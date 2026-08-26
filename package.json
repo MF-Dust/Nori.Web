@@ -7,11 +7,12 @@
   "scripts": {
     "start": "python server.py",
     "start:py": "python server.py",
-    "test:cartridges": "python test_cartridges.py",
-    "test:backend": "python test_backend_integration.py",
-    "test:schema": "node test_client_schema.mjs",
-    "test:browser": "node test_browser_bootstrap.mjs",
-    "test": "npm run test:cartridges && npm run test:schema && npm run test:backend && npm run test:browser"
+    "test:cartridges": "python tests/test_cartridges.py",
+    "test:backend": "python tests/test_backend_integration.py",
+    "test:virtual_apps": "python tests/test_virtual_apps.py",
+    "test:schema": "node tests/test_client_schema.mjs",
+    "test:browser": "node tests/test_browser_bootstrap.mjs",
+    "test": "npm run test:cartridges && npm run test:virtual_apps && npm run test:schema && npm run test:backend && npm run test:browser"
   },
   "engines": {
     "node": ">=18"

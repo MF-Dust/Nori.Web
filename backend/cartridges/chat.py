@@ -10,39 +10,7 @@ from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
 from .base import BaseCartridge, CommandRejected, ReducerResult
-from ..config import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
-
-EMOTIONS = {
-    "happy",
-    "excited",
-    "sad",
-    "angry",
-    "fearful",
-    "disgusted",
-    "surprised",
-    "doubtful",
-    "dizzy",
-    "serious",
-    "neutral",
-}
-
-EMOTION_ALIASES = {
-    "smile": "happy",
-    "kirakira": "excited",
-    "shy": "happy",
-    "dark": "serious",
-    "tears": "sad",
-    "troubled": "doubtful",
-    "doubt": "doubtful",
-    "speechless": "neutral",
-    "sleep": "neutral",
-}
-
-SYSTEM_PROMPT = """You are Nori, the AI companion inside NoriOS. Be warm, concise,
-curious, and helpful. Reply in the user's language when practical. Start the
-answer with a single emotion tag selected from: happy, excited, sad, angry,
-fearful, disgusted, surprised, doubtful, dizzy, serious, neutral. Example:
-[emotion:happy] 你好！ Avoid claiming actions you have not performed."""
+from ..services.llm_service import EMOTION_ALIASES, EMOTIONS, LLM_SERVICE
 
 
 class ChatCartridge(BaseCartridge):
@@ -331,59 +299,24 @@ class ChatCartridge(BaseCartridge):
 
     @staticmethod
     def _extract_emotion(text: str) -> Tuple[str, str]:
-        match = re.search(r"\[emotion:([a-zA-Z_]+)\]", text)
-        if not match:
-            return "neutral", text.strip()
-        raw = match.group(1).lower()
-        emotion = raw if raw in EMOTIONS else EMOTION_ALIASES.get(raw, "neutral")
-        return emotion, re.sub(r"\[emotion:[a-zA-Z_]+\]", "", text, count=1).strip()
+        return LLM_SERVICE.extract_emotion(text)
 
     async def generate_reply(self, user_text: str) -> Tuple[str, str]:
         """Use an optional OpenAI-compatible model; retain a local fallback."""
-        if OPENAI_API_KEY:
-            try:
-                import httpx
-
-                history = []
-                for line in self.state.get("lines", [])[-12:]:
-                    if not isinstance(line, dict):
-                        continue
-                    content = line.get("content")
-                    if not isinstance(content, str):
-                        continue
-                    history.append(
-                        {
-                            "role": "assistant" if line.get("sender") == "agent" else "user",
-                            "content": content,
-                        }
-                    )
-                async with httpx.AsyncClient(timeout=30.0) as client:
-                    response = await client.post(
-                        f"{OPENAI_BASE_URL.rstrip('/')}/chat/completions",
-                        headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
-                        json={
-                            "model": OPENAI_MODEL,
-                            "messages": [{"role": "system", "content": SYSTEM_PROMPT}, *history, {"role": "user", "content": user_text}],
-                            "temperature": 0.75,
-                            "max_tokens": 350,
-                        },
-                    )
-                    response.raise_for_status()
-                    content = response.json()["choices"][0]["message"]["content"]
-                    emotion, cleaned = self._extract_emotion(content)
-                    if cleaned:
-                        return emotion, cleaned
-            except Exception as exc:  # Local mode remains usable if provider fails.
-                print(f"[chat] model request failed: {exc}")
-
-        text = user_text.lower()
-        if any(token in text for token in ("你好", "hello", " hi", "嗨")):
-            return "happy", "你好呀！我是 Nori。今天想一起做点什么？"
-        if any(token in text for token in ("游戏", "game", "玩")):
-            return "excited", "当然！桌面上有 Woodland Quest、Cake Duel、Chess 和 Draw & Guess。选一个，我们就开始吧。"
-        if any(token in text for token in ("再见", "晚安", "bye")):
-            return "sad", "好呀，晚些再见。无论什么时候回来，我都会在这里。"
-        return "neutral", "我听着呢。你可以告诉我更多，或者让我陪你打开一个游戏。"
+        history = []
+        for line in self.state.get("lines", [])[-12:]:
+            if not isinstance(line, dict):
+                continue
+            content = line.get("content")
+            if not isinstance(content, str):
+                continue
+            history.append(
+                {
+                    "role": "assistant" if line.get("sender") == "agent" else "user",
+                    "content": content,
+                }
+            )
+        return await LLM_SERVICE.generate_reply(user_text, history)
 
     @staticmethod
     def build_agent_turn(reply: str, emotion: str) -> Tuple[str, str, List[Dict[str, Any]]]:

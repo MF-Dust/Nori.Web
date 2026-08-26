@@ -1,36 +1,41 @@
-import time
-from typing import Dict, Any, List
+"""Virtual Terminal command execution service."""
 
-VIRTUAL_FS = {
+from __future__ import annotations
+
+import time
+from typing import Any, Dict
+
+VIRTUAL_FS: Dict[str, Dict[str, Any]] = {
     "/": {
         "type": "dir",
-        "children": ["system", "user", "datasea", "games", "logs"]
+        "children": ["system", "user", "datasea", "games", "logs"],
     },
     "/system": {
         "type": "dir",
-        "children": ["kernel.sys", "nori_core.dll", "config.json"]
+        "children": ["kernel.sys", "nori_core.dll", "config.json"],
     },
     "/system/config.json": {
         "type": "file",
-        "content": '{"version": "1.0.0", "node": "nori-local-core", "mode": "cloud-linked"}'
+        "content": '{"version": "1.0.0", "node": "nori-local-core", "mode": "cloud-linked"}',
     },
     "/user": {
         "type": "dir",
-        "children": ["notes.txt", "memento.dat"]
+        "children": ["notes.txt", "memento.dat"],
     },
     "/user/notes.txt": {
         "type": "file",
-        "content": "NoriOS Operator Memo: Live2D synchronized, WebSocket arcade listening on port 4173."
+        "content": "NoriOS Operator Memo: Live2D synchronized, WebSocket arcade listening on port 4173.",
     },
     "/datasea": {
         "type": "dir",
-        "children": ["ocean_coordinates.log"]
+        "children": ["ocean_coordinates.log"],
     },
     "/datasea/ocean_coordinates.log": {
         "type": "file",
-        "content": "Depth: -3200m | Resonance: 98.4% | Beacon: Stable"
-    }
+        "content": "Depth: -3200m | Resonance: 98.4% | Beacon: Stable",
+    },
 }
+
 
 def execute_terminal_command(cmd_line: str) -> str:
     parts = cmd_line.strip().split()
@@ -38,7 +43,7 @@ def execute_terminal_command(cmd_line: str) -> str:
         return ""
     cmd = parts[0].lower()
     args = parts[1:]
-    
+
     if cmd in ("help", "?"):
         return """NoriOS Terminal Commands:
   help               Show this help message

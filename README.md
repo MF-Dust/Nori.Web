@@ -21,9 +21,10 @@
 - **全套内置卡带状态机 (Cartridges)**
   - 💬 **Chat**：支持操作/分块/音频确认状态机，可无缝对接 OpenAI 兼容接口，未配置时提供本地智能回退。
   - 🍰 **Cake Duel**：支持完整基础牌组规则、回合轮替、虚张声势/质疑机制、蛋糕结算与本地 AI 对手。
-  - 🕵️ **Codenames**：25 格词牌、红蓝对抗、队长提示、翻牌判定、骤死结算与本地 AI 对手。
+  - 🌲 **Codenames**：25 格词牌、红蓝对抗、队长提示、翻牌判定、骤死结算与本地 AI 对手。
   - ♟️ **Chess**：基于 `python-chess` 引擎实现全套国际象棋规则（合法着法、将军、将杀、和棋、悔棋及本地对手）。
   - 🎨 **Pictionary**：内置画板笔迹播放、猜词判词与回合流转控制。
+  - 🌐 **Manifold**：全套桌面事实（Facts）与应用解锁状态同步。
 - **虚拟应用与静态资源集成**
   - 集成 Files、Browser、Mail、Messenger、Terminal 等系统虚拟应用。
   - 完整包含 Live2D 模型（Nori / ARGNori）、表情动作、音频音效（SFX/BGM）与桌面主题资源。
@@ -70,29 +71,31 @@ OPENAI_MODEL=gpt-4o-mini
 
 ---
 
-## 📁 目录结构
+## 📂 目录结构
 
 ```text
 Nori.Web/
 ├── backend/                  # Python 兼容服务端核心
-│   ├── cartridges/           # 各卡带游戏引擎 (Chat, CakeDuel, Chess, Codenames, Pictionary)
+│   ├── api/                  # API 路由层 (Arcade WS, Better-Auth, Convex, System, Static)
+│   ├── cartridges/           # 领域卡带层与注册中心 (Chat, CakeDuel, Chess, Codenames, Manifold, Pictionary)
+│   ├── core/                 # 核心基础设施层 (Config, Media, Protocol)
+│   ├── services/             # 领域应用服务层 (EventDispatcher, LLMService)
+│   ├── session/              # 运行时会话层 (WorldSession, WorldManager, Ticket)
 │   ├── virtual_apps/         # 虚拟应用服务 (Browser, Files, Mail, Messenger, Terminal)
-│   ├── data/                 # 词库与运行时资源
-│   ├── auth.py               # 认证与用户会话处理
-│   ├── media_stream.py       # 媒体音频流分发
-│   ├── protocol.py           # 消息封装与协议定义
-│   └── world_session.py      # 世界运行时与客户端管理器
+│   └── data/                 # 词库与运行时资源
 ├── docs/                     # 协议逆向与技术文档
 │   └── VERIFIED_PROTOCOL.md  # 协议格式、消息信封与字段详解
 ├── public/                   # 前端静态资源 (Live2D 模型、音效、UI 资源与脚本)
+├── tests/                    # 规范化测试套件
+│   ├── test_cartridges.py    # 卡带状态机单元测试
+│   ├── test_virtual_apps.py  # 虚拟应用与事件分发单元测试
+│   ├── test_backend_integration.py # 后端协议与 WebSocket 集成测试
+│   ├── test_client_schema.mjs# 前端 Zod 校验规则验证
+│   └── test_browser_bootstrap.mjs # 浏览器全流程引导测试
 ├── server.py                 # FastAPI 入口服务
 ├── requirements.txt          # Python 依赖清单
 ├── package.json              # 测试与辅助脚本配置
-├── start.bat                 # Windows 一键启动脚本
-├── test_cartridges.py        # 卡带状态机单元测试
-├── test_backend_integration.py # 后端协议与 WebSocket 集成测试
-├── test_client_schema.mjs    # 前端 Zod 校验规则验证
-└── test_browser_bootstrap.mjs# 浏览器全流程引导测试
+└── start.bat                 # Windows 一键启动脚本
 ```
 
 ---
@@ -103,15 +106,18 @@ Nori.Web/
 
 ```bash
 # 1. 验证所有卡带状态机核心逻辑
-python test_cartridges.py
+python tests/test_cartridges.py
 
-# 2. 验证 REST 端点、Ticket 机制、Arcade WebSocket 与媒体流
-python test_backend_integration.py
+# 2. 验证虚拟应用与 Manifold 事件分发
+python tests/test_virtual_apps.py
 
-# 3. 使用前端 bundle 内置的 Zod parser 校验服务端消息信封
-node test_client_schema.mjs
+# 3. 验证 REST 端点、Ticket 机制、Arcade WebSocket 与媒体流
+python tests/test_backend_integration.py
 
-# 4. 执行完整测试套件 (需安装 Node 依赖)
+# 4. 使用前端 bundle 内置的 Zod parser 校验服务端消息信封
+node tests/test_client_schema.mjs
+
+# 5. 执行完整测试套件 (需安装 Node 依赖)
 npm test
 ```
 
