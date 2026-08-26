@@ -1,0 +1,166 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "ARGNori.moc3",
+		"Textures": [
+			"ARGNori.4096/texture_00.png",
+			"ARGNori.4096/texture_01.png",
+			"ARGNori.4096/texture_02.png"
+		],
+		"Physics": "ARGNori.physics3.json",
+		"DisplayInfo": "ARGNori.cdi3.json",
+		"Expressions": [
+			{
+				"Name": "00_Default",
+				"File": "expressions/00_Default.exp3.json"
+			},
+			{
+				"Name": "01_KiraKira",
+				"File": "expressions/01_KiraKira.exp3.json"
+			},
+			{
+				"Name": "02_Dizzy",
+				"File": "expressions/02_Dizzy.exp3.json"
+			},
+			{
+				"Name": "03_Angry",
+				"File": "expressions/03_Angry.exp3.json"
+			},
+			{
+				"Name": "04_Shy",
+				"File": "expressions/04_Shy.exp3.json"
+			},
+			{
+				"Name": "05_Dark",
+				"File": "expressions/05_Dark.exp3.json"
+			},
+			{
+				"Name": "06_Speechless",
+				"File": "expressions/06_Speechless.exp3.json"
+			},
+			{
+				"Name": "07_Smile",
+				"File": "expressions/07_Smile.exp3.json"
+			},
+			{
+				"Name": "08_Tears",
+				"File": "expressions/08_Tears.exp3.json"
+			},
+			{
+				"Name": "09_Troubled",
+				"File": "expressions/09_Troubled.exp3.json"
+			},
+			{
+				"Name": "10_Doubt",
+				"File": "expressions/10_Doubt.exp3.json"
+			},
+			{
+				"Name": "11_Disgust",
+				"File": "expressions/11_Disgust.exp3.json"
+			},
+			{
+				"Name": "12_Serious",
+				"File": "expressions/12_Serious.exp3.json"
+			},
+			{
+				"Name": "13_Happy",
+				"File": "expressions/13_Happy.exp3.json"
+			},
+			{
+				"Name": "Sleep",
+				"File": "expressions/Sleep.exp3.json"
+			},
+			{
+				"Name": "14_Surprised",
+				"File": "expressions/14_Surprised.exp3.json"
+			}
+		],
+		"Motions": {
+			"Background": [
+				{
+					"File": "motions/back_Loop.motion3.json",
+					"FadeInTime": 0.5,
+					"FadeOutTime": 0.5
+				}
+			],
+			"Idle": [
+				{
+					"File": "motions/01_Idle_Loop.motion3.json",
+					"FadeInTime": 5,
+					"FadeOutTime": 0.5
+				},
+				{
+					"File": "motions/sleep_Loop.motion3.json",
+					"FadeInTime": 10,
+					"FadeOutTime": 0.5
+				}
+			],
+			"Reactions": [
+				{
+					"File": "motions/02_Nod.motion3.json",
+					"FadeInTime": 0.5,
+					"FadeOutTime": 0.5
+				},
+				{
+					"File": "motions/03_ShakeHead.motion3.json",
+					"FadeInTime": 0.5,
+					"FadeOutTime": 0.5
+				},
+				{
+					"File": "motions/04_WakuWaku.motion3.json",
+					"FadeInTime": 0.5,
+					"FadeOutTime": 0.5
+				},
+				{
+					"File": "motions/05_Angry.motion3.json",
+					"FadeInTime": 0.5,
+					"FadeOutTime": 0.5
+				},
+				{
+					"File": "motions/06_Troubled.motion3.json",
+					"FadeInTime": 0.5,
+					"FadeOutTime": 0.5
+				},
+				{
+					"File": "motions/07_Dizzy.motion3.json",
+					"FadeInTime": 0.5,
+					"FadeOutTime": 0.5
+				}
+			],
+			"Effects": [
+				{
+					"File": "motions/08_Glitch_Loop.motion3.json",
+					"FadeInTime": 0.5,
+					"FadeOutTime": 0.5
+				}
+			],
+			"Poses": [
+				{
+					"File": "motions/Idle_pose_Loop.motion3.json",
+					"FadeInTime": 0.5,
+					"FadeOutTime": 0.5
+				},
+				{
+					"File": "motions/Idle_pose_expidle_Loop.motion3.json",
+					"FadeInTime": 0.5,
+					"FadeOutTime": 0.5
+				}
+			]
+		}
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": [
+				"ParamMouthOpenY"
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": []
+		}
+	],
+	"HitAreas": []
+}

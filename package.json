@@ -1,0 +1,15 @@
+{
+  "name": "nori-os-offline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline archive server for the public NoriOS web client",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "start:offline": "node server.mjs --offline",
+    "check": "node --check server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

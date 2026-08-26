@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="pulse.social">
+  <circle cx="16" cy="16" r="16" fill="#0b0d10"/>
+  <polyline points="3,16 9,16 12,16 14.5,8 18.5,24 21,16 23.5,16 29,16"
+    fill="none" stroke="#19d3e0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

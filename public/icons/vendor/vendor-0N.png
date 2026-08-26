@@ -1,0 +1,35 @@
+<!doctype html>
+<!-- NoriOS is dark-only with the nori skin: both root classes are static
+     (no runtime theme machinery), so first paint is already dark. -->
+<html lang="en" class="dark theme-nori">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NoriOS</title>
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:ital,wght@0,200..900;1,200..900&family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Press Start 2P / VT323 / Silkscreen + Fusion Pixel are self-hosted; see @font-face in styles/tailwind.css -->
+    <!-- Aleph cold-open landing typography (landing/aleph) -->
+    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..700&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- zh kai = LXGW WenKai, simplified GB build (Google Fonts only hosts the TC variant:
+         traditional glyph forms + centered punctuation, wrong for zh-CN copy) -->
+    <link href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-light.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/fusion-pixel-10px-proportional-sc@5.2.5/index.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/fusion-pixel-10px-monospaced-sc@5.2.5/index.css" rel="stylesheet">
+    <script src="/cubism_sdk/Core/live2dcubismcore.js"></script>
+    <!-- No model warmup here: dev-bypass preloads via preloadLive2DModel in
+         main.tsx (fetch + decode + stage, strictly stronger than an HTTP
+         warmer and not duplicated — fetch() does not coalesce identical
+         in-flight requests); prod loads at NoriSceneStage mount, pre-gate. -->
+    <script type="module" crossorigin src="/assets/index-CyHAbkO5.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/i18n-DtIC1LRi.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-FU-0vwSE.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

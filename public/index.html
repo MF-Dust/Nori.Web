@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- NoriOS is dark-only with the nori skin: both root classes are static
+     (no runtime theme machinery), so first paint is already dark. -->
+<html lang="en" class="dark theme-nori">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NoriOS</title>
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="stylesheet" href="/fonts.css" />
+    <script src="/cubism_sdk/Core/live2dcubismcore.js"></script>
+    <!-- No model warmup here: dev-bypass preloads via preloadLive2DModel in
+         main.tsx (fetch + decode + stage, strictly stronger than an HTTP
+         warmer and not duplicated — fetch() does not coalesce identical
+         in-flight requests); prod loads at NoriSceneStage mount, pre-gate. -->
+    <script type="module" crossorigin src="/assets/index-CyHAbkO5.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/i18n-DtIC1LRi.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-FU-0vwSE.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

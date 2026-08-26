@@ -1,0 +1,120 @@
+{
+	"Type": "Live2D Expression",
+	"Parameters": [
+		{
+			"Id": "Param14",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param130",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param15",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param26",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param30",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param28",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param31",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param25",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param150",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param16",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param20",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Param67",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamBrowLY",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamBrowLY2",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamBrowLAngle",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamBrowLForm",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamEyeLOpen",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamMouthForm",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamMouthOpenY",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamMouthOpenY4",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamMouthOpenY5",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamMouthOpenY2",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "ParamMouthOpenY3",
+			"Value": 0,
+			"Blend": "Add"
+		}
+	]
+}

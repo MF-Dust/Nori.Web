@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="driftnet">
+  <!-- The masthead's half-block "D" letterform, verbatim from the CGA art:
+       bone glyph, hot-red scan band (the masthead's red row), cyan swoosh
+       tail. Sharp corners: no rounded SaaS tile on an onion. -->
+  <rect width="32" height="32" fill="#0a0a0b"/>
+  <g fill="#cdc8b8">
+    <rect x="4" y="2" width="6" height="14"/>
+    <rect x="4" y="23" width="6" height="3.5"/>
+    <rect x="10" y="2" width="12" height="3.5"/>
+    <rect x="10" y="23" width="12" height="3.5"/>
+    <rect x="22" y="5.5" width="6" height="10.5"/>
+  </g>
+  <g fill="#c0392b">
+    <rect x="4" y="16" width="6" height="7"/>
+    <rect x="22" y="16" width="6" height="7"/>
+  </g>
+  <rect x="25" y="25" width="5" height="5" fill="#4fb6b6"/>
+</svg>
