@@ -1,36 +1,75 @@
-# NoriOS Offline Archive
+# NoriOS 本地兼容后端
 
-这是 `https://os.inori.ai/` 的公开前端资源离线归档。资源按原站路径保存在 `public/`，并将云端世界运行时替换为本地内存实现，因此断网时仍可进入 NoriOS 桌面、查看 Nori Live2D、打开本地应用和使用本地素材。
+这是一个**本地、可运行的兼容实现**：依据 `https://os.inori.ai/` 公开页面、公开 HTTP 响应和浏览器下载的客户端 bundle，还原 NoriOS Web 客户端实际使用的 Arcade 协议。
 
-## 启动
+它不是上游私有服务端源码的副本，也不会代理、抓取或绕过上游账户与私有数据。
 
-环境要求：Node.js 18 或更高版本。无需 Python、npm 依赖或构建步骤。
+## 已实现
+
+- Arcade WebSocket：`/api/arcade/web/v1`
+  - `arcade.v1` + `ticket.<token>` 子协议
+  - web world 打开、重置、挂载、卸载、命令分发、版本确认、可见性栅栏和 ping/pong
+  - 使用客户端实际校验的 `world_joined`、`runtime_transition`、`dispatch_ack` 等消息结构
+- Media WebSocket：`/api/arcade/web/v1/media`
+  - `open_media` 授权与已验证的 `chatAudio` 二进制帧格式
+- 本地 Better-Auth 兼容端点
+  - 会话、开发 OTP、退出、local Convex token
+  - 默认自动创建本地访客会话；开发 OTP 默认是 `123456`
+- 已根据公开客户端 reducer 实现的运行时卡带
+  - `chat`：真实的操作/块/音频确认状态机，支持可选 OpenAI 兼容 API
+  - `cakeduel`：基础牌组、回合、声明、质疑、蛋糕结算和本地对手
+  - `codenames`：25 格棋盘、线索、翻牌、骤死和本地对手
+  - `chess`：合法走子、将杀/和棋/认输/和棋提议/悔棋和本地对手
+  - `pictionary`：会话、回合、猜词、跳过和本地状态机
+- 静态前端仍使用原有公开资源；只对连接地址和本地 ticket 入口作最小适配。
+
+协议依据、消息字段和证据位置见 [`docs/VERIFIED_PROTOCOL.md`](docs/VERIFIED_PROTOCOL.md)。
+
+## 安装与启动
+
+需要 Python 3.11+（当前项目已在 Python 3.13 测试）和 Node.js（仅用于前端测试）。
 
 ```bash
-npm start
+python -m pip install -r requirements.txt
+python server.py
 ```
 
-然后打开 <http://127.0.0.1:4173>。
+然后访问：<http://127.0.0.1:4173>
 
-Windows 也可以双击 `start.bat`。
+Windows 也可直接运行：
 
-端口被占用时可以换端口：
+```bat
+start.bat
+```
+
+## 可选 AI 配置
+
+不配置密钥时，聊天使用本地回退回复。配置 OpenAI 兼容接口后会调用真实模型：
+
+```env
+OPENAI_API_KEY=...
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+```
+
+## 验证
 
 ```bash
-set PORT=4174
-npm start
+# 每个卡带的状态机
+python test_cartridges.py
+
+# HTTP、ticket、Arcade WebSocket 和媒体帧
+python test_backend_integration.py
+
+# 用原始前端 bundle 内置的 Zod parser 验证服务端消息信封
+node test_client_schema.mjs
+
+# Playwright 加载前端并确认 ticket、主 Arcade 和 media WebSocket 都可连接
+node test_browser_bootstrap.mjs
 ```
 
-## 已包含
+## 已知边界
 
-- NoriOS 桌面界面和本地化 Vite 分块
-- Nori / ARGNori Live2D 模型、动作、表情和纹理
-- 桌面图标、游戏图片、音频、字体和 WebGL 素材
-- 本地 SPA 回退和离线 CSP
-- 无登录访客入口与本地内存世界状态
-
-## 离线边界
-
-原站的聊天回复、云端存档、多人联机和需要服务端制品的内容无法从公开前端资源中恢复；离线版本会用空状态或本地占位响应继续显示界面。浏览器应用中原本指向外部网站的链接在断网时自然不可用。
-
-这是对公开可访问前端资源的本地归档，不包含绕过登录、付费或其他访问控制的内容。
+- 上游 LLM、真人语音、私有剧情/世界存档、邮箱投递和账号数据库不在公开 bundle 中，无法从公开链接恢复；本地服务使用独立的本地实现。
+- 基础 Cake Duel 牌组已实现；公开 UI 默认运行该牌组。上游未公开的服务器端特典牌策略不会被伪装成已恢复功能。
+- 本地状态目前按本地用户会话保存在内存中；重启服务会重置该运行时世界。

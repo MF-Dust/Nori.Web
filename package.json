@@ -1,13 +1,17 @@
 {
-  "name": "nori-os-offline",
-  "version": "1.0.0",
+  "name": "nori-os-local-compatibility",
+  "version": "2.0.0",
   "private": true,
-  "description": "Offline archive server for the public NoriOS web client",
+  "description": "Local protocol-compatible backend for the publicly shipped NoriOS web client",
   "type": "module",
   "scripts": {
-    "start": "node server.mjs",
-    "start:offline": "node server.mjs --offline",
-    "check": "node --check server.mjs"
+    "start": "python server.py",
+    "start:py": "python server.py",
+    "test:cartridges": "python test_cartridges.py",
+    "test:backend": "python test_backend_integration.py",
+    "test:schema": "node test_client_schema.mjs",
+    "test:browser": "node test_browser_bootstrap.mjs",
+    "test": "npm run test:cartridges && npm run test:schema && npm run test:backend && npm run test:browser"
   },
   "engines": {
     "node": ">=18"

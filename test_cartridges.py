@@ -1,0 +1,84 @@
+"""Reducer-level checks for every publicly registered game/chat cartridge."""
+
+from __future__ import annotations
+
+from backend.cartridges.cakeduel import CakeDuelCartridge
+from backend.cartridges.chat import ChatCartridge
+from backend.cartridges.chess_engine import ChessCartridge
+from backend.cartridges.codenames import CodenamesCartridge
+from backend.cartridges.pictionary import PictionaryCartridge
+
+
+def test_chat() -> None:
+    cartridge = ChatCartridge()
+    first = cartridge.dispatch("player", {"type": "playerMessage", "text": "hello"})
+    assert first.committed and first.result == {"messageId": "msg_1"}
+    operation = "00000000-0000-4000-8000-000000000001"
+    message = "00000000-0000-4000-8000-000000000002"
+    cartridge.dispatch("agent", {"type": "operationStarted", "operationId": operation})
+    cartridge.dispatch("agent", {"type": "ingestBlock", "operationId": operation, "messageId": message, "blockId": 0, "blockType": "text", "content": "Hi!", "isSpeech": True, "emotion": "happy"})
+    # Audio mode holds speech until its start acknowledgement, as the public reducer does.
+    assert all(line.get("content") != "Hi!" for line in cartridge.state["lines"])
+    cartridge.dispatch("player", {"type": "audioStarted", "operationId": operation, "blockId": 0})
+    assert cartridge.state["lines"][-1]["content"] == "Hi!"
+    cartridge.dispatch("player", {"type": "audioDone", "operationId": operation, "blockId": 0})
+
+
+def test_codenames() -> None:
+    cartridge = CodenamesCartridge()
+    cartridge.dispatch("player", {"type": "startGame", "settings": {"tokens": 9, "seed": 10}})
+    game = cartridge.state["gameState"]
+    assert len(game["board"]) == len(game["cells"]) == 25
+    cartridge.dispatch("player", {"type": "submitClue", "clue": {"word": "NORI", "count": 1}})
+    game = cartridge.state["gameState"]
+    assert game["history"][-1]["clue"]["word"] == "NORI"
+    action = cartridge.agent_next_command()
+    assert action and action["type"] == "submitGuess"
+    cartridge.dispatch("agent", action)
+
+
+def test_cakeduel() -> None:
+    cartridge = CakeDuelCartridge()
+    cartridge.dispatch("player", {"type": "startGame", "mode": "normal", "difficulty": "soldier"})
+    game = cartridge.state["game"]
+    assert game["phase"] == "attack" and len(game["players"][0]["hand"]) == 4
+    names = [game["cardList"][card_id] for card_id in game["players"][0]["hand"]]
+    claim = next(name for name in names if name in {"soldier", "archer", "wizard"})
+    cartridge.dispatch("player", {"type": "play", "action": {"type": "claim", "handIndices": [names.index(claim)], "claim": claim}})
+    assert cartridge.state["game"]["phase"] == "block"
+    command = cartridge.agent_next_command()
+    assert command is not None
+    cartridge.dispatch("agent", command)
+
+
+def test_chess() -> None:
+    cartridge = ChessCartridge()
+    cartridge.dispatch("player", {"type": "startGame", "mode": "normal", "side": "white", "difficulty": "casual"})
+    cartridge.dispatch("player", {"type": "move", "from": "e2", "to": "e4"})
+    game = cartridge.state["gameState"]
+    assert game["turn"] == "black" and game["moveHistory"][-1]["san"] == "e4"
+    command = cartridge.agent_next_command()
+    assert command is not None and command["type"] == "move"
+    cartridge.dispatch("agent", command)
+    assert cartridge.state["gameState"]["turn"] == "white"
+
+
+def test_pictionary() -> None:
+    cartridge = PictionaryCartridge()
+    cartridge.dispatch("player", {"type": "startSession", "atMs": 1_000, "settings": {"sessionDurationMs": 60_000, "locale": "en"}})
+    game = cartridge.state["gameState"]
+    assert game["phase"] == "PLAYING" and game["round"]["roles"] == {"drawer": "player", "guesser": "agent"}
+    # Strokes are deliberately no-op runtime commands in the shipped reducer.
+    committed = cartridge.dispatch("player", {"type": "submitStrokeBatch", "atMs": 1_001, "batch": [{"points": [{"x": 0, "y": 0}, {"x": 1, "y": 1}]}]})
+    assert committed.committed is False
+    cartridge.dispatch("player", {"type": "skipRound", "atMs": 1_002})
+    assert cartridge.state["gameState"]["round"]["status"] == "skipped"
+
+
+if __name__ == "__main__":
+    test_chat()
+    test_codenames()
+    test_cakeduel()
+    test_chess()
+    test_pictionary()
+    print("[ok] chat, codenames, cakeduel, chess, and pictionary reducers verified")

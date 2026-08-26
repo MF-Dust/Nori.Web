@@ -1,4 +1,4 @@
-import{j as c}from"./index-CyHAbkO5.js";import{ay as A}from"./NormalApp-Cn6agT0F.js";import{C as P,a as client}from"./arcadeConvexClient-4Q6F8qzz.js";
-const auth={status:"authed",signIn:async()=>{},sendEmailOtp:async()=>{},signInWithEmailOtp:async()=>{},signOut:async()=>{}};
-function OfflineAuthProvider({children:e}){return c.jsx(A.Provider,{value:auth,children:c.jsx(P,{client,children:e})})}
-export default OfflineAuthProvider;
+import{j as h}from"./index-CyHAbkO5.js";import{r as e}from"./i18n-DtIC1LRi.js";import{ay as a}from"./NormalApp-Cn6agT0F.js";import{C as p,a as c}from"./arcadeConvexClient-4Q6F8qzz.js";
+async function r(t,n){const s=await fetch(t,{method:n?"POST":"GET",headers:n?{"Content-Type":"application/json"}:void 0,body:n?JSON.stringify(n):void 0});let o=null;try{o=await s.json()}catch{}if(!s.ok||o&&o.code)throw new Error(o?.message||`Authentication request failed (${s.status})`);return o}
+function u({children:t}){const[n,s]=e.useState("loading"),o=e.useCallback(async()=>{try{const i=await r("/api/auth/get-session");s(i?.session?"authed":"unauthed")}catch{s("unauthed")}},[]);e.useEffect(()=>{o()},[o]);const i=e.useMemo(()=>({status:n,signIn:async()=>{throw new Error("Social sign-in is unavailable in local mode")},sendEmailOtp:async l=>{await r("/api/auth/email-otp/send-verification-otp",{email:l,type:"sign-in"})},signInWithEmailOtp:async(l,d)=>{await r("/api/auth/sign-in/email-otp",{email:l,otp:d});await o()},signOut:async()=>{await r("/api/auth/sign-out",{});await o()}}),[n,o]);return h.jsx(a.Provider,{value:i,children:h.jsx(p,{client:c,children:t})})}
+export default u;

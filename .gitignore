@@ -1,1 +1,7 @@
 node_modules/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.research/
+data/*.sqlite3
+data/*.db
