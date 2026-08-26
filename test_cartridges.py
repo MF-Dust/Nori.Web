@@ -6,6 +6,7 @@ from backend.cartridges.cakeduel import CakeDuelCartridge
 from backend.cartridges.chat import ChatCartridge
 from backend.cartridges.chess_engine import ChessCartridge
 from backend.cartridges.codenames import CodenamesCartridge
+from backend.cartridges.manifold import ManifoldWebCartridge
 from backend.cartridges.pictionary import PictionaryCartridge
 
 
@@ -43,8 +44,9 @@ def test_cakeduel() -> None:
     game = cartridge.state["game"]
     assert game["phase"] == "attack" and len(game["players"][0]["hand"]) == 4
     names = [game["cardList"][card_id] for card_id in game["players"][0]["hand"]]
-    claim = next(name for name in names if name in {"soldier", "archer", "wizard"})
-    cartridge.dispatch("player", {"type": "play", "action": {"type": "claim", "handIndices": [names.index(claim)], "claim": claim}})
+    claim = next((name for name in names if name in {"soldier", "archer", "wizard"}), "soldier")
+    hand_idx = names.index(claim) if claim in names else 0
+    cartridge.dispatch("player", {"type": "play", "action": {"type": "claim", "handIndices": [hand_idx], "claim": claim}})
     assert cartridge.state["game"]["phase"] == "block"
     command = cartridge.agent_next_command()
     assert command is not None
@@ -75,10 +77,27 @@ def test_pictionary() -> None:
     assert cartridge.state["gameState"]["round"]["status"] == "skipped"
 
 
+def test_manifold() -> None:
+    cartridge = ManifoldWebCartridge()
+    assert cartridge.state["facts"].get("system.repaired") is True
+    assert cartridge.state["facts"].get("virus.cleared") is True
+    assert cartridge.state["facts"].get("qfr.installed") is True
+
+    # Test client.emitFact
+    res = cartridge.dispatch("player", {"type": "client.emitFact", "factId": "custom.fact.test"})
+    assert res.committed is True
+    assert cartridge.state["facts"].get("custom.fact.test") is True
+
+    # Test idle sync & complete (idle.sync is a query dispatch without state mutations)
+    sync_res = cartridge.dispatch("player", {"type": "idle.sync"})
+    assert isinstance(sync_res.result, dict) and "prestige" in sync_res.result
+
+
 if __name__ == "__main__":
     test_chat()
     test_codenames()
     test_cakeduel()
     test_chess()
     test_pictionary()
-    print("[ok] chat, codenames, cakeduel, chess, and pictionary reducers verified")
+    test_manifold()
+    print("[ok] chat, codenames, cakeduel, chess, pictionary, and manifold.web reducers verified")

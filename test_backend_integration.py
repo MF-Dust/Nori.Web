@@ -182,6 +182,26 @@ async def test_arcade(ticket: str) -> None:
         pictionary_ack = await receive_json(socket)
         assert pictionary_ack["success"] is True and pictionary_ack["committedVersion"] == 1
 
+        # Mount and verify manifold.web cartridge (unlocks Browser, Messages, Credits, etc.)
+        await socket.send(json.dumps({"type": "mount_cartridge", "cartridgeId": "manifold.web", "requestId": "mount-manifold"}))
+        mounted_m = await receive_json(socket)
+        assert mounted_m["type"] == "cartridge_mounted" and mounted_m["cartridgeId"] == "manifold.web"
+        assert mounted_m["runtimes"][0]["state"]["facts"]["system.repaired"] is True
+        mounted_m_ack = await receive_json(socket)
+        assert mounted_m_ack["type"] == "cartridge_mounted_ack"
+
+        # Test manifold artifacts request
+        await socket.send(json.dumps({"type": "event", "channel": "manifold.artifacts.request", "cartridgeId": "manifold.web", "requestId": "req-art", "payload": {}}))
+        art_res = await receive_json(socket)
+        assert art_res["type"] == "event" and art_res["channel"] == "manifold.artifacts.response"
+        assert art_res["payload"]["ok"] is True and len(art_res["payload"]["artifacts"]) > 0
+
+        # Test manifold chip status (ensuring strict non-null fields)
+        await socket.send(json.dumps({"type": "event", "channel": "manifold.chip.status", "cartridgeId": "manifold.web", "requestId": "req-chip", "payload": {}}))
+        chip_res = await receive_json(socket)
+        assert chip_res["type"] == "event" and chip_res["channel"] == "manifold.chip.status.result"
+        assert chip_res["payload"]["capacity"] == 3
+
         await socket.send(json.dumps({"type": "ping"}))
         pong = await receive_json(socket)
         assert pong["type"] == "pong" and isinstance(pong["now"], int)

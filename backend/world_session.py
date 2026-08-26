@@ -22,6 +22,7 @@ from .cartridges.cakeduel import CakeDuelCartridge
 from .cartridges.chat import ChatCartridge
 from .cartridges.chess_engine import ChessCartridge
 from .cartridges.codenames import CodenamesCartridge
+from .cartridges.manifold import ManifoldWebCartridge
 from .cartridges.pictionary import PictionaryCartridge
 from .media_stream import fallback_speech_frames
 from .protocol import (
@@ -43,6 +44,7 @@ CARTRIDGE_FACTORIES = {
     "codenames": CodenamesCartridge,
     "chess": ChessCartridge,
     "pictionary": PictionaryCartridge,
+    "manifold.web": ManifoldWebCartridge,
 }
 
 
@@ -57,7 +59,10 @@ class WorldSession:
         self.owner_id = owner_id
         self.world_id = str(uuid.uuid4())
         self.locale = locale or "en"
-        self.cartridges: Dict[str, BaseCartridge] = {"chat": ChatCartridge()}
+        self.cartridges: Dict[str, BaseCartridge] = {
+            "chat": ChatCartridge(),
+            "manifold.web": ManifoldWebCartridge(),
+        }
         self.clients: Set[WebSocket] = set()
         self.media_clients: Set[WebSocket] = set()
         self.media_grants: Set[str] = set()
@@ -75,10 +80,11 @@ class WorldSession:
         return grant
 
     def mounted_cartridges(self) -> List[Dict[str, Json]]:
-        return [
-            {"cartridgeId": cartridge_id, "runtimes": [cartridge.get_snapshot("ui")]}
-            for cartridge_id, cartridge in self.cartridges.items()
-        ]
+        result = []
+        for cartridge_id, cartridge in self.cartridges.items():
+            fence = "player" if cartridge_id == "manifold.web" else "ui"
+            result.append({"cartridgeId": cartridge_id, "runtimes": [cartridge.get_snapshot(fence)]})
+        return result
 
     def world_payload(self) -> Dict[str, Json]:
         return {"worldId": self.world_id, "mountedCartridges": self.mounted_cartridges()}
@@ -128,6 +134,7 @@ class WorldSession:
     def _commit_messages(self, cartridge: BaseCartridge, commit: Any) -> List[Dict[str, Json]]:
         if not commit.committed or commit.transition is None:
             return []
+        fence_id = "player" if cartridge.cartridge_id == "manifold.web" else "ui"
         return [
             runtime_transition_message(
                 world_id=self.world_id,
@@ -138,7 +145,7 @@ class WorldSession:
             visibility_advanced_message(
                 world_id=self.world_id,
                 cartridge_id=cartridge.cartridge_id,
-                visibility_fence_id="ui",
+                visibility_fence_id=fence_id,
                 visible_version=cartridge.visible_version,
                 head_version=cartridge.head_version,
             ),
@@ -301,7 +308,8 @@ class WorldSession:
             try:
                 async with self.lock:
                     transition, cartridge = await self._mount(cartridge_id)
-                    runtimes = [cartridge.get_snapshot("ui")]
+                    fence = "player" if cartridge_id == "manifold.web" else "ui"
+                    runtimes = [cartridge.get_snapshot(fence)]
             except CommandRejected as exc:
                 await self.send_direct(websocket, error_message("command_rejected", str(exc), world_id=self.world_id, cartridge_id=cartridge_id, request_id=request_id))
                 return None
@@ -454,14 +462,126 @@ class WorldSession:
             return result
 
         now = int(time.time() * 1000)
+        payload = message.get("payload", {})
         if channel == "manifold.chip.status":
-            await self.send_direct(websocket, response("manifold.chip.status.result", {"capacity": 3, "heat": 0, "coolEveryMs": 60_000, "nextCoolAtMs": None, "serverNowMs": now}))
+            await self.send_direct(websocket, response("manifold.chip.status.result", {"capacity": 3, "heat": 0, "coolEveryMs": 60_000, "serverNowMs": now}))
         elif channel == "manifold.chip.scan":
             await self.send_direct(websocket, response("manifold.chip.scan.result", {"kind": "readout", "text": "Local manifold link stable."}))
         elif channel == "manifold.artifacts.request":
-            await self.send_direct(websocket, response("manifold.artifacts.response", {"ok": True, "artifacts": []}))
+            req_type = payload.get("artifactType") if isinstance(payload, dict) else None
+            artifacts: List[Dict[str, Any]] = []
+            if req_type in {None, "mail"}:
+                artifacts.extend([
+                    {
+                        "id": "mail_welcome",
+                        "type": "mail",
+                        "surfacedAt": now - 3600000,
+                        "data": {
+                            "from": "Inori Systems <system@inori.ai>",
+                            "to": "Operator <operator@nori.ai>",
+                            "subject": "欢迎接入 NoriOS 终端节点",
+                            "body_md": "尊敬的操作员：\n\n您的终端已成功同步至 NoriOS 本地运行时核心。Nori Live2D 情绪模型、全部小游戏与系统应用已解锁就绪。\n\n-- Inori OS 运维组",
+                            "folder": "inbox",
+                            "date": "2026-08-26 10:00",
+                            "read_fact": "mail.help.read",
+                        },
+                    },
+                    {
+                        "id": "mail_memo",
+                        "type": "mail",
+                        "surfacedAt": now - 1800000,
+                        "data": {
+                            "from": "Nori <nori@inori.ai>",
+                            "to": "Operator <operator@nori.ai>",
+                            "subject": "【日常备忘】今天也请多多指教呀！",
+                            "body_md": "操作员！\n\n所有应用和游戏（国际象棋、蛋糕决斗、森林寻宝、你画我猜）都已准备好啦！随时可以开始哦！\n\n(Nori 留)",
+                            "folder": "inbox",
+                            "date": "2026-08-26 10:05",
+                        },
+                    },
+                ])
+            if req_type in {None, "file"}:
+                artifacts.extend([
+                    {
+                        "id": "file_matrix",
+                        "type": "file",
+                        "surfacedAt": now - 3600000,
+                        "data": {
+                            "display_path": "personality_matrix.bin",
+                            "mime": "application/octet-stream",
+                            "folder": "Nori Core",
+                        },
+                    },
+                    {
+                        "id": "file_readme",
+                        "type": "file",
+                        "surfacedAt": now - 3600000,
+                        "data": {
+                            "display_path": "readme.txt",
+                            "mime": "text/plain",
+                            "folder": "Documents",
+                            "content": "NoriOS Local Compatibility Environment\nAll components unlocked by default.",
+                        },
+                    },
+                ])
+            if req_type in {None, "signal_thread"}:
+                artifacts.append({
+                    "id": "thread_nori",
+                    "type": "signal_thread",
+                    "surfacedAt": now - 3600000,
+                    "data": {
+                        "thread_id": "nori",
+                        "title": "Nori",
+                        "participants": ["nori", "operator"],
+                        "avatar_path": "/icon.png",
+                    },
+                })
+            if req_type in {None, "signal_message"}:
+                artifacts.extend([
+                    {
+                        "id": "msg_01",
+                        "type": "signal_message",
+                        "surfacedAt": now - 60000,
+                        "data": {
+                            "thread_id": "nori",
+                            "message_id": "msg_01",
+                            "sender": "nori",
+                            "kind": "text",
+                            "body_md": "操作员，听到我这边的信号了吗？全部功能都已解锁就绪啦！",
+                            "timestamp": "2026-08-26T10:00:00Z",
+                        },
+                    }
+                ])
+            await self.send_direct(websocket, response("manifold.artifacts.response", {"ok": True, "artifacts": artifacts}))
         elif channel == "manifold.artifacts.fetch":
-            await self.send_direct(websocket, response("manifold.artifacts.fetch.response", {"ok": False, "status": 404}))
+            lookup_key = payload.get("lookup_key") if isinstance(payload, dict) else ""
+            artifact_type = payload.get("artifactType") if isinstance(payload, dict) else ""
+            if artifact_type == "browser_page" and lookup_key:
+                from .virtual_apps.browser import get_browser_page
+                page = get_browser_page(lookup_key)
+                await self.send_direct(
+                    websocket,
+                    response(
+                        "manifold.artifacts.fetch.response",
+                        {
+                            "ok": True,
+                            "artifact": {
+                                "id": lookup_key,
+                                "type": "browser_page",
+                                "data": page,
+                            },
+                        },
+                    ),
+                )
+            else:
+                await self.send_direct(websocket, response("manifold.artifacts.fetch.response", {"ok": False, "status": 404}))
+        elif channel == "manifold.dev.jump.request":
+            facts = payload.get("facts", []) if isinstance(payload, dict) else []
+            manifold_cartridge = self.cartridges.get("manifold.web")
+            if isinstance(manifold_cartridge, ManifoldWebCartridge):
+                for f in facts:
+                    manifold_cartridge.state["facts"][f] = True
+            await self.send_direct(websocket, response("manifold.dev.jump.response", {"ok": True, "count": len(facts), "committed": True}))
         elif channel == "manifold.command.request":
             await self.send_direct(websocket, response("manifold.command.response", {"ok": True, "result": {}}))
         elif channel == "settings.network.test":
