@@ -1,2 +1,6242 @@
-import{j as e,f as de}from"./index-CyHAbkO5.js";import{r as l,u as en,o as we,_ as yt,c as Oe,s as ce,a as Tt,b as ye}from"./i18n-DtIC1LRi.js";import{f as lt,i as K,aG as tn,bx as un,B as gn,dv as hn,dw as pn,dx as mn,dy as fn,dz as bn,dA as xn,dB as yn,dC as Sn,dD as nn,dE as vn,dF as Cn,dG as Fe,dH as Pe,dI as At,dJ as at,dK as kn,dL as jn,dM as O,dN as le,dO as et,aP as ut,dP as It,dQ as Pn,dR as wn,dS as Tn,dT as ze,dU as An,dV as $e,b8 as it,aL as Q,dW as In,dX as En,dY as rt,dZ as Rn,d_ as Nn,d$ as Ke,e0 as Et,e1 as Mn,e2 as _n,b as St,c as De,e as G,e3 as Y,br as Dn,e4 as Ln,j as vt,bq as H,cw as ge,e5 as Vn,cy as Rt,e6 as Nt,e7 as Mt,e8 as Fn,e9 as Bn,ea as gt,z as Ct,aE as On,eb as Gn,ec as Un,aC as zn,a_ as $n,ed as qn,ee as Hn,ef as Kn,eg as Wn,aK as Ie,eh as ot,ei as an,ej as Qn,ek as Yn,el as Xn,Z as Jn,ba as Ae,em as Zn,en as ea,eo as ta,ep as na,eq as aa,er as st,es as _t,et as tt,eu as sa,ev as ht,ew as Dt,ex as Lt,ey as Vt,ez as la,ar as pt,eA as ia,eB as sn,eC as ra,eD as oa,eE as ca}from"./NormalApp-Cn6agT0F.js";import{Z as da}from"./zap-BiEriS6T.js";import{I as ua}from"./input-izesiKpE.js";import{u as be}from"./marginalGrowthStore-aMgk69c4.js";import{R as ga}from"./refresh-cw-D-L-0o8l.js";const ha=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["path",{d:"M8 12h8",key:"1wcyev"}],["path",{d:"M12 8v8",key:"napkw2"}]],pa=lt("circle-plus",ha);const ma=[["path",{d:"M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21",key:"g5wo59"}],["path",{d:"m5.082 11.09 8.828 8.828",key:"1wx5vj"}]],fa=lt("eraser",ma);const ba=[["path",{d:"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719",key:"1sd12s"}]],xa=lt("message-circle",ba);const ya=[["path",{d:"M10 11v6",key:"nco0om"}],["path",{d:"M14 11v6",key:"outv1u"}],["path",{d:"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6",key:"miytrc"}],["path",{d:"M3 6h18",key:"d0wm0j"}],["path",{d:"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",key:"e791ji"}]],Sa=lt("trash-2",ya),va=tn("relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",{variants:{variant:{default:"bg-card text-card-foreground",destructive:"text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90"}},defaultVariants:{variant:"default"}});function Ca({className:t,variant:n,...s}){return e.jsx("div",{"data-slot":"alert",role:"alert",className:K(va({variant:n}),t),...s})}function He({className:t,...n}){return e.jsx("div",{role:"list","data-slot":"item-group",className:K("group/item-group flex flex-col",t),...n})}const ka=tn("group/item flex items-center border border-transparent text-sm rounded-md transition-colors [a]:hover:bg-accent/50 [a]:transition-colors duration-100 flex-wrap outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",{variants:{variant:{default:"bg-transparent",outline:"border-border",muted:"bg-muted/50"},size:{default:"p-4 gap-4 ",sm:"py-3 px-4 gap-2.5"}},defaultVariants:{variant:"default",size:"default"}});function ja({className:t,variant:n="default",size:s="default",asChild:a=!1,...i}){const m=a?un:"div";return e.jsx(m,{"data-slot":"item","data-variant":n,"data-size":s,className:K(ka({variant:n,size:s,className:t})),...i})}function Pa({className:t,...n}){return e.jsx("div",{"data-slot":"item-content",className:K("flex flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none",t),...n})}function wa({className:t,...n}){return e.jsx("div",{"data-slot":"item-title",className:K("flex w-fit items-center gap-2 text-sm leading-snug font-medium",t),...n})}function Ta({className:t,...n}){return e.jsx("div",{"data-slot":"item-actions",className:K("flex items-center gap-2",t),...n})}const Aa=48,Ft=[0,0,.00122,.00384,.00166,.06662,.07272,.0344,.0188,.02647,.03784,.06691,.06208,.05719,.06938,.03144,.00316,.00174,.00256,.00144,.00153,.00142,71e-5,.02458,.06837,.02372,.0214,.03008,.03871,.04529,.01474,.04756,.05204,.04466,.00788,.00832,.03955,.05874,.02771,.03044,.02894,.04228,.07022,.09584,.08827,.08815,.1182,.10199,.04946,.01695,.00504,.01897,.07106,.08065,.0691,.00734,.04076,.05867,.04933,.00476,.00322,.00186,.0012,.00147,.00103,.00221,.00248,.00188,.00508,.05125,.04488,.01605,.00769,.02604,.03416,.04241,.04886,.0388,.02351,.01777,.04663,.05579,.02318,.0257,.06338,.04254,.01833,.05408,.0461,.02414,.02402,.01885,.0424,.04731,.04671,.05246,.0582,.05554,.07946,.07873,.06153,.01938,.04646,.06792,.05078,.06019,.07686,.07549,.06516,.02658,.00622,.03171,.08674,.10143,.04172,.00407,.00194,.00128,.00136,.00148,.00151,.00144,.00143,.03398,.05043,.01195,.02792,.07444,.07008,.05729,.09363,.07582,.09954,.10024,.08483,.0408,.00686,.00656,.04507,.06265,.08752,.07583,.00626,.00518,.0289,.04407,.02634,.02132,.03014,.04133,.05537,.05108,.04059,.04545,.00721,.00779,.0344,.05931,.10794,.03866,.01829,.06465,.02779,.01505,.00623,.00423,.00191,0,0];function v({title:t,right:n,className:s,contentClassName:a,children:i}){const m=t!=null||n!=null;return e.jsxs("div",{"data-slot":"card",className:K("flex flex-col rounded-[var(--dbg-radius)] border bg-card text-card-foreground",s),children:[m&&e.jsxs("div",{"data-slot":"card-header",className:"flex items-center justify-between gap-2 px-[var(--dbg-pad-x)] pt-2 pb-1",children:[e.jsx("span",{"data-slot":"card-title",className:"text-[length:var(--dbg-text-title)] font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground/75",children:t}),n]}),e.jsx("div",{"data-slot":"card-content",className:K("flex flex-col gap-[var(--dbg-field-gap)] px-[var(--dbg-pad-x)] text-[length:var(--dbg-text-label)]",m?"pb-2":"py-2",a),children:i})]})}function me({className:t,children:n}){return e.jsx("div",{"data-slot":"dbg-stack",className:K("flex flex-col gap-[var(--dbg-section-gap)]",t),children:n})}function _({label:t,htmlFor:n,hint:s,stack:a=!1,className:i,children:m}){return e.jsxs("div",{"data-slot":"dbg-field",className:K("gap-[var(--dbg-row-gap)]",a?"flex flex-col":"flex items-center justify-between",i),children:[e.jsxs("label",{"data-slot":"dbg-field-label",htmlFor:n,className:"flex items-center gap-1 text-[length:var(--dbg-text-label)] text-muted-foreground",children:[t,s!=null&&e.jsx("span",{className:"text-[length:var(--dbg-text-value)] text-muted-foreground/60",children:s})]}),e.jsx("div",{"data-slot":"dbg-field-control",className:K("flex items-center gap-1.5",a&&"w-full"),children:m})]})}function p({className:t,icon:n=!1,children:s,...a}){return e.jsx(gn,{size:n?"icon":"sm",className:K("h-[var(--dbg-control-h)] gap-1 text-[length:var(--dbg-text-label)] shadow-none",n?"w-[var(--dbg-control-h)]":"px-2",t),...a,children:s})}function F({className:t,children:n}){return e.jsx("div",{"data-slot":"dbg-button-row",className:K("flex flex-wrap gap-[var(--dbg-row-gap)]",t),children:n})}function Ne({cols:t=2,className:n,children:s}){return e.jsx("div",{"data-slot":"dbg-button-grid",className:K("grid gap-[var(--dbg-row-gap)]",t===4?"grid-cols-4":t===3?"grid-cols-3":"grid-cols-2",n),children:s})}function S({label:t,value:n,min:s,max:a,step:i,onValueChange:m,disabled:f,formatValue:y,unit:E,className:x}){const u=y?y(n):n.toFixed(2);return e.jsxs("div",{"data-slot":"dbg-slider",className:K("flex flex-col gap-1",x),children:[e.jsxs("div",{className:"flex items-center justify-between gap-2",children:[e.jsx(hn,{className:"text-[length:var(--dbg-text-label)] text-muted-foreground",children:t}),e.jsxs("span",{className:"text-[length:var(--dbg-text-value)] tabular-nums text-muted-foreground",children:[u,E?` ${E}`:""]})]}),e.jsx(pn,{value:[n],min:s,max:a,step:i,disabled:f,onValueChange:b=>m(b[0])})]})}function ae({label:t,checked:n,onCheckedChange:s,disabled:a,id:i}){return e.jsxs(ja,{size:"sm",className:"gap-2 p-0",children:[e.jsx(Pa,{children:e.jsx(wa,{className:"text-[length:var(--dbg-text-label)] font-medium leading-none",children:t})}),e.jsx(Ta,{children:e.jsx(mn,{id:i,checked:n,onCheckedChange:s,disabled:a})})]})}function pe({value:t,onValueChange:n,options:s,placeholder:a,disabled:i,className:m}){return e.jsxs(fn,{value:t,onValueChange:n,disabled:i,children:[e.jsx(bn,{size:"sm",className:K("h-[var(--dbg-control-h)] w-full text-[length:var(--dbg-text-label)]",m),children:e.jsx(xn,{placeholder:a})}),e.jsx(yn,{children:s.map(f=>e.jsx(Sn,{value:f.value,className:"text-[length:var(--dbg-text-label)]",children:f.label},f.value))})]})}function xe({value:t,onChange:n,className:s,...a}){return e.jsx(ua,{value:t,onChange:i=>n(i.target.value),className:K("h-[var(--dbg-control-h)] text-[length:var(--dbg-text-label)]",s),...a})}function ln(t="default"){switch(t){case"ok":return"text-emerald-500";case"warn":return"text-amber-500";case"error":return"text-red-500";case"muted":return"text-muted-foreground";default:return"text-foreground"}}function T({label:t,value:n,tone:s="default",mono:a=!0,className:i}){return e.jsxs("div",{"data-slot":"dbg-stat",className:K("flex items-center justify-between gap-2",i),children:[e.jsx("span",{className:"text-[length:var(--dbg-text-label)] text-muted-foreground",children:t}),e.jsx("span",{className:K("text-[length:var(--dbg-text-value)] text-right",a&&"tabular-nums",ln(s)),children:n})]})}function We({className:t,children:n}){return e.jsx("div",{"data-slot":"dbg-stat-group",className:K("flex flex-col gap-1",t),children:n})}function I({tone:t="muted",className:n,children:s}){return e.jsx("p",{"data-slot":"dbg-status",className:K("text-[length:var(--dbg-text-label)]",ln(t),n),children:s})}function kt({children:t,maxH:n,className:s}){return e.jsx("pre",{"data-slot":"dbg-code",style:n?{maxHeight:n}:void 0,className:K("overflow-auto rounded-[var(--dbg-radius)] bg-muted/50 p-2 font-mono text-[length:var(--dbg-text-value)] leading-relaxed",s),children:t})}function Ge({className:t,children:n}){return e.jsx("div",{"data-slot":"dbg-empty",className:K("text-[length:var(--dbg-text-label)] italic text-muted-foreground",t),children:n})}const Ia={idle:"Idle",glitch:"Glitch",kneel:"Kneel",kneelCalm:"Kneel Calm"};function Ea(){const t=nn(r=>r.model),n=vn(),s=Cn(),[a,i]=l.useState(0),[m,f]=l.useState(null),[y,E]=l.useState(!1),[x,u]=l.useState("idle"),b=Fe(r=>r.sleepFadeIn),B=Fe(r=>r.idleFadeIn),z=Fe(r=>r.setSleepFadeIn),D=Fe(r=>r.setIdleFadeIn),k=Fe(r=>r.idleState),q=Fe(r=>r.setIdleState),P=Pe(r=>r.intensity),$=Pe(r=>r.setIntensity),L=Pe(r=>r.formIntensity),d=Pe(r=>r.setFormIntensity),C=Pe(r=>r.formMode),V=Pe(r=>r.setFormMode),c=Pe(r=>r.formConstant),X=Pe(r=>r.setFormConstant),ie=Pe(r=>r.expressionBlends),he=Pe(r=>r.setExpressionBlend),h=C==="constant";l.useEffect(()=>{if(!y)return;let r=0,g=0;const A=()=>{if(g>0){g-=1,s(0);return}s(Ft[r]),r+=1,r===Ft.length&&(r=0,g=6+Math.floor(Math.random()*12))};A();const R=window.setInterval(A,Aa);return()=>{window.clearInterval(R),s(null)}},[s,y]);const Z=()=>{t?.startMotion({steps:{...at.IDLE,loop:!0,fadeIn:B}})},te=()=>{t?.startMotion({steps:{...at.SLEEP,loop:!0,fadeIn:b}})},o=r=>{f(r),n(r)},N=()=>{f(null),n(null)},j=r=>{f(null),n(null),s(null),E(r)},J=r=>ie[r]??kn[r]??jn,W=async()=>{const r={};for(const g of re)r[g]=J(g);try{await navigator.clipboard.writeText(JSON.stringify(r,null,2)),u("copied")}catch{u("failed")}},re=l.useMemo(()=>{if(!t)return[];try{return t.getExpressionNames()}catch(r){return console.error("Error getting expressions:",r),[]}},[t,a]),ne=l.useMemo(()=>{if(!t)return[];try{const r=t.getSetting(),g=[],A=r.getMotionGroupCount();for(let R=0;R<A;R++){const ee=r.getMotionGroupName(R),ke=r.getMotionCount(ee);for(let Te=0;Te<ke;Te++){const Ve=r.getMotionFileName(ee,Te);g.push({group:ee,index:Te,file:Ve||`motion_${Te}`})}}return g}catch(r){return console.error("Error getting motions:",r),[]}},[t,a]),Se=l.useMemo(()=>t?.getPluginEnabled("dragToLook")??!0,[t,a]),Ce=l.useMemo(()=>t?.getPluginEnabled("breath")??!0,[t,a]),ue=l.useMemo(()=>t?.getPluginEnabled("eyeBlink")??!0,[t,a]),M=l.useMemo(()=>t?.getPluginEnabled("physics")??!0,[t,a]),U=l.useMemo(()=>t?.getPluginEnabled("lipSync")??!0,[t,a]),Ee=l.useMemo(()=>t?.getPluginEnabled("thinkingLight")??!0,[t,a]),Me=l.useMemo(()=>At()?.isThinking()??!1,[a]),ct=l.useMemo(()=>t?.isRestPose()??!1,[t,a]),Ye=l.useMemo(()=>new Set(t?.getActiveExpressions()??[]),[t,a]),dt=r=>{if(!t){console.error("Cannot set expression: No model");return}try{Ye.has(r)?t.removeExpression(r):t.addExpression(r),i(g=>g+1)}catch(g){console.error(`Error toggling expression "${r}":`,g)}},Xe=r=>{if(!t){console.error("Cannot play motion: No model");return}try{t.startMotion({steps:{group:r.group,index:r.index}})}catch(g){console.error(`Error playing motion "${r.group}[${r.index}]":`,g)}},Re=(r,g)=>{if(!t)return;const A=!g;r==="lipSync"&&!A&&E(!1),t.setPluginEnabled(r,A),i(R=>R+1)},Le=()=>{const r=At();r&&(r.setThinking(!r.isThinking()),i(g=>g+1))},Je=()=>{t&&(t.setRestPose(!t.isRestPose()),i(r=>r+1))},Ue=r=>{const g=Object.entries(at).find(([A,R])=>R.group===r.group&&R.index===r.index);return g?g[0].split("_").map(R=>R.charAt(0)+R.slice(1).toLowerCase()).join(" "):`${r.group}[${r.index}]`};return e.jsxs(me,{children:[e.jsx(v,{title:"Plugins (6)",children:e.jsxs(He,{className:"gap-3",children:[e.jsx(ae,{id:"drag-to-look",label:"Drag to Look",checked:Se,onCheckedChange:()=>Re("dragToLook",Se),disabled:!t}),e.jsx(ae,{id:"breath",label:"Breath",checked:Ce,onCheckedChange:()=>Re("breath",Ce),disabled:!t}),e.jsx(ae,{id:"eye-blink",label:"Eye Blink",checked:ue,onCheckedChange:()=>Re("eyeBlink",ue),disabled:!t}),e.jsx(ae,{id:"physics",label:"Physics",checked:M,onCheckedChange:()=>Re("physics",M),disabled:!t}),e.jsx(ae,{id:"lip-sync",label:"Lip Sync",checked:U,onCheckedChange:()=>Re("lipSync",U),disabled:!t}),e.jsx(ae,{id:"thinking-light",label:"Thinking Light",checked:Ee,onCheckedChange:()=>Re("thinkingLight",Ee),disabled:!t})]})}),e.jsx(v,{title:"Pose",children:e.jsx(He,{className:"gap-3",children:e.jsx(ae,{id:"rest-pose",label:"Rest Pose (factory — no idle motion)",checked:ct,onCheckedChange:Je,disabled:!t})})}),e.jsxs(v,{title:"Idle state",children:[e.jsx(F,{children:["idle","glitch","kneel","kneelCalm"].map(r=>e.jsx(p,{variant:k===r?"default":"outline",onClick:()=>q(r),disabled:!t,children:Ia[r]},r))}),e.jsx("p",{className:"text-[length:var(--dbg-text-value)] text-muted-foreground",children:"Resting loop for Nori. Glitch & Kneel are held (no doze); switching crossfades via the built-in fade."})]}),e.jsxs(v,{title:"Idle / Sleep crossfade",children:[e.jsx(S,{label:"Sleep fade-in",value:b,onValueChange:z,min:0,max:10,step:.1,unit:"s",disabled:!t}),e.jsx(S,{label:"Idle fade-in (wake)",value:B,onValueChange:D,min:0,max:10,step:.1,unit:"s",disabled:!t}),e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:Z,disabled:!t,children:"▶ Idle (wake)"}),e.jsx(p,{variant:"outline",onClick:te,disabled:!t,children:"▶ Sleep"})]}),e.jsx("p",{className:"text-[length:var(--dbg-text-value)] text-muted-foreground",children:"These ARE the live auto-sleep crossfades (runtime SSOT). Use ▶ to trigger the transition now."})]}),e.jsxs(v,{title:"Lip Sync Test",children:[e.jsx(ae,{id:"simulate-talking",label:"Simulate talking",checked:y,onCheckedChange:j,disabled:!t||!U}),e.jsx(_,{label:y?"Simulating speech":m!==null?`Debug: ${(m*100).toFixed(0)}%`:"Using audio amplitude",children:m!==null&&e.jsx(p,{variant:"ghost",onClick:N,children:"Clear"})}),e.jsx(S,{label:"Amplitude",value:m??0,onValueChange:o,min:0,max:1,step:.01,disabled:!t||!U||y,formatValue:r=>`${(r*100).toFixed(0)}%`}),e.jsx(S,{label:"Intensity (mouth-open gain)",value:P,onValueChange:$,min:0,max:1.5,step:.05,unit:"×",disabled:!t||!U}),e.jsx(ae,{id:"lipsync-form-constant",label:"Mouth form: constant mode",checked:h,onCheckedChange:r=>V(r?"constant":"amplitude"),disabled:!t||!U}),h?e.jsx(S,{label:"Mouth form (constant)",value:c,onValueChange:X,min:-1,max:1,step:.05,disabled:!t||!U}):e.jsx(S,{label:"Mouth form (width gain)",value:L,onValueChange:d,min:-1,max:1,step:.05,unit:"×",disabled:!t||!U}),e.jsx("p",{className:"text-[length:var(--dbg-text-value)] text-muted-foreground",children:"Intensity = mouth-open (ParamMouthOpenY). Mouth form drives ParamMouthForm: amplitude mode follows the audio (− narrows, + widens); constant mode holds a fixed value regardless of speech."})]}),e.jsx(v,{title:"Thinking Light",children:e.jsx(He,{className:"gap-3",children:e.jsx(ae,{id:"thinking-state",label:"Thinking Override",checked:Me,onCheckedChange:Le,disabled:!t||!Ee})})}),e.jsx(v,{title:`Expressions (${re.length})`,children:re.length>0?e.jsxs(e.Fragment,{children:[e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:W,children:"Copy mouth blends JSON"}),x!=="idle"?e.jsx("span",{className:"text-[length:var(--dbg-text-value)] text-muted-foreground",children:x==="copied"?"Copied":"Clipboard blocked"}):null]}),e.jsx(He,{className:"gap-3",children:re.map(r=>{const g=Ye.has(r);return e.jsxs("div",{className:"flex flex-col gap-2 rounded-md border border-border/50 p-2",children:[e.jsx(ae,{id:`expr-${r}`,label:r,checked:g,onCheckedChange:()=>dt(r),disabled:!t}),e.jsx(S,{label:"Lip-sync share",value:J(r),onValueChange:A=>{he(r,A),u("idle")},min:0,max:1,step:.05,disabled:!t||!U,formatValue:A=>`${Math.round(A*100)}%`})]},r)})})]}):e.jsx(Ge,{children:"No expressions available"})}),e.jsx(v,{title:`Motions (${ne.length})`,children:ne.length>0?e.jsx(e.Fragment,{children:ne.map((r,g)=>{const A=Ue(r);return e.jsx(_,{label:A,children:e.jsx(p,{icon:!0,variant:"ghost",onClick:()=>Xe(r),disabled:!t,"aria-label":`Play ${A}`,children:e.jsx("svg",{xmlns:"http://www.w3.org/2000/svg",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",strokeLinecap:"round",strokeLinejoin:"round",className:"size-4",children:e.jsx("polygon",{points:"5 3 19 12 5 21 5 3"})})})},g)})}):e.jsx(Ge,{children:"No motions available"})})]})}function Ra(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("live2d");return}return n({id:"live2d",label:"Live2D",render:()=>e.jsx(Ea,{})}),()=>s("live2d")},[t,n,s])}function Na(){const t=le(c=>c.initialized),n=le(c=>c.useDebugCamera),s=le(c=>c.debugCamera),a=le(c=>c.debugBillboard),i=le(c=>c.debugShadow),m=le(c=>c.showShadow),f=le(c=>c.shadowDepthTest),y=le(c=>c.exclusiveCamera),E=le(c=>c.setUseDebugCamera),x=le(c=>c.setDebugCamera),u=le(c=>c.setExclusiveCamera),b=le(c=>c.resetExclusiveCamera),B=le(c=>c.setDebugBillboard),z=le(c=>c.resetBillboard),D=le(c=>c.setDebugShadow),k=le(c=>c.setDebugShadowLightDir),q=le(c=>c.resetShadow),P=le(c=>c.setShowShadow),$=le(c=>c.setShadowDepthTest),L=et(c=>c.visible),d=et(c=>c.setVisible),C=et(c=>c.live2dMaxFps),V=et(c=>c.setLive2dMaxFps);return t?e.jsxs(me,{children:[e.jsxs(v,{title:"Performance",children:[e.jsx(ae,{id:"perf-overlay",label:"Perf overlay (always on top)",checked:L,onCheckedChange:d}),e.jsx(_,{label:"Live2D FPS cap",htmlFor:"live2d-fps-cap",children:e.jsx(pe,{className:"w-32",value:C==null?"default":String(C),onValueChange:c=>V(c==="default"?null:c==="uncapped"?"uncapped":Number(c)),options:[{value:"default",label:"Default (60)"},{value:"uncapped",label:"Uncapped"},{value:"30",label:"30"}]})})]}),e.jsxs(v,{title:"Camera",contentClassName:K(n?"":"opacity-50"),children:[e.jsx(ae,{label:"Override",checked:n,onCheckedChange:E}),["x","y","z"].map(c=>e.jsx(S,{label:c.toUpperCase(),value:s[c],min:c==="z"?1:-15,max:c==="z"?20:15,step:.1,onValueChange:X=>x(c,X),disabled:!n},c)),e.jsx(S,{label:"Pitch (X)",value:s.rotX,min:-Math.PI/2,max:Math.PI/2,step:.01,onValueChange:c=>x("rotX",c),disabled:!n,formatValue:c=>`${(c*180/Math.PI).toFixed(1)}°`}),e.jsx(S,{label:"Yaw (Y)",value:s.rotY,min:-Math.PI/2,max:Math.PI/2,step:.01,onValueChange:c=>x("rotY",c),disabled:!n,formatValue:c=>`${(c*180/Math.PI).toFixed(1)}°`})]}),e.jsxs(v,{title:"Fullscreen camera",children:[["x","y","z"].map(c=>e.jsx(S,{label:c.toUpperCase(),value:y[c],min:c==="z"?.5:-10,max:c==="z"?15:10,step:.05,onValueChange:X=>u(c,X)},c)),e.jsx(p,{onClick:b,children:"Reset fullscreen camera"})]}),e.jsxs(v,{title:"Billboard",children:[["x","y","z","width","height"].map(c=>e.jsx(S,{label:c,value:a[c],min:c==="width"||c==="height"?1:-15,max:15,step:.1,onValueChange:X=>B(c,X)},c)),e.jsx(p,{onClick:z,children:"Reset billboard"})]}),e.jsxs(v,{title:"Shadow",children:[["x","y","z"].map(c=>e.jsx(S,{label:`Light ${c}`,value:i.lightDir[c],min:-1,max:c==="y"?0:1,step:.05,onValueChange:X=>k(c,X)},`light-${c}`)),e.jsx(S,{label:"Opacity",value:i.opacity,min:0,max:1,step:.05,onValueChange:c=>D("opacity",c)}),e.jsx(S,{label:"Blur",value:i.blurRadius,min:0,max:.15,step:.005,onValueChange:c=>D("blurRadius",c),formatValue:c=>c.toFixed(3)}),e.jsxs(He,{className:"gap-3",children:[e.jsx(ae,{id:"show-shadow",label:"Show Shadow",checked:m,onCheckedChange:P}),e.jsx(ae,{id:"shadow-depth-test",label:"Depth Test",checked:f,onCheckedChange:$})]}),e.jsx(p,{onClick:q,children:"Reset shadow"})]})]}):e.jsx(Ca,{children:"Scene not initialized"})}function Ma(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("scene");return}return n({id:"scene",label:"Scene",render:()=>e.jsx(Na,{})}),()=>s("scene")},[t,n,s])}const _a=[{label:"Mild",params:ze.mild},{label:"Heavy",params:ze.heavy},{label:"Slam",params:ze.slam},{label:"Mosh",params:ze.mosh},{label:"Fried",params:ze.fried}],Be=t=>t.toFixed(0),Da={idle:"Idle.",running:"Glitching.",frozen:"Holding one torn frame — Stop clears it."};function La(){const t=ut(a=>a.mode),n=ut(a=>a.params),s=ut(a=>a.setParams);return e.jsxs(me,{children:[e.jsxs(v,{title:"Trigger",children:[e.jsxs(F,{children:[e.jsxs(p,{onClick:()=>It(400),children:[e.jsx(da,{className:"h-3 w-3"})," Burst 400 ms"]}),e.jsx(p,{onClick:()=>It(1500),children:"Burst 1.5 s"}),e.jsx(p,{variant:"outline",onClick:Pn,disabled:t==="running",children:"Start"}),e.jsx(p,{variant:"outline",onClick:wn,disabled:t==="idle",children:"Stop"}),e.jsx(p,{variant:"outline",onClick:Tn,children:"Freeze frame"})]}),e.jsx(I,{children:Da[t]}),e.jsxs(I,{children:["SVG displacement filter on ",e.jsx("code",{children:"<html>"})," — tears the live page (scene, Live2D, windows, portals). Pixels move; click targets stay put."]})]}),e.jsx(v,{title:"Presets",children:e.jsxs(F,{children:[_a.map(a=>e.jsx(p,{variant:"outline",onClick:()=>s(a.params),children:a.label},a.label)),e.jsx(p,{variant:"outline",onClick:()=>s(An),children:"Reset"})]})}),e.jsxs(v,{title:"Tuning",children:[e.jsx(S,{label:"Max shift",unit:"px",min:0,max:120,step:1,value:n.maxShiftPx,formatValue:Be,onValueChange:a=>s({maxShiftPx:a})}),e.jsx(S,{label:"Slices",min:1,max:24,step:1,value:n.sliceCount,formatValue:Be,onValueChange:a=>s({sliceCount:a})}),e.jsx(S,{label:"Blockiness",min:0,max:1,step:.05,value:n.blockiness,onValueChange:a=>s({blockiness:a})}),e.jsx(S,{label:"Vertical",min:0,max:1,step:.05,value:n.verticalAmount,onValueChange:a=>s({verticalAmount:a})}),e.jsx(S,{label:"RGB split",unit:"px",min:0,max:20,step:1,value:n.rgbSplitPx,formatValue:Be,onValueChange:a=>s({rgbSplitPx:a})}),e.jsx(S,{label:"Jolt",unit:"px",min:0,max:40,step:1,value:n.joltPx,formatValue:Be,onValueChange:a=>s({joltPx:a})}),e.jsx(S,{label:"Mosh cells",min:0,max:16,step:1,value:n.moshCells,formatValue:Be,onValueChange:a=>s({moshCells:a})}),e.jsx(S,{label:"Deep fry",min:0,max:1,step:.05,value:n.deepFry,onValueChange:a=>s({deepFry:a})}),e.jsx(S,{label:"Static",min:0,max:1,step:.05,value:n.noise,onValueChange:a=>s({noise:a})}),e.jsx(S,{label:"Invert chance",min:0,max:1,step:.05,value:n.invertChance,onValueChange:a=>s({invertChance:a})}),e.jsx(S,{label:"Tick",unit:"ms",min:30,max:300,step:10,value:n.tickMs,formatValue:Be,onValueChange:a=>s({tickMs:a})}),e.jsx(S,{label:"Density",min:0,max:1,step:.05,value:n.density,onValueChange:a=>s({density:a})})]})]})}function Va(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("glitch");return}return n({id:"glitch",label:"Glitch",render:()=>e.jsx(La,{})}),()=>s("glitch")},[t,n,s])}const mt={bgm1:"/audio/bgm1.m4a",bgm2:"/audio/bgm2.mp3"},Bt={chess_move:"/audio/chess_move.mp3",chess_capture:"/audio/chess_capture.mp3"},Fa="/audio/speech.mp3";function Ot(t){const n=Math.floor(t/60),s=Math.floor(t%60);return`${n}:${s.toString().padStart(2,"0")}`}function Ba(t,n){return Object.keys(n).every(s=>rt(t[s],n[s]))}function Qe(t,n){const s=10**n;return Math.round(t*s)/s}function Gt(t){return t?{x:Qe(t.x,1),y:Qe(t.y,1),z:Qe(t.z,1)}:null}function Oa(){const[t,n]=l.useState({initialized:!1,contextState:"unknown",masterVolume:0,muted:!1,speechAmplitude:0,speechRawAmplitude:0,speechInitialized:!1,sfxActiveCount:0,musicPlaying:!1,musicPaused:!1,musicTrackId:null,musicCurrentTime:0,musicDuration:0,speechHasPanner:!1,loadedMusic:[],loadedSfx:[],listenerPos:null,speechPos:null,distanceParams:null}),[s,a]=l.useState(null),[i,m]=l.useState(2),f=$e(),y=it();l.useEffect(()=>{if(y)return;const o=()=>{const j=Q.getInstance(),J={initialized:j.isInitialized,contextState:j.context?.state??"no context",masterVolume:j.masterVolume,muted:j.muted,speechAmplitude:j.isInitialized?Qe(j.speech.getAmplitude(),2):0,speechRawAmplitude:j.isInitialized?Qe(j.speech.getRawAmplitude(),4):0,speechInitialized:j.isInitialized&&j.speech.isInitialized,sfxActiveCount:j.isInitialized?j.sfx.activeCount:0,musicPlaying:j.isInitialized?j.music.isPlaying():!1,musicPaused:j.isInitialized?j.music.isPaused:!1,musicTrackId:j.isInitialized?j.music.currentTrackId():null,musicCurrentTime:j.isInitialized?Math.floor(j.music.currentTime):0,musicDuration:j.isInitialized?j.music.duration:0,speechHasPanner:j.isInitialized?j.speech.hasPanner:!1,loadedMusic:j.isInitialized?j.music.loadedTracks:[],loadedSfx:j.isInitialized?j.sfx.loadedSounds:[],listenerPos:j.isInitialized?Gt(j.getListenerPosition()):null,speechPos:j.isInitialized?Gt(j.speech.getPosition()):null,distanceParams:j.isInitialized?j.speech.getDistanceParams():null};n(W=>Ba(W,J)?W:J)};o();const N=setInterval(o,100);return()=>clearInterval(N)},[y]);const E=async()=>{await Q.getInstance().resume()},x=async()=>{await Q.getInstance().suspend()},u=l.useCallback(async()=>{const o=Q.getInstance();if(o.isInitialized){a("music");try{await o.music.loadMany(mt)}finally{a(null)}}},[]),b=l.useCallback(o=>{const N=Q.getInstance();N.isInitialized&&N.music.play(o,{loop:!0,fadeIn:.5})},[]),B=l.useCallback(()=>{const o=Q.getInstance();o.isInitialized&&o.music.pause()},[]),z=l.useCallback(()=>{const o=Q.getInstance();o.isInitialized&&o.music.resume()},[]),D=l.useCallback(()=>{const o=Q.getInstance();o.isInitialized&&o.music.stop(.5)},[]),k=l.useCallback(o=>{const N=Q.getInstance();N.isInitialized&&N.music.seek(o)},[]),q=l.useCallback(o=>{const N=Q.getInstance();N.isInitialized&&N.music.crossfade(o,i,{loop:!0})},[i]),P=l.useCallback(async()=>{const o=Q.getInstance();if(o.isInitialized){a("sfx");try{await o.sfx.loadMany(Bt)}finally{a(null)}}},[]),$=l.useCallback(o=>{const N=Q.getInstance();N.isInitialized&&N.sfx.playRandomized(o)},[]),[L,d]=l.useState(null),[C,V]=l.useState(!1),c=l.useCallback(async()=>{const o=Q.getInstance();if(!(!o.isInitialized||!o.context)){a("speech");try{const j=await(await fetch(Fa)).arrayBuffer(),J=await o.context.decodeAudioData(j);d(J)}finally{a(null)}}},[]),X=l.useCallback(async()=>{const o=Q.getInstance();!o.isInitialized||!L||(C&&o.speech.stopBuffer(),V(!0),await o.speech.playBuffer(L),V(!1))},[L,C]),ie=l.useCallback(()=>{const o=Q.getInstance();o.isInitialized&&(o.speech.stopBuffer(),V(!1))},[]),he=$e(o=>o.spatialVoice),h=$e(o=>o.setSpatialVoice),Z=$e(o=>o.voiceRate),te=$e(o=>o.setVoiceRate);return e.jsxs(me,{children:[e.jsxs(v,{title:"Status",children:[e.jsx(T,{label:"Initialized",value:t.initialized?"Yes":"No",tone:t.initialized?"ok":"error"}),e.jsx(T,{label:"Context State",value:t.contextState,tone:t.contextState==="running"?"ok":"error"}),e.jsx(T,{label:"Speech Initialized",value:t.speechInitialized?"Yes":"No",tone:t.speechInitialized?"ok":"error"}),e.jsx(T,{label:"Speech Spatial",value:t.speechHasPanner?"3D (HRTF)":"2D (Stereo)"}),e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:E,disabled:t.contextState==="running",children:"Resume"}),e.jsx(p,{variant:"outline",onClick:x,disabled:t.contextState!=="running",children:"Suspend"})]})]}),t.speechHasPanner&&e.jsxs(v,{title:"3D Spatial (Speech)",children:[e.jsx(T,{label:"Listener (Camera)",value:t.listenerPos?`(${t.listenerPos.x.toFixed(1)}, ${t.listenerPos.y.toFixed(1)}, ${t.listenerPos.z.toFixed(1)})`:"N/A"}),e.jsx(T,{label:"Source (Nori)",value:t.speechPos?`(${t.speechPos.x.toFixed(1)}, ${t.speechPos.y.toFixed(1)}, ${t.speechPos.z.toFixed(1)})`:"N/A"}),t.listenerPos&&t.speechPos&&(()=>{const o=t.listenerPos.x-t.speechPos.x,N=t.listenerPos.y-t.speechPos.y,j=t.listenerPos.z-t.speechPos.z,J=Math.sqrt(o*o+N*N+j*j),W=t.distanceParams;let re=1;if(W&&W.model==="inverse"){const ne=Math.max(J,W.refDistance);re=W.refDistance/(W.refDistance+W.rolloffFactor*(ne-W.refDistance))}return e.jsxs(e.Fragment,{children:[e.jsx(T,{label:"Distance",value:J.toFixed(2)}),e.jsx(T,{label:"Model",value:W?`${W.model} (ref=${W.refDistance}, roll=${W.rolloffFactor})`:"N/A"}),e.jsx(T,{label:"Calculated Gain",value:`${(re*100).toFixed(1)}%`,tone:re>=.9?"ok":"default"})]})})()]}),e.jsxs(v,{title:"Volume (Store → Manager)",children:[e.jsx(T,{label:"Master",value:`${f.masterVolume}% → ${(t.masterVolume*100).toFixed(0)}%`}),e.jsx(T,{label:"Music",value:`${f.musicVolume}%`}),e.jsx(T,{label:"SFX",value:`${f.sfxVolume}%`}),e.jsx(T,{label:"Voice",value:`${f.voiceVolume}%`}),e.jsx(T,{label:"Muted (Store)",value:f.isMuted?"Yes":"No"}),e.jsx(T,{label:"Muted (Manager)",value:t.muted?"Yes":"No"})]}),e.jsxs(v,{title:"Music",children:[e.jsx(_,{label:`Loaded: ${t.loadedMusic.join(", ")||"none"}`,children:e.jsx(p,{variant:"outline",onClick:u,disabled:!t.initialized||s==="music",children:s==="music"?"Loading...":"Load Test Music"})}),e.jsx(F,{children:Object.keys(mt).map(o=>e.jsxs(p,{variant:t.musicTrackId===o?"default":"outline",onClick:()=>b(o),disabled:!t.loadedMusic.includes(o),children:["Play ",o]},o))}),e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:t.musicPaused?z:B,disabled:!t.musicPlaying&&!t.musicPaused,children:t.musicPaused?"Resume":"Pause"}),e.jsx(p,{variant:"outline",onClick:D,disabled:!t.musicPlaying&&!t.musicPaused,children:"Stop"})]}),t.musicDuration>0&&e.jsx(S,{label:Ot(t.musicCurrentTime),value:t.musicCurrentTime,onValueChange:k,min:0,max:t.musicDuration,step:.1,formatValue:()=>Ot(t.musicDuration)}),e.jsx(S,{label:"Crossfade",value:i,onValueChange:m,min:.5,max:5,step:.5,formatValue:o=>o.toString(),unit:"s"}),e.jsx(F,{children:Object.keys(mt).map(o=>e.jsxs(p,{variant:"outline",onClick:()=>q(o),disabled:!t.loadedMusic.includes(o)||t.musicTrackId===o||!t.musicPlaying,children:["Fade to ",o]},o))})]}),e.jsxs(v,{title:"Sound Effects",children:[e.jsx(_,{label:`Loaded: ${t.loadedSfx.join(", ")||"none"}`,children:e.jsx(p,{variant:"outline",onClick:P,disabled:!t.initialized||s==="sfx",children:s==="sfx"?"Loading...":"Load Test SFX"})}),e.jsx(F,{children:Object.keys(Bt).map(o=>e.jsxs(p,{variant:"outline",onClick:()=>$(o),disabled:!t.loadedSfx.includes(o),children:["Play ",o]},o))}),e.jsx(T,{label:"Active Sounds",value:String(t.sfxActiveCount)})]}),e.jsxs(v,{title:"Speech Test",children:[e.jsx(ae,{label:"3D Voice",checked:he,onCheckedChange:h}),e.jsx(S,{label:"Voice Speed",value:Z,onValueChange:te,min:.5,max:2,step:.05,formatValue:o=>o.toFixed(2),unit:"×"}),e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:c,disabled:!t.initialized||s==="speech",children:s==="speech"?"Loading...":L?"Reload":"Load speech.mp3"}),e.jsx(p,{variant:"outline",onClick:X,disabled:!L,children:"Play Test"}),e.jsx(p,{variant:"outline",onClick:ie,disabled:!C,children:"Stop"})]}),e.jsx(T,{label:"Speech Amplitude (from worklet)",value:"",mono:!1}),e.jsx(Ut,{label:"Raw",value:t.speechRawAmplitude,display:t.speechRawAmplitude.toFixed(4),barClassName:"bg-primary"}),e.jsx(Ut,{label:"Scaled (Lip Sync)",value:t.speechAmplitude,display:t.speechAmplitude.toFixed(2),barClassName:"bg-green-500"}),e.jsx(za,{})]}),e.jsxs(v,{title:"Effects",children:[e.jsx(ft,{track:"speech",label:"Speech"}),e.jsx(ft,{track:"music",label:"Music"}),e.jsx(ft,{track:"sfx",label:"SFX"})]})]})}function Ut({label:t,value:n,display:s,barClassName:a}){return e.jsxs("div",{className:"flex flex-col gap-1",children:[e.jsx(T,{label:t,value:s}),e.jsx("div",{className:"h-2 overflow-hidden rounded-full bg-muted",children:e.jsx("div",{className:K("h-full transition-all duration-75",a),style:{width:`${Math.min(100,n*100)}%`}})})]})}const Ga=[{value:"game",label:"follow game"},{value:"on",label:"force on"},{value:"off",label:"force off"}],Ua=Rn.map(t=>({value:t,label:t}));function za(){const[t,n]=l.useState({active:!1,gameActive:!1,override:"game",preset:En,intensity:In}),s=it();l.useEffect(()=>{if(s)return;const f=()=>{const E=Q.getInstance();if(!E.isInitialized)return;const x=E.speech.corruption,u={active:x.active,gameActive:x.gameActive,override:x.debugOverride===null?"game":x.debugOverride?"on":"off",preset:x.preset,intensity:x.intensity};n(b=>rt(b,u)?b:u)};f();const y=setInterval(f,200);return()=>clearInterval(y)},[s]);const a=l.useCallback(f=>{const y=Q.getInstance();y.isInitialized&&y.speech.corruption.setDebugOverride(f==="game"?null:f==="on")},[]),i=l.useCallback(f=>{const y=Q.getInstance();y.isInitialized&&y.speech.corruption.setPreset(f)},[]),m=l.useCallback(f=>{const y=Q.getInstance();y.isInitialized&&y.speech.corruption.setIntensity(f)},[]);return e.jsxs("div",{className:"flex flex-col gap-[var(--dbg-field-gap)] border-t pt-3",children:[e.jsx("div",{className:"text-[length:var(--dbg-text-label)] font-medium",children:"Corruption"}),e.jsx(T,{label:"Active",value:t.active?"Yes":"No",tone:t.active?"ok":"default"}),e.jsx(T,{label:"Game state",value:t.gameActive?"corrupted":"clean"}),e.jsx(_,{label:"Override",children:e.jsx(pe,{value:t.override,onValueChange:f=>a(f),options:Ga})}),e.jsx(_,{label:"Preset",children:e.jsx(pe,{value:t.preset,onValueChange:f=>i(f),options:Ua})}),e.jsx(S,{label:"Intensity",value:t.intensity*100,onValueChange:f=>m(f/100),min:0,max:100,formatValue:f=>`${f.toFixed(0)}`,unit:"%"})]})}const $a=["none","room","hall","cave"],qa=["none","lowpass","highpass","bandpass"],Ha=$a.map(t=>({value:t,label:t})),Ka=qa.map(t=>({value:t,label:t}));function ft({track:t,label:n}){const[s,a]=l.useState({reverb:"none",wetness:0,filter:"none",frequency:1e3,q:1}),i=it();l.useEffect(()=>{if(i)return;const u=()=>{const B=Q.getInstance();if(!B.isInitialized)return;const z=B[t],D={reverb:z.effects.reverbPreset,wetness:z.effects.wetness,filter:z.effects.filterType,frequency:z.effects.filterFrequency,q:z.effects.filterQ};a(k=>rt(k,D)?k:D)};u();const b=setInterval(u,200);return()=>clearInterval(b)},[t,i]);const m=l.useCallback(async u=>{const b=Q.getInstance();b.isInitialized&&await b[t].effects.setReverb(u,s.wetness||.3)},[t,s.wetness]),f=l.useCallback(u=>{const b=Q.getInstance();b.isInitialized&&b[t].effects.setWetness(u)},[t]),y=l.useCallback(u=>{const b=Q.getInstance();b.isInitialized&&b[t].effects.setFilter(u,s.frequency,s.q)},[t,s.frequency,s.q]),E=l.useCallback(u=>{const b=Q.getInstance();b.isInitialized&&b[t].effects.setFilterFrequency(u)},[t]),x=l.useCallback(u=>{const b=Q.getInstance();b.isInitialized&&b[t].effects.setFilterQ(u)},[t]);return e.jsxs("div",{className:"flex flex-col gap-[var(--dbg-field-gap)] border-b pb-3 last:border-b-0 last:pb-0",children:[e.jsx("div",{className:"text-[length:var(--dbg-text-label)] font-medium",children:n}),e.jsx(_,{label:"Reverb",children:e.jsx(pe,{value:s.reverb,onValueChange:u=>m(u),options:Ha})}),s.reverb!=="none"&&e.jsx(S,{label:"Wet",value:s.wetness*100,onValueChange:u=>f(u/100),min:0,max:100,formatValue:u=>`${u.toFixed(0)}`,unit:"%"}),e.jsx(_,{label:"Filter",children:e.jsx(pe,{value:s.filter,onValueChange:u=>y(u),options:Ka})}),s.filter!=="none"&&e.jsxs(e.Fragment,{children:[e.jsx(S,{label:"Freq",value:s.frequency,onValueChange:E,min:20,max:2e4,formatValue:u=>`${u}`,unit:"Hz"}),e.jsx(S,{label:"Q",value:s.q,onValueChange:x,min:.1,max:20,step:.1,formatValue:u=>u.toFixed(1)})]})]})}function Wa(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("audio");return}return n({id:"audio",label:"Audio",render:()=>e.jsx(Oa,{})}),()=>s("audio")},[t,n,s])}const Qa={enabled:!1,seed:void 0,log:!1,dropOutgoingRate:0,dropIncomingRate:0,dropOutgoingCount:0,dropIncomingCount:0,minLatencyMs:0,maxLatencyMs:0,connectDelayMs:0,disconnectAfterMs:0,disconnectAfterSendCount:0,randomDisconnectChance:0,randomDisconnectIntervalMs:5e3,closeCode:1001,closeReason:void 0},rn={mild:{enabled:!0,log:!0,minLatencyMs:50,maxLatencyMs:200,dropIncomingRate:.02,dropOutgoingRate:.02,randomDisconnectChance:.05,randomDisconnectIntervalMs:1e4},moderate:{enabled:!0,log:!0,minLatencyMs:100,maxLatencyMs:500,dropIncomingRate:.05,dropOutgoingRate:.05,randomDisconnectChance:.15,randomDisconnectIntervalMs:8e3},severe:{enabled:!0,log:!0,minLatencyMs:200,maxLatencyMs:1e3,dropIncomingRate:.1,dropOutgoingRate:.1,randomDisconnectChance:.3,randomDisconnectIntervalMs:5e3}};function Ya(t){return t?t==="1"||t==="true"||t==="yes"||t==="on":!1}function zt(t){return import.meta?.env?.[t]}function $t(t){if(!t)return null;try{const n=JSON.parse(t);if(n&&typeof n=="object")return n}catch{}return null}function Xa(t){const n=Ya(zt("VITE_ARCADE_FLAKY_WS")),s=$t(zt("VITE_ARCADE_FLAKY_WS_CONFIG")),a=typeof localStorage<"u"?$t(localStorage.getItem("arcade.flakyWs")):null;return n||!!s?.enabled||!!a?.enabled||!!t?.enabled?{...Qa,...a??{},...s??{},enabled:!0}:null}const qt={BASE_URL:"/",DEV:!1,MODE:"production",PROD:!0,SSR:!1,VITE_ARCADE_API_URL:"https://os.inori.ai/api",VITE_ARCADE_CONVEX_URL:"https://polished-fly-97.convex.cloud",VITE_ARCADE_WS_URL:"wss://os.inori.ai/api/arcade/web/v1",VITE_CONVEX_URL:"https://enchanted-bat-943.convex.cloud",VITE_DEBUG:"false",VITE_INTERNAL_ARCADE_API_URL:"https://arcade.alpaca-elnath.ts.net/api",VITE_INTERNAL_STORYTELLER_WS_URL:"wss://storyteller-api.alpaca-elnath.ts.net/story/v1",VITE_STORYTELLER_WS_URL:""};function qe(){if(typeof localStorage>"u")return null;try{const t=localStorage.getItem("arcade.flakyWs");if(!t)return null;const n=JSON.parse(t);if(n&&typeof n=="object")return n}catch{}return null}function nt(t){if(!(typeof localStorage>"u"))try{t?localStorage.setItem("arcade.flakyWs",JSON.stringify(t)):localStorage.removeItem("arcade.flakyWs")}catch{}}function Ht(t){if(!t?.enabled)return"off";for(const[n,s]of Object.entries(rn))if(t.minLatencyMs===s.minLatencyMs&&t.maxLatencyMs===s.maxLatencyMs&&t.dropIncomingRate===s.dropIncomingRate&&t.dropOutgoingRate===s.dropOutgoingRate&&t.randomDisconnectChance===s.randomDisconnectChance&&t.randomDisconnectIntervalMs===s.randomDisconnectIntervalMs)return n;return"custom"}function Ja(t){return t?new Date(t).toLocaleTimeString():"—"}function Kt(t){return t==null?"—":`${Math.round(t)}ms`}async function Za(t){try{return await navigator.clipboard.writeText(t),!0}catch{try{const n=document.createElement("textarea");n.value=t,n.style.position="fixed",n.style.opacity="0",document.body.append(n),n.select();const s=document.execCommand("copy");return document.body.removeChild(n),s}catch{return!1}}}function es(t){const n=new Blob([t],{type:"application/json"}),s=URL.createObjectURL(n),a=document.createElement("a");a.href=s,a.download=`arcade-diagnose-${Date.now()}.json`,a.click(),URL.revokeObjectURL(s)}function ts(t){return t.phase==="ready"?{phase:t.phase,worldId:t.worldId,connection:t.connection,fatalReason:null,error:null}:t.phase==="fatal"?{phase:t.phase,worldId:null,connection:null,fatalReason:t.reason,error:t.error}:{phase:t.phase,worldId:null,connection:null,fatalReason:null,error:null}}function ns(){const t=Nn(),[n,s]=l.useState(()=>qe()),[a,i]=l.useState(()=>Ht(qe())),[m,f]=l.useState(null),[y,E]=l.useState("idle"),[x,u]=l.useState(null),b=t.connection,B=t.outbox?.size??0,z=t.outbox?.items??[];l.useEffect(()=>{Ke().catch(()=>{})},[]),l.useEffect(()=>{const d=qe();s(d),i(Ht(d))},[]);const D=l.useCallback(d=>{if(d==="off"){nt(null),window.location.reload();return}if(d==="custom"){i("custom");return}const C=rn[d];nt(C),window.location.reload()},[]),k=l.useCallback((d,C)=>{const c={...qe()??{enabled:!0,log:!0},[d]:C,enabled:!0};nt(c),s(c),i("custom")},[]),q=l.useCallback(()=>{window.location.reload()},[]),P=l.useCallback(async()=>{await Ke().catch(()=>{}),Et().diagnostics.forceReconnect()},[]),$=l.useCallback(async()=>{E("running"),u(null);try{const C=(await Ke().catch(()=>Et())).diagnostics.getSnapshot(),V=Mn()?.getState()??null,c=Q.getInstance(),X=_n(),ie=(C.outbox?.items??[]).filter(te=>te.cmdType==="audioStarted"||te.cmdType==="audioDone"),h={session:{session:ts(C.sessionState),connection:C.connection,connectionInfo:C.connectionInfo,mountedCartridges:C.mountedCartridges,outbox:C.outbox,controllers:{chat:{phase:V?.phase??null,linesInWindow:V?.lines.length??0,turn:V?.turn??null,fatalReason:V?.fatalReason??null}},audio:{pendingAudioAcks:ie,activeMessageId:X.activeMessageId,activeOperationId:X.activeOperationId,speechQueueLength:c.isInitialized?c.getSpeechQueueLength():0,initialized:c.isInitialized,contextState:c.context?.state??null},environment:{timestamp:new Date().toISOString(),locale:navigator.language,online:navigator.onLine,userAgent:navigator.userAgent,clientVersion:qt?.VITE_APP_VERSION??qt?.VITE_BUILD_HASH??null},flaky:Xa()},server:{unavailable:"Gameplay-websocket admin/debug sidebands were removed. Use admin/debug-only surfaces instead."}},Z=JSON.stringify(h,null,2);await Za(Z),es(Z),f(h),E("done")}catch(d){E("error"),u(d instanceof Error?d.message:String(d))}},[]),L=l.useMemo(()=>m?JSON.stringify(m,null,2):"",[m]);return e.jsxs(me,{children:[e.jsxs(v,{title:"Connection",children:[e.jsxs(We,{children:[e.jsx(T,{label:"State",value:String(b?.state??"—")}),e.jsx(T,{label:"Transport",value:String(b?.transportState??"—")}),e.jsx(T,{label:"Reconnect",value:`Attempt ${String(b?.reconnectAttempt??0)}`}),e.jsx(T,{label:"Backoff",value:Kt(b?.backoffDelayMs??null)}),e.jsx(T,{label:"Last Close",value:b?.lastClose?`${b.lastClose.code} ${b.lastClose.reason}`:"—"}),e.jsx(T,{label:"Close clean",value:b?.lastClose?.wasClean?"clean":"unclean"}),e.jsx(T,{label:"Ping RTT",value:Kt(b?.pingRttMs??null)}),e.jsx(T,{label:"Last ping",value:Ja(b?.lastPingAt??null)}),e.jsx(T,{label:"Server ID",value:String(b?.lastServerId??"—")})]}),e.jsx(F,{children:e.jsx(p,{variant:"outline",onClick:P,children:"Disconnect now"})})]}),e.jsxs(v,{title:"Outbox",children:[e.jsx(We,{children:e.jsx(T,{label:"Queued",value:B})}),z.length>0?e.jsx(We,{children:z.slice(0,6).map(d=>e.jsx(I,{children:e.jsxs("span",{className:"flex gap-2",children:[e.jsx("span",{children:d.type}),e.jsx("span",{children:d.cmdType??"cmd"}),e.jsx("span",{children:d.requestId})]})},String(d.requestId)))}):e.jsx(Ge,{children:"No pending messages"})]}),e.jsxs(v,{title:"Flaky WebSocket",children:[e.jsxs(F,{children:[["off","mild","moderate","severe"].map(d=>e.jsx(p,{variant:a===d?"default":"outline",onClick:()=>D(d),children:d.charAt(0).toUpperCase()+d.slice(1)},d)),a==="custom"&&e.jsx(p,{variant:"default",disabled:!0,children:"Custom"})]}),n?.enabled&&e.jsxs(e.Fragment,{children:[e.jsx(S,{label:"Latency (min)",value:n.minLatencyMs??0,min:0,max:1e3,step:50,unit:"ms",formatValue:d=>String(Math.round(d)),onValueChange:d=>k("minLatencyMs",d)}),e.jsx(S,{label:"Latency (max)",value:n.maxLatencyMs??0,min:0,max:2e3,step:50,unit:"ms",formatValue:d=>String(Math.round(d)),onValueChange:d=>k("maxLatencyMs",d)}),e.jsx(S,{label:"Drop incoming",value:(n.dropIncomingRate??0)*100,min:0,max:50,step:1,unit:"%",formatValue:d=>String(Math.round(d)),onValueChange:d=>k("dropIncomingRate",d/100)}),e.jsx(S,{label:"Drop outgoing",value:(n.dropOutgoingRate??0)*100,min:0,max:50,step:1,unit:"%",formatValue:d=>String(Math.round(d)),onValueChange:d=>k("dropOutgoingRate",d/100)}),e.jsx(S,{label:"Random disconnect",value:(n.randomDisconnectChance??0)*100,min:0,max:50,step:1,unit:"%",formatValue:d=>String(Math.round(d)),onValueChange:d=>k("randomDisconnectChance",d/100)}),e.jsx(S,{label:"Disconnect interval",value:(n.randomDisconnectIntervalMs??5e3)/1e3,min:1,max:30,step:1,unit:"s",formatValue:d=>String(Math.round(d)),onValueChange:d=>k("randomDisconnectIntervalMs",d*1e3)}),e.jsxs(F,{children:[e.jsx(p,{onClick:q,children:"Apply & Reload"}),e.jsx(I,{children:"Changes require page reload"})]})]}),n?.enabled&&e.jsx(ae,{label:"Log flaky events to console",checked:n.log??!1,onCheckedChange:d=>{const V={...qe()??{enabled:!0},log:d};nt(V),s(V)}})]}),e.jsxs(v,{title:"Diagnose",children:[e.jsxs(F,{children:[e.jsx(p,{onClick:$,disabled:y==="running",children:y==="running"?"Collecting…":"Copy & Download Snapshot"}),y==="done"&&e.jsx(I,{children:"Snapshot copied to clipboard"}),y==="error"&&e.jsx(I,{tone:"error",children:x??"Failed to collect snapshot"})]}),L&&e.jsx(kt,{maxH:"16rem",children:L})]})]})}function as(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("connection");return}return n({id:"connection",label:"Connection",render:()=>e.jsx(ns,{})}),()=>s("connection")},[t,n,s])}const ss=[{id:"acting-forked-counterpart",label:"Acting forks Counterpart",cueId:"acting_forked_counterpart",instruction:"Play Qh5+ (d1h5). It checks the king and attacks Bc5 (you can capture it next).",startPly:0,actingSide:"white",difficulty:"serious",nextActor:"acting",nextUci:"d1h5",runtime:{id:"acting-forked-counterpart",settings:{playerSide:"black",difficulty:"serious",locale:"en"},startFen:"rnbq3r/1p3kpp/p4n2/2b5/2pNP3/2N5/PPP3PP/R1BQ1RK1 w - - 2 12",startPly:0,script:[{uci:"d1h5"}]}},{id:"counterpart-forked-acting",label:"Counterpart forks the acting side",cueId:"counterpart_forked_acting",instruction:"Wait for Counterpart to play Ne2 (c3e2). It forks your king and rook.",startPly:0,actingSide:"white",difficulty:"serious",nextActor:"counterpart",nextUci:"c3e2",runtime:{id:"counterpart-forked-acting",settings:{playerSide:"black",difficulty:"serious",locale:"en"},startFen:"5rk1/5ppp/4p3/4N3/8/1Pn5/5PPP/2R3K1 b - - 1 28",startPly:0,script:[{uci:"c3e2"}]}},{id:"acting-trapped-in-opening",label:"Acting trapped in the opening",cueId:"acting_trapped_in_opening",instruction:"Play Qxe5 (queen blunder).",startPly:4,actingSide:"white",difficulty:"serious",nextActor:"acting",nextUci:"h5e5",runtime:{id:"acting-trapped-in-opening",settings:{playerSide:"black",difficulty:"serious",locale:"en"},startFen:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",startPly:4,script:[{uci:"e2e4"},{uci:"e7e5"},{uci:"d1h5"},{uci:"b8c6"},{uci:"h5e5"}]}},{id:"counterpart-trapped-in-opening",label:"Counterpart trapped in the opening",cueId:"counterpart_trapped_in_opening",instruction:"Play Bc4; Counterpart blunders with b5.",startPly:4,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"f1c4",runtime:{id:"counterpart-trapped-in-opening",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",startPly:4,script:[{uci:"e2e4"},{uci:"e7e5"},{uci:"g1f3"},{uci:"b8c6"},{uci:"f1c4"},{uci:"b7b5"}]}},{id:"acting-blundered-repeatedly",label:"Acting blundered repeatedly",cueId:"acting_blundered_repeatedly",instruction:"After loading (…d5 already played), play f4 as White to trigger the second blunder.",startPly:4,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"f2f4",runtime:{id:"acting-blundered-repeatedly",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",startPly:4,script:[{uci:"e2e4"},{uci:"e7e5"},{uci:"g2g4"},{uci:"d7d5"},{uci:"f2f4"}]}},{id:"counterpart-blundered-repeatedly",label:"Counterpart blundered repeatedly",cueId:"counterpart_blundered_repeatedly",instruction:"Play Bxb5; Counterpart blunders with Qh4.",startPly:6,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"c4b5",runtime:{id:"counterpart-blundered-repeatedly",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",startPly:6,script:[{uci:"e2e4"},{uci:"e7e5"},{uci:"g1f3"},{uci:"b8c6"},{uci:"f1c4"},{uci:"b7b5"},{uci:"c4b5"},{uci:"d8h4"}]}},{id:"draw-stalemate",label:"Draw by stalemate",cueId:"draw",instruction:"Play Qg6 (g5g6) to stalemate.",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"g5g6",runtime:{id:"draw-stalemate",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"7k/5K2/8/6Q1/8/8/8/8 w - - 0 1",startPly:0,script:[{uci:"g5g6"}]}},{id:"acting-offers-draw",label:"Acting offers a draw",cueId:"acting_offers_draw",instruction:"Wait for Counterpart to play Ra1 (b1a1); the repetition keeps the rook endgame equal and you should be ready to offer a draw.",startPly:7,actingSide:"black",difficulty:"casual",nextActor:"counterpart",nextUci:"b1a1",runtime:{id:"acting-offers-draw",settings:{playerSide:"white",difficulty:"casual",locale:"en"},startFen:"7r/p5kp/6p1/8/8/6P1/P5KP/R7 b - - 0 1",startPly:7,script:[{uci:"h8g8"},{uci:"a1b1"},{uci:"g8h8"},{uci:"b1a1"},{uci:"h8g8"},{uci:"a1b1"},{uci:"g8h8"},{uci:"b1a1"}]}},{id:"acting-checked-counterpart-repeatedly",label:"Acting checks Counterpart repeatedly",cueId:"acting_checked_counterpart_repeatedly",instruction:"Play Bxc6+ (b5c6), then Qd8+ (d1d8).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"b5c6",runtime:{id:"acting-checked-counterpart-repeatedly",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"4k3/8/2p5/1B6/8/8/8/3Q2K1 w - - 0 1",startPly:0,script:[{uci:"b5c6"},{uci:"e8f8"},{uci:"d1d8"}]}},{id:"counterpart-checked-acting-repeatedly",label:"Counterpart checks the acting side repeatedly",cueId:"counterpart_checked_acting_repeatedly",instruction:"Wait for Counterpart to play Bxc3+ (b4c3), then Qd2+ (d8d2).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"counterpart",nextUci:"b4c3",runtime:{id:"counterpart-checked-acting-repeatedly",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"3qk3/8/8/8/1b6/2P5/8/4K3 b - - 0 1",startPly:0,script:[{uci:"b4c3"},{uci:"e1f2"},{uci:"d8d2"}]}},{id:"acting-checked-counterpart",label:"Acting checks Counterpart",cueId:"acting_checked_counterpart",instruction:"Play Qe7+ (e2e7).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"e2e7",runtime:{id:"acting-checked-counterpart",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"4k3/8/8/8/8/8/4Q3/4K3 w - - 0 1",startPly:0,script:[{uci:"e2e7"}]}},{id:"counterpart-checked-acting",label:"Counterpart checks the acting side",cueId:"counterpart_checked_acting",instruction:"Wait for Counterpart to play Re1+ (e2e1).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"counterpart",nextUci:"e2e1",runtime:{id:"counterpart-checked-acting",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"4k3/8/8/8/8/8/4r3/6K1 b - - 0 1",startPly:0,script:[{uci:"e2e1"}]}},{id:"counterpart-offered-sacrifice",label:"Counterpart offered a sacrifice",cueId:"counterpart_offered_sacrifice",instruction:"Wait for Counterpart to play Qxf4 (f7f4).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"counterpart",nextUci:"f7f4",runtime:{id:"counterpart-offered-sacrifice",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"r2b2k1/1p3q1p/p2p4/3P2p1/2P1PB2/6Q1/P6P/2R4K b - - 0 30",startPly:0,script:[{uci:"f7f4"},{uci:"g3f4"},{uci:"g5f4"}]}},{id:"acting-offered-sacrifice",label:"Acting offered a sacrifice",cueId:"acting_offered_sacrifice",instruction:"Play Rd7 (d1d7) to offer a rook.",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"d1d7",runtime:{id:"acting-offered-sacrifice",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"4r1k1/ppq3pp/2p2p2/4r3/4p1Q1/P5RP/1P3PP1/3R2K1 w - - 4 35",startPly:0,script:[{uci:"d1d7"},{uci:"c7d7"},{uci:"g4d7"}]}},{id:"acting-accepted-counterpart-sacrifice",label:"Acting accepted Counterpart sacrifice",cueId:"acting_accepted_counterpart_sacrifice",instruction:"Capture with Qxf4 (g3f4).",startPly:1,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"g3f4",runtime:{id:"acting-accepted-counterpart-sacrifice",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"r2b2k1/1p3q1p/p2p4/3P2p1/2P1PB2/6Q1/P6P/2R4K b - - 0 30",startPly:1,script:[{uci:"f7f4"},{uci:"g3f4"},{uci:"g5f4"}]}},{id:"acting-declined-counterpart-sacrifice",label:"Acting declined Counterpart sacrifice",cueId:"acting_declined_counterpart_sacrifice",instruction:"Decline with Qc7 (d6c7).",startPly:1,actingSide:"white",difficulty:"serious",nextActor:"acting",nextUci:"d6c7",runtime:{id:"acting-declined-counterpart-sacrifice",settings:{playerSide:"black",difficulty:"serious",locale:"en"},startFen:"5rk1/1p3ppp/pq1Q1b2/8/8/1P3N2/P4PPP/3R2K1 b - - 3 27",startPly:1,script:[{uci:"f8d8"},{uci:"d6c7"}]}},{id:"counterpart-accepted-acting-sacrifice",label:"Counterpart accepted acting sacrifice",cueId:"counterpart_accepted_acting_sacrifice",instruction:"Wait for Counterpart to capture on d7 (c7d7).",startPly:1,actingSide:"white",difficulty:"casual",nextActor:"counterpart",nextUci:"c7d7",runtime:{id:"counterpart-accepted-acting-sacrifice",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"4r1k1/ppq3pp/2p2p2/4r3/4p1Q1/P5RP/1P3PP1/3R2K1 w - - 4 35",startPly:1,script:[{uci:"d1d7"},{uci:"c7d7"},{uci:"g4d7"}]}},{id:"counterpart-declined-acting-sacrifice",label:"Counterpart declined acting sacrifice",cueId:"counterpart_declined_acting_sacrifice",instruction:"Wait for Counterpart to decline with a6 (a7a6).",startPly:1,actingSide:"white",difficulty:"serious",nextActor:"counterpart",nextUci:"a7a6",runtime:{id:"counterpart-declined-acting-sacrifice",settings:{playerSide:"black",difficulty:"serious",locale:"en"},startFen:"r6r/pp1qbQpk/2p4p/3pP3/3Pb3/2P1B3/PP4PP/R4RK1 w - - 4 19",startPly:1,script:[{uci:"f1f6"},{uci:"a7a6"}]}},{id:"counterpart-skewered-acting",label:"Counterpart skewers the acting side",cueId:"counterpart_skewered_acting",instruction:"Wait for Counterpart to play Rc1+ (c2c1).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"counterpart",nextUci:"c2c1",runtime:{id:"counterpart-skewered-acting",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"8/7R/8/5p2/4b2P/5k2/2r5/4K1R1 b - - 10 52",startPly:0,script:[{uci:"c2c1"},{uci:"e1d2"},{uci:"c1g1"}]}},{id:"acting-skewered-counterpart",label:"Acting skewers Counterpart",cueId:"acting_skewered_counterpart",instruction:"Play Re8+ (f8e8).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"f8e8",runtime:{id:"acting-skewered-counterpart",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"5R2/1p6/p1p1k3/2P1r3/2K3p1/2P1p1P1/1P5P/8 w - - 2 45",startPly:0,script:[{uci:"f8e8"},{uci:"e6f5"},{uci:"e8e5"},{uci:"f5e5"}]}},{id:"counterpart-pinned-acting",label:"Counterpart pins a piece",cueId:"counterpart_pinned_acting",instruction:"Wait for Counterpart to play Rb1 (b7b1).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"counterpart",nextUci:"b7b1",runtime:{id:"counterpart-pinned-acting",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"3r2k1/pr4pp/2R1b3/5p2/2P1p3/8/P4PPP/3BR1K1 b - - 0 27",startPly:0,script:[{uci:"b7b1"},{uci:"g1f1"},{uci:"d8d1"},{uci:"e1d1"}]}},{id:"acting-pinned-counterpart",label:"Acting pins Counterpart",cueId:"acting_pinned_counterpart",instruction:"Play Rxd6 (d1d6) to pin.",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"d1d6",runtime:{id:"acting-pinned-counterpart",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"r2qk2r/p2bnppp/3p4/1Bp5/4P3/4Q3/PPP2PPP/2KR3R w kq - 1 13",startPly:0,script:[{uci:"d1d6"},{uci:"d7b5"},{uci:"d6d8"}]}},{id:"acting-captured-repeatedly",label:"Acting captured repeatedly",cueId:"acting_captured_repeatedly",instruction:"Play Nxe5 (f3e5), then Nxc4 (e5c4).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"f3e5",runtime:{id:"acting-captured-repeatedly",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"6k1/8/8/4p3/2p5/5N2/8/6K1 w - - 0 1",startPly:0,script:[{uci:"f3e5"},{uci:"g8f8"},{uci:"e5c4"}]}},{id:"counterpart-captured-repeatedly",label:"Counterpart captured repeatedly",cueId:"counterpart_captured_repeatedly",instruction:"Let Counterpart play Nxe4 (f6e4), then play Kg2 (g1g2).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"counterpart",nextUci:"f6e4",runtime:{id:"counterpart-captured-repeatedly",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"6k1/8/5n2/2P5/4P3/8/8/6K1 b - - 0 1",startPly:0,script:[{uci:"f6e4"},{uci:"g1g2"},{uci:"e4c5"}]}},{id:"position-reversed",label:"Position reversed",cueId:"position_reversed",instruction:"Play h3 (h2h3); Counterpart blunders with Qh4.",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"h2h3",runtime:{id:"position-reversed",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"r2q2k1/ppp2ppp/8/2b5/2B5/5N2/PPP2PPP/R5K1 w - - 0 15",startPly:0,script:[{uci:"h2h3"},{uci:"d8h4"}]}},{id:"endgame-entered",label:"Endgame entered",cueId:"endgame_entered",instruction:"Play Qxd7 (d1d7) to trade into the endgame.",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"d1d7",runtime:{id:"endgame-entered",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"r2q2k1/pppb1ppp/8/8/2B5/5N2/PPP2PPP/R2Q2K1 w - - 0 1",startPly:0,script:[{uci:"d1d7"}]}},{id:"king-hunt-endgame",label:"King hunt endgame",cueId:"king_hunt_endgame",instruction:"Play Kf2 (g1f2).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"g1f2",runtime:{id:"king-hunt-endgame",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"6k1/8/8/8/8/8/8/R5K1 w - - 0 1",startPly:0,script:[{uci:"g1f2"}]}},{id:"race-endgame",label:"Race endgame",cueId:"race_endgame",instruction:"Play a6 (a5a6) to start the pawn race.",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"a5a6",runtime:{id:"race-endgame",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"4k3/8/8/P6p/8/8/8/4K3 w - - 0 1",startPly:0,script:[{uci:"a5a6"},{uci:"h5h4"},{uci:"a6a7"}]}},{id:"acting-used-opening",label:"Acting used an opening move",cueId:"acting_used_opening",instruction:"Play e4 (e2e4).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"acting",nextUci:"e2e4",runtime:{id:"acting-used-opening",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",startPly:0,script:[{uci:"e2e4"}]}},{id:"counterpart-used-opening",label:"Counterpart used an opening move",cueId:"counterpart_used_opening",instruction:"Play e4 (e2e4); Counterpart replies e5.",startPly:1,actingSide:"white",difficulty:"casual",nextActor:"counterpart",nextUci:"e7e5",runtime:{id:"counterpart-used-opening",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",startPly:1,script:[{uci:"e2e4"},{uci:"e7e5"}]}},{id:"counterpart-moved-quickly",label:"Counterpart moved quickly",cueId:"counterpart_moved_quickly",instruction:"Wait for Counterpart to snap-play a6 (a7a6).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"counterpart",nextUci:"a7a6",runtime:{id:"counterpart-moved-quickly",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 15",startPly:0,script:[{uci:"a7a6",durationMs:500}]}},{id:"counterpart-thought-long",label:"Counterpart thought long",cueId:"counterpart_thought_long",instruction:"Wait for Counterpart to think for a while, then play a6 (a7a6).",startPly:0,actingSide:"white",difficulty:"casual",nextActor:"counterpart",nextUci:"a7a6",runtime:{id:"counterpart-thought-long",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 15",startPly:0,script:[{uci:"a7a6",durationMs:65e3}]}},{id:"critical-move",label:"Critical move for Acting",cueId:"critical_move",instruction:"Counterpart has just blundered with b5. The position is winning, and you have a critical continuation right now.",startPly:6,actingSide:"white",difficulty:"casual",nextActor:null,nextUci:null,runtime:{id:"critical-move",settings:{playerSide:"black",difficulty:"casual",locale:"en"},startFen:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",startPly:6,script:[{uci:"e2e4"},{uci:"e7e5"},{uci:"g1f3"},{uci:"b8c6"},{uci:"f1c4"},{uci:"b7b5"}]}}],Wt=ss;function ls(){const t=St("chess"),n=De("chess"),[s,a]=l.useState(null),[i,m]=l.useState(null),f=!!n,y=t?.gameState,E=async x=>{if(!n){a("Chess app is not running.");return}m(x.id),a(null);try{await n.dispatch({type:"debugLoadScenario",...x.runtime}),a(`Loaded ${x.id}.`)}catch(u){const b=u instanceof Error?u.message:String(u);a(`Failed to load scenario: ${b}`)}finally{m(null)}};return e.jsxs(me,{children:[e.jsx(v,{title:"Session",children:e.jsx(I,{children:f?"Chess runtime connected":"Chess runtime not running"})}),e.jsxs(v,{title:"Scenarios",children:[Wt.length===0?e.jsx(Ge,{children:"No scenarios available."}):Wt.map(x=>{const u=i===x.id,b=x.nextActor&&x.nextUci?`${x.nextActor} ${x.nextUci}`:"n/a";return e.jsxs(v,{title:x.label,right:e.jsx(p,{onClick:()=>E(x),disabled:!f||u,children:u?"Loading...":"Load"}),children:[e.jsx(T,{label:"Cue",value:x.cueId,mono:!1}),e.jsx(I,{children:x.instruction}),e.jsxs(I,{children:["Acting side: ",x.actingSide," • Difficulty: ",x.difficulty," • Start ply: ",x.startPly," • Next: ",b]})]},x.id)}),s?e.jsx(I,{children:s}):null]}),e.jsxs(v,{title:"State",children:[e.jsx(T,{label:"Status",value:y?.status??"idle",mono:!1}),e.jsx(T,{label:"Ply",value:y?.moveHistory?.length??0}),e.jsx(T,{label:"Turn",value:y?.turn??"n/a",mono:!1}),e.jsx(_,{label:"FEN",stack:!0,children:e.jsx("span",{className:"break-all text-[length:var(--dbg-text-value)] tabular-nums",children:y?.fen??"n/a"})})]})]})}function is(t=!0){const n=O(i=>i.registerTab),s=O(i=>i.unregisterTab),a=De("chess");l.useEffect(()=>{if(!t||!a){s("chess");return}return n({id:"chess",label:"Chess",render:()=>e.jsx(ls,{})}),()=>s("chess")},[t,n,a,s])}const rs=0,os={sudden_death_both:"sudden_death_both",sudden_death_counterpart_only:"sudden_death_counterpart_only",sudden_death_agent_only:"sudden_death_agent_only"},cs=[{id:"sudden_death_both",label:"Load sudden death (both guessers)"},{id:"sudden_death_counterpart_only",label:"Load sudden death (counterpart only)"},{id:"sudden_death_agent_only",label:"Load sudden death (agent only)"}],ds=["ACORN","BADGER","BARK","BERRY","BROOK","CAMP","CAVE","CLOVER","COCOON","DEER","FERN","FIRE","FOX","GROVE","LANTERN","MOSS","MUSHROOM","NEST","OWL","PATH","PINE","RAVINE","ROOT","SPRUCE","STREAM"];function us(){const t=ds.map((i,m)=>({id:`w${m}`,text:i})),n=Array.from({length:25},(i,m)=>m===12?H.ASSASSIN:m%3===0?H.AGENT:H.BYSTANDER),s=Array.from({length:25},(i,m)=>m===7?H.ASSASSIN:m%4===1?H.AGENT:H.BYSTANDER),a=Array.from({length:25},()=>({solvedBy:null,bystanderMarks:[null,null],assassinatedBy:null}));return{board:t,key:{A:n,B:s},cells:a,tokensRemaining:9,whoseTurnToGive:Y.A,phase:vt.NORMAL,winner:null,history:[]}}function Qt(t){const n=us();switch(t){case"playing":return{gameState:n,uiState:{type:"HUMAN_GIVING_CLUE"}};case"win":{const s=n.cells.map((i,m)=>{const f=n.key.A[m]===H.AGENT,y=n.key.B[m]===H.AGENT;return f?{...i,solvedBy:Y.A}:y?{...i,solvedBy:Y.B}:i}),a=Date.now();return{gameState:{...n,cells:s,tokensRemaining:3,winner:"TEAM",history:[{clueGiver:Y.A,clue:{word:"NATURE",count:3},endedBy:null,guesses:[{cell:0,result:H.AGENT,at:a-5e3},{cell:3,result:H.AGENT,at:a-4e3},{cell:6,result:H.AGENT,at:a-3e3}]},{clueGiver:Y.B,clue:{word:"FOREST",count:4},endedBy:null,guesses:[{cell:1,result:H.AGENT,at:a-2e3},{cell:5,result:H.AGENT,at:a-1e3}]}]},uiState:{type:"GAME_OVER",winner:"TEAM"}}}case"loss-monster":{const s=n.cells.map((i,m)=>m===0||m===3?{...i,solvedBy:Y.A}:m===12?{...i,assassinatedBy:Y.A}:i),a=Date.now();return{gameState:{...n,cells:s,tokensRemaining:7,winner:null,history:[{clueGiver:Y.A,clue:{word:"TREES",count:3},endedBy:null,guesses:[{cell:0,result:H.AGENT,at:a-3e3},{cell:3,result:H.AGENT,at:a-2e3},{cell:12,result:H.ASSASSIN,at:a-1e3}]}]},uiState:{type:"GAME_OVER",winner:null}}}case"loss-sudden-death":{const s=n.cells.map((i,m)=>{const f=n.key.A[m]===H.AGENT,y=n.key.B[m]===H.AGENT;return(f||y)&&m!==9&&m!==15&&m!==18?{...i,solvedBy:f?Y.A:Y.B}:m===2?{...i,bystanderMarks:[Y.A,null]}:m===4?{...i,bystanderMarks:[Y.B,Y.A]}:i}),a=Date.now();return{gameState:{...n,cells:s,tokensRemaining:0,phase:vt.SUDDEN_DEATH,winner:null,history:[{clueGiver:Y.A,clue:{word:"NATURE",count:3},endedBy:null,guesses:[{cell:0,result:H.AGENT,at:a-6e3},{cell:3,result:H.AGENT,at:a-5e3},{cell:2,result:H.BYSTANDER,at:a-4e3}]},{clueGiver:Y.B,clue:{word:"FOREST",count:4},endedBy:null,guesses:[{cell:1,result:H.AGENT,at:a-3e3},{cell:5,result:H.AGENT,at:a-2e3}]},{clueGiver:Y.A,clue:{word:"WILD",count:2},endedBy:null,guesses:[{cell:6,result:H.AGENT,at:a-1500},{cell:4,result:H.BYSTANDER,at:a-1e3}]}]},uiState:{type:"GAME_OVER",winner:null}}}}}function ve(t,n,s){const a=t.cells.slice(),i=t.cells[n],m={solvedBy:s.solvedBy??i.solvedBy,bystanderMarks:s.bystanderMarks??i.bystanderMarks,assassinatedBy:s.assassinatedBy??i.assassinatedBy};return a[n]=m,{...t,cells:a}}function Yt(t,n){return ve(t,n,{solvedBy:null,assassinatedBy:null,bystanderMarks:[null,null]})}const gs=[{id:"agent-A",label:"Reveal → Agent (A)"},{id:"agent-B",label:"Reveal → Agent (B, rotate 180)"},{id:"assassin-A",label:"Reveal → Assassin (A)"},{id:"assassin-B",label:"Reveal → Assassin (B, rotate 180)"},{id:"bystander-0-A",label:"Reveal → Bystander slot 0 (A)"},{id:"bystander-0-B",label:"Reveal → Bystander slot 0 (B, rotate 180)"},{id:"bystander-1-A",label:"Reveal → Bystander slot 1 (A)"},{id:"bystander-1-B",label:"Reveal → Bystander slot 1 (B, rotate 180)"},{id:"noop",label:"Reveal → No card"},{id:"noop-token-1",label:"Reveal → No card (tokens -1)"}],hs=[{id:"HUMAN_GIVING_CLUE",label:"Counterpart giving clue (key + glow)"},{id:"AI_GIVING_CLUE",label:"Agent giving clue"},{id:"HUMAN_GUESSING",label:"Counterpart guessing (clue display)"},{id:"AI_GUESSING",label:"Agent guessing (clue display)"},{id:"SUDDEN_DEATH_HUMAN_TURN",label:"Sudden death: counterpart"},{id:"SUDDEN_DEATH_AI_TURN",label:"Sudden death: agent"},{id:"SUDDEN_DEATH_BOTH",label:"Sudden death: both guessers"},{id:"GAME_OVER",label:"Game over"}],ps=[{id:"your-turn",label:"Your turn"},{id:"agent-turn",label:"Agent turn"},{id:"sudden-death",label:"Sudden death"},{id:"win",label:"Win"},{id:"lose",label:"Lose"}];function ms(){const{t}=en(),n=St("codenames"),s=De("codenames"),a=!!s,i=n?.gameState??null,m=G(g=>g.gameState),f=G(g=>g.uiState),y=G(g=>g.counterpartSide),E=G(g=>g.clearCardSelection),x=G(g=>g.showOverlay),u=G(g=>g.dismissOverlay),b=G(g=>g.spawnFlyingCard),B=G(g=>g.playDebugClueHighlight),z=G(g=>g.clearDebugClueHighlight),[D,k]=l.useState(null),[q,P]=l.useState(null),[$,L]=l.useState(rs),d=$,[C,V]=l.useState("MUSHROOM"),[c,X]=l.useState(3),[ie,he]=l.useState("TEAM"),[h,Z]=l.useState("your-turn"),[te,o]=l.useState(()=>t("codenames.game.clue")),N=l.useMemo(()=>({word:C.trim()||"MUSHROOM",count:c}),[C,c]),[j,J]=l.useState("agent-A"),[W,re]=l.useState(!1),[ne,Se]=l.useState(!1),[Ce,ue]=l.useState(null),[M,U]=l.useState("playing"),Ee=l.useCallback(async g=>{if(!s){k("Codenames app is not running.");return}if(!i){k("Start a game first to enable server scenarios.");return}P(g),k(null);try{await s.dispatch({type:"debugLoadScenario",scenarioId:os[g]}),k(`Loaded ${g}.`)}catch(A){const R=A instanceof Error?A.message:String(A);k(`Failed to load scenario: ${R}`)}finally{P(null)}},[s,i]);l.useEffect(()=>{if(G.getState().gameState!==null)return;const{gameState:g,uiState:A}=Qt("playing");G.setState({gameState:g,uiState:A,counterpartSide:Y.A,agentSide:Y.B,pendingGuess:null,cardAnimation:null,flyingCard:null,activeOverlay:null,selectedCards:new Set,hoveredCellIndex:null})},[]);const Me=l.useCallback(g=>{if(g==="HUMAN_GUESSING"||g==="AI_GUESSING"){G.setState({uiState:{type:g,clue:N}});return}if(g==="GAME_OVER"){G.setState({uiState:{type:g,winner:ie}});return}G.setState({uiState:{type:g}})},[N,ie]),ct=l.useCallback(g=>{const{gameState:A,uiState:R}=Qt(g);G.setState({gameState:A,uiState:R,counterpartSide:Y.A,agentSide:Y.B,pendingGuess:null,cardAnimation:null,flyingCard:null,activeOverlay:null,selectedCards:new Set,hoveredCellIndex:null}),ue({playing:"Loaded: Playing state",win:"Loaded: Game over (WIN)","loss-monster":"Loaded: Game over (LOSS - monster)","loss-sudden-death":"Loaded: Game over (LOSS - sudden death)"}[g])},[]),Ye=l.useCallback(()=>{const g=G.getState().gameState;g&&G.setState({gameState:Yt(g,d),pendingGuess:null,cardAnimation:null,flyingCard:null})},[d]),dt=l.useCallback(async()=>{if(!ne&&G.getState().gameState){Se(!0),ue(null);try{G.setState({cardAnimation:{phase:"shake",cell:d}}),await new Promise(g=>setTimeout(g,Dn.CARD_SHAKE_DURATION)),G.setState({cardAnimation:null})}finally{Se(!1)}}},[d,ne]),Xe=l.useCallback(g=>{const A=G.getState().gameState;if(!A)return null;let R=Yt(A,d),ee=R;const ke=()=>{ee={...R,tokensRemaining:Math.max(0,R.tokensRemaining-1)}};switch(g){case"agent-A":ee=ve(R,d,{solvedBy:"A",assassinatedBy:null,bystanderMarks:[null,null]});break;case"agent-B":ee=ve(R,d,{solvedBy:"B",assassinatedBy:null,bystanderMarks:[null,null]});break;case"assassin-A":ee=ve(R,d,{assassinatedBy:"A",solvedBy:null,bystanderMarks:[null,null]});break;case"assassin-B":ee=ve(R,d,{assassinatedBy:"B",solvedBy:null,bystanderMarks:[null,null]});break;case"bystander-0-A":ee=ve(R,d,{bystanderMarks:["A",null],solvedBy:null,assassinatedBy:null});break;case"bystander-0-B":ee=ve(R,d,{bystanderMarks:["B",null],solvedBy:null,assassinatedBy:null});break;case"bystander-1-A":{R=ve(R,d,{bystanderMarks:["B",null]}),ee=ve(R,d,{bystanderMarks:["B","A"]});break}case"bystander-1-B":{R=ve(R,d,{bystanderMarks:["A",null]}),ee=ve(R,d,{bystanderMarks:["A","B"]});break}case"noop":break;case"noop-token-1":ke();break}return{before:R,after:ee}},[d]),Re=l.useCallback(async g=>{if(ne)return;const A=Xe(g);if(!A)return;const R=!!document.querySelector(`[data-card-cell="${d}"] .game-card-btn`),ee=!!(document.querySelector("[data-agent-source]")||document.querySelector("[data-assassin-source]")||document.querySelector("[data-bystander-source]"));if(!R||!ee){ue("Open the Codenames GameScreen (board) to run animations.");return}Se(!0),ue(null);try{G.setState({gameState:A.before,pendingGuess:null,cardAnimation:null,flyingCard:null}),await Ln(d,A.before,A.after,G)}finally{Se(!1)}},[Xe,d,ne]),Le=l.useCallback((g,A)=>{const R=G.getState().gameState;R&&b(g,d,W,R,A)},[d,W,b]),Je=l.useCallback(g=>{const A=G.getState().gameState;A&&G.setState({gameState:{...A,...g}})},[]),Ue=l.useCallback(g=>{const A=G.getState().gameState;if(!A)return;const R=G.getState().counterpartSide,ee=R===Y.A?Y.B:Y.A,ke={...A,phase:vt.SUDDEN_DEATH,winner:null,tokensRemaining:0},Te=ke.cells.map(se=>({...se,bystanderMarks:[...se.bystanderMarks]})),Ve=se=>{Te[se]={solvedBy:null,bystanderMarks:[null,null],assassinatedBy:null}},dn=(se,fe)=>{Te[se]={solvedBy:fe,bystanderMarks:[null,null],assassinatedBy:null}},jt=(se,fe)=>{for(let je=0;je<25;je++)if(ke.key[se][je]===H.AGENT&&ke.key[fe][je]!==H.AGENT)return je;return-1},Pt=se=>{for(let fe=0;fe<25;fe++)if(ke.key[se][fe]===H.AGENT)return fe;return-1},wt=(se,fe)=>{for(let je=0;je<25;je++)ke.key[se][je]===H.AGENT&&dn(je,fe)};let Ze;if(g==="both"){const se=Pt(R),fe=Pt(ee);se>=0&&Ve(se),fe>=0&&Ve(fe),Ze="SUDDEN_DEATH_BOTH",ue("Forced sudden death: both guessers.")}else if(g==="counterpartOnly"){wt(R,R);const se=jt(ee,R);se>=0&&Ve(se),Ze="SUDDEN_DEATH_HUMAN_TURN",ue("Forced sudden death: counterpart-only guesser.")}else{wt(ee,ee);const se=jt(R,ee);se>=0&&Ve(se),Ze="SUDDEN_DEATH_AI_TURN",ue("Forced sudden death: agent-only guesser.")}G.setState({gameState:{...ke,cells:Te},uiState:{type:Ze},pendingGuess:null,cardAnimation:null,flyingCard:null,activeOverlay:null})},[]),r=!!m;return e.jsxs(me,{children:[e.jsx(v,{title:"Server/runtime",children:e.jsx(I,{children:a?"Codenames runtime connected":"Codenames runtime not running"})}),e.jsxs(v,{title:"Server scenarios",children:[e.jsx(F,{children:cs.map(g=>{const A=q===g.id;return e.jsx(p,{variant:"outline",onClick:()=>Ee(g.id),disabled:!a||!i||A,children:A?"Loading...":g.label},g.id)})}),i?e.jsxs(I,{children:["Phase: ",i.phase," • Tokens: ",i.tokensRemaining," • Winner: ",i.winner??"none"]}):e.jsx(I,{children:"Start a game first (in the Codenames app) to enable server scenarios."}),D?e.jsx(I,{children:D}):null]}),e.jsxs(v,{title:"Client-only (mock store)",right:e.jsx(p,{variant:"outline",onClick:()=>G.setState({gameState:null}),children:"Clear"}),children:[e.jsx(I,{children:r?"Client mock state ready":"No client state (load mock)"}),e.jsx(I,{children:"Non-authoritative: mutates the UI store only (does not change server/runtime state)."}),e.jsxs(_,{label:"Load mock scenario",stack:!0,children:[e.jsx(pe,{className:"flex-1",value:M,onValueChange:g=>U(g),options:[{value:"playing",label:"Playing (normal)"},{value:"win",label:"Game Over: WIN"},{value:"loss-monster",label:"Game Over: LOSS (hit monster)"},{value:"loss-sudden-death",label:"Game Over: LOSS (sudden death)"}]}),e.jsx(p,{onClick:()=>ct(M),children:"Load"})]}),Ce?e.jsx(I,{children:Ce}):null,e.jsx(_,{label:"Counterpart side",children:e.jsxs(F,{children:[e.jsx(p,{variant:y==="A"?"default":"outline",onClick:()=>G.setState({counterpartSide:Y.A}),disabled:!r,children:"A"}),e.jsx(p,{variant:y==="B"?"default":"outline",onClick:()=>G.setState({counterpartSide:Y.B}),disabled:!r,children:"B"})]})}),e.jsx(_,{label:"UI state",stack:!0,children:e.jsx(pe,{value:f.type,onValueChange:g=>Me(g),disabled:!r,options:hs.map(g=>({value:g.id,label:g.label}))})}),(f.type==="HUMAN_GUESSING"||f.type==="AI_GUESSING")&&e.jsxs(e.Fragment,{children:[e.jsx(_,{label:"Clue word",stack:!0,children:e.jsx(xe,{value:C,onChange:g=>V(g.toUpperCase()),onBlur:()=>Me(f.type)})}),e.jsx(_,{label:"Clue count",stack:!0,children:e.jsx(pe,{value:c==="infinity"?"infinity":String(c),onValueChange:g=>{const A=g==="infinity"?"infinity":Number(g);X(A),G.setState({uiState:{type:f.type,clue:{word:C,count:A}}})},options:[...[0,1,2,3,4,5,6,7,8,9].map(g=>({value:String(g),label:String(g)})),{value:"infinity",label:"∞"}]})})]}),f.type==="GAME_OVER"&&e.jsx(_,{label:"Winner",stack:!0,children:e.jsx(pe,{value:ie===null?"none":"TEAM",onValueChange:g=>{const A=g==="none"?null:"TEAM";he(A),G.setState({uiState:{type:"GAME_OVER",winner:A}})},options:[{value:"TEAM",label:"TEAM"},{value:"none",label:"None"}]})}),e.jsx(_,{label:"Tokens remaining",children:e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:()=>Je({tokensRemaining:Math.max(0,(m?.tokensRemaining??0)-1)}),disabled:!r,children:"-1"}),e.jsx(p,{variant:"outline",onClick:()=>Je({tokensRemaining:Math.min(11,(m?.tokensRemaining??0)+1)}),disabled:!r,children:"+1"})]})}),e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:E,disabled:!r,children:"Clear selected cards"}),e.jsx(p,{variant:"outline",onClick:()=>G.setState({pendingGuess:d}),disabled:!r,children:"Set pending guess (target)"}),e.jsx(p,{variant:"outline",onClick:()=>G.setState({pendingGuess:null}),disabled:!r,children:"Clear pending guess"})]}),e.jsx(_,{label:"Sudden death",stack:!0,children:e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:()=>Ue("both"),disabled:!r,children:"Force sudden death (both)"}),e.jsx(p,{variant:"outline",onClick:()=>Ue("counterpartOnly"),disabled:!r,children:"Force sudden death (counterpart only)"}),e.jsx(p,{variant:"outline",onClick:()=>Ue("agentOnly"),disabled:!r,children:"Force sudden death (agent only)"})]})})]}),e.jsx(v,{title:"Target",children:e.jsx(S,{label:"Cell index",value:$,min:0,max:24,step:1,formatValue:g=>`${Math.round(g)}`,onValueChange:g=>L(Math.round(g)),disabled:!r})}),e.jsxs(v,{title:"Reveal + Flying cards",children:[e.jsx(_,{label:"Confirm click outcome",stack:!0,children:e.jsx(pe,{value:j,onValueChange:g=>J(g),disabled:!r,options:gs.map(g=>({value:g.id,label:g.label}))})}),e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:Ye,disabled:!r||ne,children:"Clear target cell"}),e.jsx(p,{onClick:()=>Re(j),disabled:!r||ne,children:"Run reveal (target)"}),e.jsx(p,{variant:"outline",onClick:dt,disabled:!r||ne,children:"Shake only"})]}),e.jsx(ae,{label:"Rotate flying card 180",checked:W,onCheckedChange:re,disabled:!r||ne}),e.jsxs(Ne,{cols:2,children:[e.jsx(p,{variant:"outline",onClick:()=>Le("agent"),disabled:!r||ne,children:"Fly agent"}),e.jsx(p,{variant:"outline",onClick:()=>Le("assassin"),disabled:!r||ne,children:"Fly assassin"}),e.jsx(p,{variant:"outline",onClick:()=>Le("bystander",0),disabled:!r||ne,children:"Fly bystander (slot 0)"}),e.jsx(p,{variant:"outline",onClick:()=>Le("bystander",1),disabled:!r||ne,children:"Fly bystander (slot 1)"})]}),e.jsx(I,{children:"Tip: open the Codenames game window to see these effects on the real board."})]}),e.jsxs(v,{title:"Clue highlight + Overlay",children:[e.jsx(_,{label:"Overlay",stack:!0,children:e.jsx(pe,{value:h,onValueChange:g=>Z(g),disabled:!r,options:ps.map(g=>({value:g.id,label:g.label}))})}),e.jsx(_,{label:"Clue highlight label",stack:!0,children:e.jsx(xe,{value:te,onChange:o})}),e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:()=>x(h),disabled:!r,children:"Show overlay"}),e.jsx(p,{variant:"outline",onClick:u,disabled:!r,children:"Dismiss overlay"}),e.jsx(p,{variant:"outline",onClick:()=>B(N,te),disabled:!r,children:"Play clue highlight"}),e.jsx(p,{variant:"outline",onClick:z,disabled:!r,children:"Stop clue highlight"})]})]})]})}function fs(t=!0){const n=O(i=>i.registerTab),s=O(i=>i.unregisterTab),a=De("codenames");l.useEffect(()=>{if(!t||!a){s("codenames");return}return n({id:"codenames",label:"Codenames",render:()=>e.jsx(ms,{})}),()=>s("codenames")},[t,n,a,s])}let on=1e3;function w(t){return{entityId:on++,name:t}}function bs(t){switch(on=1e3,t){case"attack-phase":return{playerHand:[w("archer"),w("scientist"),w("soldier"),w("archer"),w("wizard")],opponentHand:[w("archer"),w("soldier"),w("wizard")],attackPile:[w("archer"),w("archer")],blockPile:[],deckTop:[w("soldier"),w("wizard"),w("archer"),w("scientist")],deckCount:12,discardCount:3};case"block-phase":return{playerHand:[w("soldier"),w("wizard"),w("archer")],opponentHand:[w("archer"),w("scientist"),w("soldier"),w("wizard")],attackPile:[w("archer"),w("archer")],blockPile:[w("soldier"),w("soldier")],deckTop:[w("wizard"),w("archer"),w("scientist"),w("soldier")],deckCount:8,discardCount:5};case"empty":return{playerHand:[],opponentHand:[],attackPile:[],blockPile:[],deckTop:[],deckCount:0,discardCount:0};case"stacked":return{playerHand:[w("archer"),w("archer"),w("archer"),w("soldier"),w("soldier"),w("wizard"),w("scientist")],opponentHand:[w("archer"),w("soldier"),w("wizard"),w("scientist"),w("archer")],attackPile:[w("archer"),w("archer"),w("archer")],blockPile:[w("soldier"),w("soldier"),w("soldier")],deckTop:[w("wizard"),w("scientist"),w("archer"),w("soldier")],deckCount:4,discardCount:10}}}const xs=[{id:"attack-phase",label:"Attack phase"},{id:"block-phase",label:"Block phase"},{id:"stacked",label:"Stacked piles"},{id:"empty",label:"Empty board"}];function bt(t,n,s){const a=ge.getState().zoneCards;if(!a)return;const i=[...a[t]],m=i.splice(0,s),f=[...a[n],...m];ge.setState({zoneCards:{...a,[t]:i,[n]:f}})}function Xt(t){const n=ge.getState().zoneCards;if(!n||n.deckTop.length===0)return;const s=[...n.deckTop],a=s.shift(),i=[...n[t],a];ge.setState({zoneCards:{...n,[t]:i,deckTop:s,deckCount:Math.max(0,n.deckCount-1)}})}function ys(){const t=ge.getState().zoneCards;t&&ge.setState({zoneCards:{...t,attackPile:[],blockPile:[]}})}function Ss(){const{debugCakeOverride:t,myView:n}=ge.getState();return t||{playerCakes:n?.me.cakes??3,noriCakes:n?.opponent.cakes??4}}function Jt(t){const n=Ss();t==="toPlayer"&&n.noriCakes>0?ge.getState().setDebugCakeOverride({playerCakes:n.playerCakes+1,noriCakes:n.noriCakes-1}):t==="toNori"&&n.playerCakes>0&&ge.getState().setDebugCakeOverride({playerCakes:n.playerCakes-1,noriCakes:n.noriCakes+1})}function vs(){ge.getState().setDebugCakeOverride(null)}const Cs=[{id:"success-attack",label:"Challenge Reveal (Success, ATK)",build:t=>{if(t.attackPile.length===0)return null;const n=new Map;for(const s of t.attackPile)n.set(s.entityId,s.name);return{type:"challenge_reveal",pile:"attack",revealedCards:n,claimedCard:"archer",challenger:1,success:!0}}},{id:"fail-attack",label:"Challenge Reveal (Fail, ATK)",build:t=>{if(t.attackPile.length===0)return null;const n=new Map;for(const s of t.attackPile)n.set(s.entityId,s.name);return{type:"challenge_reveal",pile:"attack",revealedCards:n,claimedCard:"wizard",challenger:1,success:!1}}}];function ks(){const{t}=en(),n=St("cakeduel"),s=De("cakeduel"),a=n?.game??null,i=ge(o=>o.zoneCards),m=ge(o=>o.activeEffect),[f,y]=l.useState(!1),[E,x]=l.useState(null),[u,b]=l.useState(!1),[B,z]=l.useState("0"),[D,k]=l.useState(""),q=Rt(),[P,$]=l.useState(q.CHALLENGE_FLIP_STAGGER),[L,d]=l.useState(q.CHALLENGE_REVEAL_HOLD),C=l.useMemo(()=>a?Array.from(new Set(a.config.baseCardList)):[],[a]);l.useEffect(()=>{if(C.length===0){k("");return}k(o=>o&&C.includes(o)?o:C[0])},[C]);const V=l.useCallback(async(o,N=D,j=B)=>{if(!s||!a){o&&b(!1),x(t("cakeduel.debug.dealtGuarantee.statusRuntimeMissing"));return}try{if(!o){await s.dispatch({type:"debugSetDealtCardGuarantee",enabled:!1}),b(!1),x(t("cakeduel.debug.dealtGuarantee.statusDisabled"));return}if(!N){x(t("cakeduel.debug.dealtGuarantee.statusNoCard"));return}await s.dispatch({type:"debugSetDealtCardGuarantee",enabled:!0,cardName:N,targetPlayer:Number(j)}),b(!0),x(t("cakeduel.debug.dealtGuarantee.statusEnabled",{card:N,target:t(j==="0"?"cakeduel.debug.dealtGuarantee.targetPlayer":"cakeduel.debug.dealtGuarantee.targetNori")}))}catch(J){o&&b(!1);const W=J instanceof Error?J.message:String(J);x(t("cakeduel.debug.dealtGuarantee.statusError",{message:W}))}},[s,a,B,D,t]),c=l.useCallback(o=>{V(o)},[V]),X=l.useCallback(o=>{z(o),u&&V(!0,D,o)},[u,V,D]),ie=l.useCallback(o=>{k(o),u&&V(!0,o,B)},[u,V,B]),he=l.useCallback(o=>{const N=bs(o);ge.setState({zoneCards:N}),x(`Loaded: ${o}`)},[]),h=l.useCallback(async o=>{if(f)return;const N=ge.getState().zoneCards;if(!N){x("No zoneCards — load a scenario first");return}const j=o.build(N);if(!j){x("Pile empty — load a scenario with cards");return}Fn({CHALLENGE_FLIP_STAGGER:P,CHALLENGE_REVEAL_HOLD:L}),y(!0),x(`Playing: ${o.label}`);try{await Vn(j),x(`Done: ${o.label}`)}catch(J){x(`Error: ${J}`)}finally{y(!1)}},[f,P,L]),Z=l.useCallback(()=>{Bn();const o=Rt();$(o.CHALLENGE_FLIP_STAGGER),d(o.CHALLENGE_REVEAL_HOLD)},[]),te=!s||!a;return e.jsxs(me,{children:[E&&e.jsx(I,{children:E}),e.jsx(v,{title:"Mock State",children:e.jsx(F,{children:xs.map(o=>e.jsx(p,{variant:"outline",onClick:()=>he(o.id),children:o.label},o.id))})}),e.jsx(v,{title:"Card Moves",children:e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:()=>bt("playerHand","attackPile",1),children:"Player 1→ATK"}),e.jsx(p,{variant:"outline",onClick:()=>bt("playerHand","attackPile",2),children:"Player 2→ATK"}),e.jsx(p,{variant:"outline",onClick:()=>bt("opponentHand","blockPile",2),children:"Nori 2→BLK"}),e.jsx(p,{variant:"outline",onClick:()=>Xt("playerHand"),children:"Draw→Player"}),e.jsx(p,{variant:"outline",onClick:()=>Xt("opponentHand"),children:"Draw→Nori"}),e.jsx(p,{variant:"outline",onClick:ys,children:"Clear piles"})]})}),e.jsxs(v,{title:"Cake Transfer",children:[e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:()=>Jt("toPlayer"),children:"Player wins cake"}),e.jsx(p,{variant:"outline",onClick:()=>Jt("toNori"),children:"Nori wins cake"}),e.jsx(p,{variant:"ghost",onClick:vs,children:"Reset cakes"})]}),e.jsx(js,{})]}),e.jsx(v,{title:"Wolfy Taunt",children:e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:()=>Nt(0),children:"Player taunt"}),e.jsx(p,{variant:"outline",onClick:()=>Nt(1),children:"Nori taunt"})]})}),e.jsxs(v,{title:t("cakeduel.debug.dealtGuarantee.title"),children:[e.jsx(ae,{label:t("cakeduel.debug.dealtGuarantee.alwaysIncludeLabel"),checked:u,onCheckedChange:c,disabled:te}),e.jsx(_,{label:t("cakeduel.debug.dealtGuarantee.targetLabel"),stack:!0,children:e.jsx(pe,{value:B,onValueChange:o=>X(o),disabled:te,options:[{value:"0",label:t("cakeduel.debug.dealtGuarantee.targetPlayer")},{value:"1",label:t("cakeduel.debug.dealtGuarantee.targetNori")}]})}),e.jsx(_,{label:t("cakeduel.debug.dealtGuarantee.cardLabel"),stack:!0,children:e.jsx(pe,{value:D,onValueChange:o=>ie(o),disabled:te||C.length===0,placeholder:t("cakeduel.debug.dealtGuarantee.cardPlaceholder"),options:C.map(o=>({value:o,label:o}))})}),e.jsx(I,{children:t("cakeduel.debug.dealtGuarantee.helpText")})]}),e.jsx(v,{title:"Challenge Reveal",children:e.jsx("div",{className:"flex flex-col gap-[var(--dbg-row-gap)]",children:Cs.map(o=>e.jsx(p,{variant:"outline",disabled:f,onClick:()=>h(o),children:f&&Mt()?"Playing...":o.label},o.id))})}),e.jsxs(v,{title:"Timing",children:[e.jsx(S,{label:"Flip stagger",value:P,min:50,max:1500,step:50,onValueChange:$,formatValue:o=>`${o}ms`}),e.jsx(S,{label:"Result hold",value:L,min:200,max:5e3,step:100,onValueChange:d,formatValue:o=>`${o}ms`}),e.jsx(F,{children:e.jsx(p,{variant:"ghost",onClick:Z,children:"Reset to defaults"})})]}),e.jsxs(v,{title:"State",children:[e.jsxs(We,{children:[e.jsx(T,{label:"activeEffect",value:m?m.type:"null",tone:m?"warn":"muted"}),e.jsx(T,{label:"isPlaying",value:Mt()?"true":"false"}),i&&e.jsx(T,{label:"zones",tone:"muted",value:`Hand ${i.playerHand.length} | Opp ${i.opponentHand.length} | Atk ${i.attackPile.length} | Blk ${i.blockPile.length} | Deck ${i.deckCount}`})]}),m&&e.jsx(kt,{maxH:"8rem",children:JSON.stringify(m,(o,N)=>N instanceof Map?Object.fromEntries(N):N,2)})]})]})}function js(){const t=ge(n=>n.debugCakeOverride);return t?e.jsxs(I,{children:["Override: Player ",t.playerCakes," / Nori ",t.noriCakes]}):null}function Ps(t=!0){const n=O(i=>i.registerTab),s=O(i=>i.unregisterTab),a=De("cakeduel");l.useEffect(()=>{if(!t||!a){s("cakeduel");return}return n({id:"cakeduel",label:"Cake Duel",render:()=>e.jsx(ks,{})}),()=>s("cakeduel")},[t,n,a,s])}function Zt(t){return!t||typeof t!="object"||Array.isArray(t)?null:t}function ws(){const t=Wn(),n=gt(M=>M.queue),s=gt(M=>M.dismiss),a=gt(M=>M.dismissAll),i=Ct(),m=On(),[f,y]=l.useState(Gn()),E=l.useCallback(M=>{Un(M),y(M)},[]),[x,u]=l.useState("Test notification"),[b,B]=l.useState("Subtitle"),[z,D]=l.useState("Hello from the Debug tab."),[k,q]=l.useState(""),[P,$]=l.useState("system"),L=l.useCallback(()=>{const M=k.trim();t({title:x||"Test",subtitle:b||void 0,body:z||void 0,appId:P||void 0,autoDismissMs:M===""?void 0:Number(M)})},[t,x,b,z,P,k]),[d,C]=l.useState(null),[V,c]=l.useState(!1),X=l.useCallback(async()=>{if(i){c(!0);try{const M=await zn(i,{artifactType:"mail"});C(M)}catch(M){console.warn("[NotificationsDebug] mail fetch failed:",M),C([])}finally{c(!1)}}},[i]),ie=l.useCallback(()=>{t({appId:"mail",title:"Nori",subtitle:"Welcome to the data sea",body:"This is a debug-only mail notification — no manifold change occurred."})},[t]),he=l.useCallback(M=>{const U=Zt(M.data);U&&t({appId:"mail",title:U.from??M.id,subtitle:U.subject??"(no subject)",body:(U.body_md??"").slice(0,120),onClick:()=>{$n.getState().setPendingFocusEmailId(M.id),m({appId:"mail",mode:"activate"})}})},[t,m]),[h,Z]=l.useState("From the server"),[te,o]=l.useState("Pushed via notification.debug.push"),[N,j]=l.useState("Server is the sole author of this message."),[J,W]=l.useState("system"),[re,ne]=l.useState(""),[Se,Ce]=l.useState("idle"),ue=l.useCallback(async()=>{if(i)try{await i.publishEvent(qn,{appId:J||void 0,title:h||"Server message",subtitle:te||void 0,body:N||void 0,onClick:re?{type:"open-app",appId:re}:void 0}),Ce("sent")}catch(M){console.warn("[NotificationsDebug] server-push failed:",M),Ce("error")}},[i,J,h,te,N,re]);return e.jsxs(me,{children:[e.jsxs(v,{title:"Send test notification",children:[e.jsx(_,{label:"Title",stack:!0,children:e.jsx(xe,{value:x,onChange:u})}),e.jsx(_,{label:"Subtitle",stack:!0,children:e.jsx(xe,{value:b,onChange:B})}),e.jsx(_,{label:"Body",stack:!0,children:e.jsx(xe,{value:z,onChange:D})}),e.jsx(_,{label:"App id (icon)",stack:!0,children:e.jsx(xe,{value:P,onChange:$,placeholder:"mail, system, …"})}),e.jsx(_,{label:"Auto-dismiss ms (empty = sticky)",stack:!0,children:e.jsx(xe,{value:k,onChange:q,placeholder:"sticky"})}),e.jsxs(F,{children:[e.jsxs(p,{onClick:L,children:[e.jsx(Hn,{className:"h-3 w-3"})," Push"]}),e.jsx(ae,{label:"Mute notify sfx",checked:f,onCheckedChange:E})]})]}),e.jsxs(v,{title:"Mail simulator (client-derived)",children:[e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:ie,children:"Fire fake mail notification"}),e.jsx(p,{variant:"outline",onClick:Kn,children:"Forget seen mails"}),e.jsx(p,{variant:"outline",onClick:X,disabled:!i||V,children:V?"Loading…":"List mail artifacts"})]}),d&&d.length===0&&e.jsx(Ge,{children:"No visible mail artifacts."}),d&&d.length>0&&e.jsx("div",{className:"flex flex-col gap-1",children:d.map(M=>{const U=Zt(M.data);return e.jsx(_,{label:e.jsxs("span",{className:"flex min-w-0 flex-col",children:[e.jsx("span",{className:"truncate font-medium text-foreground",children:U?.subject??M.id}),e.jsx("span",{className:"truncate",children:U?.from??M.id})]}),children:e.jsx(p,{variant:"outline",onClick:()=>he(M),children:"Re-notify"})},M.id)})})]}),e.jsxs(v,{title:"Server-push simulator (round trip)",children:[e.jsx(_,{label:"Title",stack:!0,children:e.jsx(xe,{value:h,onChange:Z})}),e.jsx(_,{label:"Subtitle",stack:!0,children:e.jsx(xe,{value:te,onChange:o})}),e.jsx(_,{label:"Body",stack:!0,children:e.jsx(xe,{value:N,onChange:j})}),e.jsx(_,{label:"App id",stack:!0,children:e.jsx(xe,{value:J,onChange:W})}),e.jsx(_,{label:"onClick → open-app",stack:!0,children:e.jsx(xe,{value:re,onChange:ne,placeholder:"(optional appId, e.g. mail)"})}),e.jsxs(F,{children:[e.jsx(p,{onClick:ue,disabled:!i,children:"Push from server"}),Se==="sent"&&e.jsx(I,{children:"Sent. Banner should appear."}),Se==="error"&&e.jsx(I,{tone:"error",children:"Failed — see console."})]}),e.jsxs(I,{children:["Round-trips through ",e.jsx("code",{children:"notification.debug.push"})," → server",e.jsx("code",{children:" pushNotification()"})," → ",e.jsx("code",{children:"notification.pushed"})," → client."]})]}),e.jsxs(v,{title:`Active queue (${n.length})`,children:[n.length===0&&e.jsx(Ge,{children:"Queue is empty."}),n.map(M=>e.jsx(_,{label:e.jsxs("span",{className:"flex min-w-0 flex-col",children:[e.jsx("span",{className:"truncate font-medium text-foreground",children:M.title}),e.jsxs("span",{className:"flex min-w-0 gap-2 truncate",children:[e.jsx("span",{children:M.appId??"—"}),e.jsx("span",{className:"truncate",children:M.subtitle??M.body??""})]})]}),children:e.jsx(p,{icon:!0,variant:"outline",onClick:()=>s(M.id),children:e.jsx(Sa,{className:"h-3 w-3"})})},M.id)),n.length>0&&e.jsx(p,{variant:"outline",onClick:a,children:"Dismiss all"})]})]})}function Ts(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("notifications");return}return n({id:"notifications",label:"Notifications",render:()=>e.jsx(ws,{})}),()=>s("notifications")},[t,n,s])}const As=we({agentId:ce().optional()}).strict(),Is=we({agentId:ce(),storytellerWsUrl:ce().nullable(),storytellerInstanceId:ce().nullable()}).strict(),Es=Ie("debug.chat_storyteller.request",As),Rs=Ie("debug.chat_storyteller.response",Is);ot(Es,Rs,{scope:"session",defaultTimeoutMs:3e3});const Ns=we({text:ce().min(1),clientRefId:ce().optional(),ephemeral:Oe().optional(),emotion:yt(an).optional()}).strict(),Ms=Ie("debug.chat_inject_talk.request",Ns),cn=we({agentId:ce().optional()}).strict(),_s=we({id:ce(),kind:yt(["activity","chat"]),segmentClass:yt(["relaxed","protected"]),cartridgeId:ce().nullable(),open:Oe(),msgCount:ye().int(),estTokens:ye().int()}).strict(),Ds=we({id:ce(),label:ce(),description:ce(),messageCount:ye().int(),estTokens:ye().int()}).strict(),Ls=we({ok:Oe(),error:ce().nullable(),usageNow:ye(),budgetTokens:ye(),usageRatio:ye(),estimated:Oe(),overheadTokens:ye(),recencyTokens:ye(),messageCount:ye().int(),segments:Tt(_s),scenarios:Tt(Ds)}).strict(),Vs=we({agentId:ce().optional(),scenarioId:ce().min(1)}).strict(),Fs=we({ok:Oe(),error:ce().nullable(),appendedMessages:ye().int(),estTokens:ye().int()}).strict(),Bs=we({ok:Oe(),error:ce().nullable(),removedMessages:ye().int()}).strict(),Os=ot(Ie("debug.chat_context.stats.request",cn),Ie("debug.chat_context.stats.response",Ls),{scope:"session",defaultTimeoutMs:5e3}),Gs=ot(Ie("debug.chat_context.append.request",Vs),Ie("debug.chat_context.append.response",Fs),{scope:"session",defaultTimeoutMs:3e4}),Us=ot(Ie("debug.chat_context.reset.request",cn),Ie("debug.chat_context.reset.response",Bs),{scope:"session",defaultTimeoutMs:3e4}),zs=[{value:"none",label:"（无情绪）"},...an.map(t=>({value:t,label:t}))];function $s(){const t=Ct(),[n,s]=l.useState("你好，玩家。我在「海」里看到你了。"),[a,i]=l.useState("none"),[m,f]=l.useState("idle"),y=l.useRef(crypto.randomUUID()),E=l.useCallback(b=>{s(b),y.current=crypto.randomUUID(),f("idle")},[]),x=l.useCallback(b=>{i(Qn(b)?b:"none"),y.current=crypto.randomUUID(),f("idle")},[]),u=l.useCallback(async()=>{if(!(!t||n.trim()===""))try{await t.publishEvent(Ms,{text:n,clientRefId:y.current,...a!=="none"?{emotion:a}:{}}),f("sent")}catch(b){console.warn("[InjectTalkDebug] publish failed:",b),f("error")}},[t,n,a]);return e.jsxs(me,{children:[e.jsxs(v,{title:"Make Nori say it",children:[e.jsx(_,{label:"Line",stack:!0,children:e.jsx(xe,{value:n,onChange:E,placeholder:"Authored line for Nori to speak…"})}),e.jsx(_,{label:"Emotion",stack:!0,children:e.jsx(pe,{value:a,onValueChange:x,options:zs})}),e.jsxs(F,{children:[e.jsxs(p,{onClick:u,disabled:!t||n.trim()==="",children:[e.jsx(xa,{className:"h-3 w-3"})," Make Nori say it"]}),m==="sent"&&e.jsx(I,{children:"Sent. Held while a fullscreen game is open."}),m==="error"&&e.jsx(I,{tone:"error",children:"Failed — see console."})]}),e.jsxs(I,{children:["Authored verbatim → ",e.jsx("code",{children:"debug.chat_inject_talk.request"})," → server inject-talk queue (gated on fullscreen game) → Nori speaks with TTS + chat bubble, no LLM. Re-clicking the same line dedups via ",e.jsx("code",{children:"clientRefId"}),"; edit the line to say a new one."]})]}),e.jsx(qs,{})]})}function qs(){const t=Ct(),[n,s]=l.useState("idle"),[a,i]=l.useState(null),[m,f]=l.useState(!1),[y,E]=l.useState(!1),[x,u]=l.useState("idle"),[b,B]=l.useState(null),z=l.useCallback(async()=>{if(t){s("busy"),i(null);try{const k=await Yn(t);k.ok?s("done"):(s("error"),i(k.error))}catch(k){console.warn("[ChipResetDebug] reset failed:",k),s("error"),i(k instanceof Error?k.message:String(k))}}},[t]),D=l.useCallback(async k=>{if(t){f(k),u("busy"),B(null);try{const q=await Xn(t,{neverOverheat:k});q.ok?(u("done"),E(!0)):(f(!k),u("error"),B(q.error))}catch(q){console.warn("[ChipConfigDebug] toggle failed:",q),f(!k),u("error"),B(q instanceof Error?q.message:String(q))}}},[t]);return e.jsxs(v,{title:"Analysis chip",children:[e.jsxs(F,{children:[e.jsxs(p,{onClick:z,disabled:!t||n==="busy",children:[e.jsx(Jn,{className:"h-3 w-3"})," 重置芯片热度"]}),n==="done"&&e.jsx(I,{children:"Chip is cold — heat 0, not fried."}),n==="error"&&e.jsxs(I,{tone:"error",children:["Refused: ",a??"see console","."]})]}),e.jsx(ae,{label:y?"永不过热":"永不过热（未同步）",checked:m,onCheckedChange:D,disabled:!t||x==="busy"}),!y&&e.jsx(I,{children:"The server flag isn't read back — after a reload the switch shows off even while the world's flag is still on. Toggle once to sync."}),x==="done"&&e.jsx(I,{children:m?"On — scans spend no heat, the chip cannot fry.":"Off — normal overheat rules, pre-toggle heat intact."}),x==="error"&&e.jsxs(I,{tone:"error",children:["Refused: ",b??"see console","."]}),e.jsxs(I,{children:[e.jsx("code",{children:"manifold.chip.debug_reset"})," / ",e.jsx("code",{children:"manifold.chip.debug_config"})," — server-side chip state writes, debug builds only."]})]})}function Hs(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("inject-talk");return}return n({id:"inject-talk",label:"Inject Talk",render:()=>e.jsx($s,{})}),()=>s("inject-talk")},[t,n,s])}const Ks=[{label:"e6",target:1e6},{label:"e8",target:1e8},{label:"e10",target:1e10},{label:"e14",target:1e14},{label:"e15",target:1e15},{label:"e20",target:1e20},{label:"e25",target:1e25},{label:"e31",target:1e31},{label:"e35",target:1e35}],Ws=[{id:"owned",label:"Owned"},{id:"autoplay",label:"Autoplay"},{id:"manual",label:"Manual"}],Qs=[{label:"+1m",seconds:60},{label:"+10m",seconds:600},{label:"+1h",seconds:3600},{label:"+6h",seconds:21600},{label:"+12h",seconds:43200},{label:"+24h",seconds:86400}],Ys=[{label:"+100",amount:100},{label:"+1K",amount:1e3},{label:"+10K",amount:1e4}];function Xs(){const t=ta();return t.phase==="ready"?na(t.worldId):null}function Js(){const t=Ae(h=>h.devGrant),n=Ae(h=>h.devMaxAll),s=Ae(h=>h.abdicate),a=Ae(h=>h.devReset),i=Ae(h=>h.devAdvanceTime),m=Ae(h=>h.devGrantFactionCoins),f=Ae(h=>h.devProof),y=Ae(h=>h.state.currentAlignment),[E,x]=l.useState(0),u=Xs(),b=u===null?null:Zn(u),B=()=>{u!==null&&aa(u),x(h=>h+1)},z=()=>{a(),B()},D=be(h=>h.params),k=be(h=>h.source),q=be(h=>h.kRef),P=be(h=>h.exponent),$=be(h=>h.stepOffset),L=be(h=>h.phase),d=be(h=>h.setParam),C=be(h=>h.setSource),V=be(h=>h.setKRef),c=be(h=>h.setExponent),X=be(h=>h.setStepOffset),ie=be(h=>h.restart),he=be(h=>h.reset);return e.jsxs(me,{children:[e.jsxs(v,{title:"Cheats",children:[e.jsx(Ne,{cols:4,children:Ks.map(({label:h,target:Z})=>e.jsx(p,{variant:"outline",onClick:()=>{const te=Ae.getState().state.compute;Z>te&&t(Z-te)},children:h},h))}),e.jsxs(Ne,{cols:2,children:[e.jsx(p,{variant:"secondary",onClick:n,children:"Max all"}),e.jsx(p,{variant:"secondary",onClick:s,children:"Abdicate"})]}),e.jsx(p,{variant:"destructive",className:"w-full",onClick:z,children:"Reset"})]}),e.jsxs(v,{title:"Local Save",children:[e.jsx(_,{label:"saved at",children:e.jsx("span",{className:"tabular-nums text-muted-foreground",children:b===null?"—":new Date(b).toLocaleTimeString()})}),e.jsx(p,{variant:"destructive",className:"w-full",onClick:B,children:"Wipe local save"})]}),e.jsx(v,{title:"Alignment",children:e.jsxs(Ne,{cols:4,children:[e.jsx(p,{variant:y===null?"default":"outline",onClick:()=>f(null),children:"None"}),ea.map(h=>e.jsx(p,{variant:y===h.id?"default":"outline",onClick:()=>f(h.id),children:h.short},h.id))]})}),e.jsx(v,{title:"Time Travel",children:e.jsx(Ne,{cols:3,children:Qs.map(({label:h,seconds:Z})=>e.jsx(p,{variant:"outline",onClick:()=>i(Z),children:h},h))})}),e.jsx(v,{title:"Faction Coins",children:e.jsx(Ne,{cols:3,children:Ys.map(({label:h,amount:Z})=>e.jsx(p,{variant:"outline",onClick:()=>m(Z),children:h},h))})}),e.jsxs(v,{title:"Marginal Growth",children:[e.jsx(_,{label:"Source",stack:!0,children:e.jsx(Ne,{cols:3,className:"w-full",children:Ws.map(({id:h,label:Z})=>e.jsx(p,{variant:k===h?"default":"outline",onClick:()=>C(h),children:Z},h))})}),e.jsxs(Ne,{cols:2,children:[e.jsx(p,{variant:"outline",onClick:ie,children:"Restart"}),e.jsx(p,{variant:"outline",onClick:he,children:"Defaults"})]}),e.jsx(S,{label:"kRef",value:q,min:5,max:1e3,step:1,onValueChange:V,formatValue:h=>h.toFixed(1)}),e.jsx(S,{label:"exp",value:P,min:.5,max:30,step:.1,onValueChange:c,formatValue:h=>h.toFixed(2)}),e.jsx(S,{label:"step0",value:$,min:0,max:Math.max(1,D.maxSteps-1),step:1,onValueChange:X,formatValue:h=>Math.round(h).toLocaleString()}),e.jsx(_,{label:"phase",children:e.jsxs("span",{className:"tabular-nums text-muted-foreground",children:[L.toFixed(3),k==="owned"&&L>1&&e.jsx("span",{className:"text-amber-500",children:" (clamped)"})]})}),e.jsx(S,{label:"n",value:D.steps,min:0,max:D.maxSteps,step:1,onValueChange:h=>d("steps",h),formatValue:h=>Math.round(h).toLocaleString(),disabled:k!=="manual"}),e.jsx(S,{label:"width",value:D.lineWidth,min:.6,max:4,step:.1,onValueChange:h=>d("lineWidth",h),formatValue:h=>h.toFixed(1)}),e.jsx(S,{label:"scale",value:D.renderScale,min:.25,max:10,step:.25,onValueChange:h=>d("renderScale",h),formatValue:h=>`${h.toFixed(2)}x`}),e.jsx(S,{label:"alpha",value:D.renderOpacity,min:0,max:1,step:.05,onValueChange:h=>d("renderOpacity",h),formatValue:h=>h.toFixed(2)}),e.jsx(S,{label:"blur",value:D.renderBlur,min:0,max:64,step:.5,onValueChange:h=>d("renderBlur",h),formatValue:h=>h.toFixed(2)}),e.jsx(S,{label:"tint",value:D.renderTint,min:0,max:16777215,step:1118481,onValueChange:h=>d("renderTint",h),formatValue:h=>`#${Math.round(h).toString(16).padStart(6,"0")}`})]})]})}function Zs(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("idle");return}return n({id:"idle",label:"Compute",render:()=>e.jsx(Js,{})}),()=>s("idle")},[t,n,s])}function el(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{{s("nori");return}},[t,n,s])}const _e=t=>Math.round(t).toLocaleString("en-US");function tl(t){return t>=.8?"error":t>=.6?"warn":"ok"}function nl(t){return t>=.8?"bg-red-500":t>=.6?"bg-amber-500":"bg-emerald-500"}function al(){const[t,n]=l.useState(null),[s,a]=l.useState(null),[i,m]=l.useState(!1),[f,y]=l.useState(null),[E,x]=l.useState(null),u=l.useRef(!0);l.useEffect(()=>(u.current=!0,()=>{u.current=!1}),[]);const b=l.useCallback(async()=>{m(!0);try{const $=await(await Ke()).call(Os,{});if(!u.current)return;if(!$.ok){a($.error??"unknown error");return}n($),a(null)}catch(P){if(console.warn("[NoriContextDebug] stats failed:",P),!u.current)return;a("no response — server not in debug mode? (ARCADE_DEBUG / NODE_ENV=development)")}finally{u.current&&m(!1)}},[]);l.useEffect(()=>{b()},[b]);const B=l.useCallback(async(P,$)=>{y(P),x(null);try{const L=await $(await Ke());if(!u.current)return;x(L.ok?{tone:"ok",text:L.successText}:{tone:"error",text:`Refused: ${L.error??"unknown error"}.`})}catch(L){if(console.warn(`[NoriContextDebug] ${P} failed:`,L),!u.current)return;x({tone:"error",text:`${P} failed — see console.`})}finally{u.current&&y(null),b()}},[b]),z=l.useCallback(P=>B(P,async $=>{const L=await $.call(Gs,{scenarioId:P});return{...L,successText:`Appended ${L.appendedMessages} messages (~${_e(L.estTokens)} tokens) from ${P}.`}}),[B]),D=l.useCallback(()=>B("reset",async P=>{const $=await P.call(Us,{});return{...$,successText:`Removed the ${$.removedMessages} messages present at request time.`}}),[B]),k=t?.usageRatio??0,q=t?.estimated?"~":"";return e.jsxs(me,{children:[e.jsxs(v,{title:"Working set",right:e.jsx(p,{variant:"ghost",icon:!0,onClick:()=>void b(),disabled:i,children:e.jsx(ga,{className:K("h-3 w-3",i&&"animate-spin")})}),children:[s&&e.jsx(I,{tone:"error",children:s}),t&&e.jsxs(e.Fragment,{children:[e.jsx("div",{className:"h-2 w-full overflow-hidden rounded-full bg-muted",children:e.jsx("div",{className:K("h-full rounded-full transition-[width]",nl(k)),style:{width:`${Math.min(100,k*100).toFixed(1)}%`}})}),e.jsx(T,{label:"Usage / budget",tone:tl(k),value:`${q}${_e(t.usageNow)} / ${_e(t.budgetTokens)} tok (${(k*100).toFixed(1)}%)`}),e.jsx(T,{label:"Overhead (system + kernel ctx + tools)",value:`~${_e(t.overheadTokens)} tok`}),e.jsx(T,{label:"Recency window (never compacted)",value:`~${_e(t.recencyTokens)} tok`}),e.jsx(T,{label:"Messages in history",value:t.messageCount}),t.estimated&&e.jsx(I,{children:"Pure estimate — no engine-reported usage yet. Numbers re-ground on the next LLM turn."})]}),!t&&!s&&e.jsx(I,{children:"Loading…"})]}),e.jsxs(v,{title:"Append scenario",children:[t?.scenarios.map(P=>e.jsxs("div",{className:"flex items-center justify-between gap-2",children:[e.jsxs("div",{className:"min-w-0",children:[e.jsx("div",{className:"truncate",children:P.label}),e.jsxs("div",{className:"text-muted-foreground tabular-nums",children:[P.messageCount," msgs · ~",_e(P.estTokens)," tok"]})]}),e.jsxs(p,{onClick:()=>void z(P.id),disabled:f!==null,children:[e.jsx(pa,{className:"h-3 w-3"})," Append"]})]},P.id)),t&&t.scenarios.length===0&&e.jsx(I,{children:"No scenarios reported by the server."}),E&&e.jsx(I,{tone:E.tone,children:E.text}),e.jsxs(I,{children:["Replayed real sessions append VERBATIM into Nori's history — speak/game tool calls and results as actual tool_use/tool_result blocks, turn grouping and mount/unmount markers intact, ids freshly remapped. No LLM turn, no TTS. Append repeatedly to stack load, then chat to probe system-prompt recall."," ",e.jsx("code",{children:"debug.chat_context.append"}),", debug builds only."]})]}),e.jsxs(v,{title:"Reset",children:[e.jsx(F,{children:e.jsxs(p,{variant:"destructive",onClick:()=>void D(),disabled:f!==null,children:[e.jsx(fa,{className:"h-3 w-3"})," Reset context"]})}),e.jsx(I,{children:"Removes every non-system message present at request time (an in-flight turn finishes first and its output survives). Kernel context republishes next turn; the persisted session records the removal, so it survives reloads."})]}),t&&t.segments.length>0&&e.jsx(v,{title:`Segments (${t.segments.length})`,children:e.jsx("div",{className:"flex flex-col gap-px",children:t.segments.map(P=>e.jsxs("div",{className:"flex items-center justify-between gap-2 tabular-nums",children:[e.jsx("span",{className:"min-w-0 truncate font-mono text-muted-foreground",children:P.id}),e.jsxs("span",{className:"shrink-0",children:[P.segmentClass,P.open?" · open":""," · ",P.msgCount," msgs · ~",_e(P.estTokens)," tok"]})]},P.id))})})]})}function sl(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("nori-context");return}return n({id:"nori-context",label:"Nori Context",render:()=>e.jsx(al,{})}),()=>s("nori-context")},[t,n,s])}const ll=100;function oe(t){const n=st(a=>a.tuning[t]),s=st(a=>a.setTuning);return[n,a=>s({[t]:a})]}function il(){const t=st(U=>U.resetTuning),n=st(U=>U.tuning.requiredMs),s=it(),[a,i]=l.useState(_t);l.useEffect(()=>{if(s)return;const U=window.setInterval(()=>{const Ee=_t();i(Me=>rt(Me,Ee)?Me:Ee)},ll);return()=>window.clearInterval(U)},[s]);const[m,f]=oe("requiredMs"),[y,E]=oe("horizontalDominance"),[x,u]=oe("minSpeedX"),[b,B]=oe("maxSampleGapMs"),[z,D]=oe("skullTopBand"),[k,q]=oe("leashHeadWidths"),[P,$]=oe("vxToYawDeg"),[L,d]=oe("maxYawDeg"),[C,V]=oe("rollPerYaw"),[c,X]=oe("pressPitchDeg"),[ie,he]=oe("springStiffness"),[h,Z]=oe("springDamping"),[te,o]=oe("strokeSmoothTau"),[N,j]=oe("strokeReleaseTau"),[J,W]=oe("soundLevel"),[re,ne]=oe("soundFreqScale"),[Se,Ce]=oe("soundBodyGain"),[ue,M]=l.useState(.15);return e.jsxs(me,{children:[e.jsxs(v,{title:"Live state",children:[e.jsxs(We,{children:[e.jsx(T,{label:"Progress",value:`${(a.progressMs/1e3).toFixed(1)} / ${(n/1e3).toFixed(1)} s`,tone:a.progressMs>=n?"ok":"default"}),e.jsx(T,{label:"Armed (touched head)",value:a.armed?"yes":"no",tone:a.armed?"ok":"default"}),e.jsx(T,{label:"Stroking now",value:a.patting?"yes":"no"}),e.jsx(T,{label:"Stroke velocity",value:`${a.strokeVX.toFixed(2)} head-widths/s`}),e.jsx(T,{label:"Completions",value:a.completions}),e.jsx(T,{label:"Last pointer phase",value:a.lastPhase||"—"}),e.jsx(T,{label:"Pattable (state gate)",value:a.lastPattable?"yes":"no",tone:a.lastPattable?"default":"warn"}),e.jsx(T,{label:"Drag pressed on desktop",value:a.lastOnSurface?"yes":"no",tone:a.lastOnSurface?"default":"warn"}),e.jsx(T,{label:"In head-top zone",value:a.lastInZone?"yes":"no"}),e.jsx(T,{label:"Pointer (model)",value:`${a.lastModelX.toFixed(2)}, ${a.lastModelY.toFixed(2)}`})]}),e.jsx("p",{className:"text-[length:var(--dbg-text-value)] text-muted-foreground",children:'Gate rows update on pointer press-drags. The desktop-surface check applies to the initial press only; "Armed" means the drag touched the head-top zone — from then on strokes count while the pointer stays within the leash around her head.'})]}),e.jsxs(v,{title:"Gesture",children:[e.jsx(S,{label:"Required pat time",value:m,onValueChange:f,min:500,max:8e3,step:100,formatValue:U=>`${(U/1e3).toFixed(1)}`,unit:"s"}),e.jsx(S,{label:"Horizontal dominance (|dx| ≥ k·|dy|)",value:y,onValueChange:E,min:0,max:3,step:.1,unit:"×"}),e.jsx(S,{label:"Min stroke speed",value:x,onValueChange:u,min:0,max:1,step:.01,unit:"hw/s"}),e.jsx(S,{label:"Max sample gap",value:b,onValueChange:B,min:50,max:1e3,step:10,formatValue:U=>U.toFixed(0),unit:"ms"}),e.jsx(S,{label:"Head-top zone (skull band)",value:z,onValueChange:D,min:.1,max:1,step:.05,formatValue:U=>`top ${(U*100).toFixed(0)}%`}),e.jsx(S,{label:"Armed leash (around skull)",value:k,onValueChange:q,min:0,max:3,step:.05,unit:"hw"})]}),e.jsxs(v,{title:"Physical response",children:[e.jsx(S,{label:"Velocity → yaw",value:P,onValueChange:$,min:0,max:30,step:.5,unit:"°/(hw/s)"}),e.jsx(S,{label:"Max yaw",value:L,onValueChange:d,min:0,max:30,step:.5,unit:"°"}),e.jsx(S,{label:"Roll per yaw",value:C,onValueChange:V,min:-2,max:2,step:.05,unit:"×"}),e.jsx(S,{label:"Press-down pitch",value:c,onValueChange:X,min:-15,max:0,step:.5,unit:"°"}),e.jsx(S,{label:"Spring stiffness",value:ie,onValueChange:he,min:5,max:300,step:5,formatValue:U=>U.toFixed(0)}),e.jsx(S,{label:"Spring damping",value:h,onValueChange:Z,min:1,max:40,step:.5}),e.jsx(S,{label:"Stroke smoothing τ",value:te,onValueChange:o,min:.01,max:.5,step:.01,unit:"s"}),e.jsx(S,{label:"Stroke release τ",value:N,onValueChange:j,min:.05,max:2,step:.05,unit:"s"})]}),e.jsxs(v,{title:"Pat sound (procedural friction synth)",children:[e.jsx(S,{label:"Level",value:J,onValueChange:W,min:0,max:1,step:.05}),e.jsx(S,{label:"Frequency scale",value:re,onValueChange:ne,min:.3,max:1.5,step:.05,formatValue:U=>`${U.toFixed(2)}×`}),e.jsx(S,{label:"Body (low) gain",value:Se,onValueChange:Ce,min:0,max:1,step:.05}),e.jsx(S,{label:"Rub speed",value:ue,onValueChange:M,min:0,max:1,step:.05}),e.jsxs(F,{children:[e.jsx(p,{onClick:()=>tt(ue,2),children:"Rub 2s"}),e.jsx(p,{variant:"outline",onClick:()=>tt(.1,2),children:"Slow"}),e.jsx(p,{variant:"outline",onClick:()=>tt(.5,2),children:"Medium"}),e.jsx(p,{variant:"outline",onClick:()=>tt(1,2),children:"Fast"}),e.jsx(p,{variant:"outline",onClick:sa,children:"Stop"})]}),e.jsx("p",{className:"text-[length:var(--dbg-text-value)] text-muted-foreground",children:"Continuous noise-based friction synth (~/live2d/noriPatSound) — the audition feeds a sinusoidal hand velocity into the same drive path the real pat gesture uses, so swells and reversal dips match in-game behavior."})]}),e.jsx(F,{children:e.jsx(p,{variant:"outline",onClick:t,children:"Reset to defaults"})}),e.jsx("p",{className:"text-[length:var(--dbg-text-value)] text-muted-foreground",children:"These ARE the live values (runtime SSOT in useNoriPatStore) — edits apply to the next pointer sample/frame. Bake keepers into DEFAULT_NORI_PAT_TUNING."})]})}function rl(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("pat");return}return n({id:"pat",label:"Pat",render:()=>e.jsx(il,{})}),()=>s("pat")},[t,n,s])}const ol={pictionary:"Pictionary",chess:"Chess",codenames:"Codenames",cakeduel:"Cake Duel"},cl=new Map(Object.entries(at).map(([t,n])=>[`${n.group}/${n.index}`,t.split("_").map(s=>s.charAt(0)+s.slice(1).toLowerCase()).join(" ")]));function xt(t){const n=[];return t.motion&&n.push(cl.get(`${t.motion.group}/${t.motion.index}`)??`${t.motion.group}[${t.motion.index}]`),t.expression&&n.push(`${t.expression.replace(/^\d+_/,"")} ${t.expressionSeconds??3}s`),n.join(" + ")||"(empty)"}function dl(t){const n=Math.round((t.chance??1)*100);return`${t.priority} · reacts ${n}% · ${t.variants.length} outs`}const ul={none:"no tell",confident:"confident (Smile 2.5s)",nervous:"nervous (Troubled 2.5s)"};function gl(t){const n=[];for(const a of["bluff","honest"]){const i={none:0,confident:0,nervous:0};for(let f=0;f<t;f++)i[sn(a)]++;const m=f=>`${(f/t*100).toFixed(1)}%`;n.push(`${a.padEnd(6)}  none ${m(i.none)}  confident ${m(i.confident)}  nervous ${m(i.nervous)}`)}const s=ra;return n.push(""),n.push(`design  bluff: confident ${s.bluff.confident} nervous ${s.bluff.nervous}`),n.push(`        honest: confident ${s.honest.confident} nervous ${s.honest.nervous}`),n.join(`
-`)}function hl(){const t=nn(d=>d.model),[n,s]=l.useState(!1),[a,i]=l.useState(null),[m,f]=l.useState(0),[y,E]=l.useState(ht),[x,u]=l.useState(null),[b,B]=l.useState(null);l.useEffect(()=>{if(!n)return;const d=window.setInterval(()=>f(Dt()),250);return()=>window.clearInterval(d)},[n]);const z=d=>{const C=pt(d.spec,{ignoreCooldown:!n});i({label:d.label,outcome:C.outcome,variantText:C.variant?xt(C.variant):null}),f(Dt())},D=(d,C)=>{const V=pt(d.spec,{ignoreChance:!0,ignoreCooldown:!0,variantIndex:C});i({label:d.label,outcome:V.outcome,variantText:V.variant?xt(V.variant):null})},k=d=>{ia(d),E(ht())},q=()=>{oa(),E(ht())},P=d=>{const C=sn(d);C!=="none"&&pt(ca[C],{ignoreCooldown:!0}),u({kind:d,tell:C})},L=(()=>{if(!a)return{text:"",tone:"muted"};switch(a.outcome){case"played":return{text:`${a.label} → ${a.variantText}`,tone:"ok"};case"skipped_chance":return{text:`${a.label} → no reaction (lost the roll)`,tone:"warn"};case"skipped_cooldown":return{text:`${a.label} → skipped (motion cooldown)`,tone:"warn"};case"no_model":return{text:"No Live2D model mounted",tone:"error"};default:return a.outcome}})();return e.jsxs(me,{children:[e.jsxs(v,{title:"Engine",children:[e.jsx(ae,{id:"reaction-respect-cooldown",label:"Respect motion cooldown",checked:n,onCheckedChange:s}),e.jsx(I,{children:"Roll = fire like the game would: no-reaction roll, then a weight-sampled out. Numbered buttons force one exact out."}),n?e.jsx(I,{tone:m>0?"warn":"ok",children:m>0?`Minor motions blocked for ${(m/1e3).toFixed(1)}s (minor ${Lt.minor/1e3}s / major ${Lt.major/1e3}s / critical always)`:"Motion budget ready"}):null,a?e.jsx(I,{tone:L.tone,children:L.text}):null,t?null:e.jsx(I,{tone:"error",children:"No Live2D model mounted."})]}),Object.keys(Vt).map(d=>e.jsx(v,{title:ol[d],children:Object.values(Vt[d]).map(C=>e.jsxs("div",{className:"flex flex-col gap-1",children:[e.jsx(_,{label:C.label,hint:dl(C.spec),children:e.jsx(p,{variant:"outline",onClick:()=>z(C),disabled:!t,children:"Roll"})}),e.jsx(F,{children:C.spec.variants.map((V,c)=>e.jsxs(p,{variant:"ghost",onClick:()=>D(C,c),disabled:!t,className:"text-muted-foreground",children:[c+1,"· ",xt(V)]},c))}),C.note?e.jsx(I,{className:"text-[length:var(--dbg-text-value)]",children:C.note}):null]},C.id))},d)),e.jsxs(v,{title:"Phase moods (persistent)",children:[e.jsxs(F,{children:[la.map(d=>e.jsx(p,{variant:y===d.expression?"default":"outline",onClick:()=>k(d.expression),disabled:!t,children:d.label},d.id)),e.jsx(p,{variant:"ghost",onClick:q,disabled:!t||!y,children:"Clear mood"})]}),e.jsxs(I,{children:[y?`Active mood: ${y}`:"No active mood"," — moods hold until cleared and layer with one-shot reactions."]})]}),e.jsxs(v,{title:"Cake Duel acting (tell layer)",children:[e.jsx(I,{children:"On claim, a micro-expression is sampled with a soft correlation to the truth: nervous weakly signals bluff, confident weakly signals honest."}),e.jsxs(F,{children:[e.jsx(p,{variant:"outline",onClick:()=>P("bluff"),disabled:!t,children:"Claim (bluffing)"}),e.jsx(p,{variant:"outline",onClick:()=>P("honest"),disabled:!t,children:"Claim (honest)"}),e.jsx(p,{variant:"ghost",onClick:()=>B(gl(2e3)),children:"Sample 2000"})]}),x?e.jsxs(I,{tone:x.tell==="none"?"muted":"ok",children:[x.kind," claim → ",ul[x.tell]]}):null,b?e.jsx(kt,{children:b}):null]})]})}function pl(t=!0){const n=O(a=>a.registerTab),s=O(a=>a.unregisterTab);l.useEffect(()=>{if(!t){s("reaction-lab");return}return n({id:"reaction-lab",label:"Reactions",render:()=>e.jsx(hl,{})}),()=>s("reaction-lab")},[t,n,s])}function ml(t=!0){const n=O(i=>i.registerTab),s=O(i=>i.unregisterTab),a=De("codenames");l.useEffect(()=>{{s("codenames-thinking");return}},[t,n,a,s])}function kl(){const t=O(u=>u.tabs),n=O(u=>u.activeTab),s=O(u=>u.setActiveTab),a=O(u=>u.requestedTab),i=O(u=>u.clearRequestedTab),[m,f]=l.useState(()=>new Set);Ra(de),Ma(de),Va(de),Wa(de),as(de),is(de),fs(de),Ps(de),Ts(de),Hs(de),Zs(de),el(de),sl(de),rl(de),pl(de),ml(de),l.useEffect(()=>{a&&t.some(u=>u.id===a)&&(s(a),i())},[a,t,s,i]),l.useEffect(()=>{t.length!==0&&(!n||!t.some(u=>u.id===n))&&s(t[0].id)},[n,t,s]);const y=t.find(u=>u.id===(n??t[0]?.id))??t[0]??null,E=y?.id??null;if(l.useEffect(()=>{E&&f(u=>{if(u.has(E))return u;const b=new Set(u);return b.add(E),b})},[E]),!y)return e.jsx("div",{className:"flex h-full items-center justify-center text-muted-foreground",children:"No debug tabs available"});const x=t.filter(u=>u.id===y.id||m.has(u.id));return e.jsxs("div",{className:"flex h-full",children:[e.jsx("nav",{className:"w-32 shrink-0 overflow-y-auto border-r bg-muted/30 p-1",children:e.jsx("ul",{className:"flex flex-col gap-px",children:t.map(u=>{const b=u.id===y.id;return e.jsx("li",{children:e.jsx("button",{type:"button",onClick:()=>s(u.id),className:K("block w-full truncate rounded px-2 py-1 text-left text-[12.5px] leading-snug transition-colors",b?"bg-primary/10 text-primary font-medium":"text-muted-foreground hover:bg-muted hover:text-foreground"),children:u.label})},u.id)})})}),e.jsx("div",{className:"flex-1 overflow-hidden bg-muted/10",children:x.map(u=>e.jsx("div",{className:K("h-full",u.id===y.id?"":"hidden",u.fullBleed?"overflow-hidden":"debug-tab overflow-auto p-2.5"),children:u.render()},u.id))})]})}export{kl as Debug};
+import { j as e, f as de } from "./index-CyHAbkO5.js";
+import {
+  r as l,
+  u as en,
+  o as we,
+  _ as yt,
+  c as Oe,
+  s as ce,
+  a as Tt,
+  b as ye,
+} from "./i18n-DtIC1LRi.js";
+import {
+  f as lt,
+  i as K,
+  aG as tn,
+  bx as un,
+  B as gn,
+  dv as hn,
+  dw as pn,
+  dx as mn,
+  dy as fn,
+  dz as bn,
+  dA as xn,
+  dB as yn,
+  dC as Sn,
+  dD as nn,
+  dE as vn,
+  dF as Cn,
+  dG as Fe,
+  dH as Pe,
+  dI as At,
+  dJ as at,
+  dK as kn,
+  dL as jn,
+  dM as O,
+  dN as le,
+  dO as et,
+  aP as ut,
+  dP as It,
+  dQ as Pn,
+  dR as wn,
+  dS as Tn,
+  dT as ze,
+  dU as An,
+  dV as $e,
+  b8 as it,
+  aL as Q,
+  dW as In,
+  dX as En,
+  dY as rt,
+  dZ as Rn,
+  d_ as Nn,
+  d$ as Ke,
+  e0 as Et,
+  e1 as Mn,
+  e2 as _n,
+  b as St,
+  c as De,
+  e as G,
+  e3 as Y,
+  br as Dn,
+  e4 as Ln,
+  j as vt,
+  bq as H,
+  cw as ge,
+  e5 as Vn,
+  cy as Rt,
+  e6 as Nt,
+  e7 as Mt,
+  e8 as Fn,
+  e9 as Bn,
+  ea as gt,
+  z as Ct,
+  aE as On,
+  eb as Gn,
+  ec as Un,
+  aC as zn,
+  a_ as $n,
+  ed as qn,
+  ee as Hn,
+  ef as Kn,
+  eg as Wn,
+  aK as Ie,
+  eh as ot,
+  ei as an,
+  ej as Qn,
+  ek as Yn,
+  el as Xn,
+  Z as Jn,
+  ba as Ae,
+  em as Zn,
+  en as ea,
+  eo as ta,
+  ep as na,
+  eq as aa,
+  er as st,
+  es as _t,
+  et as tt,
+  eu as sa,
+  ev as ht,
+  ew as Dt,
+  ex as Lt,
+  ey as Vt,
+  ez as la,
+  ar as pt,
+  eA as ia,
+  eB as sn,
+  eC as ra,
+  eD as oa,
+  eE as ca,
+} from "./NormalApp-Cn6agT0F.js";
+import { Z as da } from "./zap-BiEriS6T.js";
+import { I as ua } from "./input-izesiKpE.js";
+import { u as be } from "./marginalGrowthStore-aMgk69c4.js";
+import { R as ga } from "./refresh-cw-D-L-0o8l.js";
+const ha = [
+    ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+    ["path", { d: "M8 12h8", key: "1wcyev" }],
+    ["path", { d: "M12 8v8", key: "napkw2" }],
+  ],
+  pa = lt("circle-plus", ha);
+const ma = [
+    [
+      "path",
+      {
+        d: "M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21",
+        key: "g5wo59",
+      },
+    ],
+    ["path", { d: "m5.082 11.09 8.828 8.828", key: "1wx5vj" }],
+  ],
+  fa = lt("eraser", ma);
+const ba = [
+    [
+      "path",
+      {
+        d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719",
+        key: "1sd12s",
+      },
+    ],
+  ],
+  xa = lt("message-circle", ba);
+const ya = [
+    ["path", { d: "M10 11v6", key: "nco0om" }],
+    ["path", { d: "M14 11v6", key: "outv1u" }],
+    ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
+    ["path", { d: "M3 6h18", key: "d0wm0j" }],
+    ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }],
+  ],
+  Sa = lt("trash-2", ya),
+  va = tn(
+    "relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+    {
+      variants: {
+        variant: {
+          default: "bg-card text-card-foreground",
+          destructive:
+            "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90",
+        },
+      },
+      defaultVariants: { variant: "default" },
+    },
+  );
+function Ca({ className: t, variant: n, ...s }) {
+  return e.jsx("div", {
+    "data-slot": "alert",
+    role: "alert",
+    className: K(va({ variant: n }), t),
+    ...s,
+  });
+}
+function He({ className: t, ...n }) {
+  return e.jsx("div", {
+    role: "list",
+    "data-slot": "item-group",
+    className: K("group/item-group flex flex-col", t),
+    ...n,
+  });
+}
+const ka = tn(
+  "group/item flex items-center border border-transparent text-sm rounded-md transition-colors [a]:hover:bg-accent/50 [a]:transition-colors duration-100 flex-wrap outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+  {
+    variants: {
+      variant: { default: "bg-transparent", outline: "border-border", muted: "bg-muted/50" },
+      size: { default: "p-4 gap-4 ", sm: "py-3 px-4 gap-2.5" },
+    },
+    defaultVariants: { variant: "default", size: "default" },
+  },
+);
+function ja({ className: t, variant: n = "default", size: s = "default", asChild: a = !1, ...i }) {
+  const m = a ? un : "div";
+  return e.jsx(m, {
+    "data-slot": "item",
+    "data-variant": n,
+    "data-size": s,
+    className: K(ka({ variant: n, size: s, className: t })),
+    ...i,
+  });
+}
+function Pa({ className: t, ...n }) {
+  return e.jsx("div", {
+    "data-slot": "item-content",
+    className: K("flex flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none", t),
+    ...n,
+  });
+}
+function wa({ className: t, ...n }) {
+  return e.jsx("div", {
+    "data-slot": "item-title",
+    className: K("flex w-fit items-center gap-2 text-sm leading-snug font-medium", t),
+    ...n,
+  });
+}
+function Ta({ className: t, ...n }) {
+  return e.jsx("div", {
+    "data-slot": "item-actions",
+    className: K("flex items-center gap-2", t),
+    ...n,
+  });
+}
+const Aa = 48,
+  Ft = [
+    0, 0, 0.00122, 0.00384, 0.00166, 0.06662, 0.07272, 0.0344, 0.0188, 0.02647, 0.03784, 0.06691,
+    0.06208, 0.05719, 0.06938, 0.03144, 0.00316, 0.00174, 0.00256, 0.00144, 0.00153, 0.00142, 71e-5,
+    0.02458, 0.06837, 0.02372, 0.0214, 0.03008, 0.03871, 0.04529, 0.01474, 0.04756, 0.05204,
+    0.04466, 0.00788, 0.00832, 0.03955, 0.05874, 0.02771, 0.03044, 0.02894, 0.04228, 0.07022,
+    0.09584, 0.08827, 0.08815, 0.1182, 0.10199, 0.04946, 0.01695, 0.00504, 0.01897, 0.07106,
+    0.08065, 0.0691, 0.00734, 0.04076, 0.05867, 0.04933, 0.00476, 0.00322, 0.00186, 0.0012, 0.00147,
+    0.00103, 0.00221, 0.00248, 0.00188, 0.00508, 0.05125, 0.04488, 0.01605, 0.00769, 0.02604,
+    0.03416, 0.04241, 0.04886, 0.0388, 0.02351, 0.01777, 0.04663, 0.05579, 0.02318, 0.0257, 0.06338,
+    0.04254, 0.01833, 0.05408, 0.0461, 0.02414, 0.02402, 0.01885, 0.0424, 0.04731, 0.04671, 0.05246,
+    0.0582, 0.05554, 0.07946, 0.07873, 0.06153, 0.01938, 0.04646, 0.06792, 0.05078, 0.06019,
+    0.07686, 0.07549, 0.06516, 0.02658, 0.00622, 0.03171, 0.08674, 0.10143, 0.04172, 0.00407,
+    0.00194, 0.00128, 0.00136, 0.00148, 0.00151, 0.00144, 0.00143, 0.03398, 0.05043, 0.01195,
+    0.02792, 0.07444, 0.07008, 0.05729, 0.09363, 0.07582, 0.09954, 0.10024, 0.08483, 0.0408,
+    0.00686, 0.00656, 0.04507, 0.06265, 0.08752, 0.07583, 0.00626, 0.00518, 0.0289, 0.04407,
+    0.02634, 0.02132, 0.03014, 0.04133, 0.05537, 0.05108, 0.04059, 0.04545, 0.00721, 0.00779,
+    0.0344, 0.05931, 0.10794, 0.03866, 0.01829, 0.06465, 0.02779, 0.01505, 0.00623, 0.00423,
+    0.00191, 0, 0,
+  ];
+function v({ title: t, right: n, className: s, contentClassName: a, children: i }) {
+  const m = t != null || n != null;
+  return e.jsxs("div", {
+    "data-slot": "card",
+    className: K(
+      "flex flex-col rounded-[var(--dbg-radius)] border bg-card text-card-foreground",
+      s,
+    ),
+    children: [
+      m &&
+        e.jsxs("div", {
+          "data-slot": "card-header",
+          className: "flex items-center justify-between gap-2 px-[var(--dbg-pad-x)] pt-2 pb-1",
+          children: [
+            e.jsx("span", {
+              "data-slot": "card-title",
+              className:
+                "text-[length:var(--dbg-text-title)] font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground/75",
+              children: t,
+            }),
+            n,
+          ],
+        }),
+      e.jsx("div", {
+        "data-slot": "card-content",
+        className: K(
+          "flex flex-col gap-[var(--dbg-field-gap)] px-[var(--dbg-pad-x)] text-[length:var(--dbg-text-label)]",
+          m ? "pb-2" : "py-2",
+          a,
+        ),
+        children: i,
+      }),
+    ],
+  });
+}
+function me({ className: t, children: n }) {
+  return e.jsx("div", {
+    "data-slot": "dbg-stack",
+    className: K("flex flex-col gap-[var(--dbg-section-gap)]", t),
+    children: n,
+  });
+}
+function _({ label: t, htmlFor: n, hint: s, stack: a = !1, className: i, children: m }) {
+  return e.jsxs("div", {
+    "data-slot": "dbg-field",
+    className: K(
+      "gap-[var(--dbg-row-gap)]",
+      a ? "flex flex-col" : "flex items-center justify-between",
+      i,
+    ),
+    children: [
+      e.jsxs("label", {
+        "data-slot": "dbg-field-label",
+        htmlFor: n,
+        className:
+          "flex items-center gap-1 text-[length:var(--dbg-text-label)] text-muted-foreground",
+        children: [
+          t,
+          s != null &&
+            e.jsx("span", {
+              className: "text-[length:var(--dbg-text-value)] text-muted-foreground/60",
+              children: s,
+            }),
+        ],
+      }),
+      e.jsx("div", {
+        "data-slot": "dbg-field-control",
+        className: K("flex items-center gap-1.5", a && "w-full"),
+        children: m,
+      }),
+    ],
+  });
+}
+function p({ className: t, icon: n = !1, children: s, ...a }) {
+  return e.jsx(gn, {
+    size: n ? "icon" : "sm",
+    className: K(
+      "h-[var(--dbg-control-h)] gap-1 text-[length:var(--dbg-text-label)] shadow-none",
+      n ? "w-[var(--dbg-control-h)]" : "px-2",
+      t,
+    ),
+    ...a,
+    children: s,
+  });
+}
+function F({ className: t, children: n }) {
+  return e.jsx("div", {
+    "data-slot": "dbg-button-row",
+    className: K("flex flex-wrap gap-[var(--dbg-row-gap)]", t),
+    children: n,
+  });
+}
+function Ne({ cols: t = 2, className: n, children: s }) {
+  return e.jsx("div", {
+    "data-slot": "dbg-button-grid",
+    className: K(
+      "grid gap-[var(--dbg-row-gap)]",
+      t === 4 ? "grid-cols-4" : t === 3 ? "grid-cols-3" : "grid-cols-2",
+      n,
+    ),
+    children: s,
+  });
+}
+function S({
+  label: t,
+  value: n,
+  min: s,
+  max: a,
+  step: i,
+  onValueChange: m,
+  disabled: f,
+  formatValue: y,
+  unit: E,
+  className: x,
+}) {
+  const u = y ? y(n) : n.toFixed(2);
+  return e.jsxs("div", {
+    "data-slot": "dbg-slider",
+    className: K("flex flex-col gap-1", x),
+    children: [
+      e.jsxs("div", {
+        className: "flex items-center justify-between gap-2",
+        children: [
+          e.jsx(hn, {
+            className: "text-[length:var(--dbg-text-label)] text-muted-foreground",
+            children: t,
+          }),
+          e.jsxs("span", {
+            className: "text-[length:var(--dbg-text-value)] tabular-nums text-muted-foreground",
+            children: [u, E ? ` ${E}` : ""],
+          }),
+        ],
+      }),
+      e.jsx(pn, {
+        value: [n],
+        min: s,
+        max: a,
+        step: i,
+        disabled: f,
+        onValueChange: (b) => m(b[0]),
+      }),
+    ],
+  });
+}
+function ae({ label: t, checked: n, onCheckedChange: s, disabled: a, id: i }) {
+  return e.jsxs(ja, {
+    size: "sm",
+    className: "gap-2 p-0",
+    children: [
+      e.jsx(Pa, {
+        children: e.jsx(wa, {
+          className: "text-[length:var(--dbg-text-label)] font-medium leading-none",
+          children: t,
+        }),
+      }),
+      e.jsx(Ta, { children: e.jsx(mn, { id: i, checked: n, onCheckedChange: s, disabled: a }) }),
+    ],
+  });
+}
+function pe({ value: t, onValueChange: n, options: s, placeholder: a, disabled: i, className: m }) {
+  return e.jsxs(fn, {
+    value: t,
+    onValueChange: n,
+    disabled: i,
+    children: [
+      e.jsx(bn, {
+        size: "sm",
+        className: K("h-[var(--dbg-control-h)] w-full text-[length:var(--dbg-text-label)]", m),
+        children: e.jsx(xn, { placeholder: a }),
+      }),
+      e.jsx(yn, {
+        children: s.map((f) =>
+          e.jsx(
+            Sn,
+            { value: f.value, className: "text-[length:var(--dbg-text-label)]", children: f.label },
+            f.value,
+          ),
+        ),
+      }),
+    ],
+  });
+}
+function xe({ value: t, onChange: n, className: s, ...a }) {
+  return e.jsx(ua, {
+    value: t,
+    onChange: (i) => n(i.target.value),
+    className: K("h-[var(--dbg-control-h)] text-[length:var(--dbg-text-label)]", s),
+    ...a,
+  });
+}
+function ln(t = "default") {
+  switch (t) {
+    case "ok":
+      return "text-emerald-500";
+    case "warn":
+      return "text-amber-500";
+    case "error":
+      return "text-red-500";
+    case "muted":
+      return "text-muted-foreground";
+    default:
+      return "text-foreground";
+  }
+}
+function T({ label: t, value: n, tone: s = "default", mono: a = !0, className: i }) {
+  return e.jsxs("div", {
+    "data-slot": "dbg-stat",
+    className: K("flex items-center justify-between gap-2", i),
+    children: [
+      e.jsx("span", {
+        className: "text-[length:var(--dbg-text-label)] text-muted-foreground",
+        children: t,
+      }),
+      e.jsx("span", {
+        className: K("text-[length:var(--dbg-text-value)] text-right", a && "tabular-nums", ln(s)),
+        children: n,
+      }),
+    ],
+  });
+}
+function We({ className: t, children: n }) {
+  return e.jsx("div", {
+    "data-slot": "dbg-stat-group",
+    className: K("flex flex-col gap-1", t),
+    children: n,
+  });
+}
+function I({ tone: t = "muted", className: n, children: s }) {
+  return e.jsx("p", {
+    "data-slot": "dbg-status",
+    className: K("text-[length:var(--dbg-text-label)]", ln(t), n),
+    children: s,
+  });
+}
+function kt({ children: t, maxH: n, className: s }) {
+  return e.jsx("pre", {
+    "data-slot": "dbg-code",
+    style: n ? { maxHeight: n } : void 0,
+    className: K(
+      "overflow-auto rounded-[var(--dbg-radius)] bg-muted/50 p-2 font-mono text-[length:var(--dbg-text-value)] leading-relaxed",
+      s,
+    ),
+    children: t,
+  });
+}
+function Ge({ className: t, children: n }) {
+  return e.jsx("div", {
+    "data-slot": "dbg-empty",
+    className: K("text-[length:var(--dbg-text-label)] italic text-muted-foreground", t),
+    children: n,
+  });
+}
+const Ia = { idle: "Idle", glitch: "Glitch", kneel: "Kneel", kneelCalm: "Kneel Calm" };
+function Ea() {
+  const t = nn((r) => r.model),
+    n = vn(),
+    s = Cn(),
+    [a, i] = l.useState(0),
+    [m, f] = l.useState(null),
+    [y, E] = l.useState(!1),
+    [x, u] = l.useState("idle"),
+    b = Fe((r) => r.sleepFadeIn),
+    B = Fe((r) => r.idleFadeIn),
+    z = Fe((r) => r.setSleepFadeIn),
+    D = Fe((r) => r.setIdleFadeIn),
+    k = Fe((r) => r.idleState),
+    q = Fe((r) => r.setIdleState),
+    P = Pe((r) => r.intensity),
+    $ = Pe((r) => r.setIntensity),
+    L = Pe((r) => r.formIntensity),
+    d = Pe((r) => r.setFormIntensity),
+    C = Pe((r) => r.formMode),
+    V = Pe((r) => r.setFormMode),
+    c = Pe((r) => r.formConstant),
+    X = Pe((r) => r.setFormConstant),
+    ie = Pe((r) => r.expressionBlends),
+    he = Pe((r) => r.setExpressionBlend),
+    h = C === "constant";
+  l.useEffect(() => {
+    if (!y) return;
+    let r = 0,
+      g = 0;
+    const A = () => {
+      if (g > 0) {
+        ((g -= 1), s(0));
+        return;
+      }
+      (s(Ft[r]), (r += 1), r === Ft.length && ((r = 0), (g = 6 + Math.floor(Math.random() * 12))));
+    };
+    A();
+    const R = window.setInterval(A, Aa);
+    return () => {
+      (window.clearInterval(R), s(null));
+    };
+  }, [s, y]);
+  const Z = () => {
+      t?.startMotion({ steps: { ...at.IDLE, loop: !0, fadeIn: B } });
+    },
+    te = () => {
+      t?.startMotion({ steps: { ...at.SLEEP, loop: !0, fadeIn: b } });
+    },
+    o = (r) => {
+      (f(r), n(r));
+    },
+    N = () => {
+      (f(null), n(null));
+    },
+    j = (r) => {
+      (f(null), n(null), s(null), E(r));
+    },
+    J = (r) => ie[r] ?? kn[r] ?? jn,
+    W = async () => {
+      const r = {};
+      for (const g of re) r[g] = J(g);
+      try {
+        (await navigator.clipboard.writeText(JSON.stringify(r, null, 2)), u("copied"));
+      } catch {
+        u("failed");
+      }
+    },
+    re = l.useMemo(() => {
+      if (!t) return [];
+      try {
+        return t.getExpressionNames();
+      } catch (r) {
+        return (console.error("Error getting expressions:", r), []);
+      }
+    }, [t, a]),
+    ne = l.useMemo(() => {
+      if (!t) return [];
+      try {
+        const r = t.getSetting(),
+          g = [],
+          A = r.getMotionGroupCount();
+        for (let R = 0; R < A; R++) {
+          const ee = r.getMotionGroupName(R),
+            ke = r.getMotionCount(ee);
+          for (let Te = 0; Te < ke; Te++) {
+            const Ve = r.getMotionFileName(ee, Te);
+            g.push({ group: ee, index: Te, file: Ve || `motion_${Te}` });
+          }
+        }
+        return g;
+      } catch (r) {
+        return (console.error("Error getting motions:", r), []);
+      }
+    }, [t, a]),
+    Se = l.useMemo(() => t?.getPluginEnabled("dragToLook") ?? !0, [t, a]),
+    Ce = l.useMemo(() => t?.getPluginEnabled("breath") ?? !0, [t, a]),
+    ue = l.useMemo(() => t?.getPluginEnabled("eyeBlink") ?? !0, [t, a]),
+    M = l.useMemo(() => t?.getPluginEnabled("physics") ?? !0, [t, a]),
+    U = l.useMemo(() => t?.getPluginEnabled("lipSync") ?? !0, [t, a]),
+    Ee = l.useMemo(() => t?.getPluginEnabled("thinkingLight") ?? !0, [t, a]),
+    Me = l.useMemo(() => At()?.isThinking() ?? !1, [a]),
+    ct = l.useMemo(() => t?.isRestPose() ?? !1, [t, a]),
+    Ye = l.useMemo(() => new Set(t?.getActiveExpressions() ?? []), [t, a]),
+    dt = (r) => {
+      if (!t) {
+        console.error("Cannot set expression: No model");
+        return;
+      }
+      try {
+        (Ye.has(r) ? t.removeExpression(r) : t.addExpression(r), i((g) => g + 1));
+      } catch (g) {
+        console.error(`Error toggling expression "${r}":`, g);
+      }
+    },
+    Xe = (r) => {
+      if (!t) {
+        console.error("Cannot play motion: No model");
+        return;
+      }
+      try {
+        t.startMotion({ steps: { group: r.group, index: r.index } });
+      } catch (g) {
+        console.error(`Error playing motion "${r.group}[${r.index}]":`, g);
+      }
+    },
+    Re = (r, g) => {
+      if (!t) return;
+      const A = !g;
+      (r === "lipSync" && !A && E(!1), t.setPluginEnabled(r, A), i((R) => R + 1));
+    },
+    Le = () => {
+      const r = At();
+      r && (r.setThinking(!r.isThinking()), i((g) => g + 1));
+    },
+    Je = () => {
+      t && (t.setRestPose(!t.isRestPose()), i((r) => r + 1));
+    },
+    Ue = (r) => {
+      const g = Object.entries(at).find(([A, R]) => R.group === r.group && R.index === r.index);
+      return g
+        ? g[0]
+            .split("_")
+            .map((R) => R.charAt(0) + R.slice(1).toLowerCase())
+            .join(" ")
+        : `${r.group}[${r.index}]`;
+    };
+  return e.jsxs(me, {
+    children: [
+      e.jsx(v, {
+        title: "Plugins (6)",
+        children: e.jsxs(He, {
+          className: "gap-3",
+          children: [
+            e.jsx(ae, {
+              id: "drag-to-look",
+              label: "Drag to Look",
+              checked: Se,
+              onCheckedChange: () => Re("dragToLook", Se),
+              disabled: !t,
+            }),
+            e.jsx(ae, {
+              id: "breath",
+              label: "Breath",
+              checked: Ce,
+              onCheckedChange: () => Re("breath", Ce),
+              disabled: !t,
+            }),
+            e.jsx(ae, {
+              id: "eye-blink",
+              label: "Eye Blink",
+              checked: ue,
+              onCheckedChange: () => Re("eyeBlink", ue),
+              disabled: !t,
+            }),
+            e.jsx(ae, {
+              id: "physics",
+              label: "Physics",
+              checked: M,
+              onCheckedChange: () => Re("physics", M),
+              disabled: !t,
+            }),
+            e.jsx(ae, {
+              id: "lip-sync",
+              label: "Lip Sync",
+              checked: U,
+              onCheckedChange: () => Re("lipSync", U),
+              disabled: !t,
+            }),
+            e.jsx(ae, {
+              id: "thinking-light",
+              label: "Thinking Light",
+              checked: Ee,
+              onCheckedChange: () => Re("thinkingLight", Ee),
+              disabled: !t,
+            }),
+          ],
+        }),
+      }),
+      e.jsx(v, {
+        title: "Pose",
+        children: e.jsx(He, {
+          className: "gap-3",
+          children: e.jsx(ae, {
+            id: "rest-pose",
+            label: "Rest Pose (factory — no idle motion)",
+            checked: ct,
+            onCheckedChange: Je,
+            disabled: !t,
+          }),
+        }),
+      }),
+      e.jsxs(v, {
+        title: "Idle state",
+        children: [
+          e.jsx(F, {
+            children: ["idle", "glitch", "kneel", "kneelCalm"].map((r) =>
+              e.jsx(
+                p,
+                {
+                  variant: k === r ? "default" : "outline",
+                  onClick: () => q(r),
+                  disabled: !t,
+                  children: Ia[r],
+                },
+                r,
+              ),
+            ),
+          }),
+          e.jsx("p", {
+            className: "text-[length:var(--dbg-text-value)] text-muted-foreground",
+            children:
+              "Resting loop for Nori. Glitch & Kneel are held (no doze); switching crossfades via the built-in fade.",
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Idle / Sleep crossfade",
+        children: [
+          e.jsx(S, {
+            label: "Sleep fade-in",
+            value: b,
+            onValueChange: z,
+            min: 0,
+            max: 10,
+            step: 0.1,
+            unit: "s",
+            disabled: !t,
+          }),
+          e.jsx(S, {
+            label: "Idle fade-in (wake)",
+            value: B,
+            onValueChange: D,
+            min: 0,
+            max: 10,
+            step: 0.1,
+            unit: "s",
+            disabled: !t,
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, { variant: "outline", onClick: Z, disabled: !t, children: "▶ Idle (wake)" }),
+              e.jsx(p, { variant: "outline", onClick: te, disabled: !t, children: "▶ Sleep" }),
+            ],
+          }),
+          e.jsx("p", {
+            className: "text-[length:var(--dbg-text-value)] text-muted-foreground",
+            children:
+              "These ARE the live auto-sleep crossfades (runtime SSOT). Use ▶ to trigger the transition now.",
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Lip Sync Test",
+        children: [
+          e.jsx(ae, {
+            id: "simulate-talking",
+            label: "Simulate talking",
+            checked: y,
+            onCheckedChange: j,
+            disabled: !t || !U,
+          }),
+          e.jsx(_, {
+            label: y
+              ? "Simulating speech"
+              : m !== null
+                ? `Debug: ${(m * 100).toFixed(0)}%`
+                : "Using audio amplitude",
+            children: m !== null && e.jsx(p, { variant: "ghost", onClick: N, children: "Clear" }),
+          }),
+          e.jsx(S, {
+            label: "Amplitude",
+            value: m ?? 0,
+            onValueChange: o,
+            min: 0,
+            max: 1,
+            step: 0.01,
+            disabled: !t || !U || y,
+            formatValue: (r) => `${(r * 100).toFixed(0)}%`,
+          }),
+          e.jsx(S, {
+            label: "Intensity (mouth-open gain)",
+            value: P,
+            onValueChange: $,
+            min: 0,
+            max: 1.5,
+            step: 0.05,
+            unit: "×",
+            disabled: !t || !U,
+          }),
+          e.jsx(ae, {
+            id: "lipsync-form-constant",
+            label: "Mouth form: constant mode",
+            checked: h,
+            onCheckedChange: (r) => V(r ? "constant" : "amplitude"),
+            disabled: !t || !U,
+          }),
+          h
+            ? e.jsx(S, {
+                label: "Mouth form (constant)",
+                value: c,
+                onValueChange: X,
+                min: -1,
+                max: 1,
+                step: 0.05,
+                disabled: !t || !U,
+              })
+            : e.jsx(S, {
+                label: "Mouth form (width gain)",
+                value: L,
+                onValueChange: d,
+                min: -1,
+                max: 1,
+                step: 0.05,
+                unit: "×",
+                disabled: !t || !U,
+              }),
+          e.jsx("p", {
+            className: "text-[length:var(--dbg-text-value)] text-muted-foreground",
+            children:
+              "Intensity = mouth-open (ParamMouthOpenY). Mouth form drives ParamMouthForm: amplitude mode follows the audio (− narrows, + widens); constant mode holds a fixed value regardless of speech.",
+          }),
+        ],
+      }),
+      e.jsx(v, {
+        title: "Thinking Light",
+        children: e.jsx(He, {
+          className: "gap-3",
+          children: e.jsx(ae, {
+            id: "thinking-state",
+            label: "Thinking Override",
+            checked: Me,
+            onCheckedChange: Le,
+            disabled: !t || !Ee,
+          }),
+        }),
+      }),
+      e.jsx(v, {
+        title: `Expressions (${re.length})`,
+        children:
+          re.length > 0
+            ? e.jsxs(e.Fragment, {
+                children: [
+                  e.jsxs(F, {
+                    children: [
+                      e.jsx(p, {
+                        variant: "outline",
+                        onClick: W,
+                        children: "Copy mouth blends JSON",
+                      }),
+                      x !== "idle"
+                        ? e.jsx("span", {
+                            className: "text-[length:var(--dbg-text-value)] text-muted-foreground",
+                            children: x === "copied" ? "Copied" : "Clipboard blocked",
+                          })
+                        : null,
+                    ],
+                  }),
+                  e.jsx(He, {
+                    className: "gap-3",
+                    children: re.map((r) => {
+                      const g = Ye.has(r);
+                      return e.jsxs(
+                        "div",
+                        {
+                          className: "flex flex-col gap-2 rounded-md border border-border/50 p-2",
+                          children: [
+                            e.jsx(ae, {
+                              id: `expr-${r}`,
+                              label: r,
+                              checked: g,
+                              onCheckedChange: () => dt(r),
+                              disabled: !t,
+                            }),
+                            e.jsx(S, {
+                              label: "Lip-sync share",
+                              value: J(r),
+                              onValueChange: (A) => {
+                                (he(r, A), u("idle"));
+                              },
+                              min: 0,
+                              max: 1,
+                              step: 0.05,
+                              disabled: !t || !U,
+                              formatValue: (A) => `${Math.round(A * 100)}%`,
+                            }),
+                          ],
+                        },
+                        r,
+                      );
+                    }),
+                  }),
+                ],
+              })
+            : e.jsx(Ge, { children: "No expressions available" }),
+      }),
+      e.jsx(v, {
+        title: `Motions (${ne.length})`,
+        children:
+          ne.length > 0
+            ? e.jsx(e.Fragment, {
+                children: ne.map((r, g) => {
+                  const A = Ue(r);
+                  return e.jsx(
+                    _,
+                    {
+                      label: A,
+                      children: e.jsx(p, {
+                        icon: !0,
+                        variant: "ghost",
+                        onClick: () => Xe(r),
+                        disabled: !t,
+                        "aria-label": `Play ${A}`,
+                        children: e.jsx("svg", {
+                          xmlns: "http://www.w3.org/2000/svg",
+                          viewBox: "0 0 24 24",
+                          fill: "none",
+                          stroke: "currentColor",
+                          strokeWidth: "2",
+                          strokeLinecap: "round",
+                          strokeLinejoin: "round",
+                          className: "size-4",
+                          children: e.jsx("polygon", { points: "5 3 19 12 5 21 5 3" }),
+                        }),
+                      }),
+                    },
+                    g,
+                  );
+                }),
+              })
+            : e.jsx(Ge, { children: "No motions available" }),
+      }),
+    ],
+  });
+}
+function Ra(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("live2d");
+      return;
+    }
+    return (n({ id: "live2d", label: "Live2D", render: () => e.jsx(Ea, {}) }), () => s("live2d"));
+  }, [t, n, s]);
+}
+function Na() {
+  const t = le((c) => c.initialized),
+    n = le((c) => c.useDebugCamera),
+    s = le((c) => c.debugCamera),
+    a = le((c) => c.debugBillboard),
+    i = le((c) => c.debugShadow),
+    m = le((c) => c.showShadow),
+    f = le((c) => c.shadowDepthTest),
+    y = le((c) => c.exclusiveCamera),
+    E = le((c) => c.setUseDebugCamera),
+    x = le((c) => c.setDebugCamera),
+    u = le((c) => c.setExclusiveCamera),
+    b = le((c) => c.resetExclusiveCamera),
+    B = le((c) => c.setDebugBillboard),
+    z = le((c) => c.resetBillboard),
+    D = le((c) => c.setDebugShadow),
+    k = le((c) => c.setDebugShadowLightDir),
+    q = le((c) => c.resetShadow),
+    P = le((c) => c.setShowShadow),
+    $ = le((c) => c.setShadowDepthTest),
+    L = et((c) => c.visible),
+    d = et((c) => c.setVisible),
+    C = et((c) => c.live2dMaxFps),
+    V = et((c) => c.setLive2dMaxFps);
+  return t
+    ? e.jsxs(me, {
+        children: [
+          e.jsxs(v, {
+            title: "Performance",
+            children: [
+              e.jsx(ae, {
+                id: "perf-overlay",
+                label: "Perf overlay (always on top)",
+                checked: L,
+                onCheckedChange: d,
+              }),
+              e.jsx(_, {
+                label: "Live2D FPS cap",
+                htmlFor: "live2d-fps-cap",
+                children: e.jsx(pe, {
+                  className: "w-32",
+                  value: C == null ? "default" : String(C),
+                  onValueChange: (c) =>
+                    V(c === "default" ? null : c === "uncapped" ? "uncapped" : Number(c)),
+                  options: [
+                    { value: "default", label: "Default (60)" },
+                    { value: "uncapped", label: "Uncapped" },
+                    { value: "30", label: "30" },
+                  ],
+                }),
+              }),
+            ],
+          }),
+          e.jsxs(v, {
+            title: "Camera",
+            contentClassName: K(n ? "" : "opacity-50"),
+            children: [
+              e.jsx(ae, { label: "Override", checked: n, onCheckedChange: E }),
+              ["x", "y", "z"].map((c) =>
+                e.jsx(
+                  S,
+                  {
+                    label: c.toUpperCase(),
+                    value: s[c],
+                    min: c === "z" ? 1 : -15,
+                    max: c === "z" ? 20 : 15,
+                    step: 0.1,
+                    onValueChange: (X) => x(c, X),
+                    disabled: !n,
+                  },
+                  c,
+                ),
+              ),
+              e.jsx(S, {
+                label: "Pitch (X)",
+                value: s.rotX,
+                min: -Math.PI / 2,
+                max: Math.PI / 2,
+                step: 0.01,
+                onValueChange: (c) => x("rotX", c),
+                disabled: !n,
+                formatValue: (c) => `${((c * 180) / Math.PI).toFixed(1)}°`,
+              }),
+              e.jsx(S, {
+                label: "Yaw (Y)",
+                value: s.rotY,
+                min: -Math.PI / 2,
+                max: Math.PI / 2,
+                step: 0.01,
+                onValueChange: (c) => x("rotY", c),
+                disabled: !n,
+                formatValue: (c) => `${((c * 180) / Math.PI).toFixed(1)}°`,
+              }),
+            ],
+          }),
+          e.jsxs(v, {
+            title: "Fullscreen camera",
+            children: [
+              ["x", "y", "z"].map((c) =>
+                e.jsx(
+                  S,
+                  {
+                    label: c.toUpperCase(),
+                    value: y[c],
+                    min: c === "z" ? 0.5 : -10,
+                    max: c === "z" ? 15 : 10,
+                    step: 0.05,
+                    onValueChange: (X) => u(c, X),
+                  },
+                  c,
+                ),
+              ),
+              e.jsx(p, { onClick: b, children: "Reset fullscreen camera" }),
+            ],
+          }),
+          e.jsxs(v, {
+            title: "Billboard",
+            children: [
+              ["x", "y", "z", "width", "height"].map((c) =>
+                e.jsx(
+                  S,
+                  {
+                    label: c,
+                    value: a[c],
+                    min: c === "width" || c === "height" ? 1 : -15,
+                    max: 15,
+                    step: 0.1,
+                    onValueChange: (X) => B(c, X),
+                  },
+                  c,
+                ),
+              ),
+              e.jsx(p, { onClick: z, children: "Reset billboard" }),
+            ],
+          }),
+          e.jsxs(v, {
+            title: "Shadow",
+            children: [
+              ["x", "y", "z"].map((c) =>
+                e.jsx(
+                  S,
+                  {
+                    label: `Light ${c}`,
+                    value: i.lightDir[c],
+                    min: -1,
+                    max: c === "y" ? 0 : 1,
+                    step: 0.05,
+                    onValueChange: (X) => k(c, X),
+                  },
+                  `light-${c}`,
+                ),
+              ),
+              e.jsx(S, {
+                label: "Opacity",
+                value: i.opacity,
+                min: 0,
+                max: 1,
+                step: 0.05,
+                onValueChange: (c) => D("opacity", c),
+              }),
+              e.jsx(S, {
+                label: "Blur",
+                value: i.blurRadius,
+                min: 0,
+                max: 0.15,
+                step: 0.005,
+                onValueChange: (c) => D("blurRadius", c),
+                formatValue: (c) => c.toFixed(3),
+              }),
+              e.jsxs(He, {
+                className: "gap-3",
+                children: [
+                  e.jsx(ae, {
+                    id: "show-shadow",
+                    label: "Show Shadow",
+                    checked: m,
+                    onCheckedChange: P,
+                  }),
+                  e.jsx(ae, {
+                    id: "shadow-depth-test",
+                    label: "Depth Test",
+                    checked: f,
+                    onCheckedChange: $,
+                  }),
+                ],
+              }),
+              e.jsx(p, { onClick: q, children: "Reset shadow" }),
+            ],
+          }),
+        ],
+      })
+    : e.jsx(Ca, { children: "Scene not initialized" });
+}
+function Ma(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("scene");
+      return;
+    }
+    return (n({ id: "scene", label: "Scene", render: () => e.jsx(Na, {}) }), () => s("scene"));
+  }, [t, n, s]);
+}
+const _a = [
+    { label: "Mild", params: ze.mild },
+    { label: "Heavy", params: ze.heavy },
+    { label: "Slam", params: ze.slam },
+    { label: "Mosh", params: ze.mosh },
+    { label: "Fried", params: ze.fried },
+  ],
+  Be = (t) => t.toFixed(0),
+  Da = { idle: "Idle.", running: "Glitching.", frozen: "Holding one torn frame — Stop clears it." };
+function La() {
+  const t = ut((a) => a.mode),
+    n = ut((a) => a.params),
+    s = ut((a) => a.setParams);
+  return e.jsxs(me, {
+    children: [
+      e.jsxs(v, {
+        title: "Trigger",
+        children: [
+          e.jsxs(F, {
+            children: [
+              e.jsxs(p, {
+                onClick: () => It(400),
+                children: [e.jsx(da, { className: "h-3 w-3" }), " Burst 400 ms"],
+              }),
+              e.jsx(p, { onClick: () => It(1500), children: "Burst 1.5 s" }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: Pn,
+                disabled: t === "running",
+                children: "Start",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: wn,
+                disabled: t === "idle",
+                children: "Stop",
+              }),
+              e.jsx(p, { variant: "outline", onClick: Tn, children: "Freeze frame" }),
+            ],
+          }),
+          e.jsx(I, { children: Da[t] }),
+          e.jsxs(I, {
+            children: [
+              "SVG displacement filter on ",
+              e.jsx("code", { children: "<html>" }),
+              " — tears the live page (scene, Live2D, windows, portals). Pixels move; click targets stay put.",
+            ],
+          }),
+        ],
+      }),
+      e.jsx(v, {
+        title: "Presets",
+        children: e.jsxs(F, {
+          children: [
+            _a.map((a) =>
+              e.jsx(
+                p,
+                { variant: "outline", onClick: () => s(a.params), children: a.label },
+                a.label,
+              ),
+            ),
+            e.jsx(p, { variant: "outline", onClick: () => s(An), children: "Reset" }),
+          ],
+        }),
+      }),
+      e.jsxs(v, {
+        title: "Tuning",
+        children: [
+          e.jsx(S, {
+            label: "Max shift",
+            unit: "px",
+            min: 0,
+            max: 120,
+            step: 1,
+            value: n.maxShiftPx,
+            formatValue: Be,
+            onValueChange: (a) => s({ maxShiftPx: a }),
+          }),
+          e.jsx(S, {
+            label: "Slices",
+            min: 1,
+            max: 24,
+            step: 1,
+            value: n.sliceCount,
+            formatValue: Be,
+            onValueChange: (a) => s({ sliceCount: a }),
+          }),
+          e.jsx(S, {
+            label: "Blockiness",
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: n.blockiness,
+            onValueChange: (a) => s({ blockiness: a }),
+          }),
+          e.jsx(S, {
+            label: "Vertical",
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: n.verticalAmount,
+            onValueChange: (a) => s({ verticalAmount: a }),
+          }),
+          e.jsx(S, {
+            label: "RGB split",
+            unit: "px",
+            min: 0,
+            max: 20,
+            step: 1,
+            value: n.rgbSplitPx,
+            formatValue: Be,
+            onValueChange: (a) => s({ rgbSplitPx: a }),
+          }),
+          e.jsx(S, {
+            label: "Jolt",
+            unit: "px",
+            min: 0,
+            max: 40,
+            step: 1,
+            value: n.joltPx,
+            formatValue: Be,
+            onValueChange: (a) => s({ joltPx: a }),
+          }),
+          e.jsx(S, {
+            label: "Mosh cells",
+            min: 0,
+            max: 16,
+            step: 1,
+            value: n.moshCells,
+            formatValue: Be,
+            onValueChange: (a) => s({ moshCells: a }),
+          }),
+          e.jsx(S, {
+            label: "Deep fry",
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: n.deepFry,
+            onValueChange: (a) => s({ deepFry: a }),
+          }),
+          e.jsx(S, {
+            label: "Static",
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: n.noise,
+            onValueChange: (a) => s({ noise: a }),
+          }),
+          e.jsx(S, {
+            label: "Invert chance",
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: n.invertChance,
+            onValueChange: (a) => s({ invertChance: a }),
+          }),
+          e.jsx(S, {
+            label: "Tick",
+            unit: "ms",
+            min: 30,
+            max: 300,
+            step: 10,
+            value: n.tickMs,
+            formatValue: Be,
+            onValueChange: (a) => s({ tickMs: a }),
+          }),
+          e.jsx(S, {
+            label: "Density",
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: n.density,
+            onValueChange: (a) => s({ density: a }),
+          }),
+        ],
+      }),
+    ],
+  });
+}
+function Va(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("glitch");
+      return;
+    }
+    return (n({ id: "glitch", label: "Glitch", render: () => e.jsx(La, {}) }), () => s("glitch"));
+  }, [t, n, s]);
+}
+const mt = { bgm1: "/audio/bgm1.m4a", bgm2: "/audio/bgm2.mp3" },
+  Bt = { chess_move: "/audio/chess_move.mp3", chess_capture: "/audio/chess_capture.mp3" },
+  Fa = "/audio/speech.mp3";
+function Ot(t) {
+  const n = Math.floor(t / 60),
+    s = Math.floor(t % 60);
+  return `${n}:${s.toString().padStart(2, "0")}`;
+}
+function Ba(t, n) {
+  return Object.keys(n).every((s) => rt(t[s], n[s]));
+}
+function Qe(t, n) {
+  const s = 10 ** n;
+  return Math.round(t * s) / s;
+}
+function Gt(t) {
+  return t ? { x: Qe(t.x, 1), y: Qe(t.y, 1), z: Qe(t.z, 1) } : null;
+}
+function Oa() {
+  const [t, n] = l.useState({
+      initialized: !1,
+      contextState: "unknown",
+      masterVolume: 0,
+      muted: !1,
+      speechAmplitude: 0,
+      speechRawAmplitude: 0,
+      speechInitialized: !1,
+      sfxActiveCount: 0,
+      musicPlaying: !1,
+      musicPaused: !1,
+      musicTrackId: null,
+      musicCurrentTime: 0,
+      musicDuration: 0,
+      speechHasPanner: !1,
+      loadedMusic: [],
+      loadedSfx: [],
+      listenerPos: null,
+      speechPos: null,
+      distanceParams: null,
+    }),
+    [s, a] = l.useState(null),
+    [i, m] = l.useState(2),
+    f = $e(),
+    y = it();
+  l.useEffect(() => {
+    if (y) return;
+    const o = () => {
+      const j = Q.getInstance(),
+        J = {
+          initialized: j.isInitialized,
+          contextState: j.context?.state ?? "no context",
+          masterVolume: j.masterVolume,
+          muted: j.muted,
+          speechAmplitude: j.isInitialized ? Qe(j.speech.getAmplitude(), 2) : 0,
+          speechRawAmplitude: j.isInitialized ? Qe(j.speech.getRawAmplitude(), 4) : 0,
+          speechInitialized: j.isInitialized && j.speech.isInitialized,
+          sfxActiveCount: j.isInitialized ? j.sfx.activeCount : 0,
+          musicPlaying: j.isInitialized ? j.music.isPlaying() : !1,
+          musicPaused: j.isInitialized ? j.music.isPaused : !1,
+          musicTrackId: j.isInitialized ? j.music.currentTrackId() : null,
+          musicCurrentTime: j.isInitialized ? Math.floor(j.music.currentTime) : 0,
+          musicDuration: j.isInitialized ? j.music.duration : 0,
+          speechHasPanner: j.isInitialized ? j.speech.hasPanner : !1,
+          loadedMusic: j.isInitialized ? j.music.loadedTracks : [],
+          loadedSfx: j.isInitialized ? j.sfx.loadedSounds : [],
+          listenerPos: j.isInitialized ? Gt(j.getListenerPosition()) : null,
+          speechPos: j.isInitialized ? Gt(j.speech.getPosition()) : null,
+          distanceParams: j.isInitialized ? j.speech.getDistanceParams() : null,
+        };
+      n((W) => (Ba(W, J) ? W : J));
+    };
+    o();
+    const N = setInterval(o, 100);
+    return () => clearInterval(N);
+  }, [y]);
+  const E = async () => {
+      await Q.getInstance().resume();
+    },
+    x = async () => {
+      await Q.getInstance().suspend();
+    },
+    u = l.useCallback(async () => {
+      const o = Q.getInstance();
+      if (o.isInitialized) {
+        a("music");
+        try {
+          await o.music.loadMany(mt);
+        } finally {
+          a(null);
+        }
+      }
+    }, []),
+    b = l.useCallback((o) => {
+      const N = Q.getInstance();
+      N.isInitialized && N.music.play(o, { loop: !0, fadeIn: 0.5 });
+    }, []),
+    B = l.useCallback(() => {
+      const o = Q.getInstance();
+      o.isInitialized && o.music.pause();
+    }, []),
+    z = l.useCallback(() => {
+      const o = Q.getInstance();
+      o.isInitialized && o.music.resume();
+    }, []),
+    D = l.useCallback(() => {
+      const o = Q.getInstance();
+      o.isInitialized && o.music.stop(0.5);
+    }, []),
+    k = l.useCallback((o) => {
+      const N = Q.getInstance();
+      N.isInitialized && N.music.seek(o);
+    }, []),
+    q = l.useCallback(
+      (o) => {
+        const N = Q.getInstance();
+        N.isInitialized && N.music.crossfade(o, i, { loop: !0 });
+      },
+      [i],
+    ),
+    P = l.useCallback(async () => {
+      const o = Q.getInstance();
+      if (o.isInitialized) {
+        a("sfx");
+        try {
+          await o.sfx.loadMany(Bt);
+        } finally {
+          a(null);
+        }
+      }
+    }, []),
+    $ = l.useCallback((o) => {
+      const N = Q.getInstance();
+      N.isInitialized && N.sfx.playRandomized(o);
+    }, []),
+    [L, d] = l.useState(null),
+    [C, V] = l.useState(!1),
+    c = l.useCallback(async () => {
+      const o = Q.getInstance();
+      if (!(!o.isInitialized || !o.context)) {
+        a("speech");
+        try {
+          const j = await (await fetch(Fa)).arrayBuffer(),
+            J = await o.context.decodeAudioData(j);
+          d(J);
+        } finally {
+          a(null);
+        }
+      }
+    }, []),
+    X = l.useCallback(async () => {
+      const o = Q.getInstance();
+      !o.isInitialized ||
+        !L ||
+        (C && o.speech.stopBuffer(), V(!0), await o.speech.playBuffer(L), V(!1));
+    }, [L, C]),
+    ie = l.useCallback(() => {
+      const o = Q.getInstance();
+      o.isInitialized && (o.speech.stopBuffer(), V(!1));
+    }, []),
+    he = $e((o) => o.spatialVoice),
+    h = $e((o) => o.setSpatialVoice),
+    Z = $e((o) => o.voiceRate),
+    te = $e((o) => o.setVoiceRate);
+  return e.jsxs(me, {
+    children: [
+      e.jsxs(v, {
+        title: "Status",
+        children: [
+          e.jsx(T, {
+            label: "Initialized",
+            value: t.initialized ? "Yes" : "No",
+            tone: t.initialized ? "ok" : "error",
+          }),
+          e.jsx(T, {
+            label: "Context State",
+            value: t.contextState,
+            tone: t.contextState === "running" ? "ok" : "error",
+          }),
+          e.jsx(T, {
+            label: "Speech Initialized",
+            value: t.speechInitialized ? "Yes" : "No",
+            tone: t.speechInitialized ? "ok" : "error",
+          }),
+          e.jsx(T, {
+            label: "Speech Spatial",
+            value: t.speechHasPanner ? "3D (HRTF)" : "2D (Stereo)",
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, {
+                variant: "outline",
+                onClick: E,
+                disabled: t.contextState === "running",
+                children: "Resume",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: x,
+                disabled: t.contextState !== "running",
+                children: "Suspend",
+              }),
+            ],
+          }),
+        ],
+      }),
+      t.speechHasPanner &&
+        e.jsxs(v, {
+          title: "3D Spatial (Speech)",
+          children: [
+            e.jsx(T, {
+              label: "Listener (Camera)",
+              value: t.listenerPos
+                ? `(${t.listenerPos.x.toFixed(1)}, ${t.listenerPos.y.toFixed(1)}, ${t.listenerPos.z.toFixed(1)})`
+                : "N/A",
+            }),
+            e.jsx(T, {
+              label: "Source (Nori)",
+              value: t.speechPos
+                ? `(${t.speechPos.x.toFixed(1)}, ${t.speechPos.y.toFixed(1)}, ${t.speechPos.z.toFixed(1)})`
+                : "N/A",
+            }),
+            t.listenerPos &&
+              t.speechPos &&
+              (() => {
+                const o = t.listenerPos.x - t.speechPos.x,
+                  N = t.listenerPos.y - t.speechPos.y,
+                  j = t.listenerPos.z - t.speechPos.z,
+                  J = Math.sqrt(o * o + N * N + j * j),
+                  W = t.distanceParams;
+                let re = 1;
+                if (W && W.model === "inverse") {
+                  const ne = Math.max(J, W.refDistance);
+                  re = W.refDistance / (W.refDistance + W.rolloffFactor * (ne - W.refDistance));
+                }
+                return e.jsxs(e.Fragment, {
+                  children: [
+                    e.jsx(T, { label: "Distance", value: J.toFixed(2) }),
+                    e.jsx(T, {
+                      label: "Model",
+                      value: W
+                        ? `${W.model} (ref=${W.refDistance}, roll=${W.rolloffFactor})`
+                        : "N/A",
+                    }),
+                    e.jsx(T, {
+                      label: "Calculated Gain",
+                      value: `${(re * 100).toFixed(1)}%`,
+                      tone: re >= 0.9 ? "ok" : "default",
+                    }),
+                  ],
+                });
+              })(),
+          ],
+        }),
+      e.jsxs(v, {
+        title: "Volume (Store → Manager)",
+        children: [
+          e.jsx(T, {
+            label: "Master",
+            value: `${f.masterVolume}% → ${(t.masterVolume * 100).toFixed(0)}%`,
+          }),
+          e.jsx(T, { label: "Music", value: `${f.musicVolume}%` }),
+          e.jsx(T, { label: "SFX", value: `${f.sfxVolume}%` }),
+          e.jsx(T, { label: "Voice", value: `${f.voiceVolume}%` }),
+          e.jsx(T, { label: "Muted (Store)", value: f.isMuted ? "Yes" : "No" }),
+          e.jsx(T, { label: "Muted (Manager)", value: t.muted ? "Yes" : "No" }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Music",
+        children: [
+          e.jsx(_, {
+            label: `Loaded: ${t.loadedMusic.join(", ") || "none"}`,
+            children: e.jsx(p, {
+              variant: "outline",
+              onClick: u,
+              disabled: !t.initialized || s === "music",
+              children: s === "music" ? "Loading..." : "Load Test Music",
+            }),
+          }),
+          e.jsx(F, {
+            children: Object.keys(mt).map((o) =>
+              e.jsxs(
+                p,
+                {
+                  variant: t.musicTrackId === o ? "default" : "outline",
+                  onClick: () => b(o),
+                  disabled: !t.loadedMusic.includes(o),
+                  children: ["Play ", o],
+                },
+                o,
+              ),
+            ),
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, {
+                variant: "outline",
+                onClick: t.musicPaused ? z : B,
+                disabled: !t.musicPlaying && !t.musicPaused,
+                children: t.musicPaused ? "Resume" : "Pause",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: D,
+                disabled: !t.musicPlaying && !t.musicPaused,
+                children: "Stop",
+              }),
+            ],
+          }),
+          t.musicDuration > 0 &&
+            e.jsx(S, {
+              label: Ot(t.musicCurrentTime),
+              value: t.musicCurrentTime,
+              onValueChange: k,
+              min: 0,
+              max: t.musicDuration,
+              step: 0.1,
+              formatValue: () => Ot(t.musicDuration),
+            }),
+          e.jsx(S, {
+            label: "Crossfade",
+            value: i,
+            onValueChange: m,
+            min: 0.5,
+            max: 5,
+            step: 0.5,
+            formatValue: (o) => o.toString(),
+            unit: "s",
+          }),
+          e.jsx(F, {
+            children: Object.keys(mt).map((o) =>
+              e.jsxs(
+                p,
+                {
+                  variant: "outline",
+                  onClick: () => q(o),
+                  disabled: !t.loadedMusic.includes(o) || t.musicTrackId === o || !t.musicPlaying,
+                  children: ["Fade to ", o],
+                },
+                o,
+              ),
+            ),
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Sound Effects",
+        children: [
+          e.jsx(_, {
+            label: `Loaded: ${t.loadedSfx.join(", ") || "none"}`,
+            children: e.jsx(p, {
+              variant: "outline",
+              onClick: P,
+              disabled: !t.initialized || s === "sfx",
+              children: s === "sfx" ? "Loading..." : "Load Test SFX",
+            }),
+          }),
+          e.jsx(F, {
+            children: Object.keys(Bt).map((o) =>
+              e.jsxs(
+                p,
+                {
+                  variant: "outline",
+                  onClick: () => $(o),
+                  disabled: !t.loadedSfx.includes(o),
+                  children: ["Play ", o],
+                },
+                o,
+              ),
+            ),
+          }),
+          e.jsx(T, { label: "Active Sounds", value: String(t.sfxActiveCount) }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Speech Test",
+        children: [
+          e.jsx(ae, { label: "3D Voice", checked: he, onCheckedChange: h }),
+          e.jsx(S, {
+            label: "Voice Speed",
+            value: Z,
+            onValueChange: te,
+            min: 0.5,
+            max: 2,
+            step: 0.05,
+            formatValue: (o) => o.toFixed(2),
+            unit: "×",
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, {
+                variant: "outline",
+                onClick: c,
+                disabled: !t.initialized || s === "speech",
+                children: s === "speech" ? "Loading..." : L ? "Reload" : "Load speech.mp3",
+              }),
+              e.jsx(p, { variant: "outline", onClick: X, disabled: !L, children: "Play Test" }),
+              e.jsx(p, { variant: "outline", onClick: ie, disabled: !C, children: "Stop" }),
+            ],
+          }),
+          e.jsx(T, { label: "Speech Amplitude (from worklet)", value: "", mono: !1 }),
+          e.jsx(Ut, {
+            label: "Raw",
+            value: t.speechRawAmplitude,
+            display: t.speechRawAmplitude.toFixed(4),
+            barClassName: "bg-primary",
+          }),
+          e.jsx(Ut, {
+            label: "Scaled (Lip Sync)",
+            value: t.speechAmplitude,
+            display: t.speechAmplitude.toFixed(2),
+            barClassName: "bg-green-500",
+          }),
+          e.jsx(za, {}),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Effects",
+        children: [
+          e.jsx(ft, { track: "speech", label: "Speech" }),
+          e.jsx(ft, { track: "music", label: "Music" }),
+          e.jsx(ft, { track: "sfx", label: "SFX" }),
+        ],
+      }),
+    ],
+  });
+}
+function Ut({ label: t, value: n, display: s, barClassName: a }) {
+  return e.jsxs("div", {
+    className: "flex flex-col gap-1",
+    children: [
+      e.jsx(T, { label: t, value: s }),
+      e.jsx("div", {
+        className: "h-2 overflow-hidden rounded-full bg-muted",
+        children: e.jsx("div", {
+          className: K("h-full transition-all duration-75", a),
+          style: { width: `${Math.min(100, n * 100)}%` },
+        }),
+      }),
+    ],
+  });
+}
+const Ga = [
+    { value: "game", label: "follow game" },
+    { value: "on", label: "force on" },
+    { value: "off", label: "force off" },
+  ],
+  Ua = Rn.map((t) => ({ value: t, label: t }));
+function za() {
+  const [t, n] = l.useState({
+      active: !1,
+      gameActive: !1,
+      override: "game",
+      preset: En,
+      intensity: In,
+    }),
+    s = it();
+  l.useEffect(() => {
+    if (s) return;
+    const f = () => {
+      const E = Q.getInstance();
+      if (!E.isInitialized) return;
+      const x = E.speech.corruption,
+        u = {
+          active: x.active,
+          gameActive: x.gameActive,
+          override: x.debugOverride === null ? "game" : x.debugOverride ? "on" : "off",
+          preset: x.preset,
+          intensity: x.intensity,
+        };
+      n((b) => (rt(b, u) ? b : u));
+    };
+    f();
+    const y = setInterval(f, 200);
+    return () => clearInterval(y);
+  }, [s]);
+  const a = l.useCallback((f) => {
+      const y = Q.getInstance();
+      y.isInitialized && y.speech.corruption.setDebugOverride(f === "game" ? null : f === "on");
+    }, []),
+    i = l.useCallback((f) => {
+      const y = Q.getInstance();
+      y.isInitialized && y.speech.corruption.setPreset(f);
+    }, []),
+    m = l.useCallback((f) => {
+      const y = Q.getInstance();
+      y.isInitialized && y.speech.corruption.setIntensity(f);
+    }, []);
+  return e.jsxs("div", {
+    className: "flex flex-col gap-[var(--dbg-field-gap)] border-t pt-3",
+    children: [
+      e.jsx("div", {
+        className: "text-[length:var(--dbg-text-label)] font-medium",
+        children: "Corruption",
+      }),
+      e.jsx(T, {
+        label: "Active",
+        value: t.active ? "Yes" : "No",
+        tone: t.active ? "ok" : "default",
+      }),
+      e.jsx(T, { label: "Game state", value: t.gameActive ? "corrupted" : "clean" }),
+      e.jsx(_, {
+        label: "Override",
+        children: e.jsx(pe, { value: t.override, onValueChange: (f) => a(f), options: Ga }),
+      }),
+      e.jsx(_, {
+        label: "Preset",
+        children: e.jsx(pe, { value: t.preset, onValueChange: (f) => i(f), options: Ua }),
+      }),
+      e.jsx(S, {
+        label: "Intensity",
+        value: t.intensity * 100,
+        onValueChange: (f) => m(f / 100),
+        min: 0,
+        max: 100,
+        formatValue: (f) => `${f.toFixed(0)}`,
+        unit: "%",
+      }),
+    ],
+  });
+}
+const $a = ["none", "room", "hall", "cave"],
+  qa = ["none", "lowpass", "highpass", "bandpass"],
+  Ha = $a.map((t) => ({ value: t, label: t })),
+  Ka = qa.map((t) => ({ value: t, label: t }));
+function ft({ track: t, label: n }) {
+  const [s, a] = l.useState({ reverb: "none", wetness: 0, filter: "none", frequency: 1e3, q: 1 }),
+    i = it();
+  l.useEffect(() => {
+    if (i) return;
+    const u = () => {
+      const B = Q.getInstance();
+      if (!B.isInitialized) return;
+      const z = B[t],
+        D = {
+          reverb: z.effects.reverbPreset,
+          wetness: z.effects.wetness,
+          filter: z.effects.filterType,
+          frequency: z.effects.filterFrequency,
+          q: z.effects.filterQ,
+        };
+      a((k) => (rt(k, D) ? k : D));
+    };
+    u();
+    const b = setInterval(u, 200);
+    return () => clearInterval(b);
+  }, [t, i]);
+  const m = l.useCallback(
+      async (u) => {
+        const b = Q.getInstance();
+        b.isInitialized && (await b[t].effects.setReverb(u, s.wetness || 0.3));
+      },
+      [t, s.wetness],
+    ),
+    f = l.useCallback(
+      (u) => {
+        const b = Q.getInstance();
+        b.isInitialized && b[t].effects.setWetness(u);
+      },
+      [t],
+    ),
+    y = l.useCallback(
+      (u) => {
+        const b = Q.getInstance();
+        b.isInitialized && b[t].effects.setFilter(u, s.frequency, s.q);
+      },
+      [t, s.frequency, s.q],
+    ),
+    E = l.useCallback(
+      (u) => {
+        const b = Q.getInstance();
+        b.isInitialized && b[t].effects.setFilterFrequency(u);
+      },
+      [t],
+    ),
+    x = l.useCallback(
+      (u) => {
+        const b = Q.getInstance();
+        b.isInitialized && b[t].effects.setFilterQ(u);
+      },
+      [t],
+    );
+  return e.jsxs("div", {
+    className: "flex flex-col gap-[var(--dbg-field-gap)] border-b pb-3 last:border-b-0 last:pb-0",
+    children: [
+      e.jsx("div", { className: "text-[length:var(--dbg-text-label)] font-medium", children: n }),
+      e.jsx(_, {
+        label: "Reverb",
+        children: e.jsx(pe, { value: s.reverb, onValueChange: (u) => m(u), options: Ha }),
+      }),
+      s.reverb !== "none" &&
+        e.jsx(S, {
+          label: "Wet",
+          value: s.wetness * 100,
+          onValueChange: (u) => f(u / 100),
+          min: 0,
+          max: 100,
+          formatValue: (u) => `${u.toFixed(0)}`,
+          unit: "%",
+        }),
+      e.jsx(_, {
+        label: "Filter",
+        children: e.jsx(pe, { value: s.filter, onValueChange: (u) => y(u), options: Ka }),
+      }),
+      s.filter !== "none" &&
+        e.jsxs(e.Fragment, {
+          children: [
+            e.jsx(S, {
+              label: "Freq",
+              value: s.frequency,
+              onValueChange: E,
+              min: 20,
+              max: 2e4,
+              formatValue: (u) => `${u}`,
+              unit: "Hz",
+            }),
+            e.jsx(S, {
+              label: "Q",
+              value: s.q,
+              onValueChange: x,
+              min: 0.1,
+              max: 20,
+              step: 0.1,
+              formatValue: (u) => u.toFixed(1),
+            }),
+          ],
+        }),
+    ],
+  });
+}
+function Wa(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("audio");
+      return;
+    }
+    return (n({ id: "audio", label: "Audio", render: () => e.jsx(Oa, {}) }), () => s("audio"));
+  }, [t, n, s]);
+}
+const Qa = {
+    enabled: !1,
+    seed: void 0,
+    log: !1,
+    dropOutgoingRate: 0,
+    dropIncomingRate: 0,
+    dropOutgoingCount: 0,
+    dropIncomingCount: 0,
+    minLatencyMs: 0,
+    maxLatencyMs: 0,
+    connectDelayMs: 0,
+    disconnectAfterMs: 0,
+    disconnectAfterSendCount: 0,
+    randomDisconnectChance: 0,
+    randomDisconnectIntervalMs: 5e3,
+    closeCode: 1001,
+    closeReason: void 0,
+  },
+  rn = {
+    mild: {
+      enabled: !0,
+      log: !0,
+      minLatencyMs: 50,
+      maxLatencyMs: 200,
+      dropIncomingRate: 0.02,
+      dropOutgoingRate: 0.02,
+      randomDisconnectChance: 0.05,
+      randomDisconnectIntervalMs: 1e4,
+    },
+    moderate: {
+      enabled: !0,
+      log: !0,
+      minLatencyMs: 100,
+      maxLatencyMs: 500,
+      dropIncomingRate: 0.05,
+      dropOutgoingRate: 0.05,
+      randomDisconnectChance: 0.15,
+      randomDisconnectIntervalMs: 8e3,
+    },
+    severe: {
+      enabled: !0,
+      log: !0,
+      minLatencyMs: 200,
+      maxLatencyMs: 1e3,
+      dropIncomingRate: 0.1,
+      dropOutgoingRate: 0.1,
+      randomDisconnectChance: 0.3,
+      randomDisconnectIntervalMs: 5e3,
+    },
+  };
+function Ya(t) {
+  return t ? t === "1" || t === "true" || t === "yes" || t === "on" : !1;
+}
+function zt(t) {
+  return import.meta?.env?.[t];
+}
+function $t(t) {
+  if (!t) return null;
+  try {
+    const n = JSON.parse(t);
+    if (n && typeof n == "object") return n;
+  } catch {}
+  return null;
+}
+function Xa(t) {
+  const n = Ya(zt("VITE_ARCADE_FLAKY_WS")),
+    s = $t(zt("VITE_ARCADE_FLAKY_WS_CONFIG")),
+    a = typeof localStorage < "u" ? $t(localStorage.getItem("arcade.flakyWs")) : null;
+  return n || !!s?.enabled || !!a?.enabled || !!t?.enabled
+    ? { ...Qa, ...(a ?? {}), ...(s ?? {}), enabled: !0 }
+    : null;
+}
+const qt = {
+  BASE_URL: "/",
+  DEV: !1,
+  MODE: "production",
+  PROD: !0,
+  SSR: !1,
+  VITE_ARCADE_API_URL: "https://os.inori.ai/api",
+  VITE_ARCADE_CONVEX_URL: "https://polished-fly-97.convex.cloud",
+  VITE_ARCADE_WS_URL: "wss://os.inori.ai/api/arcade/web/v1",
+  VITE_CONVEX_URL: "https://enchanted-bat-943.convex.cloud",
+  VITE_DEBUG: "false",
+  VITE_INTERNAL_ARCADE_API_URL: "https://arcade.alpaca-elnath.ts.net/api",
+  VITE_INTERNAL_STORYTELLER_WS_URL: "wss://storyteller-api.alpaca-elnath.ts.net/story/v1",
+  VITE_STORYTELLER_WS_URL: "",
+};
+function qe() {
+  if (typeof localStorage > "u") return null;
+  try {
+    const t = localStorage.getItem("arcade.flakyWs");
+    if (!t) return null;
+    const n = JSON.parse(t);
+    if (n && typeof n == "object") return n;
+  } catch {}
+  return null;
+}
+function nt(t) {
+  if (!(typeof localStorage > "u"))
+    try {
+      t
+        ? localStorage.setItem("arcade.flakyWs", JSON.stringify(t))
+        : localStorage.removeItem("arcade.flakyWs");
+    } catch {}
+}
+function Ht(t) {
+  if (!t?.enabled) return "off";
+  for (const [n, s] of Object.entries(rn))
+    if (
+      t.minLatencyMs === s.minLatencyMs &&
+      t.maxLatencyMs === s.maxLatencyMs &&
+      t.dropIncomingRate === s.dropIncomingRate &&
+      t.dropOutgoingRate === s.dropOutgoingRate &&
+      t.randomDisconnectChance === s.randomDisconnectChance &&
+      t.randomDisconnectIntervalMs === s.randomDisconnectIntervalMs
+    )
+      return n;
+  return "custom";
+}
+function Ja(t) {
+  return t ? new Date(t).toLocaleTimeString() : "—";
+}
+function Kt(t) {
+  return t == null ? "—" : `${Math.round(t)}ms`;
+}
+async function Za(t) {
+  try {
+    return (await navigator.clipboard.writeText(t), !0);
+  } catch {
+    try {
+      const n = document.createElement("textarea");
+      ((n.value = t),
+        (n.style.position = "fixed"),
+        (n.style.opacity = "0"),
+        document.body.append(n),
+        n.select());
+      const s = document.execCommand("copy");
+      return (document.body.removeChild(n), s);
+    } catch {
+      return !1;
+    }
+  }
+}
+function es(t) {
+  const n = new Blob([t], { type: "application/json" }),
+    s = URL.createObjectURL(n),
+    a = document.createElement("a");
+  ((a.href = s),
+    (a.download = `arcade-diagnose-${Date.now()}.json`),
+    a.click(),
+    URL.revokeObjectURL(s));
+}
+function ts(t) {
+  return t.phase === "ready"
+    ? {
+        phase: t.phase,
+        worldId: t.worldId,
+        connection: t.connection,
+        fatalReason: null,
+        error: null,
+      }
+    : t.phase === "fatal"
+      ? { phase: t.phase, worldId: null, connection: null, fatalReason: t.reason, error: t.error }
+      : { phase: t.phase, worldId: null, connection: null, fatalReason: null, error: null };
+}
+function ns() {
+  const t = Nn(),
+    [n, s] = l.useState(() => qe()),
+    [a, i] = l.useState(() => Ht(qe())),
+    [m, f] = l.useState(null),
+    [y, E] = l.useState("idle"),
+    [x, u] = l.useState(null),
+    b = t.connection,
+    B = t.outbox?.size ?? 0,
+    z = t.outbox?.items ?? [];
+  (l.useEffect(() => {
+    Ke().catch(() => {});
+  }, []),
+    l.useEffect(() => {
+      const d = qe();
+      (s(d), i(Ht(d)));
+    }, []));
+  const D = l.useCallback((d) => {
+      if (d === "off") {
+        (nt(null), window.location.reload());
+        return;
+      }
+      if (d === "custom") {
+        i("custom");
+        return;
+      }
+      const C = rn[d];
+      (nt(C), window.location.reload());
+    }, []),
+    k = l.useCallback((d, C) => {
+      const c = { ...(qe() ?? { enabled: !0, log: !0 }), [d]: C, enabled: !0 };
+      (nt(c), s(c), i("custom"));
+    }, []),
+    q = l.useCallback(() => {
+      window.location.reload();
+    }, []),
+    P = l.useCallback(async () => {
+      (await Ke().catch(() => {}), Et().diagnostics.forceReconnect());
+    }, []),
+    $ = l.useCallback(async () => {
+      (E("running"), u(null));
+      try {
+        const C = (await Ke().catch(() => Et())).diagnostics.getSnapshot(),
+          V = Mn()?.getState() ?? null,
+          c = Q.getInstance(),
+          X = _n(),
+          ie = (C.outbox?.items ?? []).filter(
+            (te) => te.cmdType === "audioStarted" || te.cmdType === "audioDone",
+          ),
+          h = {
+            session: {
+              session: ts(C.sessionState),
+              connection: C.connection,
+              connectionInfo: C.connectionInfo,
+              mountedCartridges: C.mountedCartridges,
+              outbox: C.outbox,
+              controllers: {
+                chat: {
+                  phase: V?.phase ?? null,
+                  linesInWindow: V?.lines.length ?? 0,
+                  turn: V?.turn ?? null,
+                  fatalReason: V?.fatalReason ?? null,
+                },
+              },
+              audio: {
+                pendingAudioAcks: ie,
+                activeMessageId: X.activeMessageId,
+                activeOperationId: X.activeOperationId,
+                speechQueueLength: c.isInitialized ? c.getSpeechQueueLength() : 0,
+                initialized: c.isInitialized,
+                contextState: c.context?.state ?? null,
+              },
+              environment: {
+                timestamp: new Date().toISOString(),
+                locale: navigator.language,
+                online: navigator.onLine,
+                userAgent: navigator.userAgent,
+                clientVersion: qt?.VITE_APP_VERSION ?? qt?.VITE_BUILD_HASH ?? null,
+              },
+              flaky: Xa(),
+            },
+            server: {
+              unavailable:
+                "Gameplay-websocket admin/debug sidebands were removed. Use admin/debug-only surfaces instead.",
+            },
+          },
+          Z = JSON.stringify(h, null, 2);
+        (await Za(Z), es(Z), f(h), E("done"));
+      } catch (d) {
+        (E("error"), u(d instanceof Error ? d.message : String(d)));
+      }
+    }, []),
+    L = l.useMemo(() => (m ? JSON.stringify(m, null, 2) : ""), [m]);
+  return e.jsxs(me, {
+    children: [
+      e.jsxs(v, {
+        title: "Connection",
+        children: [
+          e.jsxs(We, {
+            children: [
+              e.jsx(T, { label: "State", value: String(b?.state ?? "—") }),
+              e.jsx(T, { label: "Transport", value: String(b?.transportState ?? "—") }),
+              e.jsx(T, {
+                label: "Reconnect",
+                value: `Attempt ${String(b?.reconnectAttempt ?? 0)}`,
+              }),
+              e.jsx(T, { label: "Backoff", value: Kt(b?.backoffDelayMs ?? null) }),
+              e.jsx(T, {
+                label: "Last Close",
+                value: b?.lastClose ? `${b.lastClose.code} ${b.lastClose.reason}` : "—",
+              }),
+              e.jsx(T, {
+                label: "Close clean",
+                value: b?.lastClose?.wasClean ? "clean" : "unclean",
+              }),
+              e.jsx(T, { label: "Ping RTT", value: Kt(b?.pingRttMs ?? null) }),
+              e.jsx(T, { label: "Last ping", value: Ja(b?.lastPingAt ?? null) }),
+              e.jsx(T, { label: "Server ID", value: String(b?.lastServerId ?? "—") }),
+            ],
+          }),
+          e.jsx(F, {
+            children: e.jsx(p, { variant: "outline", onClick: P, children: "Disconnect now" }),
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Outbox",
+        children: [
+          e.jsx(We, { children: e.jsx(T, { label: "Queued", value: B }) }),
+          z.length > 0
+            ? e.jsx(We, {
+                children: z
+                  .slice(0, 6)
+                  .map((d) =>
+                    e.jsx(
+                      I,
+                      {
+                        children: e.jsxs("span", {
+                          className: "flex gap-2",
+                          children: [
+                            e.jsx("span", { children: d.type }),
+                            e.jsx("span", { children: d.cmdType ?? "cmd" }),
+                            e.jsx("span", { children: d.requestId }),
+                          ],
+                        }),
+                      },
+                      String(d.requestId),
+                    ),
+                  ),
+              })
+            : e.jsx(Ge, { children: "No pending messages" }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Flaky WebSocket",
+        children: [
+          e.jsxs(F, {
+            children: [
+              ["off", "mild", "moderate", "severe"].map((d) =>
+                e.jsx(
+                  p,
+                  {
+                    variant: a === d ? "default" : "outline",
+                    onClick: () => D(d),
+                    children: d.charAt(0).toUpperCase() + d.slice(1),
+                  },
+                  d,
+                ),
+              ),
+              a === "custom" && e.jsx(p, { variant: "default", disabled: !0, children: "Custom" }),
+            ],
+          }),
+          n?.enabled &&
+            e.jsxs(e.Fragment, {
+              children: [
+                e.jsx(S, {
+                  label: "Latency (min)",
+                  value: n.minLatencyMs ?? 0,
+                  min: 0,
+                  max: 1e3,
+                  step: 50,
+                  unit: "ms",
+                  formatValue: (d) => String(Math.round(d)),
+                  onValueChange: (d) => k("minLatencyMs", d),
+                }),
+                e.jsx(S, {
+                  label: "Latency (max)",
+                  value: n.maxLatencyMs ?? 0,
+                  min: 0,
+                  max: 2e3,
+                  step: 50,
+                  unit: "ms",
+                  formatValue: (d) => String(Math.round(d)),
+                  onValueChange: (d) => k("maxLatencyMs", d),
+                }),
+                e.jsx(S, {
+                  label: "Drop incoming",
+                  value: (n.dropIncomingRate ?? 0) * 100,
+                  min: 0,
+                  max: 50,
+                  step: 1,
+                  unit: "%",
+                  formatValue: (d) => String(Math.round(d)),
+                  onValueChange: (d) => k("dropIncomingRate", d / 100),
+                }),
+                e.jsx(S, {
+                  label: "Drop outgoing",
+                  value: (n.dropOutgoingRate ?? 0) * 100,
+                  min: 0,
+                  max: 50,
+                  step: 1,
+                  unit: "%",
+                  formatValue: (d) => String(Math.round(d)),
+                  onValueChange: (d) => k("dropOutgoingRate", d / 100),
+                }),
+                e.jsx(S, {
+                  label: "Random disconnect",
+                  value: (n.randomDisconnectChance ?? 0) * 100,
+                  min: 0,
+                  max: 50,
+                  step: 1,
+                  unit: "%",
+                  formatValue: (d) => String(Math.round(d)),
+                  onValueChange: (d) => k("randomDisconnectChance", d / 100),
+                }),
+                e.jsx(S, {
+                  label: "Disconnect interval",
+                  value: (n.randomDisconnectIntervalMs ?? 5e3) / 1e3,
+                  min: 1,
+                  max: 30,
+                  step: 1,
+                  unit: "s",
+                  formatValue: (d) => String(Math.round(d)),
+                  onValueChange: (d) => k("randomDisconnectIntervalMs", d * 1e3),
+                }),
+                e.jsxs(F, {
+                  children: [
+                    e.jsx(p, { onClick: q, children: "Apply & Reload" }),
+                    e.jsx(I, { children: "Changes require page reload" }),
+                  ],
+                }),
+              ],
+            }),
+          n?.enabled &&
+            e.jsx(ae, {
+              label: "Log flaky events to console",
+              checked: n.log ?? !1,
+              onCheckedChange: (d) => {
+                const V = { ...(qe() ?? { enabled: !0 }), log: d };
+                (nt(V), s(V));
+              },
+            }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Diagnose",
+        children: [
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, {
+                onClick: $,
+                disabled: y === "running",
+                children: y === "running" ? "Collecting…" : "Copy & Download Snapshot",
+              }),
+              y === "done" && e.jsx(I, { children: "Snapshot copied to clipboard" }),
+              y === "error" &&
+                e.jsx(I, { tone: "error", children: x ?? "Failed to collect snapshot" }),
+            ],
+          }),
+          L && e.jsx(kt, { maxH: "16rem", children: L }),
+        ],
+      }),
+    ],
+  });
+}
+function as(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("connection");
+      return;
+    }
+    return (
+      n({ id: "connection", label: "Connection", render: () => e.jsx(ns, {}) }),
+      () => s("connection")
+    );
+  }, [t, n, s]);
+}
+const ss = [
+    {
+      id: "acting-forked-counterpart",
+      label: "Acting forks Counterpart",
+      cueId: "acting_forked_counterpart",
+      instruction:
+        "Play Qh5+ (d1h5). It checks the king and attacks Bc5 (you can capture it next).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "serious",
+      nextActor: "acting",
+      nextUci: "d1h5",
+      runtime: {
+        id: "acting-forked-counterpart",
+        settings: { playerSide: "black", difficulty: "serious", locale: "en" },
+        startFen: "rnbq3r/1p3kpp/p4n2/2b5/2pNP3/2N5/PPP3PP/R1BQ1RK1 w - - 2 12",
+        startPly: 0,
+        script: [{ uci: "d1h5" }],
+      },
+    },
+    {
+      id: "counterpart-forked-acting",
+      label: "Counterpart forks the acting side",
+      cueId: "counterpart_forked_acting",
+      instruction: "Wait for Counterpart to play Ne2 (c3e2). It forks your king and rook.",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "serious",
+      nextActor: "counterpart",
+      nextUci: "c3e2",
+      runtime: {
+        id: "counterpart-forked-acting",
+        settings: { playerSide: "black", difficulty: "serious", locale: "en" },
+        startFen: "5rk1/5ppp/4p3/4N3/8/1Pn5/5PPP/2R3K1 b - - 1 28",
+        startPly: 0,
+        script: [{ uci: "c3e2" }],
+      },
+    },
+    {
+      id: "acting-trapped-in-opening",
+      label: "Acting trapped in the opening",
+      cueId: "acting_trapped_in_opening",
+      instruction: "Play Qxe5 (queen blunder).",
+      startPly: 4,
+      actingSide: "white",
+      difficulty: "serious",
+      nextActor: "acting",
+      nextUci: "h5e5",
+      runtime: {
+        id: "acting-trapped-in-opening",
+        settings: { playerSide: "black", difficulty: "serious", locale: "en" },
+        startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        startPly: 4,
+        script: [
+          { uci: "e2e4" },
+          { uci: "e7e5" },
+          { uci: "d1h5" },
+          { uci: "b8c6" },
+          { uci: "h5e5" },
+        ],
+      },
+    },
+    {
+      id: "counterpart-trapped-in-opening",
+      label: "Counterpart trapped in the opening",
+      cueId: "counterpart_trapped_in_opening",
+      instruction: "Play Bc4; Counterpart blunders with b5.",
+      startPly: 4,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "f1c4",
+      runtime: {
+        id: "counterpart-trapped-in-opening",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        startPly: 4,
+        script: [
+          { uci: "e2e4" },
+          { uci: "e7e5" },
+          { uci: "g1f3" },
+          { uci: "b8c6" },
+          { uci: "f1c4" },
+          { uci: "b7b5" },
+        ],
+      },
+    },
+    {
+      id: "acting-blundered-repeatedly",
+      label: "Acting blundered repeatedly",
+      cueId: "acting_blundered_repeatedly",
+      instruction:
+        "After loading (…d5 already played), play f4 as White to trigger the second blunder.",
+      startPly: 4,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "f2f4",
+      runtime: {
+        id: "acting-blundered-repeatedly",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        startPly: 4,
+        script: [
+          { uci: "e2e4" },
+          { uci: "e7e5" },
+          { uci: "g2g4" },
+          { uci: "d7d5" },
+          { uci: "f2f4" },
+        ],
+      },
+    },
+    {
+      id: "counterpart-blundered-repeatedly",
+      label: "Counterpart blundered repeatedly",
+      cueId: "counterpart_blundered_repeatedly",
+      instruction: "Play Bxb5; Counterpart blunders with Qh4.",
+      startPly: 6,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "c4b5",
+      runtime: {
+        id: "counterpart-blundered-repeatedly",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        startPly: 6,
+        script: [
+          { uci: "e2e4" },
+          { uci: "e7e5" },
+          { uci: "g1f3" },
+          { uci: "b8c6" },
+          { uci: "f1c4" },
+          { uci: "b7b5" },
+          { uci: "c4b5" },
+          { uci: "d8h4" },
+        ],
+      },
+    },
+    {
+      id: "draw-stalemate",
+      label: "Draw by stalemate",
+      cueId: "draw",
+      instruction: "Play Qg6 (g5g6) to stalemate.",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "g5g6",
+      runtime: {
+        id: "draw-stalemate",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "7k/5K2/8/6Q1/8/8/8/8 w - - 0 1",
+        startPly: 0,
+        script: [{ uci: "g5g6" }],
+      },
+    },
+    {
+      id: "acting-offers-draw",
+      label: "Acting offers a draw",
+      cueId: "acting_offers_draw",
+      instruction:
+        "Wait for Counterpart to play Ra1 (b1a1); the repetition keeps the rook endgame equal and you should be ready to offer a draw.",
+      startPly: 7,
+      actingSide: "black",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "b1a1",
+      runtime: {
+        id: "acting-offers-draw",
+        settings: { playerSide: "white", difficulty: "casual", locale: "en" },
+        startFen: "7r/p5kp/6p1/8/8/6P1/P5KP/R7 b - - 0 1",
+        startPly: 7,
+        script: [
+          { uci: "h8g8" },
+          { uci: "a1b1" },
+          { uci: "g8h8" },
+          { uci: "b1a1" },
+          { uci: "h8g8" },
+          { uci: "a1b1" },
+          { uci: "g8h8" },
+          { uci: "b1a1" },
+        ],
+      },
+    },
+    {
+      id: "acting-checked-counterpart-repeatedly",
+      label: "Acting checks Counterpart repeatedly",
+      cueId: "acting_checked_counterpart_repeatedly",
+      instruction: "Play Bxc6+ (b5c6), then Qd8+ (d1d8).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "b5c6",
+      runtime: {
+        id: "acting-checked-counterpart-repeatedly",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "4k3/8/2p5/1B6/8/8/8/3Q2K1 w - - 0 1",
+        startPly: 0,
+        script: [{ uci: "b5c6" }, { uci: "e8f8" }, { uci: "d1d8" }],
+      },
+    },
+    {
+      id: "counterpart-checked-acting-repeatedly",
+      label: "Counterpart checks the acting side repeatedly",
+      cueId: "counterpart_checked_acting_repeatedly",
+      instruction: "Wait for Counterpart to play Bxc3+ (b4c3), then Qd2+ (d8d2).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "b4c3",
+      runtime: {
+        id: "counterpart-checked-acting-repeatedly",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "3qk3/8/8/8/1b6/2P5/8/4K3 b - - 0 1",
+        startPly: 0,
+        script: [{ uci: "b4c3" }, { uci: "e1f2" }, { uci: "d8d2" }],
+      },
+    },
+    {
+      id: "acting-checked-counterpart",
+      label: "Acting checks Counterpart",
+      cueId: "acting_checked_counterpart",
+      instruction: "Play Qe7+ (e2e7).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "e2e7",
+      runtime: {
+        id: "acting-checked-counterpart",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "4k3/8/8/8/8/8/4Q3/4K3 w - - 0 1",
+        startPly: 0,
+        script: [{ uci: "e2e7" }],
+      },
+    },
+    {
+      id: "counterpart-checked-acting",
+      label: "Counterpart checks the acting side",
+      cueId: "counterpart_checked_acting",
+      instruction: "Wait for Counterpart to play Re1+ (e2e1).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "e2e1",
+      runtime: {
+        id: "counterpart-checked-acting",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "4k3/8/8/8/8/8/4r3/6K1 b - - 0 1",
+        startPly: 0,
+        script: [{ uci: "e2e1" }],
+      },
+    },
+    {
+      id: "counterpart-offered-sacrifice",
+      label: "Counterpart offered a sacrifice",
+      cueId: "counterpart_offered_sacrifice",
+      instruction: "Wait for Counterpart to play Qxf4 (f7f4).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "f7f4",
+      runtime: {
+        id: "counterpart-offered-sacrifice",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "r2b2k1/1p3q1p/p2p4/3P2p1/2P1PB2/6Q1/P6P/2R4K b - - 0 30",
+        startPly: 0,
+        script: [{ uci: "f7f4" }, { uci: "g3f4" }, { uci: "g5f4" }],
+      },
+    },
+    {
+      id: "acting-offered-sacrifice",
+      label: "Acting offered a sacrifice",
+      cueId: "acting_offered_sacrifice",
+      instruction: "Play Rd7 (d1d7) to offer a rook.",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "d1d7",
+      runtime: {
+        id: "acting-offered-sacrifice",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "4r1k1/ppq3pp/2p2p2/4r3/4p1Q1/P5RP/1P3PP1/3R2K1 w - - 4 35",
+        startPly: 0,
+        script: [{ uci: "d1d7" }, { uci: "c7d7" }, { uci: "g4d7" }],
+      },
+    },
+    {
+      id: "acting-accepted-counterpart-sacrifice",
+      label: "Acting accepted Counterpart sacrifice",
+      cueId: "acting_accepted_counterpart_sacrifice",
+      instruction: "Capture with Qxf4 (g3f4).",
+      startPly: 1,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "g3f4",
+      runtime: {
+        id: "acting-accepted-counterpart-sacrifice",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "r2b2k1/1p3q1p/p2p4/3P2p1/2P1PB2/6Q1/P6P/2R4K b - - 0 30",
+        startPly: 1,
+        script: [{ uci: "f7f4" }, { uci: "g3f4" }, { uci: "g5f4" }],
+      },
+    },
+    {
+      id: "acting-declined-counterpart-sacrifice",
+      label: "Acting declined Counterpart sacrifice",
+      cueId: "acting_declined_counterpart_sacrifice",
+      instruction: "Decline with Qc7 (d6c7).",
+      startPly: 1,
+      actingSide: "white",
+      difficulty: "serious",
+      nextActor: "acting",
+      nextUci: "d6c7",
+      runtime: {
+        id: "acting-declined-counterpart-sacrifice",
+        settings: { playerSide: "black", difficulty: "serious", locale: "en" },
+        startFen: "5rk1/1p3ppp/pq1Q1b2/8/8/1P3N2/P4PPP/3R2K1 b - - 3 27",
+        startPly: 1,
+        script: [{ uci: "f8d8" }, { uci: "d6c7" }],
+      },
+    },
+    {
+      id: "counterpart-accepted-acting-sacrifice",
+      label: "Counterpart accepted acting sacrifice",
+      cueId: "counterpart_accepted_acting_sacrifice",
+      instruction: "Wait for Counterpart to capture on d7 (c7d7).",
+      startPly: 1,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "c7d7",
+      runtime: {
+        id: "counterpart-accepted-acting-sacrifice",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "4r1k1/ppq3pp/2p2p2/4r3/4p1Q1/P5RP/1P3PP1/3R2K1 w - - 4 35",
+        startPly: 1,
+        script: [{ uci: "d1d7" }, { uci: "c7d7" }, { uci: "g4d7" }],
+      },
+    },
+    {
+      id: "counterpart-declined-acting-sacrifice",
+      label: "Counterpart declined acting sacrifice",
+      cueId: "counterpart_declined_acting_sacrifice",
+      instruction: "Wait for Counterpart to decline with a6 (a7a6).",
+      startPly: 1,
+      actingSide: "white",
+      difficulty: "serious",
+      nextActor: "counterpart",
+      nextUci: "a7a6",
+      runtime: {
+        id: "counterpart-declined-acting-sacrifice",
+        settings: { playerSide: "black", difficulty: "serious", locale: "en" },
+        startFen: "r6r/pp1qbQpk/2p4p/3pP3/3Pb3/2P1B3/PP4PP/R4RK1 w - - 4 19",
+        startPly: 1,
+        script: [{ uci: "f1f6" }, { uci: "a7a6" }],
+      },
+    },
+    {
+      id: "counterpart-skewered-acting",
+      label: "Counterpart skewers the acting side",
+      cueId: "counterpart_skewered_acting",
+      instruction: "Wait for Counterpart to play Rc1+ (c2c1).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "c2c1",
+      runtime: {
+        id: "counterpart-skewered-acting",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "8/7R/8/5p2/4b2P/5k2/2r5/4K1R1 b - - 10 52",
+        startPly: 0,
+        script: [{ uci: "c2c1" }, { uci: "e1d2" }, { uci: "c1g1" }],
+      },
+    },
+    {
+      id: "acting-skewered-counterpart",
+      label: "Acting skewers Counterpart",
+      cueId: "acting_skewered_counterpart",
+      instruction: "Play Re8+ (f8e8).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "f8e8",
+      runtime: {
+        id: "acting-skewered-counterpart",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "5R2/1p6/p1p1k3/2P1r3/2K3p1/2P1p1P1/1P5P/8 w - - 2 45",
+        startPly: 0,
+        script: [{ uci: "f8e8" }, { uci: "e6f5" }, { uci: "e8e5" }, { uci: "f5e5" }],
+      },
+    },
+    {
+      id: "counterpart-pinned-acting",
+      label: "Counterpart pins a piece",
+      cueId: "counterpart_pinned_acting",
+      instruction: "Wait for Counterpart to play Rb1 (b7b1).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "b7b1",
+      runtime: {
+        id: "counterpart-pinned-acting",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "3r2k1/pr4pp/2R1b3/5p2/2P1p3/8/P4PPP/3BR1K1 b - - 0 27",
+        startPly: 0,
+        script: [{ uci: "b7b1" }, { uci: "g1f1" }, { uci: "d8d1" }, { uci: "e1d1" }],
+      },
+    },
+    {
+      id: "acting-pinned-counterpart",
+      label: "Acting pins Counterpart",
+      cueId: "acting_pinned_counterpart",
+      instruction: "Play Rxd6 (d1d6) to pin.",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "d1d6",
+      runtime: {
+        id: "acting-pinned-counterpart",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "r2qk2r/p2bnppp/3p4/1Bp5/4P3/4Q3/PPP2PPP/2KR3R w kq - 1 13",
+        startPly: 0,
+        script: [{ uci: "d1d6" }, { uci: "d7b5" }, { uci: "d6d8" }],
+      },
+    },
+    {
+      id: "acting-captured-repeatedly",
+      label: "Acting captured repeatedly",
+      cueId: "acting_captured_repeatedly",
+      instruction: "Play Nxe5 (f3e5), then Nxc4 (e5c4).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "f3e5",
+      runtime: {
+        id: "acting-captured-repeatedly",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "6k1/8/8/4p3/2p5/5N2/8/6K1 w - - 0 1",
+        startPly: 0,
+        script: [{ uci: "f3e5" }, { uci: "g8f8" }, { uci: "e5c4" }],
+      },
+    },
+    {
+      id: "counterpart-captured-repeatedly",
+      label: "Counterpart captured repeatedly",
+      cueId: "counterpart_captured_repeatedly",
+      instruction: "Let Counterpart play Nxe4 (f6e4), then play Kg2 (g1g2).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "f6e4",
+      runtime: {
+        id: "counterpart-captured-repeatedly",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "6k1/8/5n2/2P5/4P3/8/8/6K1 b - - 0 1",
+        startPly: 0,
+        script: [{ uci: "f6e4" }, { uci: "g1g2" }, { uci: "e4c5" }],
+      },
+    },
+    {
+      id: "position-reversed",
+      label: "Position reversed",
+      cueId: "position_reversed",
+      instruction: "Play h3 (h2h3); Counterpart blunders with Qh4.",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "h2h3",
+      runtime: {
+        id: "position-reversed",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "r2q2k1/ppp2ppp/8/2b5/2B5/5N2/PPP2PPP/R5K1 w - - 0 15",
+        startPly: 0,
+        script: [{ uci: "h2h3" }, { uci: "d8h4" }],
+      },
+    },
+    {
+      id: "endgame-entered",
+      label: "Endgame entered",
+      cueId: "endgame_entered",
+      instruction: "Play Qxd7 (d1d7) to trade into the endgame.",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "d1d7",
+      runtime: {
+        id: "endgame-entered",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "r2q2k1/pppb1ppp/8/8/2B5/5N2/PPP2PPP/R2Q2K1 w - - 0 1",
+        startPly: 0,
+        script: [{ uci: "d1d7" }],
+      },
+    },
+    {
+      id: "king-hunt-endgame",
+      label: "King hunt endgame",
+      cueId: "king_hunt_endgame",
+      instruction: "Play Kf2 (g1f2).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "g1f2",
+      runtime: {
+        id: "king-hunt-endgame",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "6k1/8/8/8/8/8/8/R5K1 w - - 0 1",
+        startPly: 0,
+        script: [{ uci: "g1f2" }],
+      },
+    },
+    {
+      id: "race-endgame",
+      label: "Race endgame",
+      cueId: "race_endgame",
+      instruction: "Play a6 (a5a6) to start the pawn race.",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "a5a6",
+      runtime: {
+        id: "race-endgame",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "4k3/8/8/P6p/8/8/8/4K3 w - - 0 1",
+        startPly: 0,
+        script: [{ uci: "a5a6" }, { uci: "h5h4" }, { uci: "a6a7" }],
+      },
+    },
+    {
+      id: "acting-used-opening",
+      label: "Acting used an opening move",
+      cueId: "acting_used_opening",
+      instruction: "Play e4 (e2e4).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "acting",
+      nextUci: "e2e4",
+      runtime: {
+        id: "acting-used-opening",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        startPly: 0,
+        script: [{ uci: "e2e4" }],
+      },
+    },
+    {
+      id: "counterpart-used-opening",
+      label: "Counterpart used an opening move",
+      cueId: "counterpart_used_opening",
+      instruction: "Play e4 (e2e4); Counterpart replies e5.",
+      startPly: 1,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "e7e5",
+      runtime: {
+        id: "counterpart-used-opening",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        startPly: 1,
+        script: [{ uci: "e2e4" }, { uci: "e7e5" }],
+      },
+    },
+    {
+      id: "counterpart-moved-quickly",
+      label: "Counterpart moved quickly",
+      cueId: "counterpart_moved_quickly",
+      instruction: "Wait for Counterpart to snap-play a6 (a7a6).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "a7a6",
+      runtime: {
+        id: "counterpart-moved-quickly",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 15",
+        startPly: 0,
+        script: [{ uci: "a7a6", durationMs: 500 }],
+      },
+    },
+    {
+      id: "counterpart-thought-long",
+      label: "Counterpart thought long",
+      cueId: "counterpart_thought_long",
+      instruction: "Wait for Counterpart to think for a while, then play a6 (a7a6).",
+      startPly: 0,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: "counterpart",
+      nextUci: "a7a6",
+      runtime: {
+        id: "counterpart-thought-long",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 15",
+        startPly: 0,
+        script: [{ uci: "a7a6", durationMs: 65e3 }],
+      },
+    },
+    {
+      id: "critical-move",
+      label: "Critical move for Acting",
+      cueId: "critical_move",
+      instruction:
+        "Counterpart has just blundered with b5. The position is winning, and you have a critical continuation right now.",
+      startPly: 6,
+      actingSide: "white",
+      difficulty: "casual",
+      nextActor: null,
+      nextUci: null,
+      runtime: {
+        id: "critical-move",
+        settings: { playerSide: "black", difficulty: "casual", locale: "en" },
+        startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        startPly: 6,
+        script: [
+          { uci: "e2e4" },
+          { uci: "e7e5" },
+          { uci: "g1f3" },
+          { uci: "b8c6" },
+          { uci: "f1c4" },
+          { uci: "b7b5" },
+        ],
+      },
+    },
+  ],
+  Wt = ss;
+function ls() {
+  const t = St("chess"),
+    n = De("chess"),
+    [s, a] = l.useState(null),
+    [i, m] = l.useState(null),
+    f = !!n,
+    y = t?.gameState,
+    E = async (x) => {
+      if (!n) {
+        a("Chess app is not running.");
+        return;
+      }
+      (m(x.id), a(null));
+      try {
+        (await n.dispatch({ type: "debugLoadScenario", ...x.runtime }), a(`Loaded ${x.id}.`));
+      } catch (u) {
+        const b = u instanceof Error ? u.message : String(u);
+        a(`Failed to load scenario: ${b}`);
+      } finally {
+        m(null);
+      }
+    };
+  return e.jsxs(me, {
+    children: [
+      e.jsx(v, {
+        title: "Session",
+        children: e.jsx(I, {
+          children: f ? "Chess runtime connected" : "Chess runtime not running",
+        }),
+      }),
+      e.jsxs(v, {
+        title: "Scenarios",
+        children: [
+          Wt.length === 0
+            ? e.jsx(Ge, { children: "No scenarios available." })
+            : Wt.map((x) => {
+                const u = i === x.id,
+                  b = x.nextActor && x.nextUci ? `${x.nextActor} ${x.nextUci}` : "n/a";
+                return e.jsxs(
+                  v,
+                  {
+                    title: x.label,
+                    right: e.jsx(p, {
+                      onClick: () => E(x),
+                      disabled: !f || u,
+                      children: u ? "Loading..." : "Load",
+                    }),
+                    children: [
+                      e.jsx(T, { label: "Cue", value: x.cueId, mono: !1 }),
+                      e.jsx(I, { children: x.instruction }),
+                      e.jsxs(I, {
+                        children: [
+                          "Acting side: ",
+                          x.actingSide,
+                          " • Difficulty: ",
+                          x.difficulty,
+                          " • Start ply: ",
+                          x.startPly,
+                          " • Next: ",
+                          b,
+                        ],
+                      }),
+                    ],
+                  },
+                  x.id,
+                );
+              }),
+          s ? e.jsx(I, { children: s }) : null,
+        ],
+      }),
+      e.jsxs(v, {
+        title: "State",
+        children: [
+          e.jsx(T, { label: "Status", value: y?.status ?? "idle", mono: !1 }),
+          e.jsx(T, { label: "Ply", value: y?.moveHistory?.length ?? 0 }),
+          e.jsx(T, { label: "Turn", value: y?.turn ?? "n/a", mono: !1 }),
+          e.jsx(_, {
+            label: "FEN",
+            stack: !0,
+            children: e.jsx("span", {
+              className: "break-all text-[length:var(--dbg-text-value)] tabular-nums",
+              children: y?.fen ?? "n/a",
+            }),
+          }),
+        ],
+      }),
+    ],
+  });
+}
+function is(t = !0) {
+  const n = O((i) => i.registerTab),
+    s = O((i) => i.unregisterTab),
+    a = De("chess");
+  l.useEffect(() => {
+    if (!t || !a) {
+      s("chess");
+      return;
+    }
+    return (n({ id: "chess", label: "Chess", render: () => e.jsx(ls, {}) }), () => s("chess"));
+  }, [t, n, a, s]);
+}
+const rs = 0,
+  os = {
+    sudden_death_both: "sudden_death_both",
+    sudden_death_counterpart_only: "sudden_death_counterpart_only",
+    sudden_death_agent_only: "sudden_death_agent_only",
+  },
+  cs = [
+    { id: "sudden_death_both", label: "Load sudden death (both guessers)" },
+    { id: "sudden_death_counterpart_only", label: "Load sudden death (counterpart only)" },
+    { id: "sudden_death_agent_only", label: "Load sudden death (agent only)" },
+  ],
+  ds = [
+    "ACORN",
+    "BADGER",
+    "BARK",
+    "BERRY",
+    "BROOK",
+    "CAMP",
+    "CAVE",
+    "CLOVER",
+    "COCOON",
+    "DEER",
+    "FERN",
+    "FIRE",
+    "FOX",
+    "GROVE",
+    "LANTERN",
+    "MOSS",
+    "MUSHROOM",
+    "NEST",
+    "OWL",
+    "PATH",
+    "PINE",
+    "RAVINE",
+    "ROOT",
+    "SPRUCE",
+    "STREAM",
+  ];
+function us() {
+  const t = ds.map((i, m) => ({ id: `w${m}`, text: i })),
+    n = Array.from({ length: 25 }, (i, m) =>
+      m === 12 ? H.ASSASSIN : m % 3 === 0 ? H.AGENT : H.BYSTANDER,
+    ),
+    s = Array.from({ length: 25 }, (i, m) =>
+      m === 7 ? H.ASSASSIN : m % 4 === 1 ? H.AGENT : H.BYSTANDER,
+    ),
+    a = Array.from({ length: 25 }, () => ({
+      solvedBy: null,
+      bystanderMarks: [null, null],
+      assassinatedBy: null,
+    }));
+  return {
+    board: t,
+    key: { A: n, B: s },
+    cells: a,
+    tokensRemaining: 9,
+    whoseTurnToGive: Y.A,
+    phase: vt.NORMAL,
+    winner: null,
+    history: [],
+  };
+}
+function Qt(t) {
+  const n = us();
+  switch (t) {
+    case "playing":
+      return { gameState: n, uiState: { type: "HUMAN_GIVING_CLUE" } };
+    case "win": {
+      const s = n.cells.map((i, m) => {
+          const f = n.key.A[m] === H.AGENT,
+            y = n.key.B[m] === H.AGENT;
+          return f ? { ...i, solvedBy: Y.A } : y ? { ...i, solvedBy: Y.B } : i;
+        }),
+        a = Date.now();
+      return {
+        gameState: {
+          ...n,
+          cells: s,
+          tokensRemaining: 3,
+          winner: "TEAM",
+          history: [
+            {
+              clueGiver: Y.A,
+              clue: { word: "NATURE", count: 3 },
+              endedBy: null,
+              guesses: [
+                { cell: 0, result: H.AGENT, at: a - 5e3 },
+                { cell: 3, result: H.AGENT, at: a - 4e3 },
+                { cell: 6, result: H.AGENT, at: a - 3e3 },
+              ],
+            },
+            {
+              clueGiver: Y.B,
+              clue: { word: "FOREST", count: 4 },
+              endedBy: null,
+              guesses: [
+                { cell: 1, result: H.AGENT, at: a - 2e3 },
+                { cell: 5, result: H.AGENT, at: a - 1e3 },
+              ],
+            },
+          ],
+        },
+        uiState: { type: "GAME_OVER", winner: "TEAM" },
+      };
+    }
+    case "loss-monster": {
+      const s = n.cells.map((i, m) =>
+          m === 0 || m === 3
+            ? { ...i, solvedBy: Y.A }
+            : m === 12
+              ? { ...i, assassinatedBy: Y.A }
+              : i,
+        ),
+        a = Date.now();
+      return {
+        gameState: {
+          ...n,
+          cells: s,
+          tokensRemaining: 7,
+          winner: null,
+          history: [
+            {
+              clueGiver: Y.A,
+              clue: { word: "TREES", count: 3 },
+              endedBy: null,
+              guesses: [
+                { cell: 0, result: H.AGENT, at: a - 3e3 },
+                { cell: 3, result: H.AGENT, at: a - 2e3 },
+                { cell: 12, result: H.ASSASSIN, at: a - 1e3 },
+              ],
+            },
+          ],
+        },
+        uiState: { type: "GAME_OVER", winner: null },
+      };
+    }
+    case "loss-sudden-death": {
+      const s = n.cells.map((i, m) => {
+          const f = n.key.A[m] === H.AGENT,
+            y = n.key.B[m] === H.AGENT;
+          return (f || y) && m !== 9 && m !== 15 && m !== 18
+            ? { ...i, solvedBy: f ? Y.A : Y.B }
+            : m === 2
+              ? { ...i, bystanderMarks: [Y.A, null] }
+              : m === 4
+                ? { ...i, bystanderMarks: [Y.B, Y.A] }
+                : i;
+        }),
+        a = Date.now();
+      return {
+        gameState: {
+          ...n,
+          cells: s,
+          tokensRemaining: 0,
+          phase: vt.SUDDEN_DEATH,
+          winner: null,
+          history: [
+            {
+              clueGiver: Y.A,
+              clue: { word: "NATURE", count: 3 },
+              endedBy: null,
+              guesses: [
+                { cell: 0, result: H.AGENT, at: a - 6e3 },
+                { cell: 3, result: H.AGENT, at: a - 5e3 },
+                { cell: 2, result: H.BYSTANDER, at: a - 4e3 },
+              ],
+            },
+            {
+              clueGiver: Y.B,
+              clue: { word: "FOREST", count: 4 },
+              endedBy: null,
+              guesses: [
+                { cell: 1, result: H.AGENT, at: a - 3e3 },
+                { cell: 5, result: H.AGENT, at: a - 2e3 },
+              ],
+            },
+            {
+              clueGiver: Y.A,
+              clue: { word: "WILD", count: 2 },
+              endedBy: null,
+              guesses: [
+                { cell: 6, result: H.AGENT, at: a - 1500 },
+                { cell: 4, result: H.BYSTANDER, at: a - 1e3 },
+              ],
+            },
+          ],
+        },
+        uiState: { type: "GAME_OVER", winner: null },
+      };
+    }
+  }
+}
+function ve(t, n, s) {
+  const a = t.cells.slice(),
+    i = t.cells[n],
+    m = {
+      solvedBy: s.solvedBy ?? i.solvedBy,
+      bystanderMarks: s.bystanderMarks ?? i.bystanderMarks,
+      assassinatedBy: s.assassinatedBy ?? i.assassinatedBy,
+    };
+  return ((a[n] = m), { ...t, cells: a });
+}
+function Yt(t, n) {
+  return ve(t, n, { solvedBy: null, assassinatedBy: null, bystanderMarks: [null, null] });
+}
+const gs = [
+    { id: "agent-A", label: "Reveal → Agent (A)" },
+    { id: "agent-B", label: "Reveal → Agent (B, rotate 180)" },
+    { id: "assassin-A", label: "Reveal → Assassin (A)" },
+    { id: "assassin-B", label: "Reveal → Assassin (B, rotate 180)" },
+    { id: "bystander-0-A", label: "Reveal → Bystander slot 0 (A)" },
+    { id: "bystander-0-B", label: "Reveal → Bystander slot 0 (B, rotate 180)" },
+    { id: "bystander-1-A", label: "Reveal → Bystander slot 1 (A)" },
+    { id: "bystander-1-B", label: "Reveal → Bystander slot 1 (B, rotate 180)" },
+    { id: "noop", label: "Reveal → No card" },
+    { id: "noop-token-1", label: "Reveal → No card (tokens -1)" },
+  ],
+  hs = [
+    { id: "HUMAN_GIVING_CLUE", label: "Counterpart giving clue (key + glow)" },
+    { id: "AI_GIVING_CLUE", label: "Agent giving clue" },
+    { id: "HUMAN_GUESSING", label: "Counterpart guessing (clue display)" },
+    { id: "AI_GUESSING", label: "Agent guessing (clue display)" },
+    { id: "SUDDEN_DEATH_HUMAN_TURN", label: "Sudden death: counterpart" },
+    { id: "SUDDEN_DEATH_AI_TURN", label: "Sudden death: agent" },
+    { id: "SUDDEN_DEATH_BOTH", label: "Sudden death: both guessers" },
+    { id: "GAME_OVER", label: "Game over" },
+  ],
+  ps = [
+    { id: "your-turn", label: "Your turn" },
+    { id: "agent-turn", label: "Agent turn" },
+    { id: "sudden-death", label: "Sudden death" },
+    { id: "win", label: "Win" },
+    { id: "lose", label: "Lose" },
+  ];
+function ms() {
+  const { t } = en(),
+    n = St("codenames"),
+    s = De("codenames"),
+    a = !!s,
+    i = n?.gameState ?? null,
+    m = G((g) => g.gameState),
+    f = G((g) => g.uiState),
+    y = G((g) => g.counterpartSide),
+    E = G((g) => g.clearCardSelection),
+    x = G((g) => g.showOverlay),
+    u = G((g) => g.dismissOverlay),
+    b = G((g) => g.spawnFlyingCard),
+    B = G((g) => g.playDebugClueHighlight),
+    z = G((g) => g.clearDebugClueHighlight),
+    [D, k] = l.useState(null),
+    [q, P] = l.useState(null),
+    [$, L] = l.useState(rs),
+    d = $,
+    [C, V] = l.useState("MUSHROOM"),
+    [c, X] = l.useState(3),
+    [ie, he] = l.useState("TEAM"),
+    [h, Z] = l.useState("your-turn"),
+    [te, o] = l.useState(() => t("codenames.game.clue")),
+    N = l.useMemo(() => ({ word: C.trim() || "MUSHROOM", count: c }), [C, c]),
+    [j, J] = l.useState("agent-A"),
+    [W, re] = l.useState(!1),
+    [ne, Se] = l.useState(!1),
+    [Ce, ue] = l.useState(null),
+    [M, U] = l.useState("playing"),
+    Ee = l.useCallback(
+      async (g) => {
+        if (!s) {
+          k("Codenames app is not running.");
+          return;
+        }
+        if (!i) {
+          k("Start a game first to enable server scenarios.");
+          return;
+        }
+        (P(g), k(null));
+        try {
+          (await s.dispatch({ type: "debugLoadScenario", scenarioId: os[g] }), k(`Loaded ${g}.`));
+        } catch (A) {
+          const R = A instanceof Error ? A.message : String(A);
+          k(`Failed to load scenario: ${R}`);
+        } finally {
+          P(null);
+        }
+      },
+      [s, i],
+    );
+  l.useEffect(() => {
+    if (G.getState().gameState !== null) return;
+    const { gameState: g, uiState: A } = Qt("playing");
+    G.setState({
+      gameState: g,
+      uiState: A,
+      counterpartSide: Y.A,
+      agentSide: Y.B,
+      pendingGuess: null,
+      cardAnimation: null,
+      flyingCard: null,
+      activeOverlay: null,
+      selectedCards: new Set(),
+      hoveredCellIndex: null,
+    });
+  }, []);
+  const Me = l.useCallback(
+      (g) => {
+        if (g === "HUMAN_GUESSING" || g === "AI_GUESSING") {
+          G.setState({ uiState: { type: g, clue: N } });
+          return;
+        }
+        if (g === "GAME_OVER") {
+          G.setState({ uiState: { type: g, winner: ie } });
+          return;
+        }
+        G.setState({ uiState: { type: g } });
+      },
+      [N, ie],
+    ),
+    ct = l.useCallback((g) => {
+      const { gameState: A, uiState: R } = Qt(g);
+      (G.setState({
+        gameState: A,
+        uiState: R,
+        counterpartSide: Y.A,
+        agentSide: Y.B,
+        pendingGuess: null,
+        cardAnimation: null,
+        flyingCard: null,
+        activeOverlay: null,
+        selectedCards: new Set(),
+        hoveredCellIndex: null,
+      }),
+        ue(
+          {
+            playing: "Loaded: Playing state",
+            win: "Loaded: Game over (WIN)",
+            "loss-monster": "Loaded: Game over (LOSS - monster)",
+            "loss-sudden-death": "Loaded: Game over (LOSS - sudden death)",
+          }[g],
+        ));
+    }, []),
+    Ye = l.useCallback(() => {
+      const g = G.getState().gameState;
+      g &&
+        G.setState({
+          gameState: Yt(g, d),
+          pendingGuess: null,
+          cardAnimation: null,
+          flyingCard: null,
+        });
+    }, [d]),
+    dt = l.useCallback(async () => {
+      if (!ne && G.getState().gameState) {
+        (Se(!0), ue(null));
+        try {
+          (G.setState({ cardAnimation: { phase: "shake", cell: d } }),
+            await new Promise((g) => setTimeout(g, Dn.CARD_SHAKE_DURATION)),
+            G.setState({ cardAnimation: null }));
+        } finally {
+          Se(!1);
+        }
+      }
+    }, [d, ne]),
+    Xe = l.useCallback(
+      (g) => {
+        const A = G.getState().gameState;
+        if (!A) return null;
+        let R = Yt(A, d),
+          ee = R;
+        const ke = () => {
+          ee = { ...R, tokensRemaining: Math.max(0, R.tokensRemaining - 1) };
+        };
+        switch (g) {
+          case "agent-A":
+            ee = ve(R, d, { solvedBy: "A", assassinatedBy: null, bystanderMarks: [null, null] });
+            break;
+          case "agent-B":
+            ee = ve(R, d, { solvedBy: "B", assassinatedBy: null, bystanderMarks: [null, null] });
+            break;
+          case "assassin-A":
+            ee = ve(R, d, { assassinatedBy: "A", solvedBy: null, bystanderMarks: [null, null] });
+            break;
+          case "assassin-B":
+            ee = ve(R, d, { assassinatedBy: "B", solvedBy: null, bystanderMarks: [null, null] });
+            break;
+          case "bystander-0-A":
+            ee = ve(R, d, { bystanderMarks: ["A", null], solvedBy: null, assassinatedBy: null });
+            break;
+          case "bystander-0-B":
+            ee = ve(R, d, { bystanderMarks: ["B", null], solvedBy: null, assassinatedBy: null });
+            break;
+          case "bystander-1-A": {
+            ((R = ve(R, d, { bystanderMarks: ["B", null] })),
+              (ee = ve(R, d, { bystanderMarks: ["B", "A"] })));
+            break;
+          }
+          case "bystander-1-B": {
+            ((R = ve(R, d, { bystanderMarks: ["A", null] })),
+              (ee = ve(R, d, { bystanderMarks: ["A", "B"] })));
+            break;
+          }
+          case "noop":
+            break;
+          case "noop-token-1":
+            ke();
+            break;
+        }
+        return { before: R, after: ee };
+      },
+      [d],
+    ),
+    Re = l.useCallback(
+      async (g) => {
+        if (ne) return;
+        const A = Xe(g);
+        if (!A) return;
+        const R = !!document.querySelector(`[data-card-cell="${d}"] .game-card-btn`),
+          ee = !!(
+            document.querySelector("[data-agent-source]") ||
+            document.querySelector("[data-assassin-source]") ||
+            document.querySelector("[data-bystander-source]")
+          );
+        if (!R || !ee) {
+          ue("Open the Codenames GameScreen (board) to run animations.");
+          return;
+        }
+        (Se(!0), ue(null));
+        try {
+          (G.setState({
+            gameState: A.before,
+            pendingGuess: null,
+            cardAnimation: null,
+            flyingCard: null,
+          }),
+            await Ln(d, A.before, A.after, G));
+        } finally {
+          Se(!1);
+        }
+      },
+      [Xe, d, ne],
+    ),
+    Le = l.useCallback(
+      (g, A) => {
+        const R = G.getState().gameState;
+        R && b(g, d, W, R, A);
+      },
+      [d, W, b],
+    ),
+    Je = l.useCallback((g) => {
+      const A = G.getState().gameState;
+      A && G.setState({ gameState: { ...A, ...g } });
+    }, []),
+    Ue = l.useCallback((g) => {
+      const A = G.getState().gameState;
+      if (!A) return;
+      const R = G.getState().counterpartSide,
+        ee = R === Y.A ? Y.B : Y.A,
+        ke = { ...A, phase: vt.SUDDEN_DEATH, winner: null, tokensRemaining: 0 },
+        Te = ke.cells.map((se) => ({ ...se, bystanderMarks: [...se.bystanderMarks] })),
+        Ve = (se) => {
+          Te[se] = { solvedBy: null, bystanderMarks: [null, null], assassinatedBy: null };
+        },
+        dn = (se, fe) => {
+          Te[se] = { solvedBy: fe, bystanderMarks: [null, null], assassinatedBy: null };
+        },
+        jt = (se, fe) => {
+          for (let je = 0; je < 25; je++)
+            if (ke.key[se][je] === H.AGENT && ke.key[fe][je] !== H.AGENT) return je;
+          return -1;
+        },
+        Pt = (se) => {
+          for (let fe = 0; fe < 25; fe++) if (ke.key[se][fe] === H.AGENT) return fe;
+          return -1;
+        },
+        wt = (se, fe) => {
+          for (let je = 0; je < 25; je++) ke.key[se][je] === H.AGENT && dn(je, fe);
+        };
+      let Ze;
+      if (g === "both") {
+        const se = Pt(R),
+          fe = Pt(ee);
+        (se >= 0 && Ve(se),
+          fe >= 0 && Ve(fe),
+          (Ze = "SUDDEN_DEATH_BOTH"),
+          ue("Forced sudden death: both guessers."));
+      } else if (g === "counterpartOnly") {
+        wt(R, R);
+        const se = jt(ee, R);
+        (se >= 0 && Ve(se),
+          (Ze = "SUDDEN_DEATH_HUMAN_TURN"),
+          ue("Forced sudden death: counterpart-only guesser."));
+      } else {
+        wt(ee, ee);
+        const se = jt(R, ee);
+        (se >= 0 && Ve(se),
+          (Ze = "SUDDEN_DEATH_AI_TURN"),
+          ue("Forced sudden death: agent-only guesser."));
+      }
+      G.setState({
+        gameState: { ...ke, cells: Te },
+        uiState: { type: Ze },
+        pendingGuess: null,
+        cardAnimation: null,
+        flyingCard: null,
+        activeOverlay: null,
+      });
+    }, []),
+    r = !!m;
+  return e.jsxs(me, {
+    children: [
+      e.jsx(v, {
+        title: "Server/runtime",
+        children: e.jsx(I, {
+          children: a ? "Codenames runtime connected" : "Codenames runtime not running",
+        }),
+      }),
+      e.jsxs(v, {
+        title: "Server scenarios",
+        children: [
+          e.jsx(F, {
+            children: cs.map((g) => {
+              const A = q === g.id;
+              return e.jsx(
+                p,
+                {
+                  variant: "outline",
+                  onClick: () => Ee(g.id),
+                  disabled: !a || !i || A,
+                  children: A ? "Loading..." : g.label,
+                },
+                g.id,
+              );
+            }),
+          }),
+          i
+            ? e.jsxs(I, {
+                children: [
+                  "Phase: ",
+                  i.phase,
+                  " • Tokens: ",
+                  i.tokensRemaining,
+                  " • Winner: ",
+                  i.winner ?? "none",
+                ],
+              })
+            : e.jsx(I, {
+                children: "Start a game first (in the Codenames app) to enable server scenarios.",
+              }),
+          D ? e.jsx(I, { children: D }) : null,
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Client-only (mock store)",
+        right: e.jsx(p, {
+          variant: "outline",
+          onClick: () => G.setState({ gameState: null }),
+          children: "Clear",
+        }),
+        children: [
+          e.jsx(I, { children: r ? "Client mock state ready" : "No client state (load mock)" }),
+          e.jsx(I, {
+            children:
+              "Non-authoritative: mutates the UI store only (does not change server/runtime state).",
+          }),
+          e.jsxs(_, {
+            label: "Load mock scenario",
+            stack: !0,
+            children: [
+              e.jsx(pe, {
+                className: "flex-1",
+                value: M,
+                onValueChange: (g) => U(g),
+                options: [
+                  { value: "playing", label: "Playing (normal)" },
+                  { value: "win", label: "Game Over: WIN" },
+                  { value: "loss-monster", label: "Game Over: LOSS (hit monster)" },
+                  { value: "loss-sudden-death", label: "Game Over: LOSS (sudden death)" },
+                ],
+              }),
+              e.jsx(p, { onClick: () => ct(M), children: "Load" }),
+            ],
+          }),
+          Ce ? e.jsx(I, { children: Ce }) : null,
+          e.jsx(_, {
+            label: "Counterpart side",
+            children: e.jsxs(F, {
+              children: [
+                e.jsx(p, {
+                  variant: y === "A" ? "default" : "outline",
+                  onClick: () => G.setState({ counterpartSide: Y.A }),
+                  disabled: !r,
+                  children: "A",
+                }),
+                e.jsx(p, {
+                  variant: y === "B" ? "default" : "outline",
+                  onClick: () => G.setState({ counterpartSide: Y.B }),
+                  disabled: !r,
+                  children: "B",
+                }),
+              ],
+            }),
+          }),
+          e.jsx(_, {
+            label: "UI state",
+            stack: !0,
+            children: e.jsx(pe, {
+              value: f.type,
+              onValueChange: (g) => Me(g),
+              disabled: !r,
+              options: hs.map((g) => ({ value: g.id, label: g.label })),
+            }),
+          }),
+          (f.type === "HUMAN_GUESSING" || f.type === "AI_GUESSING") &&
+            e.jsxs(e.Fragment, {
+              children: [
+                e.jsx(_, {
+                  label: "Clue word",
+                  stack: !0,
+                  children: e.jsx(xe, {
+                    value: C,
+                    onChange: (g) => V(g.toUpperCase()),
+                    onBlur: () => Me(f.type),
+                  }),
+                }),
+                e.jsx(_, {
+                  label: "Clue count",
+                  stack: !0,
+                  children: e.jsx(pe, {
+                    value: c === "infinity" ? "infinity" : String(c),
+                    onValueChange: (g) => {
+                      const A = g === "infinity" ? "infinity" : Number(g);
+                      (X(A),
+                        G.setState({ uiState: { type: f.type, clue: { word: C, count: A } } }));
+                    },
+                    options: [
+                      ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((g) => ({
+                        value: String(g),
+                        label: String(g),
+                      })),
+                      { value: "infinity", label: "∞" },
+                    ],
+                  }),
+                }),
+              ],
+            }),
+          f.type === "GAME_OVER" &&
+            e.jsx(_, {
+              label: "Winner",
+              stack: !0,
+              children: e.jsx(pe, {
+                value: ie === null ? "none" : "TEAM",
+                onValueChange: (g) => {
+                  const A = g === "none" ? null : "TEAM";
+                  (he(A), G.setState({ uiState: { type: "GAME_OVER", winner: A } }));
+                },
+                options: [
+                  { value: "TEAM", label: "TEAM" },
+                  { value: "none", label: "None" },
+                ],
+              }),
+            }),
+          e.jsx(_, {
+            label: "Tokens remaining",
+            children: e.jsxs(F, {
+              children: [
+                e.jsx(p, {
+                  variant: "outline",
+                  onClick: () =>
+                    Je({ tokensRemaining: Math.max(0, (m?.tokensRemaining ?? 0) - 1) }),
+                  disabled: !r,
+                  children: "-1",
+                }),
+                e.jsx(p, {
+                  variant: "outline",
+                  onClick: () =>
+                    Je({ tokensRemaining: Math.min(11, (m?.tokensRemaining ?? 0) + 1) }),
+                  disabled: !r,
+                  children: "+1",
+                }),
+              ],
+            }),
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, {
+                variant: "outline",
+                onClick: E,
+                disabled: !r,
+                children: "Clear selected cards",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => G.setState({ pendingGuess: d }),
+                disabled: !r,
+                children: "Set pending guess (target)",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => G.setState({ pendingGuess: null }),
+                disabled: !r,
+                children: "Clear pending guess",
+              }),
+            ],
+          }),
+          e.jsx(_, {
+            label: "Sudden death",
+            stack: !0,
+            children: e.jsxs(F, {
+              children: [
+                e.jsx(p, {
+                  variant: "outline",
+                  onClick: () => Ue("both"),
+                  disabled: !r,
+                  children: "Force sudden death (both)",
+                }),
+                e.jsx(p, {
+                  variant: "outline",
+                  onClick: () => Ue("counterpartOnly"),
+                  disabled: !r,
+                  children: "Force sudden death (counterpart only)",
+                }),
+                e.jsx(p, {
+                  variant: "outline",
+                  onClick: () => Ue("agentOnly"),
+                  disabled: !r,
+                  children: "Force sudden death (agent only)",
+                }),
+              ],
+            }),
+          }),
+        ],
+      }),
+      e.jsx(v, {
+        title: "Target",
+        children: e.jsx(S, {
+          label: "Cell index",
+          value: $,
+          min: 0,
+          max: 24,
+          step: 1,
+          formatValue: (g) => `${Math.round(g)}`,
+          onValueChange: (g) => L(Math.round(g)),
+          disabled: !r,
+        }),
+      }),
+      e.jsxs(v, {
+        title: "Reveal + Flying cards",
+        children: [
+          e.jsx(_, {
+            label: "Confirm click outcome",
+            stack: !0,
+            children: e.jsx(pe, {
+              value: j,
+              onValueChange: (g) => J(g),
+              disabled: !r,
+              options: gs.map((g) => ({ value: g.id, label: g.label })),
+            }),
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, {
+                variant: "outline",
+                onClick: Ye,
+                disabled: !r || ne,
+                children: "Clear target cell",
+              }),
+              e.jsx(p, {
+                onClick: () => Re(j),
+                disabled: !r || ne,
+                children: "Run reveal (target)",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: dt,
+                disabled: !r || ne,
+                children: "Shake only",
+              }),
+            ],
+          }),
+          e.jsx(ae, {
+            label: "Rotate flying card 180",
+            checked: W,
+            onCheckedChange: re,
+            disabled: !r || ne,
+          }),
+          e.jsxs(Ne, {
+            cols: 2,
+            children: [
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => Le("agent"),
+                disabled: !r || ne,
+                children: "Fly agent",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => Le("assassin"),
+                disabled: !r || ne,
+                children: "Fly assassin",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => Le("bystander", 0),
+                disabled: !r || ne,
+                children: "Fly bystander (slot 0)",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => Le("bystander", 1),
+                disabled: !r || ne,
+                children: "Fly bystander (slot 1)",
+              }),
+            ],
+          }),
+          e.jsx(I, {
+            children: "Tip: open the Codenames game window to see these effects on the real board.",
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Clue highlight + Overlay",
+        children: [
+          e.jsx(_, {
+            label: "Overlay",
+            stack: !0,
+            children: e.jsx(pe, {
+              value: h,
+              onValueChange: (g) => Z(g),
+              disabled: !r,
+              options: ps.map((g) => ({ value: g.id, label: g.label })),
+            }),
+          }),
+          e.jsx(_, {
+            label: "Clue highlight label",
+            stack: !0,
+            children: e.jsx(xe, { value: te, onChange: o }),
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => x(h),
+                disabled: !r,
+                children: "Show overlay",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: u,
+                disabled: !r,
+                children: "Dismiss overlay",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => B(N, te),
+                disabled: !r,
+                children: "Play clue highlight",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: z,
+                disabled: !r,
+                children: "Stop clue highlight",
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+function fs(t = !0) {
+  const n = O((i) => i.registerTab),
+    s = O((i) => i.unregisterTab),
+    a = De("codenames");
+  l.useEffect(() => {
+    if (!t || !a) {
+      s("codenames");
+      return;
+    }
+    return (
+      n({ id: "codenames", label: "Codenames", render: () => e.jsx(ms, {}) }),
+      () => s("codenames")
+    );
+  }, [t, n, a, s]);
+}
+let on = 1e3;
+function w(t) {
+  return { entityId: on++, name: t };
+}
+function bs(t) {
+  switch (((on = 1e3), t)) {
+    case "attack-phase":
+      return {
+        playerHand: [w("archer"), w("scientist"), w("soldier"), w("archer"), w("wizard")],
+        opponentHand: [w("archer"), w("soldier"), w("wizard")],
+        attackPile: [w("archer"), w("archer")],
+        blockPile: [],
+        deckTop: [w("soldier"), w("wizard"), w("archer"), w("scientist")],
+        deckCount: 12,
+        discardCount: 3,
+      };
+    case "block-phase":
+      return {
+        playerHand: [w("soldier"), w("wizard"), w("archer")],
+        opponentHand: [w("archer"), w("scientist"), w("soldier"), w("wizard")],
+        attackPile: [w("archer"), w("archer")],
+        blockPile: [w("soldier"), w("soldier")],
+        deckTop: [w("wizard"), w("archer"), w("scientist"), w("soldier")],
+        deckCount: 8,
+        discardCount: 5,
+      };
+    case "empty":
+      return {
+        playerHand: [],
+        opponentHand: [],
+        attackPile: [],
+        blockPile: [],
+        deckTop: [],
+        deckCount: 0,
+        discardCount: 0,
+      };
+    case "stacked":
+      return {
+        playerHand: [
+          w("archer"),
+          w("archer"),
+          w("archer"),
+          w("soldier"),
+          w("soldier"),
+          w("wizard"),
+          w("scientist"),
+        ],
+        opponentHand: [w("archer"), w("soldier"), w("wizard"), w("scientist"), w("archer")],
+        attackPile: [w("archer"), w("archer"), w("archer")],
+        blockPile: [w("soldier"), w("soldier"), w("soldier")],
+        deckTop: [w("wizard"), w("scientist"), w("archer"), w("soldier")],
+        deckCount: 4,
+        discardCount: 10,
+      };
+  }
+}
+const xs = [
+  { id: "attack-phase", label: "Attack phase" },
+  { id: "block-phase", label: "Block phase" },
+  { id: "stacked", label: "Stacked piles" },
+  { id: "empty", label: "Empty board" },
+];
+function bt(t, n, s) {
+  const a = ge.getState().zoneCards;
+  if (!a) return;
+  const i = [...a[t]],
+    m = i.splice(0, s),
+    f = [...a[n], ...m];
+  ge.setState({ zoneCards: { ...a, [t]: i, [n]: f } });
+}
+function Xt(t) {
+  const n = ge.getState().zoneCards;
+  if (!n || n.deckTop.length === 0) return;
+  const s = [...n.deckTop],
+    a = s.shift(),
+    i = [...n[t], a];
+  ge.setState({ zoneCards: { ...n, [t]: i, deckTop: s, deckCount: Math.max(0, n.deckCount - 1) } });
+}
+function ys() {
+  const t = ge.getState().zoneCards;
+  t && ge.setState({ zoneCards: { ...t, attackPile: [], blockPile: [] } });
+}
+function Ss() {
+  const { debugCakeOverride: t, myView: n } = ge.getState();
+  return t || { playerCakes: n?.me.cakes ?? 3, noriCakes: n?.opponent.cakes ?? 4 };
+}
+function Jt(t) {
+  const n = Ss();
+  t === "toPlayer" && n.noriCakes > 0
+    ? ge
+        .getState()
+        .setDebugCakeOverride({ playerCakes: n.playerCakes + 1, noriCakes: n.noriCakes - 1 })
+    : t === "toNori" &&
+      n.playerCakes > 0 &&
+      ge
+        .getState()
+        .setDebugCakeOverride({ playerCakes: n.playerCakes - 1, noriCakes: n.noriCakes + 1 });
+}
+function vs() {
+  ge.getState().setDebugCakeOverride(null);
+}
+const Cs = [
+  {
+    id: "success-attack",
+    label: "Challenge Reveal (Success, ATK)",
+    build: (t) => {
+      if (t.attackPile.length === 0) return null;
+      const n = new Map();
+      for (const s of t.attackPile) n.set(s.entityId, s.name);
+      return {
+        type: "challenge_reveal",
+        pile: "attack",
+        revealedCards: n,
+        claimedCard: "archer",
+        challenger: 1,
+        success: !0,
+      };
+    },
+  },
+  {
+    id: "fail-attack",
+    label: "Challenge Reveal (Fail, ATK)",
+    build: (t) => {
+      if (t.attackPile.length === 0) return null;
+      const n = new Map();
+      for (const s of t.attackPile) n.set(s.entityId, s.name);
+      return {
+        type: "challenge_reveal",
+        pile: "attack",
+        revealedCards: n,
+        claimedCard: "wizard",
+        challenger: 1,
+        success: !1,
+      };
+    },
+  },
+];
+function ks() {
+  const { t } = en(),
+    n = St("cakeduel"),
+    s = De("cakeduel"),
+    a = n?.game ?? null,
+    i = ge((o) => o.zoneCards),
+    m = ge((o) => o.activeEffect),
+    [f, y] = l.useState(!1),
+    [E, x] = l.useState(null),
+    [u, b] = l.useState(!1),
+    [B, z] = l.useState("0"),
+    [D, k] = l.useState(""),
+    q = Rt(),
+    [P, $] = l.useState(q.CHALLENGE_FLIP_STAGGER),
+    [L, d] = l.useState(q.CHALLENGE_REVEAL_HOLD),
+    C = l.useMemo(() => (a ? Array.from(new Set(a.config.baseCardList)) : []), [a]);
+  l.useEffect(() => {
+    if (C.length === 0) {
+      k("");
+      return;
+    }
+    k((o) => (o && C.includes(o) ? o : C[0]));
+  }, [C]);
+  const V = l.useCallback(
+      async (o, N = D, j = B) => {
+        if (!s || !a) {
+          (o && b(!1), x(t("cakeduel.debug.dealtGuarantee.statusRuntimeMissing")));
+          return;
+        }
+        try {
+          if (!o) {
+            (await s.dispatch({ type: "debugSetDealtCardGuarantee", enabled: !1 }),
+              b(!1),
+              x(t("cakeduel.debug.dealtGuarantee.statusDisabled")));
+            return;
+          }
+          if (!N) {
+            x(t("cakeduel.debug.dealtGuarantee.statusNoCard"));
+            return;
+          }
+          (await s.dispatch({
+            type: "debugSetDealtCardGuarantee",
+            enabled: !0,
+            cardName: N,
+            targetPlayer: Number(j),
+          }),
+            b(!0),
+            x(
+              t("cakeduel.debug.dealtGuarantee.statusEnabled", {
+                card: N,
+                target: t(
+                  j === "0"
+                    ? "cakeduel.debug.dealtGuarantee.targetPlayer"
+                    : "cakeduel.debug.dealtGuarantee.targetNori",
+                ),
+              }),
+            ));
+        } catch (J) {
+          o && b(!1);
+          const W = J instanceof Error ? J.message : String(J);
+          x(t("cakeduel.debug.dealtGuarantee.statusError", { message: W }));
+        }
+      },
+      [s, a, B, D, t],
+    ),
+    c = l.useCallback(
+      (o) => {
+        V(o);
+      },
+      [V],
+    ),
+    X = l.useCallback(
+      (o) => {
+        (z(o), u && V(!0, D, o));
+      },
+      [u, V, D],
+    ),
+    ie = l.useCallback(
+      (o) => {
+        (k(o), u && V(!0, o, B));
+      },
+      [u, V, B],
+    ),
+    he = l.useCallback((o) => {
+      const N = bs(o);
+      (ge.setState({ zoneCards: N }), x(`Loaded: ${o}`));
+    }, []),
+    h = l.useCallback(
+      async (o) => {
+        if (f) return;
+        const N = ge.getState().zoneCards;
+        if (!N) {
+          x("No zoneCards — load a scenario first");
+          return;
+        }
+        const j = o.build(N);
+        if (!j) {
+          x("Pile empty — load a scenario with cards");
+          return;
+        }
+        (Fn({ CHALLENGE_FLIP_STAGGER: P, CHALLENGE_REVEAL_HOLD: L }),
+          y(!0),
+          x(`Playing: ${o.label}`));
+        try {
+          (await Vn(j), x(`Done: ${o.label}`));
+        } catch (J) {
+          x(`Error: ${J}`);
+        } finally {
+          y(!1);
+        }
+      },
+      [f, P, L],
+    ),
+    Z = l.useCallback(() => {
+      Bn();
+      const o = Rt();
+      ($(o.CHALLENGE_FLIP_STAGGER), d(o.CHALLENGE_REVEAL_HOLD));
+    }, []),
+    te = !s || !a;
+  return e.jsxs(me, {
+    children: [
+      E && e.jsx(I, { children: E }),
+      e.jsx(v, {
+        title: "Mock State",
+        children: e.jsx(F, {
+          children: xs.map((o) =>
+            e.jsx(p, { variant: "outline", onClick: () => he(o.id), children: o.label }, o.id),
+          ),
+        }),
+      }),
+      e.jsx(v, {
+        title: "Card Moves",
+        children: e.jsxs(F, {
+          children: [
+            e.jsx(p, {
+              variant: "outline",
+              onClick: () => bt("playerHand", "attackPile", 1),
+              children: "Player 1→ATK",
+            }),
+            e.jsx(p, {
+              variant: "outline",
+              onClick: () => bt("playerHand", "attackPile", 2),
+              children: "Player 2→ATK",
+            }),
+            e.jsx(p, {
+              variant: "outline",
+              onClick: () => bt("opponentHand", "blockPile", 2),
+              children: "Nori 2→BLK",
+            }),
+            e.jsx(p, {
+              variant: "outline",
+              onClick: () => Xt("playerHand"),
+              children: "Draw→Player",
+            }),
+            e.jsx(p, {
+              variant: "outline",
+              onClick: () => Xt("opponentHand"),
+              children: "Draw→Nori",
+            }),
+            e.jsx(p, { variant: "outline", onClick: ys, children: "Clear piles" }),
+          ],
+        }),
+      }),
+      e.jsxs(v, {
+        title: "Cake Transfer",
+        children: [
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => Jt("toPlayer"),
+                children: "Player wins cake",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => Jt("toNori"),
+                children: "Nori wins cake",
+              }),
+              e.jsx(p, { variant: "ghost", onClick: vs, children: "Reset cakes" }),
+            ],
+          }),
+          e.jsx(js, {}),
+        ],
+      }),
+      e.jsx(v, {
+        title: "Wolfy Taunt",
+        children: e.jsxs(F, {
+          children: [
+            e.jsx(p, { variant: "outline", onClick: () => Nt(0), children: "Player taunt" }),
+            e.jsx(p, { variant: "outline", onClick: () => Nt(1), children: "Nori taunt" }),
+          ],
+        }),
+      }),
+      e.jsxs(v, {
+        title: t("cakeduel.debug.dealtGuarantee.title"),
+        children: [
+          e.jsx(ae, {
+            label: t("cakeduel.debug.dealtGuarantee.alwaysIncludeLabel"),
+            checked: u,
+            onCheckedChange: c,
+            disabled: te,
+          }),
+          e.jsx(_, {
+            label: t("cakeduel.debug.dealtGuarantee.targetLabel"),
+            stack: !0,
+            children: e.jsx(pe, {
+              value: B,
+              onValueChange: (o) => X(o),
+              disabled: te,
+              options: [
+                { value: "0", label: t("cakeduel.debug.dealtGuarantee.targetPlayer") },
+                { value: "1", label: t("cakeduel.debug.dealtGuarantee.targetNori") },
+              ],
+            }),
+          }),
+          e.jsx(_, {
+            label: t("cakeduel.debug.dealtGuarantee.cardLabel"),
+            stack: !0,
+            children: e.jsx(pe, {
+              value: D,
+              onValueChange: (o) => ie(o),
+              disabled: te || C.length === 0,
+              placeholder: t("cakeduel.debug.dealtGuarantee.cardPlaceholder"),
+              options: C.map((o) => ({ value: o, label: o })),
+            }),
+          }),
+          e.jsx(I, { children: t("cakeduel.debug.dealtGuarantee.helpText") }),
+        ],
+      }),
+      e.jsx(v, {
+        title: "Challenge Reveal",
+        children: e.jsx("div", {
+          className: "flex flex-col gap-[var(--dbg-row-gap)]",
+          children: Cs.map((o) =>
+            e.jsx(
+              p,
+              {
+                variant: "outline",
+                disabled: f,
+                onClick: () => h(o),
+                children: f && Mt() ? "Playing..." : o.label,
+              },
+              o.id,
+            ),
+          ),
+        }),
+      }),
+      e.jsxs(v, {
+        title: "Timing",
+        children: [
+          e.jsx(S, {
+            label: "Flip stagger",
+            value: P,
+            min: 50,
+            max: 1500,
+            step: 50,
+            onValueChange: $,
+            formatValue: (o) => `${o}ms`,
+          }),
+          e.jsx(S, {
+            label: "Result hold",
+            value: L,
+            min: 200,
+            max: 5e3,
+            step: 100,
+            onValueChange: d,
+            formatValue: (o) => `${o}ms`,
+          }),
+          e.jsx(F, {
+            children: e.jsx(p, { variant: "ghost", onClick: Z, children: "Reset to defaults" }),
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "State",
+        children: [
+          e.jsxs(We, {
+            children: [
+              e.jsx(T, {
+                label: "activeEffect",
+                value: m ? m.type : "null",
+                tone: m ? "warn" : "muted",
+              }),
+              e.jsx(T, { label: "isPlaying", value: Mt() ? "true" : "false" }),
+              i &&
+                e.jsx(T, {
+                  label: "zones",
+                  tone: "muted",
+                  value: `Hand ${i.playerHand.length} | Opp ${i.opponentHand.length} | Atk ${i.attackPile.length} | Blk ${i.blockPile.length} | Deck ${i.deckCount}`,
+                }),
+            ],
+          }),
+          m &&
+            e.jsx(kt, {
+              maxH: "8rem",
+              children: JSON.stringify(
+                m,
+                (o, N) => (N instanceof Map ? Object.fromEntries(N) : N),
+                2,
+              ),
+            }),
+        ],
+      }),
+    ],
+  });
+}
+function js() {
+  const t = ge((n) => n.debugCakeOverride);
+  return t
+    ? e.jsxs(I, { children: ["Override: Player ", t.playerCakes, " / Nori ", t.noriCakes] })
+    : null;
+}
+function Ps(t = !0) {
+  const n = O((i) => i.registerTab),
+    s = O((i) => i.unregisterTab),
+    a = De("cakeduel");
+  l.useEffect(() => {
+    if (!t || !a) {
+      s("cakeduel");
+      return;
+    }
+    return (
+      n({ id: "cakeduel", label: "Cake Duel", render: () => e.jsx(ks, {}) }),
+      () => s("cakeduel")
+    );
+  }, [t, n, a, s]);
+}
+function Zt(t) {
+  return !t || typeof t != "object" || Array.isArray(t) ? null : t;
+}
+function ws() {
+  const t = Wn(),
+    n = gt((M) => M.queue),
+    s = gt((M) => M.dismiss),
+    a = gt((M) => M.dismissAll),
+    i = Ct(),
+    m = On(),
+    [f, y] = l.useState(Gn()),
+    E = l.useCallback((M) => {
+      (Un(M), y(M));
+    }, []),
+    [x, u] = l.useState("Test notification"),
+    [b, B] = l.useState("Subtitle"),
+    [z, D] = l.useState("Hello from the Debug tab."),
+    [k, q] = l.useState(""),
+    [P, $] = l.useState("system"),
+    L = l.useCallback(() => {
+      const M = k.trim();
+      t({
+        title: x || "Test",
+        subtitle: b || void 0,
+        body: z || void 0,
+        appId: P || void 0,
+        autoDismissMs: M === "" ? void 0 : Number(M),
+      });
+    }, [t, x, b, z, P, k]),
+    [d, C] = l.useState(null),
+    [V, c] = l.useState(!1),
+    X = l.useCallback(async () => {
+      if (i) {
+        c(!0);
+        try {
+          const M = await zn(i, { artifactType: "mail" });
+          C(M);
+        } catch (M) {
+          (console.warn("[NotificationsDebug] mail fetch failed:", M), C([]));
+        } finally {
+          c(!1);
+        }
+      }
+    }, [i]),
+    ie = l.useCallback(() => {
+      t({
+        appId: "mail",
+        title: "Nori",
+        subtitle: "Welcome to the data sea",
+        body: "This is a debug-only mail notification — no manifold change occurred.",
+      });
+    }, [t]),
+    he = l.useCallback(
+      (M) => {
+        const U = Zt(M.data);
+        U &&
+          t({
+            appId: "mail",
+            title: U.from ?? M.id,
+            subtitle: U.subject ?? "(no subject)",
+            body: (U.body_md ?? "").slice(0, 120),
+            onClick: () => {
+              ($n.getState().setPendingFocusEmailId(M.id), m({ appId: "mail", mode: "activate" }));
+            },
+          });
+      },
+      [t, m],
+    ),
+    [h, Z] = l.useState("From the server"),
+    [te, o] = l.useState("Pushed via notification.debug.push"),
+    [N, j] = l.useState("Server is the sole author of this message."),
+    [J, W] = l.useState("system"),
+    [re, ne] = l.useState(""),
+    [Se, Ce] = l.useState("idle"),
+    ue = l.useCallback(async () => {
+      if (i)
+        try {
+          (await i.publishEvent(qn, {
+            appId: J || void 0,
+            title: h || "Server message",
+            subtitle: te || void 0,
+            body: N || void 0,
+            onClick: re ? { type: "open-app", appId: re } : void 0,
+          }),
+            Ce("sent"));
+        } catch (M) {
+          (console.warn("[NotificationsDebug] server-push failed:", M), Ce("error"));
+        }
+    }, [i, J, h, te, N, re]);
+  return e.jsxs(me, {
+    children: [
+      e.jsxs(v, {
+        title: "Send test notification",
+        children: [
+          e.jsx(_, { label: "Title", stack: !0, children: e.jsx(xe, { value: x, onChange: u }) }),
+          e.jsx(_, {
+            label: "Subtitle",
+            stack: !0,
+            children: e.jsx(xe, { value: b, onChange: B }),
+          }),
+          e.jsx(_, { label: "Body", stack: !0, children: e.jsx(xe, { value: z, onChange: D }) }),
+          e.jsx(_, {
+            label: "App id (icon)",
+            stack: !0,
+            children: e.jsx(xe, { value: P, onChange: $, placeholder: "mail, system, …" }),
+          }),
+          e.jsx(_, {
+            label: "Auto-dismiss ms (empty = sticky)",
+            stack: !0,
+            children: e.jsx(xe, { value: k, onChange: q, placeholder: "sticky" }),
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsxs(p, { onClick: L, children: [e.jsx(Hn, { className: "h-3 w-3" }), " Push"] }),
+              e.jsx(ae, { label: "Mute notify sfx", checked: f, onCheckedChange: E }),
+            ],
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Mail simulator (client-derived)",
+        children: [
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, {
+                variant: "outline",
+                onClick: ie,
+                children: "Fire fake mail notification",
+              }),
+              e.jsx(p, { variant: "outline", onClick: Kn, children: "Forget seen mails" }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: X,
+                disabled: !i || V,
+                children: V ? "Loading…" : "List mail artifacts",
+              }),
+            ],
+          }),
+          d && d.length === 0 && e.jsx(Ge, { children: "No visible mail artifacts." }),
+          d &&
+            d.length > 0 &&
+            e.jsx("div", {
+              className: "flex flex-col gap-1",
+              children: d.map((M) => {
+                const U = Zt(M.data);
+                return e.jsx(
+                  _,
+                  {
+                    label: e.jsxs("span", {
+                      className: "flex min-w-0 flex-col",
+                      children: [
+                        e.jsx("span", {
+                          className: "truncate font-medium text-foreground",
+                          children: U?.subject ?? M.id,
+                        }),
+                        e.jsx("span", { className: "truncate", children: U?.from ?? M.id }),
+                      ],
+                    }),
+                    children: e.jsx(p, {
+                      variant: "outline",
+                      onClick: () => he(M),
+                      children: "Re-notify",
+                    }),
+                  },
+                  M.id,
+                );
+              }),
+            }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Server-push simulator (round trip)",
+        children: [
+          e.jsx(_, { label: "Title", stack: !0, children: e.jsx(xe, { value: h, onChange: Z }) }),
+          e.jsx(_, {
+            label: "Subtitle",
+            stack: !0,
+            children: e.jsx(xe, { value: te, onChange: o }),
+          }),
+          e.jsx(_, { label: "Body", stack: !0, children: e.jsx(xe, { value: N, onChange: j }) }),
+          e.jsx(_, { label: "App id", stack: !0, children: e.jsx(xe, { value: J, onChange: W }) }),
+          e.jsx(_, {
+            label: "onClick → open-app",
+            stack: !0,
+            children: e.jsx(xe, {
+              value: re,
+              onChange: ne,
+              placeholder: "(optional appId, e.g. mail)",
+            }),
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, { onClick: ue, disabled: !i, children: "Push from server" }),
+              Se === "sent" && e.jsx(I, { children: "Sent. Banner should appear." }),
+              Se === "error" && e.jsx(I, { tone: "error", children: "Failed — see console." }),
+            ],
+          }),
+          e.jsxs(I, {
+            children: [
+              "Round-trips through ",
+              e.jsx("code", { children: "notification.debug.push" }),
+              " → server",
+              e.jsx("code", { children: " pushNotification()" }),
+              " → ",
+              e.jsx("code", { children: "notification.pushed" }),
+              " → client.",
+            ],
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: `Active queue (${n.length})`,
+        children: [
+          n.length === 0 && e.jsx(Ge, { children: "Queue is empty." }),
+          n.map((M) =>
+            e.jsx(
+              _,
+              {
+                label: e.jsxs("span", {
+                  className: "flex min-w-0 flex-col",
+                  children: [
+                    e.jsx("span", {
+                      className: "truncate font-medium text-foreground",
+                      children: M.title,
+                    }),
+                    e.jsxs("span", {
+                      className: "flex min-w-0 gap-2 truncate",
+                      children: [
+                        e.jsx("span", { children: M.appId ?? "—" }),
+                        e.jsx("span", {
+                          className: "truncate",
+                          children: M.subtitle ?? M.body ?? "",
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                children: e.jsx(p, {
+                  icon: !0,
+                  variant: "outline",
+                  onClick: () => s(M.id),
+                  children: e.jsx(Sa, { className: "h-3 w-3" }),
+                }),
+              },
+              M.id,
+            ),
+          ),
+          n.length > 0 && e.jsx(p, { variant: "outline", onClick: a, children: "Dismiss all" }),
+        ],
+      }),
+    ],
+  });
+}
+function Ts(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("notifications");
+      return;
+    }
+    return (
+      n({ id: "notifications", label: "Notifications", render: () => e.jsx(ws, {}) }),
+      () => s("notifications")
+    );
+  }, [t, n, s]);
+}
+const As = we({ agentId: ce().optional() }).strict(),
+  Is = we({
+    agentId: ce(),
+    storytellerWsUrl: ce().nullable(),
+    storytellerInstanceId: ce().nullable(),
+  }).strict(),
+  Es = Ie("debug.chat_storyteller.request", As),
+  Rs = Ie("debug.chat_storyteller.response", Is);
+ot(Es, Rs, { scope: "session", defaultTimeoutMs: 3e3 });
+const Ns = we({
+    text: ce().min(1),
+    clientRefId: ce().optional(),
+    ephemeral: Oe().optional(),
+    emotion: yt(an).optional(),
+  }).strict(),
+  Ms = Ie("debug.chat_inject_talk.request", Ns),
+  cn = we({ agentId: ce().optional() }).strict(),
+  _s = we({
+    id: ce(),
+    kind: yt(["activity", "chat"]),
+    segmentClass: yt(["relaxed", "protected"]),
+    cartridgeId: ce().nullable(),
+    open: Oe(),
+    msgCount: ye().int(),
+    estTokens: ye().int(),
+  }).strict(),
+  Ds = we({
+    id: ce(),
+    label: ce(),
+    description: ce(),
+    messageCount: ye().int(),
+    estTokens: ye().int(),
+  }).strict(),
+  Ls = we({
+    ok: Oe(),
+    error: ce().nullable(),
+    usageNow: ye(),
+    budgetTokens: ye(),
+    usageRatio: ye(),
+    estimated: Oe(),
+    overheadTokens: ye(),
+    recencyTokens: ye(),
+    messageCount: ye().int(),
+    segments: Tt(_s),
+    scenarios: Tt(Ds),
+  }).strict(),
+  Vs = we({ agentId: ce().optional(), scenarioId: ce().min(1) }).strict(),
+  Fs = we({
+    ok: Oe(),
+    error: ce().nullable(),
+    appendedMessages: ye().int(),
+    estTokens: ye().int(),
+  }).strict(),
+  Bs = we({ ok: Oe(), error: ce().nullable(), removedMessages: ye().int() }).strict(),
+  Os = ot(Ie("debug.chat_context.stats.request", cn), Ie("debug.chat_context.stats.response", Ls), {
+    scope: "session",
+    defaultTimeoutMs: 5e3,
+  }),
+  Gs = ot(
+    Ie("debug.chat_context.append.request", Vs),
+    Ie("debug.chat_context.append.response", Fs),
+    { scope: "session", defaultTimeoutMs: 3e4 },
+  ),
+  Us = ot(Ie("debug.chat_context.reset.request", cn), Ie("debug.chat_context.reset.response", Bs), {
+    scope: "session",
+    defaultTimeoutMs: 3e4,
+  }),
+  zs = [{ value: "none", label: "（无情绪）" }, ...an.map((t) => ({ value: t, label: t }))];
+function $s() {
+  const t = Ct(),
+    [n, s] = l.useState("你好，玩家。我在「海」里看到你了。"),
+    [a, i] = l.useState("none"),
+    [m, f] = l.useState("idle"),
+    y = l.useRef(crypto.randomUUID()),
+    E = l.useCallback((b) => {
+      (s(b), (y.current = crypto.randomUUID()), f("idle"));
+    }, []),
+    x = l.useCallback((b) => {
+      (i(Qn(b) ? b : "none"), (y.current = crypto.randomUUID()), f("idle"));
+    }, []),
+    u = l.useCallback(async () => {
+      if (!(!t || n.trim() === ""))
+        try {
+          (await t.publishEvent(Ms, {
+            text: n,
+            clientRefId: y.current,
+            ...(a !== "none" ? { emotion: a } : {}),
+          }),
+            f("sent"));
+        } catch (b) {
+          (console.warn("[InjectTalkDebug] publish failed:", b), f("error"));
+        }
+    }, [t, n, a]);
+  return e.jsxs(me, {
+    children: [
+      e.jsxs(v, {
+        title: "Make Nori say it",
+        children: [
+          e.jsx(_, {
+            label: "Line",
+            stack: !0,
+            children: e.jsx(xe, {
+              value: n,
+              onChange: E,
+              placeholder: "Authored line for Nori to speak…",
+            }),
+          }),
+          e.jsx(_, {
+            label: "Emotion",
+            stack: !0,
+            children: e.jsx(pe, { value: a, onValueChange: x, options: zs }),
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsxs(p, {
+                onClick: u,
+                disabled: !t || n.trim() === "",
+                children: [e.jsx(xa, { className: "h-3 w-3" }), " Make Nori say it"],
+              }),
+              m === "sent" && e.jsx(I, { children: "Sent. Held while a fullscreen game is open." }),
+              m === "error" && e.jsx(I, { tone: "error", children: "Failed — see console." }),
+            ],
+          }),
+          e.jsxs(I, {
+            children: [
+              "Authored verbatim → ",
+              e.jsx("code", { children: "debug.chat_inject_talk.request" }),
+              " → server inject-talk queue (gated on fullscreen game) → Nori speaks with TTS + chat bubble, no LLM. Re-clicking the same line dedups via ",
+              e.jsx("code", { children: "clientRefId" }),
+              "; edit the line to say a new one.",
+            ],
+          }),
+        ],
+      }),
+      e.jsx(qs, {}),
+    ],
+  });
+}
+function qs() {
+  const t = Ct(),
+    [n, s] = l.useState("idle"),
+    [a, i] = l.useState(null),
+    [m, f] = l.useState(!1),
+    [y, E] = l.useState(!1),
+    [x, u] = l.useState("idle"),
+    [b, B] = l.useState(null),
+    z = l.useCallback(async () => {
+      if (t) {
+        (s("busy"), i(null));
+        try {
+          const k = await Yn(t);
+          k.ok ? s("done") : (s("error"), i(k.error));
+        } catch (k) {
+          (console.warn("[ChipResetDebug] reset failed:", k),
+            s("error"),
+            i(k instanceof Error ? k.message : String(k)));
+        }
+      }
+    }, [t]),
+    D = l.useCallback(
+      async (k) => {
+        if (t) {
+          (f(k), u("busy"), B(null));
+          try {
+            const q = await Xn(t, { neverOverheat: k });
+            q.ok ? (u("done"), E(!0)) : (f(!k), u("error"), B(q.error));
+          } catch (q) {
+            (console.warn("[ChipConfigDebug] toggle failed:", q),
+              f(!k),
+              u("error"),
+              B(q instanceof Error ? q.message : String(q)));
+          }
+        }
+      },
+      [t],
+    );
+  return e.jsxs(v, {
+    title: "Analysis chip",
+    children: [
+      e.jsxs(F, {
+        children: [
+          e.jsxs(p, {
+            onClick: z,
+            disabled: !t || n === "busy",
+            children: [e.jsx(Jn, { className: "h-3 w-3" }), " 重置芯片热度"],
+          }),
+          n === "done" && e.jsx(I, { children: "Chip is cold — heat 0, not fried." }),
+          n === "error" &&
+            e.jsxs(I, { tone: "error", children: ["Refused: ", a ?? "see console", "."] }),
+        ],
+      }),
+      e.jsx(ae, {
+        label: y ? "永不过热" : "永不过热（未同步）",
+        checked: m,
+        onCheckedChange: D,
+        disabled: !t || x === "busy",
+      }),
+      !y &&
+        e.jsx(I, {
+          children:
+            "The server flag isn't read back — after a reload the switch shows off even while the world's flag is still on. Toggle once to sync.",
+        }),
+      x === "done" &&
+        e.jsx(I, {
+          children: m
+            ? "On — scans spend no heat, the chip cannot fry."
+            : "Off — normal overheat rules, pre-toggle heat intact.",
+        }),
+      x === "error" &&
+        e.jsxs(I, { tone: "error", children: ["Refused: ", b ?? "see console", "."] }),
+      e.jsxs(I, {
+        children: [
+          e.jsx("code", { children: "manifold.chip.debug_reset" }),
+          " / ",
+          e.jsx("code", { children: "manifold.chip.debug_config" }),
+          " — server-side chip state writes, debug builds only.",
+        ],
+      }),
+    ],
+  });
+}
+function Hs(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("inject-talk");
+      return;
+    }
+    return (
+      n({ id: "inject-talk", label: "Inject Talk", render: () => e.jsx($s, {}) }),
+      () => s("inject-talk")
+    );
+  }, [t, n, s]);
+}
+const Ks = [
+    { label: "e6", target: 1e6 },
+    { label: "e8", target: 1e8 },
+    { label: "e10", target: 1e10 },
+    { label: "e14", target: 1e14 },
+    { label: "e15", target: 1e15 },
+    { label: "e20", target: 1e20 },
+    { label: "e25", target: 1e25 },
+    { label: "e31", target: 1e31 },
+    { label: "e35", target: 1e35 },
+  ],
+  Ws = [
+    { id: "owned", label: "Owned" },
+    { id: "autoplay", label: "Autoplay" },
+    { id: "manual", label: "Manual" },
+  ],
+  Qs = [
+    { label: "+1m", seconds: 60 },
+    { label: "+10m", seconds: 600 },
+    { label: "+1h", seconds: 3600 },
+    { label: "+6h", seconds: 21600 },
+    { label: "+12h", seconds: 43200 },
+    { label: "+24h", seconds: 86400 },
+  ],
+  Ys = [
+    { label: "+100", amount: 100 },
+    { label: "+1K", amount: 1e3 },
+    { label: "+10K", amount: 1e4 },
+  ];
+function Xs() {
+  const t = ta();
+  return t.phase === "ready" ? na(t.worldId) : null;
+}
+function Js() {
+  const t = Ae((h) => h.devGrant),
+    n = Ae((h) => h.devMaxAll),
+    s = Ae((h) => h.abdicate),
+    a = Ae((h) => h.devReset),
+    i = Ae((h) => h.devAdvanceTime),
+    m = Ae((h) => h.devGrantFactionCoins),
+    f = Ae((h) => h.devProof),
+    y = Ae((h) => h.state.currentAlignment),
+    [E, x] = l.useState(0),
+    u = Xs(),
+    b = u === null ? null : Zn(u),
+    B = () => {
+      (u !== null && aa(u), x((h) => h + 1));
+    },
+    z = () => {
+      (a(), B());
+    },
+    D = be((h) => h.params),
+    k = be((h) => h.source),
+    q = be((h) => h.kRef),
+    P = be((h) => h.exponent),
+    $ = be((h) => h.stepOffset),
+    L = be((h) => h.phase),
+    d = be((h) => h.setParam),
+    C = be((h) => h.setSource),
+    V = be((h) => h.setKRef),
+    c = be((h) => h.setExponent),
+    X = be((h) => h.setStepOffset),
+    ie = be((h) => h.restart),
+    he = be((h) => h.reset);
+  return e.jsxs(me, {
+    children: [
+      e.jsxs(v, {
+        title: "Cheats",
+        children: [
+          e.jsx(Ne, {
+            cols: 4,
+            children: Ks.map(({ label: h, target: Z }) =>
+              e.jsx(
+                p,
+                {
+                  variant: "outline",
+                  onClick: () => {
+                    const te = Ae.getState().state.compute;
+                    Z > te && t(Z - te);
+                  },
+                  children: h,
+                },
+                h,
+              ),
+            ),
+          }),
+          e.jsxs(Ne, {
+            cols: 2,
+            children: [
+              e.jsx(p, { variant: "secondary", onClick: n, children: "Max all" }),
+              e.jsx(p, { variant: "secondary", onClick: s, children: "Abdicate" }),
+            ],
+          }),
+          e.jsx(p, { variant: "destructive", className: "w-full", onClick: z, children: "Reset" }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Local Save",
+        children: [
+          e.jsx(_, {
+            label: "saved at",
+            children: e.jsx("span", {
+              className: "tabular-nums text-muted-foreground",
+              children: b === null ? "—" : new Date(b).toLocaleTimeString(),
+            }),
+          }),
+          e.jsx(p, {
+            variant: "destructive",
+            className: "w-full",
+            onClick: B,
+            children: "Wipe local save",
+          }),
+        ],
+      }),
+      e.jsx(v, {
+        title: "Alignment",
+        children: e.jsxs(Ne, {
+          cols: 4,
+          children: [
+            e.jsx(p, {
+              variant: y === null ? "default" : "outline",
+              onClick: () => f(null),
+              children: "None",
+            }),
+            ea.map((h) =>
+              e.jsx(
+                p,
+                {
+                  variant: y === h.id ? "default" : "outline",
+                  onClick: () => f(h.id),
+                  children: h.short,
+                },
+                h.id,
+              ),
+            ),
+          ],
+        }),
+      }),
+      e.jsx(v, {
+        title: "Time Travel",
+        children: e.jsx(Ne, {
+          cols: 3,
+          children: Qs.map(({ label: h, seconds: Z }) =>
+            e.jsx(p, { variant: "outline", onClick: () => i(Z), children: h }, h),
+          ),
+        }),
+      }),
+      e.jsx(v, {
+        title: "Faction Coins",
+        children: e.jsx(Ne, {
+          cols: 3,
+          children: Ys.map(({ label: h, amount: Z }) =>
+            e.jsx(p, { variant: "outline", onClick: () => m(Z), children: h }, h),
+          ),
+        }),
+      }),
+      e.jsxs(v, {
+        title: "Marginal Growth",
+        children: [
+          e.jsx(_, {
+            label: "Source",
+            stack: !0,
+            children: e.jsx(Ne, {
+              cols: 3,
+              className: "w-full",
+              children: Ws.map(({ id: h, label: Z }) =>
+                e.jsx(
+                  p,
+                  { variant: k === h ? "default" : "outline", onClick: () => C(h), children: Z },
+                  h,
+                ),
+              ),
+            }),
+          }),
+          e.jsxs(Ne, {
+            cols: 2,
+            children: [
+              e.jsx(p, { variant: "outline", onClick: ie, children: "Restart" }),
+              e.jsx(p, { variant: "outline", onClick: he, children: "Defaults" }),
+            ],
+          }),
+          e.jsx(S, {
+            label: "kRef",
+            value: q,
+            min: 5,
+            max: 1e3,
+            step: 1,
+            onValueChange: V,
+            formatValue: (h) => h.toFixed(1),
+          }),
+          e.jsx(S, {
+            label: "exp",
+            value: P,
+            min: 0.5,
+            max: 30,
+            step: 0.1,
+            onValueChange: c,
+            formatValue: (h) => h.toFixed(2),
+          }),
+          e.jsx(S, {
+            label: "step0",
+            value: $,
+            min: 0,
+            max: Math.max(1, D.maxSteps - 1),
+            step: 1,
+            onValueChange: X,
+            formatValue: (h) => Math.round(h).toLocaleString(),
+          }),
+          e.jsx(_, {
+            label: "phase",
+            children: e.jsxs("span", {
+              className: "tabular-nums text-muted-foreground",
+              children: [
+                L.toFixed(3),
+                k === "owned" &&
+                  L > 1 &&
+                  e.jsx("span", { className: "text-amber-500", children: " (clamped)" }),
+              ],
+            }),
+          }),
+          e.jsx(S, {
+            label: "n",
+            value: D.steps,
+            min: 0,
+            max: D.maxSteps,
+            step: 1,
+            onValueChange: (h) => d("steps", h),
+            formatValue: (h) => Math.round(h).toLocaleString(),
+            disabled: k !== "manual",
+          }),
+          e.jsx(S, {
+            label: "width",
+            value: D.lineWidth,
+            min: 0.6,
+            max: 4,
+            step: 0.1,
+            onValueChange: (h) => d("lineWidth", h),
+            formatValue: (h) => h.toFixed(1),
+          }),
+          e.jsx(S, {
+            label: "scale",
+            value: D.renderScale,
+            min: 0.25,
+            max: 10,
+            step: 0.25,
+            onValueChange: (h) => d("renderScale", h),
+            formatValue: (h) => `${h.toFixed(2)}x`,
+          }),
+          e.jsx(S, {
+            label: "alpha",
+            value: D.renderOpacity,
+            min: 0,
+            max: 1,
+            step: 0.05,
+            onValueChange: (h) => d("renderOpacity", h),
+            formatValue: (h) => h.toFixed(2),
+          }),
+          e.jsx(S, {
+            label: "blur",
+            value: D.renderBlur,
+            min: 0,
+            max: 64,
+            step: 0.5,
+            onValueChange: (h) => d("renderBlur", h),
+            formatValue: (h) => h.toFixed(2),
+          }),
+          e.jsx(S, {
+            label: "tint",
+            value: D.renderTint,
+            min: 0,
+            max: 16777215,
+            step: 1118481,
+            onValueChange: (h) => d("renderTint", h),
+            formatValue: (h) => `#${Math.round(h).toString(16).padStart(6, "0")}`,
+          }),
+        ],
+      }),
+    ],
+  });
+}
+function Zs(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("idle");
+      return;
+    }
+    return (n({ id: "idle", label: "Compute", render: () => e.jsx(Js, {}) }), () => s("idle"));
+  }, [t, n, s]);
+}
+function el(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    {
+      s("nori");
+      return;
+    }
+  }, [t, n, s]);
+}
+const _e = (t) => Math.round(t).toLocaleString("en-US");
+function tl(t) {
+  return t >= 0.8 ? "error" : t >= 0.6 ? "warn" : "ok";
+}
+function nl(t) {
+  return t >= 0.8 ? "bg-red-500" : t >= 0.6 ? "bg-amber-500" : "bg-emerald-500";
+}
+function al() {
+  const [t, n] = l.useState(null),
+    [s, a] = l.useState(null),
+    [i, m] = l.useState(!1),
+    [f, y] = l.useState(null),
+    [E, x] = l.useState(null),
+    u = l.useRef(!0);
+  l.useEffect(
+    () => (
+      (u.current = !0),
+      () => {
+        u.current = !1;
+      }
+    ),
+    [],
+  );
+  const b = l.useCallback(async () => {
+    m(!0);
+    try {
+      const $ = await (await Ke()).call(Os, {});
+      if (!u.current) return;
+      if (!$.ok) {
+        a($.error ?? "unknown error");
+        return;
+      }
+      (n($), a(null));
+    } catch (P) {
+      if ((console.warn("[NoriContextDebug] stats failed:", P), !u.current)) return;
+      a("no response — server not in debug mode? (ARCADE_DEBUG / NODE_ENV=development)");
+    } finally {
+      u.current && m(!1);
+    }
+  }, []);
+  l.useEffect(() => {
+    b();
+  }, [b]);
+  const B = l.useCallback(
+      async (P, $) => {
+        (y(P), x(null));
+        try {
+          const L = await $(await Ke());
+          if (!u.current) return;
+          x(
+            L.ok
+              ? { tone: "ok", text: L.successText }
+              : { tone: "error", text: `Refused: ${L.error ?? "unknown error"}.` },
+          );
+        } catch (L) {
+          if ((console.warn(`[NoriContextDebug] ${P} failed:`, L), !u.current)) return;
+          x({ tone: "error", text: `${P} failed — see console.` });
+        } finally {
+          (u.current && y(null), b());
+        }
+      },
+      [b],
+    ),
+    z = l.useCallback(
+      (P) =>
+        B(P, async ($) => {
+          const L = await $.call(Gs, { scenarioId: P });
+          return {
+            ...L,
+            successText: `Appended ${L.appendedMessages} messages (~${_e(L.estTokens)} tokens) from ${P}.`,
+          };
+        }),
+      [B],
+    ),
+    D = l.useCallback(
+      () =>
+        B("reset", async (P) => {
+          const $ = await P.call(Us, {});
+          return {
+            ...$,
+            successText: `Removed the ${$.removedMessages} messages present at request time.`,
+          };
+        }),
+      [B],
+    ),
+    k = t?.usageRatio ?? 0,
+    q = t?.estimated ? "~" : "";
+  return e.jsxs(me, {
+    children: [
+      e.jsxs(v, {
+        title: "Working set",
+        right: e.jsx(p, {
+          variant: "ghost",
+          icon: !0,
+          onClick: () => void b(),
+          disabled: i,
+          children: e.jsx(ga, { className: K("h-3 w-3", i && "animate-spin") }),
+        }),
+        children: [
+          s && e.jsx(I, { tone: "error", children: s }),
+          t &&
+            e.jsxs(e.Fragment, {
+              children: [
+                e.jsx("div", {
+                  className: "h-2 w-full overflow-hidden rounded-full bg-muted",
+                  children: e.jsx("div", {
+                    className: K("h-full rounded-full transition-[width]", nl(k)),
+                    style: { width: `${Math.min(100, k * 100).toFixed(1)}%` },
+                  }),
+                }),
+                e.jsx(T, {
+                  label: "Usage / budget",
+                  tone: tl(k),
+                  value: `${q}${_e(t.usageNow)} / ${_e(t.budgetTokens)} tok (${(k * 100).toFixed(1)}%)`,
+                }),
+                e.jsx(T, {
+                  label: "Overhead (system + kernel ctx + tools)",
+                  value: `~${_e(t.overheadTokens)} tok`,
+                }),
+                e.jsx(T, {
+                  label: "Recency window (never compacted)",
+                  value: `~${_e(t.recencyTokens)} tok`,
+                }),
+                e.jsx(T, { label: "Messages in history", value: t.messageCount }),
+                t.estimated &&
+                  e.jsx(I, {
+                    children:
+                      "Pure estimate — no engine-reported usage yet. Numbers re-ground on the next LLM turn.",
+                  }),
+              ],
+            }),
+          !t && !s && e.jsx(I, { children: "Loading…" }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Append scenario",
+        children: [
+          t?.scenarios.map((P) =>
+            e.jsxs(
+              "div",
+              {
+                className: "flex items-center justify-between gap-2",
+                children: [
+                  e.jsxs("div", {
+                    className: "min-w-0",
+                    children: [
+                      e.jsx("div", { className: "truncate", children: P.label }),
+                      e.jsxs("div", {
+                        className: "text-muted-foreground tabular-nums",
+                        children: [P.messageCount, " msgs · ~", _e(P.estTokens), " tok"],
+                      }),
+                    ],
+                  }),
+                  e.jsxs(p, {
+                    onClick: () => void z(P.id),
+                    disabled: f !== null,
+                    children: [e.jsx(pa, { className: "h-3 w-3" }), " Append"],
+                  }),
+                ],
+              },
+              P.id,
+            ),
+          ),
+          t &&
+            t.scenarios.length === 0 &&
+            e.jsx(I, { children: "No scenarios reported by the server." }),
+          E && e.jsx(I, { tone: E.tone, children: E.text }),
+          e.jsxs(I, {
+            children: [
+              "Replayed real sessions append VERBATIM into Nori's history — speak/game tool calls and results as actual tool_use/tool_result blocks, turn grouping and mount/unmount markers intact, ids freshly remapped. No LLM turn, no TTS. Append repeatedly to stack load, then chat to probe system-prompt recall.",
+              " ",
+              e.jsx("code", { children: "debug.chat_context.append" }),
+              ", debug builds only.",
+            ],
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Reset",
+        children: [
+          e.jsx(F, {
+            children: e.jsxs(p, {
+              variant: "destructive",
+              onClick: () => void D(),
+              disabled: f !== null,
+              children: [e.jsx(fa, { className: "h-3 w-3" }), " Reset context"],
+            }),
+          }),
+          e.jsx(I, {
+            children:
+              "Removes every non-system message present at request time (an in-flight turn finishes first and its output survives). Kernel context republishes next turn; the persisted session records the removal, so it survives reloads.",
+          }),
+        ],
+      }),
+      t &&
+        t.segments.length > 0 &&
+        e.jsx(v, {
+          title: `Segments (${t.segments.length})`,
+          children: e.jsx("div", {
+            className: "flex flex-col gap-px",
+            children: t.segments.map((P) =>
+              e.jsxs(
+                "div",
+                {
+                  className: "flex items-center justify-between gap-2 tabular-nums",
+                  children: [
+                    e.jsx("span", {
+                      className: "min-w-0 truncate font-mono text-muted-foreground",
+                      children: P.id,
+                    }),
+                    e.jsxs("span", {
+                      className: "shrink-0",
+                      children: [
+                        P.segmentClass,
+                        P.open ? " · open" : "",
+                        " · ",
+                        P.msgCount,
+                        " msgs · ~",
+                        _e(P.estTokens),
+                        " tok",
+                      ],
+                    }),
+                  ],
+                },
+                P.id,
+              ),
+            ),
+          }),
+        }),
+    ],
+  });
+}
+function sl(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("nori-context");
+      return;
+    }
+    return (
+      n({ id: "nori-context", label: "Nori Context", render: () => e.jsx(al, {}) }),
+      () => s("nori-context")
+    );
+  }, [t, n, s]);
+}
+const ll = 100;
+function oe(t) {
+  const n = st((a) => a.tuning[t]),
+    s = st((a) => a.setTuning);
+  return [n, (a) => s({ [t]: a })];
+}
+function il() {
+  const t = st((U) => U.resetTuning),
+    n = st((U) => U.tuning.requiredMs),
+    s = it(),
+    [a, i] = l.useState(_t);
+  l.useEffect(() => {
+    if (s) return;
+    const U = window.setInterval(() => {
+      const Ee = _t();
+      i((Me) => (rt(Me, Ee) ? Me : Ee));
+    }, ll);
+    return () => window.clearInterval(U);
+  }, [s]);
+  const [m, f] = oe("requiredMs"),
+    [y, E] = oe("horizontalDominance"),
+    [x, u] = oe("minSpeedX"),
+    [b, B] = oe("maxSampleGapMs"),
+    [z, D] = oe("skullTopBand"),
+    [k, q] = oe("leashHeadWidths"),
+    [P, $] = oe("vxToYawDeg"),
+    [L, d] = oe("maxYawDeg"),
+    [C, V] = oe("rollPerYaw"),
+    [c, X] = oe("pressPitchDeg"),
+    [ie, he] = oe("springStiffness"),
+    [h, Z] = oe("springDamping"),
+    [te, o] = oe("strokeSmoothTau"),
+    [N, j] = oe("strokeReleaseTau"),
+    [J, W] = oe("soundLevel"),
+    [re, ne] = oe("soundFreqScale"),
+    [Se, Ce] = oe("soundBodyGain"),
+    [ue, M] = l.useState(0.15);
+  return e.jsxs(me, {
+    children: [
+      e.jsxs(v, {
+        title: "Live state",
+        children: [
+          e.jsxs(We, {
+            children: [
+              e.jsx(T, {
+                label: "Progress",
+                value: `${(a.progressMs / 1e3).toFixed(1)} / ${(n / 1e3).toFixed(1)} s`,
+                tone: a.progressMs >= n ? "ok" : "default",
+              }),
+              e.jsx(T, {
+                label: "Armed (touched head)",
+                value: a.armed ? "yes" : "no",
+                tone: a.armed ? "ok" : "default",
+              }),
+              e.jsx(T, { label: "Stroking now", value: a.patting ? "yes" : "no" }),
+              e.jsx(T, {
+                label: "Stroke velocity",
+                value: `${a.strokeVX.toFixed(2)} head-widths/s`,
+              }),
+              e.jsx(T, { label: "Completions", value: a.completions }),
+              e.jsx(T, { label: "Last pointer phase", value: a.lastPhase || "—" }),
+              e.jsx(T, {
+                label: "Pattable (state gate)",
+                value: a.lastPattable ? "yes" : "no",
+                tone: a.lastPattable ? "default" : "warn",
+              }),
+              e.jsx(T, {
+                label: "Drag pressed on desktop",
+                value: a.lastOnSurface ? "yes" : "no",
+                tone: a.lastOnSurface ? "default" : "warn",
+              }),
+              e.jsx(T, { label: "In head-top zone", value: a.lastInZone ? "yes" : "no" }),
+              e.jsx(T, {
+                label: "Pointer (model)",
+                value: `${a.lastModelX.toFixed(2)}, ${a.lastModelY.toFixed(2)}`,
+              }),
+            ],
+          }),
+          e.jsx("p", {
+            className: "text-[length:var(--dbg-text-value)] text-muted-foreground",
+            children:
+              'Gate rows update on pointer press-drags. The desktop-surface check applies to the initial press only; "Armed" means the drag touched the head-top zone — from then on strokes count while the pointer stays within the leash around her head.',
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Gesture",
+        children: [
+          e.jsx(S, {
+            label: "Required pat time",
+            value: m,
+            onValueChange: f,
+            min: 500,
+            max: 8e3,
+            step: 100,
+            formatValue: (U) => `${(U / 1e3).toFixed(1)}`,
+            unit: "s",
+          }),
+          e.jsx(S, {
+            label: "Horizontal dominance (|dx| ≥ k·|dy|)",
+            value: y,
+            onValueChange: E,
+            min: 0,
+            max: 3,
+            step: 0.1,
+            unit: "×",
+          }),
+          e.jsx(S, {
+            label: "Min stroke speed",
+            value: x,
+            onValueChange: u,
+            min: 0,
+            max: 1,
+            step: 0.01,
+            unit: "hw/s",
+          }),
+          e.jsx(S, {
+            label: "Max sample gap",
+            value: b,
+            onValueChange: B,
+            min: 50,
+            max: 1e3,
+            step: 10,
+            formatValue: (U) => U.toFixed(0),
+            unit: "ms",
+          }),
+          e.jsx(S, {
+            label: "Head-top zone (skull band)",
+            value: z,
+            onValueChange: D,
+            min: 0.1,
+            max: 1,
+            step: 0.05,
+            formatValue: (U) => `top ${(U * 100).toFixed(0)}%`,
+          }),
+          e.jsx(S, {
+            label: "Armed leash (around skull)",
+            value: k,
+            onValueChange: q,
+            min: 0,
+            max: 3,
+            step: 0.05,
+            unit: "hw",
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Physical response",
+        children: [
+          e.jsx(S, {
+            label: "Velocity → yaw",
+            value: P,
+            onValueChange: $,
+            min: 0,
+            max: 30,
+            step: 0.5,
+            unit: "°/(hw/s)",
+          }),
+          e.jsx(S, {
+            label: "Max yaw",
+            value: L,
+            onValueChange: d,
+            min: 0,
+            max: 30,
+            step: 0.5,
+            unit: "°",
+          }),
+          e.jsx(S, {
+            label: "Roll per yaw",
+            value: C,
+            onValueChange: V,
+            min: -2,
+            max: 2,
+            step: 0.05,
+            unit: "×",
+          }),
+          e.jsx(S, {
+            label: "Press-down pitch",
+            value: c,
+            onValueChange: X,
+            min: -15,
+            max: 0,
+            step: 0.5,
+            unit: "°",
+          }),
+          e.jsx(S, {
+            label: "Spring stiffness",
+            value: ie,
+            onValueChange: he,
+            min: 5,
+            max: 300,
+            step: 5,
+            formatValue: (U) => U.toFixed(0),
+          }),
+          e.jsx(S, {
+            label: "Spring damping",
+            value: h,
+            onValueChange: Z,
+            min: 1,
+            max: 40,
+            step: 0.5,
+          }),
+          e.jsx(S, {
+            label: "Stroke smoothing τ",
+            value: te,
+            onValueChange: o,
+            min: 0.01,
+            max: 0.5,
+            step: 0.01,
+            unit: "s",
+          }),
+          e.jsx(S, {
+            label: "Stroke release τ",
+            value: N,
+            onValueChange: j,
+            min: 0.05,
+            max: 2,
+            step: 0.05,
+            unit: "s",
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Pat sound (procedural friction synth)",
+        children: [
+          e.jsx(S, { label: "Level", value: J, onValueChange: W, min: 0, max: 1, step: 0.05 }),
+          e.jsx(S, {
+            label: "Frequency scale",
+            value: re,
+            onValueChange: ne,
+            min: 0.3,
+            max: 1.5,
+            step: 0.05,
+            formatValue: (U) => `${U.toFixed(2)}×`,
+          }),
+          e.jsx(S, {
+            label: "Body (low) gain",
+            value: Se,
+            onValueChange: Ce,
+            min: 0,
+            max: 1,
+            step: 0.05,
+          }),
+          e.jsx(S, { label: "Rub speed", value: ue, onValueChange: M, min: 0, max: 1, step: 0.05 }),
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, { onClick: () => tt(ue, 2), children: "Rub 2s" }),
+              e.jsx(p, { variant: "outline", onClick: () => tt(0.1, 2), children: "Slow" }),
+              e.jsx(p, { variant: "outline", onClick: () => tt(0.5, 2), children: "Medium" }),
+              e.jsx(p, { variant: "outline", onClick: () => tt(1, 2), children: "Fast" }),
+              e.jsx(p, { variant: "outline", onClick: sa, children: "Stop" }),
+            ],
+          }),
+          e.jsx("p", {
+            className: "text-[length:var(--dbg-text-value)] text-muted-foreground",
+            children:
+              "Continuous noise-based friction synth (~/live2d/noriPatSound) — the audition feeds a sinusoidal hand velocity into the same drive path the real pat gesture uses, so swells and reversal dips match in-game behavior.",
+          }),
+        ],
+      }),
+      e.jsx(F, {
+        children: e.jsx(p, { variant: "outline", onClick: t, children: "Reset to defaults" }),
+      }),
+      e.jsx("p", {
+        className: "text-[length:var(--dbg-text-value)] text-muted-foreground",
+        children:
+          "These ARE the live values (runtime SSOT in useNoriPatStore) — edits apply to the next pointer sample/frame. Bake keepers into DEFAULT_NORI_PAT_TUNING.",
+      }),
+    ],
+  });
+}
+function rl(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("pat");
+      return;
+    }
+    return (n({ id: "pat", label: "Pat", render: () => e.jsx(il, {}) }), () => s("pat"));
+  }, [t, n, s]);
+}
+const ol = {
+    pictionary: "Pictionary",
+    chess: "Chess",
+    codenames: "Codenames",
+    cakeduel: "Cake Duel",
+  },
+  cl = new Map(
+    Object.entries(at).map(([t, n]) => [
+      `${n.group}/${n.index}`,
+      t
+        .split("_")
+        .map((s) => s.charAt(0) + s.slice(1).toLowerCase())
+        .join(" "),
+    ]),
+  );
+function xt(t) {
+  const n = [];
+  return (
+    t.motion &&
+      n.push(
+        cl.get(`${t.motion.group}/${t.motion.index}`) ?? `${t.motion.group}[${t.motion.index}]`,
+      ),
+    t.expression && n.push(`${t.expression.replace(/^\d+_/, "")} ${t.expressionSeconds ?? 3}s`),
+    n.join(" + ") || "(empty)"
+  );
+}
+function dl(t) {
+  const n = Math.round((t.chance ?? 1) * 100);
+  return `${t.priority} · reacts ${n}% · ${t.variants.length} outs`;
+}
+const ul = {
+  none: "no tell",
+  confident: "confident (Smile 2.5s)",
+  nervous: "nervous (Troubled 2.5s)",
+};
+function gl(t) {
+  const n = [];
+  for (const a of ["bluff", "honest"]) {
+    const i = { none: 0, confident: 0, nervous: 0 };
+    for (let f = 0; f < t; f++) i[sn(a)]++;
+    const m = (f) => `${((f / t) * 100).toFixed(1)}%`;
+    n.push(
+      `${a.padEnd(6)}  none ${m(i.none)}  confident ${m(i.confident)}  nervous ${m(i.nervous)}`,
+    );
+  }
+  const s = ra;
+  return (
+    n.push(""),
+    n.push(`design  bluff: confident ${s.bluff.confident} nervous ${s.bluff.nervous}`),
+    n.push(`        honest: confident ${s.honest.confident} nervous ${s.honest.nervous}`),
+    n.join(`
+`)
+  );
+}
+function hl() {
+  const t = nn((d) => d.model),
+    [n, s] = l.useState(!1),
+    [a, i] = l.useState(null),
+    [m, f] = l.useState(0),
+    [y, E] = l.useState(ht),
+    [x, u] = l.useState(null),
+    [b, B] = l.useState(null);
+  l.useEffect(() => {
+    if (!n) return;
+    const d = window.setInterval(() => f(Dt()), 250);
+    return () => window.clearInterval(d);
+  }, [n]);
+  const z = (d) => {
+      const C = pt(d.spec, { ignoreCooldown: !n });
+      (i({ label: d.label, outcome: C.outcome, variantText: C.variant ? xt(C.variant) : null }),
+        f(Dt()));
+    },
+    D = (d, C) => {
+      const V = pt(d.spec, { ignoreChance: !0, ignoreCooldown: !0, variantIndex: C });
+      i({ label: d.label, outcome: V.outcome, variantText: V.variant ? xt(V.variant) : null });
+    },
+    k = (d) => {
+      (ia(d), E(ht()));
+    },
+    q = () => {
+      (oa(), E(ht()));
+    },
+    P = (d) => {
+      const C = sn(d);
+      (C !== "none" && pt(ca[C], { ignoreCooldown: !0 }), u({ kind: d, tell: C }));
+    },
+    L = (() => {
+      if (!a) return { text: "", tone: "muted" };
+      switch (a.outcome) {
+        case "played":
+          return { text: `${a.label} → ${a.variantText}`, tone: "ok" };
+        case "skipped_chance":
+          return { text: `${a.label} → no reaction (lost the roll)`, tone: "warn" };
+        case "skipped_cooldown":
+          return { text: `${a.label} → skipped (motion cooldown)`, tone: "warn" };
+        case "no_model":
+          return { text: "No Live2D model mounted", tone: "error" };
+        default:
+          return a.outcome;
+      }
+    })();
+  return e.jsxs(me, {
+    children: [
+      e.jsxs(v, {
+        title: "Engine",
+        children: [
+          e.jsx(ae, {
+            id: "reaction-respect-cooldown",
+            label: "Respect motion cooldown",
+            checked: n,
+            onCheckedChange: s,
+          }),
+          e.jsx(I, {
+            children:
+              "Roll = fire like the game would: no-reaction roll, then a weight-sampled out. Numbered buttons force one exact out.",
+          }),
+          n
+            ? e.jsx(I, {
+                tone: m > 0 ? "warn" : "ok",
+                children:
+                  m > 0
+                    ? `Minor motions blocked for ${(m / 1e3).toFixed(1)}s (minor ${Lt.minor / 1e3}s / major ${Lt.major / 1e3}s / critical always)`
+                    : "Motion budget ready",
+              })
+            : null,
+          a ? e.jsx(I, { tone: L.tone, children: L.text }) : null,
+          t ? null : e.jsx(I, { tone: "error", children: "No Live2D model mounted." }),
+        ],
+      }),
+      Object.keys(Vt).map((d) =>
+        e.jsx(
+          v,
+          {
+            title: ol[d],
+            children: Object.values(Vt[d]).map((C) =>
+              e.jsxs(
+                "div",
+                {
+                  className: "flex flex-col gap-1",
+                  children: [
+                    e.jsx(_, {
+                      label: C.label,
+                      hint: dl(C.spec),
+                      children: e.jsx(p, {
+                        variant: "outline",
+                        onClick: () => z(C),
+                        disabled: !t,
+                        children: "Roll",
+                      }),
+                    }),
+                    e.jsx(F, {
+                      children: C.spec.variants.map((V, c) =>
+                        e.jsxs(
+                          p,
+                          {
+                            variant: "ghost",
+                            onClick: () => D(C, c),
+                            disabled: !t,
+                            className: "text-muted-foreground",
+                            children: [c + 1, "· ", xt(V)],
+                          },
+                          c,
+                        ),
+                      ),
+                    }),
+                    C.note
+                      ? e.jsx(I, {
+                          className: "text-[length:var(--dbg-text-value)]",
+                          children: C.note,
+                        })
+                      : null,
+                  ],
+                },
+                C.id,
+              ),
+            ),
+          },
+          d,
+        ),
+      ),
+      e.jsxs(v, {
+        title: "Phase moods (persistent)",
+        children: [
+          e.jsxs(F, {
+            children: [
+              la.map((d) =>
+                e.jsx(
+                  p,
+                  {
+                    variant: y === d.expression ? "default" : "outline",
+                    onClick: () => k(d.expression),
+                    disabled: !t,
+                    children: d.label,
+                  },
+                  d.id,
+                ),
+              ),
+              e.jsx(p, {
+                variant: "ghost",
+                onClick: q,
+                disabled: !t || !y,
+                children: "Clear mood",
+              }),
+            ],
+          }),
+          e.jsxs(I, {
+            children: [
+              y ? `Active mood: ${y}` : "No active mood",
+              " — moods hold until cleared and layer with one-shot reactions.",
+            ],
+          }),
+        ],
+      }),
+      e.jsxs(v, {
+        title: "Cake Duel acting (tell layer)",
+        children: [
+          e.jsx(I, {
+            children:
+              "On claim, a micro-expression is sampled with a soft correlation to the truth: nervous weakly signals bluff, confident weakly signals honest.",
+          }),
+          e.jsxs(F, {
+            children: [
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => P("bluff"),
+                disabled: !t,
+                children: "Claim (bluffing)",
+              }),
+              e.jsx(p, {
+                variant: "outline",
+                onClick: () => P("honest"),
+                disabled: !t,
+                children: "Claim (honest)",
+              }),
+              e.jsx(p, { variant: "ghost", onClick: () => B(gl(2e3)), children: "Sample 2000" }),
+            ],
+          }),
+          x
+            ? e.jsxs(I, {
+                tone: x.tell === "none" ? "muted" : "ok",
+                children: [x.kind, " claim → ", ul[x.tell]],
+              })
+            : null,
+          b ? e.jsx(kt, { children: b }) : null,
+        ],
+      }),
+    ],
+  });
+}
+function pl(t = !0) {
+  const n = O((a) => a.registerTab),
+    s = O((a) => a.unregisterTab);
+  l.useEffect(() => {
+    if (!t) {
+      s("reaction-lab");
+      return;
+    }
+    return (
+      n({ id: "reaction-lab", label: "Reactions", render: () => e.jsx(hl, {}) }),
+      () => s("reaction-lab")
+    );
+  }, [t, n, s]);
+}
+function ml(t = !0) {
+  const n = O((i) => i.registerTab),
+    s = O((i) => i.unregisterTab),
+    a = De("codenames");
+  l.useEffect(() => {
+    {
+      s("codenames-thinking");
+      return;
+    }
+  }, [t, n, a, s]);
+}
+function kl() {
+  const t = O((u) => u.tabs),
+    n = O((u) => u.activeTab),
+    s = O((u) => u.setActiveTab),
+    a = O((u) => u.requestedTab),
+    i = O((u) => u.clearRequestedTab),
+    [m, f] = l.useState(() => new Set());
+  (Ra(de),
+    Ma(de),
+    Va(de),
+    Wa(de),
+    as(de),
+    is(de),
+    fs(de),
+    Ps(de),
+    Ts(de),
+    Hs(de),
+    Zs(de),
+    el(de),
+    sl(de),
+    rl(de),
+    pl(de),
+    ml(de),
+    l.useEffect(() => {
+      a && t.some((u) => u.id === a) && (s(a), i());
+    }, [a, t, s, i]),
+    l.useEffect(() => {
+      t.length !== 0 && (!n || !t.some((u) => u.id === n)) && s(t[0].id);
+    }, [n, t, s]));
+  const y = t.find((u) => u.id === (n ?? t[0]?.id)) ?? t[0] ?? null,
+    E = y?.id ?? null;
+  if (
+    (l.useEffect(() => {
+      E &&
+        f((u) => {
+          if (u.has(E)) return u;
+          const b = new Set(u);
+          return (b.add(E), b);
+        });
+    }, [E]),
+    !y)
+  )
+    return e.jsx("div", {
+      className: "flex h-full items-center justify-center text-muted-foreground",
+      children: "No debug tabs available",
+    });
+  const x = t.filter((u) => u.id === y.id || m.has(u.id));
+  return e.jsxs("div", {
+    className: "flex h-full",
+    children: [
+      e.jsx("nav", {
+        className: "w-32 shrink-0 overflow-y-auto border-r bg-muted/30 p-1",
+        children: e.jsx("ul", {
+          className: "flex flex-col gap-px",
+          children: t.map((u) => {
+            const b = u.id === y.id;
+            return e.jsx(
+              "li",
+              {
+                children: e.jsx("button", {
+                  type: "button",
+                  onClick: () => s(u.id),
+                  className: K(
+                    "block w-full truncate rounded px-2 py-1 text-left text-[12.5px] leading-snug transition-colors",
+                    b
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ),
+                  children: u.label,
+                }),
+              },
+              u.id,
+            );
+          }),
+        }),
+      }),
+      e.jsx("div", {
+        className: "flex-1 overflow-hidden bg-muted/10",
+        children: x.map((u) =>
+          e.jsx(
+            "div",
+            {
+              className: K(
+                "h-full",
+                u.id === y.id ? "" : "hidden",
+                u.fullBleed ? "overflow-hidden" : "debug-tab overflow-auto p-2.5",
+              ),
+              children: u.render(),
+            },
+            u.id,
+          ),
+        ),
+      }),
+    ],
+  });
+}
+export { kl as Debug };

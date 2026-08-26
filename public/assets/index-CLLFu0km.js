@@ -1,1 +1,200 @@
-import{B as p,P as g,s as m}from"./paginated_query_client-BfQfGvpv.js";import{v as y}from"./index-B-Up_0PN.js";import{N as c}from"./NormalApp-Cn6agT0F.js";import{C as L}from"./http_client-C-GJjFrM.js";import"./index-CyHAbkO5.js";import"./i18n-DtIC1LRi.js";var v=Object.defineProperty,w=(a,e,t)=>e in a?v(a,e,{enumerable:!0,configurable:!0,writable:!0,value:t}):a[e]=t,d=(a,e,t)=>w(a,typeof e!="symbol"?e+"":e,t);class x{constructor(e,t={}){d(this,"listeners"),d(this,"_client"),d(this,"_paginatedClient"),d(this,"callNewListenersWithCurrentValuesTimer"),d(this,"_closed"),d(this,"_disabled"),t.skipConvexDeploymentUrlCheck!==!0&&y(e);const{disabled:n,...r}=t;this._closed=!1,this._disabled=!!n,typeof window>"u"&&!("unsavedChangesWarning"in r)&&(r.unsavedChangesWarning=!1),this.disabled||(this._client=new p(e,()=>{},r),this._paginatedClient=new g(this._client,i=>this._transition(i))),this.listeners=new Set}get closed(){return this._closed}get client(){if(this._client)return this._client;throw new Error("ConvexClient is disabled")}get paginatedClient(){if(this._paginatedClient)return this._paginatedClient;throw new Error("ConvexClient is disabled")}get disabled(){return this._disabled}onUpdate(e,t,n,r){if(this.disabled)return this.createDisabledUnsubscribe();const{queryToken:i,unsubscribe:l}=this.client.subscribe(c(e),t),s={queryToken:i,callback:n,onError:r,unsubscribe:l,hasEverRun:!1,query:e,args:t,paginationOptions:void 0};this.listeners.add(s),this.queryResultReady(i)&&this.callNewListenersWithCurrentValuesTimer===void 0&&(this.callNewListenersWithCurrentValuesTimer=setTimeout(()=>this.callNewListenersWithCurrentValues(),0));const o={unsubscribe:()=>{this.closed||(this.listeners.delete(s),l())},getCurrentValue:()=>this.client.localQueryResultByToken(i),getQueryLogs:()=>this.client.localQueryLogs(i)},u=o.unsubscribe;return Object.assign(u,o),u}onPaginatedUpdate_experimental(e,t,n,r,i){if(this.disabled)return this.createDisabledUnsubscribe();const l={initialNumItems:n.initialNumItems,id:-1},{paginatedQueryToken:s,unsubscribe:o}=this.paginatedClient.subscribe(c(e),t,l),u={queryToken:s,callback:r,onError:i,unsubscribe:o,hasEverRun:!1,query:e,args:t,paginationOptions:l};this.listeners.add(u),this.paginatedClient.localQueryResultByToken(s)&&this.callNewListenersWithCurrentValuesTimer===void 0&&(this.callNewListenersWithCurrentValuesTimer=setTimeout(()=>this.callNewListenersWithCurrentValues(),0));const h={unsubscribe:()=>{this.closed||(this.listeners.delete(u),o())},getCurrentValue:()=>this.paginatedClient.localQueryResult(c(e),t,l),getQueryLogs:()=>[]},b=h.unsubscribe;return Object.assign(b,h),b}callNewListenersWithCurrentValues(){this.callNewListenersWithCurrentValuesTimer=void 0,this._transition({queries:[],paginatedQueries:[]},!0)}queryResultReady(e){return this.client.hasLocalQueryResultByToken(e)}createDisabledUnsubscribe(){const e=(()=>{});return Object.assign(e,{unsubscribe:e,getCurrentValue:()=>{},getQueryLogs:()=>{}}),e}async close(){if(!this.disabled)return this.listeners.clear(),this._closed=!0,this._paginatedClient&&(this._paginatedClient=void 0),this.client.close()}getAuth(){if(!this.disabled)return this.client.getCurrentAuthClaims()}setAuth(e,t){this.disabled||this.client.setAuth(e,t??(()=>{}))}setAdminAuth(e,t){if(this.closed)throw new Error("ConvexClient has already been closed.");this.disabled||this.client.setAdminAuth(e,t)}_transition({queries:e,paginatedQueries:t},n=!1){const r=[...e.map(i=>i.token),...t.map(i=>i.token)];for(const i of this.listeners){const{callback:l,queryToken:s,onError:o,hasEverRun:u}=i,h=m(s),b=h?!!this.paginatedClient.localQueryResultByToken(s):this.client.hasLocalQueryResultByToken(s);if(r.includes(s)||n&&!u&&b){i.hasEverRun=!0;let C;try{h?C=this.paginatedClient.localQueryResultByToken(s):C=this.client.localQueryResultByToken(s)}catch(f){if(!(f instanceof Error))throw f;o?o(f,"Second argument to onUpdate onError is reserved for later use"):Promise.reject(f);continue}l(C,"Second argument to onUpdate callback is reserved for later use")}}}async mutation(e,t,n){if(this.disabled)throw new Error("ConvexClient is disabled");return await this.client.mutation(c(e),t,n)}async action(e,t){if(this.disabled)throw new Error("ConvexClient is disabled");return await this.client.action(c(e),t)}async query(e,t){if(this.disabled)throw new Error("ConvexClient is disabled");const n=this.client.localQueryResult(c(e),t);return n!==void 0?Promise.resolve(n):new Promise((r,i)=>{const{unsubscribe:l}=this.onUpdate(e,t,s=>{l(),r(s)},s=>{l(),i(s)})})}connectionState(){if(this.disabled)throw new Error("ConvexClient is disabled");return this.client.connectionState()}subscribeToConnectionState(e){return this.disabled?()=>{}:this.client.subscribeToConnectionState(e)}}function E(a){return a}export{p as BaseConvexClient,x as ConvexClient,L as ConvexHttpClient,E as convexQueryOptions};
+import { B as p, P as g, s as m } from "./paginated_query_client-BfQfGvpv.js";
+import { v as y } from "./index-B-Up_0PN.js";
+import { N as c } from "./NormalApp-Cn6agT0F.js";
+import { C as L } from "./http_client-C-GJjFrM.js";
+import "./index-CyHAbkO5.js";
+import "./i18n-DtIC1LRi.js";
+var v = Object.defineProperty,
+  w = (a, e, t) =>
+    e in a ? v(a, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : (a[e] = t),
+  d = (a, e, t) => w(a, typeof e != "symbol" ? e + "" : e, t);
+class x {
+  constructor(e, t = {}) {
+    (d(this, "listeners"),
+      d(this, "_client"),
+      d(this, "_paginatedClient"),
+      d(this, "callNewListenersWithCurrentValuesTimer"),
+      d(this, "_closed"),
+      d(this, "_disabled"),
+      t.skipConvexDeploymentUrlCheck !== !0 && y(e));
+    const { disabled: n, ...r } = t;
+    ((this._closed = !1),
+      (this._disabled = !!n),
+      typeof window > "u" && !("unsavedChangesWarning" in r) && (r.unsavedChangesWarning = !1),
+      this.disabled ||
+        ((this._client = new p(e, () => {}, r)),
+        (this._paginatedClient = new g(this._client, (i) => this._transition(i)))),
+      (this.listeners = new Set()));
+  }
+  get closed() {
+    return this._closed;
+  }
+  get client() {
+    if (this._client) return this._client;
+    throw new Error("ConvexClient is disabled");
+  }
+  get paginatedClient() {
+    if (this._paginatedClient) return this._paginatedClient;
+    throw new Error("ConvexClient is disabled");
+  }
+  get disabled() {
+    return this._disabled;
+  }
+  onUpdate(e, t, n, r) {
+    if (this.disabled) return this.createDisabledUnsubscribe();
+    const { queryToken: i, unsubscribe: l } = this.client.subscribe(c(e), t),
+      s = {
+        queryToken: i,
+        callback: n,
+        onError: r,
+        unsubscribe: l,
+        hasEverRun: !1,
+        query: e,
+        args: t,
+        paginationOptions: void 0,
+      };
+    (this.listeners.add(s),
+      this.queryResultReady(i) &&
+        this.callNewListenersWithCurrentValuesTimer === void 0 &&
+        (this.callNewListenersWithCurrentValuesTimer = setTimeout(
+          () => this.callNewListenersWithCurrentValues(),
+          0,
+        )));
+    const o = {
+        unsubscribe: () => {
+          this.closed || (this.listeners.delete(s), l());
+        },
+        getCurrentValue: () => this.client.localQueryResultByToken(i),
+        getQueryLogs: () => this.client.localQueryLogs(i),
+      },
+      u = o.unsubscribe;
+    return (Object.assign(u, o), u);
+  }
+  onPaginatedUpdate_experimental(e, t, n, r, i) {
+    if (this.disabled) return this.createDisabledUnsubscribe();
+    const l = { initialNumItems: n.initialNumItems, id: -1 },
+      { paginatedQueryToken: s, unsubscribe: o } = this.paginatedClient.subscribe(c(e), t, l),
+      u = {
+        queryToken: s,
+        callback: r,
+        onError: i,
+        unsubscribe: o,
+        hasEverRun: !1,
+        query: e,
+        args: t,
+        paginationOptions: l,
+      };
+    (this.listeners.add(u),
+      this.paginatedClient.localQueryResultByToken(s) &&
+        this.callNewListenersWithCurrentValuesTimer === void 0 &&
+        (this.callNewListenersWithCurrentValuesTimer = setTimeout(
+          () => this.callNewListenersWithCurrentValues(),
+          0,
+        )));
+    const h = {
+        unsubscribe: () => {
+          this.closed || (this.listeners.delete(u), o());
+        },
+        getCurrentValue: () => this.paginatedClient.localQueryResult(c(e), t, l),
+        getQueryLogs: () => [],
+      },
+      b = h.unsubscribe;
+    return (Object.assign(b, h), b);
+  }
+  callNewListenersWithCurrentValues() {
+    ((this.callNewListenersWithCurrentValuesTimer = void 0),
+      this._transition({ queries: [], paginatedQueries: [] }, !0));
+  }
+  queryResultReady(e) {
+    return this.client.hasLocalQueryResultByToken(e);
+  }
+  createDisabledUnsubscribe() {
+    const e = () => {};
+    return (
+      Object.assign(e, { unsubscribe: e, getCurrentValue: () => {}, getQueryLogs: () => {} }),
+      e
+    );
+  }
+  async close() {
+    if (!this.disabled)
+      return (
+        this.listeners.clear(),
+        (this._closed = !0),
+        this._paginatedClient && (this._paginatedClient = void 0),
+        this.client.close()
+      );
+  }
+  getAuth() {
+    if (!this.disabled) return this.client.getCurrentAuthClaims();
+  }
+  setAuth(e, t) {
+    this.disabled || this.client.setAuth(e, t ?? (() => {}));
+  }
+  setAdminAuth(e, t) {
+    if (this.closed) throw new Error("ConvexClient has already been closed.");
+    this.disabled || this.client.setAdminAuth(e, t);
+  }
+  _transition({ queries: e, paginatedQueries: t }, n = !1) {
+    const r = [...e.map((i) => i.token), ...t.map((i) => i.token)];
+    for (const i of this.listeners) {
+      const { callback: l, queryToken: s, onError: o, hasEverRun: u } = i,
+        h = m(s),
+        b = h
+          ? !!this.paginatedClient.localQueryResultByToken(s)
+          : this.client.hasLocalQueryResultByToken(s);
+      if (r.includes(s) || (n && !u && b)) {
+        i.hasEverRun = !0;
+        let C;
+        try {
+          h
+            ? (C = this.paginatedClient.localQueryResultByToken(s))
+            : (C = this.client.localQueryResultByToken(s));
+        } catch (f) {
+          if (!(f instanceof Error)) throw f;
+          o
+            ? o(f, "Second argument to onUpdate onError is reserved for later use")
+            : Promise.reject(f);
+          continue;
+        }
+        l(C, "Second argument to onUpdate callback is reserved for later use");
+      }
+    }
+  }
+  async mutation(e, t, n) {
+    if (this.disabled) throw new Error("ConvexClient is disabled");
+    return await this.client.mutation(c(e), t, n);
+  }
+  async action(e, t) {
+    if (this.disabled) throw new Error("ConvexClient is disabled");
+    return await this.client.action(c(e), t);
+  }
+  async query(e, t) {
+    if (this.disabled) throw new Error("ConvexClient is disabled");
+    const n = this.client.localQueryResult(c(e), t);
+    return n !== void 0
+      ? Promise.resolve(n)
+      : new Promise((r, i) => {
+          const { unsubscribe: l } = this.onUpdate(
+            e,
+            t,
+            (s) => {
+              (l(), r(s));
+            },
+            (s) => {
+              (l(), i(s));
+            },
+          );
+        });
+  }
+  connectionState() {
+    if (this.disabled) throw new Error("ConvexClient is disabled");
+    return this.client.connectionState();
+  }
+  subscribeToConnectionState(e) {
+    return this.disabled ? () => {} : this.client.subscribeToConnectionState(e);
+  }
+}
+function E(a) {
+  return a;
+}
+export { p as BaseConvexClient, x as ConvexClient, L as ConvexHttpClient, E as convexQueryOptions };

@@ -1,8 +1,145 @@
-import{j as t}from"./index-CyHAbkO5.js";import{m as r,at as x,au as y,s as m,p as h,n as g,C as f}from"./NormalApp-Cn6agT0F.js";import{C as e}from"./useElementSize-2mM2J_lP.js";const u=72,b=99,w=[{card:"defender",x:-100,y:12,rotate:-22,delay:.35},{card:"soldier",x:-48,y:-8,rotate:-10,delay:.25},{card:"archer",x:48,y:-8,rotate:10,delay:.3},{card:"wizard",x:100,y:12,rotate:22,delay:.4}];function N({locale:i,scale:a=1}){return t.jsxs("div",{className:"relative flex items-center justify-center",style:{height:160*a},children:[w.map(({card:s,x:l,y:o,rotate:d,delay:n})=>t.jsx(r.img,{src:x(s,i),alt:"",draggable:!1,className:"absolute rounded-lg",style:{width:u*a,height:b*a,objectFit:"cover",border:`2px solid ${e.cream}`,boxShadow:"0 4px 16px rgba(60,40,20,0.25)"},initial:{opacity:0,x:0,y:30*a,rotate:0,scale:.5},animate:{opacity:1,x:l*a,y:o*a,rotate:d,scale:1},transition:{delay:n,type:"spring",stiffness:130,damping:14}},s)),t.jsx(r.img,{src:y,alt:"",draggable:!1,className:"relative z-10 rounded-xl",style:{width:88*a,height:121*a,objectFit:"cover",border:`3px solid ${e.cream}`,boxShadow:`
+import { j as t } from "./index-CyHAbkO5.js";
+import { m as r, at as x, au as y, s as m, p as h, n as g, C as f } from "./NormalApp-Cn6agT0F.js";
+import { C as e } from "./useElementSize-2mM2J_lP.js";
+const u = 72,
+  b = 99,
+  w = [
+    { card: "defender", x: -100, y: 12, rotate: -22, delay: 0.35 },
+    { card: "soldier", x: -48, y: -8, rotate: -10, delay: 0.25 },
+    { card: "archer", x: 48, y: -8, rotate: 10, delay: 0.3 },
+    { card: "wizard", x: 100, y: 12, rotate: 22, delay: 0.4 },
+  ];
+function N({ locale: i, scale: a = 1 }) {
+  return t.jsxs("div", {
+    className: "relative flex items-center justify-center",
+    style: { height: 160 * a },
+    children: [
+      w.map(({ card: s, x: l, y: o, rotate: d, delay: n }) =>
+        t.jsx(
+          r.img,
+          {
+            src: x(s, i),
+            alt: "",
+            draggable: !1,
+            className: "absolute rounded-lg",
+            style: {
+              width: u * a,
+              height: b * a,
+              objectFit: "cover",
+              border: `2px solid ${e.cream}`,
+              boxShadow: "0 4px 16px rgba(60,40,20,0.25)",
+            },
+            initial: { opacity: 0, x: 0, y: 30 * a, rotate: 0, scale: 0.5 },
+            animate: { opacity: 1, x: l * a, y: o * a, rotate: d, scale: 1 },
+            transition: { delay: n, type: "spring", stiffness: 130, damping: 14 },
+          },
+          s,
+        ),
+      ),
+      t.jsx(r.img, {
+        src: y,
+        alt: "",
+        draggable: !1,
+        className: "relative z-10 rounded-xl",
+        style: {
+          width: 88 * a,
+          height: 121 * a,
+          objectFit: "cover",
+          border: `3px solid ${e.cream}`,
+          boxShadow: `
             0 8px 32px rgba(60,40,20,0.35),
             0 2px 8px rgba(60,40,20,0.2)
-          `},initial:{opacity:0,y:20*a,scale:.7,rotate:-4},animate:{opacity:1,y:0,scale:1,rotate:0},transition:{delay:.1,type:"spring",stiffness:140,damping:16}})]})}function $({compact:i=!1}){return t.jsxs(r.div,{className:i?"flex items-center gap-2 w-full":"flex items-center gap-2 w-full my-1",initial:{opacity:0,scaleX:0},animate:{opacity:1,scaleX:1},transition:{delay:.5,duration:.4},children:[t.jsx("div",{className:"flex-1 h-px",style:{background:`linear-gradient(90deg, transparent, ${e.peach}80)`}}),t.jsx("img",{src:m,alt:"",draggable:!1,className:i?"w-7 h-7 drop-shadow-md":"w-9 h-9 drop-shadow-md"}),t.jsx("div",{className:"flex-1 h-px",style:{background:`linear-gradient(90deg, ${e.peach}80, transparent)`}})]})}function D({onClick:i,icon:a,children:s,fontSize:l=20,compact:o=!1,shimmerDelay:d=0,entryDelay:n,pressSfx:c="hoof"}){const p=t.jsxs(r.button,{onClick:()=>{c==="session-start"?h("partygames-session-start"):g(f.hoof),i()},className:o?"w-full py-2 px-4 rounded-xl relative overflow-hidden":"w-full py-3 px-6 rounded-xl relative overflow-hidden",style:{background:`linear-gradient(135deg, ${e.peach} 0%, #e09050 50%, ${e.peachDeep} 100%)`,border:`2px solid ${e.peachDeep}`,color:e.cream,fontFamily:"'Lilita One', sans-serif",fontSize:l,letterSpacing:"0.03em",boxShadow:`
+          `,
+        },
+        initial: { opacity: 0, y: 20 * a, scale: 0.7, rotate: -4 },
+        animate: { opacity: 1, y: 0, scale: 1, rotate: 0 },
+        transition: { delay: 0.1, type: "spring", stiffness: 140, damping: 16 },
+      }),
+    ],
+  });
+}
+function $({ compact: i = !1 }) {
+  return t.jsxs(r.div, {
+    className: i ? "flex items-center gap-2 w-full" : "flex items-center gap-2 w-full my-1",
+    initial: { opacity: 0, scaleX: 0 },
+    animate: { opacity: 1, scaleX: 1 },
+    transition: { delay: 0.5, duration: 0.4 },
+    children: [
+      t.jsx("div", {
+        className: "flex-1 h-px",
+        style: { background: `linear-gradient(90deg, transparent, ${e.peach}80)` },
+      }),
+      t.jsx("img", {
+        src: m,
+        alt: "",
+        draggable: !1,
+        className: i ? "w-7 h-7 drop-shadow-md" : "w-9 h-9 drop-shadow-md",
+      }),
+      t.jsx("div", {
+        className: "flex-1 h-px",
+        style: { background: `linear-gradient(90deg, ${e.peach}80, transparent)` },
+      }),
+    ],
+  });
+}
+function D({
+  onClick: i,
+  icon: a,
+  children: s,
+  fontSize: l = 20,
+  compact: o = !1,
+  shimmerDelay: d = 0,
+  entryDelay: n,
+  pressSfx: c = "hoof",
+}) {
+  const p = t.jsxs(r.button, {
+    onClick: () => {
+      (c === "session-start" ? h("partygames-session-start") : g(f.hoof), i());
+    },
+    className: o
+      ? "w-full py-2 px-4 rounded-xl relative overflow-hidden"
+      : "w-full py-3 px-6 rounded-xl relative overflow-hidden",
+    style: {
+      background: `linear-gradient(135deg, ${e.peach} 0%, #e09050 50%, ${e.peachDeep} 100%)`,
+      border: `2px solid ${e.peachDeep}`,
+      color: e.cream,
+      fontFamily: "'Lilita One', sans-serif",
+      fontSize: l,
+      letterSpacing: "0.03em",
+      boxShadow: `
           0 6px 24px ${e.peach}50,
           inset 0 2px 0 ${e.peachLight}40,
           inset 0 -2px 0 ${e.peachDeep}40
-        `},whileHover:{scale:1.03,boxShadow:`0 8px 32px ${e.peach}60, inset 0 2px 0 ${e.peachLight}50`},whileTap:{scale:.97},children:[t.jsx(r.div,{className:"absolute inset-0",style:{background:"linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%)"},animate:{x:["-100%","200%"]},transition:{duration:3,repeat:1/0,repeatDelay:2,delay:d}}),t.jsxs("span",{className:"relative flex items-center justify-center gap-2",children:[a,s]})]});return n!==void 0?t.jsx(r.div,{initial:{opacity:0,y:10},animate:{opacity:1,y:0},transition:{delay:n,duration:.4},children:p}):p}export{$ as C,N as H,D as a};
+        `,
+    },
+    whileHover: {
+      scale: 1.03,
+      boxShadow: `0 8px 32px ${e.peach}60, inset 0 2px 0 ${e.peachLight}50`,
+    },
+    whileTap: { scale: 0.97 },
+    children: [
+      t.jsx(r.div, {
+        className: "absolute inset-0",
+        style: {
+          background:
+            "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%)",
+        },
+        animate: { x: ["-100%", "200%"] },
+        transition: { duration: 3, repeat: 1 / 0, repeatDelay: 2, delay: d },
+      }),
+      t.jsxs("span", {
+        className: "relative flex items-center justify-center gap-2",
+        children: [a, s],
+      }),
+    ],
+  });
+  return n !== void 0
+    ? t.jsx(r.div, {
+        initial: { opacity: 0, y: 10 },
+        animate: { opacity: 1, y: 0 },
+        transition: { delay: n, duration: 0.4 },
+        children: p,
+      })
+    : p;
+}
+export { $ as C, N as H, D as a };

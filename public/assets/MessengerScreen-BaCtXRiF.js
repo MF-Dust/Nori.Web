@@ -1,6 +1,1257 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/MarkdownMessage-BBEG1jm3.js","assets/index-CyHAbkO5.js","assets/i18n-DtIC1LRi.js","assets/index-FU-0vwSE.css","assets/openUrlInBrowser-VWrl1VvA.js","assets/browserIntent-DuTqin6R.js","assets/NormalApp-Cn6agT0F.js","assets/NormalApp-B2xPBQgm.css","assets/index-6t0U9yuc.js"])))=>i.map(i=>d[i]);
-import{j as e,_ as oe}from"./index-CyHAbkO5.js";import{r,u as N}from"./i18n-DtIC1LRi.js";import{f as w,aS as Q,aM as le,bT as I,bU as K,bV as ce,bW as de,bX as ue,bY as me,i as S,bZ as xe,b_ as F,X as ee,b$ as C,c0 as fe,c1 as pe,c2 as he,c3 as te,E as M,_ as ge,aY as U,J as ye,c4 as be,c5 as ve,c6 as je,c7 as L,p as D,A as V,m as B,aI as Ne,W as we,c8 as ke,c9 as _e,ca as Se,cb as Ce,z as Ee,cc as Te,D as Re,y as Ie,bC as De,cd as q,F as ze,G as Le}from"./NormalApp-Cn6agT0F.js";import{S as Ae}from"./square-pen-DO9jpDiG.js";import{o as G}from"./openUrlInBrowser-VWrl1VvA.js";import{m as Fe}from"./downloads-xYYIzO4D.js";import{D as Me}from"./download-BfBW5oEI.js";import{L as Be}from"./loader-circle-DfbEUp82.js";import{P as Pe}from"./plus-DNMm4qhb.js";import{L as P}from"./lock-eIU2WcCi.js";import{C as $e}from"./chevron-left-BV9NpAwY.js";import"./browserIntent-DuTqin6R.js";const Oe=[["path",{d:"M4.929 4.929 19.07 19.071",key:"196cmz"}],["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}]],We=w("ban",Oe);const He=[["path",{d:"M12 8V4H8",key:"hb8ula"}],["rect",{width:"16",height:"12",x:"4",y:"8",rx:"2",key:"enze0r"}],["path",{d:"M2 14h2",key:"vft8re"}],["path",{d:"M20 14h2",key:"4cs60a"}],["path",{d:"M15 13v2",key:"1xurst"}],["path",{d:"M9 13v2",key:"rq6x2g"}]],Ke=w("bot",He);const Ue=[["path",{d:"M18 6 7 17l-5-5",key:"116fxf"}],["path",{d:"m22 10-7.5 7.5L13 16",key:"ke71qq"}]],Ve=w("check-check",Ue);const qe=[["circle",{cx:"12",cy:"12",r:"1",key:"41hilf"}],["circle",{cx:"12",cy:"5",r:"1",key:"gxeob9"}],["circle",{cx:"12",cy:"19",r:"1",key:"lyex9k"}]],Ge=w("ellipsis-vertical",qe);const Ye=[["path",{d:"M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384",key:"9njp5v"}]],Je=w("phone",Ye);const Xe=[["path",{d:"m21 21-4.34-4.34",key:"14j7rj"}],["circle",{cx:"11",cy:"11",r:"8",key:"4ej97u"}]],Ze=w("search",Xe);const Qe=[["path",{d:"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z",key:"117uat"}],["path",{d:"M6 12h16",key:"s4cdu5"}]],Y=w("send-horizontal",Qe);const et=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["path",{d:"M8 14s1.5 2 4 2 4-2 4-2",key:"1y1vjs"}],["line",{x1:"9",x2:"9.01",y1:"9",y2:"9",key:"yxxnd0"}],["line",{x1:"15",x2:"15.01",y1:"9",y2:"9",key:"1p4y9e"}]],tt=w("smile",et);const st=[["path",{d:"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5",key:"ftymec"}],["rect",{x:"2",y:"6",width:"14",height:"12",rx:"2",key:"158x01"}]],nt=w("video",st);function rt(){const i=Q(),t=le(),a=I.useArtifacts("signal_thread"),n=I.useArtifacts("signal_message"),o=I.useIsLoading(),l=K(x=>x.localReadByFactId),s=K(x=>x.markReadLocal),u=r.useMemo(()=>ce(a,n),[a,n]),c=r.useRef(null),f=r.useMemo(()=>{const x=c.current,d=x&&x.parsed===u?x.views:null;let v=!d||d.length!==u.length;const h=u.map((k,_)=>{const j=de(k,t,l),y=d?.[_];return y&&y.read===j.read&&y.unreadCount===j.unreadCount&&y.pendingReadFacts.join(`
-`)===j.pendingReadFacts.join(`
-`)?y:(v=!0,{...k.view,read:j.read,unreadCount:j.unreadCount,pendingReadFacts:j.pendingReadFacts})});return!v&&d?d:(c.current={parsed:u,views:h},h)},[u,t,l]),m=r.useRef(f);m.current=f;const b=r.useCallback(x=>{const d=m.current.find(h=>h.threadId===x);if(!d||d.read)return;const v=d.pendingReadFacts;i("signal.read",{threadId:x}).then(()=>{for(const h of v)s(h)}).catch(h=>{console.warn("[Signal] Failed to mark thread as read:",h)})},[i,s]);return{threads:f,isLoading:o,markThreadRead:b}}function at(){const i=r.useRef(null),[t,a]=r.useState(0);return r.useLayoutEffect(()=>{const n=i.current;if(!n)return;a(n.clientWidth);const o=new ResizeObserver(l=>{const s=l[0];s&&a(s.contentRect.width)});return o.observe(n),()=>o.disconnect()},[]),[i,t]}const se=r.memo(function({title:t,size:a=40,seed:n,imageSrc:o,onZoom:l}){const{t:s}=N(),[u,c]=r.useState(!1);if(!!o&&!u){const m=e.jsx("img",{src:o,alt:"",width:a,height:a,onError:()=>c(!0),className:"shrink-0 select-none rounded-full object-cover",style:{width:a,height:a},"aria-hidden":!0});return l?e.jsx("button",{type:"button",onClick:l,"aria-label":s("signal.conversation.viewPhoto"),className:"shrink-0 rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/60",children:m}):m}return e.jsx("div",{className:"flex shrink-0 select-none items-center justify-center rounded-full font-medium text-white",style:{width:a,height:a,fontSize:Math.round(a*.42),background:me(n??t)},"aria-hidden":!0,children:ue(t)})}),it=r.memo(function({thread:t,selected:a,onSelect:n}){const{t:o}=N(),l=t.unreadCount>0,s=t.lastKind==="deleted"?o("signal.message.recalled"):t.lastKind==="image"?o("signal.message.imagePreview"):t.lastKind==="file"?o("signal.message.filePreview"):t.lastBody.replaceAll(`
-`," ");return e.jsxs("button",{type:"button",onClick:()=>n(t.threadId),"aria-current":a?"true":void 0,className:S("flex w-full items-center gap-3 px-3 py-2.5 text-left","border-b border-border/50 border-l-2 border-l-transparent","transition-colors duration-150","outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/60",a?"border-l-primary bg-primary/[0.12] hover:bg-primary/[0.18] active:bg-primary/[0.24]":"hover:bg-muted/40 active:bg-muted/60"),children:[e.jsx(se,{title:t.title,seed:t.threadId,size:44,imageSrc:t.avatarPath}),e.jsxs("div",{className:"min-w-0 flex-1",children:[e.jsxs("div",{className:"flex items-baseline justify-between gap-2",children:[e.jsx("span",{className:S("truncate text-sm text-foreground",l?"font-semibold":"font-medium"),children:t.title}),e.jsx("span",{className:S("shrink-0 text-[11px]",l?"font-medium text-primary":a?"text-foreground/70":"text-muted-foreground"),children:xe(t.lastTimestamp)})]}),e.jsxs("div",{className:"mt-0.5 flex items-center gap-2",children:[e.jsx("span",{className:S("min-w-0 flex-1 truncate text-[13px]",l?"font-medium text-foreground/90":a?"text-foreground/80":"text-muted-foreground"),children:s}),l&&e.jsx("span",{"aria-label":o("signal.threads.unread",{count:t.unreadCount}),className:"flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground",children:t.unreadCount})]})]})]})}),J=r.memo(function({threads:t,selectedThreadId:a,isLoading:n,onSelect:o}){const{t:l}=N(),[s,u]=r.useState(""),c=r.useMemo(()=>{const f=s.trim().toLowerCase();return f?t.filter(m=>`${m.title} ${m.lastBody}`.toLowerCase().includes(f)):t},[t,s]);return e.jsxs("div",{className:"flex h-full flex-col bg-muted/20",children:[e.jsxs("header",{className:"flex h-11 shrink-0 items-center justify-between border-b border-border/50 px-3",children:[e.jsx("span",{className:"text-sm font-medium text-foreground",children:l("signal.threads.title")}),e.jsx("button",{type:"button",title:l("signal.threads.newChatHint"),"aria-label":l("signal.threads.newChat"),className:"flex size-7 cursor-not-allowed items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:text-muted-foreground",children:e.jsx(Ae,{className:"size-4"})})]}),e.jsx("div",{className:"px-3 py-2.5",children:e.jsxs("div",{className:"flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",style:F,children:[e.jsx(Ze,{className:"size-4 shrink-0 text-muted-foreground"}),e.jsx("input",{value:s,onChange:f=>u(f.currentTarget.value),placeholder:l("signal.threads.search"),"aria-label":l("signal.threads.search"),className:"min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"}),s&&e.jsx("button",{type:"button",onClick:()=>u(""),"aria-label":l("signal.threads.clearSearch"),className:"shrink-0 text-muted-foreground transition-colors hover:text-foreground",children:e.jsx(ee,{className:"size-4"})})]})}),e.jsx("div",{className:"flex-1 overflow-y-auto border-t border-border/50 pb-2",children:n&&t.length===0?e.jsx("div",{className:"px-4 py-6 text-sm text-muted-foreground",children:l("signal.threads.loading")}):t.length===0?e.jsx("div",{className:"px-4 py-6 text-sm text-muted-foreground",children:l("signal.threads.empty")}):c.length===0?e.jsx("div",{className:"px-4 py-6 text-sm text-muted-foreground",children:l("signal.threads.noResults",{query:s.trim()})}):e.jsxs(e.Fragment,{children:[c.map(f=>e.jsx(it,{thread:f,selected:f.threadId===a,onSelect:o},f.threadId)),e.jsx("p",{className:"px-4 pb-1 pt-3 text-center text-[11px] text-muted-foreground/70",children:l("signal.threads.retention")})]})})]})});function ot(i){const t=I.useArtifacts("signal_message"),a=I.useIsLoading(),n=C(s=>s.messages),o=C(s=>s.typing),l=r.useMemo(()=>{if(!i)return[];const s=i===te,u=t.map(fe).filter(m=>m!=null&&m.threadId===i).filter(m=>!(s&&o&&m.kind==="file")),c=s?n:[];return[...s?pe(u,c):u,...c].sort(he)},[t,i,n,o]);return{messages:l,isLoading:a&&l.length===0}}function lt(i){return i>=1048576?`${(i/1048576).toFixed(1)} MB`:i>=1024?`${Math.round(i/1024)} KB`:`${i} B`}function ct({fileName:i,sizeBytes:t,downloadFact:a}){const{t:n}=N(),o=Q(),l=M(a),[s,u]=r.useState(!1),[c,f]=r.useState(0),m=r.useRef({});r.useEffect(()=>()=>{m.current.raf&&cancelAnimationFrame(m.current.raf),m.current.done&&clearTimeout(m.current.done)},[]);async function b(){const d=await o("client.emitFact",{factId:a});Fe("client.emitFact",{factId:a},d)}function x(){if(!(s||!a)){if(l){b();return}u(!0),f(0),m.current.raf=requestAnimationFrame(()=>f(100)),m.current.done=setTimeout(()=>{b().finally(()=>u(!1))},U)}}return e.jsxs("button",{type:"button",onClick:x,"aria-label":n(l?"signal.attachment.downloaded":"signal.attachment.download"),className:"flex w-full items-center gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-left transition-colors hover:bg-background/70",children:[e.jsx("div",{className:"flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary",children:e.jsx(ge,{className:"size-4"})}),e.jsxs("div",{className:"min-w-0 flex-1",children:[e.jsx("div",{className:"truncate text-sm font-medium text-foreground",children:i}),e.jsx("div",{className:"text-xs text-muted-foreground",children:s?n("signal.attachment.downloading"):lt(t)})]}),s?e.jsx("div",{className:"h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-muted",children:e.jsx("div",{className:"h-full rounded-full bg-primary",style:{width:`${c}%`,transitionProperty:"width",transitionDuration:`${U}ms`,transitionTimingFunction:"linear"}})}):e.jsx("span",{className:"flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground",children:l?e.jsx(ye,{className:"size-4 text-primary"}):e.jsx(Me,{className:"size-4"})})]})}const dt=r.lazy(()=>oe(()=>import("./MarkdownMessage-BBEG1jm3.js"),__vite__mapDeps([0,1,2,3,4,5,6,7,8]))),ut=/(https?:\/\/[^\s]+)/g;function mt(i,t){return i.split(ut).map((a,n)=>n%2===1?e.jsx("span",{role:"link",tabIndex:0,onClick:()=>void G(a),onKeyDown:o=>{(o.key==="Enter"||o.key===" ")&&(o.preventDefault(),G(a))},className:S("cursor-pointer underline underline-offset-2 hover:opacity-80",t),children:a},n):a)}const xt=r.memo(function({message:t,onViewImage:a}){const{t:n}=N(),o=t.sender!==be,l=o&&t.sender===ve&&t.kind==="text";if(t.kind==="deleted")return e.jsx("div",{className:`flex ${o?"justify-start":"justify-end"}`,children:e.jsxs("div",{className:"flex max-w-[78%] items-center gap-1.5 rounded-2xl bg-muted/60 px-3.5 py-2 text-[13px] italic text-muted-foreground",children:[e.jsx(We,{className:"size-3.5 shrink-0"}),e.jsx("span",{children:n("signal.message.recalled")})]})});const s=t.timestamp?e.jsxs(e.Fragment,{children:[e.jsx("span",{children:je(t.timestamp)}),!o&&e.jsx(Ve,{className:"size-3"})]}):null;if(t.kind==="image"&&t.assetPath){const u=t.assetPath,c=e.jsx("img",{src:u,alt:t.alt??"",width:t.dimensions?.width,height:t.dimensions?.height,className:"block h-auto max-w-full rounded-[14px] object-cover"});return e.jsx("div",{className:`flex ${o?"justify-start":"justify-end"}`,children:e.jsxs("div",{className:S("relative max-w-[min(78%,20rem)] overflow-hidden rounded-2xl p-0.5",o?"rounded-bl-sm border shadow-sm":"rounded-br-sm bg-primary shadow-[0_1px_2px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.18)]"),style:o?L:void 0,children:[a?e.jsx("button",{type:"button",onClick:()=>a(u),"aria-label":n("signal.conversation.viewPhoto"),className:"block w-full cursor-zoom-in outline-none transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring/60",children:c}):c,s&&e.jsx("span",{className:"pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white",children:s})]})})}if(t.kind==="file"&&t.downloadFact)return e.jsx("div",{className:"flex justify-start",children:e.jsxs("div",{className:"max-w-[min(78%,18rem)]",children:[e.jsx(ct,{fileName:t.fileName??"",sizeBytes:t.sizeBytes??0,downloadFact:t.downloadFact}),s&&e.jsx("div",{className:"mt-1 flex justify-end",children:e.jsx("span",{className:"flex items-center gap-1 text-[10px] text-muted-foreground",children:s})})]})});if(l){const u=`🤖 ${t.body}`;return e.jsx("div",{className:"flex justify-start",children:e.jsxs("div",{className:"relative max-w-[78%] rounded-2xl rounded-bl-sm border px-3.5 py-2 text-sm text-secondary-foreground shadow-sm",style:L,children:[e.jsx("div",{className:"select-text break-words italic leading-relaxed",children:e.jsx(r.Suspense,{fallback:e.jsx("div",{className:"flex min-h-5 items-center justify-center py-1 not-italic text-muted-foreground",children:e.jsx(Be,{className:"size-4 animate-spin","aria-label":n("signal.threads.loading")})}),children:e.jsx(dt,{source:u})})}),s&&e.jsx("div",{className:"mt-1 flex justify-end",children:e.jsx("span",{className:"flex items-center gap-1 text-[10px] not-italic text-muted-foreground",children:s})})]})})}return e.jsx("div",{className:`flex ${o?"justify-start":"justify-end"}`,children:e.jsxs("div",{className:S("relative max-w-[78%] rounded-2xl px-3.5 py-2 text-sm",o?"rounded-bl-sm border text-secondary-foreground shadow-sm":"rounded-br-sm bg-primary text-primary-foreground shadow-[0_1px_2px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.18)]"),style:o?L:void 0,children:[e.jsxs("div",{className:"select-text whitespace-pre-wrap break-words leading-relaxed",children:[mt(t.body,o?"text-primary":"text-primary-foreground"),s&&e.jsx("span",{"aria-hidden":!0,className:"invisible ml-2 inline-flex select-none items-center gap-1 text-[10px]",children:s})]}),s&&e.jsx("span",{className:S("pointer-events-none absolute bottom-2 right-3.5 flex items-center gap-1 text-[10px]",o?"text-muted-foreground":"text-primary-foreground/70"),children:s})]})})}),ft="451 SENDER_RESTRICTED",pt=["PolicyException: send rejected","  route: unidentified-delivery → relay.signal","  peer is not a verified service account","  account +1 555 0•• ••••  status 451 (restricted: risk-review)"];function ht({interactive:i=!1,sending:t=!1,onSend:a}){const{t:n}=N(),[o,l]=r.useState(!1),[s,u]=r.useState(!1),[c,f]=r.useState(""),m=r.useCallback(()=>{D("comms-signal-sealed-composer"),l(!0)},[]),b=r.useCallback(()=>{l(!1),u(!1)},[]),x=r.useCallback(()=>{const d=c.trim();d.length===0||t||(D("comms-signal-verify-send"),a?.(d),f(""))},[c,t,a]);return i?e.jsx("div",{className:"relative shrink-0 border-t border-border/50",children:e.jsxs("div",{className:"flex items-end gap-2 px-3 py-2.5",children:[e.jsx("div",{className:"flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",style:F,children:e.jsx("input",{type:"text",value:c,onChange:d=>f(d.target.value),onKeyDown:d=>{d.key==="Enter"&&!d.nativeEvent.isComposing&&(d.preventDefault(),x())},autoComplete:"off",placeholder:n("signal.composer.servicePlaceholder"),"aria-label":n("signal.composer.servicePlaceholder"),className:"min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"})}),e.jsx("button",{type:"button",onClick:x,disabled:c.trim().length===0||t,"aria-label":n("signal.composer.send"),className:"mb-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40",children:e.jsx(Y,{className:"size-[18px]"})})]})}):e.jsxs("div",{className:"relative shrink-0 border-t border-border/50",children:[e.jsx(V,{children:o&&e.jsx(B.div,{initial:{opacity:0,y:8},animate:{opacity:1,y:0},exit:{opacity:0,y:8},transition:{duration:.18,ease:[.32,.72,0,1]},className:"absolute inset-x-3 bottom-full mb-2 overflow-hidden rounded-lg border border-destructive/40 bg-popover shadow-lg",role:"alert",children:e.jsxs("div",{className:"flex items-start gap-2.5 p-3",children:[e.jsx(Ne,{className:"mt-0.5 size-4 shrink-0 text-destructive"}),e.jsxs("div",{className:"min-w-0 flex-1",children:[e.jsx("div",{className:"text-sm font-medium text-destructive",children:n("signal.composer.errorTitle")}),e.jsx("p",{className:"mt-0.5 text-[13px] leading-relaxed text-muted-foreground",children:n("signal.composer.errorBody")}),e.jsxs("div",{className:"mt-2 flex items-center gap-2",children:[e.jsx("span",{className:"inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground",children:ft}),e.jsxs("button",{type:"button",onClick:()=>u(d=>!d),className:"inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground",children:[n("signal.composer.details"),s?e.jsx(we,{className:"size-3"}):e.jsx(ke,{className:"size-3"})]})]}),e.jsx(V,{children:s&&e.jsx(B.pre,{initial:{height:0,opacity:0},animate:{height:"auto",opacity:1},exit:{height:0,opacity:0},transition:{duration:.16},className:"mt-2 overflow-hidden whitespace-pre-wrap rounded bg-muted/50 p-2 font-mono text-[10px] leading-relaxed text-muted-foreground",children:pt.join(`
-`)})})]}),e.jsx("button",{type:"button",onClick:b,"aria-label":n("signal.composer.dismiss"),className:"shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground",children:e.jsx(ee,{className:"size-4"})})]})})}),e.jsxs("div",{className:"flex items-end gap-2 px-3 py-2.5",children:[e.jsx("button",{type:"button",onClick:m,"aria-label":n("signal.composer.attach"),title:n("signal.composer.disabledHint"),className:"mb-0.5 flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-muted-foreground",children:e.jsx(Pe,{className:"size-5"})}),e.jsxs("div",{className:"flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2",style:F,children:[e.jsx(P,{className:"size-3.5 shrink-0 text-muted-foreground"}),e.jsx("input",{type:"text",readOnly:!0,value:"",onMouseDown:d=>{d.preventDefault(),m()},onFocus:d=>d.currentTarget.blur(),placeholder:n("signal.composer.placeholder"),"aria-label":n("signal.composer.placeholder"),className:"min-w-0 flex-1 cursor-not-allowed bg-transparent text-sm text-muted-foreground outline-none placeholder:text-muted-foreground"}),e.jsx("button",{type:"button",onClick:m,"aria-label":n("signal.composer.emoji"),title:n("signal.composer.disabledHint"),className:"shrink-0 cursor-not-allowed text-muted-foreground/70 transition-colors hover:text-muted-foreground",children:e.jsx(tt,{className:"size-5"})})]}),e.jsx("button",{type:"button",onClick:m,"aria-label":n("signal.composer.send"),title:n("signal.composer.disabledHint"),className:"mb-0.5 flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-primary text-primary-foreground opacity-50",children:e.jsx(Y,{className:"size-[18px]"})})]})]})}function gt({sep:i}){const{t}=N(),a=i.kind==="today"?t("signal.day.today"):i.kind==="yesterday"?t("signal.day.yesterday"):i.label;return e.jsx("div",{className:"flex justify-center py-1",children:e.jsx("span",{className:"rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground",children:a})})}function yt(){const{t:i}=N();return e.jsx("div",{className:"flex justify-start",children:e.jsxs("div",{className:"flex items-center gap-1.5 rounded-2xl rounded-bl-sm border px-3.5 py-2.5 text-secondary-foreground shadow-sm",style:L,children:[e.jsx("span",{className:"sr-only",children:i("signal.conversation.typing")}),[0,1,2].map(t=>e.jsx("span",{className:"size-1.5 animate-bounce rounded-full bg-current opacity-50",style:{animationDelay:`${t*140}ms`}},t))]})})}const X=r.memo(function({thread:t,fallbackTitle:a,showBack:n,onBack:o,onViewImage:l}){const{t:s}=N(),u=t?.threadId??null,{messages:c,isLoading:f}=ot(u),m=r.useMemo(()=>_e(c),[c]),b=t?.title??a??"",x=t?.avatarPath,d=t?.service===!0,v=M(Se),h=M(Ce),k=u===te,_=k&&d&&v&&!h,j=d&&v,y=Ee(),E=C(p=>p.typing),A=C(p=>p.send),T=C(p=>p.resumeOnce),g=C(p=>p.reset),R=k&&E,$=r.useRef(!1);r.useEffect(()=>{R&&!$.current&&D("comms-signal-typing"),$.current=R},[R]);const O=r.useRef(h);r.useEffect(()=>{h&&!O.current&&D("comms-signal-evidence-unlock"),O.current=h},[h]);const ne=r.useCallback(p=>{y&&A(y,p)},[y,A]);r.useEffect(()=>{_&&y&&T(y)},[_,y,T]);const re=Te(),W=r.useRef(!0);r.useEffect(()=>{if(W.current){W.current=!1;return}g()},[re,g]);const H=r.useRef(null);r.useEffect(()=>{const p=H.current;p&&(p.scrollTop=p.scrollHeight)},[c,R]);const ae=[{key:"call",icon:Je,label:s("signal.conversation.call")},{key:"video",icon:nt,label:s("signal.conversation.video")},{key:"menu",icon:Ge,label:s("signal.conversation.menu")}];return e.jsxs("div",{className:"flex h-full flex-col text-foreground",children:[e.jsxs("header",{className:"flex shrink-0 items-center gap-3 border-b border-border/50 px-3 py-2.5",children:[n&&e.jsx("button",{type:"button",onClick:o,"aria-label":s("signal.conversation.back"),className:"-ml-1 inline-flex items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground",children:e.jsx($e,{className:"size-5"})}),e.jsx(se,{title:b,seed:u??b,size:36,imageSrc:x,onZoom:x?()=>l?.(x):void 0}),e.jsxs("div",{className:"min-w-0 flex-1",children:[e.jsxs("div",{className:"flex items-center gap-1.5",children:[e.jsx("span",{className:"truncate text-sm font-medium",children:b}),j&&e.jsxs("span",{className:"inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary",children:[e.jsx(Ke,{className:"size-2.5"}),s("signal.conversation.serviceBadge")]})]}),e.jsxs("div",{className:"flex items-center gap-1 text-[11px] text-muted-foreground",children:[e.jsx(P,{className:"size-3"}),e.jsx("span",{children:s("signal.conversation.encrypted")})]})]}),e.jsx("div",{className:"flex items-center gap-0.5",children:ae.map(({key:p,icon:z,label:ie})=>e.jsx("button",{type:"button",title:s("signal.conversation.unavailable"),"aria-label":ie,className:"flex size-8 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-muted-foreground",children:e.jsx(z,{className:"size-[18px]"})},p))})]}),e.jsx("div",{ref:H,className:"flex-1 overflow-y-auto px-4 py-3",children:f&&c.length===0?e.jsx("div",{className:"text-sm text-muted-foreground",children:s("signal.threads.loading")}):e.jsxs(e.Fragment,{children:[e.jsx("div",{className:"flex justify-center pb-3 pt-1",children:e.jsx("span",{className:"max-w-[80%] rounded-lg bg-muted/60 px-3 py-1.5 text-center text-[11px] leading-relaxed text-muted-foreground",children:s("signal.conversation.encryptionNotice")})}),e.jsxs("div",{className:"space-y-2",children:[m.map(p=>e.jsxs(r.Fragment,{children:[p.separator&&e.jsx(gt,{sep:p.separator}),p.messages.map(z=>e.jsx(xt,{message:z,onViewImage:l},z.messageId))]},p.key)),R&&e.jsx(yt,{})]})]})}),e.jsx(ht,{interactive:_,sending:E,onSend:ne})]})}),bt=640,vt=320;function jt(){const{t:i}=N();return e.jsxs("div",{className:"flex h-full flex-col items-center justify-center gap-4 px-8 text-center text-foreground",style:{backgroundImage:"radial-gradient(320px 240px at 50% 38%, color-mix(in oklab, var(--primary) 13%, transparent), transparent 72%)"},children:[e.jsx("div",{className:"size-16",children:e.jsx(ze,{icon:Le("signal"),static:!0})}),e.jsxs("div",{children:[e.jsx("div",{className:"text-base font-medium",children:i("signal.empty.title")}),e.jsx("p",{className:"mt-1 max-w-xs text-sm leading-relaxed text-muted-foreground",children:i("signal.empty.subtitle")})]}),e.jsxs("div",{className:"flex items-center gap-1.5 text-[11px] text-muted-foreground",children:[e.jsx(P,{className:"size-3"}),e.jsx("span",{children:i("signal.empty.encrypted")})]})]})}function Nt(i){return(i.split("/").pop()??i).replace(/\.[^.]+$/,"").replaceAll(".","-")}function Z({src:i,onClose:t}){const{t:a}=N();return r.useEffect(()=>{const n=o=>{o.key==="Escape"&&t()};return window.addEventListener("keydown",n),()=>window.removeEventListener("keydown",n)},[t]),e.jsx("div",{className:"absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-6",role:"dialog","aria-modal":"true",onClick:t,children:e.jsx("img",{src:i,alt:a("signal.conversation.viewPhoto"),className:"max-h-full max-w-full rounded-lg object-contain shadow-2xl",onClick:n=>n.stopPropagation()})})}function At({navigate:i}){const{t}=N(),a=Re(g=>g.authenticated),{threads:n,isLoading:o,markThreadRead:l}=rt(),[s,u]=at(),[c,f]=r.useState(null),[m,b]=r.useState(null),[x,d]=r.useState(null);r.useEffect(()=>{a||i("login")},[a,i]);const v=n.find(g=>g.threadId===c)??null;Ie(c?x?`signal:${c}.photo.${Nt(x)}`:`signal:${c}`:"signal:messenger"),De(x&&v?t("chip.signal_photo",{name:v.title}):null);const h=r.useCallback(g=>{f(g),b(g),d(null),l(g)},[l]),k=r.useCallback(()=>f(null),[]),_=r.useCallback(g=>{g!==c&&D("comms-signal-open-thread"),h(g)},[h,c]),j=q(g=>g.pendingFocusThreadId),y=q(g=>g.setPendingFocusThreadId);r.useEffect(()=>{j&&(h(j),y(null))},[j,y,h]);const E=n.find(g=>g.threadId===m)??null;if(u>=bt)return e.jsxs("div",{ref:s,className:"relative flex h-full",children:[e.jsx("div",{className:"shrink-0 border-r border-border/50",style:{width:vt},children:e.jsx(J,{threads:n,selectedThreadId:c,isLoading:o,onSelect:_})}),e.jsx("div",{className:"min-w-0 flex-1",children:v?e.jsx(X,{thread:v,showBack:!1,onBack:k,onViewImage:d}):e.jsx(jt,{})}),x&&e.jsx(Z,{src:x,onClose:()=>d(null)})]});const T=c!==null;return e.jsxs("div",{ref:s,className:"relative h-full overflow-clip",children:[e.jsxs(B.div,{className:"flex h-full w-[200%]",initial:!1,animate:{x:T?"-50%":"0%"},transition:{type:"tween",duration:.25,ease:[.32,.72,0,1]},onAnimationComplete:()=>{T||b(null)},children:[e.jsx("div",{className:"h-full w-1/2 shrink-0",children:e.jsx(J,{threads:n,selectedThreadId:c,isLoading:o,onSelect:_})}),e.jsx("div",{className:"h-full w-1/2 shrink-0",children:E&&e.jsx(X,{thread:E,showBack:!0,onBack:k,onViewImage:d})})]}),x&&e.jsx(Z,{src:x,onClose:()=>d(null)})]})}export{At as MessengerScreen};
+const __vite__mapDeps = (
+  i,
+  m = __vite__mapDeps,
+  d = m.f ||
+    (m.f = [
+      "assets/MarkdownMessage-BBEG1jm3.js",
+      "assets/index-CyHAbkO5.js",
+      "assets/i18n-DtIC1LRi.js",
+      "assets/index-FU-0vwSE.css",
+      "assets/openUrlInBrowser-VWrl1VvA.js",
+      "assets/browserIntent-DuTqin6R.js",
+      "assets/NormalApp-Cn6agT0F.js",
+      "assets/NormalApp-B2xPBQgm.css",
+      "assets/index-6t0U9yuc.js",
+    ]),
+) => i.map((i) => d[i]);
+import { j as e, _ as oe } from "./index-CyHAbkO5.js";
+import { r, u as N } from "./i18n-DtIC1LRi.js";
+import {
+  f as w,
+  aS as Q,
+  aM as le,
+  bT as I,
+  bU as K,
+  bV as ce,
+  bW as de,
+  bX as ue,
+  bY as me,
+  i as S,
+  bZ as xe,
+  b_ as F,
+  X as ee,
+  b$ as C,
+  c0 as fe,
+  c1 as pe,
+  c2 as he,
+  c3 as te,
+  E as M,
+  _ as ge,
+  aY as U,
+  J as ye,
+  c4 as be,
+  c5 as ve,
+  c6 as je,
+  c7 as L,
+  p as D,
+  A as V,
+  m as B,
+  aI as Ne,
+  W as we,
+  c8 as ke,
+  c9 as _e,
+  ca as Se,
+  cb as Ce,
+  z as Ee,
+  cc as Te,
+  D as Re,
+  y as Ie,
+  bC as De,
+  cd as q,
+  F as ze,
+  G as Le,
+} from "./NormalApp-Cn6agT0F.js";
+import { S as Ae } from "./square-pen-DO9jpDiG.js";
+import { o as G } from "./openUrlInBrowser-VWrl1VvA.js";
+import { m as Fe } from "./downloads-xYYIzO4D.js";
+import { D as Me } from "./download-BfBW5oEI.js";
+import { L as Be } from "./loader-circle-DfbEUp82.js";
+import { P as Pe } from "./plus-DNMm4qhb.js";
+import { L as P } from "./lock-eIU2WcCi.js";
+import { C as $e } from "./chevron-left-BV9NpAwY.js";
+import "./browserIntent-DuTqin6R.js";
+const Oe = [
+    ["path", { d: "M4.929 4.929 19.07 19.071", key: "196cmz" }],
+    ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ],
+  We = w("ban", Oe);
+const He = [
+    ["path", { d: "M12 8V4H8", key: "hb8ula" }],
+    ["rect", { width: "16", height: "12", x: "4", y: "8", rx: "2", key: "enze0r" }],
+    ["path", { d: "M2 14h2", key: "vft8re" }],
+    ["path", { d: "M20 14h2", key: "4cs60a" }],
+    ["path", { d: "M15 13v2", key: "1xurst" }],
+    ["path", { d: "M9 13v2", key: "rq6x2g" }],
+  ],
+  Ke = w("bot", He);
+const Ue = [
+    ["path", { d: "M18 6 7 17l-5-5", key: "116fxf" }],
+    ["path", { d: "m22 10-7.5 7.5L13 16", key: "ke71qq" }],
+  ],
+  Ve = w("check-check", Ue);
+const qe = [
+    ["circle", { cx: "12", cy: "12", r: "1", key: "41hilf" }],
+    ["circle", { cx: "12", cy: "5", r: "1", key: "gxeob9" }],
+    ["circle", { cx: "12", cy: "19", r: "1", key: "lyex9k" }],
+  ],
+  Ge = w("ellipsis-vertical", qe);
+const Ye = [
+    [
+      "path",
+      {
+        d: "M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384",
+        key: "9njp5v",
+      },
+    ],
+  ],
+  Je = w("phone", Ye);
+const Xe = [
+    ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
+    ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }],
+  ],
+  Ze = w("search", Xe);
+const Qe = [
+    [
+      "path",
+      {
+        d: "M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z",
+        key: "117uat",
+      },
+    ],
+    ["path", { d: "M6 12h16", key: "s4cdu5" }],
+  ],
+  Y = w("send-horizontal", Qe);
+const et = [
+    ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+    ["path", { d: "M8 14s1.5 2 4 2 4-2 4-2", key: "1y1vjs" }],
+    ["line", { x1: "9", x2: "9.01", y1: "9", y2: "9", key: "yxxnd0" }],
+    ["line", { x1: "15", x2: "15.01", y1: "9", y2: "9", key: "1p4y9e" }],
+  ],
+  tt = w("smile", et);
+const st = [
+    [
+      "path",
+      {
+        d: "m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5",
+        key: "ftymec",
+      },
+    ],
+    ["rect", { x: "2", y: "6", width: "14", height: "12", rx: "2", key: "158x01" }],
+  ],
+  nt = w("video", st);
+function rt() {
+  const i = Q(),
+    t = le(),
+    a = I.useArtifacts("signal_thread"),
+    n = I.useArtifacts("signal_message"),
+    o = I.useIsLoading(),
+    l = K((x) => x.localReadByFactId),
+    s = K((x) => x.markReadLocal),
+    u = r.useMemo(() => ce(a, n), [a, n]),
+    c = r.useRef(null),
+    f = r.useMemo(() => {
+      const x = c.current,
+        d = x && x.parsed === u ? x.views : null;
+      let v = !d || d.length !== u.length;
+      const h = u.map((k, _) => {
+        const j = de(k, t, l),
+          y = d?.[_];
+        return y &&
+          y.read === j.read &&
+          y.unreadCount === j.unreadCount &&
+          y.pendingReadFacts.join(`
+`) ===
+            j.pendingReadFacts.join(`
+`)
+          ? y
+          : ((v = !0),
+            {
+              ...k.view,
+              read: j.read,
+              unreadCount: j.unreadCount,
+              pendingReadFacts: j.pendingReadFacts,
+            });
+      });
+      return !v && d ? d : ((c.current = { parsed: u, views: h }), h);
+    }, [u, t, l]),
+    m = r.useRef(f);
+  m.current = f;
+  const b = r.useCallback(
+    (x) => {
+      const d = m.current.find((h) => h.threadId === x);
+      if (!d || d.read) return;
+      const v = d.pendingReadFacts;
+      i("signal.read", { threadId: x })
+        .then(() => {
+          for (const h of v) s(h);
+        })
+        .catch((h) => {
+          console.warn("[Signal] Failed to mark thread as read:", h);
+        });
+    },
+    [i, s],
+  );
+  return { threads: f, isLoading: o, markThreadRead: b };
+}
+function at() {
+  const i = r.useRef(null),
+    [t, a] = r.useState(0);
+  return (
+    r.useLayoutEffect(() => {
+      const n = i.current;
+      if (!n) return;
+      a(n.clientWidth);
+      const o = new ResizeObserver((l) => {
+        const s = l[0];
+        s && a(s.contentRect.width);
+      });
+      return (o.observe(n), () => o.disconnect());
+    }, []),
+    [i, t]
+  );
+}
+const se = r.memo(function ({ title: t, size: a = 40, seed: n, imageSrc: o, onZoom: l }) {
+    const { t: s } = N(),
+      [u, c] = r.useState(!1);
+    if (!!o && !u) {
+      const m = e.jsx("img", {
+        src: o,
+        alt: "",
+        width: a,
+        height: a,
+        onError: () => c(!0),
+        className: "shrink-0 select-none rounded-full object-cover",
+        style: { width: a, height: a },
+        "aria-hidden": !0,
+      });
+      return l
+        ? e.jsx("button", {
+            type: "button",
+            onClick: l,
+            "aria-label": s("signal.conversation.viewPhoto"),
+            className:
+              "shrink-0 rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/60",
+            children: m,
+          })
+        : m;
+    }
+    return e.jsx("div", {
+      className:
+        "flex shrink-0 select-none items-center justify-center rounded-full font-medium text-white",
+      style: { width: a, height: a, fontSize: Math.round(a * 0.42), background: me(n ?? t) },
+      "aria-hidden": !0,
+      children: ue(t),
+    });
+  }),
+  it = r.memo(function ({ thread: t, selected: a, onSelect: n }) {
+    const { t: o } = N(),
+      l = t.unreadCount > 0,
+      s =
+        t.lastKind === "deleted"
+          ? o("signal.message.recalled")
+          : t.lastKind === "image"
+            ? o("signal.message.imagePreview")
+            : t.lastKind === "file"
+              ? o("signal.message.filePreview")
+              : t.lastBody.replaceAll(
+                  `
+`,
+                  " ",
+                );
+    return e.jsxs("button", {
+      type: "button",
+      onClick: () => n(t.threadId),
+      "aria-current": a ? "true" : void 0,
+      className: S(
+        "flex w-full items-center gap-3 px-3 py-2.5 text-left",
+        "border-b border-border/50 border-l-2 border-l-transparent",
+        "transition-colors duration-150",
+        "outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/60",
+        a
+          ? "border-l-primary bg-primary/[0.12] hover:bg-primary/[0.18] active:bg-primary/[0.24]"
+          : "hover:bg-muted/40 active:bg-muted/60",
+      ),
+      children: [
+        e.jsx(se, { title: t.title, seed: t.threadId, size: 44, imageSrc: t.avatarPath }),
+        e.jsxs("div", {
+          className: "min-w-0 flex-1",
+          children: [
+            e.jsxs("div", {
+              className: "flex items-baseline justify-between gap-2",
+              children: [
+                e.jsx("span", {
+                  className: S(
+                    "truncate text-sm text-foreground",
+                    l ? "font-semibold" : "font-medium",
+                  ),
+                  children: t.title,
+                }),
+                e.jsx("span", {
+                  className: S(
+                    "shrink-0 text-[11px]",
+                    l
+                      ? "font-medium text-primary"
+                      : a
+                        ? "text-foreground/70"
+                        : "text-muted-foreground",
+                  ),
+                  children: xe(t.lastTimestamp),
+                }),
+              ],
+            }),
+            e.jsxs("div", {
+              className: "mt-0.5 flex items-center gap-2",
+              children: [
+                e.jsx("span", {
+                  className: S(
+                    "min-w-0 flex-1 truncate text-[13px]",
+                    l
+                      ? "font-medium text-foreground/90"
+                      : a
+                        ? "text-foreground/80"
+                        : "text-muted-foreground",
+                  ),
+                  children: s,
+                }),
+                l &&
+                  e.jsx("span", {
+                    "aria-label": o("signal.threads.unread", { count: t.unreadCount }),
+                    className:
+                      "flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground",
+                    children: t.unreadCount,
+                  }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    });
+  }),
+  J = r.memo(function ({ threads: t, selectedThreadId: a, isLoading: n, onSelect: o }) {
+    const { t: l } = N(),
+      [s, u] = r.useState(""),
+      c = r.useMemo(() => {
+        const f = s.trim().toLowerCase();
+        return f ? t.filter((m) => `${m.title} ${m.lastBody}`.toLowerCase().includes(f)) : t;
+      }, [t, s]);
+    return e.jsxs("div", {
+      className: "flex h-full flex-col bg-muted/20",
+      children: [
+        e.jsxs("header", {
+          className:
+            "flex h-11 shrink-0 items-center justify-between border-b border-border/50 px-3",
+          children: [
+            e.jsx("span", {
+              className: "text-sm font-medium text-foreground",
+              children: l("signal.threads.title"),
+            }),
+            e.jsx("button", {
+              type: "button",
+              title: l("signal.threads.newChatHint"),
+              "aria-label": l("signal.threads.newChat"),
+              className:
+                "flex size-7 cursor-not-allowed items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:text-muted-foreground",
+              children: e.jsx(Ae, { className: "size-4" }),
+            }),
+          ],
+        }),
+        e.jsx("div", {
+          className: "px-3 py-2.5",
+          children: e.jsxs("div", {
+            className:
+              "flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",
+            style: F,
+            children: [
+              e.jsx(Ze, { className: "size-4 shrink-0 text-muted-foreground" }),
+              e.jsx("input", {
+                value: s,
+                onChange: (f) => u(f.currentTarget.value),
+                placeholder: l("signal.threads.search"),
+                "aria-label": l("signal.threads.search"),
+                className:
+                  "min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground",
+              }),
+              s &&
+                e.jsx("button", {
+                  type: "button",
+                  onClick: () => u(""),
+                  "aria-label": l("signal.threads.clearSearch"),
+                  className:
+                    "shrink-0 text-muted-foreground transition-colors hover:text-foreground",
+                  children: e.jsx(ee, { className: "size-4" }),
+                }),
+            ],
+          }),
+        }),
+        e.jsx("div", {
+          className: "flex-1 overflow-y-auto border-t border-border/50 pb-2",
+          children:
+            n && t.length === 0
+              ? e.jsx("div", {
+                  className: "px-4 py-6 text-sm text-muted-foreground",
+                  children: l("signal.threads.loading"),
+                })
+              : t.length === 0
+                ? e.jsx("div", {
+                    className: "px-4 py-6 text-sm text-muted-foreground",
+                    children: l("signal.threads.empty"),
+                  })
+                : c.length === 0
+                  ? e.jsx("div", {
+                      className: "px-4 py-6 text-sm text-muted-foreground",
+                      children: l("signal.threads.noResults", { query: s.trim() }),
+                    })
+                  : e.jsxs(e.Fragment, {
+                      children: [
+                        c.map((f) =>
+                          e.jsx(
+                            it,
+                            { thread: f, selected: f.threadId === a, onSelect: o },
+                            f.threadId,
+                          ),
+                        ),
+                        e.jsx("p", {
+                          className:
+                            "px-4 pb-1 pt-3 text-center text-[11px] text-muted-foreground/70",
+                          children: l("signal.threads.retention"),
+                        }),
+                      ],
+                    }),
+        }),
+      ],
+    });
+  });
+function ot(i) {
+  const t = I.useArtifacts("signal_message"),
+    a = I.useIsLoading(),
+    n = C((s) => s.messages),
+    o = C((s) => s.typing),
+    l = r.useMemo(() => {
+      if (!i) return [];
+      const s = i === te,
+        u = t
+          .map(fe)
+          .filter((m) => m != null && m.threadId === i)
+          .filter((m) => !(s && o && m.kind === "file")),
+        c = s ? n : [];
+      return [...(s ? pe(u, c) : u), ...c].sort(he);
+    }, [t, i, n, o]);
+  return { messages: l, isLoading: a && l.length === 0 };
+}
+function lt(i) {
+  return i >= 1048576
+    ? `${(i / 1048576).toFixed(1)} MB`
+    : i >= 1024
+      ? `${Math.round(i / 1024)} KB`
+      : `${i} B`;
+}
+function ct({ fileName: i, sizeBytes: t, downloadFact: a }) {
+  const { t: n } = N(),
+    o = Q(),
+    l = M(a),
+    [s, u] = r.useState(!1),
+    [c, f] = r.useState(0),
+    m = r.useRef({});
+  r.useEffect(
+    () => () => {
+      (m.current.raf && cancelAnimationFrame(m.current.raf),
+        m.current.done && clearTimeout(m.current.done));
+    },
+    [],
+  );
+  async function b() {
+    const d = await o("client.emitFact", { factId: a });
+    Fe("client.emitFact", { factId: a }, d);
+  }
+  function x() {
+    if (!(s || !a)) {
+      if (l) {
+        b();
+        return;
+      }
+      (u(!0),
+        f(0),
+        (m.current.raf = requestAnimationFrame(() => f(100))),
+        (m.current.done = setTimeout(() => {
+          b().finally(() => u(!1));
+        }, U)));
+    }
+  }
+  return e.jsxs("button", {
+    type: "button",
+    onClick: x,
+    "aria-label": n(l ? "signal.attachment.downloaded" : "signal.attachment.download"),
+    className:
+      "flex w-full items-center gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-left transition-colors hover:bg-background/70",
+    children: [
+      e.jsx("div", {
+        className:
+          "flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary",
+        children: e.jsx(ge, { className: "size-4" }),
+      }),
+      e.jsxs("div", {
+        className: "min-w-0 flex-1",
+        children: [
+          e.jsx("div", { className: "truncate text-sm font-medium text-foreground", children: i }),
+          e.jsx("div", {
+            className: "text-xs text-muted-foreground",
+            children: s ? n("signal.attachment.downloading") : lt(t),
+          }),
+        ],
+      }),
+      s
+        ? e.jsx("div", {
+            className: "h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-muted",
+            children: e.jsx("div", {
+              className: "h-full rounded-full bg-primary",
+              style: {
+                width: `${c}%`,
+                transitionProperty: "width",
+                transitionDuration: `${U}ms`,
+                transitionTimingFunction: "linear",
+              },
+            }),
+          })
+        : e.jsx("span", {
+            className:
+              "flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground",
+            children: l
+              ? e.jsx(ye, { className: "size-4 text-primary" })
+              : e.jsx(Me, { className: "size-4" }),
+          }),
+    ],
+  });
+}
+const dt = r.lazy(() =>
+    oe(() => import("./MarkdownMessage-BBEG1jm3.js"), __vite__mapDeps([0, 1, 2, 3, 4, 5, 6, 7, 8])),
+  ),
+  ut = /(https?:\/\/[^\s]+)/g;
+function mt(i, t) {
+  return i.split(ut).map((a, n) =>
+    n % 2 === 1
+      ? e.jsx(
+          "span",
+          {
+            role: "link",
+            tabIndex: 0,
+            onClick: () => void G(a),
+            onKeyDown: (o) => {
+              (o.key === "Enter" || o.key === " ") && (o.preventDefault(), G(a));
+            },
+            className: S("cursor-pointer underline underline-offset-2 hover:opacity-80", t),
+            children: a,
+          },
+          n,
+        )
+      : a,
+  );
+}
+const xt = r.memo(function ({ message: t, onViewImage: a }) {
+    const { t: n } = N(),
+      o = t.sender !== be,
+      l = o && t.sender === ve && t.kind === "text";
+    if (t.kind === "deleted")
+      return e.jsx("div", {
+        className: `flex ${o ? "justify-start" : "justify-end"}`,
+        children: e.jsxs("div", {
+          className:
+            "flex max-w-[78%] items-center gap-1.5 rounded-2xl bg-muted/60 px-3.5 py-2 text-[13px] italic text-muted-foreground",
+          children: [
+            e.jsx(We, { className: "size-3.5 shrink-0" }),
+            e.jsx("span", { children: n("signal.message.recalled") }),
+          ],
+        }),
+      });
+    const s = t.timestamp
+      ? e.jsxs(e.Fragment, {
+          children: [
+            e.jsx("span", { children: je(t.timestamp) }),
+            !o && e.jsx(Ve, { className: "size-3" }),
+          ],
+        })
+      : null;
+    if (t.kind === "image" && t.assetPath) {
+      const u = t.assetPath,
+        c = e.jsx("img", {
+          src: u,
+          alt: t.alt ?? "",
+          width: t.dimensions?.width,
+          height: t.dimensions?.height,
+          className: "block h-auto max-w-full rounded-[14px] object-cover",
+        });
+      return e.jsx("div", {
+        className: `flex ${o ? "justify-start" : "justify-end"}`,
+        children: e.jsxs("div", {
+          className: S(
+            "relative max-w-[min(78%,20rem)] overflow-hidden rounded-2xl p-0.5",
+            o
+              ? "rounded-bl-sm border shadow-sm"
+              : "rounded-br-sm bg-primary shadow-[0_1px_2px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.18)]",
+          ),
+          style: o ? L : void 0,
+          children: [
+            a
+              ? e.jsx("button", {
+                  type: "button",
+                  onClick: () => a(u),
+                  "aria-label": n("signal.conversation.viewPhoto"),
+                  className:
+                    "block w-full cursor-zoom-in outline-none transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring/60",
+                  children: c,
+                })
+              : c,
+            s &&
+              e.jsx("span", {
+                className:
+                  "pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white",
+                children: s,
+              }),
+          ],
+        }),
+      });
+    }
+    if (t.kind === "file" && t.downloadFact)
+      return e.jsx("div", {
+        className: "flex justify-start",
+        children: e.jsxs("div", {
+          className: "max-w-[min(78%,18rem)]",
+          children: [
+            e.jsx(ct, {
+              fileName: t.fileName ?? "",
+              sizeBytes: t.sizeBytes ?? 0,
+              downloadFact: t.downloadFact,
+            }),
+            s &&
+              e.jsx("div", {
+                className: "mt-1 flex justify-end",
+                children: e.jsx("span", {
+                  className: "flex items-center gap-1 text-[10px] text-muted-foreground",
+                  children: s,
+                }),
+              }),
+          ],
+        }),
+      });
+    if (l) {
+      const u = `🤖 ${t.body}`;
+      return e.jsx("div", {
+        className: "flex justify-start",
+        children: e.jsxs("div", {
+          className:
+            "relative max-w-[78%] rounded-2xl rounded-bl-sm border px-3.5 py-2 text-sm text-secondary-foreground shadow-sm",
+          style: L,
+          children: [
+            e.jsx("div", {
+              className: "select-text break-words italic leading-relaxed",
+              children: e.jsx(r.Suspense, {
+                fallback: e.jsx("div", {
+                  className:
+                    "flex min-h-5 items-center justify-center py-1 not-italic text-muted-foreground",
+                  children: e.jsx(Be, {
+                    className: "size-4 animate-spin",
+                    "aria-label": n("signal.threads.loading"),
+                  }),
+                }),
+                children: e.jsx(dt, { source: u }),
+              }),
+            }),
+            s &&
+              e.jsx("div", {
+                className: "mt-1 flex justify-end",
+                children: e.jsx("span", {
+                  className: "flex items-center gap-1 text-[10px] not-italic text-muted-foreground",
+                  children: s,
+                }),
+              }),
+          ],
+        }),
+      });
+    }
+    return e.jsx("div", {
+      className: `flex ${o ? "justify-start" : "justify-end"}`,
+      children: e.jsxs("div", {
+        className: S(
+          "relative max-w-[78%] rounded-2xl px-3.5 py-2 text-sm",
+          o
+            ? "rounded-bl-sm border text-secondary-foreground shadow-sm"
+            : "rounded-br-sm bg-primary text-primary-foreground shadow-[0_1px_2px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.18)]",
+        ),
+        style: o ? L : void 0,
+        children: [
+          e.jsxs("div", {
+            className: "select-text whitespace-pre-wrap break-words leading-relaxed",
+            children: [
+              mt(t.body, o ? "text-primary" : "text-primary-foreground"),
+              s &&
+                e.jsx("span", {
+                  "aria-hidden": !0,
+                  className:
+                    "invisible ml-2 inline-flex select-none items-center gap-1 text-[10px]",
+                  children: s,
+                }),
+            ],
+          }),
+          s &&
+            e.jsx("span", {
+              className: S(
+                "pointer-events-none absolute bottom-2 right-3.5 flex items-center gap-1 text-[10px]",
+                o ? "text-muted-foreground" : "text-primary-foreground/70",
+              ),
+              children: s,
+            }),
+        ],
+      }),
+    });
+  }),
+  ft = "451 SENDER_RESTRICTED",
+  pt = [
+    "PolicyException: send rejected",
+    "  route: unidentified-delivery → relay.signal",
+    "  peer is not a verified service account",
+    "  account +1 555 0•• ••••  status 451 (restricted: risk-review)",
+  ];
+function ht({ interactive: i = !1, sending: t = !1, onSend: a }) {
+  const { t: n } = N(),
+    [o, l] = r.useState(!1),
+    [s, u] = r.useState(!1),
+    [c, f] = r.useState(""),
+    m = r.useCallback(() => {
+      (D("comms-signal-sealed-composer"), l(!0));
+    }, []),
+    b = r.useCallback(() => {
+      (l(!1), u(!1));
+    }, []),
+    x = r.useCallback(() => {
+      const d = c.trim();
+      d.length === 0 || t || (D("comms-signal-verify-send"), a?.(d), f(""));
+    }, [c, t, a]);
+  return i
+    ? e.jsx("div", {
+        className: "relative shrink-0 border-t border-border/50",
+        children: e.jsxs("div", {
+          className: "flex items-end gap-2 px-3 py-2.5",
+          children: [
+            e.jsx("div", {
+              className:
+                "flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",
+              style: F,
+              children: e.jsx("input", {
+                type: "text",
+                value: c,
+                onChange: (d) => f(d.target.value),
+                onKeyDown: (d) => {
+                  d.key === "Enter" && !d.nativeEvent.isComposing && (d.preventDefault(), x());
+                },
+                autoComplete: "off",
+                placeholder: n("signal.composer.servicePlaceholder"),
+                "aria-label": n("signal.composer.servicePlaceholder"),
+                className:
+                  "min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground",
+              }),
+            }),
+            e.jsx("button", {
+              type: "button",
+              onClick: x,
+              disabled: c.trim().length === 0 || t,
+              "aria-label": n("signal.composer.send"),
+              className:
+                "mb-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40",
+              children: e.jsx(Y, { className: "size-[18px]" }),
+            }),
+          ],
+        }),
+      })
+    : e.jsxs("div", {
+        className: "relative shrink-0 border-t border-border/50",
+        children: [
+          e.jsx(V, {
+            children:
+              o &&
+              e.jsx(B.div, {
+                initial: { opacity: 0, y: 8 },
+                animate: { opacity: 1, y: 0 },
+                exit: { opacity: 0, y: 8 },
+                transition: { duration: 0.18, ease: [0.32, 0.72, 0, 1] },
+                className:
+                  "absolute inset-x-3 bottom-full mb-2 overflow-hidden rounded-lg border border-destructive/40 bg-popover shadow-lg",
+                role: "alert",
+                children: e.jsxs("div", {
+                  className: "flex items-start gap-2.5 p-3",
+                  children: [
+                    e.jsx(Ne, { className: "mt-0.5 size-4 shrink-0 text-destructive" }),
+                    e.jsxs("div", {
+                      className: "min-w-0 flex-1",
+                      children: [
+                        e.jsx("div", {
+                          className: "text-sm font-medium text-destructive",
+                          children: n("signal.composer.errorTitle"),
+                        }),
+                        e.jsx("p", {
+                          className: "mt-0.5 text-[13px] leading-relaxed text-muted-foreground",
+                          children: n("signal.composer.errorBody"),
+                        }),
+                        e.jsxs("div", {
+                          className: "mt-2 flex items-center gap-2",
+                          children: [
+                            e.jsx("span", {
+                              className:
+                                "inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground",
+                              children: ft,
+                            }),
+                            e.jsxs("button", {
+                              type: "button",
+                              onClick: () => u((d) => !d),
+                              className:
+                                "inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground",
+                              children: [
+                                n("signal.composer.details"),
+                                s
+                                  ? e.jsx(we, { className: "size-3" })
+                                  : e.jsx(ke, { className: "size-3" }),
+                              ],
+                            }),
+                          ],
+                        }),
+                        e.jsx(V, {
+                          children:
+                            s &&
+                            e.jsx(B.pre, {
+                              initial: { height: 0, opacity: 0 },
+                              animate: { height: "auto", opacity: 1 },
+                              exit: { height: 0, opacity: 0 },
+                              transition: { duration: 0.16 },
+                              className:
+                                "mt-2 overflow-hidden whitespace-pre-wrap rounded bg-muted/50 p-2 font-mono text-[10px] leading-relaxed text-muted-foreground",
+                              children: pt.join(`
+`),
+                            }),
+                        }),
+                      ],
+                    }),
+                    e.jsx("button", {
+                      type: "button",
+                      onClick: b,
+                      "aria-label": n("signal.composer.dismiss"),
+                      className:
+                        "shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground",
+                      children: e.jsx(ee, { className: "size-4" }),
+                    }),
+                  ],
+                }),
+              }),
+          }),
+          e.jsxs("div", {
+            className: "flex items-end gap-2 px-3 py-2.5",
+            children: [
+              e.jsx("button", {
+                type: "button",
+                onClick: m,
+                "aria-label": n("signal.composer.attach"),
+                title: n("signal.composer.disabledHint"),
+                className:
+                  "mb-0.5 flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-muted-foreground",
+                children: e.jsx(Pe, { className: "size-5" }),
+              }),
+              e.jsxs("div", {
+                className: "flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2",
+                style: F,
+                children: [
+                  e.jsx(P, { className: "size-3.5 shrink-0 text-muted-foreground" }),
+                  e.jsx("input", {
+                    type: "text",
+                    readOnly: !0,
+                    value: "",
+                    onMouseDown: (d) => {
+                      (d.preventDefault(), m());
+                    },
+                    onFocus: (d) => d.currentTarget.blur(),
+                    placeholder: n("signal.composer.placeholder"),
+                    "aria-label": n("signal.composer.placeholder"),
+                    className:
+                      "min-w-0 flex-1 cursor-not-allowed bg-transparent text-sm text-muted-foreground outline-none placeholder:text-muted-foreground",
+                  }),
+                  e.jsx("button", {
+                    type: "button",
+                    onClick: m,
+                    "aria-label": n("signal.composer.emoji"),
+                    title: n("signal.composer.disabledHint"),
+                    className:
+                      "shrink-0 cursor-not-allowed text-muted-foreground/70 transition-colors hover:text-muted-foreground",
+                    children: e.jsx(tt, { className: "size-5" }),
+                  }),
+                ],
+              }),
+              e.jsx("button", {
+                type: "button",
+                onClick: m,
+                "aria-label": n("signal.composer.send"),
+                title: n("signal.composer.disabledHint"),
+                className:
+                  "mb-0.5 flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-primary text-primary-foreground opacity-50",
+                children: e.jsx(Y, { className: "size-[18px]" }),
+              }),
+            ],
+          }),
+        ],
+      });
+}
+function gt({ sep: i }) {
+  const { t } = N(),
+    a =
+      i.kind === "today"
+        ? t("signal.day.today")
+        : i.kind === "yesterday"
+          ? t("signal.day.yesterday")
+          : i.label;
+  return e.jsx("div", {
+    className: "flex justify-center py-1",
+    children: e.jsx("span", {
+      className: "rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground",
+      children: a,
+    }),
+  });
+}
+function yt() {
+  const { t: i } = N();
+  return e.jsx("div", {
+    className: "flex justify-start",
+    children: e.jsxs("div", {
+      className:
+        "flex items-center gap-1.5 rounded-2xl rounded-bl-sm border px-3.5 py-2.5 text-secondary-foreground shadow-sm",
+      style: L,
+      children: [
+        e.jsx("span", { className: "sr-only", children: i("signal.conversation.typing") }),
+        [0, 1, 2].map((t) =>
+          e.jsx(
+            "span",
+            {
+              className: "size-1.5 animate-bounce rounded-full bg-current opacity-50",
+              style: { animationDelay: `${t * 140}ms` },
+            },
+            t,
+          ),
+        ),
+      ],
+    }),
+  });
+}
+const X = r.memo(function ({
+    thread: t,
+    fallbackTitle: a,
+    showBack: n,
+    onBack: o,
+    onViewImage: l,
+  }) {
+    const { t: s } = N(),
+      u = t?.threadId ?? null,
+      { messages: c, isLoading: f } = ot(u),
+      m = r.useMemo(() => _e(c), [c]),
+      b = t?.title ?? a ?? "",
+      x = t?.avatarPath,
+      d = t?.service === !0,
+      v = M(Se),
+      h = M(Ce),
+      k = u === te,
+      _ = k && d && v && !h,
+      j = d && v,
+      y = Ee(),
+      E = C((p) => p.typing),
+      A = C((p) => p.send),
+      T = C((p) => p.resumeOnce),
+      g = C((p) => p.reset),
+      R = k && E,
+      $ = r.useRef(!1);
+    r.useEffect(() => {
+      (R && !$.current && D("comms-signal-typing"), ($.current = R));
+    }, [R]);
+    const O = r.useRef(h);
+    r.useEffect(() => {
+      (h && !O.current && D("comms-signal-evidence-unlock"), (O.current = h));
+    }, [h]);
+    const ne = r.useCallback(
+      (p) => {
+        y && A(y, p);
+      },
+      [y, A],
+    );
+    r.useEffect(() => {
+      _ && y && T(y);
+    }, [_, y, T]);
+    const re = Te(),
+      W = r.useRef(!0);
+    r.useEffect(() => {
+      if (W.current) {
+        W.current = !1;
+        return;
+      }
+      g();
+    }, [re, g]);
+    const H = r.useRef(null);
+    r.useEffect(() => {
+      const p = H.current;
+      p && (p.scrollTop = p.scrollHeight);
+    }, [c, R]);
+    const ae = [
+      { key: "call", icon: Je, label: s("signal.conversation.call") },
+      { key: "video", icon: nt, label: s("signal.conversation.video") },
+      { key: "menu", icon: Ge, label: s("signal.conversation.menu") },
+    ];
+    return e.jsxs("div", {
+      className: "flex h-full flex-col text-foreground",
+      children: [
+        e.jsxs("header", {
+          className: "flex shrink-0 items-center gap-3 border-b border-border/50 px-3 py-2.5",
+          children: [
+            n &&
+              e.jsx("button", {
+                type: "button",
+                onClick: o,
+                "aria-label": s("signal.conversation.back"),
+                className:
+                  "-ml-1 inline-flex items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground",
+                children: e.jsx($e, { className: "size-5" }),
+              }),
+            e.jsx(se, {
+              title: b,
+              seed: u ?? b,
+              size: 36,
+              imageSrc: x,
+              onZoom: x ? () => l?.(x) : void 0,
+            }),
+            e.jsxs("div", {
+              className: "min-w-0 flex-1",
+              children: [
+                e.jsxs("div", {
+                  className: "flex items-center gap-1.5",
+                  children: [
+                    e.jsx("span", { className: "truncate text-sm font-medium", children: b }),
+                    j &&
+                      e.jsxs("span", {
+                        className:
+                          "inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary",
+                        children: [
+                          e.jsx(Ke, { className: "size-2.5" }),
+                          s("signal.conversation.serviceBadge"),
+                        ],
+                      }),
+                  ],
+                }),
+                e.jsxs("div", {
+                  className: "flex items-center gap-1 text-[11px] text-muted-foreground",
+                  children: [
+                    e.jsx(P, { className: "size-3" }),
+                    e.jsx("span", { children: s("signal.conversation.encrypted") }),
+                  ],
+                }),
+              ],
+            }),
+            e.jsx("div", {
+              className: "flex items-center gap-0.5",
+              children: ae.map(({ key: p, icon: z, label: ie }) =>
+                e.jsx(
+                  "button",
+                  {
+                    type: "button",
+                    title: s("signal.conversation.unavailable"),
+                    "aria-label": ie,
+                    className:
+                      "flex size-8 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-muted-foreground",
+                    children: e.jsx(z, { className: "size-[18px]" }),
+                  },
+                  p,
+                ),
+              ),
+            }),
+          ],
+        }),
+        e.jsx("div", {
+          ref: H,
+          className: "flex-1 overflow-y-auto px-4 py-3",
+          children:
+            f && c.length === 0
+              ? e.jsx("div", {
+                  className: "text-sm text-muted-foreground",
+                  children: s("signal.threads.loading"),
+                })
+              : e.jsxs(e.Fragment, {
+                  children: [
+                    e.jsx("div", {
+                      className: "flex justify-center pb-3 pt-1",
+                      children: e.jsx("span", {
+                        className:
+                          "max-w-[80%] rounded-lg bg-muted/60 px-3 py-1.5 text-center text-[11px] leading-relaxed text-muted-foreground",
+                        children: s("signal.conversation.encryptionNotice"),
+                      }),
+                    }),
+                    e.jsxs("div", {
+                      className: "space-y-2",
+                      children: [
+                        m.map((p) =>
+                          e.jsxs(
+                            r.Fragment,
+                            {
+                              children: [
+                                p.separator && e.jsx(gt, { sep: p.separator }),
+                                p.messages.map((z) =>
+                                  e.jsx(xt, { message: z, onViewImage: l }, z.messageId),
+                                ),
+                              ],
+                            },
+                            p.key,
+                          ),
+                        ),
+                        R && e.jsx(yt, {}),
+                      ],
+                    }),
+                  ],
+                }),
+        }),
+        e.jsx(ht, { interactive: _, sending: E, onSend: ne }),
+      ],
+    });
+  }),
+  bt = 640,
+  vt = 320;
+function jt() {
+  const { t: i } = N();
+  return e.jsxs("div", {
+    className:
+      "flex h-full flex-col items-center justify-center gap-4 px-8 text-center text-foreground",
+    style: {
+      backgroundImage:
+        "radial-gradient(320px 240px at 50% 38%, color-mix(in oklab, var(--primary) 13%, transparent), transparent 72%)",
+    },
+    children: [
+      e.jsx("div", {
+        className: "size-16",
+        children: e.jsx(ze, { icon: Le("signal"), static: !0 }),
+      }),
+      e.jsxs("div", {
+        children: [
+          e.jsx("div", { className: "text-base font-medium", children: i("signal.empty.title") }),
+          e.jsx("p", {
+            className: "mt-1 max-w-xs text-sm leading-relaxed text-muted-foreground",
+            children: i("signal.empty.subtitle"),
+          }),
+        ],
+      }),
+      e.jsxs("div", {
+        className: "flex items-center gap-1.5 text-[11px] text-muted-foreground",
+        children: [
+          e.jsx(P, { className: "size-3" }),
+          e.jsx("span", { children: i("signal.empty.encrypted") }),
+        ],
+      }),
+    ],
+  });
+}
+function Nt(i) {
+  return (i.split("/").pop() ?? i).replace(/\.[^.]+$/, "").replaceAll(".", "-");
+}
+function Z({ src: i, onClose: t }) {
+  const { t: a } = N();
+  return (
+    r.useEffect(() => {
+      const n = (o) => {
+        o.key === "Escape" && t();
+      };
+      return (
+        window.addEventListener("keydown", n),
+        () => window.removeEventListener("keydown", n)
+      );
+    }, [t]),
+    e.jsx("div", {
+      className: "absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-6",
+      role: "dialog",
+      "aria-modal": "true",
+      onClick: t,
+      children: e.jsx("img", {
+        src: i,
+        alt: a("signal.conversation.viewPhoto"),
+        className: "max-h-full max-w-full rounded-lg object-contain shadow-2xl",
+        onClick: (n) => n.stopPropagation(),
+      }),
+    })
+  );
+}
+function At({ navigate: i }) {
+  const { t } = N(),
+    a = Re((g) => g.authenticated),
+    { threads: n, isLoading: o, markThreadRead: l } = rt(),
+    [s, u] = at(),
+    [c, f] = r.useState(null),
+    [m, b] = r.useState(null),
+    [x, d] = r.useState(null);
+  r.useEffect(() => {
+    a || i("login");
+  }, [a, i]);
+  const v = n.find((g) => g.threadId === c) ?? null;
+  (Ie(c ? (x ? `signal:${c}.photo.${Nt(x)}` : `signal:${c}`) : "signal:messenger"),
+    De(x && v ? t("chip.signal_photo", { name: v.title }) : null));
+  const h = r.useCallback(
+      (g) => {
+        (f(g), b(g), d(null), l(g));
+      },
+      [l],
+    ),
+    k = r.useCallback(() => f(null), []),
+    _ = r.useCallback(
+      (g) => {
+        (g !== c && D("comms-signal-open-thread"), h(g));
+      },
+      [h, c],
+    ),
+    j = q((g) => g.pendingFocusThreadId),
+    y = q((g) => g.setPendingFocusThreadId);
+  r.useEffect(() => {
+    j && (h(j), y(null));
+  }, [j, y, h]);
+  const E = n.find((g) => g.threadId === m) ?? null;
+  if (u >= bt)
+    return e.jsxs("div", {
+      ref: s,
+      className: "relative flex h-full",
+      children: [
+        e.jsx("div", {
+          className: "shrink-0 border-r border-border/50",
+          style: { width: vt },
+          children: e.jsx(J, { threads: n, selectedThreadId: c, isLoading: o, onSelect: _ }),
+        }),
+        e.jsx("div", {
+          className: "min-w-0 flex-1",
+          children: v
+            ? e.jsx(X, { thread: v, showBack: !1, onBack: k, onViewImage: d })
+            : e.jsx(jt, {}),
+        }),
+        x && e.jsx(Z, { src: x, onClose: () => d(null) }),
+      ],
+    });
+  const T = c !== null;
+  return e.jsxs("div", {
+    ref: s,
+    className: "relative h-full overflow-clip",
+    children: [
+      e.jsxs(B.div, {
+        className: "flex h-full w-[200%]",
+        initial: !1,
+        animate: { x: T ? "-50%" : "0%" },
+        transition: { type: "tween", duration: 0.25, ease: [0.32, 0.72, 0, 1] },
+        onAnimationComplete: () => {
+          T || b(null);
+        },
+        children: [
+          e.jsx("div", {
+            className: "h-full w-1/2 shrink-0",
+            children: e.jsx(J, { threads: n, selectedThreadId: c, isLoading: o, onSelect: _ }),
+          }),
+          e.jsx("div", {
+            className: "h-full w-1/2 shrink-0",
+            children: E && e.jsx(X, { thread: E, showBack: !0, onBack: k, onViewImage: d }),
+          }),
+        ],
+      }),
+      x && e.jsx(Z, { src: x, onClose: () => d(null) }),
+    ],
+  });
+}
+export { At as MessengerScreen };

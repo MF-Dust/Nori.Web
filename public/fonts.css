@@ -1,15 +1,85 @@
 /* Local substitutes for the web fonts used by the archived client. */
-@font-face{font-family:"Plus Jakarta Sans";src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:400 700;font-display:swap}
-@font-face{font-family:"Noto Sans SC";src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:400 700;font-display:swap}
-@font-face{font-family:"Noto Sans JP";src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:400 700;font-display:swap}
-@font-face{font-family:"Chiron GoRound TC";src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:200 900;font-display:swap}
-@font-face{font-family:Literata;src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:200 900;font-display:swap}
-@font-face{font-family:"Bodoni Moda";src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:400 900;font-display:swap}
-@font-face{font-family:Newsreader;src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:300 600;font-display:swap}
-@font-face{font-family:"IBM Plex Mono";src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:400 700;font-display:swap}
-@font-face{font-family:"LXGW WenKai";src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:300 400;font-display:swap}
-@font-face{font-family:Nunito;src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:400 800;font-display:swap}
-@font-face{font-family:Fredoka;src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:400 700;font-display:swap}
-@font-face{font-family:Quicksand;src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:400 700;font-display:swap}
-@font-face{font-family:"Crimson Pro";src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:400 600;font-display:swap}
-@font-face{font-family:"Lilita One";src:url("/fonts/sarasa-fixed-sc.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans JP";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chiron GoRound TC";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: Literata;
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Bodoni Moda";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: Newsreader;
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 300 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "LXGW WenKai";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 300 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: Nunito;
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: Fredoka;
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: Quicksand;
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Crimson Pro";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lilita One";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}

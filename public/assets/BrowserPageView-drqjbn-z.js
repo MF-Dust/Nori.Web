@@ -1,4 +1,51 @@
-import{j as F}from"./index-CyHAbkO5.js";import{o as ye,a as be,s as y,r as o,u as vt,n as kt}from"./i18n-DtIC1LRi.js";import{aK as At,aL as Xe,z as xt,aM as St,aN as Tt,aO as Et,aP as Ke,I as Ge,aQ as Rt,aR as It}from"./NormalApp-Cn6agT0F.js";import{m as _t}from"./downloads-xYYIzO4D.js";function Ct(e){try{const t=new URL(e);return t.protocol==="http:"&&(t.protocol="https:"),t.search="",t.hash="",t.toString()}catch{return e}}const Mt=ye({url:y().min(1).transform(Ct),supported_locales:be(y().min(1)).min(1),title:y(),body_html:y(),allowed_commands:be(y().min(1)),favicon:y().min(1).optional(),read_fact:y().min(1).optional(),fonts:be(ye({family:y().min(1),url:y().min(1),weight:y().min(1).optional(),style:y().min(1).optional()}).strict()).optional()}).strict(),Pt=ye({reason:y()}),Lt=At("sites.envelopes.changed",Pt),Ht=`// Runtime shim injected into every fictional-internet iframe by BrowserApp
+import { j as F } from "./index-CyHAbkO5.js";
+import { o as ye, a as be, s as y, r as o, u as vt, n as kt } from "./i18n-DtIC1LRi.js";
+import {
+  aK as At,
+  aL as Xe,
+  z as xt,
+  aM as St,
+  aN as Tt,
+  aO as Et,
+  aP as Ke,
+  I as Ge,
+  aQ as Rt,
+  aR as It,
+} from "./NormalApp-Cn6agT0F.js";
+import { m as _t } from "./downloads-xYYIzO4D.js";
+function Ct(e) {
+  try {
+    const t = new URL(e);
+    return (
+      t.protocol === "http:" && (t.protocol = "https:"),
+      (t.search = ""),
+      (t.hash = ""),
+      t.toString()
+    );
+  } catch {
+    return e;
+  }
+}
+const Mt = ye({
+    url: y().min(1).transform(Ct),
+    supported_locales: be(y().min(1)).min(1),
+    title: y(),
+    body_html: y(),
+    allowed_commands: be(y().min(1)),
+    favicon: y().min(1).optional(),
+    read_fact: y().min(1).optional(),
+    fonts: be(
+      ye({
+        family: y().min(1),
+        url: y().min(1),
+        weight: y().min(1).optional(),
+        style: y().min(1).optional(),
+      }).strict(),
+    ).optional(),
+  }).strict(),
+  Pt = ye({ reason: y() }),
+  Lt = At("sites.envelopes.changed", Pt),
+  Ht = `// Runtime shim injected into every fictional-internet iframe by BrowserApp
 // (in-game) and the editor (offline preview). Imported as a STRING via
 // Vite's \`?raw\`, then injected via <script> into the iframe's <head> so it
 // runs BEFORE the page's own scripts.
@@ -984,5 +1031,1049 @@ import{j as F}from"./index-CyHAbkO5.js";import{o as ye,a as be,s as y,r as o,u a
   document.addEventListener('DOMContentLoaded', scrollToInitialHash)
   window.addEventListener('load', scrollToInitialHash)
 })()
-`,ge=new Map;function Nt(e){return typeof e=="string"&&e.startsWith("/webAssets/")&&!e.includes("..")}function Ot(e){let t="";for(let n=0;n<e.length;n+=32768)t+=String.fromCharCode(...e.subarray(n,n+32768));return btoa(t)}function Ut(e){const t=ge.get(e);if(t)return t;const s=(async()=>{try{const n=await fetch(e);if(!n.ok)return null;const c=n.headers.get("content-type")?.split(";")[0]?.trim()||"application/octet-stream",r=await n.arrayBuffer();return`data:${c};base64,${Ot(new Uint8Array(r))}`}catch{return null}})();return ge.set(e,s),s.then(n=>{n===null&&ge.delete(e)}),s}function Dt(e){if(!e||typeof e!="object")return!1;const t=e;return t.__arcade!==!0?!1:t.type==="cmd"||t.type==="nav"||t.type==="activate"||t.type==="link-hover"||t.type==="submittable"||t.type==="title"||t.type==="scroll"||t.type==="context-menu"||t.type==="assets-request"}function Ye(e){const t=r=>{r.source===e.iframe.contentWindow&&Dt(r.data)&&s(r.data)};async function s(r){if(r.type==="nav"){e.onNavigate(r.url,{newTab:r.newTab===!0,popup:r.popup===!0,back:r.back===!0});return}if(r.type==="activate"){e.onActivate?.();return}if(r.type==="link-hover"){e.onLinkHover?.(r.url);return}if(r.type==="submittable"){e.onSubmittable?.(r.value===!0);return}if(r.type==="title"){typeof r.title=="string"&&r.title.length>0&&e.onTitle?.(r.title);return}if(r.type==="scroll"){typeof r.y=="number"&&Number.isFinite(r.y)&&e.onScroll?.(r.y);return}if(r.type==="assets-request"){const u=Array.isArray(r.urls)?r.urls.filter(M=>Nt(M)):[];for(const M of u)Ut(M).then(V=>{const J=e.iframe.contentWindow;if(!J)return;const Q={__arcade:!0,type:"asset-data",url:M,dataUri:V};J.postMessage(Q,"*")});return}if(r.type==="context-menu"){typeof r.x=="number"&&Number.isFinite(r.x)&&typeof r.y=="number"&&Number.isFinite(r.y)&&e.onContextMenu?.({x:r.x,y:r.y,selectionText:typeof r.selectionText=="string"?r.selectionText:"",editable:r.editable??null,link:typeof r.link=="string"&&r.link!==""?r.link:null,linkPopup:r.linkPopup===!0});return}if(!e.allowedCommands.includes(r.command)){n(r.requestId,{ok:!1,reason:"command_not_allowed",message:`Command '${r.command}' is not allowed from this page.`});return}try{const u=await e.invokeCommand(r.command,r.payload);n(r.requestId,u)}catch(u){n(r.requestId,{ok:!1,reason:"invoke_failed",message:u instanceof Error?u.message:String(u)})}}function n(r,l){const u=e.iframe.contentWindow;u&&u.postMessage({__arcade:!0,type:"cmd-result",requestId:r,result:l},"*")}const c=e.hostWindow??window;return c.addEventListener("message",t),{pushFacts(r){const l=e.iframe.contentWindow;if(!l)return;const u={__arcade:!0,type:"facts",emitted:[...r.emitted],retracted:[...r.retracted],snapshot:{...r.snapshot}};l.postMessage(u,"*")},pushWindowState(r){const l=e.iframe.contentWindow;if(!l)return;const u={__arcade:!0,type:"window-state",isMaximized:r.isMaximized};l.postMessage(u,"*")},pushPodcastState(r){const l=e.iframe.contentWindow;if(!l)return;const u={__arcade:!0,type:"podcast-state",state:r};l.postMessage(u,"*")},scrollToHash(r){const l=e.iframe.contentWindow;if(!l)return;const u={__arcade:!0,type:"scroll-to-hash",hash:r};l.postMessage(u,"*")},scrollToPosition(r){const l=e.iframe.contentWindow;if(!l)return;const u={__arcade:!0,type:"scroll-to-position",y:r};l.postMessage(u,"*")},sendEditAction(r){const l=e.iframe.contentWindow;if(!l)return;const u={__arcade:!0,type:"edit-action",...r};l.postMessage(u,"*")},dispose(){c.removeEventListener("message",t)}}}const Ft="<style>::-webkit-scrollbar{width:5px;height:5px;background:var(--arcade-sb-bg,transparent)}::-webkit-scrollbar-track{background:var(--arcade-sb-bg,transparent)}::-webkit-scrollbar-thumb{background:rgba(113,113,122,.5);border-radius:5px}::-webkit-scrollbar-thumb:hover{background:rgba(113,113,122,.7)}::-webkit-scrollbar-corner{background:var(--arcade-sb-bg,transparent)}</style>",Bt="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";function qt(e){return e.replaceAll(/(<img\b[^>]*?)\ssrc="(\/webAssets\/[^"]*)"/gi,(t,s,n)=>`${s} src="${Bt}" data-arcade-src="${n}"`).replaceAll(/<link\b[^>]*>/gi,t=>/\brel="preload"/i.test(t)&&/\bas="image"/i.test(t)&&/\bhref="\/webAssets\//i.test(t)?"":t)}function Wt(){try{return globalThis.localStorage?.getItem("arcade.assetInline")==="off"}catch{return!1}}function Ve(e){const t={locale:e.locale,url:e.url??"",facts:{...e.facts},window:{isMaximized:e.isMaximized===!0}},s=Ft+(e.fontCss?`<style>${e.fontCss}</style>`:"")+`<script>window.__arcadeInit__=${zt(t)};<\/script><script>${Ht}<\/script>`,n=Wt()?e.bodyHtml:qt(e.bodyHtml),c=/<head\b[^>]*>/i.exec(n);if(c){const l=c.index+c[0].length;return n.slice(0,l)+s+n.slice(l)}const r=/<html\b[^>]*>/i.exec(n);if(r){const l=r.index+r[0].length;return n.slice(0,l)+`<head>${s}</head>`+n.slice(l)}return s+n}const jt="\\u003c";function zt(e){return JSON.stringify(e).replaceAll("<",jt)}const Je="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",we=new Map;function $t(e){let t="";for(let n=0;n<e.length;n+=32768)t+=String.fromCharCode(...e.subarray(n,n+32768));return btoa(t)}function Kt(e){const t=we.get(e);if(t)return t;const s=(async()=>{try{const n=await fetch(e);if(!n.ok)return null;const c=n.headers.get("content-type")?.split(";")[0]?.trim()||"font/woff2",r=await n.arrayBuffer();return`data:${c};base64,${$t(new Uint8Array(r))}`}catch{return null}})();return we.set(e,s),s.then(n=>{n===null&&we.delete(e)}),s}function Gt(e){return JSON.stringify(e).replaceAll("<",String.raw`\3c `)}function Qe(e){return e.replaceAll("<","")}async function Yt(e){if(!e||e.length===0)return"";const t=await Promise.all(e.map(n=>Kt(n.url))),s=[];for(let n=0;n<e.length;n++){const c=t[n];if(!c)continue;const r=e[n];s.push(`@font-face{font-family:${Gt(r.family)};src:url(${c});font-weight:${Qe(r.weight??"400")};font-style:${Qe(r.style??"normal")}}`)}return s.join(`
-`)}const Ze=/^[a-z][a-z0-9+-]*:/i,Vt=/^[^\s/]+\.[^\s/]+$/;function et(e){if(Ze.test(e)||/^[/.#?]/.test(e))return e;const t=e.split("/")[0];return Vt.test(t)?`https://${e}`:e}function kn(e){const t=e.trim();return t?Ze.test(et(t)):!1}function ve(e){try{const t=new URL(e),s=t.hash;return t.hash="",{pageUrl:t.toString(),hash:s}}catch{const t=e.indexOf("#");return t===-1?{pageUrl:e,hash:""}:{pageUrl:e.slice(0,t),hash:e.slice(t)}}}function An(e,t){if(!e||!t||e===t)return!1;const s=ve(e),n=ve(t);return s.pageUrl===n.pageUrl&&s.hash!==n.hash}function xn(e,t){const s=e.trim();if(!s)return{kind:"absolute",url:s};try{const n=new URL(et(s),t),c=new URL(t);return n.host===c.host&&n.protocol===c.protocol?{kind:"same-site",path:n.pathname+n.search+n.hash,url:n.toString()}:{kind:"absolute",url:n.toString()}}catch{return{kind:"absolute",url:s}}}const tt={"concord-clinic.med/":{id:"page-bgm-concord-jack",url:"/webAssets/concord/jack_bgm.mp3"}},oe=new Map;function Jt(e){try{const{host:t,pathname:s}=new URL(e),n=t+s;return n in tt?n:null}catch{return null}}function Qt(e){const t=oe.get(e);if(t){t.count+=1;return}const s=tt[e];if(!s)return;const n={count:1,handle:null,unsubInit:()=>{}};oe.set(e,n);const c=Xe.getInstance();n.unsubInit=c.onInit(()=>{c.sfx.load(s.id,s.url).then(()=>{n.count<=0||n.handle||(n.handle=c.sfx.play(s.id,{loop:!0}))}).catch(r=>console.warn("[page-bgm] load failed:",r))})}function Xt(e){const t=oe.get(e);t&&(t.count-=1,!(t.count>0)&&(oe.delete(e),t.unsubInit(),t.handle?.stop(),t.handle=null))}function Zt(e){o.useEffect(()=>{if(e==null)return;const t=Jt(e);if(t)return Qt(t),()=>Xt(t)},[e])}const Sn="https://meridianpost.com/",en="doodle.search";function tn(e){return`https://${en}/?q=${encodeURIComponent(e.trim())}`}const nt="noebrowser.tabs",rt="noebrowser.bookmarks";function at(e){if(!e)return null;try{return JSON.parse(e)}catch{return null}}function ke(e){return typeof e=="object"&&e!==null}function nn(e){return ke(e)&&typeof e.url=="string"}function Tn(){const e=at(ot(nt)),s=(Array.isArray(e)?e:ke(e)&&Array.isArray(e.tabs)?e.tabs:[]).filter(nn).map(r=>({url:r.url,pinned:r.pinned===!0})),n=ke(e)?e.activeIndex:void 0,c=typeof n=="number"&&n>=0&&n<s.length?n:0;return{tabs:s,activeIndex:c}}function En(e,t){st(nt,JSON.stringify({tabs:e,activeIndex:t}))}function Rn(){const e=at(ot(rt));return Array.isArray(e)?e.filter(t=>typeof t=="object"&&t!==null&&typeof t.url=="string"&&typeof t.title=="string").map(t=>({url:t.url,title:t.title,...typeof t.favicon=="string"?{favicon:t.favicon}:{}})):[]}function In(e){st(rt,JSON.stringify(e))}function ot(e){try{return window.localStorage.getItem(e)}catch{return null}}function st(e,t){try{window.localStorage.setItem(e,t)}catch{}}let b=null,K=null,it=null;const Ae=new Set,rn=.5,an=3;function xe(){if(!b)return null;const e=b.element,t=e.getAttribute("data-podcast-src");if(!t)return null;let s=0;try{e.buffered.length>0&&(s=e.buffered.end(e.buffered.length-1))}catch{}return{src:t,paused:e.paused,currentTime:e.currentTime,duration:Number.isFinite(e.duration)?e.duration:null,buffered:s,rate:e.playbackRate}}function G(){const e=xe();for(const t of Ae)try{t(e)}catch(s){console.error("[podcast-audio] state subscriber threw:",s)}}function on(){return b?Promise.resolve(b):K||(K=new Promise((e,t)=>{const s=Xe.getInstance();s.onInit(()=>{if(b){e(b);return}try{const n=new Audio;n.crossOrigin="anonymous",n.preload="metadata";const c=s.sfx.connectMediaElement(n),r=()=>{n.currentTime=0,G()};n.addEventListener("ended",r);for(const l of["play","pause","timeupdate","durationchange","loadedmetadata","ratechange","seeked","progress"])n.addEventListener(l,G);b={element:n,disconnect:c},e(b)}catch(n){K=null,t(n instanceof Error?n:new Error(String(n)))}})}),K)}function sn(e){return e.startsWith("podcast.")}function cn(e){return e&&typeof e=="object"?e:{}}function ln(e){return typeof e=="string"&&e.startsWith("/webAssets/")}async function un(e,t,s){const n=cn(t);if(!ln(n.src))return{ok:!1,reason:"bad_src",message:"podcast src must be a /webAssets/ URL"};const c=n.src;switch(e){case"podcast.play":{const{element:r}=await on();r.getAttribute("data-podcast-src")!==c&&(r.setAttribute("data-podcast-src",c),r.src=c,r.playbackRate=1),typeof n.at=="number"&&Number.isFinite(n.at)&&n.at>=0&&(r.currentTime=n.at),it=s;try{await r.play()}catch(u){return G(),{ok:!1,reason:"play_failed",message:u instanceof Error?u.message:String(u)}}return G(),{ok:!0}}case"podcast.pause":return b?.element.getAttribute("data-podcast-src")===c&&b.element.pause(),{ok:!0};case"podcast.seek":{if(b?.element.getAttribute("data-podcast-src")===c&&typeof n.to=="number"&&Number.isFinite(n.to)){const r=b.element,l=Number.isFinite(r.duration)?r.duration:Number.POSITIVE_INFINITY;r.currentTime=Math.max(0,Math.min(l,n.to)),G()}return{ok:!0}}case"podcast.rate":return b?.element.getAttribute("data-podcast-src")===c&&typeof n.rate=="number"&&Number.isFinite(n.rate)&&(b.element.playbackRate=Math.max(rn,Math.min(an,n.rate))),{ok:!0};default:return{ok:!1,reason:"unknown_command",message:`Unknown command '${e}'`}}}function dn(e){Ae.add(e);try{e(xe())}catch(t){console.error("[podcast-audio] state subscriber threw:",t)}return()=>{Ae.delete(e)}}function fn(){return xe()}const Y=new Map;function hn(e){Y.set(e,(Y.get(e)??0)+1)}function pn(e){const t=Y.get(e)??0;if(t>1){Y.set(e,t-1);return}Y.delete(e),it===e&&b&&!b.element.paused&&b.element.pause()}function mn(e){o.useEffect(()=>{if(e!=null)return hn(e),()=>pn(e)},[e])}const bn=4e3;function _n({url:e,reloadNonce:t,isMaximized:s,onTitleChange:n,onFaviconChange:c,onStatusChange:r,onEnvelopeChange:l,onNavigate:u,onActivate:M,onLinkHover:V,showWhiteFlash:J=!1,onReady:Q,onContentReady:Se,active:P=!0,onSubmittableChange:Te,onRequestExtensionInstall:Ee,onScrollChange:Re,restoreScroll:B}){const v=xt(),N=St(),ct=Tt(),{i18n:X}=vt(),q=o.useMemo(()=>kt(X.resolvedLanguage??X.language??"en"),[X.language,X.resolvedLanguage]),{pageUrl:k,hash:se}=o.useMemo(()=>ve(e),[e]),[d,Z]=o.useState(null),[ee,L]=o.useState(null),[T,W]=o.useState(!1);Zt(T&&d?d.pageUrl:null),mn(T&&d?d.pageUrl:null);const[H,ie]=o.useState(null),[Ie,ce]=o.useState(null),[lt,j]=o.useState(!1),[_e,Ce]=o.useState(!1),[ut,dt]=o.useState(0),[ft,ht]=o.useState(0),Me=o.useRef(e);Me.current=e;const le=o.useRef(k);le.current=k;const Pe=o.useRef({}),pt=o.useRef(0),E=o.useRef(null);E.current=d;const Le=o.useRef(null);Le.current=ee;const ue=o.useRef(s);ue.current=s;const te=o.useRef(v);te.current=v;const O=o.useRef(P);O.current=P;const de=o.useRef([]),I=o.useRef(u);I.current=u;const fe=o.useRef(M);fe.current=M;const He=o.useRef(V);He.current=V;const ne=o.useRef(Q);ne.current=Q;const re=o.useRef(Se);re.current=Se;const z=o.useRef(Te);z.current=Te;const Ne=o.useRef(Ee);Ne.current=Ee;const he=o.useRef(Re);he.current=Re;const $=o.useRef(new Map),[mt,Oe]=o.useState(new Map),x=o.useRef(new Map),Ue=o.useRef(new Map),U=o.useRef(new Map),bt=o.useCallback(a=>{const f=Ue.current,g=f.get(a.generation);if(g)return g;const p=h=>{const A=x.current,w=A.get(a.generation);if(!h){w&&(w.dispose(),A.delete(a.generation)),f.delete(a.generation),U.current.delete(a.generation),$.current.delete(a.generation),Oe(i=>{if(!i.has(a.generation))return i;const m=new Map(i);return m.delete(a.generation),m});return}if(U.current.set(a.generation,h),w||!te.current)return;const R=Ye({iframe:h,allowedCommands:a.data.allowed_commands,invokeCommand:async(i,m)=>{if(i==="bounty.installExtension")return O.current?{ok:await Ne.current?.()===!0}:{ok:!1};if(sn(i))return O.current?await un(i,m,a.pageUrl):{ok:!1,reason:"inactive_tab"};const C=te.current;if(!C)return{ok:!1,reason:"no_binding",message:"no binding"};if(i==="client.emitFact"&&!O.current)return de.current.push(m),{ok:!0};const S=await Ge(C,i,m);return S.ok?(_t(i,m,S.result),S.result??{ok:!0}):{ok:!1,reason:S.error,message:S.error}},onNavigate:(i,m)=>{I.current?.(i,m)},onActivate:()=>{fe.current?.()},onLinkHover:i=>{He.current?.(i)},onTitle:i=>{Oe(m=>{if(m.get(a.generation)===i)return m;const C=new Map(m);return C.set(a.generation,i),C})},onSubmittable:i=>{$.current.set(a.generation,i),Ke.getState().mode==="idle"&&E.current?.generation===a.generation&&a.pageUrl===le.current&&z.current?.(i)},onScroll:i=>{E.current?.generation===a.generation&&he.current?.(i)},onContextMenu:i=>{if(!O.current||E.current?.generation!==a.generation)return;const m=U.current.get(a.generation);if(!m)return;const C=m.getBoundingClientRect(),S=i.link;It({x:C.left+i.x,y:C.top+i.y,selectionText:i.selectionText,editable:i.editable,openLinkInNewTab:S&&!i.linkPopup&&I.current?()=>I.current?.(S,{newTab:!0}):null,openLinkInPopup:S&&i.linkPopup&&I.current?()=>I.current?.(S,{popup:!0}):null,searchSelection:i.selectionText.trim()&&I.current?()=>I.current?.(tn(i.selectionText),{newTab:!0}):null,sendEditAction:$e=>{x.current.get(a.generation)?.sendEditAction($e)}})}});A.set(a.generation,R),R.pushWindowState({isMaximized:ue.current})};return f.set(a.generation,p),p},[]),D=o.useRef(null),gt=o.useCallback(a=>{D.current&&(D.current.dispose(),D.current=null),a&&(D.current=Ye({iframe:a,allowedCommands:[],invokeCommand:async()=>({ok:!1}),onNavigate:()=>{},onActivate:()=>{fe.current?.()}}))},[]);o.useEffect(()=>()=>{for(const a of x.current.values())a.dispose();x.current.clear(),Ue.current.clear(),D.current?.dispose(),D.current=null},[]),Et(P?d?.data.read_fact??null:null),o.useEffect(()=>{z.current?.(d!=null&&d.pageUrl===k?$.current.get(d.generation)??!1:!1)},[d?.generation]),o.useEffect(()=>{const a=E.current;a&&z.current?.(a.pageUrl===k&&($.current.get(a.generation)??!1))},[k]),o.useEffect(()=>{if(!P||!d||!T)return;const a=U.current.get(d.generation);if(!a)return;const f=requestAnimationFrame(()=>{try{a.contentWindow?.focus()}catch{}});return()=>cancelAnimationFrame(f)},[P,d,T]);const pe=o.useRef(null),_=o.useRef(null);o.useEffect(()=>{const a=Ke.subscribe((f,g)=>{const p=g.mode==="idle",h=f.mode==="idle";if(p&&!h){if(_.current!==null){cancelAnimationFrame(_.current),_.current=null;return}const A=document.activeElement;let w=null;for(const[R,i]of U.current)i===A&&(w=R);pe.current=w;return}h===p||!h||(_.current=requestAnimationFrame(()=>{_.current=null;const A=E.current;A!=null&&z.current?.(A.pageUrl===le.current&&($.current.get(A.generation)??!1));const w=pe.current;if(pe.current=null,w==null||!O.current||E.current?.generation!==w)return;const R=U.current.get(w),i=document.activeElement;if(!(i&&i!==document.body&&i!==R))try{R?.contentWindow?.focus()}catch{}}))});return()=>{a(),_.current!==null&&(cancelAnimationFrame(_.current),_.current=null)}},[]),o.useEffect(()=>{!se||!d||!T||x.current.get(d.generation)?.scrollToHash(se)},[se,d,T]),o.useEffect(()=>{he.current?.(0)},[d?.generation]);const De=o.useRef(null);o.useEffect(()=>{!B||!d||!T||d.pageUrl===k&&De.current!==B.token&&(De.current=B.token,x.current.get(d.generation)?.scrollToPosition(B.y))},[B,d,T,k]),o.useEffect(()=>{if(!P)return;const a=de.current;if(a.length===0)return;de.current=[];const f=te.current;if(f)for(const g of a)Ge(f,"client.emitFact",g).catch(()=>{})},[P]);const Fe=o.useRef(new Set);o.useEffect(()=>{const a=Fe.current,f={};for(const h of N)f[h]=!0;Pe.current=f;const g=[],p=[];for(const h of N)a.has(h)||g.push(h);for(const h of a)N.has(h)||p.push(h);if(Fe.current=N,!(g.length===0&&p.length===0))for(const h of x.current.values())h.pushFacts({emitted:g,retracted:p,snapshot:f})},[N]),o.useEffect(()=>{for(const a of x.current.values())a.pushWindowState({isMaximized:s})},[s]),o.useEffect(()=>dn(a=>{for(const f of x.current.values())f.pushPodcastState(a)}),[]),o.useEffect(()=>{if(v)return v.onEvent(Lt,()=>{ht(a=>a+1)})},[v]),o.useEffect(()=>{if(!v){j(!1);return}let a=!1;return j(!0),ie(null),ce(null),Ce(!1),Rt(v,{artifactType:"browser_page",lookup_key:k}).then(async f=>{if(a)return;if(!f.ok){j(!1),ie(f.status===502?"unavailable":"not-found"),ce(f.body??null),Z(null),L(null),W(!1);return}const g=Mt.safeParse(f.artifact.data);if(!g.success){j(!1),ie("not-found"),ce(null),Z(null),L(null),W(!1);return}const p=g.data,h=f.artifact.id,A=await Yt(p.fonts);if(a)return;j(!1);const w=p.supported_locales.includes(q)?q:p.supported_locales[0]??q,R=Ve({locale:w,facts:Pe.current,bodyHtml:p.body_html,url:Me.current,isMaximized:ue.current,fontCss:A}),i=E.current;if(i&&i.envelopeId===h&&i.pageUrl===k){L(null);return}const m={data:p,envelopeId:h,pageUrl:k,srcDoc:R,generation:++pt.current};i?L(m):(L(null),W(!1),Z(m))}).catch(()=>{a||(L(null),Ce(!0))}),()=>{a=!0}},[v,k,t,ft,q,ct,N,ut]),o.useEffect(()=>{if(!_e||!v)return;const a=()=>dt(p=>p+1),f=v.subscribeState(p=>{p.phase==="ready"&&a()}),g=setInterval(a,bn);return()=>{f(),clearInterval(g)}},[_e,v]);const ae=o.useCallback(a=>{x.current.get(a)?.pushPodcastState(fn())},[]),wt=o.useCallback(a=>{Le.current?.generation===a.generation&&(Z(a),W(!0),L(null),ae(a.generation),ne.current?.(),re.current?.())},[ae]),yt=o.useCallback(()=>{W(!0);const a=E.current?.generation;a!=null&&ae(a),ne.current?.(),re.current?.()},[ae]);o.useEffect(()=>{H&&(ne.current?.(),re.current?.())},[H]);const Be=(d?mt.get(d.generation):void 0)??d?.data.title??"",qe=d?.data.favicon??null,We=d?.envelopeId??null,je=H??(lt||ee!=null||d==null||!T?"loading":"page");o.useEffect(()=>{n?.(Be)},[Be,n]),o.useEffect(()=>{c?.(qe)},[qe,c]),o.useEffect(()=>{l?.(We)},[We,l]),o.useEffect(()=>{r?.(je)},[je,r]);const me=[];d&&me.push({page:d,role:"displayed"}),ee&&me.push({page:ee,role:"incoming"});const ze=H&&Ie?Ve({locale:q,facts:{},bodyHtml:Ie,url:e}):null;return F.jsxs("div",{className:"absolute inset-0 bg-white",children:[H?ze?F.jsx("iframe",{ref:gt,srcDoc:ze,title:H,sandbox:Je,referrerPolicy:"no-referrer","data-browser-page-frame":"",className:"absolute inset-0 h-full w-full border-0"},`error-${H}`):F.jsx("div",{className:"absolute inset-0 flex items-center justify-center bg-white px-6 text-center text-sm text-zinc-500",children:e}):me.map(({page:a,role:f})=>F.jsx("iframe",{ref:bt(a),srcDoc:a.srcDoc,title:a.data.title,sandbox:Je,referrerPolicy:"no-referrer","data-browser-page-frame":"",onLoad:f==="displayed"?yt:()=>wt(a),className:"absolute inset-0 h-full w-full border-0",style:f==="incoming"?{visibility:"hidden"}:void 0,"aria-hidden":f==="incoming"?!0:void 0},a.generation)),J&&F.jsx("div",{className:"absolute inset-0 bg-white","aria-hidden":!0}),F.jsx("div",{"aria-hidden":!0,className:"browser-glitch-shield pointer-events-none absolute inset-0 bg-zinc-950",style:{backgroundImage:"repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 3px)"}})]})}export{_n as B,Sn as H,Rn as a,In as b,kn as c,tn as d,An as i,Tn as l,xn as r,En as s};
+`,
+  ge = new Map();
+function Nt(e) {
+  return typeof e == "string" && e.startsWith("/webAssets/") && !e.includes("..");
+}
+function Ot(e) {
+  let t = "";
+  for (let n = 0; n < e.length; n += 32768) t += String.fromCharCode(...e.subarray(n, n + 32768));
+  return btoa(t);
+}
+function Ut(e) {
+  const t = ge.get(e);
+  if (t) return t;
+  const s = (async () => {
+    try {
+      const n = await fetch(e);
+      if (!n.ok) return null;
+      const c = n.headers.get("content-type")?.split(";")[0]?.trim() || "application/octet-stream",
+        r = await n.arrayBuffer();
+      return `data:${c};base64,${Ot(new Uint8Array(r))}`;
+    } catch {
+      return null;
+    }
+  })();
+  return (
+    ge.set(e, s),
+    s.then((n) => {
+      n === null && ge.delete(e);
+    }),
+    s
+  );
+}
+function Dt(e) {
+  if (!e || typeof e != "object") return !1;
+  const t = e;
+  return t.__arcade !== !0
+    ? !1
+    : t.type === "cmd" ||
+        t.type === "nav" ||
+        t.type === "activate" ||
+        t.type === "link-hover" ||
+        t.type === "submittable" ||
+        t.type === "title" ||
+        t.type === "scroll" ||
+        t.type === "context-menu" ||
+        t.type === "assets-request";
+}
+function Ye(e) {
+  const t = (r) => {
+    r.source === e.iframe.contentWindow && Dt(r.data) && s(r.data);
+  };
+  async function s(r) {
+    if (r.type === "nav") {
+      e.onNavigate(r.url, { newTab: r.newTab === !0, popup: r.popup === !0, back: r.back === !0 });
+      return;
+    }
+    if (r.type === "activate") {
+      e.onActivate?.();
+      return;
+    }
+    if (r.type === "link-hover") {
+      e.onLinkHover?.(r.url);
+      return;
+    }
+    if (r.type === "submittable") {
+      e.onSubmittable?.(r.value === !0);
+      return;
+    }
+    if (r.type === "title") {
+      typeof r.title == "string" && r.title.length > 0 && e.onTitle?.(r.title);
+      return;
+    }
+    if (r.type === "scroll") {
+      typeof r.y == "number" && Number.isFinite(r.y) && e.onScroll?.(r.y);
+      return;
+    }
+    if (r.type === "assets-request") {
+      const u = Array.isArray(r.urls) ? r.urls.filter((M) => Nt(M)) : [];
+      for (const M of u)
+        Ut(M).then((V) => {
+          const J = e.iframe.contentWindow;
+          if (!J) return;
+          const Q = { __arcade: !0, type: "asset-data", url: M, dataUri: V };
+          J.postMessage(Q, "*");
+        });
+      return;
+    }
+    if (r.type === "context-menu") {
+      typeof r.x == "number" &&
+        Number.isFinite(r.x) &&
+        typeof r.y == "number" &&
+        Number.isFinite(r.y) &&
+        e.onContextMenu?.({
+          x: r.x,
+          y: r.y,
+          selectionText: typeof r.selectionText == "string" ? r.selectionText : "",
+          editable: r.editable ?? null,
+          link: typeof r.link == "string" && r.link !== "" ? r.link : null,
+          linkPopup: r.linkPopup === !0,
+        });
+      return;
+    }
+    if (!e.allowedCommands.includes(r.command)) {
+      n(r.requestId, {
+        ok: !1,
+        reason: "command_not_allowed",
+        message: `Command '${r.command}' is not allowed from this page.`,
+      });
+      return;
+    }
+    try {
+      const u = await e.invokeCommand(r.command, r.payload);
+      n(r.requestId, u);
+    } catch (u) {
+      n(r.requestId, {
+        ok: !1,
+        reason: "invoke_failed",
+        message: u instanceof Error ? u.message : String(u),
+      });
+    }
+  }
+  function n(r, l) {
+    const u = e.iframe.contentWindow;
+    u && u.postMessage({ __arcade: !0, type: "cmd-result", requestId: r, result: l }, "*");
+  }
+  const c = e.hostWindow ?? window;
+  return (
+    c.addEventListener("message", t),
+    {
+      pushFacts(r) {
+        const l = e.iframe.contentWindow;
+        if (!l) return;
+        const u = {
+          __arcade: !0,
+          type: "facts",
+          emitted: [...r.emitted],
+          retracted: [...r.retracted],
+          snapshot: { ...r.snapshot },
+        };
+        l.postMessage(u, "*");
+      },
+      pushWindowState(r) {
+        const l = e.iframe.contentWindow;
+        if (!l) return;
+        const u = { __arcade: !0, type: "window-state", isMaximized: r.isMaximized };
+        l.postMessage(u, "*");
+      },
+      pushPodcastState(r) {
+        const l = e.iframe.contentWindow;
+        if (!l) return;
+        const u = { __arcade: !0, type: "podcast-state", state: r };
+        l.postMessage(u, "*");
+      },
+      scrollToHash(r) {
+        const l = e.iframe.contentWindow;
+        if (!l) return;
+        const u = { __arcade: !0, type: "scroll-to-hash", hash: r };
+        l.postMessage(u, "*");
+      },
+      scrollToPosition(r) {
+        const l = e.iframe.contentWindow;
+        if (!l) return;
+        const u = { __arcade: !0, type: "scroll-to-position", y: r };
+        l.postMessage(u, "*");
+      },
+      sendEditAction(r) {
+        const l = e.iframe.contentWindow;
+        if (!l) return;
+        const u = { __arcade: !0, type: "edit-action", ...r };
+        l.postMessage(u, "*");
+      },
+      dispose() {
+        c.removeEventListener("message", t);
+      },
+    }
+  );
+}
+const Ft =
+    "<style>::-webkit-scrollbar{width:5px;height:5px;background:var(--arcade-sb-bg,transparent)}::-webkit-scrollbar-track{background:var(--arcade-sb-bg,transparent)}::-webkit-scrollbar-thumb{background:rgba(113,113,122,.5);border-radius:5px}::-webkit-scrollbar-thumb:hover{background:rgba(113,113,122,.7)}::-webkit-scrollbar-corner{background:var(--arcade-sb-bg,transparent)}</style>",
+  Bt = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+function qt(e) {
+  return e
+    .replaceAll(
+      /(<img\b[^>]*?)\ssrc="(\/webAssets\/[^"]*)"/gi,
+      (t, s, n) => `${s} src="${Bt}" data-arcade-src="${n}"`,
+    )
+    .replaceAll(/<link\b[^>]*>/gi, (t) =>
+      /\brel="preload"/i.test(t) && /\bas="image"/i.test(t) && /\bhref="\/webAssets\//i.test(t)
+        ? ""
+        : t,
+    );
+}
+function Wt() {
+  try {
+    return globalThis.localStorage?.getItem("arcade.assetInline") === "off";
+  } catch {
+    return !1;
+  }
+}
+function Ve(e) {
+  const t = {
+      locale: e.locale,
+      url: e.url ?? "",
+      facts: { ...e.facts },
+      window: { isMaximized: e.isMaximized === !0 },
+    },
+    s =
+      Ft +
+      (e.fontCss ? `<style>${e.fontCss}</style>` : "") +
+      `<script>window.__arcadeInit__=${zt(t)};<\/script><script>${Ht}<\/script>`,
+    n = Wt() ? e.bodyHtml : qt(e.bodyHtml),
+    c = /<head\b[^>]*>/i.exec(n);
+  if (c) {
+    const l = c.index + c[0].length;
+    return n.slice(0, l) + s + n.slice(l);
+  }
+  const r = /<html\b[^>]*>/i.exec(n);
+  if (r) {
+    const l = r.index + r[0].length;
+    return n.slice(0, l) + `<head>${s}</head>` + n.slice(l);
+  }
+  return s + n;
+}
+const jt = "\\u003c";
+function zt(e) {
+  return JSON.stringify(e).replaceAll("<", jt);
+}
+const Je = "allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",
+  we = new Map();
+function $t(e) {
+  let t = "";
+  for (let n = 0; n < e.length; n += 32768) t += String.fromCharCode(...e.subarray(n, n + 32768));
+  return btoa(t);
+}
+function Kt(e) {
+  const t = we.get(e);
+  if (t) return t;
+  const s = (async () => {
+    try {
+      const n = await fetch(e);
+      if (!n.ok) return null;
+      const c = n.headers.get("content-type")?.split(";")[0]?.trim() || "font/woff2",
+        r = await n.arrayBuffer();
+      return `data:${c};base64,${$t(new Uint8Array(r))}`;
+    } catch {
+      return null;
+    }
+  })();
+  return (
+    we.set(e, s),
+    s.then((n) => {
+      n === null && we.delete(e);
+    }),
+    s
+  );
+}
+function Gt(e) {
+  return JSON.stringify(e).replaceAll("<", String.raw`\3c `);
+}
+function Qe(e) {
+  return e.replaceAll("<", "");
+}
+async function Yt(e) {
+  if (!e || e.length === 0) return "";
+  const t = await Promise.all(e.map((n) => Kt(n.url))),
+    s = [];
+  for (let n = 0; n < e.length; n++) {
+    const c = t[n];
+    if (!c) continue;
+    const r = e[n];
+    s.push(
+      `@font-face{font-family:${Gt(r.family)};src:url(${c});font-weight:${Qe(r.weight ?? "400")};font-style:${Qe(r.style ?? "normal")}}`,
+    );
+  }
+  return s.join(`
+`);
+}
+const Ze = /^[a-z][a-z0-9+-]*:/i,
+  Vt = /^[^\s/]+\.[^\s/]+$/;
+function et(e) {
+  if (Ze.test(e) || /^[/.#?]/.test(e)) return e;
+  const t = e.split("/")[0];
+  return Vt.test(t) ? `https://${e}` : e;
+}
+function kn(e) {
+  const t = e.trim();
+  return t ? Ze.test(et(t)) : !1;
+}
+function ve(e) {
+  try {
+    const t = new URL(e),
+      s = t.hash;
+    return ((t.hash = ""), { pageUrl: t.toString(), hash: s });
+  } catch {
+    const t = e.indexOf("#");
+    return t === -1 ? { pageUrl: e, hash: "" } : { pageUrl: e.slice(0, t), hash: e.slice(t) };
+  }
+}
+function An(e, t) {
+  if (!e || !t || e === t) return !1;
+  const s = ve(e),
+    n = ve(t);
+  return s.pageUrl === n.pageUrl && s.hash !== n.hash;
+}
+function xn(e, t) {
+  const s = e.trim();
+  if (!s) return { kind: "absolute", url: s };
+  try {
+    const n = new URL(et(s), t),
+      c = new URL(t);
+    return n.host === c.host && n.protocol === c.protocol
+      ? { kind: "same-site", path: n.pathname + n.search + n.hash, url: n.toString() }
+      : { kind: "absolute", url: n.toString() };
+  } catch {
+    return { kind: "absolute", url: s };
+  }
+}
+const tt = {
+    "concord-clinic.med/": { id: "page-bgm-concord-jack", url: "/webAssets/concord/jack_bgm.mp3" },
+  },
+  oe = new Map();
+function Jt(e) {
+  try {
+    const { host: t, pathname: s } = new URL(e),
+      n = t + s;
+    return n in tt ? n : null;
+  } catch {
+    return null;
+  }
+}
+function Qt(e) {
+  const t = oe.get(e);
+  if (t) {
+    t.count += 1;
+    return;
+  }
+  const s = tt[e];
+  if (!s) return;
+  const n = { count: 1, handle: null, unsubInit: () => {} };
+  oe.set(e, n);
+  const c = Xe.getInstance();
+  n.unsubInit = c.onInit(() => {
+    c.sfx
+      .load(s.id, s.url)
+      .then(() => {
+        n.count <= 0 || n.handle || (n.handle = c.sfx.play(s.id, { loop: !0 }));
+      })
+      .catch((r) => console.warn("[page-bgm] load failed:", r));
+  });
+}
+function Xt(e) {
+  const t = oe.get(e);
+  t &&
+    ((t.count -= 1),
+    !(t.count > 0) && (oe.delete(e), t.unsubInit(), t.handle?.stop(), (t.handle = null)));
+}
+function Zt(e) {
+  o.useEffect(() => {
+    if (e == null) return;
+    const t = Jt(e);
+    if (t) return (Qt(t), () => Xt(t));
+  }, [e]);
+}
+const Sn = "https://meridianpost.com/",
+  en = "doodle.search";
+function tn(e) {
+  return `https://${en}/?q=${encodeURIComponent(e.trim())}`;
+}
+const nt = "noebrowser.tabs",
+  rt = "noebrowser.bookmarks";
+function at(e) {
+  if (!e) return null;
+  try {
+    return JSON.parse(e);
+  } catch {
+    return null;
+  }
+}
+function ke(e) {
+  return typeof e == "object" && e !== null;
+}
+function nn(e) {
+  return ke(e) && typeof e.url == "string";
+}
+function Tn() {
+  const e = at(ot(nt)),
+    s = (Array.isArray(e) ? e : ke(e) && Array.isArray(e.tabs) ? e.tabs : [])
+      .filter(nn)
+      .map((r) => ({ url: r.url, pinned: r.pinned === !0 })),
+    n = ke(e) ? e.activeIndex : void 0,
+    c = typeof n == "number" && n >= 0 && n < s.length ? n : 0;
+  return { tabs: s, activeIndex: c };
+}
+function En(e, t) {
+  st(nt, JSON.stringify({ tabs: e, activeIndex: t }));
+}
+function Rn() {
+  const e = at(ot(rt));
+  return Array.isArray(e)
+    ? e
+        .filter(
+          (t) =>
+            typeof t == "object" &&
+            t !== null &&
+            typeof t.url == "string" &&
+            typeof t.title == "string",
+        )
+        .map((t) => ({
+          url: t.url,
+          title: t.title,
+          ...(typeof t.favicon == "string" ? { favicon: t.favicon } : {}),
+        }))
+    : [];
+}
+function In(e) {
+  st(rt, JSON.stringify(e));
+}
+function ot(e) {
+  try {
+    return window.localStorage.getItem(e);
+  } catch {
+    return null;
+  }
+}
+function st(e, t) {
+  try {
+    window.localStorage.setItem(e, t);
+  } catch {}
+}
+let b = null,
+  K = null,
+  it = null;
+const Ae = new Set(),
+  rn = 0.5,
+  an = 3;
+function xe() {
+  if (!b) return null;
+  const e = b.element,
+    t = e.getAttribute("data-podcast-src");
+  if (!t) return null;
+  let s = 0;
+  try {
+    e.buffered.length > 0 && (s = e.buffered.end(e.buffered.length - 1));
+  } catch {}
+  return {
+    src: t,
+    paused: e.paused,
+    currentTime: e.currentTime,
+    duration: Number.isFinite(e.duration) ? e.duration : null,
+    buffered: s,
+    rate: e.playbackRate,
+  };
+}
+function G() {
+  const e = xe();
+  for (const t of Ae)
+    try {
+      t(e);
+    } catch (s) {
+      console.error("[podcast-audio] state subscriber threw:", s);
+    }
+}
+function on() {
+  return b
+    ? Promise.resolve(b)
+    : K ||
+        ((K = new Promise((e, t) => {
+          const s = Xe.getInstance();
+          s.onInit(() => {
+            if (b) {
+              e(b);
+              return;
+            }
+            try {
+              const n = new Audio();
+              ((n.crossOrigin = "anonymous"), (n.preload = "metadata"));
+              const c = s.sfx.connectMediaElement(n),
+                r = () => {
+                  ((n.currentTime = 0), G());
+                };
+              n.addEventListener("ended", r);
+              for (const l of [
+                "play",
+                "pause",
+                "timeupdate",
+                "durationchange",
+                "loadedmetadata",
+                "ratechange",
+                "seeked",
+                "progress",
+              ])
+                n.addEventListener(l, G);
+              ((b = { element: n, disconnect: c }), e(b));
+            } catch (n) {
+              ((K = null), t(n instanceof Error ? n : new Error(String(n))));
+            }
+          });
+        })),
+        K);
+}
+function sn(e) {
+  return e.startsWith("podcast.");
+}
+function cn(e) {
+  return e && typeof e == "object" ? e : {};
+}
+function ln(e) {
+  return typeof e == "string" && e.startsWith("/webAssets/");
+}
+async function un(e, t, s) {
+  const n = cn(t);
+  if (!ln(n.src))
+    return { ok: !1, reason: "bad_src", message: "podcast src must be a /webAssets/ URL" };
+  const c = n.src;
+  switch (e) {
+    case "podcast.play": {
+      const { element: r } = await on();
+      (r.getAttribute("data-podcast-src") !== c &&
+        (r.setAttribute("data-podcast-src", c), (r.src = c), (r.playbackRate = 1)),
+        typeof n.at == "number" && Number.isFinite(n.at) && n.at >= 0 && (r.currentTime = n.at),
+        (it = s));
+      try {
+        await r.play();
+      } catch (u) {
+        return (
+          G(),
+          { ok: !1, reason: "play_failed", message: u instanceof Error ? u.message : String(u) }
+        );
+      }
+      return (G(), { ok: !0 });
+    }
+    case "podcast.pause":
+      return (b?.element.getAttribute("data-podcast-src") === c && b.element.pause(), { ok: !0 });
+    case "podcast.seek": {
+      if (
+        b?.element.getAttribute("data-podcast-src") === c &&
+        typeof n.to == "number" &&
+        Number.isFinite(n.to)
+      ) {
+        const r = b.element,
+          l = Number.isFinite(r.duration) ? r.duration : Number.POSITIVE_INFINITY;
+        ((r.currentTime = Math.max(0, Math.min(l, n.to))), G());
+      }
+      return { ok: !0 };
+    }
+    case "podcast.rate":
+      return (
+        b?.element.getAttribute("data-podcast-src") === c &&
+          typeof n.rate == "number" &&
+          Number.isFinite(n.rate) &&
+          (b.element.playbackRate = Math.max(rn, Math.min(an, n.rate))),
+        { ok: !0 }
+      );
+    default:
+      return { ok: !1, reason: "unknown_command", message: `Unknown command '${e}'` };
+  }
+}
+function dn(e) {
+  Ae.add(e);
+  try {
+    e(xe());
+  } catch (t) {
+    console.error("[podcast-audio] state subscriber threw:", t);
+  }
+  return () => {
+    Ae.delete(e);
+  };
+}
+function fn() {
+  return xe();
+}
+const Y = new Map();
+function hn(e) {
+  Y.set(e, (Y.get(e) ?? 0) + 1);
+}
+function pn(e) {
+  const t = Y.get(e) ?? 0;
+  if (t > 1) {
+    Y.set(e, t - 1);
+    return;
+  }
+  (Y.delete(e), it === e && b && !b.element.paused && b.element.pause());
+}
+function mn(e) {
+  o.useEffect(() => {
+    if (e != null) return (hn(e), () => pn(e));
+  }, [e]);
+}
+const bn = 4e3;
+function _n({
+  url: e,
+  reloadNonce: t,
+  isMaximized: s,
+  onTitleChange: n,
+  onFaviconChange: c,
+  onStatusChange: r,
+  onEnvelopeChange: l,
+  onNavigate: u,
+  onActivate: M,
+  onLinkHover: V,
+  showWhiteFlash: J = !1,
+  onReady: Q,
+  onContentReady: Se,
+  active: P = !0,
+  onSubmittableChange: Te,
+  onRequestExtensionInstall: Ee,
+  onScrollChange: Re,
+  restoreScroll: B,
+}) {
+  const v = xt(),
+    N = St(),
+    ct = Tt(),
+    { i18n: X } = vt(),
+    q = o.useMemo(
+      () => kt(X.resolvedLanguage ?? X.language ?? "en"),
+      [X.language, X.resolvedLanguage],
+    ),
+    { pageUrl: k, hash: se } = o.useMemo(() => ve(e), [e]),
+    [d, Z] = o.useState(null),
+    [ee, L] = o.useState(null),
+    [T, W] = o.useState(!1);
+  (Zt(T && d ? d.pageUrl : null), mn(T && d ? d.pageUrl : null));
+  const [H, ie] = o.useState(null),
+    [Ie, ce] = o.useState(null),
+    [lt, j] = o.useState(!1),
+    [_e, Ce] = o.useState(!1),
+    [ut, dt] = o.useState(0),
+    [ft, ht] = o.useState(0),
+    Me = o.useRef(e);
+  Me.current = e;
+  const le = o.useRef(k);
+  le.current = k;
+  const Pe = o.useRef({}),
+    pt = o.useRef(0),
+    E = o.useRef(null);
+  E.current = d;
+  const Le = o.useRef(null);
+  Le.current = ee;
+  const ue = o.useRef(s);
+  ue.current = s;
+  const te = o.useRef(v);
+  te.current = v;
+  const O = o.useRef(P);
+  O.current = P;
+  const de = o.useRef([]),
+    I = o.useRef(u);
+  I.current = u;
+  const fe = o.useRef(M);
+  fe.current = M;
+  const He = o.useRef(V);
+  He.current = V;
+  const ne = o.useRef(Q);
+  ne.current = Q;
+  const re = o.useRef(Se);
+  re.current = Se;
+  const z = o.useRef(Te);
+  z.current = Te;
+  const Ne = o.useRef(Ee);
+  Ne.current = Ee;
+  const he = o.useRef(Re);
+  he.current = Re;
+  const $ = o.useRef(new Map()),
+    [mt, Oe] = o.useState(new Map()),
+    x = o.useRef(new Map()),
+    Ue = o.useRef(new Map()),
+    U = o.useRef(new Map()),
+    bt = o.useCallback((a) => {
+      const f = Ue.current,
+        g = f.get(a.generation);
+      if (g) return g;
+      const p = (h) => {
+        const A = x.current,
+          w = A.get(a.generation);
+        if (!h) {
+          (w && (w.dispose(), A.delete(a.generation)),
+            f.delete(a.generation),
+            U.current.delete(a.generation),
+            $.current.delete(a.generation),
+            Oe((i) => {
+              if (!i.has(a.generation)) return i;
+              const m = new Map(i);
+              return (m.delete(a.generation), m);
+            }));
+          return;
+        }
+        if ((U.current.set(a.generation, h), w || !te.current)) return;
+        const R = Ye({
+          iframe: h,
+          allowedCommands: a.data.allowed_commands,
+          invokeCommand: async (i, m) => {
+            if (i === "bounty.installExtension")
+              return O.current ? { ok: (await Ne.current?.()) === !0 } : { ok: !1 };
+            if (sn(i))
+              return O.current ? await un(i, m, a.pageUrl) : { ok: !1, reason: "inactive_tab" };
+            const C = te.current;
+            if (!C) return { ok: !1, reason: "no_binding", message: "no binding" };
+            if (i === "client.emitFact" && !O.current) return (de.current.push(m), { ok: !0 });
+            const S = await Ge(C, i, m);
+            return S.ok
+              ? (_t(i, m, S.result), S.result ?? { ok: !0 })
+              : { ok: !1, reason: S.error, message: S.error };
+          },
+          onNavigate: (i, m) => {
+            I.current?.(i, m);
+          },
+          onActivate: () => {
+            fe.current?.();
+          },
+          onLinkHover: (i) => {
+            He.current?.(i);
+          },
+          onTitle: (i) => {
+            Oe((m) => {
+              if (m.get(a.generation) === i) return m;
+              const C = new Map(m);
+              return (C.set(a.generation, i), C);
+            });
+          },
+          onSubmittable: (i) => {
+            ($.current.set(a.generation, i),
+              Ke.getState().mode === "idle" &&
+                E.current?.generation === a.generation &&
+                a.pageUrl === le.current &&
+                z.current?.(i));
+          },
+          onScroll: (i) => {
+            E.current?.generation === a.generation && he.current?.(i);
+          },
+          onContextMenu: (i) => {
+            if (!O.current || E.current?.generation !== a.generation) return;
+            const m = U.current.get(a.generation);
+            if (!m) return;
+            const C = m.getBoundingClientRect(),
+              S = i.link;
+            It({
+              x: C.left + i.x,
+              y: C.top + i.y,
+              selectionText: i.selectionText,
+              editable: i.editable,
+              openLinkInNewTab:
+                S && !i.linkPopup && I.current ? () => I.current?.(S, { newTab: !0 }) : null,
+              openLinkInPopup:
+                S && i.linkPopup && I.current ? () => I.current?.(S, { popup: !0 }) : null,
+              searchSelection:
+                i.selectionText.trim() && I.current
+                  ? () => I.current?.(tn(i.selectionText), { newTab: !0 })
+                  : null,
+              sendEditAction: ($e) => {
+                x.current.get(a.generation)?.sendEditAction($e);
+              },
+            });
+          },
+        });
+        (A.set(a.generation, R), R.pushWindowState({ isMaximized: ue.current }));
+      };
+      return (f.set(a.generation, p), p);
+    }, []),
+    D = o.useRef(null),
+    gt = o.useCallback((a) => {
+      (D.current && (D.current.dispose(), (D.current = null)),
+        a &&
+          (D.current = Ye({
+            iframe: a,
+            allowedCommands: [],
+            invokeCommand: async () => ({ ok: !1 }),
+            onNavigate: () => {},
+            onActivate: () => {
+              fe.current?.();
+            },
+          })));
+    }, []);
+  (o.useEffect(
+    () => () => {
+      for (const a of x.current.values()) a.dispose();
+      (x.current.clear(), Ue.current.clear(), D.current?.dispose(), (D.current = null));
+    },
+    [],
+  ),
+    Et(P ? (d?.data.read_fact ?? null) : null),
+    o.useEffect(() => {
+      z.current?.(d != null && d.pageUrl === k ? ($.current.get(d.generation) ?? !1) : !1);
+    }, [d?.generation]),
+    o.useEffect(() => {
+      const a = E.current;
+      a && z.current?.(a.pageUrl === k && ($.current.get(a.generation) ?? !1));
+    }, [k]),
+    o.useEffect(() => {
+      if (!P || !d || !T) return;
+      const a = U.current.get(d.generation);
+      if (!a) return;
+      const f = requestAnimationFrame(() => {
+        try {
+          a.contentWindow?.focus();
+        } catch {}
+      });
+      return () => cancelAnimationFrame(f);
+    }, [P, d, T]));
+  const pe = o.useRef(null),
+    _ = o.useRef(null);
+  (o.useEffect(() => {
+    const a = Ke.subscribe((f, g) => {
+      const p = g.mode === "idle",
+        h = f.mode === "idle";
+      if (p && !h) {
+        if (_.current !== null) {
+          (cancelAnimationFrame(_.current), (_.current = null));
+          return;
+        }
+        const A = document.activeElement;
+        let w = null;
+        for (const [R, i] of U.current) i === A && (w = R);
+        pe.current = w;
+        return;
+      }
+      h === p ||
+        !h ||
+        (_.current = requestAnimationFrame(() => {
+          _.current = null;
+          const A = E.current;
+          A != null && z.current?.(A.pageUrl === le.current && ($.current.get(A.generation) ?? !1));
+          const w = pe.current;
+          if (((pe.current = null), w == null || !O.current || E.current?.generation !== w)) return;
+          const R = U.current.get(w),
+            i = document.activeElement;
+          if (!(i && i !== document.body && i !== R))
+            try {
+              R?.contentWindow?.focus();
+            } catch {}
+        }));
+    });
+    return () => {
+      (a(), _.current !== null && (cancelAnimationFrame(_.current), (_.current = null)));
+    };
+  }, []),
+    o.useEffect(() => {
+      !se || !d || !T || x.current.get(d.generation)?.scrollToHash(se);
+    }, [se, d, T]),
+    o.useEffect(() => {
+      he.current?.(0);
+    }, [d?.generation]));
+  const De = o.useRef(null);
+  (o.useEffect(() => {
+    !B ||
+      !d ||
+      !T ||
+      (d.pageUrl === k &&
+        De.current !== B.token &&
+        ((De.current = B.token), x.current.get(d.generation)?.scrollToPosition(B.y)));
+  }, [B, d, T, k]),
+    o.useEffect(() => {
+      if (!P) return;
+      const a = de.current;
+      if (a.length === 0) return;
+      de.current = [];
+      const f = te.current;
+      if (f) for (const g of a) Ge(f, "client.emitFact", g).catch(() => {});
+    }, [P]));
+  const Fe = o.useRef(new Set());
+  (o.useEffect(() => {
+    const a = Fe.current,
+      f = {};
+    for (const h of N) f[h] = !0;
+    Pe.current = f;
+    const g = [],
+      p = [];
+    for (const h of N) a.has(h) || g.push(h);
+    for (const h of a) N.has(h) || p.push(h);
+    if (((Fe.current = N), !(g.length === 0 && p.length === 0)))
+      for (const h of x.current.values()) h.pushFacts({ emitted: g, retracted: p, snapshot: f });
+  }, [N]),
+    o.useEffect(() => {
+      for (const a of x.current.values()) a.pushWindowState({ isMaximized: s });
+    }, [s]),
+    o.useEffect(
+      () =>
+        dn((a) => {
+          for (const f of x.current.values()) f.pushPodcastState(a);
+        }),
+      [],
+    ),
+    o.useEffect(() => {
+      if (v)
+        return v.onEvent(Lt, () => {
+          ht((a) => a + 1);
+        });
+    }, [v]),
+    o.useEffect(() => {
+      if (!v) {
+        j(!1);
+        return;
+      }
+      let a = !1;
+      return (
+        j(!0),
+        ie(null),
+        ce(null),
+        Ce(!1),
+        Rt(v, { artifactType: "browser_page", lookup_key: k })
+          .then(async (f) => {
+            if (a) return;
+            if (!f.ok) {
+              (j(!1),
+                ie(f.status === 502 ? "unavailable" : "not-found"),
+                ce(f.body ?? null),
+                Z(null),
+                L(null),
+                W(!1));
+              return;
+            }
+            const g = Mt.safeParse(f.artifact.data);
+            if (!g.success) {
+              (j(!1), ie("not-found"), ce(null), Z(null), L(null), W(!1));
+              return;
+            }
+            const p = g.data,
+              h = f.artifact.id,
+              A = await Yt(p.fonts);
+            if (a) return;
+            j(!1);
+            const w = p.supported_locales.includes(q) ? q : (p.supported_locales[0] ?? q),
+              R = Ve({
+                locale: w,
+                facts: Pe.current,
+                bodyHtml: p.body_html,
+                url: Me.current,
+                isMaximized: ue.current,
+                fontCss: A,
+              }),
+              i = E.current;
+            if (i && i.envelopeId === h && i.pageUrl === k) {
+              L(null);
+              return;
+            }
+            const m = { data: p, envelopeId: h, pageUrl: k, srcDoc: R, generation: ++pt.current };
+            i ? L(m) : (L(null), W(!1), Z(m));
+          })
+          .catch(() => {
+            a || (L(null), Ce(!0));
+          }),
+        () => {
+          a = !0;
+        }
+      );
+    }, [v, k, t, ft, q, ct, N, ut]),
+    o.useEffect(() => {
+      if (!_e || !v) return;
+      const a = () => dt((p) => p + 1),
+        f = v.subscribeState((p) => {
+          p.phase === "ready" && a();
+        }),
+        g = setInterval(a, bn);
+      return () => {
+        (f(), clearInterval(g));
+      };
+    }, [_e, v]));
+  const ae = o.useCallback((a) => {
+      x.current.get(a)?.pushPodcastState(fn());
+    }, []),
+    wt = o.useCallback(
+      (a) => {
+        Le.current?.generation === a.generation &&
+          (Z(a), W(!0), L(null), ae(a.generation), ne.current?.(), re.current?.());
+      },
+      [ae],
+    ),
+    yt = o.useCallback(() => {
+      W(!0);
+      const a = E.current?.generation;
+      (a != null && ae(a), ne.current?.(), re.current?.());
+    }, [ae]);
+  o.useEffect(() => {
+    H && (ne.current?.(), re.current?.());
+  }, [H]);
+  const Be = (d ? mt.get(d.generation) : void 0) ?? d?.data.title ?? "",
+    qe = d?.data.favicon ?? null,
+    We = d?.envelopeId ?? null,
+    je = H ?? (lt || ee != null || d == null || !T ? "loading" : "page");
+  (o.useEffect(() => {
+    n?.(Be);
+  }, [Be, n]),
+    o.useEffect(() => {
+      c?.(qe);
+    }, [qe, c]),
+    o.useEffect(() => {
+      l?.(We);
+    }, [We, l]),
+    o.useEffect(() => {
+      r?.(je);
+    }, [je, r]));
+  const me = [];
+  (d && me.push({ page: d, role: "displayed" }), ee && me.push({ page: ee, role: "incoming" }));
+  const ze = H && Ie ? Ve({ locale: q, facts: {}, bodyHtml: Ie, url: e }) : null;
+  return F.jsxs("div", {
+    className: "absolute inset-0 bg-white",
+    children: [
+      H
+        ? ze
+          ? F.jsx(
+              "iframe",
+              {
+                ref: gt,
+                srcDoc: ze,
+                title: H,
+                sandbox: Je,
+                referrerPolicy: "no-referrer",
+                "data-browser-page-frame": "",
+                className: "absolute inset-0 h-full w-full border-0",
+              },
+              `error-${H}`,
+            )
+          : F.jsx("div", {
+              className:
+                "absolute inset-0 flex items-center justify-center bg-white px-6 text-center text-sm text-zinc-500",
+              children: e,
+            })
+        : me.map(({ page: a, role: f }) =>
+            F.jsx(
+              "iframe",
+              {
+                ref: bt(a),
+                srcDoc: a.srcDoc,
+                title: a.data.title,
+                sandbox: Je,
+                referrerPolicy: "no-referrer",
+                "data-browser-page-frame": "",
+                onLoad: f === "displayed" ? yt : () => wt(a),
+                className: "absolute inset-0 h-full w-full border-0",
+                style: f === "incoming" ? { visibility: "hidden" } : void 0,
+                "aria-hidden": f === "incoming" ? !0 : void 0,
+              },
+              a.generation,
+            ),
+          ),
+      J && F.jsx("div", { className: "absolute inset-0 bg-white", "aria-hidden": !0 }),
+      F.jsx("div", {
+        "aria-hidden": !0,
+        className: "browser-glitch-shield pointer-events-none absolute inset-0 bg-zinc-950",
+        style: {
+          backgroundImage:
+            "repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 3px)",
+        },
+      }),
+    ],
+  });
+}
+export { _n as B, Sn as H, Rn as a, In as b, kn as c, tn as d, An as i, Tn as l, xn as r, En as s };

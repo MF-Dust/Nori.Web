@@ -1,1 +1,39 @@
-import{j as e}from"./index-CyHAbkO5.js";import{o as n}from"./openUrlInBrowser-VWrl1VvA.js";import{M as i,r as a}from"./index-6t0U9yuc.js";import"./i18n-DtIC1LRi.js";import"./browserIntent-DuTqin6R.js";import"./NormalApp-Cn6agT0F.js";const l=[a],m={p:({children:t})=>e.jsx("p",{className:"mb-2 last:mb-0",children:t}),blockquote:({children:t})=>e.jsx("blockquote",{className:"my-2 border-l-2 border-current pl-3 not-italic opacity-80 last:mb-0",children:t}),a:({children:t,href:s})=>{const r=typeof s=="string"?s:"";return r.startsWith("http://")||r.startsWith("https://")?e.jsx("span",{role:"link",tabIndex:0,title:r,onClick:()=>void n(r),onKeyDown:o=>{(o.key==="Enter"||o.key===" ")&&(o.preventDefault(),n(r))},className:"cursor-pointer underline underline-offset-2 hover:opacity-80",children:t}):e.jsx("span",{className:"underline underline-offset-2",title:r||void 0,children:t})}};function x({source:t}){return e.jsx(i,{remarkPlugins:l,components:m,children:t})}export{x as default};
+import { j as e } from "./index-CyHAbkO5.js";
+import { o as n } from "./openUrlInBrowser-VWrl1VvA.js";
+import { M as i, r as a } from "./index-6t0U9yuc.js";
+import "./i18n-DtIC1LRi.js";
+import "./browserIntent-DuTqin6R.js";
+import "./NormalApp-Cn6agT0F.js";
+const l = [a],
+  m = {
+    p: ({ children: t }) => e.jsx("p", { className: "mb-2 last:mb-0", children: t }),
+    blockquote: ({ children: t }) =>
+      e.jsx("blockquote", {
+        className: "my-2 border-l-2 border-current pl-3 not-italic opacity-80 last:mb-0",
+        children: t,
+      }),
+    a: ({ children: t, href: s }) => {
+      const r = typeof s == "string" ? s : "";
+      return r.startsWith("http://") || r.startsWith("https://")
+        ? e.jsx("span", {
+            role: "link",
+            tabIndex: 0,
+            title: r,
+            onClick: () => void n(r),
+            onKeyDown: (o) => {
+              (o.key === "Enter" || o.key === " ") && (o.preventDefault(), n(r));
+            },
+            className: "cursor-pointer underline underline-offset-2 hover:opacity-80",
+            children: t,
+          })
+        : e.jsx("span", {
+            className: "underline underline-offset-2",
+            title: r || void 0,
+            children: t,
+          });
+    },
+  };
+function x({ source: t }) {
+  return e.jsx(i, { remarkPlugins: l, components: m, children: t });
+}
+export { x as default };

@@ -1,1 +1,472 @@
-import{j as c}from"./index-CyHAbkO5.js";import{r as s}from"./i18n-DtIC1LRi.js";import{ac as X,ad as K,ae as W,$ as I,af as J,a1 as Q,a4 as y,a2 as H,ag as Z,ah as ee,ai as S,aj as te,ak as oe,al as re,a3 as ne,am as se,an as ae,i as ie}from"./NormalApp-Cn6agT0F.js";var[_]=ne("Tooltip",[S]),O=S(),G="TooltipProvider",le=700,D="tooltip.open",[ce,A]=_(G),F=e=>{const{__scopeTooltip:o,delayDuration:t=le,skipDelayDuration:r=300,disableHoverableContent:n=!1,children:l}=e,a=s.useRef(!0),v=s.useRef(!1),i=s.useRef(0);return s.useEffect(()=>{const d=i.current;return()=>window.clearTimeout(d)},[]),c.jsx(ce,{scope:o,isOpenDelayedRef:a,delayDuration:t,onOpen:s.useCallback(()=>{r<=0||(window.clearTimeout(i.current),a.current=!1)},[r]),onClose:s.useCallback(()=>{r<=0||(window.clearTimeout(i.current),i.current=window.setTimeout(()=>a.current=!0,r))},[r]),isPointerInTransitRef:v,onPointerInTransitChange:s.useCallback(d=>{v.current=d},[]),disableHoverableContent:n,children:l})};F.displayName=G;var R="Tooltip",[ue,j]=_(R),$=e=>{const{__scopeTooltip:o,children:t,open:r,defaultOpen:n,onOpenChange:l,disableHoverableContent:a,delayDuration:v}=e,i=A(R,e.__scopeTooltip),d=O(o),[u,p]=s.useState(null),x=X(),f=s.useRef(0),h=a??i.disableHoverableContent,T=v??i.delayDuration,g=s.useRef(!1),[C,m]=K({prop:r,defaultProp:n??!1,onChange:N=>{N?(i.onOpen(),document.dispatchEvent(new CustomEvent(D))):i.onClose(),l?.(N)},caller:R}),w=s.useMemo(()=>C?g.current?"delayed-open":"instant-open":"closed",[C]),P=s.useCallback(()=>{window.clearTimeout(f.current),f.current=0,g.current=!1,m(!0)},[m]),E=s.useCallback(()=>{window.clearTimeout(f.current),f.current=0,m(!1)},[m]),M=s.useCallback(()=>{window.clearTimeout(f.current),f.current=window.setTimeout(()=>{g.current=!0,m(!0),f.current=0},T)},[T,m]);return s.useEffect(()=>()=>{f.current&&(window.clearTimeout(f.current),f.current=0)},[]),c.jsx(W,{...d,children:c.jsx(ue,{scope:o,contentId:x,open:C,stateAttribute:w,trigger:u,onTriggerChange:p,onTriggerEnter:s.useCallback(()=>{i.isOpenDelayedRef.current?M():P()},[i.isOpenDelayedRef,M,P]),onTriggerLeave:s.useCallback(()=>{h?E():(window.clearTimeout(f.current),f.current=0)},[E,h]),onOpen:P,onClose:E,disableHoverableContent:h,children:t})})};$.displayName=R;var k="TooltipTrigger",z=s.forwardRef((e,o)=>{const{__scopeTooltip:t,...r}=e,n=j(k,t),l=A(k,t),a=O(t),v=s.useRef(null),i=I(o,v,n.onTriggerChange),d=s.useRef(!1),u=s.useRef(!1),p=s.useCallback(()=>d.current=!1,[]);return s.useEffect(()=>()=>document.removeEventListener("pointerup",p),[p]),c.jsx(J,{asChild:!0,...a,children:c.jsx(Q.button,{"aria-describedby":n.open?n.contentId:void 0,"data-state":n.stateAttribute,...r,ref:i,onPointerMove:y(e.onPointerMove,x=>{x.pointerType!=="touch"&&!u.current&&!l.isPointerInTransitRef.current&&(n.onTriggerEnter(),u.current=!0)}),onPointerLeave:y(e.onPointerLeave,()=>{n.onTriggerLeave(),u.current=!1}),onPointerDown:y(e.onPointerDown,()=>{n.open&&n.onClose(),d.current=!0,document.addEventListener("pointerup",p,{once:!0})}),onFocus:y(e.onFocus,()=>{d.current||n.onOpen()}),onBlur:y(e.onBlur,n.onClose),onClick:y(e.onClick,n.onClose)})})});z.displayName=k;var L="TooltipPortal",[de,pe]=_(L,{forceMount:void 0}),B=e=>{const{__scopeTooltip:o,forceMount:t,children:r,container:n}=e,l=j(L,o);return c.jsx(de,{scope:o,forceMount:t,children:c.jsx(H,{present:t||l.open,children:c.jsx(Z,{asChild:!0,container:n,children:r})})})};B.displayName=L;var b="TooltipContent",U=s.forwardRef((e,o)=>{const t=pe(b,e.__scopeTooltip),{forceMount:r=t.forceMount,side:n="top",...l}=e,a=j(b,e.__scopeTooltip);return c.jsx(H,{present:r||a.open,children:a.disableHoverableContent?c.jsx(V,{side:n,...l,ref:o}):c.jsx(fe,{side:n,...l,ref:o})})}),fe=s.forwardRef((e,o)=>{const t=j(b,e.__scopeTooltip),r=A(b,e.__scopeTooltip),n=s.useRef(null),l=I(o,n),[a,v]=s.useState(null),{trigger:i,onClose:d}=t,u=n.current,{onPointerInTransitChange:p}=r,x=s.useCallback(()=>{v(null),p(!1)},[p]),f=s.useCallback((h,T)=>{const g=h.currentTarget,C={x:h.clientX,y:h.clientY},m=ge(C,g.getBoundingClientRect()),w=Te(C,m),P=me(T.getBoundingClientRect()),E=ye([...w,...P]);v(E),p(!0)},[p]);return s.useEffect(()=>()=>x(),[x]),s.useEffect(()=>{if(i&&u){const h=g=>f(g,u),T=g=>f(g,i);return i.addEventListener("pointerleave",h),u.addEventListener("pointerleave",T),()=>{i.removeEventListener("pointerleave",h),u.removeEventListener("pointerleave",T)}}},[i,u,f,x]),s.useEffect(()=>{if(a){const h=T=>{const g=T.target,C={x:T.clientX,y:T.clientY},m=i?.contains(g)||u?.contains(g),w=!Ce(C,a);m?x():w&&(x(),d())};return document.addEventListener("pointermove",h),()=>document.removeEventListener("pointermove",h)}},[i,u,a,d,x]),c.jsx(V,{...e,ref:l})}),[xe,ve]=_(R,{isInside:!1}),he=se("TooltipContent"),V=s.forwardRef((e,o)=>{const{__scopeTooltip:t,children:r,"aria-label":n,onEscapeKeyDown:l,onPointerDownOutside:a,...v}=e,i=j(b,t),d=O(t),{onClose:u}=i;return s.useEffect(()=>(document.addEventListener(D,u),()=>document.removeEventListener(D,u)),[u]),s.useEffect(()=>{if(i.trigger){const p=x=>{x.target instanceof Node&&x.target.contains(i.trigger)&&u()};return window.addEventListener("scroll",p,{capture:!0}),()=>window.removeEventListener("scroll",p,{capture:!0})}},[i.trigger,u]),c.jsx(te,{asChild:!0,disableOutsidePointerEvents:!1,onEscapeKeyDown:l,onPointerDownOutside:a,onFocusOutside:p=>p.preventDefault(),onDismiss:u,children:c.jsxs(oe,{"data-state":i.stateAttribute,...d,...v,ref:o,style:{...v.style,"--radix-tooltip-content-transform-origin":"var(--radix-popper-transform-origin)","--radix-tooltip-content-available-width":"var(--radix-popper-available-width)","--radix-tooltip-content-available-height":"var(--radix-popper-available-height)","--radix-tooltip-trigger-width":"var(--radix-popper-anchor-width)","--radix-tooltip-trigger-height":"var(--radix-popper-anchor-height)"},children:[c.jsx(he,{children:r}),c.jsx(xe,{scope:t,isInside:!0,children:c.jsx(re,{id:i.contentId,role:"tooltip",children:n||r})})]})})});U.displayName=b;var Y="TooltipArrow",q=s.forwardRef((e,o)=>{const{__scopeTooltip:t,...r}=e,n=O(t);return ve(Y,t).isInside?null:c.jsx(ee,{...n,...r,ref:o})});q.displayName=Y;function ge(e,o){const t=Math.abs(o.top-e.y),r=Math.abs(o.bottom-e.y),n=Math.abs(o.right-e.x),l=Math.abs(o.left-e.x);switch(Math.min(t,r,n,l)){case l:return"left";case n:return"right";case t:return"top";case r:return"bottom";default:throw new Error("unreachable")}}function Te(e,o,t=5){const r=[];switch(o){case"top":r.push({x:e.x-t,y:e.y+t},{x:e.x+t,y:e.y+t});break;case"bottom":r.push({x:e.x-t,y:e.y-t},{x:e.x+t,y:e.y-t});break;case"left":r.push({x:e.x+t,y:e.y-t},{x:e.x+t,y:e.y+t});break;case"right":r.push({x:e.x-t,y:e.y-t},{x:e.x-t,y:e.y+t});break}return r}function me(e){const{top:o,right:t,bottom:r,left:n}=e;return[{x:n,y:o},{x:t,y:o},{x:t,y:r},{x:n,y:r}]}function Ce(e,o){const{x:t,y:r}=e;let n=!1;for(let l=0,a=o.length-1;l<o.length;a=l++){const v=o[l],i=o[a],d=v.x,u=v.y,p=i.x,x=i.y;u>r!=x>r&&t<(p-d)*(r-u)/(x-u)+d&&(n=!n)}return n}function ye(e){const o=e.slice();return o.sort((t,r)=>t.x<r.x?-1:t.x>r.x?1:t.y<r.y?-1:t.y>r.y?1:0),be(o)}function be(e){if(e.length<=1)return e.slice();const o=[];for(let r=0;r<e.length;r++){const n=e[r];for(;o.length>=2;){const l=o[o.length-1],a=o[o.length-2];if((l.x-a.x)*(n.y-a.y)>=(l.y-a.y)*(n.x-a.x))o.pop();else break}o.push(n)}o.pop();const t=[];for(let r=e.length-1;r>=0;r--){const n=e[r];for(;t.length>=2;){const l=t[t.length-1],a=t[t.length-2];if((l.x-a.x)*(n.y-a.y)>=(l.y-a.y)*(n.x-a.x))t.pop();else break}t.push(n)}return t.pop(),o.length===1&&t.length===1&&o[0].x===t[0].x&&o[0].y===t[0].y?o:o.concat(t)}var we=F,Pe=$,Ee=z,Re=B,je=U,_e=q;function Oe({delayDuration:e=0,...o}){return c.jsx(we,{"data-slot":"tooltip-provider",delayDuration:e,...o})}function Le({...e}){return c.jsx(Oe,{children:c.jsx(Pe,{"data-slot":"tooltip",...e})})}function Me({...e}){return c.jsx(Ee,{"data-slot":"tooltip-trigger",...e})}function Ne({className:e,sideOffset:o=0,children:t,container:r,...n}){const l=ae(),a=r??l??void 0;return c.jsx(Re,{container:a,children:c.jsxs(je,{"data-slot":"tooltip-content",sideOffset:o,className:ie("bg-foreground text-background animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance",e),...n,children:[t,c.jsx(_e,{className:"bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]"})]})})}export{Le as T,Me as a,Ne as b};
+import { j as c } from "./index-CyHAbkO5.js";
+import { r as s } from "./i18n-DtIC1LRi.js";
+import {
+  ac as X,
+  ad as K,
+  ae as W,
+  $ as I,
+  af as J,
+  a1 as Q,
+  a4 as y,
+  a2 as H,
+  ag as Z,
+  ah as ee,
+  ai as S,
+  aj as te,
+  ak as oe,
+  al as re,
+  a3 as ne,
+  am as se,
+  an as ae,
+  i as ie,
+} from "./NormalApp-Cn6agT0F.js";
+var [_] = ne("Tooltip", [S]),
+  O = S(),
+  G = "TooltipProvider",
+  le = 700,
+  D = "tooltip.open",
+  [ce, A] = _(G),
+  F = (e) => {
+    const {
+        __scopeTooltip: o,
+        delayDuration: t = le,
+        skipDelayDuration: r = 300,
+        disableHoverableContent: n = !1,
+        children: l,
+      } = e,
+      a = s.useRef(!0),
+      v = s.useRef(!1),
+      i = s.useRef(0);
+    return (
+      s.useEffect(() => {
+        const d = i.current;
+        return () => window.clearTimeout(d);
+      }, []),
+      c.jsx(ce, {
+        scope: o,
+        isOpenDelayedRef: a,
+        delayDuration: t,
+        onOpen: s.useCallback(() => {
+          r <= 0 || (window.clearTimeout(i.current), (a.current = !1));
+        }, [r]),
+        onClose: s.useCallback(() => {
+          r <= 0 ||
+            (window.clearTimeout(i.current),
+            (i.current = window.setTimeout(() => (a.current = !0), r)));
+        }, [r]),
+        isPointerInTransitRef: v,
+        onPointerInTransitChange: s.useCallback((d) => {
+          v.current = d;
+        }, []),
+        disableHoverableContent: n,
+        children: l,
+      })
+    );
+  };
+F.displayName = G;
+var R = "Tooltip",
+  [ue, j] = _(R),
+  $ = (e) => {
+    const {
+        __scopeTooltip: o,
+        children: t,
+        open: r,
+        defaultOpen: n,
+        onOpenChange: l,
+        disableHoverableContent: a,
+        delayDuration: v,
+      } = e,
+      i = A(R, e.__scopeTooltip),
+      d = O(o),
+      [u, p] = s.useState(null),
+      x = X(),
+      f = s.useRef(0),
+      h = a ?? i.disableHoverableContent,
+      T = v ?? i.delayDuration,
+      g = s.useRef(!1),
+      [C, m] = K({
+        prop: r,
+        defaultProp: n ?? !1,
+        onChange: (N) => {
+          (N ? (i.onOpen(), document.dispatchEvent(new CustomEvent(D))) : i.onClose(), l?.(N));
+        },
+        caller: R,
+      }),
+      w = s.useMemo(() => (C ? (g.current ? "delayed-open" : "instant-open") : "closed"), [C]),
+      P = s.useCallback(() => {
+        (window.clearTimeout(f.current), (f.current = 0), (g.current = !1), m(!0));
+      }, [m]),
+      E = s.useCallback(() => {
+        (window.clearTimeout(f.current), (f.current = 0), m(!1));
+      }, [m]),
+      M = s.useCallback(() => {
+        (window.clearTimeout(f.current),
+          (f.current = window.setTimeout(() => {
+            ((g.current = !0), m(!0), (f.current = 0));
+          }, T)));
+      }, [T, m]);
+    return (
+      s.useEffect(
+        () => () => {
+          f.current && (window.clearTimeout(f.current), (f.current = 0));
+        },
+        [],
+      ),
+      c.jsx(W, {
+        ...d,
+        children: c.jsx(ue, {
+          scope: o,
+          contentId: x,
+          open: C,
+          stateAttribute: w,
+          trigger: u,
+          onTriggerChange: p,
+          onTriggerEnter: s.useCallback(() => {
+            i.isOpenDelayedRef.current ? M() : P();
+          }, [i.isOpenDelayedRef, M, P]),
+          onTriggerLeave: s.useCallback(() => {
+            h ? E() : (window.clearTimeout(f.current), (f.current = 0));
+          }, [E, h]),
+          onOpen: P,
+          onClose: E,
+          disableHoverableContent: h,
+          children: t,
+        }),
+      })
+    );
+  };
+$.displayName = R;
+var k = "TooltipTrigger",
+  z = s.forwardRef((e, o) => {
+    const { __scopeTooltip: t, ...r } = e,
+      n = j(k, t),
+      l = A(k, t),
+      a = O(t),
+      v = s.useRef(null),
+      i = I(o, v, n.onTriggerChange),
+      d = s.useRef(!1),
+      u = s.useRef(!1),
+      p = s.useCallback(() => (d.current = !1), []);
+    return (
+      s.useEffect(() => () => document.removeEventListener("pointerup", p), [p]),
+      c.jsx(J, {
+        asChild: !0,
+        ...a,
+        children: c.jsx(Q.button, {
+          "aria-describedby": n.open ? n.contentId : void 0,
+          "data-state": n.stateAttribute,
+          ...r,
+          ref: i,
+          onPointerMove: y(e.onPointerMove, (x) => {
+            x.pointerType !== "touch" &&
+              !u.current &&
+              !l.isPointerInTransitRef.current &&
+              (n.onTriggerEnter(), (u.current = !0));
+          }),
+          onPointerLeave: y(e.onPointerLeave, () => {
+            (n.onTriggerLeave(), (u.current = !1));
+          }),
+          onPointerDown: y(e.onPointerDown, () => {
+            (n.open && n.onClose(),
+              (d.current = !0),
+              document.addEventListener("pointerup", p, { once: !0 }));
+          }),
+          onFocus: y(e.onFocus, () => {
+            d.current || n.onOpen();
+          }),
+          onBlur: y(e.onBlur, n.onClose),
+          onClick: y(e.onClick, n.onClose),
+        }),
+      })
+    );
+  });
+z.displayName = k;
+var L = "TooltipPortal",
+  [de, pe] = _(L, { forceMount: void 0 }),
+  B = (e) => {
+    const { __scopeTooltip: o, forceMount: t, children: r, container: n } = e,
+      l = j(L, o);
+    return c.jsx(de, {
+      scope: o,
+      forceMount: t,
+      children: c.jsx(H, {
+        present: t || l.open,
+        children: c.jsx(Z, { asChild: !0, container: n, children: r }),
+      }),
+    });
+  };
+B.displayName = L;
+var b = "TooltipContent",
+  U = s.forwardRef((e, o) => {
+    const t = pe(b, e.__scopeTooltip),
+      { forceMount: r = t.forceMount, side: n = "top", ...l } = e,
+      a = j(b, e.__scopeTooltip);
+    return c.jsx(H, {
+      present: r || a.open,
+      children: a.disableHoverableContent
+        ? c.jsx(V, { side: n, ...l, ref: o })
+        : c.jsx(fe, { side: n, ...l, ref: o }),
+    });
+  }),
+  fe = s.forwardRef((e, o) => {
+    const t = j(b, e.__scopeTooltip),
+      r = A(b, e.__scopeTooltip),
+      n = s.useRef(null),
+      l = I(o, n),
+      [a, v] = s.useState(null),
+      { trigger: i, onClose: d } = t,
+      u = n.current,
+      { onPointerInTransitChange: p } = r,
+      x = s.useCallback(() => {
+        (v(null), p(!1));
+      }, [p]),
+      f = s.useCallback(
+        (h, T) => {
+          const g = h.currentTarget,
+            C = { x: h.clientX, y: h.clientY },
+            m = ge(C, g.getBoundingClientRect()),
+            w = Te(C, m),
+            P = me(T.getBoundingClientRect()),
+            E = ye([...w, ...P]);
+          (v(E), p(!0));
+        },
+        [p],
+      );
+    return (
+      s.useEffect(() => () => x(), [x]),
+      s.useEffect(() => {
+        if (i && u) {
+          const h = (g) => f(g, u),
+            T = (g) => f(g, i);
+          return (
+            i.addEventListener("pointerleave", h),
+            u.addEventListener("pointerleave", T),
+            () => {
+              (i.removeEventListener("pointerleave", h), u.removeEventListener("pointerleave", T));
+            }
+          );
+        }
+      }, [i, u, f, x]),
+      s.useEffect(() => {
+        if (a) {
+          const h = (T) => {
+            const g = T.target,
+              C = { x: T.clientX, y: T.clientY },
+              m = i?.contains(g) || u?.contains(g),
+              w = !Ce(C, a);
+            m ? x() : w && (x(), d());
+          };
+          return (
+            document.addEventListener("pointermove", h),
+            () => document.removeEventListener("pointermove", h)
+          );
+        }
+      }, [i, u, a, d, x]),
+      c.jsx(V, { ...e, ref: l })
+    );
+  }),
+  [xe, ve] = _(R, { isInside: !1 }),
+  he = se("TooltipContent"),
+  V = s.forwardRef((e, o) => {
+    const {
+        __scopeTooltip: t,
+        children: r,
+        "aria-label": n,
+        onEscapeKeyDown: l,
+        onPointerDownOutside: a,
+        ...v
+      } = e,
+      i = j(b, t),
+      d = O(t),
+      { onClose: u } = i;
+    return (
+      s.useEffect(
+        () => (document.addEventListener(D, u), () => document.removeEventListener(D, u)),
+        [u],
+      ),
+      s.useEffect(() => {
+        if (i.trigger) {
+          const p = (x) => {
+            x.target instanceof Node && x.target.contains(i.trigger) && u();
+          };
+          return (
+            window.addEventListener("scroll", p, { capture: !0 }),
+            () => window.removeEventListener("scroll", p, { capture: !0 })
+          );
+        }
+      }, [i.trigger, u]),
+      c.jsx(te, {
+        asChild: !0,
+        disableOutsidePointerEvents: !1,
+        onEscapeKeyDown: l,
+        onPointerDownOutside: a,
+        onFocusOutside: (p) => p.preventDefault(),
+        onDismiss: u,
+        children: c.jsxs(oe, {
+          "data-state": i.stateAttribute,
+          ...d,
+          ...v,
+          ref: o,
+          style: {
+            ...v.style,
+            "--radix-tooltip-content-transform-origin": "var(--radix-popper-transform-origin)",
+            "--radix-tooltip-content-available-width": "var(--radix-popper-available-width)",
+            "--radix-tooltip-content-available-height": "var(--radix-popper-available-height)",
+            "--radix-tooltip-trigger-width": "var(--radix-popper-anchor-width)",
+            "--radix-tooltip-trigger-height": "var(--radix-popper-anchor-height)",
+          },
+          children: [
+            c.jsx(he, { children: r }),
+            c.jsx(xe, {
+              scope: t,
+              isInside: !0,
+              children: c.jsx(re, { id: i.contentId, role: "tooltip", children: n || r }),
+            }),
+          ],
+        }),
+      })
+    );
+  });
+U.displayName = b;
+var Y = "TooltipArrow",
+  q = s.forwardRef((e, o) => {
+    const { __scopeTooltip: t, ...r } = e,
+      n = O(t);
+    return ve(Y, t).isInside ? null : c.jsx(ee, { ...n, ...r, ref: o });
+  });
+q.displayName = Y;
+function ge(e, o) {
+  const t = Math.abs(o.top - e.y),
+    r = Math.abs(o.bottom - e.y),
+    n = Math.abs(o.right - e.x),
+    l = Math.abs(o.left - e.x);
+  switch (Math.min(t, r, n, l)) {
+    case l:
+      return "left";
+    case n:
+      return "right";
+    case t:
+      return "top";
+    case r:
+      return "bottom";
+    default:
+      throw new Error("unreachable");
+  }
+}
+function Te(e, o, t = 5) {
+  const r = [];
+  switch (o) {
+    case "top":
+      r.push({ x: e.x - t, y: e.y + t }, { x: e.x + t, y: e.y + t });
+      break;
+    case "bottom":
+      r.push({ x: e.x - t, y: e.y - t }, { x: e.x + t, y: e.y - t });
+      break;
+    case "left":
+      r.push({ x: e.x + t, y: e.y - t }, { x: e.x + t, y: e.y + t });
+      break;
+    case "right":
+      r.push({ x: e.x - t, y: e.y - t }, { x: e.x - t, y: e.y + t });
+      break;
+  }
+  return r;
+}
+function me(e) {
+  const { top: o, right: t, bottom: r, left: n } = e;
+  return [
+    { x: n, y: o },
+    { x: t, y: o },
+    { x: t, y: r },
+    { x: n, y: r },
+  ];
+}
+function Ce(e, o) {
+  const { x: t, y: r } = e;
+  let n = !1;
+  for (let l = 0, a = o.length - 1; l < o.length; a = l++) {
+    const v = o[l],
+      i = o[a],
+      d = v.x,
+      u = v.y,
+      p = i.x,
+      x = i.y;
+    u > r != x > r && t < ((p - d) * (r - u)) / (x - u) + d && (n = !n);
+  }
+  return n;
+}
+function ye(e) {
+  const o = e.slice();
+  return (
+    o.sort((t, r) => (t.x < r.x ? -1 : t.x > r.x ? 1 : t.y < r.y ? -1 : t.y > r.y ? 1 : 0)),
+    be(o)
+  );
+}
+function be(e) {
+  if (e.length <= 1) return e.slice();
+  const o = [];
+  for (let r = 0; r < e.length; r++) {
+    const n = e[r];
+    for (; o.length >= 2;) {
+      const l = o[o.length - 1],
+        a = o[o.length - 2];
+      if ((l.x - a.x) * (n.y - a.y) >= (l.y - a.y) * (n.x - a.x)) o.pop();
+      else break;
+    }
+    o.push(n);
+  }
+  o.pop();
+  const t = [];
+  for (let r = e.length - 1; r >= 0; r--) {
+    const n = e[r];
+    for (; t.length >= 2;) {
+      const l = t[t.length - 1],
+        a = t[t.length - 2];
+      if ((l.x - a.x) * (n.y - a.y) >= (l.y - a.y) * (n.x - a.x)) t.pop();
+      else break;
+    }
+    t.push(n);
+  }
+  return (
+    t.pop(),
+    o.length === 1 && t.length === 1 && o[0].x === t[0].x && o[0].y === t[0].y ? o : o.concat(t)
+  );
+}
+var we = F,
+  Pe = $,
+  Ee = z,
+  Re = B,
+  je = U,
+  _e = q;
+function Oe({ delayDuration: e = 0, ...o }) {
+  return c.jsx(we, { "data-slot": "tooltip-provider", delayDuration: e, ...o });
+}
+function Le({ ...e }) {
+  return c.jsx(Oe, { children: c.jsx(Pe, { "data-slot": "tooltip", ...e }) });
+}
+function Me({ ...e }) {
+  return c.jsx(Ee, { "data-slot": "tooltip-trigger", ...e });
+}
+function Ne({ className: e, sideOffset: o = 0, children: t, container: r, ...n }) {
+  const l = ae(),
+    a = r ?? l ?? void 0;
+  return c.jsx(Re, {
+    container: a,
+    children: c.jsxs(je, {
+      "data-slot": "tooltip-content",
+      sideOffset: o,
+      className: ie(
+        "bg-foreground text-background animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance",
+        e,
+      ),
+      ...n,
+      children: [
+        t,
+        c.jsx(_e, {
+          className:
+            "bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]",
+        }),
+      ],
+    }),
+  });
+}
+export { Le as T, Me as a, Ne as b };

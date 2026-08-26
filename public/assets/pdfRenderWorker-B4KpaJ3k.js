@@ -1,2 +1,176 @@
-function f(e,t){return this.has(e)||this.set(e,t),this.get(e)}function p(e,t){return this.has(e)||this.set(e,t(e)),this.get(e)}function u(e,...t){return new this(r=>{r(e(...t))})}function h(){let e,t;return{promise:new this((n,o)=>{e=n,t=o}),resolve:e,reject:t}}function g(e){const t=new Set;for(const r of this)e.has(r)&&t.add(r);return t}function w(e){const t=atob(e),r=new Uint8Array(t.length);for(let n=0;n<t.length;n++)r[n]=t.charCodeAt(n);return r}function d(){let e="";for(let r=0;r<this.length;r+=32768)e+=String.fromCharCode(...this.subarray(r,r+32768));return btoa(e)}function m(){let e="";for(let t=0;t<this.length;t++)e+=this[t].toString(16).padStart(2,"0");return e}function y(e){let t=-0,r=0;for(const n of e){const o=t+n;Math.abs(t)>=Math.abs(n)?r+=t-o+n:r+=n-o+t,t=o}return r===0?t:t+r}function v(e,t){try{return new URL(e,t)}catch{return null}}function b(e){const t=new AbortController;for(const r of e){if(r.aborted){t.abort(r.reason);break}r.addEventListener("abort",()=>t.abort(r.reason),{once:!0,signal:t.signal})}return t.signal}Map.prototype.getOrInsert||(Map.prototype.getOrInsert=f);Map.prototype.getOrInsertComputed||(Map.prototype.getOrInsertComputed=p);Promise.try||(Promise.try=u);Promise.withResolvers||(Promise.withResolvers=h);Set.prototype.intersection||(Set.prototype.intersection=g);Uint8Array.fromBase64||(Uint8Array.fromBase64=w);Uint8Array.prototype.toBase64||(Uint8Array.prototype.toBase64=d);Uint8Array.prototype.toHex||(Uint8Array.prototype.toHex=m);Math.sumPrecise||(Math.sumPrecise=y);URL.parse||(URL.parse=v);AbortSignal.any||(AbortSignal.any=b);const s=self;class C{create(t,r){if(t<=0||r<=0)throw new Error("Invalid canvas size");const n=new OffscreenCanvas(t,r);return{canvas:n,context:n.getContext("2d",{willReadFrequently:!0})}}reset(t,r,n){if(!t.canvas)throw new Error("Canvas is not specified");if(r<=0||n<=0)throw new Error("Invalid canvas size");t.canvas.width=r,t.canvas.height=n}destroy(t){if(!t.canvas)throw new Error("Canvas is not specified");t.canvas.width=0,t.canvas.height=0,t.canvas=null,t.context=null}}let a=null;const i=new Map;async function P(e){const t=await import("./pdf-o1CUHkl-.js");return t.GlobalWorkerOptions.workerPort=new Worker(new URL("/assets/pdfParserWorker-BOruHdND.js",import.meta.url),{type:"module"}),t.getDocument({url:new URL(e),CanvasFactory:C,ownerDocument:{fonts:s.fonts}}).promise}async function k(e){return Promise.all(Array.from({length:e.numPages},async(t,r)=>{const o=(await e.getPage(r+1)).getViewport({scale:1});return{width:o.width,height:o.height,rotation:o.rotation,rawDims:{...o.rawDims}}}))}async function x(e){switch(e.type){case"open":{a=P(e.url);const t=await a;return{kind:"open",pages:await k(t)}}case"render":{if(!a)throw new Error("render before open");const r=await(await a).getPage(e.pageNumber),n=r.getViewport({scale:e.scale}),o=new OffscreenCanvas(Math.floor(n.width),Math.floor(n.height)),c=o.getContext("2d");if(!c)throw new Error("OffscreenCanvas 2d context unavailable");const l=r.render({canvas:o,canvasContext:c,viewport:n});i.set(e.id,l);try{await l.promise}finally{i.delete(e.id)}return{kind:"render",bitmap:o.transferToImageBitmap()}}case"textContent":{if(!a)throw new Error("textContent before open");return{kind:"textContent",textContent:await(await(await a).getPage(e.pageNumber)).getTextContent()}}case"cancel":return i.get(e.targetId)?.cancel(),null;default:return e}}s.onmessage=e=>{const t=e.data;x(t).then(r=>{if(r===null)return;const n=r.kind==="render"?[r.bitmap]:[];s.postMessage({id:t.id,ok:!0,result:r},n)}).catch(r=>{const n=r?.name==="RenderingCancelledException";s.postMessage({id:t.id,ok:!1,error:r instanceof Error?`${r.message}
-${r.stack??""}`:String(r),cancelled:n})})};
+function f(e, t) {
+  return (this.has(e) || this.set(e, t), this.get(e));
+}
+function p(e, t) {
+  return (this.has(e) || this.set(e, t(e)), this.get(e));
+}
+function u(e, ...t) {
+  return new this((r) => {
+    r(e(...t));
+  });
+}
+function h() {
+  let e, t;
+  return {
+    promise: new this((n, o) => {
+      ((e = n), (t = o));
+    }),
+    resolve: e,
+    reject: t,
+  };
+}
+function g(e) {
+  const t = new Set();
+  for (const r of this) e.has(r) && t.add(r);
+  return t;
+}
+function w(e) {
+  const t = atob(e),
+    r = new Uint8Array(t.length);
+  for (let n = 0; n < t.length; n++) r[n] = t.charCodeAt(n);
+  return r;
+}
+function d() {
+  let e = "";
+  for (let r = 0; r < this.length; r += 32768)
+    e += String.fromCharCode(...this.subarray(r, r + 32768));
+  return btoa(e);
+}
+function m() {
+  let e = "";
+  for (let t = 0; t < this.length; t++) e += this[t].toString(16).padStart(2, "0");
+  return e;
+}
+function y(e) {
+  let t = -0,
+    r = 0;
+  for (const n of e) {
+    const o = t + n;
+    (Math.abs(t) >= Math.abs(n) ? (r += t - o + n) : (r += n - o + t), (t = o));
+  }
+  return r === 0 ? t : t + r;
+}
+function v(e, t) {
+  try {
+    return new URL(e, t);
+  } catch {
+    return null;
+  }
+}
+function b(e) {
+  const t = new AbortController();
+  for (const r of e) {
+    if (r.aborted) {
+      t.abort(r.reason);
+      break;
+    }
+    r.addEventListener("abort", () => t.abort(r.reason), { once: !0, signal: t.signal });
+  }
+  return t.signal;
+}
+Map.prototype.getOrInsert || (Map.prototype.getOrInsert = f);
+Map.prototype.getOrInsertComputed || (Map.prototype.getOrInsertComputed = p);
+Promise.try || (Promise.try = u);
+Promise.withResolvers || (Promise.withResolvers = h);
+Set.prototype.intersection || (Set.prototype.intersection = g);
+Uint8Array.fromBase64 || (Uint8Array.fromBase64 = w);
+Uint8Array.prototype.toBase64 || (Uint8Array.prototype.toBase64 = d);
+Uint8Array.prototype.toHex || (Uint8Array.prototype.toHex = m);
+Math.sumPrecise || (Math.sumPrecise = y);
+URL.parse || (URL.parse = v);
+AbortSignal.any || (AbortSignal.any = b);
+const s = self;
+class C {
+  create(t, r) {
+    if (t <= 0 || r <= 0) throw new Error("Invalid canvas size");
+    const n = new OffscreenCanvas(t, r);
+    return { canvas: n, context: n.getContext("2d", { willReadFrequently: !0 }) };
+  }
+  reset(t, r, n) {
+    if (!t.canvas) throw new Error("Canvas is not specified");
+    if (r <= 0 || n <= 0) throw new Error("Invalid canvas size");
+    ((t.canvas.width = r), (t.canvas.height = n));
+  }
+  destroy(t) {
+    if (!t.canvas) throw new Error("Canvas is not specified");
+    ((t.canvas.width = 0), (t.canvas.height = 0), (t.canvas = null), (t.context = null));
+  }
+}
+let a = null;
+const i = new Map();
+async function P(e) {
+  const t = await import("./pdf-o1CUHkl-.js");
+  return (
+    (t.GlobalWorkerOptions.workerPort = new Worker(
+      new URL("/assets/pdfParserWorker-BOruHdND.js", import.meta.url),
+      { type: "module" },
+    )),
+    t.getDocument({ url: new URL(e), CanvasFactory: C, ownerDocument: { fonts: s.fonts } }).promise
+  );
+}
+async function k(e) {
+  return Promise.all(
+    Array.from({ length: e.numPages }, async (t, r) => {
+      const o = (await e.getPage(r + 1)).getViewport({ scale: 1 });
+      return { width: o.width, height: o.height, rotation: o.rotation, rawDims: { ...o.rawDims } };
+    }),
+  );
+}
+async function x(e) {
+  switch (e.type) {
+    case "open": {
+      a = P(e.url);
+      const t = await a;
+      return { kind: "open", pages: await k(t) };
+    }
+    case "render": {
+      if (!a) throw new Error("render before open");
+      const r = await (await a).getPage(e.pageNumber),
+        n = r.getViewport({ scale: e.scale }),
+        o = new OffscreenCanvas(Math.floor(n.width), Math.floor(n.height)),
+        c = o.getContext("2d");
+      if (!c) throw new Error("OffscreenCanvas 2d context unavailable");
+      const l = r.render({ canvas: o, canvasContext: c, viewport: n });
+      i.set(e.id, l);
+      try {
+        await l.promise;
+      } finally {
+        i.delete(e.id);
+      }
+      return { kind: "render", bitmap: o.transferToImageBitmap() };
+    }
+    case "textContent": {
+      if (!a) throw new Error("textContent before open");
+      return {
+        kind: "textContent",
+        textContent: await (await (await a).getPage(e.pageNumber)).getTextContent(),
+      };
+    }
+    case "cancel":
+      return (i.get(e.targetId)?.cancel(), null);
+    default:
+      return e;
+  }
+}
+s.onmessage = (e) => {
+  const t = e.data;
+  x(t)
+    .then((r) => {
+      if (r === null) return;
+      const n = r.kind === "render" ? [r.bitmap] : [];
+      s.postMessage({ id: t.id, ok: !0, result: r }, n);
+    })
+    .catch((r) => {
+      const n = r?.name === "RenderingCancelledException";
+      s.postMessage({
+        id: t.id,
+        ok: !1,
+        error:
+          r instanceof Error
+            ? `${r.message}
+${r.stack ?? ""}`
+            : String(r),
+        cancelled: n,
+      });
+    });
+};

@@ -1,4 +1,399 @@
-import{j as e}from"./index-CyHAbkO5.js";import{u as L,r as c}from"./i18n-DtIC1LRi.js";import{b as M,u as D,c as _,k as T,l as W,m as p,i as S,n as y,C as b,o as B,q as N}from"./NormalApp-Cn6agT0F.js";import{C as I,g as O}from"./HelpOverlay-Fg7nuFTJ.js";import{u as H,C as t,F as R}from"./useElementSize-2mM2J_lP.js";import{H as A,C as E,a as G}from"./CakeDuelPrimaryButton-BAwIQX7O.js";function U(s){return{k:Math.min(1,Math.max(0,(s-400)/240)),compact:s>0&&s<520}}function P(){const s=c.useMemo(()=>Array.from({length:12},(a,l)=>({id:l,x:5+Math.random()*90,y:5+Math.random()*90,size:3+Math.random()*5,delay:Math.random()*5,duration:4+Math.random()*4,drift:8+Math.random()*16,color:[t.peach,t.peachLight,t.pink,t.gold][l%4]})),[]);return e.jsx("div",{className:"absolute inset-0 overflow-hidden pointer-events-none",children:s.map(a=>e.jsx(p.div,{className:"absolute rounded-full",style:{left:`${a.x}%`,top:`${a.y}%`,width:a.size,height:a.size,background:a.color,opacity:.35},animate:{y:[0,-a.drift,0],x:[0,a.drift*.4,0],opacity:[.15,.4,.15],scale:[.8,1.2,.8]},transition:{duration:a.duration,delay:a.delay,repeat:1/0,ease:"easeInOut"}},a.id))})}const Y={soldier:"#C8872A",wizard:O("wizard"),assassin:"#5B4A6A"},Z=[{key:"soldier",cardName:"soldier"},{key:"wizard",cardName:"wizard"},{key:"assassin",cardName:"assassin"}];function q({label:s,value:a,onChange:l,labels:f,compact:o=!1}){const x=o?28:36;return e.jsxs("div",{className:"w-full space-y-1.5",children:[e.jsx("div",{className:"text-[11px] font-semibold uppercase tracking-widest text-center",style:{color:t.brownLight,fontFamily:"'Nunito', sans-serif"},children:s}),e.jsx("div",{className:"flex gap-2",children:Z.map(({key:d,cardName:m})=>{const i=a===d,r=Y[d];return e.jsxs(p.button,{onClick:()=>{y(b.hoof),l(d)},className:"flex-1 flex flex-col items-center gap-0.5 rounded-xl overflow-hidden",style:{padding:o?"4px 4px 5px":"6px 4px 8px",background:i?`linear-gradient(135deg, ${n(r,.3)} 0%, ${n(r,.15)} 100%)`:"rgba(255,255,255,0.15)",border:i?`2px solid ${n(r,.7)}`:"2px solid rgba(255,255,255,0.2)",boxShadow:i?`0 2px 12px ${n(r,.25)}, inset 0 1px 0 rgba(255,255,255,0.3)`:"none"},whileHover:{scale:1.03},whileTap:{scale:.97},transition:{duration:.15},children:[e.jsx(p.img,{src:B(m),alt:"",draggable:!1,style:{width:x,height:x,marginBottom:o?2:4,objectFit:"contain",filter:i?`drop-shadow(0 2px 4px ${n(r,.5)})`:"grayscale(0.6) brightness(0.8)"},animate:{scale:i?1.1:1,filter:i?`drop-shadow(0 2px 4px ${n(r,.5)})`:"grayscale(0.6) brightness(0.8)"},transition:{type:"spring",stiffness:300,damping:20}}),e.jsx("span",{style:{fontFamily:"'Nunito', sans-serif",fontWeight:i?800:700,fontSize:o?12:13,lineHeight:1.1,color:i?t.brown:t.brownLight},children:f[d].name}),e.jsx("span",{style:{fontFamily:"'Nunito', sans-serif",fontWeight:700,fontSize:9,color:i?t.brown:t.brownLight,opacity:i?.7:.5,letterSpacing:"0.06em",textTransform:"uppercase"},children:f[d].caption})]},d)})})]})}function n(s,a){const l=Number.parseInt(s.slice(1,3),16),f=Number.parseInt(s.slice(3,5),16),o=Number.parseInt(s.slice(5,7),16);return`rgba(${l},${f},${o},${a})`}function ae({navigate:s}){const{t:a,i18n:l}=L(),f=l.language.startsWith("zh"),o=M("cakeduel"),{setWindowStyle:x}=D(),[d,m]=H(),{k:i,compact:r}=U(m.height),k=c.useRef(!1),[h,w]=c.useState("soldier"),[$,j]=c.useState(!1);c.useEffect(()=>(x({titleBarBackground:t.sky}),()=>x(null)),[x]),c.useEffect(()=>{!o||k.current||(k.current=!0,w(o.settings.difficulty))},[o]);const C=_("cakeduel"),v=o?.game??null;c.useEffect(()=>{const u=C?.getHeadSnapshot()?.state.game;T(v,u)==="game"&&s("game")},[v,s,C]);const z=c.useCallback(async()=>{const u=N();if(u)try{await u.startGame({mode:"normal",difficulty:h}),s("game")}catch(g){console.error("[CakeDuelStart] Failed to start game:",g)}},[h,s]),F=c.useCallback(async()=>{const u=N();if(u)try{await u.startGame({mode:"tutorial"}),s("game")}catch(g){console.error("[CakeDuelStart] Failed to start tutorial:",g)}},[s]);return e.jsxs("div",{ref:d,className:"relative h-full w-full overflow-hidden","data-cakeduel-screen":"start",children:[e.jsx("style",{children:R}),e.jsx("img",{src:W,alt:"",className:"absolute inset-0 h-full w-full object-cover",draggable:!1}),e.jsx("div",{className:"absolute inset-0",style:{background:`
+import { j as e } from "./index-CyHAbkO5.js";
+import { u as L, r as c } from "./i18n-DtIC1LRi.js";
+import {
+  b as M,
+  u as D,
+  c as _,
+  k as T,
+  l as W,
+  m as p,
+  i as S,
+  n as y,
+  C as b,
+  o as B,
+  q as N,
+} from "./NormalApp-Cn6agT0F.js";
+import { C as I, g as O } from "./HelpOverlay-Fg7nuFTJ.js";
+import { u as H, C as t, F as R } from "./useElementSize-2mM2J_lP.js";
+import { H as A, C as E, a as G } from "./CakeDuelPrimaryButton-BAwIQX7O.js";
+function U(s) {
+  return { k: Math.min(1, Math.max(0, (s - 400) / 240)), compact: s > 0 && s < 520 };
+}
+function P() {
+  const s = c.useMemo(
+    () =>
+      Array.from({ length: 12 }, (a, l) => ({
+        id: l,
+        x: 5 + Math.random() * 90,
+        y: 5 + Math.random() * 90,
+        size: 3 + Math.random() * 5,
+        delay: Math.random() * 5,
+        duration: 4 + Math.random() * 4,
+        drift: 8 + Math.random() * 16,
+        color: [t.peach, t.peachLight, t.pink, t.gold][l % 4],
+      })),
+    [],
+  );
+  return e.jsx("div", {
+    className: "absolute inset-0 overflow-hidden pointer-events-none",
+    children: s.map((a) =>
+      e.jsx(
+        p.div,
+        {
+          className: "absolute rounded-full",
+          style: {
+            left: `${a.x}%`,
+            top: `${a.y}%`,
+            width: a.size,
+            height: a.size,
+            background: a.color,
+            opacity: 0.35,
+          },
+          animate: {
+            y: [0, -a.drift, 0],
+            x: [0, a.drift * 0.4, 0],
+            opacity: [0.15, 0.4, 0.15],
+            scale: [0.8, 1.2, 0.8],
+          },
+          transition: { duration: a.duration, delay: a.delay, repeat: 1 / 0, ease: "easeInOut" },
+        },
+        a.id,
+      ),
+    ),
+  });
+}
+const Y = { soldier: "#C8872A", wizard: O("wizard"), assassin: "#5B4A6A" },
+  Z = [
+    { key: "soldier", cardName: "soldier" },
+    { key: "wizard", cardName: "wizard" },
+    { key: "assassin", cardName: "assassin" },
+  ];
+function q({ label: s, value: a, onChange: l, labels: f, compact: o = !1 }) {
+  const x = o ? 28 : 36;
+  return e.jsxs("div", {
+    className: "w-full space-y-1.5",
+    children: [
+      e.jsx("div", {
+        className: "text-[11px] font-semibold uppercase tracking-widest text-center",
+        style: { color: t.brownLight, fontFamily: "'Nunito', sans-serif" },
+        children: s,
+      }),
+      e.jsx("div", {
+        className: "flex gap-2",
+        children: Z.map(({ key: d, cardName: m }) => {
+          const i = a === d,
+            r = Y[d];
+          return e.jsxs(
+            p.button,
+            {
+              onClick: () => {
+                (y(b.hoof), l(d));
+              },
+              className: "flex-1 flex flex-col items-center gap-0.5 rounded-xl overflow-hidden",
+              style: {
+                padding: o ? "4px 4px 5px" : "6px 4px 8px",
+                background: i
+                  ? `linear-gradient(135deg, ${n(r, 0.3)} 0%, ${n(r, 0.15)} 100%)`
+                  : "rgba(255,255,255,0.15)",
+                border: i ? `2px solid ${n(r, 0.7)}` : "2px solid rgba(255,255,255,0.2)",
+                boxShadow: i
+                  ? `0 2px 12px ${n(r, 0.25)}, inset 0 1px 0 rgba(255,255,255,0.3)`
+                  : "none",
+              },
+              whileHover: { scale: 1.03 },
+              whileTap: { scale: 0.97 },
+              transition: { duration: 0.15 },
+              children: [
+                e.jsx(p.img, {
+                  src: B(m),
+                  alt: "",
+                  draggable: !1,
+                  style: {
+                    width: x,
+                    height: x,
+                    marginBottom: o ? 2 : 4,
+                    objectFit: "contain",
+                    filter: i
+                      ? `drop-shadow(0 2px 4px ${n(r, 0.5)})`
+                      : "grayscale(0.6) brightness(0.8)",
+                  },
+                  animate: {
+                    scale: i ? 1.1 : 1,
+                    filter: i
+                      ? `drop-shadow(0 2px 4px ${n(r, 0.5)})`
+                      : "grayscale(0.6) brightness(0.8)",
+                  },
+                  transition: { type: "spring", stiffness: 300, damping: 20 },
+                }),
+                e.jsx("span", {
+                  style: {
+                    fontFamily: "'Nunito', sans-serif",
+                    fontWeight: i ? 800 : 700,
+                    fontSize: o ? 12 : 13,
+                    lineHeight: 1.1,
+                    color: i ? t.brown : t.brownLight,
+                  },
+                  children: f[d].name,
+                }),
+                e.jsx("span", {
+                  style: {
+                    fontFamily: "'Nunito', sans-serif",
+                    fontWeight: 700,
+                    fontSize: 9,
+                    color: i ? t.brown : t.brownLight,
+                    opacity: i ? 0.7 : 0.5,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                  },
+                  children: f[d].caption,
+                }),
+              ],
+            },
+            d,
+          );
+        }),
+      }),
+    ],
+  });
+}
+function n(s, a) {
+  const l = Number.parseInt(s.slice(1, 3), 16),
+    f = Number.parseInt(s.slice(3, 5), 16),
+    o = Number.parseInt(s.slice(5, 7), 16);
+  return `rgba(${l},${f},${o},${a})`;
+}
+function ae({ navigate: s }) {
+  const { t: a, i18n: l } = L(),
+    f = l.language.startsWith("zh"),
+    o = M("cakeduel"),
+    { setWindowStyle: x } = D(),
+    [d, m] = H(),
+    { k: i, compact: r } = U(m.height),
+    k = c.useRef(!1),
+    [h, w] = c.useState("soldier"),
+    [$, j] = c.useState(!1);
+  (c.useEffect(() => (x({ titleBarBackground: t.sky }), () => x(null)), [x]),
+    c.useEffect(() => {
+      !o || k.current || ((k.current = !0), w(o.settings.difficulty));
+    }, [o]));
+  const C = _("cakeduel"),
+    v = o?.game ?? null;
+  c.useEffect(() => {
+    const u = C?.getHeadSnapshot()?.state.game;
+    T(v, u) === "game" && s("game");
+  }, [v, s, C]);
+  const z = c.useCallback(async () => {
+      const u = N();
+      if (u)
+        try {
+          (await u.startGame({ mode: "normal", difficulty: h }), s("game"));
+        } catch (g) {
+          console.error("[CakeDuelStart] Failed to start game:", g);
+        }
+    }, [h, s]),
+    F = c.useCallback(async () => {
+      const u = N();
+      if (u)
+        try {
+          (await u.startGame({ mode: "tutorial" }), s("game"));
+        } catch (g) {
+          console.error("[CakeDuelStart] Failed to start tutorial:", g);
+        }
+    }, [s]);
+  return e.jsxs("div", {
+    ref: d,
+    className: "relative h-full w-full overflow-hidden",
+    "data-cakeduel-screen": "start",
+    children: [
+      e.jsx("style", { children: R }),
+      e.jsx("img", {
+        src: W,
+        alt: "",
+        className: "absolute inset-0 h-full w-full object-cover",
+        draggable: !1,
+      }),
+      e.jsx("div", {
+        className: "absolute inset-0",
+        style: {
+          background: `
             radial-gradient(ellipse 70% 60% at 50% 45%, ${t.sky}60 0%, transparent 70%),
             linear-gradient(180deg, ${t.sky}80 0%, ${t.sky}50 40%, ${t.peach}30 100%)
-          `}}),e.jsx("div",{className:"absolute inset-0",style:{boxShadow:"inset 0 0 100px 30px rgba(40,60,80,0.5)"}}),e.jsx(P,{}),e.jsxs("div",{className:"relative z-10 flex h-full w-full flex-col items-center justify-center p-4",style:{gap:6+6*i},children:[e.jsxs(p.div,{className:"flex flex-col items-center",initial:{opacity:0,y:20},animate:{opacity:1,y:0},transition:{duration:.5,ease:[.23,1,.32,1]},children:[e.jsx(A,{locale:l.language,scale:.55+.45*i}),e.jsx(p.h1,{className:"text-center leading-none",style:{marginTop:4+4*i,marginBottom:6+10*i,fontFamily:"'Lilita One', sans-serif",fontSize:26+16*i,fontWeight:f?900:void 0,background:`linear-gradient(180deg, ${t.cream} 0%, ${t.gold} 45%, ${t.peach} 75%, ${t.peachDeep} 100%)`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",filter:`drop-shadow(0 2px 0 ${t.peachDeep}) drop-shadow(0 4px 10px rgba(60,40,20,0.55))`},initial:{opacity:0,y:16,scale:.85},animate:{opacity:1,y:0,scale:1},transition:{delay:.2,type:"spring",stiffness:160,damping:12},children:a("cakeduel.title")})]}),e.jsx(p.div,{className:"w-full max-w-[310px] rounded-2xl relative overflow-hidden backdrop-blur-md",style:{background:"linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.40) 50%, rgba(255,255,255,0.55) 100%)",border:"1px solid rgba(255,255,255,0.6)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 16px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1)"},initial:{opacity:0,y:20},animate:{opacity:1,y:0},transition:{delay:.4,duration:.5,ease:[.23,1,.32,1]},children:e.jsxs("div",{className:r?"relative px-4 pt-2.5 pb-3.5 space-y-2":"relative px-5 pt-4 pb-5 space-y-3",children:[e.jsx(E,{compact:r}),e.jsx(q,{compact:r,label:a("cakeduel.start.difficulty"),value:h,onChange:w,labels:{soldier:{name:a("cakeduel.start.difficulty_soldier"),caption:a("cakeduel.start.difficulty_soldier_caption")},wizard:{name:a("cakeduel.start.difficulty_wizard"),caption:a("cakeduel.start.difficulty_wizard_caption")},assassin:{name:a("cakeduel.start.difficulty_assassin"),caption:a("cakeduel.start.difficulty_assassin_caption")}}}),e.jsx(G,{onClick:z,pressSfx:"session-start",compact:r,fontSize:r?16:20,icon:e.jsxs("svg",{viewBox:"0 0 24 24",className:"w-5 h-5",fill:"none",stroke:"currentColor",strokeWidth:"2.5",strokeLinecap:"round",children:[e.jsx("path",{d:"M4 20 L17 7 M17 3 L17 7 L21 7"}),e.jsx("path",{d:"M20 20 L7 7 M7 3 L7 7 L3 7"})]}),children:a("cakeduel.start.startGame")}),e.jsxs("div",{className:"flex gap-2",children:[e.jsxs(p.button,{onClick:()=>{y(b.hoof),F()},className:S("flex-1 px-4 rounded-xl flex items-center justify-center gap-2",r?"py-1.5":"py-2"),style:{background:"rgba(255,255,255,0.35)",border:`1.5px solid ${n(t.sky,.55)}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 8px ${n(t.sky,.2)}`,color:t.brown,fontFamily:"'Nunito', sans-serif",fontWeight:800,fontSize:r?13:14},whileHover:{scale:1.02,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 14px ${n(t.sky,.35)}`},whileTap:{scale:.98},children:[e.jsxs("svg",{viewBox:"0 0 24 24",className:"w-4 h-4",fill:"none",stroke:"currentColor",strokeWidth:"2.2",strokeLinecap:"round",strokeLinejoin:"round",children:[e.jsx("path",{d:"M2 5.5 C5 4, 8.5 4.2, 12 6 v13 C8.5 17.2, 5 17, 2 18.5 Z"}),e.jsx("path",{d:"M22 5.5 C19 4, 15.5 4.2, 12 6 v13 c3.5 -1.8, 7 -2, 10 -0.5 Z"})]}),a("cakeduel.start.tutorial")]}),e.jsx(p.button,{onClick:()=>{y(b.hoof),j(!0)},"aria-label":a("cakeduel.help.button"),className:S("shrink-0 px-3 rounded-xl flex items-center justify-center",r?"py-1.5":"py-2"),style:{background:"rgba(255,255,255,0.35)",border:`1.5px solid ${n(t.sky,.55)}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 8px ${n(t.sky,.2)}`,color:t.brown,fontFamily:"'Nunito', sans-serif",fontWeight:800,fontSize:r?13:14},whileHover:{scale:1.05,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 14px ${n(t.sky,.35)}`},whileTap:{scale:.95},children:"?"})]})]})})]}),e.jsx(I,{open:$,onClose:()=>j(!1)})]})}export{ae as StartScreen};
+          `,
+        },
+      }),
+      e.jsx("div", {
+        className: "absolute inset-0",
+        style: { boxShadow: "inset 0 0 100px 30px rgba(40,60,80,0.5)" },
+      }),
+      e.jsx(P, {}),
+      e.jsxs("div", {
+        className: "relative z-10 flex h-full w-full flex-col items-center justify-center p-4",
+        style: { gap: 6 + 6 * i },
+        children: [
+          e.jsxs(p.div, {
+            className: "flex flex-col items-center",
+            initial: { opacity: 0, y: 20 },
+            animate: { opacity: 1, y: 0 },
+            transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] },
+            children: [
+              e.jsx(A, { locale: l.language, scale: 0.55 + 0.45 * i }),
+              e.jsx(p.h1, {
+                className: "text-center leading-none",
+                style: {
+                  marginTop: 4 + 4 * i,
+                  marginBottom: 6 + 10 * i,
+                  fontFamily: "'Lilita One', sans-serif",
+                  fontSize: 26 + 16 * i,
+                  fontWeight: f ? 900 : void 0,
+                  background: `linear-gradient(180deg, ${t.cream} 0%, ${t.gold} 45%, ${t.peach} 75%, ${t.peachDeep} 100%)`,
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  filter: `drop-shadow(0 2px 0 ${t.peachDeep}) drop-shadow(0 4px 10px rgba(60,40,20,0.55))`,
+                },
+                initial: { opacity: 0, y: 16, scale: 0.85 },
+                animate: { opacity: 1, y: 0, scale: 1 },
+                transition: { delay: 0.2, type: "spring", stiffness: 160, damping: 12 },
+                children: a("cakeduel.title"),
+              }),
+            ],
+          }),
+          e.jsx(p.div, {
+            className: "w-full max-w-[310px] rounded-2xl relative overflow-hidden backdrop-blur-md",
+            style: {
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.40) 50%, rgba(255,255,255,0.55) 100%)",
+              border: "1px solid rgba(255,255,255,0.6)",
+              boxShadow:
+                "inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 16px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1)",
+            },
+            initial: { opacity: 0, y: 20 },
+            animate: { opacity: 1, y: 0 },
+            transition: { delay: 0.4, duration: 0.5, ease: [0.23, 1, 0.32, 1] },
+            children: e.jsxs("div", {
+              className: r
+                ? "relative px-4 pt-2.5 pb-3.5 space-y-2"
+                : "relative px-5 pt-4 pb-5 space-y-3",
+              children: [
+                e.jsx(E, { compact: r }),
+                e.jsx(q, {
+                  compact: r,
+                  label: a("cakeduel.start.difficulty"),
+                  value: h,
+                  onChange: w,
+                  labels: {
+                    soldier: {
+                      name: a("cakeduel.start.difficulty_soldier"),
+                      caption: a("cakeduel.start.difficulty_soldier_caption"),
+                    },
+                    wizard: {
+                      name: a("cakeduel.start.difficulty_wizard"),
+                      caption: a("cakeduel.start.difficulty_wizard_caption"),
+                    },
+                    assassin: {
+                      name: a("cakeduel.start.difficulty_assassin"),
+                      caption: a("cakeduel.start.difficulty_assassin_caption"),
+                    },
+                  },
+                }),
+                e.jsx(G, {
+                  onClick: z,
+                  pressSfx: "session-start",
+                  compact: r,
+                  fontSize: r ? 16 : 20,
+                  icon: e.jsxs("svg", {
+                    viewBox: "0 0 24 24",
+                    className: "w-5 h-5",
+                    fill: "none",
+                    stroke: "currentColor",
+                    strokeWidth: "2.5",
+                    strokeLinecap: "round",
+                    children: [
+                      e.jsx("path", { d: "M4 20 L17 7 M17 3 L17 7 L21 7" }),
+                      e.jsx("path", { d: "M20 20 L7 7 M7 3 L7 7 L3 7" }),
+                    ],
+                  }),
+                  children: a("cakeduel.start.startGame"),
+                }),
+                e.jsxs("div", {
+                  className: "flex gap-2",
+                  children: [
+                    e.jsxs(p.button, {
+                      onClick: () => {
+                        (y(b.hoof), F());
+                      },
+                      className: S(
+                        "flex-1 px-4 rounded-xl flex items-center justify-center gap-2",
+                        r ? "py-1.5" : "py-2",
+                      ),
+                      style: {
+                        background: "rgba(255,255,255,0.35)",
+                        border: `1.5px solid ${n(t.sky, 0.55)}`,
+                        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 8px ${n(t.sky, 0.2)}`,
+                        color: t.brown,
+                        fontFamily: "'Nunito', sans-serif",
+                        fontWeight: 800,
+                        fontSize: r ? 13 : 14,
+                      },
+                      whileHover: {
+                        scale: 1.02,
+                        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 14px ${n(t.sky, 0.35)}`,
+                      },
+                      whileTap: { scale: 0.98 },
+                      children: [
+                        e.jsxs("svg", {
+                          viewBox: "0 0 24 24",
+                          className: "w-4 h-4",
+                          fill: "none",
+                          stroke: "currentColor",
+                          strokeWidth: "2.2",
+                          strokeLinecap: "round",
+                          strokeLinejoin: "round",
+                          children: [
+                            e.jsx("path", {
+                              d: "M2 5.5 C5 4, 8.5 4.2, 12 6 v13 C8.5 17.2, 5 17, 2 18.5 Z",
+                            }),
+                            e.jsx("path", {
+                              d: "M22 5.5 C19 4, 15.5 4.2, 12 6 v13 c3.5 -1.8, 7 -2, 10 -0.5 Z",
+                            }),
+                          ],
+                        }),
+                        a("cakeduel.start.tutorial"),
+                      ],
+                    }),
+                    e.jsx(p.button, {
+                      onClick: () => {
+                        (y(b.hoof), j(!0));
+                      },
+                      "aria-label": a("cakeduel.help.button"),
+                      className: S(
+                        "shrink-0 px-3 rounded-xl flex items-center justify-center",
+                        r ? "py-1.5" : "py-2",
+                      ),
+                      style: {
+                        background: "rgba(255,255,255,0.35)",
+                        border: `1.5px solid ${n(t.sky, 0.55)}`,
+                        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 8px ${n(t.sky, 0.2)}`,
+                        color: t.brown,
+                        fontFamily: "'Nunito', sans-serif",
+                        fontWeight: 800,
+                        fontSize: r ? 13 : 14,
+                      },
+                      whileHover: {
+                        scale: 1.05,
+                        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 14px ${n(t.sky, 0.35)}`,
+                      },
+                      whileTap: { scale: 0.95 },
+                      children: "?",
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          }),
+        ],
+      }),
+      e.jsx(I, { open: $, onClose: () => j(!1) }),
+    ],
+  });
+}
+export { ae as StartScreen };

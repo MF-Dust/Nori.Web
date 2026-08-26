@@ -1,1 +1,17 @@
-import{extensions as i,AccessibilitySystem as t,Container as e,accessibilityTarget as m,DOMPipe as n,EventSystem as r,FederatedContainer as a}from"./index-BsHKXFB1.js";import"./webworkerAll-C5HGj2IR.js";import"./index-CyHAbkO5.js";import"./i18n-DtIC1LRi.js";i.add(t);i.mixin(e,m);i.add(n);i.add(r);i.mixin(e,a);
+import {
+  extensions as i,
+  AccessibilitySystem as t,
+  Container as e,
+  accessibilityTarget as m,
+  DOMPipe as n,
+  EventSystem as r,
+  FederatedContainer as a,
+} from "./index-BsHKXFB1.js";
+import "./webworkerAll-C5HGj2IR.js";
+import "./index-CyHAbkO5.js";
+import "./i18n-DtIC1LRi.js";
+i.add(t);
+i.mixin(e, m);
+i.add(n);
+i.add(r);
+i.mixin(e, a);

@@ -1,1 +1,2687 @@
-import{j as t}from"./index-CyHAbkO5.js";import{r as c,u as U}from"./i18n-DtIC1LRi.js";import{ab as St,cp as Et,cq as _e,f as je,ad as At,ae as _t,ac as Tt,af as Le,a2 as Be,ag as Mt,ai as Ge,$ as Ue,cr as Ot,cs as Ht,a4 as te,a3 as Dt,ct as Ft,cu as $t,cv as Lt,aj as Bt,ak as Gt,a1 as ze,ah as Ut,an as zt,i as D,m as M,cw as b,A as X,cx as ue,at as Ce,T as Wt,au as W,cy as We,cz as Vt,p as we,cA as Kt,cB as Xt,cC as Yt,n as Z,C as Q,s as qt,cD as Zt,cE as Qt,cF as Ve,cG as Jt,q as Ke,cH as en,o as tn,cI as nn,bs as rn,u as sn,B as an,l as on}from"./NormalApp-Cn6agT0F.js";import{C as re,a as Ne}from"./CardPreviewContext-C0SSQTqj.js";import{u as cn}from"./useElementSize-2mM2J_lP.js";import{C as ln}from"./circle-question-mark-B6STuJHR.js";import{g as se,C as dn}from"./HelpOverlay-Fg7nuFTJ.js";const un=c.createContext(null);function pn(){const e=c.useRef(!1);return St(()=>(e.current=!0,()=>{e.current=!1}),[]),e}function fn(){const e=pn(),[n,r]=c.useState(0),s=c.useCallback(()=>{e.current&&r(n+1)},[n]);return[c.useCallback(()=>Et.postRender(s),[s]),n]}const mn=e=>!e.isLayoutDirty&&e.willUpdate(!1);function Te(){const e=new Set,n=new WeakMap,r=()=>e.forEach(mn);return{add:s=>{e.add(s),n.set(s,s.addEventListener("willUpdate",r))},remove:s=>{e.delete(s);const a=n.get(s);a&&(a(),n.delete(s)),r()},dirty:r}}const Xe=e=>e===!0,xn=e=>Xe(e===!0)||e==="id",hn=({children:e,id:n,inherit:r=!0})=>{const s=c.useContext(_e),a=c.useContext(un),[o,i]=fn(),l=c.useRef(null),u=s.id||a;l.current===null&&(xn(r)&&u&&(n=n?u+"-"+n:u),l.current={id:n,group:Xe(r)&&s.group||Te()});const d=c.useMemo(()=>({...l.current,forceRender:o}),[i]);return t.jsx(_e.Provider,{value:d,children:e})};const gn=[["path",{d:"m2 2 20 20",key:"1ooewy"}],["path",{d:"M5 5a1 1 0 0 0-1 1v7c0 5 3.5 7.5 7.67 8.94a1 1 0 0 0 .67.01c2.35-.82 4.48-1.97 5.9-3.71",key:"1jlk70"}],["path",{d:"M9.309 3.652A12.252 12.252 0 0 0 11.24 2.28a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1v7a9.784 9.784 0 0 1-.08 1.264",key:"18rp1v"}]],Ye=je("shield-off",gn);const bn=[["polyline",{points:"14.5 17.5 3 6 3 3 6 3 17.5 14.5",key:"1hfsw2"}],["line",{x1:"13",x2:"19",y1:"19",y2:"13",key:"1vrmhu"}],["line",{x1:"16",x2:"20",y1:"16",y2:"20",key:"1bron3"}],["line",{x1:"19",x2:"21",y1:"21",y2:"19",key:"13pww6"}],["polyline",{points:"14.5 6.5 18 3 21 3 21 6 17.5 9.5",key:"hbey2j"}],["line",{x1:"5",x2:"9",y1:"14",y2:"18",key:"1hf58s"}],["line",{x1:"7",x2:"4",y1:"17",y2:"20",key:"pidxm4"}],["line",{x1:"3",x2:"5",y1:"19",y2:"21",key:"1pehsh"}]],vn=je("swords",bn);const yn=[["path",{d:"M13.73 4a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z",key:"14u9p9"}]],de=je("triangle",yn);var pe="Popover",[qe]=Dt(pe,[Ge]),ae=Ge(),[kn,z]=qe(pe),Ze=e=>{const{__scopePopover:n,children:r,open:s,defaultOpen:a,onOpenChange:o,modal:i=!1}=e,l=ae(n),u=c.useRef(null),[d,x]=c.useState(!1),[f,p]=At({prop:s,defaultProp:a??!1,onChange:o,caller:pe});return t.jsx(_t,{...l,children:t.jsx(kn,{scope:n,contentId:Tt(),triggerRef:u,open:f,onOpenChange:p,onOpenToggle:c.useCallback(()=>p(m=>!m),[p]),hasCustomAnchor:d,onCustomAnchorAdd:c.useCallback(()=>x(!0),[]),onCustomAnchorRemove:c.useCallback(()=>x(!1),[]),modal:i,children:r})})};Ze.displayName=pe;var Qe="PopoverAnchor",Je=c.forwardRef((e,n)=>{const{__scopePopover:r,...s}=e,a=z(Qe,r),o=ae(r),{onCustomAnchorAdd:i,onCustomAnchorRemove:l}=a;return c.useEffect(()=>(i(),()=>l()),[i,l]),t.jsx(Le,{...o,...s,ref:n})});Je.displayName=Qe;var et="PopoverTrigger",jn=c.forwardRef((e,n)=>{const{__scopePopover:r,...s}=e,a=z(et,r),o=ae(r),i=Ue(n,a.triggerRef),l=t.jsx(ze.button,{type:"button","aria-haspopup":"dialog","aria-expanded":a.open,"aria-controls":a.open?a.contentId:void 0,"data-state":at(a.open),...s,ref:i,onClick:te(e.onClick,a.onOpenToggle)});return a.hasCustomAnchor?l:t.jsx(Le,{asChild:!0,...o,children:l})});jn.displayName=et;var Re="PopoverPortal",[Cn,wn]=qe(Re,{forceMount:void 0}),tt=e=>{const{__scopePopover:n,forceMount:r,children:s,container:a}=e,o=z(Re,n);return t.jsx(Cn,{scope:n,forceMount:r,children:t.jsx(Be,{present:r||o.open,children:t.jsx(Mt,{asChild:!0,container:a,children:s})})})};tt.displayName=Re;var Y="PopoverContent",nt=c.forwardRef((e,n)=>{const r=wn(Y,e.__scopePopover),{forceMount:s=r.forceMount,...a}=e,o=z(Y,e.__scopePopover);return t.jsx(Be,{present:s||o.open,children:o.modal?t.jsx(Rn,{...a,ref:n}):t.jsx(Pn,{...a,ref:n})})});nt.displayName=Y;var Nn=Ft("PopoverContent.RemoveScroll"),Rn=c.forwardRef((e,n)=>{const r=z(Y,e.__scopePopover),s=c.useRef(null),a=Ue(n,s),o=c.useRef(!1);return c.useEffect(()=>{const i=s.current;if(i)return Ot(i)},[]),t.jsx(Ht,{as:Nn,allowPinchZoom:!0,children:t.jsx(rt,{...e,ref:a,trapFocus:r.open,disableOutsidePointerEvents:!0,onCloseAutoFocus:te(e.onCloseAutoFocus,i=>{i.preventDefault(),o.current||r.triggerRef.current?.focus()}),onPointerDownOutside:te(e.onPointerDownOutside,i=>{const l=i.detail.originalEvent,u=l.button===0&&l.ctrlKey===!0,d=l.button===2||u;o.current=d},{checkForDefaultPrevented:!1}),onFocusOutside:te(e.onFocusOutside,i=>i.preventDefault(),{checkForDefaultPrevented:!1})})})}),Pn=c.forwardRef((e,n)=>{const r=z(Y,e.__scopePopover),s=c.useRef(!1),a=c.useRef(!1);return t.jsx(rt,{...e,ref:n,trapFocus:!1,disableOutsidePointerEvents:!1,onCloseAutoFocus:o=>{e.onCloseAutoFocus?.(o),o.defaultPrevented||(s.current||r.triggerRef.current?.focus(),o.preventDefault()),s.current=!1,a.current=!1},onInteractOutside:o=>{e.onInteractOutside?.(o),o.defaultPrevented||(s.current=!0,o.detail.originalEvent.type==="pointerdown"&&(a.current=!0));const i=o.target;r.triggerRef.current?.contains(i)&&o.preventDefault(),o.detail.originalEvent.type==="focusin"&&a.current&&o.preventDefault()}})}),rt=c.forwardRef((e,n)=>{const{__scopePopover:r,trapFocus:s,onOpenAutoFocus:a,onCloseAutoFocus:o,disableOutsidePointerEvents:i,onEscapeKeyDown:l,onPointerDownOutside:u,onFocusOutside:d,onInteractOutside:x,...f}=e,p=z(Y,r),m=ae(r);return $t(),t.jsx(Lt,{asChild:!0,loop:!0,trapped:s,onMountAutoFocus:a,onUnmountAutoFocus:o,children:t.jsx(Bt,{asChild:!0,disableOutsidePointerEvents:i,onInteractOutside:x,onEscapeKeyDown:l,onPointerDownOutside:u,onFocusOutside:d,onDismiss:()=>p.onOpenChange(!1),deferPointerDownOutside:!0,children:t.jsx(Gt,{"data-state":at(p.open),role:"dialog",id:p.contentId,...m,...f,ref:n,style:{...f.style,"--radix-popover-content-transform-origin":"var(--radix-popper-transform-origin)","--radix-popover-content-available-width":"var(--radix-popper-available-width)","--radix-popover-content-available-height":"var(--radix-popper-available-height)","--radix-popover-trigger-width":"var(--radix-popper-anchor-width)","--radix-popover-trigger-height":"var(--radix-popper-anchor-height)"}})})})}),st="PopoverClose",In=c.forwardRef((e,n)=>{const{__scopePopover:r,...s}=e,a=z(st,r);return t.jsx(ze.button,{type:"button",...s,ref:n,onClick:te(e.onClick,()=>a.onOpenChange(!1))})});In.displayName=st;var Sn="PopoverArrow",En=c.forwardRef((e,n)=>{const{__scopePopover:r,...s}=e,a=ae(r);return t.jsx(Ut,{...a,...s,ref:n})});En.displayName=Sn;function at(e){return e?"open":"closed"}var An=Ze,_n=Je,Tn=tt,Mn=nt;function On({...e}){return t.jsx(An,{"data-slot":"popover",...e})}function Hn({className:e,align:n="center",sideOffset:r=4,container:s,...a}){const o=zt(),i=s??o??void 0;return t.jsx(Tn,{container:i,children:t.jsx(Mn,{"data-slot":"popover-content",align:n,sideOffset:r,className:D("bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border p-4 shadow-md outline-hidden",e),...a})})}function Dn({...e}){return t.jsx(_n,{"data-slot":"popover-anchor",...e})}const G={type:"spring",stiffness:380,damping:26,mass:.6},F={cardWidth:110,cardHeight:150,borderRadius:12,overlap:38,arc:{maxRotationDeg:5,droopPx:14},hover:{liftPx:8,scale:1.05},selectLiftPx:10,glowColor:"rgba(255,255,255,0.85)"};function he(e,n){return e.replace(/[\d.]+\)$/,`${n})`)}function Fn(e,n,r){return r?"0 16px 40px rgba(0,0,0,0.45)":e?"0 8px 18px rgba(0,0,0,0.40)":n?"0 5px 12px rgba(0,0,0,0.30)":"0 2px 6px rgba(0,0,0,0.30)"}function Pe({data:e,faceUp:n,width:r,height:s,hovered:a=!1,selected:o=!1,dragging:i=!1,disabled:l=!1,highlighted:u=!1,dimmed:d=!1,liftY:x=0,rotation:f=0,scale:p=1,borderRadius:m=12,inverted:h=!1,glowColor:v="rgba(255,255,255,0.85)",flipDelayMs:R=0,onClick:j,onHoverChange:C}){const w=c.useContext(re),S=c.useContext(Ne),A=c.useRef(null);c.useEffect(()=>{if(!w||!a||!n||!A.current)return;const P=e.hdFrontImage??e.frontImage;return w.reportHover(e.id,P,A.current),()=>w.reportUnhover(e.id)},[a,w,n,e.id,e.hdFrontImage,e.frontImage]);const $=S===e.id,O=a||$,k=Fn(O,o,i),g=O&&e.hdFrontImage?e.hdFrontImage:e.frontImage;return t.jsx(M.div,{animate:{opacity:d?.45:1,filter:d?"saturate(0.35) brightness(0.85)":"saturate(1) brightness(1)"},transition:{opacity:{duration:.3},filter:{duration:.3}},style:{width:r,height:s,perspective:800},children:t.jsxs(M.div,{ref:A,"data-card-id":e.id,onMouseEnter:C?()=>C(!0):void 0,onMouseLeave:C?()=>C(!1):void 0,onClick:j&&!l?j:void 0,animate:{y:x,rotate:f,scale:p,boxShadow:k,rotateY:n?0:180},transition:{y:G,rotate:G,scale:G,rotateY:{...G,delay:R/1e3},boxShadow:l?{duration:0}:G},style:{width:r,height:s,borderRadius:m,transformOrigin:"bottom center",transformStyle:"preserve-3d"},className:D("select-none",j&&!l&&"cursor-pointer",l&&"cursor-not-allowed"),children:[t.jsxs("div",{className:"absolute inset-0 overflow-hidden",style:{borderRadius:m,backfaceVisibility:"hidden"},children:[t.jsx("img",{src:g,alt:"",className:"h-full w-full object-cover",style:{borderRadius:m,transform:h?"rotate(180deg)":void 0},draggable:!1}),t.jsx("div",{className:"absolute inset-0 ring-1 ring-inset ring-white/10 pointer-events-none",style:{borderRadius:m}})]}),t.jsxs("div",{className:"absolute inset-0 overflow-hidden",style:{borderRadius:m,backfaceVisibility:"hidden",transform:"rotateY(180deg)"},children:[t.jsx("img",{src:e.backImage,alt:"",className:"h-full w-full object-cover",style:{borderRadius:m,transform:h?"rotate(180deg)":void 0},draggable:!1}),t.jsx("div",{className:"absolute inset-0 ring-1 ring-inset ring-white/10 pointer-events-none",style:{borderRadius:m}})]}),u&&!o&&t.jsx(M.div,{className:"absolute inset-0 pointer-events-none",style:{borderRadius:m},animate:{boxShadow:["inset 0 0 0 2.5px rgba(232,199,58,0.9), 0 0 14px rgba(232,199,58,0.45)","inset 0 0 0 2.5px rgba(255,226,110,1), 0 0 30px rgba(232,199,58,0.8)","inset 0 0 0 2.5px rgba(232,199,58,0.9), 0 0 14px rgba(232,199,58,0.45)"]},transition:{duration:1.2,ease:"easeInOut",repeat:1/0}}),o&&t.jsx(M.div,{className:"absolute inset-0 pointer-events-none",style:{borderRadius:m},animate:{boxShadow:[`inset 0 0 0 2px ${v}, 0 0 16px ${he(v,.4)}`,`inset 0 0 0 2px ${v}, 0 0 28px ${he(v,.65)}`,`inset 0 0 0 2px ${v}, 0 0 16px ${he(v,.4)}`]},transition:{duration:1.6,ease:"easeInOut",repeat:1/0}})]})})}function ge(e,n,r){const s=Math.floor(e/n);return Math.max(0,Math.min(s,r-1))}function Me(e,n,r){if(e.length<=1)return[...e];const s=e.findIndex(l=>l.id===n);if(s<0)return[...e];const a=Math.max(0,Math.min(r,e.length-1));if(s===a)return[...e];const o=[...e],[i]=o.splice(s,1);return o.splice(a,0,i),o}const $n=180;function Ln(e,n,r,s){if(n<=1)return{rotation:0,yOffset:0};const a=(n-1)/2,o=(e-a)/a,i=s?-1:1;return{rotation:o*r.arc.maxRotationDeg*i,yOffset:o*o*r.arc.droopPx*i}}function Bn(e,n){const r=new Map(n.map(i=>[i.id,i])),s=e.filter(i=>r.has(i.id)).map(i=>r.get(i.id)),a=new Set(s.map(i=>i.id)),o=n.filter(i=>!a.has(i.id));return[...s,...o]}function be(e,n){if(e.length!==n.length)return!1;for(let r=0;r<e.length;r++)if(e[r].id!==n[r].id)return!1;return!0}function ot({cards:e,faceUp:n=!0,config:r,selectedIds:s,highlightedIds:a,dimmedIds:o,disabled:i=!1,draggable:l,inverted:u=!1,onCardClick:d,onReorder:x,className:f}){const p=c.useMemo(()=>r?{...F,...r}:F,[r]),m=l??n,h=c.useContext(Ne),[v,R]=c.useState(null),[j,C]=c.useState(null),[w,S]=c.useState(null),A=c.useRef(null),$=c.useRef(0),O=v??e,k=c.useRef(O);k.current=O;const g=c.useRef(e);g.current=e;const P=c.useRef(v);P.current=v;const y=c.useRef(j);y.current=j;const I=O.length,_=p.cardWidth-p.overlap,K=c.useRef(w);K.current=w;const Ie=c.useRef(x);Ie.current=x;const fe=c.useRef(d);fe.current=d;const Se=c.useRef(o);Se.current=o,c.useEffect(()=>{if(P.current==null)return;const N=Bn(P.current,e);be(P.current,N)||R(N);const H=y.current;H&&!N.some(E=>E.id===H)&&(C(null),R(null))},[e]);const Ee=c.useCallback(()=>{$.current=performance.now()+$n},[]),oe=c.useCallback((N,H)=>{const E=A.current;if(!E||H===0)return null;const L=E.getBoundingClientRect(),T=N.point.x-L.left;return ge(T,_,H)},[_]),ht=c.useCallback(N=>{!m||i||(C(N),S(null),R(g.current))},[m,i]),gt=c.useCallback((N,H)=>{const E=P.current??g.current;if(E.length<=1)return;const L=oe(H,E.length);if(L==null)return;const T=Me(E,N,L);be(E,T)||c.startTransition(()=>{R(T)})},[oe]),bt=c.useCallback((N,H)=>{const E=P.current??g.current,L=oe(H,E.length),T=L==null?E:Me(E,N,L);C(null),R(null),Ee(),be(g.current,T)||Ie.current?.(T)},[oe,Ee]),vt=c.useCallback(N=>{if(i||y.current!=null||!A.current)return;const H=A.current.getBoundingClientRect(),E=N.clientX-H.left,L=ge(E,_,I),T=k.current[L];T&&T.id!==K.current&&S(T.id)},[i,_,I]),yt=c.useCallback(()=>{S(null)},[]),kt=c.useCallback(N=>{if(performance.now()<$.current||y.current!=null||P.current!=null||i||!fe.current||!A.current)return;const H=A.current.getBoundingClientRect(),E=N.clientX-H.left,L=ge(E,_,I),T=k.current[L];T&&!Se.current?.has(T.id)&&fe.current(T.id,L)},[i,_,I]),jt=p.selectLiftPx;return I===0?null:t.jsx("div",{className:D("flex justify-center",f),children:t.jsx("div",{ref:A,className:"flex items-end",style:{paddingTop:jt},onMouseMove:vt,onMouseLeave:yt,onClick:kt,children:O.map((N,H)=>{const E=o?.has(N.id)??!1,L=!E&&w===N.id,T=L||!E&&h===N.id,me=s?.has(N.id)??!1,Ct=a?.has(N.id)??!1,Ae=j===N.id,J=Ln(H,I,p,u),wt=T?-(p.hover.liftPx+J.yOffset):me?-p.selectLiftPx:J.yOffset,Nt=T?0:J.rotation,Rt=T?p.hover.scale:1,Pt=Ae?60:T?50:me?40:10;return t.jsx(M.div,{layoutId:`card-${N.id}`,layout:"position",initial:{opacity:0,scale:.85},animate:{opacity:1,scale:1},drag:m&&!i?"x":!1,dragSnapToOrigin:!0,dragMomentum:!1,dragElastic:.15,onDragStart:m&&!i?()=>ht(N.id):void 0,onDrag:m&&!i?(It,xe)=>gt(N.id,xe):void 0,onDragEnd:m&&!i?(It,xe)=>bt(N.id,xe):void 0,transition:{layout:G},style:{marginRight:H<I-1?-p.overlap:0,zIndex:Pt,position:"relative"},children:t.jsx(Pe,{data:N,faceUp:n,width:p.cardWidth,height:p.cardHeight,borderRadius:p.borderRadius,inverted:u,hovered:!i&&L,selected:me,highlighted:Ct,dimmed:E,dragging:Ae,disabled:i||E,liftY:i?J.yOffset:wt,rotation:i?J.rotation:Nt,scale:i?1:Rt,glowColor:p.glowColor})},N.id)})})})}const ne=F.cardWidth,q=F.cardHeight,Gn=57,Un=49,zn=2.45,Wn=138,Vn=1.25,Kn=132,ke=2,Xn=2,Yn=1.25,it=F.arc.droopPx+ne/2*Math.sin(F.arc.maxRotationDeg*Math.PI/180),qn=(q+it+F.selectLiftPx)/q;function ct(e,n,r){const s=u=>Math.round(u*e),a=u=>Math.round(u*n),o=s(ne),i=s(q),l=Math.max(6,s(F.borderRadius));return{scale:e,handScale:n,compact:r,cardWidth:o,cardHeight:i,borderRadius:l,hand:{cardWidth:a(ne),cardHeight:a(q),borderRadius:Math.max(6,a(F.borderRadius)),overlap:a(F.overlap),arc:{maxRotationDeg:F.arc.maxRotationDeg,droopPx:a(F.arc.droopPx)},hover:{liftPx:a(F.hover.liftPx),scale:F.hover.scale},selectLiftPx:a(F.selectLiftPx)},opponentHand:{cardWidth:o,cardHeight:i,borderRadius:l,overlap:s(42),arc:{maxRotationDeg:4,droopPx:s(10)},hover:{liftPx:0,scale:1},selectLiftPx:0},opponentShiftPx:-Math.round(i*(r?.75:.55)),handBottomPadPx:Math.ceil(it*n),pileOverlapPx:Math.round(o*.55),cakeTokenPx:r?Math.max(34,s(44)):48}}function Zn(e,n){const r=qn*ke,s=(n-Gn-Wn)/(q*(zn+r)),a=s<.66,o=a?(n-Un-Kn)/(q*(Vn+r)):s,i=ne+6*(ne-F.overlap),l=e>0?(e-150)/i:1/0,u=Math.min(a?.85:1,Math.max(.5,Math.min(o,l))),d=Math.max(u,Math.min(o*ke,l,Xn));return ct(u,d,a)}const Qn=ct(1,ke,!1),lt=c.createContext(Qn);function B(){return c.useContext(lt)}const Jn="polygon(14px 0%, calc(100% - 14px) 0%, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0% 50%)";function er({onHelp:e}){const{t:n,i18n:r}=U(),s=r.language,a=c.useContext(re),o=b(j=>j.myView),i=b(j=>j.isMyTurn),l=B().compact;if(!o)return null;const{phase:u,attackingClaim:d,blockingClaim:x}=o,f=o.boutWinners.filter(j=>j===0).length,p=o.boutWinners.filter(j=>j===1).length,m=`cakeduel.game.turn_${i?"you":"nori"}_${u}`,h=x??d,v=o.attackerIndex===0,R=h===x?!v:v;return t.jsxs("div",{className:"shrink-0 relative",children:[t.jsx("div",{className:"bg-card/95 backdrop-blur-sm",children:t.jsxs("div",{className:D("grid grid-cols-[1fr_auto_1fr] items-center",l?"px-3 h-12":"px-5 h-14"),children:[t.jsx("div",{className:"flex items-center justify-start",children:t.jsxs("button",{onClick:e,"aria-label":n("cakeduel.help.button"),className:"flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",children:[t.jsx(ln,{className:"h-3.5 w-3.5"}),t.jsx("span",{className:"text-[11px] font-semibold",children:n("cakeduel.help.button")})]})}),t.jsx("div",{className:"flex justify-center px-4",children:t.jsx(M.div,{className:"relative",animate:i?{filter:["drop-shadow(0 0 4px rgba(217,119,6,0.12))","drop-shadow(0 0 16px rgba(217,119,6,0.32))","drop-shadow(0 0 4px rgba(217,119,6,0.12))"]}:{filter:"drop-shadow(0 0 0px rgba(0,0,0,0))"},transition:i?{duration:2.8,ease:"easeInOut",repeat:1/0}:{duration:.3},children:t.jsxs("div",{className:D("flex items-center select-none whitespace-nowrap",!i&&"bg-muted"),style:{clipPath:Jn,padding:l?"5px 26px":"7px 38px",...i?{background:"linear-gradient(135deg, #92400e, #d97706, #92400e)"}:{}},children:[t.jsx("span",{className:D("text-[13px] font-bold tracking-wide",i?"text-amber-50":"text-muted-foreground"),children:n(m)}),t.jsx(X,{mode:"popLayout",children:h&&t.jsxs(M.div,{initial:{opacity:0,x:-6},animate:{opacity:1,x:0},exit:{opacity:0},transition:{duration:.2},className:"flex items-center gap-2 ml-3",children:[t.jsx("div",{className:D("w-px h-5",i?"bg-amber-300/30":"bg-border")}),t.jsx("img",{src:Ce(h.claim,s),alt:h.claim,className:"h-7 w-auto rounded-[2px] shadow-sm",draggable:!1,onPointerEnter:j=>a?.reportHover(`hud-claim-${h.claim}`,ue(h.claim,s),j.currentTarget),onPointerLeave:()=>a?.reportUnhover(`hud-claim-${h.claim}`)}),t.jsxs("div",{className:"flex flex-col leading-none gap-0.5",children:[t.jsx("span",{className:D("text-[10px]",i?"text-amber-200/60":"text-muted-foreground/60"),children:n("cakeduel.game.claimedLabel",{who:n(R?"cakeduel.game.you":"cakeduel.game.nori")})}),t.jsxs("span",{className:D("text-xs font-semibold capitalize",i?"text-amber-50":"text-foreground"),children:[n(`cakeduel.cards.${h.claim}`),t.jsxs("span",{className:D("ml-1 font-normal",i?"text-amber-200/80":"text-muted-foreground"),children:["×",h.cardCount]})]})]})]},`${h.claim}-${h.cardCount}`)})]})})}),t.jsx("div",{className:"flex items-center justify-end",children:t.jsxs("div",{className:"flex items-center gap-1.5 rounded-full bg-muted/50 px-3.5 py-1",children:[t.jsx("span",{className:"text-[10px] font-medium text-muted-foreground/60 uppercase",children:n("cakeduel.game.you")}),t.jsx("span",{className:D("text-sm font-bold tabular-nums",f>0&&f>=p?"text-amber-600 dark:text-amber-400":"text-foreground"),children:f}),t.jsx("img",{src:Wt,alt:"",className:"h-5 w-5 drop-shadow-sm",draggable:!1}),t.jsx("span",{className:D("text-sm font-bold tabular-nums",p>0&&p>f?"text-amber-600 dark:text-amber-400":"text-foreground"),children:p}),t.jsx("span",{className:"text-[10px] font-medium text-muted-foreground/60 uppercase",children:n("cakeduel.game.nori")})]})})]})}),t.jsx("div",{className:D("h-px",i?"bg-gradient-to-r from-transparent via-amber-500/40 to-transparent":"bg-border/50")})]})}function tr(e){return{id:String(e.entityId),frontImage:W,backImage:W}}function nr(){const{t:e}=U(),n=b(o=>o.myView),r=b(o=>o.zoneCards),s=B(),a=c.useMemo(()=>(r?.opponentHand??[]).map(tr),[r?.opponentHand]);return n?t.jsx("div",{className:"shrink-0 relative",children:a.length>0?t.jsx("div",{style:{marginTop:s.opponentShiftPx},children:t.jsx(ot,{cards:a,faceUp:!1,config:s.opponentHand,draggable:!1,inverted:!0,disabled:!0})}):t.jsx("div",{className:"flex justify-center items-center h-12",children:t.jsx("div",{className:"text-xs text-amber-200/30 italic",children:e("cakeduel.game.noCards")})})}):null}const rr=14,sr=220;function Oe({pileType:e,pileCards:n,opponentSide:r}){const{i18n:s}=U(),a=s.language,o=c.useContext(re),{cardWidth:i,cardHeight:l,borderRadius:u,pileOverlapPx:d}=B(),x=b(h=>h.activeEffect?.type==="challenge_reveal"?h.activeEffect:null),f=b(h=>h.revealedPileCards[e]),p=x?.pile===e,m=We().CHALLENGE_FLIP_STAGGER;return or(p,n.length,m),ar(p?x:null,n,m),t.jsx("div",{className:"flex flex-col items-center gap-1.5",style:{minHeight:l},"data-pile-target":e,children:n.length>0&&t.jsx("div",{className:"flex",children:n.map((h,v)=>{const R=(p?x.revealedCards.get(h.entityId):void 0)??f.get(h.entityId),j=R!=null,C=v===n.length-1,w=r&&j,S=j?rr:-d,A=String(h.entityId);return t.jsx(M.div,{layoutId:`card-${h.entityId}`,layout:"position",initial:{opacity:0,scale:.85},animate:{opacity:1,scale:1},transition:{layout:G},style:{marginRight:C?0:S,zIndex:v,position:"relative"},onPointerEnter:j&&R?$=>o?.reportHover(A,ue(R,a),$.currentTarget):void 0,onPointerLeave:j?()=>o?.reportUnhover(A):void 0,children:t.jsx(M.div,{animate:{rotate:w?180:0},transition:{rotate:{type:"spring",stiffness:240,damping:24,mass:.7}},children:t.jsx(Pe,{data:{id:A,frontImage:j?Ce(R,a):W,backImage:W},faceUp:j,flipDelayMs:p?v*m:0,width:i,height:l,borderRadius:u,inverted:r,disabled:!0})})},h.entityId)})})})}function ar(e,n,r){c.useEffect(()=>{if(!e)return;const s=[];return n.forEach((a,o)=>{e.revealedCards.has(a.entityId)&&s.push(setTimeout(()=>{we("partygames-cakeduel-challenge-reveal",{pitch:1+o*.06})},o*r))}),()=>{for(const a of s)clearTimeout(a)}},[e,n,r])}function or(e,n,r){const s=c.useRef(void 0);c.useEffect(()=>{if(!e||n===0)return;const o=Math.max(0,n-1)*r+sr;return s.current=setTimeout(Vt,o),()=>clearTimeout(s.current)},[e,n,r])}function ir(){const e=b(d=>d.myView),n=b(d=>d.zoneCards),r=B();if(!e)return null;const s=e.attackerIndex===0,a=s?"block":"attack",o=s?n?.blockPile??[]:n?.attackPile??[],i=s?"attack":"block",l=s?n?.attackPile??[]:n?.blockPile??[],u=t.jsxs(t.Fragment,{children:[t.jsx(Oe,{pileType:a,pileCards:o,opponentSide:!0}),t.jsx(Oe,{pileType:i,pileCards:l})]});return r.compact?t.jsx("div",{className:"absolute inset-0 pointer-events-none",children:t.jsx("div",{className:"absolute left-1/2 -translate-x-1/2 flex flex-row items-start gap-4 pointer-events-auto",style:{top:Math.round(r.cardHeight*.25)+26},children:u})}):t.jsx("div",{className:"absolute inset-0 flex items-center justify-center pointer-events-none",children:t.jsx("div",{className:"flex flex-col items-center gap-1 pointer-events-auto -translate-y-8",children:u})})}const ve={kind:"off"};function cr(e){const n=e?.game,r=e?.tutorial;if(!n||!r)return ve;const s=Kt(r.step);switch(s.kind){case"free":return ve;case"wait":return{kind:"wait"};case"pass":return{kind:"pass"};case"challenge":return{kind:"challenge"};case"claim":{const a=Xt(n,s);if(!a)return ve;const o=n.players[0].hand;return{kind:"claim",claim:s.claim,requiredEntityIds:new Set(a.map(i=>o[i]))}}default:return s}}function dt(){const e=b(n=>n.runtimeState);return c.useMemo(()=>cr(e),[e])}function lr(e){return e.some(n=>n.type==="claim")}function dr(e,n,r){const s=ue(e.name,n);return{id:String(e.entityId),frontImage:r?s:Ce(e.name,n),backImage:W,hdFrontImage:s}}function ur(){const{t:e,i18n:n}=U(),r=b(y=>y.zoneCards),s=b(y=>y.isMyTurn),a=b(y=>y.legalActions),o=b(y=>y.selectedHandEntityIds),i=b(y=>y.handOrderEntityIds),l=b(y=>y.actionPending),u=b(y=>y.activeEffect),d=b(y=>y.toggleHandEntityId),x=b(y=>y.setHandOrderEntityIds),f=dt(),p=B(),m=c.useMemo(()=>r?.playerHand??[],[r?.playerHand]),h=c.useMemo(()=>Yt(m,i),[m,i]),v=c.useMemo(()=>s&&lr(a),[s,a]),R=f.kind!=="off"&&f.kind!=="claim",C=l||!s||!v||R||u!=null,w=n.language,S=p.handScale>=Yn,A=c.useMemo(()=>h.map(y=>dr(y,w,S)),[h,w,S]),$=c.useMemo(()=>{const y=new Set;for(const I of o)y.add(String(I));return y},[o]),{highlightedIds:O,dimmedIds:k}=c.useMemo(()=>{if(C||f.kind!=="claim")return{highlightedIds:void 0,dimmedIds:void 0};const y=new Set,I=new Set;for(const _ of m)f.requiredEntityIds.has(_.entityId)?$.has(String(_.entityId))||y.add(String(_.entityId)):I.add(String(_.entityId));return{highlightedIds:y,dimmedIds:I}},[C,f,m,$]),g=c.useCallback(y=>{const I=Number.parseInt(y,10);Number.isFinite(I)&&(Z(Q.hoof),d(I))},[d]),P=c.useCallback(y=>{we("partygames-cakeduel-hand-reorder");const I=y.map(_=>Number.parseInt(_.id,10)).filter(_=>Number.isFinite(_));x(I)},[x]);return m.length===0?t.jsx("div",{className:"flex justify-center pb-2 pt-1",children:t.jsx("div",{className:"text-xs text-amber-200/30 italic py-6",children:e("cakeduel.game.noCards")})}):t.jsx(ot,{cards:A,faceUp:!0,config:p.hand,selectedIds:$,highlightedIds:O,dimmedIds:k,disabled:C,draggable:!C,onCardClick:g,onReorder:P})}function pr(){const e=b(r=>r.myView),n=B();return e?t.jsx("div",{className:n.compact?"shrink-0 px-3":"shrink-0 px-4",style:{paddingBottom:n.handBottomPadPx,...n.compact?{marginTop:-12}:void 0},children:t.jsx(ur,{})}):null}const He=1.5;function fr(){const e=b(l=>l.zoneCards),{cardWidth:n,cardHeight:r,borderRadius:s}=B(),a=e?.deckTop??[],o=e?.deckCount??0,i=c.useRef(null);return c.useEffect(()=>{const l=i.current;i.current=o,!(l===null||o>=l)&&Z(Q.cardDraw)},[o]),t.jsxs("div",{className:"relative",style:{width:n+6,height:r+6},children:[a.map((l,u)=>{const d=u===0,x=a.length-1-u,f=x*He,p=x*He,m={left:f,top:p,zIndex:a.length-x},h=t.jsx(Pe,{data:{id:String(l.entityId),frontImage:W,backImage:W},faceUp:!1,width:n,height:r,borderRadius:s,disabled:!0});return d?t.jsx(M.div,{layoutId:`card-${l.entityId}`,layout:"position",initial:{opacity:0,scale:.85},animate:{opacity:1,scale:1},transition:{layout:G},className:"absolute",style:m,children:h},l.entityId):t.jsx("div",{className:"absolute",style:m,children:h},l.entityId)}),o>0&&t.jsx(M.div,{initial:{scale:1.3},animate:{scale:1},className:"absolute backdrop-blur-md rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold text-stone-700 shadow",style:{bottom:-6,left:-14,zIndex:20,background:"linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.40) 100%)",border:"1px solid rgba(255,255,255,0.6)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 16px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1)"},children:o},o),o===0&&t.jsx("div",{className:"absolute inset-0 border border-dashed border-amber-800/20 flex items-center justify-center",style:{width:n,height:r,borderRadius:s},children:t.jsx("span",{className:"text-[9px] text-amber-200/20",children:"0"})})]})}const De=7,mr={type:"spring",stiffness:300,damping:28};function xr(){const e=b(d=>d.myView),n=b(d=>d.debugCakeOverride),r=B().cakeTokenPx,s=n?.playerCakes??e?.me.cakes??3,a=n?.noriCakes??e?.opponent.cakes??4,o=c.useRef(null);c.useEffect(()=>{const d=o.current;o.current=[s,a],!(d===null||d[0]===s&&d[1]===a)&&Z(Q.cakeTransfer)},[s,a]);const i=Array.from({length:a},(d,x)=>x),l=Array.from({length:s},(d,x)=>a+x);return i.length+l.length>De&&(l.length=De-i.length),t.jsxs("div",{className:"relative flex h-full shrink-0 items-center justify-center py-2 px-1",style:{width:r+16},children:[t.jsx("div",{className:"absolute inset-y-2 inset-x-1 rounded-xl backdrop-blur-md",style:{background:"linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.40) 50%, rgba(255,255,255,0.55) 100%)",border:"1px solid rgba(255,255,255,0.6)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 16px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1)"}}),t.jsx("div",{className:"absolute left-1/2 -translate-x-1/2 z-[1] rounded-full",style:{width:6,top:22,bottom:22,background:"#d4944a",border:"1px solid #b87736"}}),t.jsx("div",{className:"absolute left-1/2 -translate-x-1/2 z-[2] rounded-full",style:{width:12,height:12,top:14,background:"#e8a85c",border:"1px solid #b87736"}}),t.jsx("div",{className:"absolute left-1/2 -translate-x-1/2 z-[2] rounded-full",style:{width:12,height:12,bottom:14,background:"#e8a85c",border:"1px solid #b87736"}}),t.jsx(hn,{children:t.jsxs("div",{className:"relative z-10 flex h-full flex-col items-center py-6",children:[t.jsx("div",{className:"flex flex-col items-center",style:{gap:-r/2},children:i.map(d=>t.jsx(Fe,{id:d,size:r},`cake-${d}`))}),t.jsx("div",{className:"flex-1"}),t.jsx("div",{className:"flex flex-col items-center",style:{gap:-r/2},children:l.map(d=>t.jsx(Fe,{id:d,size:r},`cake-${d}`))})]})})]})}function Fe({id:e,size:n}){return t.jsx(M.div,{layoutId:`cake-token-${e}`,layout:!0,transition:mr,className:"relative",style:{width:n,height:n},children:t.jsx("img",{src:qt,alt:"",className:"h-full w-full drop-shadow-md",draggable:!1})})}function ut(e){return e.find(n=>n.type==="claim")??null}function pt(e){return e.find(n=>n.type==="pick")??null}const hr={type:"spring",stiffness:400,damping:32,mass:.8},gr={initial:{opacity:0,y:8,filter:"blur(4px)"},animate:{opacity:1,y:0,filter:"blur(0px)"},exit:{opacity:0,y:-8,filter:"blur(4px)"}};function br(e){const n=b(f=>f.legalActions),r=b(f=>f.selectedHandEntityIds),s=b(f=>f.isMyTurn),a=b(f=>f.myView),o=c.useMemo(()=>ut(n),[n]),i=c.useMemo(()=>pt(n),[n]),l=n.some(f=>f.type==="pass"),u=n.some(f=>f.type==="challenge");if(a?.gameEnded||!a||!s)return{visible:!1};if(e.kind==="wait")return{visible:!1};const x=o!==null&&!u;return e.kind==="challenge"||e.kind==="pass"&&!x?{visible:!0,mode:"response"}:i?{visible:!0,mode:"pick"}:o&&u?{visible:!0,mode:"block_response"}:o?r.length===0?l?{visible:!0,mode:"attack_pass"}:{visible:!1}:{visible:!0,mode:"claim"}:u||l?{visible:!0,mode:"response"}:{visible:!1}}function vr(){const{t:e}=U(),n=b(g=>g.legalActions),r=b(g=>g.selectedHandEntityIds),s=b(g=>g.runtimeState?.game?.lastAttackPassed??!1),a=b(g=>g.zoneCards),o=b(g=>g.selectedClaim),i=b(g=>g.selectedPickIndex),l=b(g=>g.actionPending),u=b(g=>g.myView),d=b(g=>g.setSelectedClaim),x=b(g=>g.setSelectedPickIndex),f=c.useCallback(g=>{Z(Q.hoof),Ke()?.play(g)},[]),p=c.useMemo(()=>ut(n),[n]),m=c.useMemo(()=>pt(n),[n]),h=n.some(g=>g.type==="pass"),v=n.some(g=>g.type==="challenge"),R=c.useMemo(()=>u?.me.hand??[],[u?.me.hand]),j=c.useMemo(()=>a?.playerHand??[],[a?.playerHand]),C=c.useMemo(()=>Zt(r,j),[r,j]),w=dt(),S=w.kind==="claim"?w.claim:null,A=w.kind==="pass"||w.kind==="challenge"?w.kind:null,$=w.kind!=="claim"||C.length===w.requiredEntityIds.size&&C.every(g=>{const P=j[g];return P!==void 0&&w.requiredEntityIds.has(P.entityId)}),O=br(w),{compact:k}=B();return c.useEffect(()=>{if(!p)return;if(C.length===0){o&&d("");return}if(S){o!==S&&d(S);return}if(o)return;const g=C.map(_=>R[_]),P=p.claimFrom.find(_=>g.every(K=>K===_)),y=p.claimFrom[0],I=P??y;I&&d(I)},[C,p,R,o,d,S]),t.jsx("div",{className:"flex justify-center z-20 pb-1",children:t.jsx(X,{children:O.visible&&t.jsx(M.div,{layout:!0,initial:{opacity:0,y:20},animate:{opacity:1,y:0},exit:{opacity:0,y:20},transition:hr,className:D("rounded-2xl backdrop-blur-md",k?"px-4 py-2":"px-5 py-3"),style:{minWidth:280,maxWidth:600,background:"linear-gradient(180deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0.42) 50%, rgba(255,255,255,0.58) 100%)",border:"1px solid rgba(255,255,255,0.6)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 24px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.08)"},children:t.jsxs(X,{mode:"wait",children:[O.mode==="claim"&&p&&t.jsx(ee,{children:t.jsx(yr,{claimSpec:p,selectedClaim:o,selectedHandIndices:C,actionPending:l,tutorialClaim:S,tutorialSelectionReady:$,onSelectClaim:d,onSubmit:()=>f({type:"claim",handIndices:C,claim:o}),t:e})},"claim"),O.mode==="pick"&&m&&t.jsx(ee,{children:t.jsx(Nr,{pickSpec:m,selectedPickIndex:i,actionPending:l,onSelectPick:x,onSubmit:()=>f({type:"pick",pickIndices:[i]}),t:e})},"pick"),O.mode==="block_response"&&p&&t.jsx(ee,{children:t.jsx(wr,{claimSpec:p,selectedClaim:o,selectedHandIndices:C,canPass:h,canChallenge:v,actionPending:l,tutorialClaim:S,tutorialSelectionReady:$,onSelectClaim:d,onSubmitClaim:()=>f({type:"claim",handIndices:C,claim:o}),onPass:()=>f({type:"pass"}),onChallenge:()=>f({type:"challenge"}),t:e})},"block_response"),O.mode==="response"&&t.jsx(ee,{children:t.jsx(kr,{canPass:h,canChallenge:v,actionPending:l,tutorialResponse:A,onPass:()=>f({type:"pass"}),onChallenge:()=>f({type:"challenge"}),t:e})},"response"),O.mode==="attack_pass"&&t.jsx(ee,{children:t.jsx(Cr,{endsBout:s,actionPending:l,tutorialPass:A==="pass",onPass:()=>f({type:"pass"}),t:e})},"attack_pass")]})})})})}function ee({children:e}){return t.jsx(M.div,{variants:gr,initial:"initial",animate:"animate",exit:"exit",transition:{duration:.2,ease:"easeOut"},children:e})}function ft({claimSpec:e,selectedClaim:n,selectedHandIndices:r,actionPending:s,tutorialClaim:a,onSelectClaim:o,onSubmit:i,t:l,ready:u}){return t.jsxs(t.Fragment,{children:[e.claimFrom.length>1&&t.jsxs("div",{className:"flex items-center justify-center gap-1.5",children:[t.jsx("span",{className:"text-[10px] uppercase tracking-wider text-stone-500/70 mr-1",children:l("cakeduel.game.action.claimAs")}),e.claimFrom.map(d=>t.jsx(mt,{card:d,selected:n===d,disabled:s||a!==null&&d!==a,onClick:()=>o(d)},d))]}),t.jsx("div",{className:"flex items-center justify-center",children:t.jsx(V,{variant:"primary",cardHint:n||void 0,icon:t.jsx(vn,{className:"h-4 w-4"}),label:u?l("cakeduel.game.action.playCards",{count:r.length,card:l(`cakeduel.cards.${n}`)}):l("cakeduel.game.action.submitClaim"),disabled:s||!u,pulse:a!==null&&u,onClick:i,className:"max-w-[280px]"})})]})}function yr({claimSpec:e,selectedClaim:n,selectedHandIndices:r,actionPending:s,tutorialClaim:a,tutorialSelectionReady:o,onSelectClaim:i,onSubmit:l,t:u}){return t.jsx("div",{className:"flex flex-col gap-2.5",children:t.jsx(ft,{claimSpec:e,selectedClaim:n,selectedHandIndices:r,actionPending:s,tutorialClaim:a,onSelectClaim:i,onSubmit:l,t:u,ready:n!==""&&o})})}function kr({canPass:e,canChallenge:n,actionPending:r,tutorialResponse:s,onPass:a,onChallenge:o,t:i}){return t.jsxs("div",{className:"flex flex-col gap-2",children:[t.jsx("div",{className:"text-center text-[10px] uppercase tracking-widest text-stone-500/70",children:i("cakeduel.game.action.respondHint")}),t.jsxs("div",{className:"flex items-center justify-center gap-2.5",children:[e&&t.jsx(V,{variant:"muted",icon:t.jsx(Ye,{className:"h-4 w-4"}),label:i("cakeduel.game.action.letPass"),sublabel:i("cakeduel.game.action.letPassHint"),disabled:r||s==="challenge",pulse:s==="pass",onClick:a}),n&&t.jsx(V,{variant:"danger",icon:t.jsx(Ve,{className:"h-4 w-4"}),label:i("cakeduel.game.action.callBluff"),sublabel:i("cakeduel.game.action.callBluffHint"),disabled:r||s==="pass",pulse:s==="challenge",onClick:o})]})]})}const jr=3500;function Cr({endsBout:e,actionPending:n,tutorialPass:r,onPass:s,t:a}){const[o,i]=c.useState(!1),l=c.useRef(null);c.useEffect(()=>()=>{l.current&&clearTimeout(l.current)},[]);const u=c.useCallback(()=>{if(!o){i(!0),l.current&&clearTimeout(l.current),l.current=setTimeout(()=>i(!1),jr);return}l.current&&clearTimeout(l.current),i(!1),s()},[o,s]);return t.jsxs("div",{className:"flex flex-col gap-2",children:[t.jsx("div",{className:"flex items-center justify-center",children:t.jsx(V,{variant:o?"danger":"muted",icon:t.jsx(Jt,{className:"h-4 w-4"}),label:a(o?"cakeduel.game.action.passAttackConfirm":"cakeduel.game.action.passAttack"),sublabel:a(e?"cakeduel.game.action.passAttackEndsBout":"cakeduel.game.action.passAttackHint"),disabled:n,pulse:r,onClick:u})}),!r&&t.jsxs("div",{className:"flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-widest text-stone-500/70",children:[t.jsx(de,{className:"h-2.5 w-2.5 rotate-180 fill-current"}),a("cakeduel.game.action.orPlayFromHand"),t.jsx(de,{className:"h-2.5 w-2.5 rotate-180 fill-current"})]})]})}function wr({claimSpec:e,selectedClaim:n,selectedHandIndices:r,canPass:s,canChallenge:a,actionPending:o,tutorialClaim:i,tutorialSelectionReady:l,onSelectClaim:u,onSubmitClaim:d,onPass:x,onChallenge:f,t:p}){const m=r.length>0,v=m&&n!==""&&l,R=i!==null;return t.jsxs("div",{className:"flex flex-col gap-2.5",children:[t.jsx("div",{className:"text-center text-[10px] uppercase tracking-widest text-stone-500/70",children:p("cakeduel.game.action.respondHint")}),t.jsxs("div",{className:"flex items-center justify-center gap-2.5",children:[s&&t.jsx(V,{variant:"muted",icon:t.jsx(Ye,{className:"h-4 w-4"}),label:p("cakeduel.game.action.letPass"),sublabel:p("cakeduel.game.action.letPassHint"),disabled:o||R,onClick:x}),a&&t.jsx(V,{variant:"danger",icon:t.jsx(Ve,{className:"h-4 w-4"}),label:p("cakeduel.game.action.callBluff"),sublabel:p("cakeduel.game.action.callBluffHint"),disabled:o||R,onClick:f})]}),m?t.jsx("div",{className:"border-t border-stone-300/40 pt-2 flex flex-col gap-2",children:t.jsx(ft,{claimSpec:e,selectedClaim:n,selectedHandIndices:r,actionPending:o,tutorialClaim:i,onSelectClaim:u,onSubmit:d,t:p,ready:v})}):t.jsxs("div",{className:"flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-widest text-stone-500/70",children:[t.jsx(de,{className:"h-2.5 w-2.5 rotate-180 fill-current"}),p("cakeduel.game.action.orPlayFromHand"),t.jsx(de,{className:"h-2.5 w-2.5 rotate-180 fill-current"})]})]})}function Nr({pickSpec:e,selectedPickIndex:n,actionPending:r,onSelectPick:s,onSubmit:a,t:o}){return t.jsxs("div",{className:"flex flex-col gap-2.5",children:[t.jsx("div",{className:"text-center text-[10px] uppercase tracking-widest text-stone-500/70",children:o("cakeduel.game.action.pickHint")}),t.jsx("div",{className:"flex items-center justify-center gap-1.5 flex-wrap",children:e.pickFrom.map((i,l)=>t.jsx(mt,{card:i,selected:n===l,disabled:r,onClick:()=>s(l)},`${l}:${i}`))}),t.jsx("div",{className:"flex justify-center",children:t.jsx(V,{variant:"primary",cardHint:n!=null?e.pickFrom[n]:void 0,icon:t.jsx(Qt,{className:"h-4 w-4"}),label:o("cakeduel.game.action.confirmPick"),disabled:r||n==null,onClick:a})})]})}function Rr(e,n){const r=Number.parseInt(e.slice(1,3),16),s=Number.parseInt(e.slice(3,5),16),a=Number.parseInt(e.slice(5,7),16);return`rgb(${Math.round(r+(255-r)*n)},${Math.round(s+(255-s)*n)},${Math.round(a+(255-a)*n)})`}function mt({card:e,selected:n,disabled:r,onClick:s}){const{t:a,i18n:o}=U(),i=c.useContext(re),l=se(e),u=Rr(l,.6),d=`pill-${e}`,x=c.useCallback(()=>{Z(Q.hoof),s()},[s]);return t.jsx(M.button,{type:"button",whileHover:r?void 0:{scale:1.06},whileTap:r?void 0:{scale:.95},onClick:x,disabled:r,onPointerEnter:f=>i?.reportHover(d,ue(e,o.language),f.currentTarget),onPointerLeave:()=>i?.reportUnhover(d),className:D("px-3 py-1 text-xs font-bold rounded-full transition-all duration-150",r&&"opacity-50 cursor-not-allowed"),style:n?{background:l,color:"#1c1917",boxShadow:`0 2px 10px ${l}55, inset 0 1px 0 rgba(255,255,255,0.35)`,border:`1.5px solid ${l}`}:{background:u,color:"#78716c",border:`1.5px solid ${l}`},children:a(`cakeduel.cards.${e}`)})}function Pr(e,n){if(e==="primary"){const r=n?se(n):"#FECE08";return{background:`linear-gradient(to bottom, ${r}, ${r}cc)`,color:"#1c1917",border:`1px solid ${r}88`,boxShadow:`0 4px 14px ${r}30, inset 0 1px 0 rgba(255,255,255,0.3)`}}if(e==="danger"){const r="#F49187";return{background:`linear-gradient(to bottom, ${r}, ${r}cc)`,color:"#1c1917",border:`1px solid ${r}88`,boxShadow:`0 4px 14px ${r}30, inset 0 1px 0 rgba(255,255,255,0.3)`}}return{background:"rgba(255,255,255,0.45)",color:"#44403c",border:"1px solid rgba(255,255,255,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.6)"}}function V({variant:e,cardHint:n,icon:r,label:s,sublabel:a,disabled:o,pulse:i=!1,onClick:l,className:u}){const d=o?void 0:Pr(e,n),x=i&&!o;return t.jsxs(M.button,{type:"button",whileHover:o?void 0:{scale:1.03},whileTap:o?void 0:{scale:.97},animate:x?{scale:[1,1.05,1],boxShadow:[`${d?.boxShadow??"0 0 0 rgba(0,0,0,0)"}, 0 0 0 0 rgba(232,199,58,0.55)`,`${d?.boxShadow??"0 0 0 rgba(0,0,0,0)"}, 0 0 0 9px rgba(232,199,58,0)`]}:{scale:1},transition:x?{duration:1.3,ease:"easeInOut",repeat:1/0}:{duration:.2},disabled:o,onClick:l,className:D("flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-colors","disabled:cursor-not-allowed disabled:opacity-50",o&&"bg-stone-300/40 text-stone-400 border border-stone-300/30",u),style:d,children:[r,t.jsxs("div",{className:"flex flex-col items-start",children:[t.jsx("span",{className:"whitespace-nowrap",children:s}),a&&t.jsx("span",{className:"text-[9px] opacity-60 font-normal whitespace-nowrap",children:a})]})]})}function Ir(){const e=b(n=>n.actionError);return t.jsx(X,{children:e&&t.jsx(M.div,{initial:{opacity:0,y:10},animate:{opacity:1,y:0},exit:{opacity:0,y:-10},className:"absolute bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-xl border border-red-600/40 bg-red-900/80 px-4 py-2 text-xs text-red-200 shadow-lg backdrop-blur-sm",children:e})})}function xt({entryKey:e,fadeDuration:n=.2,stripAlign:r="center",stripClassName:s="",background:a,children:o}){return t.jsx(X,{children:e!==null&&t.jsxs(M.div,{className:"absolute inset-0 z-40 flex items-center justify-center pointer-events-none",initial:{opacity:0},animate:{opacity:1},exit:{opacity:0},transition:{duration:n},children:[t.jsx("div",{className:"absolute inset-0 bg-black/50"}),t.jsxs(M.div,{className:`relative w-full flex justify-center ${r==="end"?"items-end":"items-center"} ${s}`,initial:{clipPath:"inset(0 100% 0 0)"},animate:{clipPath:"inset(0 0% 0 0)"},exit:{clipPath:"inset(0 0 0 100%)"},transition:{duration:.35,ease:[.22,1,.36,1]},children:[a,t.jsx("div",{className:"relative",children:o})]})]},e)})}function Sr(){const e=b(d=>d.bannerQueue),n=b(d=>d.advanceBanner),r=e[0]??null,s=r?.id??null,a=r?.message.type==="bout_end",o=c.useRef(void 0);c.useEffect(()=>{if(s!==null)return we("partygames-cakeduel-banner-whoosh"),a&&en(),clearTimeout(o.current),o.current=setTimeout(n,We().BANNER_DURATION),()=>clearTimeout(o.current)},[s,a,n]);const i=r?.message.type==="claim"?se(r.message.claim):null,l=r?.message.type==="bout_end"?r.message:null,u=i?t.jsx("div",{className:"absolute inset-0 border-y border-white/10",style:{background:`linear-gradient(to right, ${ie(i,.15)}, ${ie(i,.85)}, ${ie(i,.85)}, ${ie(i,.15)})`}}):l?t.jsx(_r,{victory:l.victory}):t.jsx("div",{className:"absolute inset-0 bg-gradient-to-r from-amber-950/90 via-amber-900/95 to-amber-950/90 border-y border-amber-600/30"});return t.jsx(xt,{entryKey:r?.id??null,stripAlign:i?"end":"center",stripClassName:i?"":"py-5",background:u,children:r&&t.jsx(Er,{message:r.message})})}function Er({message:e}){const{t:n}=U();switch(e.type){case"claim":{const r=e.actualCards??[];return r.length===0?null:t.jsxs("div",{className:"flex items-end gap-4 h-28",children:[t.jsx(Ar,{actualCards:r,claim:e.claim,greyed:!e.isPlayer}),t.jsxs("span",{className:"text-xl font-black tracking-wide",style:{color:Tr(se(e.claim))?"#1a1000":"#fff"},children:[r.length,"× ",n(`cakeduel.cards.${e.claim}`)]})]})}case"accepted":return t.jsx("span",{className:"text-2xl font-black tracking-widest uppercase text-amber-200",children:n("cakeduel.banner.accepted")});case"challenge":return t.jsx("span",{className:"text-3xl font-black tracking-widest uppercase text-red-400 drop-shadow-[0_0_12px_rgba(248,113,113,0.5)]",children:n("cakeduel.banner.challenge")});case"bout_start":return t.jsx("span",{className:"text-2xl font-black tracking-widest uppercase text-amber-100",children:n("cakeduel.banner.boutStart",{n:e.boutNumber})});case"bout_end":return t.jsxs("div",{className:"flex flex-col items-center gap-1",children:[t.jsx("span",{className:`text-3xl font-black tracking-widest uppercase ${e.victory?"text-emerald-200 drop-shadow-[0_0_14px_rgba(110,231,183,0.6)]":"text-red-300 drop-shadow-[0_0_14px_rgba(252,129,129,0.6)]"}`,children:e.victory?n("cakeduel.banner.victory"):n("cakeduel.banner.defeat")}),t.jsx("span",{className:`text-sm font-medium ${e.victory?"text-emerald-300/70":"text-red-300/60"}`,children:e.reason})]})}}const $e=-16;function Ar({actualCards:e,claim:n,greyed:r}){return t.jsx("div",{className:"flex items-center h-full",style:{paddingLeft:-$e},children:e.map((s,a)=>t.jsx("img",{src:tn(r?n:s),alt:"",draggable:!1,className:"h-full w-auto object-contain",style:{marginLeft:a===0?0:$e,zIndex:a+1,position:"relative",filter:r?"grayscale(1)":"none"}},a))})}function _r({victory:e}){return e?t.jsx("div",{className:"absolute inset-0 border-y border-emerald-400/20",style:{background:"linear-gradient(to right, rgba(6,78,59,0.85), rgba(4,120,87,0.95), rgba(4,120,87,0.95), rgba(6,78,59,0.85))"}}):t.jsx("div",{className:"absolute inset-0 border-y border-red-400/20",style:{background:"linear-gradient(to right, rgba(127,29,29,0.85), rgba(153,27,27,0.95), rgba(153,27,27,0.95), rgba(127,29,29,0.85))"}})}function Tr(e){const n=Number.parseInt(e.slice(1,3),16),r=Number.parseInt(e.slice(3,5),16),s=Number.parseInt(e.slice(5,7),16);return n*.299+r*.587+s*.114>150}function ie(e,n){const r=Number.parseInt(e.slice(1,3),16),s=Number.parseInt(e.slice(3,5),16),a=Number.parseInt(e.slice(5,7),16);return`rgba(${r},${s},${a},${n})`}const ce=se("wolfy"),Mr=[{frame:0,at:0},{frame:1,at:100},{frame:2,at:300},{frame:3,at:400}],Or=1100;function Hr(e){const[n,r]=c.useState(0),s=c.useRef(0),a=c.useRef(0);return c.useEffect(()=>{if(!e){r(0);return}s.current=performance.now();const o=()=>{const i=(performance.now()-s.current)%Or;let l=0;for(const u of Mr)i>=u.at&&(l=u.frame);r(l),a.current=requestAnimationFrame(o)};return a.current=requestAnimationFrame(o),()=>cancelAnimationFrame(a.current)},[e]),n}function le(e,n){const r=Number.parseInt(e.slice(1,3),16),s=Number.parseInt(e.slice(3,5),16),a=Number.parseInt(e.slice(5,7),16);return`rgba(${r},${s},${a},${n})`}function Dr(){const e=b(s=>s.wolfyTaunt),r=Hr(e!==null);return t.jsx(xt,{entryKey:e?"wolfy-taunt":null,fadeDuration:.15,stripAlign:"end",background:t.jsx("div",{className:"absolute inset-0 border-y border-white/10",style:{background:`linear-gradient(to right, ${le(ce,.15)}, ${le(ce,.85)}, ${le(ce,.85)}, ${le(ce,.15)})`}}),children:t.jsx("img",{src:nn[r],alt:"",draggable:!1,className:"relative h-28 w-auto"})})}const Fr=1e3,$r=200;function Lr({children:e}){const n=c.useRef(null),[r,s]=c.useState(!1),[a,o]=c.useState(null),[i,l]=c.useState(null),[u,d]=c.useState(null),x=c.useRef(null),f=c.useRef(void 0),p=c.useRef(void 0),m=c.useRef(null),h=c.useRef(!1),v=c.useRef(!1),R=c.useRef(null),j=c.useRef({getBoundingClientRect:()=>{const k=x.current;return k?.isConnected&&(R.current=k.getBoundingClientRect()),R.current??new DOMRect}}),C=c.useCallback(()=>{const k=x.current,g=n.current;if(!k||!g)return null;const P=k.getBoundingClientRect(),y=g.getBoundingClientRect(),I=k.hasAttribute("data-card-id")?k:k.querySelector("[data-card-id]")??k,_=Number.parseFloat(getComputedStyle(I).borderRadius)||12,K=I.offsetWidth>0?P.width/I.offsetWidth:1;return{left:P.left-y.left,top:P.top-y.top,width:P.width,height:P.height,borderRadius:_*K}},[]),w=c.useCallback(()=>{h.current=!1,s(!1),o(null),l(null),d(null),clearTimeout(f.current),clearTimeout(p.current),m.current=null,x.current=null,R.current=null,v.current=!1},[]),S=c.useCallback(()=>{clearTimeout(p.current),p.current=setTimeout(()=>{(!x.current?.isConnected||!v.current)&&w()},$r)},[w]),A=c.useMemo(()=>({reportHover(k,g,P){if(h.current){k===m.current&&(x.current=P,clearTimeout(p.current),l(C()));return}clearTimeout(f.current),clearTimeout(p.current),m.current=k,x.current=P,f.current=setTimeout(()=>{x.current?.isConnected&&(h.current=!0,o(g),l(C()),d(k),s(!0))},Fr)},reportUnhover(k){m.current===k&&(clearTimeout(f.current),h.current?S():(m.current=null,x.current=null))}}),[C,S]),$=c.useCallback(()=>{v.current=!0,clearTimeout(p.current)},[]),O=c.useCallback(()=>{v.current=!1,h.current&&S()},[S]);return c.useEffect(()=>{if(!r)return;const k=g=>{g.key==="Escape"&&w()};return window.addEventListener("keydown",k),()=>window.removeEventListener("keydown",k)},[r,w]),c.useEffect(()=>()=>{clearTimeout(f.current),clearTimeout(p.current)},[]),t.jsxs("div",{ref:n,className:"relative h-full w-full",children:[t.jsx(re.Provider,{value:A,children:t.jsx(Ne.Provider,{value:u,children:e})}),t.jsx(X,{children:r&&i&&t.jsx(M.div,{className:"absolute inset-0 z-[90] overflow-hidden pointer-events-none",initial:{opacity:0},animate:{opacity:1},exit:{opacity:0},transition:{duration:.2},children:t.jsx("div",{style:{position:"absolute",left:i.left,top:i.top,width:i.width,height:i.height,borderRadius:i.borderRadius,boxShadow:"0 0 0 9999px rgba(0, 0, 0, 0.6)"}})})}),t.jsxs(On,{open:r,onOpenChange:k=>{k||w()},children:[t.jsx(Dn,{virtualRef:j}),t.jsx(Hn,{container:n.current,side:"right",sideOffset:14,collisionPadding:24,collisionBoundary:n.current?[n.current]:void 0,className:"z-[100] w-auto border-none bg-transparent p-0 shadow-none",onPointerEnter:$,onPointerLeave:O,onOpenAutoFocus:k=>k.preventDefault(),children:a&&t.jsx("img",{src:a,alt:"",draggable:!1,className:"h-auto max-h-[55vh] rounded-xl select-none",style:{boxShadow:["0 0 80px 16px rgba(255, 180, 60, 0.07)","0 0 40px rgba(255, 200, 100, 0.10)","0 20px 60px rgba(0, 0, 0, 0.55)"].join(", ")}})})]})]})}function Xr({navigate:e}){const{t:n}=U(),[r,s]=cn(),a=c.useMemo(()=>Zn(s.width,s.height),[s.width,s.height]),o=b(v=>v.controllerReady),i=b(v=>v.runtimeState),l=b(v=>v.myView),u=b(v=>v.navigateToResults),{setTitleBarContent:d}=rn(),{setWindowStyle:x}=sn(),[f,p]=c.useState(!1);c.useEffect(()=>{x(null),d(null)},[x,d]);const m=c.useRef(!1),h=i?.tutorial!=null;return c.useEffect(()=>{if(!u){m.current=!1;return}if(!m.current){if(m.current=!0,h){Ke()?.reset().catch(v=>{console.error("[CakeDuelGame] Failed to reset after tutorial:",v)}),e("start");return}e("results")}},[u,e,h]),!o||!i?t.jsxs(ye,{stage:"loading",children:[t.jsx("div",{className:"absolute inset-0 bg-black/40"}),t.jsx("div",{className:"relative z-10 flex h-full w-full items-center justify-center",children:t.jsx("div",{className:"text-sm text-amber-200/60",children:n("cakeduel.game.loading")})})]}):!i.game||!l?t.jsxs(ye,{stage:"empty",children:[t.jsx("div",{className:"absolute inset-0 bg-black/40"}),t.jsxs("div",{className:"relative z-10 flex h-full w-full flex-col items-center justify-center gap-3",children:[t.jsx("div",{className:"text-sm text-amber-200/60",children:n("cakeduel.game.noGame")}),t.jsx(an,{size:"sm",onClick:()=>{Z(Q.hoof),e("start")},className:"bg-amber-600 text-amber-50 hover:bg-amber-500",children:n("cakeduel.game.backToStart")})]})]}):t.jsx(ye,{stage:"game",children:t.jsx(Lr,{children:t.jsxs(lt.Provider,{value:a,children:[t.jsxs("div",{ref:r,className:"relative z-10 flex h-full w-full flex-col",children:[t.jsx(er,{onHelp:()=>p(!0)}),t.jsxs("div",{className:"flex-1 min-h-0 overflow-hidden relative",children:[t.jsx("div",{className:"absolute left-0 inset-y-0 z-20",children:t.jsx(xr,{})}),t.jsxs("div",{className:"h-full flex flex-col relative",children:[t.jsx(nr,{}),t.jsx("div",{className:"flex-1"}),t.jsxs("div",{className:"shrink-0 relative z-30",children:[t.jsx(vr,{}),t.jsx(pr,{})]}),t.jsx(ir,{}),t.jsx("div",{className:"absolute right-0 top-1/2",style:{transform:"translateX(50%) translateY(-50%)"},children:t.jsx(fr,{})})]})]})]}),t.jsx(Sr,{}),t.jsx(Dr,{}),t.jsx(Ir,{}),t.jsx(dn,{open:f,onClose:()=>p(!1)})]})})})}function ye({stage:e,children:n}){return t.jsxs("div",{className:"relative h-full w-full overflow-hidden","data-cakeduel-screen":e,children:[t.jsx("img",{src:on,alt:"",className:"absolute inset-0 h-full w-full object-cover",draggable:!1}),n]})}export{Xr as GameScreen};
+import { j as t } from "./index-CyHAbkO5.js";
+import { r as c, u as U } from "./i18n-DtIC1LRi.js";
+import {
+  ab as St,
+  cp as Et,
+  cq as _e,
+  f as je,
+  ad as At,
+  ae as _t,
+  ac as Tt,
+  af as Le,
+  a2 as Be,
+  ag as Mt,
+  ai as Ge,
+  $ as Ue,
+  cr as Ot,
+  cs as Ht,
+  a4 as te,
+  a3 as Dt,
+  ct as Ft,
+  cu as $t,
+  cv as Lt,
+  aj as Bt,
+  ak as Gt,
+  a1 as ze,
+  ah as Ut,
+  an as zt,
+  i as D,
+  m as M,
+  cw as b,
+  A as X,
+  cx as ue,
+  at as Ce,
+  T as Wt,
+  au as W,
+  cy as We,
+  cz as Vt,
+  p as we,
+  cA as Kt,
+  cB as Xt,
+  cC as Yt,
+  n as Z,
+  C as Q,
+  s as qt,
+  cD as Zt,
+  cE as Qt,
+  cF as Ve,
+  cG as Jt,
+  q as Ke,
+  cH as en,
+  o as tn,
+  cI as nn,
+  bs as rn,
+  u as sn,
+  B as an,
+  l as on,
+} from "./NormalApp-Cn6agT0F.js";
+import { C as re, a as Ne } from "./CardPreviewContext-C0SSQTqj.js";
+import { u as cn } from "./useElementSize-2mM2J_lP.js";
+import { C as ln } from "./circle-question-mark-B6STuJHR.js";
+import { g as se, C as dn } from "./HelpOverlay-Fg7nuFTJ.js";
+const un = c.createContext(null);
+function pn() {
+  const e = c.useRef(!1);
+  return (
+    St(
+      () => (
+        (e.current = !0),
+        () => {
+          e.current = !1;
+        }
+      ),
+      [],
+    ),
+    e
+  );
+}
+function fn() {
+  const e = pn(),
+    [n, r] = c.useState(0),
+    s = c.useCallback(() => {
+      e.current && r(n + 1);
+    }, [n]);
+  return [c.useCallback(() => Et.postRender(s), [s]), n];
+}
+const mn = (e) => !e.isLayoutDirty && e.willUpdate(!1);
+function Te() {
+  const e = new Set(),
+    n = new WeakMap(),
+    r = () => e.forEach(mn);
+  return {
+    add: (s) => {
+      (e.add(s), n.set(s, s.addEventListener("willUpdate", r)));
+    },
+    remove: (s) => {
+      e.delete(s);
+      const a = n.get(s);
+      (a && (a(), n.delete(s)), r());
+    },
+    dirty: r,
+  };
+}
+const Xe = (e) => e === !0,
+  xn = (e) => Xe(e === !0) || e === "id",
+  hn = ({ children: e, id: n, inherit: r = !0 }) => {
+    const s = c.useContext(_e),
+      a = c.useContext(un),
+      [o, i] = fn(),
+      l = c.useRef(null),
+      u = s.id || a;
+    l.current === null &&
+      (xn(r) && u && (n = n ? u + "-" + n : u),
+      (l.current = { id: n, group: (Xe(r) && s.group) || Te() }));
+    const d = c.useMemo(() => ({ ...l.current, forceRender: o }), [i]);
+    return t.jsx(_e.Provider, { value: d, children: e });
+  };
+const gn = [
+    ["path", { d: "m2 2 20 20", key: "1ooewy" }],
+    [
+      "path",
+      {
+        d: "M5 5a1 1 0 0 0-1 1v7c0 5 3.5 7.5 7.67 8.94a1 1 0 0 0 .67.01c2.35-.82 4.48-1.97 5.9-3.71",
+        key: "1jlk70",
+      },
+    ],
+    [
+      "path",
+      {
+        d: "M9.309 3.652A12.252 12.252 0 0 0 11.24 2.28a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1v7a9.784 9.784 0 0 1-.08 1.264",
+        key: "18rp1v",
+      },
+    ],
+  ],
+  Ye = je("shield-off", gn);
+const bn = [
+    ["polyline", { points: "14.5 17.5 3 6 3 3 6 3 17.5 14.5", key: "1hfsw2" }],
+    ["line", { x1: "13", x2: "19", y1: "19", y2: "13", key: "1vrmhu" }],
+    ["line", { x1: "16", x2: "20", y1: "16", y2: "20", key: "1bron3" }],
+    ["line", { x1: "19", x2: "21", y1: "21", y2: "19", key: "13pww6" }],
+    ["polyline", { points: "14.5 6.5 18 3 21 3 21 6 17.5 9.5", key: "hbey2j" }],
+    ["line", { x1: "5", x2: "9", y1: "14", y2: "18", key: "1hf58s" }],
+    ["line", { x1: "7", x2: "4", y1: "17", y2: "20", key: "pidxm4" }],
+    ["line", { x1: "3", x2: "5", y1: "19", y2: "21", key: "1pehsh" }],
+  ],
+  vn = je("swords", bn);
+const yn = [
+    [
+      "path",
+      { d: "M13.73 4a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z", key: "14u9p9" },
+    ],
+  ],
+  de = je("triangle", yn);
+var pe = "Popover",
+  [qe] = Dt(pe, [Ge]),
+  ae = Ge(),
+  [kn, z] = qe(pe),
+  Ze = (e) => {
+    const {
+        __scopePopover: n,
+        children: r,
+        open: s,
+        defaultOpen: a,
+        onOpenChange: o,
+        modal: i = !1,
+      } = e,
+      l = ae(n),
+      u = c.useRef(null),
+      [d, x] = c.useState(!1),
+      [f, p] = At({ prop: s, defaultProp: a ?? !1, onChange: o, caller: pe });
+    return t.jsx(_t, {
+      ...l,
+      children: t.jsx(kn, {
+        scope: n,
+        contentId: Tt(),
+        triggerRef: u,
+        open: f,
+        onOpenChange: p,
+        onOpenToggle: c.useCallback(() => p((m) => !m), [p]),
+        hasCustomAnchor: d,
+        onCustomAnchorAdd: c.useCallback(() => x(!0), []),
+        onCustomAnchorRemove: c.useCallback(() => x(!1), []),
+        modal: i,
+        children: r,
+      }),
+    });
+  };
+Ze.displayName = pe;
+var Qe = "PopoverAnchor",
+  Je = c.forwardRef((e, n) => {
+    const { __scopePopover: r, ...s } = e,
+      a = z(Qe, r),
+      o = ae(r),
+      { onCustomAnchorAdd: i, onCustomAnchorRemove: l } = a;
+    return (c.useEffect(() => (i(), () => l()), [i, l]), t.jsx(Le, { ...o, ...s, ref: n }));
+  });
+Je.displayName = Qe;
+var et = "PopoverTrigger",
+  jn = c.forwardRef((e, n) => {
+    const { __scopePopover: r, ...s } = e,
+      a = z(et, r),
+      o = ae(r),
+      i = Ue(n, a.triggerRef),
+      l = t.jsx(ze.button, {
+        type: "button",
+        "aria-haspopup": "dialog",
+        "aria-expanded": a.open,
+        "aria-controls": a.open ? a.contentId : void 0,
+        "data-state": at(a.open),
+        ...s,
+        ref: i,
+        onClick: te(e.onClick, a.onOpenToggle),
+      });
+    return a.hasCustomAnchor ? l : t.jsx(Le, { asChild: !0, ...o, children: l });
+  });
+jn.displayName = et;
+var Re = "PopoverPortal",
+  [Cn, wn] = qe(Re, { forceMount: void 0 }),
+  tt = (e) => {
+    const { __scopePopover: n, forceMount: r, children: s, container: a } = e,
+      o = z(Re, n);
+    return t.jsx(Cn, {
+      scope: n,
+      forceMount: r,
+      children: t.jsx(Be, {
+        present: r || o.open,
+        children: t.jsx(Mt, { asChild: !0, container: a, children: s }),
+      }),
+    });
+  };
+tt.displayName = Re;
+var Y = "PopoverContent",
+  nt = c.forwardRef((e, n) => {
+    const r = wn(Y, e.__scopePopover),
+      { forceMount: s = r.forceMount, ...a } = e,
+      o = z(Y, e.__scopePopover);
+    return t.jsx(Be, {
+      present: s || o.open,
+      children: o.modal ? t.jsx(Rn, { ...a, ref: n }) : t.jsx(Pn, { ...a, ref: n }),
+    });
+  });
+nt.displayName = Y;
+var Nn = Ft("PopoverContent.RemoveScroll"),
+  Rn = c.forwardRef((e, n) => {
+    const r = z(Y, e.__scopePopover),
+      s = c.useRef(null),
+      a = Ue(n, s),
+      o = c.useRef(!1);
+    return (
+      c.useEffect(() => {
+        const i = s.current;
+        if (i) return Ot(i);
+      }, []),
+      t.jsx(Ht, {
+        as: Nn,
+        allowPinchZoom: !0,
+        children: t.jsx(rt, {
+          ...e,
+          ref: a,
+          trapFocus: r.open,
+          disableOutsidePointerEvents: !0,
+          onCloseAutoFocus: te(e.onCloseAutoFocus, (i) => {
+            (i.preventDefault(), o.current || r.triggerRef.current?.focus());
+          }),
+          onPointerDownOutside: te(
+            e.onPointerDownOutside,
+            (i) => {
+              const l = i.detail.originalEvent,
+                u = l.button === 0 && l.ctrlKey === !0,
+                d = l.button === 2 || u;
+              o.current = d;
+            },
+            { checkForDefaultPrevented: !1 },
+          ),
+          onFocusOutside: te(e.onFocusOutside, (i) => i.preventDefault(), {
+            checkForDefaultPrevented: !1,
+          }),
+        }),
+      })
+    );
+  }),
+  Pn = c.forwardRef((e, n) => {
+    const r = z(Y, e.__scopePopover),
+      s = c.useRef(!1),
+      a = c.useRef(!1);
+    return t.jsx(rt, {
+      ...e,
+      ref: n,
+      trapFocus: !1,
+      disableOutsidePointerEvents: !1,
+      onCloseAutoFocus: (o) => {
+        (e.onCloseAutoFocus?.(o),
+          o.defaultPrevented || (s.current || r.triggerRef.current?.focus(), o.preventDefault()),
+          (s.current = !1),
+          (a.current = !1));
+      },
+      onInteractOutside: (o) => {
+        (e.onInteractOutside?.(o),
+          o.defaultPrevented ||
+            ((s.current = !0), o.detail.originalEvent.type === "pointerdown" && (a.current = !0)));
+        const i = o.target;
+        (r.triggerRef.current?.contains(i) && o.preventDefault(),
+          o.detail.originalEvent.type === "focusin" && a.current && o.preventDefault());
+      },
+    });
+  }),
+  rt = c.forwardRef((e, n) => {
+    const {
+        __scopePopover: r,
+        trapFocus: s,
+        onOpenAutoFocus: a,
+        onCloseAutoFocus: o,
+        disableOutsidePointerEvents: i,
+        onEscapeKeyDown: l,
+        onPointerDownOutside: u,
+        onFocusOutside: d,
+        onInteractOutside: x,
+        ...f
+      } = e,
+      p = z(Y, r),
+      m = ae(r);
+    return (
+      $t(),
+      t.jsx(Lt, {
+        asChild: !0,
+        loop: !0,
+        trapped: s,
+        onMountAutoFocus: a,
+        onUnmountAutoFocus: o,
+        children: t.jsx(Bt, {
+          asChild: !0,
+          disableOutsidePointerEvents: i,
+          onInteractOutside: x,
+          onEscapeKeyDown: l,
+          onPointerDownOutside: u,
+          onFocusOutside: d,
+          onDismiss: () => p.onOpenChange(!1),
+          deferPointerDownOutside: !0,
+          children: t.jsx(Gt, {
+            "data-state": at(p.open),
+            role: "dialog",
+            id: p.contentId,
+            ...m,
+            ...f,
+            ref: n,
+            style: {
+              ...f.style,
+              "--radix-popover-content-transform-origin": "var(--radix-popper-transform-origin)",
+              "--radix-popover-content-available-width": "var(--radix-popper-available-width)",
+              "--radix-popover-content-available-height": "var(--radix-popper-available-height)",
+              "--radix-popover-trigger-width": "var(--radix-popper-anchor-width)",
+              "--radix-popover-trigger-height": "var(--radix-popper-anchor-height)",
+            },
+          }),
+        }),
+      })
+    );
+  }),
+  st = "PopoverClose",
+  In = c.forwardRef((e, n) => {
+    const { __scopePopover: r, ...s } = e,
+      a = z(st, r);
+    return t.jsx(ze.button, {
+      type: "button",
+      ...s,
+      ref: n,
+      onClick: te(e.onClick, () => a.onOpenChange(!1)),
+    });
+  });
+In.displayName = st;
+var Sn = "PopoverArrow",
+  En = c.forwardRef((e, n) => {
+    const { __scopePopover: r, ...s } = e,
+      a = ae(r);
+    return t.jsx(Ut, { ...a, ...s, ref: n });
+  });
+En.displayName = Sn;
+function at(e) {
+  return e ? "open" : "closed";
+}
+var An = Ze,
+  _n = Je,
+  Tn = tt,
+  Mn = nt;
+function On({ ...e }) {
+  return t.jsx(An, { "data-slot": "popover", ...e });
+}
+function Hn({ className: e, align: n = "center", sideOffset: r = 4, container: s, ...a }) {
+  const o = zt(),
+    i = s ?? o ?? void 0;
+  return t.jsx(Tn, {
+    container: i,
+    children: t.jsx(Mn, {
+      "data-slot": "popover-content",
+      align: n,
+      sideOffset: r,
+      className: D(
+        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border p-4 shadow-md outline-hidden",
+        e,
+      ),
+      ...a,
+    }),
+  });
+}
+function Dn({ ...e }) {
+  return t.jsx(_n, { "data-slot": "popover-anchor", ...e });
+}
+const G = { type: "spring", stiffness: 380, damping: 26, mass: 0.6 },
+  F = {
+    cardWidth: 110,
+    cardHeight: 150,
+    borderRadius: 12,
+    overlap: 38,
+    arc: { maxRotationDeg: 5, droopPx: 14 },
+    hover: { liftPx: 8, scale: 1.05 },
+    selectLiftPx: 10,
+    glowColor: "rgba(255,255,255,0.85)",
+  };
+function he(e, n) {
+  return e.replace(/[\d.]+\)$/, `${n})`);
+}
+function Fn(e, n, r) {
+  return r
+    ? "0 16px 40px rgba(0,0,0,0.45)"
+    : e
+      ? "0 8px 18px rgba(0,0,0,0.40)"
+      : n
+        ? "0 5px 12px rgba(0,0,0,0.30)"
+        : "0 2px 6px rgba(0,0,0,0.30)";
+}
+function Pe({
+  data: e,
+  faceUp: n,
+  width: r,
+  height: s,
+  hovered: a = !1,
+  selected: o = !1,
+  dragging: i = !1,
+  disabled: l = !1,
+  highlighted: u = !1,
+  dimmed: d = !1,
+  liftY: x = 0,
+  rotation: f = 0,
+  scale: p = 1,
+  borderRadius: m = 12,
+  inverted: h = !1,
+  glowColor: v = "rgba(255,255,255,0.85)",
+  flipDelayMs: R = 0,
+  onClick: j,
+  onHoverChange: C,
+}) {
+  const w = c.useContext(re),
+    S = c.useContext(Ne),
+    A = c.useRef(null);
+  c.useEffect(() => {
+    if (!w || !a || !n || !A.current) return;
+    const P = e.hdFrontImage ?? e.frontImage;
+    return (w.reportHover(e.id, P, A.current), () => w.reportUnhover(e.id));
+  }, [a, w, n, e.id, e.hdFrontImage, e.frontImage]);
+  const $ = S === e.id,
+    O = a || $,
+    k = Fn(O, o, i),
+    g = O && e.hdFrontImage ? e.hdFrontImage : e.frontImage;
+  return t.jsx(M.div, {
+    animate: {
+      opacity: d ? 0.45 : 1,
+      filter: d ? "saturate(0.35) brightness(0.85)" : "saturate(1) brightness(1)",
+    },
+    transition: { opacity: { duration: 0.3 }, filter: { duration: 0.3 } },
+    style: { width: r, height: s, perspective: 800 },
+    children: t.jsxs(M.div, {
+      ref: A,
+      "data-card-id": e.id,
+      onMouseEnter: C ? () => C(!0) : void 0,
+      onMouseLeave: C ? () => C(!1) : void 0,
+      onClick: j && !l ? j : void 0,
+      animate: { y: x, rotate: f, scale: p, boxShadow: k, rotateY: n ? 0 : 180 },
+      transition: {
+        y: G,
+        rotate: G,
+        scale: G,
+        rotateY: { ...G, delay: R / 1e3 },
+        boxShadow: l ? { duration: 0 } : G,
+      },
+      style: {
+        width: r,
+        height: s,
+        borderRadius: m,
+        transformOrigin: "bottom center",
+        transformStyle: "preserve-3d",
+      },
+      className: D("select-none", j && !l && "cursor-pointer", l && "cursor-not-allowed"),
+      children: [
+        t.jsxs("div", {
+          className: "absolute inset-0 overflow-hidden",
+          style: { borderRadius: m, backfaceVisibility: "hidden" },
+          children: [
+            t.jsx("img", {
+              src: g,
+              alt: "",
+              className: "h-full w-full object-cover",
+              style: { borderRadius: m, transform: h ? "rotate(180deg)" : void 0 },
+              draggable: !1,
+            }),
+            t.jsx("div", {
+              className: "absolute inset-0 ring-1 ring-inset ring-white/10 pointer-events-none",
+              style: { borderRadius: m },
+            }),
+          ],
+        }),
+        t.jsxs("div", {
+          className: "absolute inset-0 overflow-hidden",
+          style: { borderRadius: m, backfaceVisibility: "hidden", transform: "rotateY(180deg)" },
+          children: [
+            t.jsx("img", {
+              src: e.backImage,
+              alt: "",
+              className: "h-full w-full object-cover",
+              style: { borderRadius: m, transform: h ? "rotate(180deg)" : void 0 },
+              draggable: !1,
+            }),
+            t.jsx("div", {
+              className: "absolute inset-0 ring-1 ring-inset ring-white/10 pointer-events-none",
+              style: { borderRadius: m },
+            }),
+          ],
+        }),
+        u &&
+          !o &&
+          t.jsx(M.div, {
+            className: "absolute inset-0 pointer-events-none",
+            style: { borderRadius: m },
+            animate: {
+              boxShadow: [
+                "inset 0 0 0 2.5px rgba(232,199,58,0.9), 0 0 14px rgba(232,199,58,0.45)",
+                "inset 0 0 0 2.5px rgba(255,226,110,1), 0 0 30px rgba(232,199,58,0.8)",
+                "inset 0 0 0 2.5px rgba(232,199,58,0.9), 0 0 14px rgba(232,199,58,0.45)",
+              ],
+            },
+            transition: { duration: 1.2, ease: "easeInOut", repeat: 1 / 0 },
+          }),
+        o &&
+          t.jsx(M.div, {
+            className: "absolute inset-0 pointer-events-none",
+            style: { borderRadius: m },
+            animate: {
+              boxShadow: [
+                `inset 0 0 0 2px ${v}, 0 0 16px ${he(v, 0.4)}`,
+                `inset 0 0 0 2px ${v}, 0 0 28px ${he(v, 0.65)}`,
+                `inset 0 0 0 2px ${v}, 0 0 16px ${he(v, 0.4)}`,
+              ],
+            },
+            transition: { duration: 1.6, ease: "easeInOut", repeat: 1 / 0 },
+          }),
+      ],
+    }),
+  });
+}
+function ge(e, n, r) {
+  const s = Math.floor(e / n);
+  return Math.max(0, Math.min(s, r - 1));
+}
+function Me(e, n, r) {
+  if (e.length <= 1) return [...e];
+  const s = e.findIndex((l) => l.id === n);
+  if (s < 0) return [...e];
+  const a = Math.max(0, Math.min(r, e.length - 1));
+  if (s === a) return [...e];
+  const o = [...e],
+    [i] = o.splice(s, 1);
+  return (o.splice(a, 0, i), o);
+}
+const $n = 180;
+function Ln(e, n, r, s) {
+  if (n <= 1) return { rotation: 0, yOffset: 0 };
+  const a = (n - 1) / 2,
+    o = (e - a) / a,
+    i = s ? -1 : 1;
+  return { rotation: o * r.arc.maxRotationDeg * i, yOffset: o * o * r.arc.droopPx * i };
+}
+function Bn(e, n) {
+  const r = new Map(n.map((i) => [i.id, i])),
+    s = e.filter((i) => r.has(i.id)).map((i) => r.get(i.id)),
+    a = new Set(s.map((i) => i.id)),
+    o = n.filter((i) => !a.has(i.id));
+  return [...s, ...o];
+}
+function be(e, n) {
+  if (e.length !== n.length) return !1;
+  for (let r = 0; r < e.length; r++) if (e[r].id !== n[r].id) return !1;
+  return !0;
+}
+function ot({
+  cards: e,
+  faceUp: n = !0,
+  config: r,
+  selectedIds: s,
+  highlightedIds: a,
+  dimmedIds: o,
+  disabled: i = !1,
+  draggable: l,
+  inverted: u = !1,
+  onCardClick: d,
+  onReorder: x,
+  className: f,
+}) {
+  const p = c.useMemo(() => (r ? { ...F, ...r } : F), [r]),
+    m = l ?? n,
+    h = c.useContext(Ne),
+    [v, R] = c.useState(null),
+    [j, C] = c.useState(null),
+    [w, S] = c.useState(null),
+    A = c.useRef(null),
+    $ = c.useRef(0),
+    O = v ?? e,
+    k = c.useRef(O);
+  k.current = O;
+  const g = c.useRef(e);
+  g.current = e;
+  const P = c.useRef(v);
+  P.current = v;
+  const y = c.useRef(j);
+  y.current = j;
+  const I = O.length,
+    _ = p.cardWidth - p.overlap,
+    K = c.useRef(w);
+  K.current = w;
+  const Ie = c.useRef(x);
+  Ie.current = x;
+  const fe = c.useRef(d);
+  fe.current = d;
+  const Se = c.useRef(o);
+  ((Se.current = o),
+    c.useEffect(() => {
+      if (P.current == null) return;
+      const N = Bn(P.current, e);
+      be(P.current, N) || R(N);
+      const H = y.current;
+      H && !N.some((E) => E.id === H) && (C(null), R(null));
+    }, [e]));
+  const Ee = c.useCallback(() => {
+      $.current = performance.now() + $n;
+    }, []),
+    oe = c.useCallback(
+      (N, H) => {
+        const E = A.current;
+        if (!E || H === 0) return null;
+        const L = E.getBoundingClientRect(),
+          T = N.point.x - L.left;
+        return ge(T, _, H);
+      },
+      [_],
+    ),
+    ht = c.useCallback(
+      (N) => {
+        !m || i || (C(N), S(null), R(g.current));
+      },
+      [m, i],
+    ),
+    gt = c.useCallback(
+      (N, H) => {
+        const E = P.current ?? g.current;
+        if (E.length <= 1) return;
+        const L = oe(H, E.length);
+        if (L == null) return;
+        const T = Me(E, N, L);
+        be(E, T) ||
+          c.startTransition(() => {
+            R(T);
+          });
+      },
+      [oe],
+    ),
+    bt = c.useCallback(
+      (N, H) => {
+        const E = P.current ?? g.current,
+          L = oe(H, E.length),
+          T = L == null ? E : Me(E, N, L);
+        (C(null), R(null), Ee(), be(g.current, T) || Ie.current?.(T));
+      },
+      [oe, Ee],
+    ),
+    vt = c.useCallback(
+      (N) => {
+        if (i || y.current != null || !A.current) return;
+        const H = A.current.getBoundingClientRect(),
+          E = N.clientX - H.left,
+          L = ge(E, _, I),
+          T = k.current[L];
+        T && T.id !== K.current && S(T.id);
+      },
+      [i, _, I],
+    ),
+    yt = c.useCallback(() => {
+      S(null);
+    }, []),
+    kt = c.useCallback(
+      (N) => {
+        if (
+          performance.now() < $.current ||
+          y.current != null ||
+          P.current != null ||
+          i ||
+          !fe.current ||
+          !A.current
+        )
+          return;
+        const H = A.current.getBoundingClientRect(),
+          E = N.clientX - H.left,
+          L = ge(E, _, I),
+          T = k.current[L];
+        T && !Se.current?.has(T.id) && fe.current(T.id, L);
+      },
+      [i, _, I],
+    ),
+    jt = p.selectLiftPx;
+  return I === 0
+    ? null
+    : t.jsx("div", {
+        className: D("flex justify-center", f),
+        children: t.jsx("div", {
+          ref: A,
+          className: "flex items-end",
+          style: { paddingTop: jt },
+          onMouseMove: vt,
+          onMouseLeave: yt,
+          onClick: kt,
+          children: O.map((N, H) => {
+            const E = o?.has(N.id) ?? !1,
+              L = !E && w === N.id,
+              T = L || (!E && h === N.id),
+              me = s?.has(N.id) ?? !1,
+              Ct = a?.has(N.id) ?? !1,
+              Ae = j === N.id,
+              J = Ln(H, I, p, u),
+              wt = T ? -(p.hover.liftPx + J.yOffset) : me ? -p.selectLiftPx : J.yOffset,
+              Nt = T ? 0 : J.rotation,
+              Rt = T ? p.hover.scale : 1,
+              Pt = Ae ? 60 : T ? 50 : me ? 40 : 10;
+            return t.jsx(
+              M.div,
+              {
+                layoutId: `card-${N.id}`,
+                layout: "position",
+                initial: { opacity: 0, scale: 0.85 },
+                animate: { opacity: 1, scale: 1 },
+                drag: m && !i ? "x" : !1,
+                dragSnapToOrigin: !0,
+                dragMomentum: !1,
+                dragElastic: 0.15,
+                onDragStart: m && !i ? () => ht(N.id) : void 0,
+                onDrag: m && !i ? (It, xe) => gt(N.id, xe) : void 0,
+                onDragEnd: m && !i ? (It, xe) => bt(N.id, xe) : void 0,
+                transition: { layout: G },
+                style: {
+                  marginRight: H < I - 1 ? -p.overlap : 0,
+                  zIndex: Pt,
+                  position: "relative",
+                },
+                children: t.jsx(Pe, {
+                  data: N,
+                  faceUp: n,
+                  width: p.cardWidth,
+                  height: p.cardHeight,
+                  borderRadius: p.borderRadius,
+                  inverted: u,
+                  hovered: !i && L,
+                  selected: me,
+                  highlighted: Ct,
+                  dimmed: E,
+                  dragging: Ae,
+                  disabled: i || E,
+                  liftY: i ? J.yOffset : wt,
+                  rotation: i ? J.rotation : Nt,
+                  scale: i ? 1 : Rt,
+                  glowColor: p.glowColor,
+                }),
+              },
+              N.id,
+            );
+          }),
+        }),
+      });
+}
+const ne = F.cardWidth,
+  q = F.cardHeight,
+  Gn = 57,
+  Un = 49,
+  zn = 2.45,
+  Wn = 138,
+  Vn = 1.25,
+  Kn = 132,
+  ke = 2,
+  Xn = 2,
+  Yn = 1.25,
+  it = F.arc.droopPx + (ne / 2) * Math.sin((F.arc.maxRotationDeg * Math.PI) / 180),
+  qn = (q + it + F.selectLiftPx) / q;
+function ct(e, n, r) {
+  const s = (u) => Math.round(u * e),
+    a = (u) => Math.round(u * n),
+    o = s(ne),
+    i = s(q),
+    l = Math.max(6, s(F.borderRadius));
+  return {
+    scale: e,
+    handScale: n,
+    compact: r,
+    cardWidth: o,
+    cardHeight: i,
+    borderRadius: l,
+    hand: {
+      cardWidth: a(ne),
+      cardHeight: a(q),
+      borderRadius: Math.max(6, a(F.borderRadius)),
+      overlap: a(F.overlap),
+      arc: { maxRotationDeg: F.arc.maxRotationDeg, droopPx: a(F.arc.droopPx) },
+      hover: { liftPx: a(F.hover.liftPx), scale: F.hover.scale },
+      selectLiftPx: a(F.selectLiftPx),
+    },
+    opponentHand: {
+      cardWidth: o,
+      cardHeight: i,
+      borderRadius: l,
+      overlap: s(42),
+      arc: { maxRotationDeg: 4, droopPx: s(10) },
+      hover: { liftPx: 0, scale: 1 },
+      selectLiftPx: 0,
+    },
+    opponentShiftPx: -Math.round(i * (r ? 0.75 : 0.55)),
+    handBottomPadPx: Math.ceil(it * n),
+    pileOverlapPx: Math.round(o * 0.55),
+    cakeTokenPx: r ? Math.max(34, s(44)) : 48,
+  };
+}
+function Zn(e, n) {
+  const r = qn * ke,
+    s = (n - Gn - Wn) / (q * (zn + r)),
+    a = s < 0.66,
+    o = a ? (n - Un - Kn) / (q * (Vn + r)) : s,
+    i = ne + 6 * (ne - F.overlap),
+    l = e > 0 ? (e - 150) / i : 1 / 0,
+    u = Math.min(a ? 0.85 : 1, Math.max(0.5, Math.min(o, l))),
+    d = Math.max(u, Math.min(o * ke, l, Xn));
+  return ct(u, d, a);
+}
+const Qn = ct(1, ke, !1),
+  lt = c.createContext(Qn);
+function B() {
+  return c.useContext(lt);
+}
+const Jn =
+  "polygon(14px 0%, calc(100% - 14px) 0%, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0% 50%)";
+function er({ onHelp: e }) {
+  const { t: n, i18n: r } = U(),
+    s = r.language,
+    a = c.useContext(re),
+    o = b((j) => j.myView),
+    i = b((j) => j.isMyTurn),
+    l = B().compact;
+  if (!o) return null;
+  const { phase: u, attackingClaim: d, blockingClaim: x } = o,
+    f = o.boutWinners.filter((j) => j === 0).length,
+    p = o.boutWinners.filter((j) => j === 1).length,
+    m = `cakeduel.game.turn_${i ? "you" : "nori"}_${u}`,
+    h = x ?? d,
+    v = o.attackerIndex === 0,
+    R = h === x ? !v : v;
+  return t.jsxs("div", {
+    className: "shrink-0 relative",
+    children: [
+      t.jsx("div", {
+        className: "bg-card/95 backdrop-blur-sm",
+        children: t.jsxs("div", {
+          className: D("grid grid-cols-[1fr_auto_1fr] items-center", l ? "px-3 h-12" : "px-5 h-14"),
+          children: [
+            t.jsx("div", {
+              className: "flex items-center justify-start",
+              children: t.jsxs("button", {
+                onClick: e,
+                "aria-label": n("cakeduel.help.button"),
+                className:
+                  "flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                children: [
+                  t.jsx(ln, { className: "h-3.5 w-3.5" }),
+                  t.jsx("span", {
+                    className: "text-[11px] font-semibold",
+                    children: n("cakeduel.help.button"),
+                  }),
+                ],
+              }),
+            }),
+            t.jsx("div", {
+              className: "flex justify-center px-4",
+              children: t.jsx(M.div, {
+                className: "relative",
+                animate: i
+                  ? {
+                      filter: [
+                        "drop-shadow(0 0 4px rgba(217,119,6,0.12))",
+                        "drop-shadow(0 0 16px rgba(217,119,6,0.32))",
+                        "drop-shadow(0 0 4px rgba(217,119,6,0.12))",
+                      ],
+                    }
+                  : { filter: "drop-shadow(0 0 0px rgba(0,0,0,0))" },
+                transition: i
+                  ? { duration: 2.8, ease: "easeInOut", repeat: 1 / 0 }
+                  : { duration: 0.3 },
+                children: t.jsxs("div", {
+                  className: D("flex items-center select-none whitespace-nowrap", !i && "bg-muted"),
+                  style: {
+                    clipPath: Jn,
+                    padding: l ? "5px 26px" : "7px 38px",
+                    ...(i
+                      ? { background: "linear-gradient(135deg, #92400e, #d97706, #92400e)" }
+                      : {}),
+                  },
+                  children: [
+                    t.jsx("span", {
+                      className: D(
+                        "text-[13px] font-bold tracking-wide",
+                        i ? "text-amber-50" : "text-muted-foreground",
+                      ),
+                      children: n(m),
+                    }),
+                    t.jsx(X, {
+                      mode: "popLayout",
+                      children:
+                        h &&
+                        t.jsxs(
+                          M.div,
+                          {
+                            initial: { opacity: 0, x: -6 },
+                            animate: { opacity: 1, x: 0 },
+                            exit: { opacity: 0 },
+                            transition: { duration: 0.2 },
+                            className: "flex items-center gap-2 ml-3",
+                            children: [
+                              t.jsx("div", {
+                                className: D("w-px h-5", i ? "bg-amber-300/30" : "bg-border"),
+                              }),
+                              t.jsx("img", {
+                                src: Ce(h.claim, s),
+                                alt: h.claim,
+                                className: "h-7 w-auto rounded-[2px] shadow-sm",
+                                draggable: !1,
+                                onPointerEnter: (j) =>
+                                  a?.reportHover(
+                                    `hud-claim-${h.claim}`,
+                                    ue(h.claim, s),
+                                    j.currentTarget,
+                                  ),
+                                onPointerLeave: () => a?.reportUnhover(`hud-claim-${h.claim}`),
+                              }),
+                              t.jsxs("div", {
+                                className: "flex flex-col leading-none gap-0.5",
+                                children: [
+                                  t.jsx("span", {
+                                    className: D(
+                                      "text-[10px]",
+                                      i ? "text-amber-200/60" : "text-muted-foreground/60",
+                                    ),
+                                    children: n("cakeduel.game.claimedLabel", {
+                                      who: n(R ? "cakeduel.game.you" : "cakeduel.game.nori"),
+                                    }),
+                                  }),
+                                  t.jsxs("span", {
+                                    className: D(
+                                      "text-xs font-semibold capitalize",
+                                      i ? "text-amber-50" : "text-foreground",
+                                    ),
+                                    children: [
+                                      n(`cakeduel.cards.${h.claim}`),
+                                      t.jsxs("span", {
+                                        className: D(
+                                          "ml-1 font-normal",
+                                          i ? "text-amber-200/80" : "text-muted-foreground",
+                                        ),
+                                        children: ["×", h.cardCount],
+                                      }),
+                                    ],
+                                  }),
+                                ],
+                              }),
+                            ],
+                          },
+                          `${h.claim}-${h.cardCount}`,
+                        ),
+                    }),
+                  ],
+                }),
+              }),
+            }),
+            t.jsx("div", {
+              className: "flex items-center justify-end",
+              children: t.jsxs("div", {
+                className: "flex items-center gap-1.5 rounded-full bg-muted/50 px-3.5 py-1",
+                children: [
+                  t.jsx("span", {
+                    className: "text-[10px] font-medium text-muted-foreground/60 uppercase",
+                    children: n("cakeduel.game.you"),
+                  }),
+                  t.jsx("span", {
+                    className: D(
+                      "text-sm font-bold tabular-nums",
+                      f > 0 && f >= p ? "text-amber-600 dark:text-amber-400" : "text-foreground",
+                    ),
+                    children: f,
+                  }),
+                  t.jsx("img", {
+                    src: Wt,
+                    alt: "",
+                    className: "h-5 w-5 drop-shadow-sm",
+                    draggable: !1,
+                  }),
+                  t.jsx("span", {
+                    className: D(
+                      "text-sm font-bold tabular-nums",
+                      p > 0 && p > f ? "text-amber-600 dark:text-amber-400" : "text-foreground",
+                    ),
+                    children: p,
+                  }),
+                  t.jsx("span", {
+                    className: "text-[10px] font-medium text-muted-foreground/60 uppercase",
+                    children: n("cakeduel.game.nori"),
+                  }),
+                ],
+              }),
+            }),
+          ],
+        }),
+      }),
+      t.jsx("div", {
+        className: D(
+          "h-px",
+          i ? "bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" : "bg-border/50",
+        ),
+      }),
+    ],
+  });
+}
+function tr(e) {
+  return { id: String(e.entityId), frontImage: W, backImage: W };
+}
+function nr() {
+  const { t: e } = U(),
+    n = b((o) => o.myView),
+    r = b((o) => o.zoneCards),
+    s = B(),
+    a = c.useMemo(() => (r?.opponentHand ?? []).map(tr), [r?.opponentHand]);
+  return n
+    ? t.jsx("div", {
+        className: "shrink-0 relative",
+        children:
+          a.length > 0
+            ? t.jsx("div", {
+                style: { marginTop: s.opponentShiftPx },
+                children: t.jsx(ot, {
+                  cards: a,
+                  faceUp: !1,
+                  config: s.opponentHand,
+                  draggable: !1,
+                  inverted: !0,
+                  disabled: !0,
+                }),
+              })
+            : t.jsx("div", {
+                className: "flex justify-center items-center h-12",
+                children: t.jsx("div", {
+                  className: "text-xs text-amber-200/30 italic",
+                  children: e("cakeduel.game.noCards"),
+                }),
+              }),
+      })
+    : null;
+}
+const rr = 14,
+  sr = 220;
+function Oe({ pileType: e, pileCards: n, opponentSide: r }) {
+  const { i18n: s } = U(),
+    a = s.language,
+    o = c.useContext(re),
+    { cardWidth: i, cardHeight: l, borderRadius: u, pileOverlapPx: d } = B(),
+    x = b((h) => (h.activeEffect?.type === "challenge_reveal" ? h.activeEffect : null)),
+    f = b((h) => h.revealedPileCards[e]),
+    p = x?.pile === e,
+    m = We().CHALLENGE_FLIP_STAGGER;
+  return (
+    or(p, n.length, m),
+    ar(p ? x : null, n, m),
+    t.jsx("div", {
+      className: "flex flex-col items-center gap-1.5",
+      style: { minHeight: l },
+      "data-pile-target": e,
+      children:
+        n.length > 0 &&
+        t.jsx("div", {
+          className: "flex",
+          children: n.map((h, v) => {
+            const R = (p ? x.revealedCards.get(h.entityId) : void 0) ?? f.get(h.entityId),
+              j = R != null,
+              C = v === n.length - 1,
+              w = r && j,
+              S = j ? rr : -d,
+              A = String(h.entityId);
+            return t.jsx(
+              M.div,
+              {
+                layoutId: `card-${h.entityId}`,
+                layout: "position",
+                initial: { opacity: 0, scale: 0.85 },
+                animate: { opacity: 1, scale: 1 },
+                transition: { layout: G },
+                style: { marginRight: C ? 0 : S, zIndex: v, position: "relative" },
+                onPointerEnter:
+                  j && R ? ($) => o?.reportHover(A, ue(R, a), $.currentTarget) : void 0,
+                onPointerLeave: j ? () => o?.reportUnhover(A) : void 0,
+                children: t.jsx(M.div, {
+                  animate: { rotate: w ? 180 : 0 },
+                  transition: {
+                    rotate: { type: "spring", stiffness: 240, damping: 24, mass: 0.7 },
+                  },
+                  children: t.jsx(Pe, {
+                    data: { id: A, frontImage: j ? Ce(R, a) : W, backImage: W },
+                    faceUp: j,
+                    flipDelayMs: p ? v * m : 0,
+                    width: i,
+                    height: l,
+                    borderRadius: u,
+                    inverted: r,
+                    disabled: !0,
+                  }),
+                }),
+              },
+              h.entityId,
+            );
+          }),
+        }),
+    })
+  );
+}
+function ar(e, n, r) {
+  c.useEffect(() => {
+    if (!e) return;
+    const s = [];
+    return (
+      n.forEach((a, o) => {
+        e.revealedCards.has(a.entityId) &&
+          s.push(
+            setTimeout(() => {
+              we("partygames-cakeduel-challenge-reveal", { pitch: 1 + o * 0.06 });
+            }, o * r),
+          );
+      }),
+      () => {
+        for (const a of s) clearTimeout(a);
+      }
+    );
+  }, [e, n, r]);
+}
+function or(e, n, r) {
+  const s = c.useRef(void 0);
+  c.useEffect(() => {
+    if (!e || n === 0) return;
+    const o = Math.max(0, n - 1) * r + sr;
+    return ((s.current = setTimeout(Vt, o)), () => clearTimeout(s.current));
+  }, [e, n, r]);
+}
+function ir() {
+  const e = b((d) => d.myView),
+    n = b((d) => d.zoneCards),
+    r = B();
+  if (!e) return null;
+  const s = e.attackerIndex === 0,
+    a = s ? "block" : "attack",
+    o = s ? (n?.blockPile ?? []) : (n?.attackPile ?? []),
+    i = s ? "attack" : "block",
+    l = s ? (n?.attackPile ?? []) : (n?.blockPile ?? []),
+    u = t.jsxs(t.Fragment, {
+      children: [
+        t.jsx(Oe, { pileType: a, pileCards: o, opponentSide: !0 }),
+        t.jsx(Oe, { pileType: i, pileCards: l }),
+      ],
+    });
+  return r.compact
+    ? t.jsx("div", {
+        className: "absolute inset-0 pointer-events-none",
+        children: t.jsx("div", {
+          className:
+            "absolute left-1/2 -translate-x-1/2 flex flex-row items-start gap-4 pointer-events-auto",
+          style: { top: Math.round(r.cardHeight * 0.25) + 26 },
+          children: u,
+        }),
+      })
+    : t.jsx("div", {
+        className: "absolute inset-0 flex items-center justify-center pointer-events-none",
+        children: t.jsx("div", {
+          className: "flex flex-col items-center gap-1 pointer-events-auto -translate-y-8",
+          children: u,
+        }),
+      });
+}
+const ve = { kind: "off" };
+function cr(e) {
+  const n = e?.game,
+    r = e?.tutorial;
+  if (!n || !r) return ve;
+  const s = Kt(r.step);
+  switch (s.kind) {
+    case "free":
+      return ve;
+    case "wait":
+      return { kind: "wait" };
+    case "pass":
+      return { kind: "pass" };
+    case "challenge":
+      return { kind: "challenge" };
+    case "claim": {
+      const a = Xt(n, s);
+      if (!a) return ve;
+      const o = n.players[0].hand;
+      return { kind: "claim", claim: s.claim, requiredEntityIds: new Set(a.map((i) => o[i])) };
+    }
+    default:
+      return s;
+  }
+}
+function dt() {
+  const e = b((n) => n.runtimeState);
+  return c.useMemo(() => cr(e), [e]);
+}
+function lr(e) {
+  return e.some((n) => n.type === "claim");
+}
+function dr(e, n, r) {
+  const s = ue(e.name, n);
+  return {
+    id: String(e.entityId),
+    frontImage: r ? s : Ce(e.name, n),
+    backImage: W,
+    hdFrontImage: s,
+  };
+}
+function ur() {
+  const { t: e, i18n: n } = U(),
+    r = b((y) => y.zoneCards),
+    s = b((y) => y.isMyTurn),
+    a = b((y) => y.legalActions),
+    o = b((y) => y.selectedHandEntityIds),
+    i = b((y) => y.handOrderEntityIds),
+    l = b((y) => y.actionPending),
+    u = b((y) => y.activeEffect),
+    d = b((y) => y.toggleHandEntityId),
+    x = b((y) => y.setHandOrderEntityIds),
+    f = dt(),
+    p = B(),
+    m = c.useMemo(() => r?.playerHand ?? [], [r?.playerHand]),
+    h = c.useMemo(() => Yt(m, i), [m, i]),
+    v = c.useMemo(() => s && lr(a), [s, a]),
+    R = f.kind !== "off" && f.kind !== "claim",
+    C = l || !s || !v || R || u != null,
+    w = n.language,
+    S = p.handScale >= Yn,
+    A = c.useMemo(() => h.map((y) => dr(y, w, S)), [h, w, S]),
+    $ = c.useMemo(() => {
+      const y = new Set();
+      for (const I of o) y.add(String(I));
+      return y;
+    }, [o]),
+    { highlightedIds: O, dimmedIds: k } = c.useMemo(() => {
+      if (C || f.kind !== "claim") return { highlightedIds: void 0, dimmedIds: void 0 };
+      const y = new Set(),
+        I = new Set();
+      for (const _ of m)
+        f.requiredEntityIds.has(_.entityId)
+          ? $.has(String(_.entityId)) || y.add(String(_.entityId))
+          : I.add(String(_.entityId));
+      return { highlightedIds: y, dimmedIds: I };
+    }, [C, f, m, $]),
+    g = c.useCallback(
+      (y) => {
+        const I = Number.parseInt(y, 10);
+        Number.isFinite(I) && (Z(Q.hoof), d(I));
+      },
+      [d],
+    ),
+    P = c.useCallback(
+      (y) => {
+        we("partygames-cakeduel-hand-reorder");
+        const I = y.map((_) => Number.parseInt(_.id, 10)).filter((_) => Number.isFinite(_));
+        x(I);
+      },
+      [x],
+    );
+  return m.length === 0
+    ? t.jsx("div", {
+        className: "flex justify-center pb-2 pt-1",
+        children: t.jsx("div", {
+          className: "text-xs text-amber-200/30 italic py-6",
+          children: e("cakeduel.game.noCards"),
+        }),
+      })
+    : t.jsx(ot, {
+        cards: A,
+        faceUp: !0,
+        config: p.hand,
+        selectedIds: $,
+        highlightedIds: O,
+        dimmedIds: k,
+        disabled: C,
+        draggable: !C,
+        onCardClick: g,
+        onReorder: P,
+      });
+}
+function pr() {
+  const e = b((r) => r.myView),
+    n = B();
+  return e
+    ? t.jsx("div", {
+        className: n.compact ? "shrink-0 px-3" : "shrink-0 px-4",
+        style: { paddingBottom: n.handBottomPadPx, ...(n.compact ? { marginTop: -12 } : void 0) },
+        children: t.jsx(ur, {}),
+      })
+    : null;
+}
+const He = 1.5;
+function fr() {
+  const e = b((l) => l.zoneCards),
+    { cardWidth: n, cardHeight: r, borderRadius: s } = B(),
+    a = e?.deckTop ?? [],
+    o = e?.deckCount ?? 0,
+    i = c.useRef(null);
+  return (
+    c.useEffect(() => {
+      const l = i.current;
+      ((i.current = o), !(l === null || o >= l) && Z(Q.cardDraw));
+    }, [o]),
+    t.jsxs("div", {
+      className: "relative",
+      style: { width: n + 6, height: r + 6 },
+      children: [
+        a.map((l, u) => {
+          const d = u === 0,
+            x = a.length - 1 - u,
+            f = x * He,
+            p = x * He,
+            m = { left: f, top: p, zIndex: a.length - x },
+            h = t.jsx(Pe, {
+              data: { id: String(l.entityId), frontImage: W, backImage: W },
+              faceUp: !1,
+              width: n,
+              height: r,
+              borderRadius: s,
+              disabled: !0,
+            });
+          return d
+            ? t.jsx(
+                M.div,
+                {
+                  layoutId: `card-${l.entityId}`,
+                  layout: "position",
+                  initial: { opacity: 0, scale: 0.85 },
+                  animate: { opacity: 1, scale: 1 },
+                  transition: { layout: G },
+                  className: "absolute",
+                  style: m,
+                  children: h,
+                },
+                l.entityId,
+              )
+            : t.jsx("div", { className: "absolute", style: m, children: h }, l.entityId);
+        }),
+        o > 0 &&
+          t.jsx(
+            M.div,
+            {
+              initial: { scale: 1.3 },
+              animate: { scale: 1 },
+              className:
+                "absolute backdrop-blur-md rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold text-stone-700 shadow",
+              style: {
+                bottom: -6,
+                left: -14,
+                zIndex: 20,
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.40) 100%)",
+                border: "1px solid rgba(255,255,255,0.6)",
+                boxShadow:
+                  "inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 16px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1)",
+              },
+              children: o,
+            },
+            o,
+          ),
+        o === 0 &&
+          t.jsx("div", {
+            className:
+              "absolute inset-0 border border-dashed border-amber-800/20 flex items-center justify-center",
+            style: { width: n, height: r, borderRadius: s },
+            children: t.jsx("span", { className: "text-[9px] text-amber-200/20", children: "0" }),
+          }),
+      ],
+    })
+  );
+}
+const De = 7,
+  mr = { type: "spring", stiffness: 300, damping: 28 };
+function xr() {
+  const e = b((d) => d.myView),
+    n = b((d) => d.debugCakeOverride),
+    r = B().cakeTokenPx,
+    s = n?.playerCakes ?? e?.me.cakes ?? 3,
+    a = n?.noriCakes ?? e?.opponent.cakes ?? 4,
+    o = c.useRef(null);
+  c.useEffect(() => {
+    const d = o.current;
+    ((o.current = [s, a]), !(d === null || (d[0] === s && d[1] === a)) && Z(Q.cakeTransfer));
+  }, [s, a]);
+  const i = Array.from({ length: a }, (d, x) => x),
+    l = Array.from({ length: s }, (d, x) => a + x);
+  return (
+    i.length + l.length > De && (l.length = De - i.length),
+    t.jsxs("div", {
+      className: "relative flex h-full shrink-0 items-center justify-center py-2 px-1",
+      style: { width: r + 16 },
+      children: [
+        t.jsx("div", {
+          className: "absolute inset-y-2 inset-x-1 rounded-xl backdrop-blur-md",
+          style: {
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.40) 50%, rgba(255,255,255,0.55) 100%)",
+            border: "1px solid rgba(255,255,255,0.6)",
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 16px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1)",
+          },
+        }),
+        t.jsx("div", {
+          className: "absolute left-1/2 -translate-x-1/2 z-[1] rounded-full",
+          style: {
+            width: 6,
+            top: 22,
+            bottom: 22,
+            background: "#d4944a",
+            border: "1px solid #b87736",
+          },
+        }),
+        t.jsx("div", {
+          className: "absolute left-1/2 -translate-x-1/2 z-[2] rounded-full",
+          style: {
+            width: 12,
+            height: 12,
+            top: 14,
+            background: "#e8a85c",
+            border: "1px solid #b87736",
+          },
+        }),
+        t.jsx("div", {
+          className: "absolute left-1/2 -translate-x-1/2 z-[2] rounded-full",
+          style: {
+            width: 12,
+            height: 12,
+            bottom: 14,
+            background: "#e8a85c",
+            border: "1px solid #b87736",
+          },
+        }),
+        t.jsx(hn, {
+          children: t.jsxs("div", {
+            className: "relative z-10 flex h-full flex-col items-center py-6",
+            children: [
+              t.jsx("div", {
+                className: "flex flex-col items-center",
+                style: { gap: -r / 2 },
+                children: i.map((d) => t.jsx(Fe, { id: d, size: r }, `cake-${d}`)),
+              }),
+              t.jsx("div", { className: "flex-1" }),
+              t.jsx("div", {
+                className: "flex flex-col items-center",
+                style: { gap: -r / 2 },
+                children: l.map((d) => t.jsx(Fe, { id: d, size: r }, `cake-${d}`)),
+              }),
+            ],
+          }),
+        }),
+      ],
+    })
+  );
+}
+function Fe({ id: e, size: n }) {
+  return t.jsx(M.div, {
+    layoutId: `cake-token-${e}`,
+    layout: !0,
+    transition: mr,
+    className: "relative",
+    style: { width: n, height: n },
+    children: t.jsx("img", {
+      src: qt,
+      alt: "",
+      className: "h-full w-full drop-shadow-md",
+      draggable: !1,
+    }),
+  });
+}
+function ut(e) {
+  return e.find((n) => n.type === "claim") ?? null;
+}
+function pt(e) {
+  return e.find((n) => n.type === "pick") ?? null;
+}
+const hr = { type: "spring", stiffness: 400, damping: 32, mass: 0.8 },
+  gr = {
+    initial: { opacity: 0, y: 8, filter: "blur(4px)" },
+    animate: { opacity: 1, y: 0, filter: "blur(0px)" },
+    exit: { opacity: 0, y: -8, filter: "blur(4px)" },
+  };
+function br(e) {
+  const n = b((f) => f.legalActions),
+    r = b((f) => f.selectedHandEntityIds),
+    s = b((f) => f.isMyTurn),
+    a = b((f) => f.myView),
+    o = c.useMemo(() => ut(n), [n]),
+    i = c.useMemo(() => pt(n), [n]),
+    l = n.some((f) => f.type === "pass"),
+    u = n.some((f) => f.type === "challenge");
+  if (a?.gameEnded || !a || !s) return { visible: !1 };
+  if (e.kind === "wait") return { visible: !1 };
+  const x = o !== null && !u;
+  return e.kind === "challenge" || (e.kind === "pass" && !x)
+    ? { visible: !0, mode: "response" }
+    : i
+      ? { visible: !0, mode: "pick" }
+      : o && u
+        ? { visible: !0, mode: "block_response" }
+        : o
+          ? r.length === 0
+            ? l
+              ? { visible: !0, mode: "attack_pass" }
+              : { visible: !1 }
+            : { visible: !0, mode: "claim" }
+          : u || l
+            ? { visible: !0, mode: "response" }
+            : { visible: !1 };
+}
+function vr() {
+  const { t: e } = U(),
+    n = b((g) => g.legalActions),
+    r = b((g) => g.selectedHandEntityIds),
+    s = b((g) => g.runtimeState?.game?.lastAttackPassed ?? !1),
+    a = b((g) => g.zoneCards),
+    o = b((g) => g.selectedClaim),
+    i = b((g) => g.selectedPickIndex),
+    l = b((g) => g.actionPending),
+    u = b((g) => g.myView),
+    d = b((g) => g.setSelectedClaim),
+    x = b((g) => g.setSelectedPickIndex),
+    f = c.useCallback((g) => {
+      (Z(Q.hoof), Ke()?.play(g));
+    }, []),
+    p = c.useMemo(() => ut(n), [n]),
+    m = c.useMemo(() => pt(n), [n]),
+    h = n.some((g) => g.type === "pass"),
+    v = n.some((g) => g.type === "challenge"),
+    R = c.useMemo(() => u?.me.hand ?? [], [u?.me.hand]),
+    j = c.useMemo(() => a?.playerHand ?? [], [a?.playerHand]),
+    C = c.useMemo(() => Zt(r, j), [r, j]),
+    w = dt(),
+    S = w.kind === "claim" ? w.claim : null,
+    A = w.kind === "pass" || w.kind === "challenge" ? w.kind : null,
+    $ =
+      w.kind !== "claim" ||
+      (C.length === w.requiredEntityIds.size &&
+        C.every((g) => {
+          const P = j[g];
+          return P !== void 0 && w.requiredEntityIds.has(P.entityId);
+        })),
+    O = br(w),
+    { compact: k } = B();
+  return (
+    c.useEffect(() => {
+      if (!p) return;
+      if (C.length === 0) {
+        o && d("");
+        return;
+      }
+      if (S) {
+        o !== S && d(S);
+        return;
+      }
+      if (o) return;
+      const g = C.map((_) => R[_]),
+        P = p.claimFrom.find((_) => g.every((K) => K === _)),
+        y = p.claimFrom[0],
+        I = P ?? y;
+      I && d(I);
+    }, [C, p, R, o, d, S]),
+    t.jsx("div", {
+      className: "flex justify-center z-20 pb-1",
+      children: t.jsx(X, {
+        children:
+          O.visible &&
+          t.jsx(M.div, {
+            layout: !0,
+            initial: { opacity: 0, y: 20 },
+            animate: { opacity: 1, y: 0 },
+            exit: { opacity: 0, y: 20 },
+            transition: hr,
+            className: D("rounded-2xl backdrop-blur-md", k ? "px-4 py-2" : "px-5 py-3"),
+            style: {
+              minWidth: 280,
+              maxWidth: 600,
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0.42) 50%, rgba(255,255,255,0.58) 100%)",
+              border: "1px solid rgba(255,255,255,0.6)",
+              boxShadow:
+                "inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 24px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.08)",
+            },
+            children: t.jsxs(X, {
+              mode: "wait",
+              children: [
+                O.mode === "claim" &&
+                  p &&
+                  t.jsx(
+                    ee,
+                    {
+                      children: t.jsx(yr, {
+                        claimSpec: p,
+                        selectedClaim: o,
+                        selectedHandIndices: C,
+                        actionPending: l,
+                        tutorialClaim: S,
+                        tutorialSelectionReady: $,
+                        onSelectClaim: d,
+                        onSubmit: () => f({ type: "claim", handIndices: C, claim: o }),
+                        t: e,
+                      }),
+                    },
+                    "claim",
+                  ),
+                O.mode === "pick" &&
+                  m &&
+                  t.jsx(
+                    ee,
+                    {
+                      children: t.jsx(Nr, {
+                        pickSpec: m,
+                        selectedPickIndex: i,
+                        actionPending: l,
+                        onSelectPick: x,
+                        onSubmit: () => f({ type: "pick", pickIndices: [i] }),
+                        t: e,
+                      }),
+                    },
+                    "pick",
+                  ),
+                O.mode === "block_response" &&
+                  p &&
+                  t.jsx(
+                    ee,
+                    {
+                      children: t.jsx(wr, {
+                        claimSpec: p,
+                        selectedClaim: o,
+                        selectedHandIndices: C,
+                        canPass: h,
+                        canChallenge: v,
+                        actionPending: l,
+                        tutorialClaim: S,
+                        tutorialSelectionReady: $,
+                        onSelectClaim: d,
+                        onSubmitClaim: () => f({ type: "claim", handIndices: C, claim: o }),
+                        onPass: () => f({ type: "pass" }),
+                        onChallenge: () => f({ type: "challenge" }),
+                        t: e,
+                      }),
+                    },
+                    "block_response",
+                  ),
+                O.mode === "response" &&
+                  t.jsx(
+                    ee,
+                    {
+                      children: t.jsx(kr, {
+                        canPass: h,
+                        canChallenge: v,
+                        actionPending: l,
+                        tutorialResponse: A,
+                        onPass: () => f({ type: "pass" }),
+                        onChallenge: () => f({ type: "challenge" }),
+                        t: e,
+                      }),
+                    },
+                    "response",
+                  ),
+                O.mode === "attack_pass" &&
+                  t.jsx(
+                    ee,
+                    {
+                      children: t.jsx(Cr, {
+                        endsBout: s,
+                        actionPending: l,
+                        tutorialPass: A === "pass",
+                        onPass: () => f({ type: "pass" }),
+                        t: e,
+                      }),
+                    },
+                    "attack_pass",
+                  ),
+              ],
+            }),
+          }),
+      }),
+    })
+  );
+}
+function ee({ children: e }) {
+  return t.jsx(M.div, {
+    variants: gr,
+    initial: "initial",
+    animate: "animate",
+    exit: "exit",
+    transition: { duration: 0.2, ease: "easeOut" },
+    children: e,
+  });
+}
+function ft({
+  claimSpec: e,
+  selectedClaim: n,
+  selectedHandIndices: r,
+  actionPending: s,
+  tutorialClaim: a,
+  onSelectClaim: o,
+  onSubmit: i,
+  t: l,
+  ready: u,
+}) {
+  return t.jsxs(t.Fragment, {
+    children: [
+      e.claimFrom.length > 1 &&
+        t.jsxs("div", {
+          className: "flex items-center justify-center gap-1.5",
+          children: [
+            t.jsx("span", {
+              className: "text-[10px] uppercase tracking-wider text-stone-500/70 mr-1",
+              children: l("cakeduel.game.action.claimAs"),
+            }),
+            e.claimFrom.map((d) =>
+              t.jsx(
+                mt,
+                {
+                  card: d,
+                  selected: n === d,
+                  disabled: s || (a !== null && d !== a),
+                  onClick: () => o(d),
+                },
+                d,
+              ),
+            ),
+          ],
+        }),
+      t.jsx("div", {
+        className: "flex items-center justify-center",
+        children: t.jsx(V, {
+          variant: "primary",
+          cardHint: n || void 0,
+          icon: t.jsx(vn, { className: "h-4 w-4" }),
+          label: u
+            ? l("cakeduel.game.action.playCards", {
+                count: r.length,
+                card: l(`cakeduel.cards.${n}`),
+              })
+            : l("cakeduel.game.action.submitClaim"),
+          disabled: s || !u,
+          pulse: a !== null && u,
+          onClick: i,
+          className: "max-w-[280px]",
+        }),
+      }),
+    ],
+  });
+}
+function yr({
+  claimSpec: e,
+  selectedClaim: n,
+  selectedHandIndices: r,
+  actionPending: s,
+  tutorialClaim: a,
+  tutorialSelectionReady: o,
+  onSelectClaim: i,
+  onSubmit: l,
+  t: u,
+}) {
+  return t.jsx("div", {
+    className: "flex flex-col gap-2.5",
+    children: t.jsx(ft, {
+      claimSpec: e,
+      selectedClaim: n,
+      selectedHandIndices: r,
+      actionPending: s,
+      tutorialClaim: a,
+      onSelectClaim: i,
+      onSubmit: l,
+      t: u,
+      ready: n !== "" && o,
+    }),
+  });
+}
+function kr({
+  canPass: e,
+  canChallenge: n,
+  actionPending: r,
+  tutorialResponse: s,
+  onPass: a,
+  onChallenge: o,
+  t: i,
+}) {
+  return t.jsxs("div", {
+    className: "flex flex-col gap-2",
+    children: [
+      t.jsx("div", {
+        className: "text-center text-[10px] uppercase tracking-widest text-stone-500/70",
+        children: i("cakeduel.game.action.respondHint"),
+      }),
+      t.jsxs("div", {
+        className: "flex items-center justify-center gap-2.5",
+        children: [
+          e &&
+            t.jsx(V, {
+              variant: "muted",
+              icon: t.jsx(Ye, { className: "h-4 w-4" }),
+              label: i("cakeduel.game.action.letPass"),
+              sublabel: i("cakeduel.game.action.letPassHint"),
+              disabled: r || s === "challenge",
+              pulse: s === "pass",
+              onClick: a,
+            }),
+          n &&
+            t.jsx(V, {
+              variant: "danger",
+              icon: t.jsx(Ve, { className: "h-4 w-4" }),
+              label: i("cakeduel.game.action.callBluff"),
+              sublabel: i("cakeduel.game.action.callBluffHint"),
+              disabled: r || s === "pass",
+              pulse: s === "challenge",
+              onClick: o,
+            }),
+        ],
+      }),
+    ],
+  });
+}
+const jr = 3500;
+function Cr({ endsBout: e, actionPending: n, tutorialPass: r, onPass: s, t: a }) {
+  const [o, i] = c.useState(!1),
+    l = c.useRef(null);
+  c.useEffect(
+    () => () => {
+      l.current && clearTimeout(l.current);
+    },
+    [],
+  );
+  const u = c.useCallback(() => {
+    if (!o) {
+      (i(!0), l.current && clearTimeout(l.current), (l.current = setTimeout(() => i(!1), jr)));
+      return;
+    }
+    (l.current && clearTimeout(l.current), i(!1), s());
+  }, [o, s]);
+  return t.jsxs("div", {
+    className: "flex flex-col gap-2",
+    children: [
+      t.jsx("div", {
+        className: "flex items-center justify-center",
+        children: t.jsx(V, {
+          variant: o ? "danger" : "muted",
+          icon: t.jsx(Jt, { className: "h-4 w-4" }),
+          label: a(
+            o ? "cakeduel.game.action.passAttackConfirm" : "cakeduel.game.action.passAttack",
+          ),
+          sublabel: a(
+            e ? "cakeduel.game.action.passAttackEndsBout" : "cakeduel.game.action.passAttackHint",
+          ),
+          disabled: n,
+          pulse: r,
+          onClick: u,
+        }),
+      }),
+      !r &&
+        t.jsxs("div", {
+          className:
+            "flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-widest text-stone-500/70",
+          children: [
+            t.jsx(de, { className: "h-2.5 w-2.5 rotate-180 fill-current" }),
+            a("cakeduel.game.action.orPlayFromHand"),
+            t.jsx(de, { className: "h-2.5 w-2.5 rotate-180 fill-current" }),
+          ],
+        }),
+    ],
+  });
+}
+function wr({
+  claimSpec: e,
+  selectedClaim: n,
+  selectedHandIndices: r,
+  canPass: s,
+  canChallenge: a,
+  actionPending: o,
+  tutorialClaim: i,
+  tutorialSelectionReady: l,
+  onSelectClaim: u,
+  onSubmitClaim: d,
+  onPass: x,
+  onChallenge: f,
+  t: p,
+}) {
+  const m = r.length > 0,
+    v = m && n !== "" && l,
+    R = i !== null;
+  return t.jsxs("div", {
+    className: "flex flex-col gap-2.5",
+    children: [
+      t.jsx("div", {
+        className: "text-center text-[10px] uppercase tracking-widest text-stone-500/70",
+        children: p("cakeduel.game.action.respondHint"),
+      }),
+      t.jsxs("div", {
+        className: "flex items-center justify-center gap-2.5",
+        children: [
+          s &&
+            t.jsx(V, {
+              variant: "muted",
+              icon: t.jsx(Ye, { className: "h-4 w-4" }),
+              label: p("cakeduel.game.action.letPass"),
+              sublabel: p("cakeduel.game.action.letPassHint"),
+              disabled: o || R,
+              onClick: x,
+            }),
+          a &&
+            t.jsx(V, {
+              variant: "danger",
+              icon: t.jsx(Ve, { className: "h-4 w-4" }),
+              label: p("cakeduel.game.action.callBluff"),
+              sublabel: p("cakeduel.game.action.callBluffHint"),
+              disabled: o || R,
+              onClick: f,
+            }),
+        ],
+      }),
+      m
+        ? t.jsx("div", {
+            className: "border-t border-stone-300/40 pt-2 flex flex-col gap-2",
+            children: t.jsx(ft, {
+              claimSpec: e,
+              selectedClaim: n,
+              selectedHandIndices: r,
+              actionPending: o,
+              tutorialClaim: i,
+              onSelectClaim: u,
+              onSubmit: d,
+              t: p,
+              ready: v,
+            }),
+          })
+        : t.jsxs("div", {
+            className:
+              "flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-widest text-stone-500/70",
+            children: [
+              t.jsx(de, { className: "h-2.5 w-2.5 rotate-180 fill-current" }),
+              p("cakeduel.game.action.orPlayFromHand"),
+              t.jsx(de, { className: "h-2.5 w-2.5 rotate-180 fill-current" }),
+            ],
+          }),
+    ],
+  });
+}
+function Nr({
+  pickSpec: e,
+  selectedPickIndex: n,
+  actionPending: r,
+  onSelectPick: s,
+  onSubmit: a,
+  t: o,
+}) {
+  return t.jsxs("div", {
+    className: "flex flex-col gap-2.5",
+    children: [
+      t.jsx("div", {
+        className: "text-center text-[10px] uppercase tracking-widest text-stone-500/70",
+        children: o("cakeduel.game.action.pickHint"),
+      }),
+      t.jsx("div", {
+        className: "flex items-center justify-center gap-1.5 flex-wrap",
+        children: e.pickFrom.map((i, l) =>
+          t.jsx(mt, { card: i, selected: n === l, disabled: r, onClick: () => s(l) }, `${l}:${i}`),
+        ),
+      }),
+      t.jsx("div", {
+        className: "flex justify-center",
+        children: t.jsx(V, {
+          variant: "primary",
+          cardHint: n != null ? e.pickFrom[n] : void 0,
+          icon: t.jsx(Qt, { className: "h-4 w-4" }),
+          label: o("cakeduel.game.action.confirmPick"),
+          disabled: r || n == null,
+          onClick: a,
+        }),
+      }),
+    ],
+  });
+}
+function Rr(e, n) {
+  const r = Number.parseInt(e.slice(1, 3), 16),
+    s = Number.parseInt(e.slice(3, 5), 16),
+    a = Number.parseInt(e.slice(5, 7), 16);
+  return `rgb(${Math.round(r + (255 - r) * n)},${Math.round(s + (255 - s) * n)},${Math.round(a + (255 - a) * n)})`;
+}
+function mt({ card: e, selected: n, disabled: r, onClick: s }) {
+  const { t: a, i18n: o } = U(),
+    i = c.useContext(re),
+    l = se(e),
+    u = Rr(l, 0.6),
+    d = `pill-${e}`,
+    x = c.useCallback(() => {
+      (Z(Q.hoof), s());
+    }, [s]);
+  return t.jsx(M.button, {
+    type: "button",
+    whileHover: r ? void 0 : { scale: 1.06 },
+    whileTap: r ? void 0 : { scale: 0.95 },
+    onClick: x,
+    disabled: r,
+    onPointerEnter: (f) => i?.reportHover(d, ue(e, o.language), f.currentTarget),
+    onPointerLeave: () => i?.reportUnhover(d),
+    className: D(
+      "px-3 py-1 text-xs font-bold rounded-full transition-all duration-150",
+      r && "opacity-50 cursor-not-allowed",
+    ),
+    style: n
+      ? {
+          background: l,
+          color: "#1c1917",
+          boxShadow: `0 2px 10px ${l}55, inset 0 1px 0 rgba(255,255,255,0.35)`,
+          border: `1.5px solid ${l}`,
+        }
+      : { background: u, color: "#78716c", border: `1.5px solid ${l}` },
+    children: a(`cakeduel.cards.${e}`),
+  });
+}
+function Pr(e, n) {
+  if (e === "primary") {
+    const r = n ? se(n) : "#FECE08";
+    return {
+      background: `linear-gradient(to bottom, ${r}, ${r}cc)`,
+      color: "#1c1917",
+      border: `1px solid ${r}88`,
+      boxShadow: `0 4px 14px ${r}30, inset 0 1px 0 rgba(255,255,255,0.3)`,
+    };
+  }
+  if (e === "danger") {
+    const r = "#F49187";
+    return {
+      background: `linear-gradient(to bottom, ${r}, ${r}cc)`,
+      color: "#1c1917",
+      border: `1px solid ${r}88`,
+      boxShadow: `0 4px 14px ${r}30, inset 0 1px 0 rgba(255,255,255,0.3)`,
+    };
+  }
+  return {
+    background: "rgba(255,255,255,0.45)",
+    color: "#44403c",
+    border: "1px solid rgba(255,255,255,0.5)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+  };
+}
+function V({
+  variant: e,
+  cardHint: n,
+  icon: r,
+  label: s,
+  sublabel: a,
+  disabled: o,
+  pulse: i = !1,
+  onClick: l,
+  className: u,
+}) {
+  const d = o ? void 0 : Pr(e, n),
+    x = i && !o;
+  return t.jsxs(M.button, {
+    type: "button",
+    whileHover: o ? void 0 : { scale: 1.03 },
+    whileTap: o ? void 0 : { scale: 0.97 },
+    animate: x
+      ? {
+          scale: [1, 1.05, 1],
+          boxShadow: [
+            `${d?.boxShadow ?? "0 0 0 rgba(0,0,0,0)"}, 0 0 0 0 rgba(232,199,58,0.55)`,
+            `${d?.boxShadow ?? "0 0 0 rgba(0,0,0,0)"}, 0 0 0 9px rgba(232,199,58,0)`,
+          ],
+        }
+      : { scale: 1 },
+    transition: x ? { duration: 1.3, ease: "easeInOut", repeat: 1 / 0 } : { duration: 0.2 },
+    disabled: o,
+    onClick: l,
+    className: D(
+      "flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-colors",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      o && "bg-stone-300/40 text-stone-400 border border-stone-300/30",
+      u,
+    ),
+    style: d,
+    children: [
+      r,
+      t.jsxs("div", {
+        className: "flex flex-col items-start",
+        children: [
+          t.jsx("span", { className: "whitespace-nowrap", children: s }),
+          a &&
+            t.jsx("span", {
+              className: "text-[9px] opacity-60 font-normal whitespace-nowrap",
+              children: a,
+            }),
+        ],
+      }),
+    ],
+  });
+}
+function Ir() {
+  const e = b((n) => n.actionError);
+  return t.jsx(X, {
+    children:
+      e &&
+      t.jsx(M.div, {
+        initial: { opacity: 0, y: 10 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -10 },
+        className:
+          "absolute bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-xl border border-red-600/40 bg-red-900/80 px-4 py-2 text-xs text-red-200 shadow-lg backdrop-blur-sm",
+        children: e,
+      }),
+  });
+}
+function xt({
+  entryKey: e,
+  fadeDuration: n = 0.2,
+  stripAlign: r = "center",
+  stripClassName: s = "",
+  background: a,
+  children: o,
+}) {
+  return t.jsx(X, {
+    children:
+      e !== null &&
+      t.jsxs(
+        M.div,
+        {
+          className: "absolute inset-0 z-40 flex items-center justify-center pointer-events-none",
+          initial: { opacity: 0 },
+          animate: { opacity: 1 },
+          exit: { opacity: 0 },
+          transition: { duration: n },
+          children: [
+            t.jsx("div", { className: "absolute inset-0 bg-black/50" }),
+            t.jsxs(M.div, {
+              className: `relative w-full flex justify-center ${r === "end" ? "items-end" : "items-center"} ${s}`,
+              initial: { clipPath: "inset(0 100% 0 0)" },
+              animate: { clipPath: "inset(0 0% 0 0)" },
+              exit: { clipPath: "inset(0 0 0 100%)" },
+              transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+              children: [a, t.jsx("div", { className: "relative", children: o })],
+            }),
+          ],
+        },
+        e,
+      ),
+  });
+}
+function Sr() {
+  const e = b((d) => d.bannerQueue),
+    n = b((d) => d.advanceBanner),
+    r = e[0] ?? null,
+    s = r?.id ?? null,
+    a = r?.message.type === "bout_end",
+    o = c.useRef(void 0);
+  c.useEffect(() => {
+    if (s !== null)
+      return (
+        we("partygames-cakeduel-banner-whoosh"),
+        a && en(),
+        clearTimeout(o.current),
+        (o.current = setTimeout(n, We().BANNER_DURATION)),
+        () => clearTimeout(o.current)
+      );
+  }, [s, a, n]);
+  const i = r?.message.type === "claim" ? se(r.message.claim) : null,
+    l = r?.message.type === "bout_end" ? r.message : null,
+    u = i
+      ? t.jsx("div", {
+          className: "absolute inset-0 border-y border-white/10",
+          style: {
+            background: `linear-gradient(to right, ${ie(i, 0.15)}, ${ie(i, 0.85)}, ${ie(i, 0.85)}, ${ie(i, 0.15)})`,
+          },
+        })
+      : l
+        ? t.jsx(_r, { victory: l.victory })
+        : t.jsx("div", {
+            className:
+              "absolute inset-0 bg-gradient-to-r from-amber-950/90 via-amber-900/95 to-amber-950/90 border-y border-amber-600/30",
+          });
+  return t.jsx(xt, {
+    entryKey: r?.id ?? null,
+    stripAlign: i ? "end" : "center",
+    stripClassName: i ? "" : "py-5",
+    background: u,
+    children: r && t.jsx(Er, { message: r.message }),
+  });
+}
+function Er({ message: e }) {
+  const { t: n } = U();
+  switch (e.type) {
+    case "claim": {
+      const r = e.actualCards ?? [];
+      return r.length === 0
+        ? null
+        : t.jsxs("div", {
+            className: "flex items-end gap-4 h-28",
+            children: [
+              t.jsx(Ar, { actualCards: r, claim: e.claim, greyed: !e.isPlayer }),
+              t.jsxs("span", {
+                className: "text-xl font-black tracking-wide",
+                style: { color: Tr(se(e.claim)) ? "#1a1000" : "#fff" },
+                children: [r.length, "× ", n(`cakeduel.cards.${e.claim}`)],
+              }),
+            ],
+          });
+    }
+    case "accepted":
+      return t.jsx("span", {
+        className: "text-2xl font-black tracking-widest uppercase text-amber-200",
+        children: n("cakeduel.banner.accepted"),
+      });
+    case "challenge":
+      return t.jsx("span", {
+        className:
+          "text-3xl font-black tracking-widest uppercase text-red-400 drop-shadow-[0_0_12px_rgba(248,113,113,0.5)]",
+        children: n("cakeduel.banner.challenge"),
+      });
+    case "bout_start":
+      return t.jsx("span", {
+        className: "text-2xl font-black tracking-widest uppercase text-amber-100",
+        children: n("cakeduel.banner.boutStart", { n: e.boutNumber }),
+      });
+    case "bout_end":
+      return t.jsxs("div", {
+        className: "flex flex-col items-center gap-1",
+        children: [
+          t.jsx("span", {
+            className: `text-3xl font-black tracking-widest uppercase ${e.victory ? "text-emerald-200 drop-shadow-[0_0_14px_rgba(110,231,183,0.6)]" : "text-red-300 drop-shadow-[0_0_14px_rgba(252,129,129,0.6)]"}`,
+            children: e.victory ? n("cakeduel.banner.victory") : n("cakeduel.banner.defeat"),
+          }),
+          t.jsx("span", {
+            className: `text-sm font-medium ${e.victory ? "text-emerald-300/70" : "text-red-300/60"}`,
+            children: e.reason,
+          }),
+        ],
+      });
+  }
+}
+const $e = -16;
+function Ar({ actualCards: e, claim: n, greyed: r }) {
+  return t.jsx("div", {
+    className: "flex items-center h-full",
+    style: { paddingLeft: -$e },
+    children: e.map((s, a) =>
+      t.jsx(
+        "img",
+        {
+          src: tn(r ? n : s),
+          alt: "",
+          draggable: !1,
+          className: "h-full w-auto object-contain",
+          style: {
+            marginLeft: a === 0 ? 0 : $e,
+            zIndex: a + 1,
+            position: "relative",
+            filter: r ? "grayscale(1)" : "none",
+          },
+        },
+        a,
+      ),
+    ),
+  });
+}
+function _r({ victory: e }) {
+  return e
+    ? t.jsx("div", {
+        className: "absolute inset-0 border-y border-emerald-400/20",
+        style: {
+          background:
+            "linear-gradient(to right, rgba(6,78,59,0.85), rgba(4,120,87,0.95), rgba(4,120,87,0.95), rgba(6,78,59,0.85))",
+        },
+      })
+    : t.jsx("div", {
+        className: "absolute inset-0 border-y border-red-400/20",
+        style: {
+          background:
+            "linear-gradient(to right, rgba(127,29,29,0.85), rgba(153,27,27,0.95), rgba(153,27,27,0.95), rgba(127,29,29,0.85))",
+        },
+      });
+}
+function Tr(e) {
+  const n = Number.parseInt(e.slice(1, 3), 16),
+    r = Number.parseInt(e.slice(3, 5), 16),
+    s = Number.parseInt(e.slice(5, 7), 16);
+  return n * 0.299 + r * 0.587 + s * 0.114 > 150;
+}
+function ie(e, n) {
+  const r = Number.parseInt(e.slice(1, 3), 16),
+    s = Number.parseInt(e.slice(3, 5), 16),
+    a = Number.parseInt(e.slice(5, 7), 16);
+  return `rgba(${r},${s},${a},${n})`;
+}
+const ce = se("wolfy"),
+  Mr = [
+    { frame: 0, at: 0 },
+    { frame: 1, at: 100 },
+    { frame: 2, at: 300 },
+    { frame: 3, at: 400 },
+  ],
+  Or = 1100;
+function Hr(e) {
+  const [n, r] = c.useState(0),
+    s = c.useRef(0),
+    a = c.useRef(0);
+  return (
+    c.useEffect(() => {
+      if (!e) {
+        r(0);
+        return;
+      }
+      s.current = performance.now();
+      const o = () => {
+        const i = (performance.now() - s.current) % Or;
+        let l = 0;
+        for (const u of Mr) i >= u.at && (l = u.frame);
+        (r(l), (a.current = requestAnimationFrame(o)));
+      };
+      return ((a.current = requestAnimationFrame(o)), () => cancelAnimationFrame(a.current));
+    }, [e]),
+    n
+  );
+}
+function le(e, n) {
+  const r = Number.parseInt(e.slice(1, 3), 16),
+    s = Number.parseInt(e.slice(3, 5), 16),
+    a = Number.parseInt(e.slice(5, 7), 16);
+  return `rgba(${r},${s},${a},${n})`;
+}
+function Dr() {
+  const e = b((s) => s.wolfyTaunt),
+    r = Hr(e !== null);
+  return t.jsx(xt, {
+    entryKey: e ? "wolfy-taunt" : null,
+    fadeDuration: 0.15,
+    stripAlign: "end",
+    background: t.jsx("div", {
+      className: "absolute inset-0 border-y border-white/10",
+      style: {
+        background: `linear-gradient(to right, ${le(ce, 0.15)}, ${le(ce, 0.85)}, ${le(ce, 0.85)}, ${le(ce, 0.15)})`,
+      },
+    }),
+    children: t.jsx("img", {
+      src: nn[r],
+      alt: "",
+      draggable: !1,
+      className: "relative h-28 w-auto",
+    }),
+  });
+}
+const Fr = 1e3,
+  $r = 200;
+function Lr({ children: e }) {
+  const n = c.useRef(null),
+    [r, s] = c.useState(!1),
+    [a, o] = c.useState(null),
+    [i, l] = c.useState(null),
+    [u, d] = c.useState(null),
+    x = c.useRef(null),
+    f = c.useRef(void 0),
+    p = c.useRef(void 0),
+    m = c.useRef(null),
+    h = c.useRef(!1),
+    v = c.useRef(!1),
+    R = c.useRef(null),
+    j = c.useRef({
+      getBoundingClientRect: () => {
+        const k = x.current;
+        return (
+          k?.isConnected && (R.current = k.getBoundingClientRect()),
+          R.current ?? new DOMRect()
+        );
+      },
+    }),
+    C = c.useCallback(() => {
+      const k = x.current,
+        g = n.current;
+      if (!k || !g) return null;
+      const P = k.getBoundingClientRect(),
+        y = g.getBoundingClientRect(),
+        I = k.hasAttribute("data-card-id") ? k : (k.querySelector("[data-card-id]") ?? k),
+        _ = Number.parseFloat(getComputedStyle(I).borderRadius) || 12,
+        K = I.offsetWidth > 0 ? P.width / I.offsetWidth : 1;
+      return {
+        left: P.left - y.left,
+        top: P.top - y.top,
+        width: P.width,
+        height: P.height,
+        borderRadius: _ * K,
+      };
+    }, []),
+    w = c.useCallback(() => {
+      ((h.current = !1),
+        s(!1),
+        o(null),
+        l(null),
+        d(null),
+        clearTimeout(f.current),
+        clearTimeout(p.current),
+        (m.current = null),
+        (x.current = null),
+        (R.current = null),
+        (v.current = !1));
+    }, []),
+    S = c.useCallback(() => {
+      (clearTimeout(p.current),
+        (p.current = setTimeout(() => {
+          (!x.current?.isConnected || !v.current) && w();
+        }, $r)));
+    }, [w]),
+    A = c.useMemo(
+      () => ({
+        reportHover(k, g, P) {
+          if (h.current) {
+            k === m.current && ((x.current = P), clearTimeout(p.current), l(C()));
+            return;
+          }
+          (clearTimeout(f.current),
+            clearTimeout(p.current),
+            (m.current = k),
+            (x.current = P),
+            (f.current = setTimeout(() => {
+              x.current?.isConnected && ((h.current = !0), o(g), l(C()), d(k), s(!0));
+            }, Fr)));
+        },
+        reportUnhover(k) {
+          m.current === k &&
+            (clearTimeout(f.current), h.current ? S() : ((m.current = null), (x.current = null)));
+        },
+      }),
+      [C, S],
+    ),
+    $ = c.useCallback(() => {
+      ((v.current = !0), clearTimeout(p.current));
+    }, []),
+    O = c.useCallback(() => {
+      ((v.current = !1), h.current && S());
+    }, [S]);
+  return (
+    c.useEffect(() => {
+      if (!r) return;
+      const k = (g) => {
+        g.key === "Escape" && w();
+      };
+      return (
+        window.addEventListener("keydown", k),
+        () => window.removeEventListener("keydown", k)
+      );
+    }, [r, w]),
+    c.useEffect(
+      () => () => {
+        (clearTimeout(f.current), clearTimeout(p.current));
+      },
+      [],
+    ),
+    t.jsxs("div", {
+      ref: n,
+      className: "relative h-full w-full",
+      children: [
+        t.jsx(re.Provider, { value: A, children: t.jsx(Ne.Provider, { value: u, children: e }) }),
+        t.jsx(X, {
+          children:
+            r &&
+            i &&
+            t.jsx(M.div, {
+              className: "absolute inset-0 z-[90] overflow-hidden pointer-events-none",
+              initial: { opacity: 0 },
+              animate: { opacity: 1 },
+              exit: { opacity: 0 },
+              transition: { duration: 0.2 },
+              children: t.jsx("div", {
+                style: {
+                  position: "absolute",
+                  left: i.left,
+                  top: i.top,
+                  width: i.width,
+                  height: i.height,
+                  borderRadius: i.borderRadius,
+                  boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.6)",
+                },
+              }),
+            }),
+        }),
+        t.jsxs(On, {
+          open: r,
+          onOpenChange: (k) => {
+            k || w();
+          },
+          children: [
+            t.jsx(Dn, { virtualRef: j }),
+            t.jsx(Hn, {
+              container: n.current,
+              side: "right",
+              sideOffset: 14,
+              collisionPadding: 24,
+              collisionBoundary: n.current ? [n.current] : void 0,
+              className: "z-[100] w-auto border-none bg-transparent p-0 shadow-none",
+              onPointerEnter: $,
+              onPointerLeave: O,
+              onOpenAutoFocus: (k) => k.preventDefault(),
+              children:
+                a &&
+                t.jsx("img", {
+                  src: a,
+                  alt: "",
+                  draggable: !1,
+                  className: "h-auto max-h-[55vh] rounded-xl select-none",
+                  style: {
+                    boxShadow: [
+                      "0 0 80px 16px rgba(255, 180, 60, 0.07)",
+                      "0 0 40px rgba(255, 200, 100, 0.10)",
+                      "0 20px 60px rgba(0, 0, 0, 0.55)",
+                    ].join(", "),
+                  },
+                }),
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+}
+function Xr({ navigate: e }) {
+  const { t: n } = U(),
+    [r, s] = cn(),
+    a = c.useMemo(() => Zn(s.width, s.height), [s.width, s.height]),
+    o = b((v) => v.controllerReady),
+    i = b((v) => v.runtimeState),
+    l = b((v) => v.myView),
+    u = b((v) => v.navigateToResults),
+    { setTitleBarContent: d } = rn(),
+    { setWindowStyle: x } = sn(),
+    [f, p] = c.useState(!1);
+  c.useEffect(() => {
+    (x(null), d(null));
+  }, [x, d]);
+  const m = c.useRef(!1),
+    h = i?.tutorial != null;
+  return (
+    c.useEffect(() => {
+      if (!u) {
+        m.current = !1;
+        return;
+      }
+      if (!m.current) {
+        if (((m.current = !0), h)) {
+          (Ke()
+            ?.reset()
+            .catch((v) => {
+              console.error("[CakeDuelGame] Failed to reset after tutorial:", v);
+            }),
+            e("start"));
+          return;
+        }
+        e("results");
+      }
+    }, [u, e, h]),
+    !o || !i
+      ? t.jsxs(ye, {
+          stage: "loading",
+          children: [
+            t.jsx("div", { className: "absolute inset-0 bg-black/40" }),
+            t.jsx("div", {
+              className: "relative z-10 flex h-full w-full items-center justify-center",
+              children: t.jsx("div", {
+                className: "text-sm text-amber-200/60",
+                children: n("cakeduel.game.loading"),
+              }),
+            }),
+          ],
+        })
+      : !i.game || !l
+        ? t.jsxs(ye, {
+            stage: "empty",
+            children: [
+              t.jsx("div", { className: "absolute inset-0 bg-black/40" }),
+              t.jsxs("div", {
+                className:
+                  "relative z-10 flex h-full w-full flex-col items-center justify-center gap-3",
+                children: [
+                  t.jsx("div", {
+                    className: "text-sm text-amber-200/60",
+                    children: n("cakeduel.game.noGame"),
+                  }),
+                  t.jsx(an, {
+                    size: "sm",
+                    onClick: () => {
+                      (Z(Q.hoof), e("start"));
+                    },
+                    className: "bg-amber-600 text-amber-50 hover:bg-amber-500",
+                    children: n("cakeduel.game.backToStart"),
+                  }),
+                ],
+              }),
+            ],
+          })
+        : t.jsx(ye, {
+            stage: "game",
+            children: t.jsx(Lr, {
+              children: t.jsxs(lt.Provider, {
+                value: a,
+                children: [
+                  t.jsxs("div", {
+                    ref: r,
+                    className: "relative z-10 flex h-full w-full flex-col",
+                    children: [
+                      t.jsx(er, { onHelp: () => p(!0) }),
+                      t.jsxs("div", {
+                        className: "flex-1 min-h-0 overflow-hidden relative",
+                        children: [
+                          t.jsx("div", {
+                            className: "absolute left-0 inset-y-0 z-20",
+                            children: t.jsx(xr, {}),
+                          }),
+                          t.jsxs("div", {
+                            className: "h-full flex flex-col relative",
+                            children: [
+                              t.jsx(nr, {}),
+                              t.jsx("div", { className: "flex-1" }),
+                              t.jsxs("div", {
+                                className: "shrink-0 relative z-30",
+                                children: [t.jsx(vr, {}), t.jsx(pr, {})],
+                              }),
+                              t.jsx(ir, {}),
+                              t.jsx("div", {
+                                className: "absolute right-0 top-1/2",
+                                style: { transform: "translateX(50%) translateY(-50%)" },
+                                children: t.jsx(fr, {}),
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  t.jsx(Sr, {}),
+                  t.jsx(Dr, {}),
+                  t.jsx(Ir, {}),
+                  t.jsx(dn, { open: f, onClose: () => p(!1) }),
+                ],
+              }),
+            }),
+          })
+  );
+}
+function ye({ stage: e, children: n }) {
+  return t.jsxs("div", {
+    className: "relative h-full w-full overflow-hidden",
+    "data-cakeduel-screen": e,
+    children: [
+      t.jsx("img", {
+        src: on,
+        alt: "",
+        className: "absolute inset-0 h-full w-full object-cover",
+        draggable: !1,
+      }),
+      n,
+    ],
+  });
+}
+export { Xr as GameScreen };

@@ -1,2 +1,1727 @@
-import{c as f,C as Xe,j as y,a as w,p as A,b as x,d as Ze}from"./index-B-Up_0PN.js";import{cj as R,N as et,ck as re,cl as tt,cm as cr}from"./NormalApp-Cn6agT0F.js";import{cn as Nr,co as Ar}from"./NormalApp-Cn6agT0F.js";import"./index-CyHAbkO5.js";import"./i18n-DtIC1LRi.js";var rt=Object.defineProperty,nt=(t,e,r)=>e in t?rt(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,h=(t,e,r)=>nt(t,typeof e!="symbol"?e+"":e,r);const st="https://docs.convex.dev/error#undefined-validator";function N(t,e){const r=e!==void 0?` for field "${e}"`:"";throw new Error(`A validator is undefined${r} in ${t}. This is often caused by circular imports. See ${st} for details.`)}class b{constructor({isOptional:e}){h(this,"type"),h(this,"fieldPaths"),h(this,"isOptional"),h(this,"isConvexValidator"),this.isOptional=e,this.isConvexValidator=!0}}class ne extends b{constructor({isOptional:e,tableName:r}){if(super({isOptional:e}),h(this,"tableName"),h(this,"kind","id"),typeof r!="string")throw new Error("v.id(tableName) requires a string");this.tableName=r}get json(){return{type:"id",tableName:this.tableName}}asOptional(){return new ne({isOptional:"optional",tableName:this.tableName})}}class k extends b{constructor(){super(...arguments),h(this,"kind","float64")}get json(){return{type:"number"}}asOptional(){return new k({isOptional:"optional"})}}class J extends b{constructor(){super(...arguments),h(this,"kind","int64")}get json(){return{type:"bigint"}}asOptional(){return new J({isOptional:"optional"})}}class se extends b{constructor(){super(...arguments),h(this,"kind","boolean")}get json(){return{type:this.kind}}asOptional(){return new se({isOptional:"optional"})}}class oe extends b{constructor(){super(...arguments),h(this,"kind","bytes")}get json(){return{type:this.kind}}asOptional(){return new oe({isOptional:"optional"})}}class ie extends b{constructor(){super(...arguments),h(this,"kind","string")}get json(){return{type:this.kind}}asOptional(){return new ie({isOptional:"optional"})}}class ae extends b{constructor(){super(...arguments),h(this,"kind","null")}get json(){return{type:this.kind}}asOptional(){return new ae({isOptional:"optional"})}}class ue extends b{constructor(){super(...arguments),h(this,"kind","any")}get json(){return{type:this.kind}}asOptional(){return new ue({isOptional:"optional"})}}class $ extends b{constructor({isOptional:e,fields:r}){super({isOptional:e}),h(this,"fields"),h(this,"kind","object"),globalThis.Object.entries(r).forEach(([n,s])=>{if(s===void 0&&N("v.object()",n),!s.isConvexValidator)throw new Error("v.object() entries must be validators")}),this.fields=r}get json(){return{type:this.kind,value:globalThis.Object.fromEntries(globalThis.Object.entries(this.fields).map(([e,r])=>[e,{fieldType:r.json,optional:r.isOptional==="optional"}]))}}asOptional(){return new $({isOptional:"optional",fields:this.fields})}omit(...e){const r={...this.fields};for(const n of e)delete r[n];return new $({isOptional:this.isOptional,fields:r})}pick(...e){const r={};for(const n of e)r[n]=this.fields[n];return new $({isOptional:this.isOptional,fields:r})}partial(){const e={};for(const[r,n]of globalThis.Object.entries(this.fields))e[r]=n.asOptional();return new $({isOptional:this.isOptional,fields:e})}extend(e){return new $({isOptional:this.isOptional,fields:{...this.fields,...e}})}}class le extends b{constructor({isOptional:e,value:r}){if(super({isOptional:e}),h(this,"value"),h(this,"kind","literal"),typeof r!="string"&&typeof r!="boolean"&&typeof r!="number"&&typeof r!="bigint")throw new Error("v.literal(value) must be a string, number, or boolean");this.value=r}get json(){return{type:this.kind,value:f(this.value)}}asOptional(){return new le({isOptional:"optional",value:this.value})}}class ce extends b{constructor({isOptional:e,element:r}){super({isOptional:e}),h(this,"element"),h(this,"kind","array"),r===void 0&&N("v.array()"),this.element=r}get json(){return{type:this.kind,value:this.element.json}}asOptional(){return new ce({isOptional:"optional",element:this.element})}}class de extends b{constructor({isOptional:e,key:r,value:n}){if(super({isOptional:e}),h(this,"key"),h(this,"value"),h(this,"kind","record"),r===void 0&&N("v.record()","key"),n===void 0&&N("v.record()","value"),r.isOptional==="optional")throw new Error("Record validator cannot have optional keys");if(n.isOptional==="optional")throw new Error("Record validator cannot have optional values");if(!r.isConvexValidator||!n.isConvexValidator)throw new Error("Key and value of v.record() but be validators");this.key=r,this.value=n}get json(){return{type:this.kind,keys:this.key.json,values:{fieldType:this.value.json,optional:!1}}}asOptional(){return new de({isOptional:"optional",key:this.key,value:this.value})}}class he extends b{constructor({isOptional:e,members:r}){super({isOptional:e}),h(this,"members"),h(this,"kind","union"),r.forEach((n,s)=>{if(n===void 0&&N("v.union()",`member at index ${s}`),!n.isConvexValidator)throw new Error("All members of v.union() must be validators")}),this.members=r}get json(){return{type:this.kind,value:this.members.map(e=>e.json)}}asOptional(){return new he({isOptional:"optional",members:this.members})}}function $e(t){return!!t.isConvexValidator}function Se(t){return $e(t)?t:i.object(t)}const i={id:t=>new ne({isOptional:"required",tableName:t}),null:()=>new ae({isOptional:"required"}),number:()=>new k({isOptional:"required"}),float64:()=>new k({isOptional:"required"}),bigint:()=>new J({isOptional:"required"}),int64:()=>new J({isOptional:"required"}),boolean:()=>new se({isOptional:"required"}),string:()=>new ie({isOptional:"required"}),bytes:()=>new oe({isOptional:"required"}),literal:t=>new le({isOptional:"required",value:t}),array:t=>new ce({isOptional:"required",element:t}),object:t=>new $({isOptional:"required",fields:t}),record:(t,e)=>new de({isOptional:"required",key:t,value:e}),union:(...t)=>new he({isOptional:"required",members:t}),any:()=>new ue({isOptional:"required"}),optional:t=>t.asOptional(),nullable:t=>i.union(t,i.null())};function B(t,e){if(typeof Convex>"u"||Convex.syscall===void 0)throw new Error("The Convex database and auth objects are being used outside of a Convex backend. Did you mean to use `useQuery` or `useMutation` to call a Convex function?");const r=Convex.syscall(t,JSON.stringify(e));return JSON.parse(r)}async function d(t,e){if(typeof Convex>"u"||Convex.asyncSyscall===void 0)throw new Error("The Convex database and auth objects are being used outside of a Convex backend. Did you mean to use `useQuery` or `useMutation` to call a Convex function?");let r;try{r=await Convex.asyncSyscall(t,JSON.stringify(e))}catch(n){if(n.data!==void 0){const s=new Xe(n.message);throw s.data=y(n.data),s}throw new Error(n.message)}return JSON.parse(r)}function I(t,e){if(typeof Convex>"u"||Convex.jsSyscall===void 0)throw new Error("The Convex database and auth objects are being used outside of a Convex backend. Did you mean to use `useQuery` or `useMutation` to call a Convex function?");return Convex.jsSyscall(t,e)}function H(t,e,r){return{...R(e),args:f(A(r)),version:w,requestId:t}}function Pe(t){return{runQuery:async(e,r)=>{const n=await d("1.0/actions/query",H(t,e,r));return y(n)},runMutation:async(e,r)=>{const n=await d("1.0/actions/mutation",H(t,e,r));return y(n)},runAction:async(e,r)=>{const n=await d("1.0/actions/action",H(t,e,r));return y(n)}}}var ot=Object.defineProperty,it=(t,e,r)=>e in t?ot(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,me=(t,e,r)=>it(t,typeof e!="symbol"?e+"":e,r);class at{constructor(){me(this,"_isExpression"),me(this,"_value")}}function l(t,e,r,n){if(t===void 0)throw new TypeError(`Must provide arg ${e} \`${n}\` to \`${r}\``)}function ut(t,e,r,n){if(!Number.isInteger(t)||t<0)throw new TypeError(`Arg ${e} \`${n}\` to \`${r}\` must be a non-negative integer`)}var lt=Object.defineProperty,ct=(t,e,r)=>e in t?lt(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,L=(t,e,r)=>ct(t,typeof e!="symbol"?e+"":e,r);function Ce(t){return async(e,r,n)=>{if(l(e,1,"vectorSearch","tableName"),l(r,2,"vectorSearch","indexName"),l(n,3,"vectorSearch","query"),!n.vector||!Array.isArray(n.vector)||n.vector.length===0)throw Error("`vector` must be a non-empty Array in vectorSearch");return await new dt(t,e+"."+r,n).collect()}}class dt{constructor(e,r,n){L(this,"requestId"),L(this,"state"),this.requestId=e;const s=n.filter?j(n.filter(ht)):null;this.state={type:"preparing",query:{indexName:r,limit:n.limit,vector:n.vector,expressions:s}}}async collect(){if(this.state.type==="consumed")throw new Error("This query is closed and can't emit any more values.");const e=this.state.query;this.state={type:"consumed"};const{results:r}=await d("1.0/actions/vectorSearch",{requestId:this.requestId,version:w,query:e});return r}}let M=class extends at{constructor(e){super(),L(this,"inner"),this.inner=e}serialize(){return this.inner}};function j(t){return t instanceof M?t.serialize():{$literal:x(t)}}const ht={eq(t,e){if(typeof t!="string")throw new Error("The first argument to `q.eq` must be a field name.");return new M({$eq:[j(new M({$field:t})),j(e)]})},or(...t){return new M({$or:t.map(j)})}};function Q(t){return{getUserIdentity:async()=>await d("1.0/getUserIdentity",{requestId:t})}}var pt=Object.defineProperty,ft=(t,e,r)=>e in t?pt(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,ye=(t,e,r)=>ft(t,typeof e!="symbol"?e+"":e,r);class mt{constructor(){ye(this,"_isExpression"),ye(this,"_value")}}var yt=Object.defineProperty,wt=(t,e,r)=>e in t?yt(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,bt=(t,e,r)=>wt(t,e+"",r);class m extends mt{constructor(e){super(),bt(this,"inner"),this.inner=e}serialize(){return this.inner}}function c(t){return t instanceof m?t.serialize():{$literal:x(t)}}const vt={eq(t,e){return new m({$eq:[c(t),c(e)]})},neq(t,e){return new m({$neq:[c(t),c(e)]})},lt(t,e){return new m({$lt:[c(t),c(e)]})},lte(t,e){return new m({$lte:[c(t),c(e)]})},gt(t,e){return new m({$gt:[c(t),c(e)]})},gte(t,e){return new m({$gte:[c(t),c(e)]})},add(t,e){return new m({$add:[c(t),c(e)]})},sub(t,e){return new m({$sub:[c(t),c(e)]})},mul(t,e){return new m({$mul:[c(t),c(e)]})},div(t,e){return new m({$div:[c(t),c(e)]})},mod(t,e){return new m({$mod:[c(t),c(e)]})},neg(t){return new m({$neg:c(t)})},and(...t){return new m({$and:t.map(c)})},or(...t){return new m({$or:t.map(c)})},not(t){return new m({$not:c(t)})},field(t){return new m({$field:t})}};var gt=Object.defineProperty,xt=(t,e,r)=>e in t?gt(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,_t=(t,e,r)=>xt(t,e+"",r);class Et{constructor(){_t(this,"_isIndexRange")}}var Ot=Object.defineProperty,$t=(t,e,r)=>e in t?Ot(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,we=(t,e,r)=>$t(t,typeof e!="symbol"?e+"":e,r);class g extends Et{constructor(e){super(),we(this,"rangeExpressions"),we(this,"isConsumed"),this.rangeExpressions=e,this.isConsumed=!1}static new(){return new g([])}consume(){if(this.isConsumed)throw new Error("IndexRangeBuilder has already been used! Chain your method calls like `q => q.eq(...).eq(...)`. See https://docs.convex.dev/using/indexes");this.isConsumed=!0}eq(e,r){return this.consume(),new g(this.rangeExpressions.concat({type:"Eq",fieldPath:e,value:x(r)}))}gt(e,r){return this.consume(),new g(this.rangeExpressions.concat({type:"Gt",fieldPath:e,value:x(r)}))}gte(e,r){return this.consume(),new g(this.rangeExpressions.concat({type:"Gte",fieldPath:e,value:x(r)}))}lt(e,r){return this.consume(),new g(this.rangeExpressions.concat({type:"Lt",fieldPath:e,value:x(r)}))}lte(e,r){return this.consume(),new g(this.rangeExpressions.concat({type:"Lte",fieldPath:e,value:x(r)}))}export(){return this.consume(),this.rangeExpressions}}var St=Object.defineProperty,Pt=(t,e,r)=>e in t?St(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,Ct=(t,e,r)=>Pt(t,e+"",r);class Tt{constructor(){Ct(this,"_isSearchFilter")}}var It=Object.defineProperty,qt=(t,e,r)=>e in t?It(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,be=(t,e,r)=>qt(t,typeof e!="symbol"?e+"":e,r);class q extends Tt{constructor(e){super(),be(this,"filters"),be(this,"isConsumed"),this.filters=e,this.isConsumed=!1}static new(){return new q([])}consume(){if(this.isConsumed)throw new Error("SearchFilterBuilder has already been used! Chain your method calls like `q => q.search(...).eq(...)`.");this.isConsumed=!0}search(e,r){return l(e,1,"search","fieldName"),l(r,2,"search","query"),this.consume(),new q(this.filters.concat({type:"Search",fieldPath:e,value:r}))}eq(e,r){return l(e,1,"eq","fieldName"),arguments.length!==2&&l(r,2,"search","value"),this.consume(),new q(this.filters.concat({type:"Eq",fieldPath:e,value:x(r)}))}export(){return this.consume(),this.filters}}var Nt=Object.defineProperty,At=(t,e,r)=>e in t?Nt(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,K=(t,e,r)=>At(t,typeof e!="symbol"?e+"":e,r);const ve=256;class Te{constructor(e){K(this,"tableName"),this.tableName=e}withIndex(e,r){l(e,1,"withIndex","indexName");let n=g.new();return r!==void 0&&(n=r(n)),new _({source:{type:"IndexRange",indexName:this.tableName+"."+e,range:n.export(),order:null},operators:[]})}withSearchIndex(e,r){l(e,1,"withSearchIndex","indexName"),l(r,2,"withSearchIndex","searchFilter");const n=q.new();return new _({source:{type:"Search",indexName:this.tableName+"."+e,filters:r(n).export()},operators:[]})}fullTableScan(){return new _({source:{type:"FullTableScan",tableName:this.tableName,order:null},operators:[]})}order(e){return this.fullTableScan().order(e)}async count(){const e=await d("1.0/count",{table:this.tableName});return y(e)}filter(e){return this.fullTableScan().filter(e)}limit(e){return this.fullTableScan().limit(e)}collect(){return this.fullTableScan().collect()}take(e){return this.fullTableScan().take(e)}paginate(e){return this.fullTableScan().paginate(e)}first(){return this.fullTableScan().first()}unique(){return this.fullTableScan().unique()}[Symbol.asyncIterator](){return this.fullTableScan()[Symbol.asyncIterator]()}}function ge(t){throw new Error(t==="consumed"?"This query is closed and can't emit any more values.":"This query has been chained with another operator and can't be reused.")}class _{constructor(e){K(this,"state"),K(this,"tableNameForErrorMessages"),this.state={type:"preparing",query:e},e.source.type==="FullTableScan"?this.tableNameForErrorMessages=e.source.tableName:this.tableNameForErrorMessages=e.source.indexName.split(".")[0]}takeQuery(){if(this.state.type!=="preparing")throw new Error("A query can only be chained once and can't be chained after iteration begins.");const e=this.state.query;return this.state={type:"closed"},e}startQuery(){if(this.state.type==="executing")throw new Error("Iteration can only begin on a query once.");(this.state.type==="closed"||this.state.type==="consumed")&&ge(this.state.type);const e=this.state.query,{queryId:r}=B("1.0/queryStream",{query:e,version:w});return this.state={type:"executing",queryId:r},r}closeQuery(){if(this.state.type==="executing"){const e=this.state.queryId;B("1.0/queryCleanup",{queryId:e})}this.state={type:"consumed"}}order(e){l(e,1,"order","order");const r=this.takeQuery();if(r.source.type==="Search")throw new Error("Search queries must always be in relevance order. Can not set order manually.");if(r.source.order!==null)throw new Error("Queries may only specify order at most once");return r.source.order=e,new _(r)}filter(e){l(e,1,"filter","predicate");const r=this.takeQuery();if(r.operators.length>=ve)throw new Error(`Can't construct query with more than ${ve} operators`);return r.operators.push({filter:c(e(vt))}),new _(r)}limit(e){l(e,1,"limit","n");const r=this.takeQuery();return r.operators.push({limit:e}),new _(r)}[Symbol.asyncIterator](){return this.startQuery(),this}async next(){(this.state.type==="closed"||this.state.type==="consumed")&&ge(this.state.type);const e=this.state.type==="preparing"?this.startQuery():this.state.queryId,{value:r,done:n}=await d("1.0/queryStreamNext",{queryId:e});return n&&this.closeQuery(),{value:y(r),done:n}}return(){return this.closeQuery(),Promise.resolve({done:!0,value:void 0})}async paginate(e){if(l(e,1,"paginate","options"),typeof e?.numItems!="number"||e.numItems<0)throw new Error(`\`options.numItems\` must be a positive number. Received \`${e?.numItems}\`.`);const r=this.takeQuery(),n=e.numItems,s=e.cursor,o=e?.endCursor??null,a=e.maximumRowsRead??null,{page:u,isDone:p,continueCursor:E,splitCursor:z,pageStatus:W}=await d("1.0/queryPage",{query:r,cursor:s,endCursor:o,pageSize:n,maximumRowsRead:a,maximumBytesRead:e.maximumBytesRead,version:w});return{page:u.map(Ye=>y(Ye)),isDone:p,continueCursor:E,splitCursor:z,pageStatus:W}}async collect(){const e=[];for await(const r of this)e.push(r);return e}async take(e){return l(e,1,"take","n"),ut(e,1,"take","n"),this.limit(e).collect()}async first(){const e=await this.take(1);return e.length===0?null:e[0]}async unique(){const e=await this.take(2);if(e.length===0)return null;if(e.length===2)throw new Error(`unique() query returned more than one result from table ${this.tableNameForErrorMessages}:
- [${e[0]._id}, ${e[1]._id}, ...]`);return e[0]}}async function Y(t,e,r){if(l(e,1,"get","id"),typeof e!="string")throw new Error(`Invalid argument \`id\` for \`db.get\`, expected string but got '${typeof e}': ${e}`);const n={id:f(e),isSystem:r,version:w,table:t},s=await d("1.0/get",n);return y(s)}function Ie(){const t=(s=!1)=>({get:async(o,a)=>a!==void 0?await Y(o,a,s):await Y(void 0,o,s),query:o=>new te(o,s).query(),normalizeId:(o,a)=>{l(o,1,"normalizeId","tableName"),l(a,2,"normalizeId","id");const u=o.startsWith("_");if(u!==s)throw new Error(`${u?"System":"User"} tables can only be accessed from db.${s?"":"system."}normalizeId().`);const p=B("1.0/db/normalizeId",{table:o,idString:a});return y(p).id},system:null,table:o=>new te(o,s)}),{system:e,...r}=t(!0),n=t();return n.system=r,n}async function qe(t,e){if(t.startsWith("_"))throw new Error("System tables (prefixed with `_`) are read-only.");l(t,1,"insert","table"),l(e,2,"insert","value");const r=await d("1.0/insert",{table:t,value:f(e)});return y(r)._id}async function X(t,e,r){l(e,1,"patch","id"),l(r,2,"patch","value"),await d("1.0/shallowMerge",{id:f(e),value:Ze(r),table:t})}async function Z(t,e,r){l(e,1,"replace","id"),l(r,2,"replace","value"),await d("1.0/replace",{id:f(e),value:f(r),table:t})}async function ee(t,e){l(e,1,"delete","id"),await d("1.0/remove",{id:f(e),table:t})}function Rt(){const t=Ie();return{get:t.get,query:t.query,normalizeId:t.normalizeId,system:t.system,insert:async(e,r)=>await qe(e,r),patch:async(e,r,n)=>n!==void 0?await X(e,r,n):await X(void 0,e,r),replace:async(e,r,n)=>n!==void 0?await Z(e,r,n):await Z(void 0,e,r),delete:async(e,r)=>r!==void 0?await ee(e,r):await ee(void 0,e),table:e=>new Ft(e,!1)}}class te{constructor(e,r){this.tableName=e,this.isSystem=r}async get(e){return Y(this.tableName,e,this.isSystem)}query(){const e=this.tableName.startsWith("_");if(e!==this.isSystem)throw new Error(`${e?"System":"User"} tables can only be accessed from db.${this.isSystem?"":"system."}query().`);return new Te(this.tableName)}}class Ft extends te{async insert(e){return qe(this.tableName,e)}async patch(e,r){return X(this.tableName,e,r)}async replace(e,r){return Z(this.tableName,e,r)}async delete(e){return ee(this.tableName,e)}}function Mt(){return{runAfter:async(t,e,r)=>{const n=Ae(t,e,r);return await d("1.0/schedule",n)},runAt:async(t,e,r)=>{const n=Re(t,e,r);return await d("1.0/schedule",n)},cancel:async t=>{l(t,1,"cancel","id");const e={id:f(t)};await d("1.0/cancel_job",e)}}}function Ne(t){return{runAfter:async(e,r,n)=>{const s={requestId:t,...Ae(e,r,n)};return await d("1.0/actions/schedule",s)},runAt:async(e,r,n)=>{const s={requestId:t,...Re(e,r,n)};return await d("1.0/actions/schedule",s)},cancel:async e=>{l(e,1,"cancel","id");const r={requestId:t,id:f(e)};return await d("1.0/actions/cancel_job",r)}}}function Ae(t,e,r){if(typeof t!="number")throw new Error("`delayMs` must be a number");if(!isFinite(t))throw new Error("`delayMs` must be a finite number");if(t<0)throw new Error("`delayMs` must be non-negative");const n=A(r),s=R(e),o=(Date.now()+t)/1e3;return{...s,ts:o,args:f(n),version:w}}function Re(t,e,r){let n;if(t instanceof Date)n=t.valueOf()/1e3;else if(typeof t=="number")n=t/1e3;else throw new Error("The invoke time must a Date or a timestamp");const s=R(e),o=A(r);return{...s,ts:n,args:f(o),version:w}}function Fe(t){return{getUrl:async e=>(l(e,1,"getUrl","storageId"),await d("1.0/storageGetUrl",{requestId:t,version:w,storageId:e})),getMetadata:async e=>await d("1.0/storageGetMetadata",{requestId:t,version:w,storageId:e})}}function Me(t){const e=Fe(t);return{generateUploadUrl:async()=>await d("1.0/storageGenerateUploadUrl",{requestId:t,version:w}),delete:async r=>{await d("1.0/storageDelete",{requestId:t,version:w,storageId:r})},getUrl:e.getUrl,getMetadata:e.getMetadata}}function je(t){return{...Me(t),store:async(r,n)=>await I("storage/storeBlob",{requestId:t,version:w,blob:r,options:n}),get:async r=>await I("storage/getBlob",{requestId:t,version:w,storageId:r})}}async function Ue(){let t;try{t=await d("1.0/getTransactionMetrics",{})}catch(e){throw e.message?.includes("Unknown async operation")?new Error("getTransactionMetrics() can only be called from a query or mutation. It is not available in actions or outside of a Convex function."):e}return y(t)}async function pe(){const{name:t,componentPath:e}=await d("1.0/getFunctionMetadata",{});return{name:t,componentPath:e}}function jt(t){return{getFunctionMetadata:async()=>({...await pe(),type:"query",visibility:t}),getTransactionMetrics:Ue}}function Ut(t){return{getFunctionMetadata:async()=>({...await pe(),type:"mutation",visibility:t}),getTransactionMetrics:Ue}}function ke(t){return{getFunctionMetadata:async()=>({...await pe(),type:"action",visibility:t})}}async function Je(t,e,r){const s=y(JSON.parse(e)),o={db:Rt(),auth:Q(""),storage:Me(""),scheduler:Mt(),meta:Ut(r),runQuery:(u,p)=>U("query",u,p),runSnapshotQuery:(u,p)=>U("snapshotQuery",u,p),runMutation:(u,p)=>U("mutation",u,p)},a=await V(t,o,s);return Qe(a),JSON.stringify(f(a===void 0?null:a))}function Qe(t){if(t instanceof Te||t instanceof _)throw new Error("Return value is a Query. Results must be retrieved with `.collect()`, `.take(n), `.unique()`, or `.first()`.")}async function V(t,e,r){let n;try{n=await Promise.resolve(t(e,...r))}catch(s){throw kt(s)}return n}function S(t,e){return(r,n)=>(globalThis.console.warn(`Convex functions should not directly call other Convex functions. Consider calling a helper function instead. e.g. \`export const foo = ${t}(...); await foo(ctx);\` is not supported. See https://docs.convex.dev/production/best-practices/#use-helper-functions-to-write-shared-code`),e(r,n))}function kt(t){if(typeof t=="object"&&t!==null&&Symbol.for("ConvexError")in t){const e=t;return e.data=JSON.stringify(f(e.data===void 0?null:e.data)),e.ConvexErrorSymbol=Symbol.for("ConvexError"),e}else return t}function P(){if(typeof window>"u"||window.__convexAllowFunctionsInBrowser)return;(Object.getOwnPropertyDescriptor(globalThis,"window")?.get?.toString().includes("[native code]")??!1)&&console.error("Convex functions should not be imported in the browser. This will throw an error in future versions of `convex`. If this is a false negative, please report it to Convex support.")}function Ve(t,e){if(e===void 0)throw new Error(`A validator is undefined for field "${t}". This is often caused by circular imports. See https://docs.convex.dev/error#undefined-validator for details.`);return e}function C(t){return()=>{let e=i.any();return typeof t=="object"&&t.args!==void 0&&(e=Se(t.args)),JSON.stringify(e.json,Ve)}}function T(t){return()=>{let e;return typeof t=="object"&&t.returns!==void 0&&(e=Se(t.returns)),JSON.stringify(e?e.json:null,Ve)}}const fr=(t=>{const e=typeof t=="function"?t:t.handler,r=S("mutation",e);return P(),r.isMutation=!0,r.isPublic=!0,r.invokeMutation=n=>Je(e,n,"public"),r.exportArgs=C(t),r.exportReturns=T(t),r._handler=e,r}),mr=(t=>{const e=typeof t=="function"?t:t.handler,r=S("internalMutation",e);return P(),r.isMutation=!0,r.isInternal=!0,r.invokeMutation=n=>Je(e,n,"internal"),r.exportArgs=C(t),r.exportReturns=T(t),r._handler=e,r});async function ze(t,e,r){const s=y(JSON.parse(e)),o={db:Ie(),auth:Q(""),storage:Fe(""),meta:jt(r),runQuery:(u,p)=>U("query",u,p)},a=await V(t,o,s);return Qe(a),JSON.stringify(f(a===void 0?null:a))}const yr=(t=>{const e=typeof t=="function"?t:t.handler,r=S("query",e);return P(),r.isQuery=!0,r.isPublic=!0,r.invokeQuery=n=>ze(e,n,"public"),r.exportArgs=C(t),r.exportReturns=T(t),r._handler=e,r}),wr=(t=>{const e=typeof t=="function"?t:t.handler,r=S("internalQuery",e);return P(),r.isQuery=!0,r.isInternal=!0,r.invokeQuery=n=>ze(e,n,"internal"),r.exportArgs=C(t),r.exportReturns=T(t),r._handler=e,r});async function We(t,e,r,n){const s=y(JSON.parse(r)),a={...Pe(e),auth:Q(e),scheduler:Ne(e),storage:je(e),vectorSearch:Ce(e),meta:ke(n)},u=await V(t,a,s);return JSON.stringify(f(u===void 0?null:u))}const br=(t=>{const e=typeof t=="function"?t:t.handler,r=S("action",e);return P(),r.isAction=!0,r.isPublic=!0,r.invokeAction=(n,s)=>We(e,n,s,"public"),r.exportArgs=C(t),r.exportReturns=T(t),r._handler=e,r}),vr=(t=>{const e=typeof t=="function"?t:t.handler,r=S("internalAction",e);return P(),r.isAction=!0,r.isInternal=!0,r.invokeAction=(n,s)=>We(e,n,s,"internal"),r.exportArgs=C(t),r.exportReturns=T(t),r._handler=e,r});async function Jt(t,e){const s={...Pe(""),auth:Q(""),storage:je(""),scheduler:Ne(""),vectorSearch:Ce(""),meta:ke("public")};return await V(t,s,[e])}const gr=t=>{const e=S("httpAction",t);return P(),e.isHttp=!0,e.invokeHttpAction=r=>Jt(t,r),e._handler=t,e};async function U(t,e,r){const n=A(r),s={udfType:t,args:f(n),...R(e)},o=await d("1.0/runUdf",s);return y(o)}const xr=i.object({numItems:i.number(),cursor:i.union(i.string(),i.null()),endCursor:i.optional(i.union(i.string(),i.null())),id:i.optional(i.number()),maximumRowsRead:i.optional(i.number()),maximumBytesRead:i.optional(i.number())});function _r(t){return i.object({page:i.array(t),continueCursor:i.string(),isDone:i.boolean(),splitCursor:i.optional(i.union(i.string(),i.null())),pageStatus:i.optional(i.union(i.literal("SplitRecommended"),i.literal("SplitRequired"),i.null()))})}var Qt=Object.defineProperty,Vt=(t,e,r)=>e in t?Qt(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,xe=(t,e,r)=>Vt(t,typeof e!="symbol"?e+"":e,r);const zt=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"],Er=()=>new Gt;function D(t){if(!Number.isInteger(t)||t<=0)throw new Error("Interval must be an integer greater than 0")}function Wt(t){if(!Number.isInteger(t)||t<1||t>31)throw new Error("Day of month must be an integer from 1 to 31");return t}function Ht(t){if(!zt.includes(t))throw new Error('Day of week must be a string like "monday".');return t}function G(t){if(!Number.isInteger(t)||t<0||t>23)throw new Error("Hour of day must be an integer from 0 to 23");return t}function F(t){if(!Number.isInteger(t)||t<0||t>59)throw new Error("Minute of hour must be an integer from 0 to 59");return t}function Dt(t){if(!t.match(/^[ -~]*$/))throw new Error(`Invalid cron identifier ${t}: use ASCII letters that are not control characters`);return t}class Gt{constructor(){xe(this,"crons"),xe(this,"isCrons"),this.isCrons=!0,this.crons={}}schedule(e,r,n,s){const o=A(s);if(Dt(e),e in this.crons)throw new Error(`Cron identifier registered twice: ${e}`);this.crons[e]={name:et(n),args:[f(o)],schedule:r}}interval(e,r,n,...s){const o=r,a=+("seconds"in o&&o.seconds!==void 0),u=+("minutes"in o&&o.minutes!==void 0),p=+("hours"in o&&o.hours!==void 0);if(a+u+p!==1)throw new Error("Must specify one of seconds, minutes, or hours");a?D(r.seconds):u?D(r.minutes):p&&D(r.hours),this.schedule(e,{...r,type:"interval"},n,...s)}hourly(e,r,n,...s){const o=F(r.minuteUTC);this.schedule(e,{minuteUTC:o,type:"hourly"},n,...s)}daily(e,r,n,...s){const o=G(r.hourUTC),a=F(r.minuteUTC);this.schedule(e,{hourUTC:o,minuteUTC:a,type:"daily"},n,...s)}weekly(e,r,n,...s){const o=Ht(r.dayOfWeek),a=G(r.hourUTC),u=F(r.minuteUTC);this.schedule(e,{dayOfWeek:o,hourUTC:a,minuteUTC:u,type:"weekly"},n,...s)}monthly(e,r,n,...s){const o=Wt(r.day),a=G(r.hourUTC),u=F(r.minuteUTC);this.schedule(e,{day:o,hourUTC:a,minuteUTC:u,type:"monthly"},n,...s)}cron(e,r,n,...s){const o=r;this.schedule(e,{cron:o,type:"cron"},n,...s)}export(){return JSON.stringify(this.crons)}}var Bt=Object.defineProperty,Lt=(t,e,r)=>e in t?Bt(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,O=(t,e,r)=>Lt(t,typeof e!="symbol"?e+"":e,r);const Kt=["GET","POST","PUT","DELETE","OPTIONS","PATCH"];function Yt(t){return t==="HEAD"?"GET":t}const Or=()=>new Xt;class Xt{constructor(){O(this,"exactRoutes",new Map),O(this,"prefixRoutes",new Map),O(this,"isRouter",!0),O(this,"route",e=>{if(!e.handler)throw new Error("route requires handler");if(!e.method)throw new Error("route requires method");const{method:r,handler:n}=e;if(!Kt.includes(r))throw new Error(`'${r}' is not an allowed HTTP method (like GET, POST, PUT etc.)`);if("path"in e){if("pathPrefix"in e)throw new Error("Invalid httpRouter route: cannot contain both 'path' and 'pathPrefix'");if(!e.path.startsWith("/"))throw new Error(`path '${e.path}' does not start with a /`);if(e.path.startsWith("/.files/")||e.path==="/.files")throw new Error(`path '${e.path}' is reserved`);const s=this.exactRoutes.has(e.path)?this.exactRoutes.get(e.path):new Map;if(s.has(r))throw new Error(`Path '${e.path}' for method ${r} already in use`);s.set(r,n),this.exactRoutes.set(e.path,s)}else if("pathPrefix"in e){if(!e.pathPrefix.startsWith("/"))throw new Error(`pathPrefix '${e.pathPrefix}' does not start with a /`);if(!e.pathPrefix.endsWith("/"))throw new Error(`pathPrefix ${e.pathPrefix} must end with a /`);if(e.pathPrefix.startsWith("/.files/"))throw new Error(`pathPrefix '${e.pathPrefix}' is reserved`);const s=this.prefixRoutes.get(r)||new Map;if(s.has(e.pathPrefix))throw new Error(`${e.method} pathPrefix ${e.pathPrefix} is already defined`);s.set(e.pathPrefix,n),this.prefixRoutes.set(r,s)}else throw new Error("Invalid httpRouter route entry: must contain either field 'path' or 'pathPrefix'")}),O(this,"getRoutes",()=>{const r=[...this.exactRoutes.keys()].sort().flatMap(o=>[...this.exactRoutes.get(o).keys()].sort().map(a=>[o,a,this.exactRoutes.get(o).get(a)])),s=[...this.prefixRoutes.keys()].sort().flatMap(o=>[...this.prefixRoutes.get(o).keys()].sort().map(a=>[`${a}*`,o,this.prefixRoutes.get(o).get(a)]));return[...r,...s]}),O(this,"lookup",(e,r)=>{r=Yt(r);const n=this.exactRoutes.get(e)?.get(r);if(n)return[n,r,e];const o=[...(this.prefixRoutes.get(r)||new Map).entries()].sort(([a,u],[p,E])=>p.length-a.length);for(const[a,u]of o)if(e.startsWith(a))return[u,r,`${a}*`];return null}),O(this,"runRequest",async(e,r)=>{const n=I("requestFromConvexJson",{convexJson:JSON.parse(e)});let s=r;(!s||typeof s!="string")&&(s=new URL(n.url).pathname);const o=n.method,a=this.lookup(s,o);if(!a){const W=new Response(`No HttpAction routed for ${s}`,{status:404});return JSON.stringify(I("convexJsonFromResponse",{response:W}))}const[u,p,E]=a,z=await u.invokeHttpAction(n);return JSON.stringify(I("convexJsonFromResponse",{response:z}))})}}var Zt=Object.defineProperty,er=(t,e,r)=>e in t?Zt(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,_e=(t,e,r)=>er(t,typeof e!="symbol"?e+"":e,r);async function $r(t){const e=R(t);return await d("1.0/createFunctionHandle",{...e,version:w})}class tr{constructor(e,r){_e(this,"_definition"),_e(this,"_name"),this._definition=e,this._name=r,tt(this,`_reference/childComponent/${r}`)}get exports(){return He(this._name,[])}}function He(t,e){const r={get(n,s){if(typeof s=="string"){const o=[...e,s];return He(t,o)}else if(s===re){let o=`_reference/childComponent/${t}`;for(const a of e)o+=`/${a}`;return o}else return}};return new Proxy({},r)}function De(t,e){const r=t;if(typeof r.componentDefinitionPath!="string")throw new Error("Component definition does not have the required componentDefinitionPath property. This code only works in Convex runtime.");const n=e?.name??r.defaultName??r.componentDefinitionPath.split("/").pop();if(typeof n!="string")throw new Error(`Component name must be a string. Received: ${typeof n}`);if(n.length===0)throw new Error("Component name cannot be empty.");const s=e?.httpPrefix;if(s!==void 0&&!s.startsWith("/"))throw new Error(`httpPrefix must start with "/". Received: "${s}"`);return this._childComponents.push([n,r,{},s]),new tr(t,n)}function rr(){const t={type:"app"},e=Le(this._childComponents),r=Be(this._childComponents);return{definitionType:t,...this._httpPrefix!==void 0?{httpPrefix:Ge(this._httpPrefix)}:{},childComponents:e,httpMounts:r,exports:fe(this._exportTree)}}function fe(t){const e=[];for(const[r,n]of Object.entries(t)){let s;typeof n=="string"?s={type:"leaf",leaf:n}:s=fe(n),e.push([r,s])}return{type:"branch",branch:e}}function Ge(t){return t.endsWith("/")?t:t+"/"}function Be(t){const e={};for(const[r,,,n]of t)if(n!==void 0){const s=Ge(n);e[s]=`_reference/childComponent/${r}`}return e}function Le(t){return t.map(([e,r,n])=>{let s=null;if(n!==null){s=[];for(const[a,u]of Object.entries(n))u!==void 0&&s.push([a,{type:"value",value:JSON.stringify(f(u))}])}const o=r.componentDefinitionPath;if(!o)throw new Error("no .componentPath for component definition "+JSON.stringify(r,null,2));return{name:e,path:o,args:s}})}function nr(){const t=Object.entries(this._args).map(([s,o])=>[s,{type:"value",value:JSON.stringify(o.json)}]),e={type:"childComponent",name:this._name,args:t},r=Le(this._childComponents),n=Be(this._childComponents);return{name:this._name,definitionType:e,childComponents:r,httpMounts:n,exports:fe(this._exportTree)}}function Sr(t){return{_isRoot:!1,_name:t,_args:{},_childComponents:[],_exportTree:{},_onInitCallbacks:{},export:nr,use:De}}function Pr(t){const e=t?.httpPrefix;if(e!==void 0&&!e.startsWith("/"))throw new Error(`httpPrefix must start with "/". Received: "${e}"`);return{_isRoot:!0,_childComponents:[],_exportTree:{},...e!==void 0?{_httpPrefix:e}:{},export:rr,use:De}}function Cr(t){return{[re]:`_reference/currentSystemUdfInComponent/${t}`}}function Ke(t,e){const r={get(n,s){if(typeof s=="string"){const o=[...e,s];return Ke(t,o)}else if(s===re){if(e.length<1){const o=[t,...e].join(".");throw new Error(`API path is expected to be of the form \`${t}.childComponent.functionName\`. Found: \`${o}\``)}return"_reference/childComponent/"+e.join("/")}else return}};return new Proxy({},r)}const Tr=()=>Ke("components",[]);var sr=Object.defineProperty,or=(t,e,r)=>e in t?sr(t,e,{enumerable:!0,configurable:!0,writable:!0,value:r}):t[e]=r,v=(t,e,r)=>or(t,typeof e!="symbol"?e+"":e,r);class Ee{constructor(e){v(this,"indexes"),v(this,"stagedDbIndexes"),v(this,"searchIndexes"),v(this,"stagedSearchIndexes"),v(this,"vectorIndexes"),v(this,"stagedVectorIndexes"),v(this,"validator"),this.indexes=[],this.stagedDbIndexes=[],this.searchIndexes=[],this.stagedSearchIndexes=[],this.vectorIndexes=[],this.stagedVectorIndexes=[],this.validator=e}" indexes"(){return this.indexes}index(e,r){return Array.isArray(r)?this.indexes.push({indexDescriptor:e,fields:r}):r.staged?this.stagedDbIndexes.push({indexDescriptor:e,fields:r.fields}):this.indexes.push({indexDescriptor:e,fields:r.fields}),this}searchIndex(e,r){return r.staged?this.stagedSearchIndexes.push({indexDescriptor:e,searchField:r.searchField,filterFields:r.filterFields||[]}):this.searchIndexes.push({indexDescriptor:e,searchField:r.searchField,filterFields:r.filterFields||[]}),this}vectorIndex(e,r){return r.staged?this.stagedVectorIndexes.push({indexDescriptor:e,vectorField:r.vectorField,dimensions:r.dimensions,filterFields:r.filterFields||[]}):this.vectorIndexes.push({indexDescriptor:e,vectorField:r.vectorField,dimensions:r.dimensions,filterFields:r.filterFields||[]}),this}self(){return this}export(){const e=this.validator.json;if(typeof e!="object")throw new Error("Invalid validator: please make sure that the parameter of `defineTable` is valid (see https://docs.convex.dev/database/schemas)");return{indexes:this.indexes,stagedDbIndexes:this.stagedDbIndexes,searchIndexes:this.searchIndexes,stagedSearchIndexes:this.stagedSearchIndexes,vectorIndexes:this.vectorIndexes,stagedVectorIndexes:this.stagedVectorIndexes,documentType:e}}}function Oe(t){return $e(t)?new Ee(t):new Ee(i.object(t))}class ir{constructor(e,r){v(this,"tables"),v(this,"strictTableNameTypes"),v(this,"schemaValidation"),this.tables=e,this.schemaValidation=r?.schemaValidation===void 0?!0:r.schemaValidation}export(){return JSON.stringify({tables:Object.entries(this.tables).map(([e,r])=>{const{indexes:n,stagedDbIndexes:s,searchIndexes:o,stagedSearchIndexes:a,vectorIndexes:u,stagedVectorIndexes:p,documentType:E}=r.export();return{tableName:e,indexes:n,stagedDbIndexes:s,searchIndexes:o,stagedSearchIndexes:a,vectorIndexes:u,stagedVectorIndexes:p,documentType:E}}),schemaValidation:this.schemaValidation})}}function ar(t,e){return new ir(t,e)}ar({_scheduled_functions:Oe({name:i.string(),args:i.array(i.any()),scheduledTime:i.float64(),completedTime:i.optional(i.float64()),state:i.union(i.object({kind:i.literal("pending")}),i.object({kind:i.literal("inProgress")}),i.object({kind:i.literal("success")}),i.object({kind:i.literal("failed"),error:i.string()}),i.object({kind:i.literal("canceled")}))}),_storage:Oe({sha256:i.string(),size:i.float64(),contentType:i.optional(i.string())})});export{Xt as HttpRouter,Kt as ROUTABLE_HTTP_METHODS,Tt as SearchFilter,br as actionGeneric,cr as anyApi,Tr as componentsGeneric,$r as createFunctionHandle,Er as cronJobs,Cr as currentSystemUdfInComponent,Pr as defineApp,Sr as defineComponent,ar as defineSchema,Oe as defineTable,Nr as filterApi,R as getFunctionAddress,et as getFunctionName,gr as httpActionGeneric,Or as httpRouter,vr as internalActionGeneric,mr as internalMutationGeneric,wr as internalQueryGeneric,Ar as makeFunctionReference,fr as mutationGeneric,xr as paginationOptsValidator,_r as paginationResultValidator,yr as queryGeneric};
+import { c as f, C as Xe, j as y, a as w, p as A, b as x, d as Ze } from "./index-B-Up_0PN.js";
+import { cj as R, N as et, ck as re, cl as tt, cm as cr } from "./NormalApp-Cn6agT0F.js";
+import { cn as Nr, co as Ar } from "./NormalApp-Cn6agT0F.js";
+import "./index-CyHAbkO5.js";
+import "./i18n-DtIC1LRi.js";
+var rt = Object.defineProperty,
+  nt = (t, e, r) =>
+    e in t ? rt(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  h = (t, e, r) => nt(t, typeof e != "symbol" ? e + "" : e, r);
+const st = "https://docs.convex.dev/error#undefined-validator";
+function N(t, e) {
+  const r = e !== void 0 ? ` for field "${e}"` : "";
+  throw new Error(
+    `A validator is undefined${r} in ${t}. This is often caused by circular imports. See ${st} for details.`,
+  );
+}
+class b {
+  constructor({ isOptional: e }) {
+    (h(this, "type"),
+      h(this, "fieldPaths"),
+      h(this, "isOptional"),
+      h(this, "isConvexValidator"),
+      (this.isOptional = e),
+      (this.isConvexValidator = !0));
+  }
+}
+class ne extends b {
+  constructor({ isOptional: e, tableName: r }) {
+    if (
+      (super({ isOptional: e }), h(this, "tableName"), h(this, "kind", "id"), typeof r != "string")
+    )
+      throw new Error("v.id(tableName) requires a string");
+    this.tableName = r;
+  }
+  get json() {
+    return { type: "id", tableName: this.tableName };
+  }
+  asOptional() {
+    return new ne({ isOptional: "optional", tableName: this.tableName });
+  }
+}
+class k extends b {
+  constructor() {
+    (super(...arguments), h(this, "kind", "float64"));
+  }
+  get json() {
+    return { type: "number" };
+  }
+  asOptional() {
+    return new k({ isOptional: "optional" });
+  }
+}
+class J extends b {
+  constructor() {
+    (super(...arguments), h(this, "kind", "int64"));
+  }
+  get json() {
+    return { type: "bigint" };
+  }
+  asOptional() {
+    return new J({ isOptional: "optional" });
+  }
+}
+class se extends b {
+  constructor() {
+    (super(...arguments), h(this, "kind", "boolean"));
+  }
+  get json() {
+    return { type: this.kind };
+  }
+  asOptional() {
+    return new se({ isOptional: "optional" });
+  }
+}
+class oe extends b {
+  constructor() {
+    (super(...arguments), h(this, "kind", "bytes"));
+  }
+  get json() {
+    return { type: this.kind };
+  }
+  asOptional() {
+    return new oe({ isOptional: "optional" });
+  }
+}
+class ie extends b {
+  constructor() {
+    (super(...arguments), h(this, "kind", "string"));
+  }
+  get json() {
+    return { type: this.kind };
+  }
+  asOptional() {
+    return new ie({ isOptional: "optional" });
+  }
+}
+class ae extends b {
+  constructor() {
+    (super(...arguments), h(this, "kind", "null"));
+  }
+  get json() {
+    return { type: this.kind };
+  }
+  asOptional() {
+    return new ae({ isOptional: "optional" });
+  }
+}
+class ue extends b {
+  constructor() {
+    (super(...arguments), h(this, "kind", "any"));
+  }
+  get json() {
+    return { type: this.kind };
+  }
+  asOptional() {
+    return new ue({ isOptional: "optional" });
+  }
+}
+class $ extends b {
+  constructor({ isOptional: e, fields: r }) {
+    (super({ isOptional: e }),
+      h(this, "fields"),
+      h(this, "kind", "object"),
+      globalThis.Object.entries(r).forEach(([n, s]) => {
+        if ((s === void 0 && N("v.object()", n), !s.isConvexValidator))
+          throw new Error("v.object() entries must be validators");
+      }),
+      (this.fields = r));
+  }
+  get json() {
+    return {
+      type: this.kind,
+      value: globalThis.Object.fromEntries(
+        globalThis.Object.entries(this.fields).map(([e, r]) => [
+          e,
+          { fieldType: r.json, optional: r.isOptional === "optional" },
+        ]),
+      ),
+    };
+  }
+  asOptional() {
+    return new $({ isOptional: "optional", fields: this.fields });
+  }
+  omit(...e) {
+    const r = { ...this.fields };
+    for (const n of e) delete r[n];
+    return new $({ isOptional: this.isOptional, fields: r });
+  }
+  pick(...e) {
+    const r = {};
+    for (const n of e) r[n] = this.fields[n];
+    return new $({ isOptional: this.isOptional, fields: r });
+  }
+  partial() {
+    const e = {};
+    for (const [r, n] of globalThis.Object.entries(this.fields)) e[r] = n.asOptional();
+    return new $({ isOptional: this.isOptional, fields: e });
+  }
+  extend(e) {
+    return new $({ isOptional: this.isOptional, fields: { ...this.fields, ...e } });
+  }
+}
+class le extends b {
+  constructor({ isOptional: e, value: r }) {
+    if (
+      (super({ isOptional: e }),
+      h(this, "value"),
+      h(this, "kind", "literal"),
+      typeof r != "string" && typeof r != "boolean" && typeof r != "number" && typeof r != "bigint")
+    )
+      throw new Error("v.literal(value) must be a string, number, or boolean");
+    this.value = r;
+  }
+  get json() {
+    return { type: this.kind, value: f(this.value) };
+  }
+  asOptional() {
+    return new le({ isOptional: "optional", value: this.value });
+  }
+}
+class ce extends b {
+  constructor({ isOptional: e, element: r }) {
+    (super({ isOptional: e }),
+      h(this, "element"),
+      h(this, "kind", "array"),
+      r === void 0 && N("v.array()"),
+      (this.element = r));
+  }
+  get json() {
+    return { type: this.kind, value: this.element.json };
+  }
+  asOptional() {
+    return new ce({ isOptional: "optional", element: this.element });
+  }
+}
+class de extends b {
+  constructor({ isOptional: e, key: r, value: n }) {
+    if (
+      (super({ isOptional: e }),
+      h(this, "key"),
+      h(this, "value"),
+      h(this, "kind", "record"),
+      r === void 0 && N("v.record()", "key"),
+      n === void 0 && N("v.record()", "value"),
+      r.isOptional === "optional")
+    )
+      throw new Error("Record validator cannot have optional keys");
+    if (n.isOptional === "optional")
+      throw new Error("Record validator cannot have optional values");
+    if (!r.isConvexValidator || !n.isConvexValidator)
+      throw new Error("Key and value of v.record() but be validators");
+    ((this.key = r), (this.value = n));
+  }
+  get json() {
+    return {
+      type: this.kind,
+      keys: this.key.json,
+      values: { fieldType: this.value.json, optional: !1 },
+    };
+  }
+  asOptional() {
+    return new de({ isOptional: "optional", key: this.key, value: this.value });
+  }
+}
+class he extends b {
+  constructor({ isOptional: e, members: r }) {
+    (super({ isOptional: e }),
+      h(this, "members"),
+      h(this, "kind", "union"),
+      r.forEach((n, s) => {
+        if ((n === void 0 && N("v.union()", `member at index ${s}`), !n.isConvexValidator))
+          throw new Error("All members of v.union() must be validators");
+      }),
+      (this.members = r));
+  }
+  get json() {
+    return { type: this.kind, value: this.members.map((e) => e.json) };
+  }
+  asOptional() {
+    return new he({ isOptional: "optional", members: this.members });
+  }
+}
+function $e(t) {
+  return !!t.isConvexValidator;
+}
+function Se(t) {
+  return $e(t) ? t : i.object(t);
+}
+const i = {
+  id: (t) => new ne({ isOptional: "required", tableName: t }),
+  null: () => new ae({ isOptional: "required" }),
+  number: () => new k({ isOptional: "required" }),
+  float64: () => new k({ isOptional: "required" }),
+  bigint: () => new J({ isOptional: "required" }),
+  int64: () => new J({ isOptional: "required" }),
+  boolean: () => new se({ isOptional: "required" }),
+  string: () => new ie({ isOptional: "required" }),
+  bytes: () => new oe({ isOptional: "required" }),
+  literal: (t) => new le({ isOptional: "required", value: t }),
+  array: (t) => new ce({ isOptional: "required", element: t }),
+  object: (t) => new $({ isOptional: "required", fields: t }),
+  record: (t, e) => new de({ isOptional: "required", key: t, value: e }),
+  union: (...t) => new he({ isOptional: "required", members: t }),
+  any: () => new ue({ isOptional: "required" }),
+  optional: (t) => t.asOptional(),
+  nullable: (t) => i.union(t, i.null()),
+};
+function B(t, e) {
+  if (typeof Convex > "u" || Convex.syscall === void 0)
+    throw new Error(
+      "The Convex database and auth objects are being used outside of a Convex backend. Did you mean to use `useQuery` or `useMutation` to call a Convex function?",
+    );
+  const r = Convex.syscall(t, JSON.stringify(e));
+  return JSON.parse(r);
+}
+async function d(t, e) {
+  if (typeof Convex > "u" || Convex.asyncSyscall === void 0)
+    throw new Error(
+      "The Convex database and auth objects are being used outside of a Convex backend. Did you mean to use `useQuery` or `useMutation` to call a Convex function?",
+    );
+  let r;
+  try {
+    r = await Convex.asyncSyscall(t, JSON.stringify(e));
+  } catch (n) {
+    if (n.data !== void 0) {
+      const s = new Xe(n.message);
+      throw ((s.data = y(n.data)), s);
+    }
+    throw new Error(n.message);
+  }
+  return JSON.parse(r);
+}
+function I(t, e) {
+  if (typeof Convex > "u" || Convex.jsSyscall === void 0)
+    throw new Error(
+      "The Convex database and auth objects are being used outside of a Convex backend. Did you mean to use `useQuery` or `useMutation` to call a Convex function?",
+    );
+  return Convex.jsSyscall(t, e);
+}
+function H(t, e, r) {
+  return { ...R(e), args: f(A(r)), version: w, requestId: t };
+}
+function Pe(t) {
+  return {
+    runQuery: async (e, r) => {
+      const n = await d("1.0/actions/query", H(t, e, r));
+      return y(n);
+    },
+    runMutation: async (e, r) => {
+      const n = await d("1.0/actions/mutation", H(t, e, r));
+      return y(n);
+    },
+    runAction: async (e, r) => {
+      const n = await d("1.0/actions/action", H(t, e, r));
+      return y(n);
+    },
+  };
+}
+var ot = Object.defineProperty,
+  it = (t, e, r) =>
+    e in t ? ot(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  me = (t, e, r) => it(t, typeof e != "symbol" ? e + "" : e, r);
+class at {
+  constructor() {
+    (me(this, "_isExpression"), me(this, "_value"));
+  }
+}
+function l(t, e, r, n) {
+  if (t === void 0) throw new TypeError(`Must provide arg ${e} \`${n}\` to \`${r}\``);
+}
+function ut(t, e, r, n) {
+  if (!Number.isInteger(t) || t < 0)
+    throw new TypeError(`Arg ${e} \`${n}\` to \`${r}\` must be a non-negative integer`);
+}
+var lt = Object.defineProperty,
+  ct = (t, e, r) =>
+    e in t ? lt(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  L = (t, e, r) => ct(t, typeof e != "symbol" ? e + "" : e, r);
+function Ce(t) {
+  return async (e, r, n) => {
+    if (
+      (l(e, 1, "vectorSearch", "tableName"),
+      l(r, 2, "vectorSearch", "indexName"),
+      l(n, 3, "vectorSearch", "query"),
+      !n.vector || !Array.isArray(n.vector) || n.vector.length === 0)
+    )
+      throw Error("`vector` must be a non-empty Array in vectorSearch");
+    return await new dt(t, e + "." + r, n).collect();
+  };
+}
+class dt {
+  constructor(e, r, n) {
+    (L(this, "requestId"), L(this, "state"), (this.requestId = e));
+    const s = n.filter ? j(n.filter(ht)) : null;
+    this.state = {
+      type: "preparing",
+      query: { indexName: r, limit: n.limit, vector: n.vector, expressions: s },
+    };
+  }
+  async collect() {
+    if (this.state.type === "consumed")
+      throw new Error("This query is closed and can't emit any more values.");
+    const e = this.state.query;
+    this.state = { type: "consumed" };
+    const { results: r } = await d("1.0/actions/vectorSearch", {
+      requestId: this.requestId,
+      version: w,
+      query: e,
+    });
+    return r;
+  }
+}
+let M = class extends at {
+  constructor(e) {
+    (super(), L(this, "inner"), (this.inner = e));
+  }
+  serialize() {
+    return this.inner;
+  }
+};
+function j(t) {
+  return t instanceof M ? t.serialize() : { $literal: x(t) };
+}
+const ht = {
+  eq(t, e) {
+    if (typeof t != "string") throw new Error("The first argument to `q.eq` must be a field name.");
+    return new M({ $eq: [j(new M({ $field: t })), j(e)] });
+  },
+  or(...t) {
+    return new M({ $or: t.map(j) });
+  },
+};
+function Q(t) {
+  return { getUserIdentity: async () => await d("1.0/getUserIdentity", { requestId: t }) };
+}
+var pt = Object.defineProperty,
+  ft = (t, e, r) =>
+    e in t ? pt(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  ye = (t, e, r) => ft(t, typeof e != "symbol" ? e + "" : e, r);
+class mt {
+  constructor() {
+    (ye(this, "_isExpression"), ye(this, "_value"));
+  }
+}
+var yt = Object.defineProperty,
+  wt = (t, e, r) =>
+    e in t ? yt(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  bt = (t, e, r) => wt(t, e + "", r);
+class m extends mt {
+  constructor(e) {
+    (super(), bt(this, "inner"), (this.inner = e));
+  }
+  serialize() {
+    return this.inner;
+  }
+}
+function c(t) {
+  return t instanceof m ? t.serialize() : { $literal: x(t) };
+}
+const vt = {
+  eq(t, e) {
+    return new m({ $eq: [c(t), c(e)] });
+  },
+  neq(t, e) {
+    return new m({ $neq: [c(t), c(e)] });
+  },
+  lt(t, e) {
+    return new m({ $lt: [c(t), c(e)] });
+  },
+  lte(t, e) {
+    return new m({ $lte: [c(t), c(e)] });
+  },
+  gt(t, e) {
+    return new m({ $gt: [c(t), c(e)] });
+  },
+  gte(t, e) {
+    return new m({ $gte: [c(t), c(e)] });
+  },
+  add(t, e) {
+    return new m({ $add: [c(t), c(e)] });
+  },
+  sub(t, e) {
+    return new m({ $sub: [c(t), c(e)] });
+  },
+  mul(t, e) {
+    return new m({ $mul: [c(t), c(e)] });
+  },
+  div(t, e) {
+    return new m({ $div: [c(t), c(e)] });
+  },
+  mod(t, e) {
+    return new m({ $mod: [c(t), c(e)] });
+  },
+  neg(t) {
+    return new m({ $neg: c(t) });
+  },
+  and(...t) {
+    return new m({ $and: t.map(c) });
+  },
+  or(...t) {
+    return new m({ $or: t.map(c) });
+  },
+  not(t) {
+    return new m({ $not: c(t) });
+  },
+  field(t) {
+    return new m({ $field: t });
+  },
+};
+var gt = Object.defineProperty,
+  xt = (t, e, r) =>
+    e in t ? gt(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  _t = (t, e, r) => xt(t, e + "", r);
+class Et {
+  constructor() {
+    _t(this, "_isIndexRange");
+  }
+}
+var Ot = Object.defineProperty,
+  $t = (t, e, r) =>
+    e in t ? Ot(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  we = (t, e, r) => $t(t, typeof e != "symbol" ? e + "" : e, r);
+class g extends Et {
+  constructor(e) {
+    (super(),
+      we(this, "rangeExpressions"),
+      we(this, "isConsumed"),
+      (this.rangeExpressions = e),
+      (this.isConsumed = !1));
+  }
+  static new() {
+    return new g([]);
+  }
+  consume() {
+    if (this.isConsumed)
+      throw new Error(
+        "IndexRangeBuilder has already been used! Chain your method calls like `q => q.eq(...).eq(...)`. See https://docs.convex.dev/using/indexes",
+      );
+    this.isConsumed = !0;
+  }
+  eq(e, r) {
+    return (
+      this.consume(),
+      new g(this.rangeExpressions.concat({ type: "Eq", fieldPath: e, value: x(r) }))
+    );
+  }
+  gt(e, r) {
+    return (
+      this.consume(),
+      new g(this.rangeExpressions.concat({ type: "Gt", fieldPath: e, value: x(r) }))
+    );
+  }
+  gte(e, r) {
+    return (
+      this.consume(),
+      new g(this.rangeExpressions.concat({ type: "Gte", fieldPath: e, value: x(r) }))
+    );
+  }
+  lt(e, r) {
+    return (
+      this.consume(),
+      new g(this.rangeExpressions.concat({ type: "Lt", fieldPath: e, value: x(r) }))
+    );
+  }
+  lte(e, r) {
+    return (
+      this.consume(),
+      new g(this.rangeExpressions.concat({ type: "Lte", fieldPath: e, value: x(r) }))
+    );
+  }
+  export() {
+    return (this.consume(), this.rangeExpressions);
+  }
+}
+var St = Object.defineProperty,
+  Pt = (t, e, r) =>
+    e in t ? St(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  Ct = (t, e, r) => Pt(t, e + "", r);
+class Tt {
+  constructor() {
+    Ct(this, "_isSearchFilter");
+  }
+}
+var It = Object.defineProperty,
+  qt = (t, e, r) =>
+    e in t ? It(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  be = (t, e, r) => qt(t, typeof e != "symbol" ? e + "" : e, r);
+class q extends Tt {
+  constructor(e) {
+    (super(),
+      be(this, "filters"),
+      be(this, "isConsumed"),
+      (this.filters = e),
+      (this.isConsumed = !1));
+  }
+  static new() {
+    return new q([]);
+  }
+  consume() {
+    if (this.isConsumed)
+      throw new Error(
+        "SearchFilterBuilder has already been used! Chain your method calls like `q => q.search(...).eq(...)`.",
+      );
+    this.isConsumed = !0;
+  }
+  search(e, r) {
+    return (
+      l(e, 1, "search", "fieldName"),
+      l(r, 2, "search", "query"),
+      this.consume(),
+      new q(this.filters.concat({ type: "Search", fieldPath: e, value: r }))
+    );
+  }
+  eq(e, r) {
+    return (
+      l(e, 1, "eq", "fieldName"),
+      arguments.length !== 2 && l(r, 2, "search", "value"),
+      this.consume(),
+      new q(this.filters.concat({ type: "Eq", fieldPath: e, value: x(r) }))
+    );
+  }
+  export() {
+    return (this.consume(), this.filters);
+  }
+}
+var Nt = Object.defineProperty,
+  At = (t, e, r) =>
+    e in t ? Nt(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  K = (t, e, r) => At(t, typeof e != "symbol" ? e + "" : e, r);
+const ve = 256;
+class Te {
+  constructor(e) {
+    (K(this, "tableName"), (this.tableName = e));
+  }
+  withIndex(e, r) {
+    l(e, 1, "withIndex", "indexName");
+    let n = g.new();
+    return (
+      r !== void 0 && (n = r(n)),
+      new _({
+        source: {
+          type: "IndexRange",
+          indexName: this.tableName + "." + e,
+          range: n.export(),
+          order: null,
+        },
+        operators: [],
+      })
+    );
+  }
+  withSearchIndex(e, r) {
+    (l(e, 1, "withSearchIndex", "indexName"), l(r, 2, "withSearchIndex", "searchFilter"));
+    const n = q.new();
+    return new _({
+      source: { type: "Search", indexName: this.tableName + "." + e, filters: r(n).export() },
+      operators: [],
+    });
+  }
+  fullTableScan() {
+    return new _({
+      source: { type: "FullTableScan", tableName: this.tableName, order: null },
+      operators: [],
+    });
+  }
+  order(e) {
+    return this.fullTableScan().order(e);
+  }
+  async count() {
+    const e = await d("1.0/count", { table: this.tableName });
+    return y(e);
+  }
+  filter(e) {
+    return this.fullTableScan().filter(e);
+  }
+  limit(e) {
+    return this.fullTableScan().limit(e);
+  }
+  collect() {
+    return this.fullTableScan().collect();
+  }
+  take(e) {
+    return this.fullTableScan().take(e);
+  }
+  paginate(e) {
+    return this.fullTableScan().paginate(e);
+  }
+  first() {
+    return this.fullTableScan().first();
+  }
+  unique() {
+    return this.fullTableScan().unique();
+  }
+  [Symbol.asyncIterator]() {
+    return this.fullTableScan()[Symbol.asyncIterator]();
+  }
+}
+function ge(t) {
+  throw new Error(
+    t === "consumed"
+      ? "This query is closed and can't emit any more values."
+      : "This query has been chained with another operator and can't be reused.",
+  );
+}
+class _ {
+  constructor(e) {
+    (K(this, "state"),
+      K(this, "tableNameForErrorMessages"),
+      (this.state = { type: "preparing", query: e }),
+      e.source.type === "FullTableScan"
+        ? (this.tableNameForErrorMessages = e.source.tableName)
+        : (this.tableNameForErrorMessages = e.source.indexName.split(".")[0]));
+  }
+  takeQuery() {
+    if (this.state.type !== "preparing")
+      throw new Error(
+        "A query can only be chained once and can't be chained after iteration begins.",
+      );
+    const e = this.state.query;
+    return ((this.state = { type: "closed" }), e);
+  }
+  startQuery() {
+    if (this.state.type === "executing")
+      throw new Error("Iteration can only begin on a query once.");
+    (this.state.type === "closed" || this.state.type === "consumed") && ge(this.state.type);
+    const e = this.state.query,
+      { queryId: r } = B("1.0/queryStream", { query: e, version: w });
+    return ((this.state = { type: "executing", queryId: r }), r);
+  }
+  closeQuery() {
+    if (this.state.type === "executing") {
+      const e = this.state.queryId;
+      B("1.0/queryCleanup", { queryId: e });
+    }
+    this.state = { type: "consumed" };
+  }
+  order(e) {
+    l(e, 1, "order", "order");
+    const r = this.takeQuery();
+    if (r.source.type === "Search")
+      throw new Error(
+        "Search queries must always be in relevance order. Can not set order manually.",
+      );
+    if (r.source.order !== null) throw new Error("Queries may only specify order at most once");
+    return ((r.source.order = e), new _(r));
+  }
+  filter(e) {
+    l(e, 1, "filter", "predicate");
+    const r = this.takeQuery();
+    if (r.operators.length >= ve)
+      throw new Error(`Can't construct query with more than ${ve} operators`);
+    return (r.operators.push({ filter: c(e(vt)) }), new _(r));
+  }
+  limit(e) {
+    l(e, 1, "limit", "n");
+    const r = this.takeQuery();
+    return (r.operators.push({ limit: e }), new _(r));
+  }
+  [Symbol.asyncIterator]() {
+    return (this.startQuery(), this);
+  }
+  async next() {
+    (this.state.type === "closed" || this.state.type === "consumed") && ge(this.state.type);
+    const e = this.state.type === "preparing" ? this.startQuery() : this.state.queryId,
+      { value: r, done: n } = await d("1.0/queryStreamNext", { queryId: e });
+    return (n && this.closeQuery(), { value: y(r), done: n });
+  }
+  return() {
+    return (this.closeQuery(), Promise.resolve({ done: !0, value: void 0 }));
+  }
+  async paginate(e) {
+    if ((l(e, 1, "paginate", "options"), typeof e?.numItems != "number" || e.numItems < 0))
+      throw new Error(
+        `\`options.numItems\` must be a positive number. Received \`${e?.numItems}\`.`,
+      );
+    const r = this.takeQuery(),
+      n = e.numItems,
+      s = e.cursor,
+      o = e?.endCursor ?? null,
+      a = e.maximumRowsRead ?? null,
+      {
+        page: u,
+        isDone: p,
+        continueCursor: E,
+        splitCursor: z,
+        pageStatus: W,
+      } = await d("1.0/queryPage", {
+        query: r,
+        cursor: s,
+        endCursor: o,
+        pageSize: n,
+        maximumRowsRead: a,
+        maximumBytesRead: e.maximumBytesRead,
+        version: w,
+      });
+    return {
+      page: u.map((Ye) => y(Ye)),
+      isDone: p,
+      continueCursor: E,
+      splitCursor: z,
+      pageStatus: W,
+    };
+  }
+  async collect() {
+    const e = [];
+    for await (const r of this) e.push(r);
+    return e;
+  }
+  async take(e) {
+    return (l(e, 1, "take", "n"), ut(e, 1, "take", "n"), this.limit(e).collect());
+  }
+  async first() {
+    const e = await this.take(1);
+    return e.length === 0 ? null : e[0];
+  }
+  async unique() {
+    const e = await this.take(2);
+    if (e.length === 0) return null;
+    if (e.length === 2)
+      throw new Error(`unique() query returned more than one result from table ${this.tableNameForErrorMessages}:
+ [${e[0]._id}, ${e[1]._id}, ...]`);
+    return e[0];
+  }
+}
+async function Y(t, e, r) {
+  if ((l(e, 1, "get", "id"), typeof e != "string"))
+    throw new Error(
+      `Invalid argument \`id\` for \`db.get\`, expected string but got '${typeof e}': ${e}`,
+    );
+  const n = { id: f(e), isSystem: r, version: w, table: t },
+    s = await d("1.0/get", n);
+  return y(s);
+}
+function Ie() {
+  const t = (s = !1) => ({
+      get: async (o, a) => (a !== void 0 ? await Y(o, a, s) : await Y(void 0, o, s)),
+      query: (o) => new te(o, s).query(),
+      normalizeId: (o, a) => {
+        (l(o, 1, "normalizeId", "tableName"), l(a, 2, "normalizeId", "id"));
+        const u = o.startsWith("_");
+        if (u !== s)
+          throw new Error(
+            `${u ? "System" : "User"} tables can only be accessed from db.${s ? "" : "system."}normalizeId().`,
+          );
+        const p = B("1.0/db/normalizeId", { table: o, idString: a });
+        return y(p).id;
+      },
+      system: null,
+      table: (o) => new te(o, s),
+    }),
+    { system: e, ...r } = t(!0),
+    n = t();
+  return ((n.system = r), n);
+}
+async function qe(t, e) {
+  if (t.startsWith("_")) throw new Error("System tables (prefixed with `_`) are read-only.");
+  (l(t, 1, "insert", "table"), l(e, 2, "insert", "value"));
+  const r = await d("1.0/insert", { table: t, value: f(e) });
+  return y(r)._id;
+}
+async function X(t, e, r) {
+  (l(e, 1, "patch", "id"),
+    l(r, 2, "patch", "value"),
+    await d("1.0/shallowMerge", { id: f(e), value: Ze(r), table: t }));
+}
+async function Z(t, e, r) {
+  (l(e, 1, "replace", "id"),
+    l(r, 2, "replace", "value"),
+    await d("1.0/replace", { id: f(e), value: f(r), table: t }));
+}
+async function ee(t, e) {
+  (l(e, 1, "delete", "id"), await d("1.0/remove", { id: f(e), table: t }));
+}
+function Rt() {
+  const t = Ie();
+  return {
+    get: t.get,
+    query: t.query,
+    normalizeId: t.normalizeId,
+    system: t.system,
+    insert: async (e, r) => await qe(e, r),
+    patch: async (e, r, n) => (n !== void 0 ? await X(e, r, n) : await X(void 0, e, r)),
+    replace: async (e, r, n) => (n !== void 0 ? await Z(e, r, n) : await Z(void 0, e, r)),
+    delete: async (e, r) => (r !== void 0 ? await ee(e, r) : await ee(void 0, e)),
+    table: (e) => new Ft(e, !1),
+  };
+}
+class te {
+  constructor(e, r) {
+    ((this.tableName = e), (this.isSystem = r));
+  }
+  async get(e) {
+    return Y(this.tableName, e, this.isSystem);
+  }
+  query() {
+    const e = this.tableName.startsWith("_");
+    if (e !== this.isSystem)
+      throw new Error(
+        `${e ? "System" : "User"} tables can only be accessed from db.${this.isSystem ? "" : "system."}query().`,
+      );
+    return new Te(this.tableName);
+  }
+}
+class Ft extends te {
+  async insert(e) {
+    return qe(this.tableName, e);
+  }
+  async patch(e, r) {
+    return X(this.tableName, e, r);
+  }
+  async replace(e, r) {
+    return Z(this.tableName, e, r);
+  }
+  async delete(e) {
+    return ee(this.tableName, e);
+  }
+}
+function Mt() {
+  return {
+    runAfter: async (t, e, r) => {
+      const n = Ae(t, e, r);
+      return await d("1.0/schedule", n);
+    },
+    runAt: async (t, e, r) => {
+      const n = Re(t, e, r);
+      return await d("1.0/schedule", n);
+    },
+    cancel: async (t) => {
+      l(t, 1, "cancel", "id");
+      const e = { id: f(t) };
+      await d("1.0/cancel_job", e);
+    },
+  };
+}
+function Ne(t) {
+  return {
+    runAfter: async (e, r, n) => {
+      const s = { requestId: t, ...Ae(e, r, n) };
+      return await d("1.0/actions/schedule", s);
+    },
+    runAt: async (e, r, n) => {
+      const s = { requestId: t, ...Re(e, r, n) };
+      return await d("1.0/actions/schedule", s);
+    },
+    cancel: async (e) => {
+      l(e, 1, "cancel", "id");
+      const r = { requestId: t, id: f(e) };
+      return await d("1.0/actions/cancel_job", r);
+    },
+  };
+}
+function Ae(t, e, r) {
+  if (typeof t != "number") throw new Error("`delayMs` must be a number");
+  if (!isFinite(t)) throw new Error("`delayMs` must be a finite number");
+  if (t < 0) throw new Error("`delayMs` must be non-negative");
+  const n = A(r),
+    s = R(e),
+    o = (Date.now() + t) / 1e3;
+  return { ...s, ts: o, args: f(n), version: w };
+}
+function Re(t, e, r) {
+  let n;
+  if (t instanceof Date) n = t.valueOf() / 1e3;
+  else if (typeof t == "number") n = t / 1e3;
+  else throw new Error("The invoke time must a Date or a timestamp");
+  const s = R(e),
+    o = A(r);
+  return { ...s, ts: n, args: f(o), version: w };
+}
+function Fe(t) {
+  return {
+    getUrl: async (e) => (
+      l(e, 1, "getUrl", "storageId"),
+      await d("1.0/storageGetUrl", { requestId: t, version: w, storageId: e })
+    ),
+    getMetadata: async (e) =>
+      await d("1.0/storageGetMetadata", { requestId: t, version: w, storageId: e }),
+  };
+}
+function Me(t) {
+  const e = Fe(t);
+  return {
+    generateUploadUrl: async () =>
+      await d("1.0/storageGenerateUploadUrl", { requestId: t, version: w }),
+    delete: async (r) => {
+      await d("1.0/storageDelete", { requestId: t, version: w, storageId: r });
+    },
+    getUrl: e.getUrl,
+    getMetadata: e.getMetadata,
+  };
+}
+function je(t) {
+  return {
+    ...Me(t),
+    store: async (r, n) =>
+      await I("storage/storeBlob", { requestId: t, version: w, blob: r, options: n }),
+    get: async (r) => await I("storage/getBlob", { requestId: t, version: w, storageId: r }),
+  };
+}
+async function Ue() {
+  let t;
+  try {
+    t = await d("1.0/getTransactionMetrics", {});
+  } catch (e) {
+    throw e.message?.includes("Unknown async operation")
+      ? new Error(
+          "getTransactionMetrics() can only be called from a query or mutation. It is not available in actions or outside of a Convex function.",
+        )
+      : e;
+  }
+  return y(t);
+}
+async function pe() {
+  const { name: t, componentPath: e } = await d("1.0/getFunctionMetadata", {});
+  return { name: t, componentPath: e };
+}
+function jt(t) {
+  return {
+    getFunctionMetadata: async () => ({ ...(await pe()), type: "query", visibility: t }),
+    getTransactionMetrics: Ue,
+  };
+}
+function Ut(t) {
+  return {
+    getFunctionMetadata: async () => ({ ...(await pe()), type: "mutation", visibility: t }),
+    getTransactionMetrics: Ue,
+  };
+}
+function ke(t) {
+  return { getFunctionMetadata: async () => ({ ...(await pe()), type: "action", visibility: t }) };
+}
+async function Je(t, e, r) {
+  const s = y(JSON.parse(e)),
+    o = {
+      db: Rt(),
+      auth: Q(""),
+      storage: Me(""),
+      scheduler: Mt(),
+      meta: Ut(r),
+      runQuery: (u, p) => U("query", u, p),
+      runSnapshotQuery: (u, p) => U("snapshotQuery", u, p),
+      runMutation: (u, p) => U("mutation", u, p),
+    },
+    a = await V(t, o, s);
+  return (Qe(a), JSON.stringify(f(a === void 0 ? null : a)));
+}
+function Qe(t) {
+  if (t instanceof Te || t instanceof _)
+    throw new Error(
+      "Return value is a Query. Results must be retrieved with `.collect()`, `.take(n), `.unique()`, or `.first()`.",
+    );
+}
+async function V(t, e, r) {
+  let n;
+  try {
+    n = await Promise.resolve(t(e, ...r));
+  } catch (s) {
+    throw kt(s);
+  }
+  return n;
+}
+function S(t, e) {
+  return (r, n) => (
+    globalThis.console.warn(
+      `Convex functions should not directly call other Convex functions. Consider calling a helper function instead. e.g. \`export const foo = ${t}(...); await foo(ctx);\` is not supported. See https://docs.convex.dev/production/best-practices/#use-helper-functions-to-write-shared-code`,
+    ),
+    e(r, n)
+  );
+}
+function kt(t) {
+  if (typeof t == "object" && t !== null && Symbol.for("ConvexError") in t) {
+    const e = t;
+    return (
+      (e.data = JSON.stringify(f(e.data === void 0 ? null : e.data))),
+      (e.ConvexErrorSymbol = Symbol.for("ConvexError")),
+      e
+    );
+  } else return t;
+}
+function P() {
+  if (typeof window > "u" || window.__convexAllowFunctionsInBrowser) return;
+  (Object.getOwnPropertyDescriptor(globalThis, "window")
+    ?.get?.toString()
+    .includes("[native code]") ??
+    !1) &&
+    console.error(
+      "Convex functions should not be imported in the browser. This will throw an error in future versions of `convex`. If this is a false negative, please report it to Convex support.",
+    );
+}
+function Ve(t, e) {
+  if (e === void 0)
+    throw new Error(
+      `A validator is undefined for field "${t}". This is often caused by circular imports. See https://docs.convex.dev/error#undefined-validator for details.`,
+    );
+  return e;
+}
+function C(t) {
+  return () => {
+    let e = i.any();
+    return (
+      typeof t == "object" && t.args !== void 0 && (e = Se(t.args)),
+      JSON.stringify(e.json, Ve)
+    );
+  };
+}
+function T(t) {
+  return () => {
+    let e;
+    return (
+      typeof t == "object" && t.returns !== void 0 && (e = Se(t.returns)),
+      JSON.stringify(e ? e.json : null, Ve)
+    );
+  };
+}
+const fr = (t) => {
+    const e = typeof t == "function" ? t : t.handler,
+      r = S("mutation", e);
+    return (
+      P(),
+      (r.isMutation = !0),
+      (r.isPublic = !0),
+      (r.invokeMutation = (n) => Je(e, n, "public")),
+      (r.exportArgs = C(t)),
+      (r.exportReturns = T(t)),
+      (r._handler = e),
+      r
+    );
+  },
+  mr = (t) => {
+    const e = typeof t == "function" ? t : t.handler,
+      r = S("internalMutation", e);
+    return (
+      P(),
+      (r.isMutation = !0),
+      (r.isInternal = !0),
+      (r.invokeMutation = (n) => Je(e, n, "internal")),
+      (r.exportArgs = C(t)),
+      (r.exportReturns = T(t)),
+      (r._handler = e),
+      r
+    );
+  };
+async function ze(t, e, r) {
+  const s = y(JSON.parse(e)),
+    o = {
+      db: Ie(),
+      auth: Q(""),
+      storage: Fe(""),
+      meta: jt(r),
+      runQuery: (u, p) => U("query", u, p),
+    },
+    a = await V(t, o, s);
+  return (Qe(a), JSON.stringify(f(a === void 0 ? null : a)));
+}
+const yr = (t) => {
+    const e = typeof t == "function" ? t : t.handler,
+      r = S("query", e);
+    return (
+      P(),
+      (r.isQuery = !0),
+      (r.isPublic = !0),
+      (r.invokeQuery = (n) => ze(e, n, "public")),
+      (r.exportArgs = C(t)),
+      (r.exportReturns = T(t)),
+      (r._handler = e),
+      r
+    );
+  },
+  wr = (t) => {
+    const e = typeof t == "function" ? t : t.handler,
+      r = S("internalQuery", e);
+    return (
+      P(),
+      (r.isQuery = !0),
+      (r.isInternal = !0),
+      (r.invokeQuery = (n) => ze(e, n, "internal")),
+      (r.exportArgs = C(t)),
+      (r.exportReturns = T(t)),
+      (r._handler = e),
+      r
+    );
+  };
+async function We(t, e, r, n) {
+  const s = y(JSON.parse(r)),
+    a = {
+      ...Pe(e),
+      auth: Q(e),
+      scheduler: Ne(e),
+      storage: je(e),
+      vectorSearch: Ce(e),
+      meta: ke(n),
+    },
+    u = await V(t, a, s);
+  return JSON.stringify(f(u === void 0 ? null : u));
+}
+const br = (t) => {
+    const e = typeof t == "function" ? t : t.handler,
+      r = S("action", e);
+    return (
+      P(),
+      (r.isAction = !0),
+      (r.isPublic = !0),
+      (r.invokeAction = (n, s) => We(e, n, s, "public")),
+      (r.exportArgs = C(t)),
+      (r.exportReturns = T(t)),
+      (r._handler = e),
+      r
+    );
+  },
+  vr = (t) => {
+    const e = typeof t == "function" ? t : t.handler,
+      r = S("internalAction", e);
+    return (
+      P(),
+      (r.isAction = !0),
+      (r.isInternal = !0),
+      (r.invokeAction = (n, s) => We(e, n, s, "internal")),
+      (r.exportArgs = C(t)),
+      (r.exportReturns = T(t)),
+      (r._handler = e),
+      r
+    );
+  };
+async function Jt(t, e) {
+  const s = {
+    ...Pe(""),
+    auth: Q(""),
+    storage: je(""),
+    scheduler: Ne(""),
+    vectorSearch: Ce(""),
+    meta: ke("public"),
+  };
+  return await V(t, s, [e]);
+}
+const gr = (t) => {
+  const e = S("httpAction", t);
+  return (P(), (e.isHttp = !0), (e.invokeHttpAction = (r) => Jt(t, r)), (e._handler = t), e);
+};
+async function U(t, e, r) {
+  const n = A(r),
+    s = { udfType: t, args: f(n), ...R(e) },
+    o = await d("1.0/runUdf", s);
+  return y(o);
+}
+const xr = i.object({
+  numItems: i.number(),
+  cursor: i.union(i.string(), i.null()),
+  endCursor: i.optional(i.union(i.string(), i.null())),
+  id: i.optional(i.number()),
+  maximumRowsRead: i.optional(i.number()),
+  maximumBytesRead: i.optional(i.number()),
+});
+function _r(t) {
+  return i.object({
+    page: i.array(t),
+    continueCursor: i.string(),
+    isDone: i.boolean(),
+    splitCursor: i.optional(i.union(i.string(), i.null())),
+    pageStatus: i.optional(
+      i.union(i.literal("SplitRecommended"), i.literal("SplitRequired"), i.null()),
+    ),
+  });
+}
+var Qt = Object.defineProperty,
+  Vt = (t, e, r) =>
+    e in t ? Qt(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  xe = (t, e, r) => Vt(t, typeof e != "symbol" ? e + "" : e, r);
+const zt = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"],
+  Er = () => new Gt();
+function D(t) {
+  if (!Number.isInteger(t) || t <= 0) throw new Error("Interval must be an integer greater than 0");
+}
+function Wt(t) {
+  if (!Number.isInteger(t) || t < 1 || t > 31)
+    throw new Error("Day of month must be an integer from 1 to 31");
+  return t;
+}
+function Ht(t) {
+  if (!zt.includes(t)) throw new Error('Day of week must be a string like "monday".');
+  return t;
+}
+function G(t) {
+  if (!Number.isInteger(t) || t < 0 || t > 23)
+    throw new Error("Hour of day must be an integer from 0 to 23");
+  return t;
+}
+function F(t) {
+  if (!Number.isInteger(t) || t < 0 || t > 59)
+    throw new Error("Minute of hour must be an integer from 0 to 59");
+  return t;
+}
+function Dt(t) {
+  if (!t.match(/^[ -~]*$/))
+    throw new Error(
+      `Invalid cron identifier ${t}: use ASCII letters that are not control characters`,
+    );
+  return t;
+}
+class Gt {
+  constructor() {
+    (xe(this, "crons"), xe(this, "isCrons"), (this.isCrons = !0), (this.crons = {}));
+  }
+  schedule(e, r, n, s) {
+    const o = A(s);
+    if ((Dt(e), e in this.crons)) throw new Error(`Cron identifier registered twice: ${e}`);
+    this.crons[e] = { name: et(n), args: [f(o)], schedule: r };
+  }
+  interval(e, r, n, ...s) {
+    const o = r,
+      a = +("seconds" in o && o.seconds !== void 0),
+      u = +("minutes" in o && o.minutes !== void 0),
+      p = +("hours" in o && o.hours !== void 0);
+    if (a + u + p !== 1) throw new Error("Must specify one of seconds, minutes, or hours");
+    (a ? D(r.seconds) : u ? D(r.minutes) : p && D(r.hours),
+      this.schedule(e, { ...r, type: "interval" }, n, ...s));
+  }
+  hourly(e, r, n, ...s) {
+    const o = F(r.minuteUTC);
+    this.schedule(e, { minuteUTC: o, type: "hourly" }, n, ...s);
+  }
+  daily(e, r, n, ...s) {
+    const o = G(r.hourUTC),
+      a = F(r.minuteUTC);
+    this.schedule(e, { hourUTC: o, minuteUTC: a, type: "daily" }, n, ...s);
+  }
+  weekly(e, r, n, ...s) {
+    const o = Ht(r.dayOfWeek),
+      a = G(r.hourUTC),
+      u = F(r.minuteUTC);
+    this.schedule(e, { dayOfWeek: o, hourUTC: a, minuteUTC: u, type: "weekly" }, n, ...s);
+  }
+  monthly(e, r, n, ...s) {
+    const o = Wt(r.day),
+      a = G(r.hourUTC),
+      u = F(r.minuteUTC);
+    this.schedule(e, { day: o, hourUTC: a, minuteUTC: u, type: "monthly" }, n, ...s);
+  }
+  cron(e, r, n, ...s) {
+    const o = r;
+    this.schedule(e, { cron: o, type: "cron" }, n, ...s);
+  }
+  export() {
+    return JSON.stringify(this.crons);
+  }
+}
+var Bt = Object.defineProperty,
+  Lt = (t, e, r) =>
+    e in t ? Bt(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  O = (t, e, r) => Lt(t, typeof e != "symbol" ? e + "" : e, r);
+const Kt = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"];
+function Yt(t) {
+  return t === "HEAD" ? "GET" : t;
+}
+const Or = () => new Xt();
+class Xt {
+  constructor() {
+    (O(this, "exactRoutes", new Map()),
+      O(this, "prefixRoutes", new Map()),
+      O(this, "isRouter", !0),
+      O(this, "route", (e) => {
+        if (!e.handler) throw new Error("route requires handler");
+        if (!e.method) throw new Error("route requires method");
+        const { method: r, handler: n } = e;
+        if (!Kt.includes(r))
+          throw new Error(`'${r}' is not an allowed HTTP method (like GET, POST, PUT etc.)`);
+        if ("path" in e) {
+          if ("pathPrefix" in e)
+            throw new Error(
+              "Invalid httpRouter route: cannot contain both 'path' and 'pathPrefix'",
+            );
+          if (!e.path.startsWith("/")) throw new Error(`path '${e.path}' does not start with a /`);
+          if (e.path.startsWith("/.files/") || e.path === "/.files")
+            throw new Error(`path '${e.path}' is reserved`);
+          const s = this.exactRoutes.has(e.path) ? this.exactRoutes.get(e.path) : new Map();
+          if (s.has(r)) throw new Error(`Path '${e.path}' for method ${r} already in use`);
+          (s.set(r, n), this.exactRoutes.set(e.path, s));
+        } else if ("pathPrefix" in e) {
+          if (!e.pathPrefix.startsWith("/"))
+            throw new Error(`pathPrefix '${e.pathPrefix}' does not start with a /`);
+          if (!e.pathPrefix.endsWith("/"))
+            throw new Error(`pathPrefix ${e.pathPrefix} must end with a /`);
+          if (e.pathPrefix.startsWith("/.files/"))
+            throw new Error(`pathPrefix '${e.pathPrefix}' is reserved`);
+          const s = this.prefixRoutes.get(r) || new Map();
+          if (s.has(e.pathPrefix))
+            throw new Error(`${e.method} pathPrefix ${e.pathPrefix} is already defined`);
+          (s.set(e.pathPrefix, n), this.prefixRoutes.set(r, s));
+        } else
+          throw new Error(
+            "Invalid httpRouter route entry: must contain either field 'path' or 'pathPrefix'",
+          );
+      }),
+      O(this, "getRoutes", () => {
+        const r = [...this.exactRoutes.keys()]
+            .sort()
+            .flatMap((o) =>
+              [...this.exactRoutes.get(o).keys()]
+                .sort()
+                .map((a) => [o, a, this.exactRoutes.get(o).get(a)]),
+            ),
+          s = [...this.prefixRoutes.keys()]
+            .sort()
+            .flatMap((o) =>
+              [...this.prefixRoutes.get(o).keys()]
+                .sort()
+                .map((a) => [`${a}*`, o, this.prefixRoutes.get(o).get(a)]),
+            );
+        return [...r, ...s];
+      }),
+      O(this, "lookup", (e, r) => {
+        r = Yt(r);
+        const n = this.exactRoutes.get(e)?.get(r);
+        if (n) return [n, r, e];
+        const o = [...(this.prefixRoutes.get(r) || new Map()).entries()].sort(
+          ([a, u], [p, E]) => p.length - a.length,
+        );
+        for (const [a, u] of o) if (e.startsWith(a)) return [u, r, `${a}*`];
+        return null;
+      }),
+      O(this, "runRequest", async (e, r) => {
+        const n = I("requestFromConvexJson", { convexJson: JSON.parse(e) });
+        let s = r;
+        (!s || typeof s != "string") && (s = new URL(n.url).pathname);
+        const o = n.method,
+          a = this.lookup(s, o);
+        if (!a) {
+          const W = new Response(`No HttpAction routed for ${s}`, { status: 404 });
+          return JSON.stringify(I("convexJsonFromResponse", { response: W }));
+        }
+        const [u, p, E] = a,
+          z = await u.invokeHttpAction(n);
+        return JSON.stringify(I("convexJsonFromResponse", { response: z }));
+      }));
+  }
+}
+var Zt = Object.defineProperty,
+  er = (t, e, r) =>
+    e in t ? Zt(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  _e = (t, e, r) => er(t, typeof e != "symbol" ? e + "" : e, r);
+async function $r(t) {
+  const e = R(t);
+  return await d("1.0/createFunctionHandle", { ...e, version: w });
+}
+class tr {
+  constructor(e, r) {
+    (_e(this, "_definition"),
+      _e(this, "_name"),
+      (this._definition = e),
+      (this._name = r),
+      tt(this, `_reference/childComponent/${r}`));
+  }
+  get exports() {
+    return He(this._name, []);
+  }
+}
+function He(t, e) {
+  const r = {
+    get(n, s) {
+      if (typeof s == "string") {
+        const o = [...e, s];
+        return He(t, o);
+      } else if (s === re) {
+        let o = `_reference/childComponent/${t}`;
+        for (const a of e) o += `/${a}`;
+        return o;
+      } else return;
+    },
+  };
+  return new Proxy({}, r);
+}
+function De(t, e) {
+  const r = t;
+  if (typeof r.componentDefinitionPath != "string")
+    throw new Error(
+      "Component definition does not have the required componentDefinitionPath property. This code only works in Convex runtime.",
+    );
+  const n = e?.name ?? r.defaultName ?? r.componentDefinitionPath.split("/").pop();
+  if (typeof n != "string")
+    throw new Error(`Component name must be a string. Received: ${typeof n}`);
+  if (n.length === 0) throw new Error("Component name cannot be empty.");
+  const s = e?.httpPrefix;
+  if (s !== void 0 && !s.startsWith("/"))
+    throw new Error(`httpPrefix must start with "/". Received: "${s}"`);
+  return (this._childComponents.push([n, r, {}, s]), new tr(t, n));
+}
+function rr() {
+  const t = { type: "app" },
+    e = Le(this._childComponents),
+    r = Be(this._childComponents);
+  return {
+    definitionType: t,
+    ...(this._httpPrefix !== void 0 ? { httpPrefix: Ge(this._httpPrefix) } : {}),
+    childComponents: e,
+    httpMounts: r,
+    exports: fe(this._exportTree),
+  };
+}
+function fe(t) {
+  const e = [];
+  for (const [r, n] of Object.entries(t)) {
+    let s;
+    (typeof n == "string" ? (s = { type: "leaf", leaf: n }) : (s = fe(n)), e.push([r, s]));
+  }
+  return { type: "branch", branch: e };
+}
+function Ge(t) {
+  return t.endsWith("/") ? t : t + "/";
+}
+function Be(t) {
+  const e = {};
+  for (const [r, , , n] of t)
+    if (n !== void 0) {
+      const s = Ge(n);
+      e[s] = `_reference/childComponent/${r}`;
+    }
+  return e;
+}
+function Le(t) {
+  return t.map(([e, r, n]) => {
+    let s = null;
+    if (n !== null) {
+      s = [];
+      for (const [a, u] of Object.entries(n))
+        u !== void 0 && s.push([a, { type: "value", value: JSON.stringify(f(u)) }]);
+    }
+    const o = r.componentDefinitionPath;
+    if (!o)
+      throw new Error("no .componentPath for component definition " + JSON.stringify(r, null, 2));
+    return { name: e, path: o, args: s };
+  });
+}
+function nr() {
+  const t = Object.entries(this._args).map(([s, o]) => [
+      s,
+      { type: "value", value: JSON.stringify(o.json) },
+    ]),
+    e = { type: "childComponent", name: this._name, args: t },
+    r = Le(this._childComponents),
+    n = Be(this._childComponents);
+  return {
+    name: this._name,
+    definitionType: e,
+    childComponents: r,
+    httpMounts: n,
+    exports: fe(this._exportTree),
+  };
+}
+function Sr(t) {
+  return {
+    _isRoot: !1,
+    _name: t,
+    _args: {},
+    _childComponents: [],
+    _exportTree: {},
+    _onInitCallbacks: {},
+    export: nr,
+    use: De,
+  };
+}
+function Pr(t) {
+  const e = t?.httpPrefix;
+  if (e !== void 0 && !e.startsWith("/"))
+    throw new Error(`httpPrefix must start with "/". Received: "${e}"`);
+  return {
+    _isRoot: !0,
+    _childComponents: [],
+    _exportTree: {},
+    ...(e !== void 0 ? { _httpPrefix: e } : {}),
+    export: rr,
+    use: De,
+  };
+}
+function Cr(t) {
+  return { [re]: `_reference/currentSystemUdfInComponent/${t}` };
+}
+function Ke(t, e) {
+  const r = {
+    get(n, s) {
+      if (typeof s == "string") {
+        const o = [...e, s];
+        return Ke(t, o);
+      } else if (s === re) {
+        if (e.length < 1) {
+          const o = [t, ...e].join(".");
+          throw new Error(
+            `API path is expected to be of the form \`${t}.childComponent.functionName\`. Found: \`${o}\``,
+          );
+        }
+        return "_reference/childComponent/" + e.join("/");
+      } else return;
+    },
+  };
+  return new Proxy({}, r);
+}
+const Tr = () => Ke("components", []);
+var sr = Object.defineProperty,
+  or = (t, e, r) =>
+    e in t ? sr(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : (t[e] = r),
+  v = (t, e, r) => or(t, typeof e != "symbol" ? e + "" : e, r);
+class Ee {
+  constructor(e) {
+    (v(this, "indexes"),
+      v(this, "stagedDbIndexes"),
+      v(this, "searchIndexes"),
+      v(this, "stagedSearchIndexes"),
+      v(this, "vectorIndexes"),
+      v(this, "stagedVectorIndexes"),
+      v(this, "validator"),
+      (this.indexes = []),
+      (this.stagedDbIndexes = []),
+      (this.searchIndexes = []),
+      (this.stagedSearchIndexes = []),
+      (this.vectorIndexes = []),
+      (this.stagedVectorIndexes = []),
+      (this.validator = e));
+  }
+  " indexes"() {
+    return this.indexes;
+  }
+  index(e, r) {
+    return (
+      Array.isArray(r)
+        ? this.indexes.push({ indexDescriptor: e, fields: r })
+        : r.staged
+          ? this.stagedDbIndexes.push({ indexDescriptor: e, fields: r.fields })
+          : this.indexes.push({ indexDescriptor: e, fields: r.fields }),
+      this
+    );
+  }
+  searchIndex(e, r) {
+    return (
+      r.staged
+        ? this.stagedSearchIndexes.push({
+            indexDescriptor: e,
+            searchField: r.searchField,
+            filterFields: r.filterFields || [],
+          })
+        : this.searchIndexes.push({
+            indexDescriptor: e,
+            searchField: r.searchField,
+            filterFields: r.filterFields || [],
+          }),
+      this
+    );
+  }
+  vectorIndex(e, r) {
+    return (
+      r.staged
+        ? this.stagedVectorIndexes.push({
+            indexDescriptor: e,
+            vectorField: r.vectorField,
+            dimensions: r.dimensions,
+            filterFields: r.filterFields || [],
+          })
+        : this.vectorIndexes.push({
+            indexDescriptor: e,
+            vectorField: r.vectorField,
+            dimensions: r.dimensions,
+            filterFields: r.filterFields || [],
+          }),
+      this
+    );
+  }
+  self() {
+    return this;
+  }
+  export() {
+    const e = this.validator.json;
+    if (typeof e != "object")
+      throw new Error(
+        "Invalid validator: please make sure that the parameter of `defineTable` is valid (see https://docs.convex.dev/database/schemas)",
+      );
+    return {
+      indexes: this.indexes,
+      stagedDbIndexes: this.stagedDbIndexes,
+      searchIndexes: this.searchIndexes,
+      stagedSearchIndexes: this.stagedSearchIndexes,
+      vectorIndexes: this.vectorIndexes,
+      stagedVectorIndexes: this.stagedVectorIndexes,
+      documentType: e,
+    };
+  }
+}
+function Oe(t) {
+  return $e(t) ? new Ee(t) : new Ee(i.object(t));
+}
+class ir {
+  constructor(e, r) {
+    (v(this, "tables"),
+      v(this, "strictTableNameTypes"),
+      v(this, "schemaValidation"),
+      (this.tables = e),
+      (this.schemaValidation = r?.schemaValidation === void 0 ? !0 : r.schemaValidation));
+  }
+  export() {
+    return JSON.stringify({
+      tables: Object.entries(this.tables).map(([e, r]) => {
+        const {
+          indexes: n,
+          stagedDbIndexes: s,
+          searchIndexes: o,
+          stagedSearchIndexes: a,
+          vectorIndexes: u,
+          stagedVectorIndexes: p,
+          documentType: E,
+        } = r.export();
+        return {
+          tableName: e,
+          indexes: n,
+          stagedDbIndexes: s,
+          searchIndexes: o,
+          stagedSearchIndexes: a,
+          vectorIndexes: u,
+          stagedVectorIndexes: p,
+          documentType: E,
+        };
+      }),
+      schemaValidation: this.schemaValidation,
+    });
+  }
+}
+function ar(t, e) {
+  return new ir(t, e);
+}
+ar({
+  _scheduled_functions: Oe({
+    name: i.string(),
+    args: i.array(i.any()),
+    scheduledTime: i.float64(),
+    completedTime: i.optional(i.float64()),
+    state: i.union(
+      i.object({ kind: i.literal("pending") }),
+      i.object({ kind: i.literal("inProgress") }),
+      i.object({ kind: i.literal("success") }),
+      i.object({ kind: i.literal("failed"), error: i.string() }),
+      i.object({ kind: i.literal("canceled") }),
+    ),
+  }),
+  _storage: Oe({ sha256: i.string(), size: i.float64(), contentType: i.optional(i.string()) }),
+});
+export {
+  Xt as HttpRouter,
+  Kt as ROUTABLE_HTTP_METHODS,
+  Tt as SearchFilter,
+  br as actionGeneric,
+  cr as anyApi,
+  Tr as componentsGeneric,
+  $r as createFunctionHandle,
+  Er as cronJobs,
+  Cr as currentSystemUdfInComponent,
+  Pr as defineApp,
+  Sr as defineComponent,
+  ar as defineSchema,
+  Oe as defineTable,
+  Nr as filterApi,
+  R as getFunctionAddress,
+  et as getFunctionName,
+  gr as httpActionGeneric,
+  Or as httpRouter,
+  vr as internalActionGeneric,
+  mr as internalMutationGeneric,
+  wr as internalQueryGeneric,
+  Ar as makeFunctionReference,
+  fr as mutationGeneric,
+  xr as paginationOptsValidator,
+  _r as paginationResultValidator,
+  yr as queryGeneric,
+};
