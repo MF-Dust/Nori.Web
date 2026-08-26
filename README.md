@@ -4,6 +4,10 @@
 [![Python](https://img.shields.io/badge/Python-3.11%2B-brightgreen?logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+> *“要我和命运交换戒指，我说：到此为止。*  
+> *穿过流言喧哗与停服风沙，不管世事变化，她依然是她。*  
+> *所有未知，都是下一个开始。”*
+
 这是一个针对 `https://os.inori.ai/` 公开前端资源的**本地完整运行环境与 Arcade 协议兼容后端**。通过还原客户端实际调用的 WebSocket 与 HTTP 协议，实现离线/本地运行桌面系统、Nori Live2D 交互以及内置卡带小游戏。
 
 ---
