@@ -1,6 +1,6 @@
 # Nori.Web - NoriOS 本地兼容后端与离线服务
 
-[![GitHub](https://img.shields.io/badge/GitHub-MF--Dust%2FNori.Web-blue?logo=github)](https://github.com/MF-Dust/Nori.Web)
+[![GitHub](https://img.shields.io/badge/GitHub-FuturumTech%2FNori.Web-blue?logo=github)](https://github.com/FuturumTech/Nori.Web)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-brightgreen?logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -40,7 +40,7 @@
 ### 1. 安装依赖
 
 ```bash
-git clone https://github.com/MF-Dust/Nori.Web.git
+git clone https://github.com/FuturumTech/Nori.Web.git
 cd Nori.Web
 python -m pip install -r requirements.txt
 ```

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+import re
+from pathlib import Path
 import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -88,6 +90,40 @@ class EventDispatcher:
         "vault.unlock": "vault",
         "unseal_volume": "vault",
     }
+
+
+    _WEBASSET_RE = re.compile(r"^(/webAssets/[A-Za-z0-9_./-]+)$")
+
+    @staticmethod
+    def _resolve_web_asset(lookup_key: str):
+        """Map ``/webAssets/**`` (bare or inside any URL) to a served file.
+
+        In-game PDF downloads navigate the sandboxed browser to raw assets;
+        wrap them in a minimal embed page so Chromium's native viewer shows
+        them instead of the simulated-404 fallback."""
+        raw = (lookup_key or "").strip()
+        m = EventDispatcher._WEBASSET_RE.match(raw)
+        candidates = []
+        if m:
+            candidates.append(m.group(1))
+        # absolute URL forms: take path portion when host is in-world
+        path_part = raw.split("://", 1)[-1]
+        slash = path_part.find("/")
+        if slash != -1:
+            candidate = path_part[slash:]
+            m2 = EventDispatcher._WEBASSET_RE.match(candidate)
+            if m2:
+                candidates.append(m2.group(1))
+        for c in candidates:
+            if not re.search(r"\.(?:pdf|png|jpe?g|gif|svg|webp|mp3|mp4|woff2?)$", c,
+                             re.I):
+                continue
+            fs_candidate = Path(__file__).resolve().parents[2] / "public" / c.lstrip("/")
+            if fs_candidate.is_file():
+                filename = c.rsplit("/", 1)[-1]
+                return c, filename
+        return None
+
 
     def _run_manifold_command(self, command: str, sub_payload: Dict[str, Any]):
         """Route a generic manifold command; returns (ok, result-or-error)."""
@@ -430,6 +466,40 @@ class EventDispatcher:
             lookup_key = payload.get("lookup_key", "")
             artifact_type = payload.get("artifactType", "")
             if artifact_type == "browser_page" and lookup_key:
+                web_asset = self._resolve_web_asset(lookup_key)
+                if web_asset is not None:
+                    rel_path, filename = web_asset
+                    embed_html = (
+                        "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
+                        f"<title>{filename}</title>"
+                        "<style>html,body{margin:0;padding:0;height:100%;"
+                        "background:#111}>embed,iframe{width:100%;height:100%;"
+                        "border:0;display:block}</style></head><body>"
+                        f'<embed src="{rel_path}" type="application/pdf">'
+                        f'<iframe src="{rel_path}" title="{filename}" '
+                        'style="position:absolute;inset:0"></iframe>'
+                        "</body></html>"
+                    )
+                    return self.build_response(
+                        "manifold.artifacts.fetch.response",
+                        {
+                            "ok": True,
+                            "artifact": {
+                                "id": f"webasset.{filename}",
+                                "type": "browser_page",
+                                "data": {
+                                    "url": lookup_key,
+                                    "supported_locales": ["zh-CN"],
+                                    "title": filename,
+                                    "body_html": embed_html,
+                                    "favicon": "/webAssets/favicon.svg"
+                                    if False else None,
+                                },
+                            },
+                        },
+                        cartridge_id=cartridge_id,
+                        request_id=request_id,
+                    )
                 page = get_browser_page(lookup_key)
                 return self.build_response(
                     "manifold.artifacts.fetch.response",
