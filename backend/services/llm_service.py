@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 
-from ..core.config import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
+from ..core import config
 
 EMOTIONS = {
     "happy",
@@ -98,7 +98,7 @@ class LLMService:
         user_text: str,
         history: Optional[List[Dict[str, str]]] = None,
     ) -> Tuple[str, str]:
-        if OPENAI_API_KEY:
+        if config.OPENAI_API_KEY:
             try:
                 messages = [{"role": "system", "content": SYSTEM_PROMPT}]
                 if history:
@@ -107,10 +107,10 @@ class LLMService:
 
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.post(
-                        f"{OPENAI_BASE_URL.rstrip('/')}/chat/completions",
-                        headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
+                        f"{config.OPENAI_BASE_URL.rstrip('/')}/chat/completions",
+                        headers={"Authorization": f"Bearer {config.OPENAI_API_KEY}"},
                         json={
-                            "model": OPENAI_MODEL,
+                            "model": config.OPENAI_MODEL,
                             "messages": messages,
                             "temperature": 0.75,
                             "max_tokens": 350,
