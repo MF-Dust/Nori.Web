@@ -7,15 +7,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NoriOS</title>
     <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="preload" href="/fonts/sarasa-fixed-sc.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/fonts.css" />
-    <script src="/cubism_sdk/Core/live2dcubismcore.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-FU-0vwSE.css" />
+    <link rel="modulepreload" crossorigin href="/assets/index-CyHAbkO5.js" />
+    <link rel="modulepreload" crossorigin href="/assets/i18n-DtIC1LRi.js" />
+    <link rel="modulepreload" crossorigin href="/assets/NormalApp-Cn6agT0F.js" />
+    <script defer src="/cubism_sdk/Core/live2dcubismcore.js"></script>
     <!-- No model warmup here: dev-bypass preloads via preloadLive2DModel in
          main.tsx (fetch + decode + stage, strictly stronger than an HTTP
          warmer and not duplicated — fetch() does not coalesce identical
          in-flight requests); prod loads at NoriSceneStage mount, pre-gate. -->
     <script type="module" crossorigin src="/assets/index-CyHAbkO5.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/i18n-DtIC1LRi.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-FU-0vwSE.css">
   </head>
   <body>
     <div id="root"></div>

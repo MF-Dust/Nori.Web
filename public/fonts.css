@@ -1,85 +1,180 @@
-/* Local substitutes for the web fonts used by the archived client. */
+/* Local typography definitions and web font substitutes for NoriOS */
+
+/* === Primary UI / Typography Font: Sarasa Fixed SC === */
+@font-face {
+  font-family: "SarasaFixed";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 100 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SarasaFixed";
+  src: url("/fonts/sarasa-fixed-sc-bold.woff2") format("woff2");
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* === Pixel & Retro Fonts for Terminal, Arcade & Badges === */
+@font-face {
+  font-family: "Fusion Pixel 12px Monospaced SC";
+  src: url("/fonts/fusion-pixel-12px-monospaced-sc.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fusion Pixel 12px Proportional SC";
+  src: url("/fonts/fusion-pixel-12px-proportional-sc.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Press Start 2P";
+  src: url("/fonts/press-start-2p-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Silkscreen";
+  src: url("/fonts/silkscreen-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Silkscreen";
+  src: url("/fonts/silkscreen-bold-latin.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "VT323";
+  src: url("/fonts/vt323-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* === Web Font Substitutes for Desktop Components === */
 @font-face {
   font-family: "Plus Jakarta Sans";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 400 700;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: "Noto Sans SC";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 400 700;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: "Noto Sans JP";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 400 700;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: "Chiron GoRound TC";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 200 900;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
-  font-family: Literata;
+  font-family: "Literata";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 200 900;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: "Bodoni Moda";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 400 900;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
-  font-family: Newsreader;
+  font-family: "Newsreader";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 300 600;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: "IBM Plex Mono";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 400 700;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: "LXGW WenKai";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 300 400;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
-  font-family: Nunito;
+  font-family: "Nunito";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 400 800;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
-  font-family: Fredoka;
+  font-family: "Fredoka";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 400 700;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
-  font-family: Quicksand;
+  font-family: "Quicksand";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 400 700;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: "Crimson Pro";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 400 600;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: "Lilita One";
   src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
-  font-weight: 400;
+  font-weight: 100 900;
+  font-style: normal;
   font-display: swap;
 }
