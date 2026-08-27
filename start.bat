@@ -6,8 +6,14 @@ echo         Starting NoriOS local compatibility server
 echo =======================================================
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo Python 3 is required. Install dependencies with:
-    echo   python -m pip install -r requirements.txt
+    echo Python 3 is required. Install Python first.
+    pause
+    exit /b 1
+)
+python -c "import fastapi, uvicorn, httpx, chess" >nul 2>&1
+if errorlevel 1 (
+    echo Python dependencies are missing. Install them with:
+    echo   python -m pip install -e ".[local]"
     pause
     exit /b 1
 )
