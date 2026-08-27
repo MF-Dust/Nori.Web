@@ -8,8 +8,17 @@
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": [
+      "/api/*",
+      "/datasea/cosmicweb.min.glb"
+    ]
   },
+  "r2_buckets": [
+    {
+      "binding": "NORI_ASSETS_R2",
+      "bucket_name": "nori-web-assets"
+    }
+  ],
   "durable_objects": {
     "bindings": [
       {
