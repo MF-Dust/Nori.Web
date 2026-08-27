@@ -3,7 +3,8 @@
 HTTP API requests are served through Cloudflare's Python ASGI adapter. Static
 frontend files are served by Workers Static Assets. Arcade WebSocket pairs are
 routed by their signed ticket into a Durable Object so the main and media
-channels share one in-memory WorldManager.
+channels share one in-memory WorldManager. Oversized static assets are streamed
+from R2 while keeping their original public URL.
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ from __future__ import annotations
 import hashlib
 from urllib.parse import urlsplit
 
-from workers import DurableObject, WorkerEntrypoint, asgi
+from workers import DurableObject, Response, WorkerEntrypoint, asgi
 
 from backend.core import config
 from backend.session.manager import (
@@ -24,6 +25,10 @@ from server import create_app
 
 _FASTAPI_APP = create_app(include_static=False)
 _TRUE_VALUES = {"1", "true", "yes", "on"}
+_R2_MODEL_PATH = "/datasea/cosmicweb.min.glb"
+_R2_MODEL_KEY = "datasea/cosmicweb.min.glb"
+_R2_MODEL_CONTENT_TYPE = "model/gltf-binary"
+_R2_MODEL_CACHE_CONTROL = "public, max-age=604800, immutable"
 
 
 def _configure_runtime(env) -> None:
@@ -52,6 +57,42 @@ def _ticket_from_request(request) -> str | None:
 def _durable_object_name(ticket: str | None) -> str:
     seed = ticket or "missing-ticket"
     return hashlib.sha256(seed.encode("utf-8")).hexdigest()
+
+
+def _r2_headers(obj) -> dict[str, str]:
+    headers = {
+        "Content-Type": _R2_MODEL_CONTENT_TYPE,
+        "Cache-Control": _R2_MODEL_CACHE_CONTROL,
+    }
+    etag = getattr(obj, "httpEtag", None)
+    if etag:
+        headers["ETag"] = str(etag)
+    size = getattr(obj, "size", None)
+    if size is not None:
+        headers["Content-Length"] = str(size)
+    return headers
+
+
+async def _serve_r2_model(env, request):
+    """Stream the oversized DataSea GLB from the private R2 bucket."""
+    if request.method == "HEAD":
+        obj = await env.NORI_ASSETS_R2.head(_R2_MODEL_KEY)
+        if obj is None:
+            return Response("Object Not Found", status=404)
+        return Response(None, status=200, headers=_r2_headers(obj))
+
+    if request.method != "GET":
+        return Response(
+            "Method Not Allowed",
+            status=405,
+            headers={"Allow": "GET, HEAD"},
+        )
+
+    obj = await env.NORI_ASSETS_R2.get(_R2_MODEL_KEY)
+    if obj is None:
+        return Response("Object Not Found", status=404)
+
+    return Response(obj.body, status=200, headers=_r2_headers(obj))
 
 
 async def _cloudflare_asgi_app(scope, receive, send) -> None:
@@ -102,11 +143,14 @@ class NoriArcadeSession(DurableObject):
 
 
 class Default(WorkerEntrypoint):
-    """Route API traffic to FastAPI and frontend traffic to Static Assets."""
+    """Route API, R2 assets, and frontend traffic to the correct service."""
 
     async def fetch(self, request):
         _configure_runtime(self.env)
         path = urlsplit(request.url).path
+
+        if path == _R2_MODEL_PATH:
+            return await _serve_r2_model(self.env, request)
 
         if _is_websocket(request) and path.startswith("/api/arcade/web/v1"):
             ticket = _ticket_from_request(request)
