@@ -22,7 +22,11 @@ SUDDEN_DEATH = "SUDDEN_DEATH"
 GAME_OVER = "GAME_OVER"
 
 _WORDS_FILE = Path(__file__).resolve().parents[1] / "data" / "codenames_words.json"
-WORDS: List[str] = json.loads(_WORDS_FILE.read_text(encoding="utf-8"))
+_RAW_WORDS = json.loads(_WORDS_FILE.read_text(encoding="utf-8"))
+if isinstance(_RAW_WORDS, dict):
+    WORDS_BY_LOCALE: Dict[str, List[str]] = _RAW_WORDS
+else:
+    WORDS_BY_LOCALE: Dict[str, List[str]] = {"en": _RAW_WORDS}
 
 
 class CodenamesCartridge(BaseCartridge):
@@ -33,10 +37,22 @@ class CodenamesCartridge(BaseCartridge):
                 "gameState": None,
                 "counterpartSide": TEAM_A,
                 "agentSide": TEAM_B,
-                "settings": {"tokens": 9},
+                "settings": {"tokens": 9, "wordLocale": "zh-CN"},
                 "tutorial": None,
             },
         )
+
+    @staticmethod
+    def _resolve_words(word_locale: Optional[str]) -> List[str]:
+        """Resolve localized vocabulary for Codenames game board."""
+        if not word_locale:
+            return WORDS_BY_LOCALE.get("zh-CN") or WORDS_BY_LOCALE.get("en", [])
+        loc = word_locale.lower().replace("_", "-")
+        if loc.startswith("zh") or loc in {"cn", "zh-cn", "zh-tw", "zh-hk"}:
+            return WORDS_BY_LOCALE.get("zh-CN") or WORDS_BY_LOCALE.get("en", [])
+        if loc.startswith("ja") or loc in {"jp", "ja"}:
+            return WORDS_BY_LOCALE.get("ja") or WORDS_BY_LOCALE.get("en", [])
+        return WORDS_BY_LOCALE.get("en") or list(WORDS_BY_LOCALE.values())[0]
 
     @staticmethod
     def _other(side: str) -> str:
@@ -107,7 +123,8 @@ class CodenamesCartridge(BaseCartridge):
         if isinstance(seed, bool) or not isinstance(seed, int):
             seed = int(time.time() * 1000)
         rng = random.Random(seed)
-        selected = rng.sample(WORDS, 25)
+        words_pool = cls._resolve_words(settings.get("wordLocale"))
+        selected = rng.sample(words_pool, 25)
         return {
             "board": [{"id": word, "text": word} for word in selected],
             "key": cls._generate_keys(rng),
@@ -397,6 +414,12 @@ class CodenamesCartridge(BaseCartridge):
         if not isinstance(game, dict) or game.get("phase") == GAME_OVER:
             return None
         agent_side = state["agentSide"]
+        word_locale = (state.get("settings") or {}).get("wordLocale", "zh-CN")
+        default_clue_word = (
+            "诺莉"
+            if (word_locale and ("zh" in word_locale.lower() or "cn" in word_locale.lower()))
+            else ("ノリ" if (word_locale and "ja" in word_locale.lower()) else "NORI")
+        )
         if game["phase"] == NORMAL:
             if not game["history"] or game["history"][-1]["endedBy"] is not None:
                 if game["whoseTurnToGive"] == agent_side:
@@ -407,7 +430,7 @@ class CodenamesCartridge(BaseCartridge):
                     ]
                     if targets:
                         # The public reducer validates clue form, not semantic relation.
-                        return {"type": "submitClue", "clue": {"word": "NORI", "count": 1}}
+                        return {"type": "submitClue", "clue": {"word": default_clue_word, "count": 1}}
             else:
                 turn = game["history"][-1]
                 if turn["clueGiver"] != agent_side:

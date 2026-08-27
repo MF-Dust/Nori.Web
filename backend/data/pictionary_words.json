@@ -1,0 +1,8632 @@
+{
+  "en": [
+    {
+      "word": "aircraft carrier",
+      "synonyms": [],
+      "drawingId": "aircraft carrier",
+      "removed": false
+    },
+    {
+      "word": "airplane",
+      "synonyms": [
+        "plane",
+        "aircraft"
+      ],
+      "drawingId": "airplane",
+      "removed": false
+    },
+    {
+      "word": "alarm clock",
+      "synonyms": [
+        "alarm",
+        "clock"
+      ],
+      "drawingId": "alarm clock",
+      "removed": false
+    },
+    {
+      "word": "ambulance",
+      "synonyms": [],
+      "drawingId": "ambulance",
+      "removed": false
+    },
+    {
+      "word": "angel",
+      "synonyms": [],
+      "drawingId": "angel",
+      "removed": false
+    },
+    {
+      "word": "animal migration",
+      "synonyms": [
+        "migration"
+      ],
+      "drawingId": "animal migration",
+      "removed": true
+    },
+    {
+      "word": "ant",
+      "synonyms": [],
+      "drawingId": "ant",
+      "removed": false
+    },
+    {
+      "word": "anvil",
+      "synonyms": [],
+      "drawingId": "anvil",
+      "removed": false
+    },
+    {
+      "word": "apple",
+      "synonyms": [],
+      "drawingId": "apple",
+      "removed": false
+    },
+    {
+      "word": "arm",
+      "synonyms": [],
+      "drawingId": "arm",
+      "removed": false
+    },
+    {
+      "word": "asparagus",
+      "synonyms": [],
+      "drawingId": "asparagus",
+      "removed": true
+    },
+    {
+      "word": "axe",
+      "synonyms": [
+        "ax"
+      ],
+      "drawingId": "axe",
+      "removed": false
+    },
+    {
+      "word": "backpack",
+      "synonyms": [
+        "rucksack",
+        "pack"
+      ],
+      "drawingId": "backpack",
+      "removed": false
+    },
+    {
+      "word": "banana",
+      "synonyms": [],
+      "drawingId": "banana",
+      "removed": false
+    },
+    {
+      "word": "bandage",
+      "synonyms": [],
+      "drawingId": "bandage",
+      "removed": false
+    },
+    {
+      "word": "barn",
+      "synonyms": [],
+      "drawingId": "barn",
+      "removed": false
+    },
+    {
+      "word": "baseball",
+      "synonyms": [],
+      "drawingId": "baseball",
+      "removed": false
+    },
+    {
+      "word": "baseball bat",
+      "synonyms": [
+        "bat"
+      ],
+      "drawingId": "baseball bat",
+      "removed": false
+    },
+    {
+      "word": "basket",
+      "synonyms": [],
+      "drawingId": "basket",
+      "removed": false
+    },
+    {
+      "word": "basketball",
+      "synonyms": [],
+      "drawingId": "basketball",
+      "removed": false
+    },
+    {
+      "word": "bat",
+      "synonyms": [],
+      "drawingId": "bat",
+      "removed": false
+    },
+    {
+      "word": "bathtub",
+      "synonyms": [
+        "tub",
+        "bath"
+      ],
+      "drawingId": "bathtub",
+      "removed": false
+    },
+    {
+      "word": "beach",
+      "synonyms": [],
+      "drawingId": "beach",
+      "removed": false
+    },
+    {
+      "word": "bear",
+      "synonyms": [],
+      "drawingId": "bear",
+      "removed": false
+    },
+    {
+      "word": "beard",
+      "synonyms": [],
+      "drawingId": "beard",
+      "removed": false
+    },
+    {
+      "word": "bed",
+      "synonyms": [],
+      "drawingId": "bed",
+      "removed": false
+    },
+    {
+      "word": "bee",
+      "synonyms": [],
+      "drawingId": "bee",
+      "removed": false
+    },
+    {
+      "word": "belt",
+      "synonyms": [],
+      "drawingId": "belt",
+      "removed": false
+    },
+    {
+      "word": "bench",
+      "synonyms": [],
+      "drawingId": "bench",
+      "removed": false
+    },
+    {
+      "word": "bicycle",
+      "synonyms": [
+        "bike",
+        "cycle"
+      ],
+      "drawingId": "bicycle",
+      "removed": false
+    },
+    {
+      "word": "binoculars",
+      "synonyms": [
+        "binocs"
+      ],
+      "drawingId": "binoculars",
+      "removed": false
+    },
+    {
+      "word": "bird",
+      "synonyms": [],
+      "drawingId": "bird",
+      "removed": false
+    },
+    {
+      "word": "birthday cake",
+      "synonyms": [
+        "cake"
+      ],
+      "drawingId": "birthday cake",
+      "removed": false
+    },
+    {
+      "word": "blackberry",
+      "synonyms": [],
+      "drawingId": "blackberry",
+      "removed": false
+    },
+    {
+      "word": "blueberry",
+      "synonyms": [],
+      "drawingId": "blueberry",
+      "removed": false
+    },
+    {
+      "word": "book",
+      "synonyms": [],
+      "drawingId": "book",
+      "removed": false
+    },
+    {
+      "word": "boomerang",
+      "synonyms": [],
+      "drawingId": "boomerang",
+      "removed": false
+    },
+    {
+      "word": "bottlecap",
+      "synonyms": [
+        "bottle cap"
+      ],
+      "drawingId": "bottlecap",
+      "removed": false
+    },
+    {
+      "word": "bowtie",
+      "synonyms": [
+        "bow tie"
+      ],
+      "drawingId": "bowtie",
+      "removed": false
+    },
+    {
+      "word": "bracelet",
+      "synonyms": [],
+      "drawingId": "bracelet",
+      "removed": false
+    },
+    {
+      "word": "brain",
+      "synonyms": [],
+      "drawingId": "brain",
+      "removed": false
+    },
+    {
+      "word": "bread",
+      "synonyms": [],
+      "drawingId": "bread",
+      "removed": false
+    },
+    {
+      "word": "bridge",
+      "synonyms": [],
+      "drawingId": "bridge",
+      "removed": false
+    },
+    {
+      "word": "broccoli",
+      "synonyms": [],
+      "drawingId": "broccoli",
+      "removed": false
+    },
+    {
+      "word": "broom",
+      "synonyms": [],
+      "drawingId": "broom",
+      "removed": false
+    },
+    {
+      "word": "bucket",
+      "synonyms": [
+        "pail"
+      ],
+      "drawingId": "bucket",
+      "removed": false
+    },
+    {
+      "word": "bulldozer",
+      "synonyms": [],
+      "drawingId": "bulldozer",
+      "removed": false
+    },
+    {
+      "word": "bus",
+      "synonyms": [],
+      "drawingId": "bus",
+      "removed": false
+    },
+    {
+      "word": "bush",
+      "synonyms": [
+        "shrub"
+      ],
+      "drawingId": "bush",
+      "removed": false
+    },
+    {
+      "word": "butterfly",
+      "synonyms": [],
+      "drawingId": "butterfly",
+      "removed": false
+    },
+    {
+      "word": "cactus",
+      "synonyms": [],
+      "drawingId": "cactus",
+      "removed": false
+    },
+    {
+      "word": "cake",
+      "synonyms": [],
+      "drawingId": "cake",
+      "removed": false
+    },
+    {
+      "word": "calculator",
+      "synonyms": [],
+      "drawingId": "calculator",
+      "removed": false
+    },
+    {
+      "word": "calendar",
+      "synonyms": [],
+      "drawingId": "calendar",
+      "removed": false
+    },
+    {
+      "word": "camel",
+      "synonyms": [],
+      "drawingId": "camel",
+      "removed": false
+    },
+    {
+      "word": "camera",
+      "synonyms": [],
+      "drawingId": "camera",
+      "removed": false
+    },
+    {
+      "word": "camouflage",
+      "synonyms": [
+        "camo"
+      ],
+      "drawingId": "camouflage",
+      "removed": true
+    },
+    {
+      "word": "campfire",
+      "synonyms": [
+        "camp fire",
+        "fire"
+      ],
+      "drawingId": "campfire",
+      "removed": false
+    },
+    {
+      "word": "candle",
+      "synonyms": [],
+      "drawingId": "candle",
+      "removed": false
+    },
+    {
+      "word": "cannon",
+      "synonyms": [],
+      "drawingId": "cannon",
+      "removed": false
+    },
+    {
+      "word": "canoe",
+      "synonyms": [],
+      "drawingId": "canoe",
+      "removed": true
+    },
+    {
+      "word": "car",
+      "synonyms": [
+        "automobile",
+        "vehicle"
+      ],
+      "drawingId": "car",
+      "removed": false
+    },
+    {
+      "word": "carrot",
+      "synonyms": [],
+      "drawingId": "carrot",
+      "removed": false
+    },
+    {
+      "word": "castle",
+      "synonyms": [],
+      "drawingId": "castle",
+      "removed": false
+    },
+    {
+      "word": "cat",
+      "synonyms": [
+        "kitty",
+        "kitten"
+      ],
+      "drawingId": "cat",
+      "removed": false
+    },
+    {
+      "word": "ceiling fan",
+      "synonyms": [
+        "fan"
+      ],
+      "drawingId": "ceiling fan",
+      "removed": false
+    },
+    {
+      "word": "cello",
+      "synonyms": [
+        "violoncello"
+      ],
+      "drawingId": "cello",
+      "removed": false
+    },
+    {
+      "word": "cell phone",
+      "synonyms": [
+        "cellphone",
+        "mobile",
+        "mobile phone",
+        "smartphone",
+        "phone"
+      ],
+      "drawingId": "cell phone",
+      "removed": false
+    },
+    {
+      "word": "chair",
+      "synonyms": [],
+      "drawingId": "chair",
+      "removed": false
+    },
+    {
+      "word": "chandelier",
+      "synonyms": [],
+      "drawingId": "chandelier",
+      "removed": true
+    },
+    {
+      "word": "church",
+      "synonyms": [],
+      "drawingId": "church",
+      "removed": false
+    },
+    {
+      "word": "circle",
+      "synonyms": [],
+      "drawingId": "circle",
+      "removed": false
+    },
+    {
+      "word": "clarinet",
+      "synonyms": [],
+      "drawingId": "clarinet",
+      "removed": true
+    },
+    {
+      "word": "clock",
+      "synonyms": [],
+      "drawingId": "clock",
+      "removed": false
+    },
+    {
+      "word": "cloud",
+      "synonyms": [],
+      "drawingId": "cloud",
+      "removed": false
+    },
+    {
+      "word": "coffee cup",
+      "synonyms": [
+        "coffee",
+        "cup"
+      ],
+      "drawingId": "coffee cup",
+      "removed": false
+    },
+    {
+      "word": "compass",
+      "synonyms": [],
+      "drawingId": "compass",
+      "removed": false
+    },
+    {
+      "word": "computer",
+      "synonyms": [
+        "pc",
+        "desktop"
+      ],
+      "drawingId": "computer",
+      "removed": false
+    },
+    {
+      "word": "cookie",
+      "synonyms": [
+        "biscuit"
+      ],
+      "drawingId": "cookie",
+      "removed": false
+    },
+    {
+      "word": "cooler",
+      "synonyms": [
+        "ice chest",
+        "cooler box"
+      ],
+      "drawingId": "cooler",
+      "removed": true
+    },
+    {
+      "word": "couch",
+      "synonyms": [
+        "sofa"
+      ],
+      "drawingId": "couch",
+      "removed": false
+    },
+    {
+      "word": "cow",
+      "synonyms": [],
+      "drawingId": "cow",
+      "removed": false
+    },
+    {
+      "word": "crab",
+      "synonyms": [],
+      "drawingId": "crab",
+      "removed": false
+    },
+    {
+      "word": "crayon",
+      "synonyms": [],
+      "drawingId": "crayon",
+      "removed": false
+    },
+    {
+      "word": "crocodile",
+      "synonyms": [
+        "croc"
+      ],
+      "drawingId": "crocodile",
+      "removed": false
+    },
+    {
+      "word": "crown",
+      "synonyms": [],
+      "drawingId": "crown",
+      "removed": false
+    },
+    {
+      "word": "cruise ship",
+      "synonyms": [
+        "cruise",
+        "ship"
+      ],
+      "drawingId": "cruise ship",
+      "removed": false
+    },
+    {
+      "word": "cup",
+      "synonyms": [],
+      "drawingId": "cup",
+      "removed": false
+    },
+    {
+      "word": "diamond",
+      "synonyms": [],
+      "drawingId": "diamond",
+      "removed": false
+    },
+    {
+      "word": "dishwasher",
+      "synonyms": [],
+      "drawingId": "dishwasher",
+      "removed": true
+    },
+    {
+      "word": "diving board",
+      "synonyms": [
+        "diving platform"
+      ],
+      "drawingId": "diving board",
+      "removed": true
+    },
+    {
+      "word": "dog",
+      "synonyms": [
+        "puppy",
+        "pup"
+      ],
+      "drawingId": "dog",
+      "removed": false
+    },
+    {
+      "word": "dolphin",
+      "synonyms": [],
+      "drawingId": "dolphin",
+      "removed": false
+    },
+    {
+      "word": "donut",
+      "synonyms": [
+        "doughnut"
+      ],
+      "drawingId": "donut",
+      "removed": false
+    },
+    {
+      "word": "door",
+      "synonyms": [],
+      "drawingId": "door",
+      "removed": false
+    },
+    {
+      "word": "dragon",
+      "synonyms": [],
+      "drawingId": "dragon",
+      "removed": false
+    },
+    {
+      "word": "dresser",
+      "synonyms": [
+        "chest of drawers",
+        "drawers"
+      ],
+      "drawingId": "dresser",
+      "removed": false
+    },
+    {
+      "word": "drill",
+      "synonyms": [],
+      "drawingId": "drill",
+      "removed": false
+    },
+    {
+      "word": "drums",
+      "synonyms": [
+        "drum set",
+        "drumkit"
+      ],
+      "drawingId": "drums",
+      "removed": false
+    },
+    {
+      "word": "duck",
+      "synonyms": [],
+      "drawingId": "duck",
+      "removed": false
+    },
+    {
+      "word": "dumbbell",
+      "synonyms": [
+        "weight"
+      ],
+      "drawingId": "dumbbell",
+      "removed": false
+    },
+    {
+      "word": "ear",
+      "synonyms": [],
+      "drawingId": "ear",
+      "removed": false
+    },
+    {
+      "word": "elbow",
+      "synonyms": [],
+      "drawingId": "elbow",
+      "removed": false
+    },
+    {
+      "word": "elephant",
+      "synonyms": [],
+      "drawingId": "elephant",
+      "removed": false
+    },
+    {
+      "word": "envelope",
+      "synonyms": [],
+      "drawingId": "envelope",
+      "removed": false
+    },
+    {
+      "word": "eraser",
+      "synonyms": [
+        "rubber"
+      ],
+      "drawingId": "eraser",
+      "removed": false
+    },
+    {
+      "word": "eye",
+      "synonyms": [],
+      "drawingId": "eye",
+      "removed": false
+    },
+    {
+      "word": "eyeglasses",
+      "synonyms": [
+        "glasses",
+        "spectacles"
+      ],
+      "drawingId": "eyeglasses",
+      "removed": false
+    },
+    {
+      "word": "face",
+      "synonyms": [],
+      "drawingId": "face",
+      "removed": false
+    },
+    {
+      "word": "fan",
+      "synonyms": [],
+      "drawingId": "fan",
+      "removed": false
+    },
+    {
+      "word": "feather",
+      "synonyms": [],
+      "drawingId": "feather",
+      "removed": false
+    },
+    {
+      "word": "fence",
+      "synonyms": [],
+      "drawingId": "fence",
+      "removed": false
+    },
+    {
+      "word": "finger",
+      "synonyms": [],
+      "drawingId": "finger",
+      "removed": false
+    },
+    {
+      "word": "fire hydrant",
+      "synonyms": [
+        "hydrant",
+        "fireplug"
+      ],
+      "drawingId": "fire hydrant",
+      "removed": false
+    },
+    {
+      "word": "fireplace",
+      "synonyms": [],
+      "drawingId": "fireplace",
+      "removed": false
+    },
+    {
+      "word": "firetruck",
+      "synonyms": [
+        "fire truck",
+        "fire engine"
+      ],
+      "drawingId": "firetruck",
+      "removed": false
+    },
+    {
+      "word": "fish",
+      "synonyms": [],
+      "drawingId": "fish",
+      "removed": false
+    },
+    {
+      "word": "flamingo",
+      "synonyms": [],
+      "drawingId": "flamingo",
+      "removed": false
+    },
+    {
+      "word": "flashlight",
+      "synonyms": [
+        "torch"
+      ],
+      "drawingId": "flashlight",
+      "removed": false
+    },
+    {
+      "word": "flip flops",
+      "synonyms": [
+        "sandals",
+        "thongs"
+      ],
+      "drawingId": "flip flops",
+      "removed": false
+    },
+    {
+      "word": "floor lamp",
+      "synonyms": [
+        "lamp"
+      ],
+      "drawingId": "floor lamp",
+      "removed": false
+    },
+    {
+      "word": "flower",
+      "synonyms": [],
+      "drawingId": "flower",
+      "removed": false
+    },
+    {
+      "word": "flying saucer",
+      "synonyms": [
+        "ufo",
+        "unidentified flying object"
+      ],
+      "drawingId": "flying saucer",
+      "removed": false
+    },
+    {
+      "word": "foot",
+      "synonyms": [],
+      "drawingId": "foot",
+      "removed": false
+    },
+    {
+      "word": "fork",
+      "synonyms": [],
+      "drawingId": "fork",
+      "removed": false
+    },
+    {
+      "word": "frog",
+      "synonyms": [],
+      "drawingId": "frog",
+      "removed": false
+    },
+    {
+      "word": "frying pan",
+      "synonyms": [
+        "frypan",
+        "skillet"
+      ],
+      "drawingId": "frying pan",
+      "removed": false
+    },
+    {
+      "word": "garden",
+      "synonyms": [],
+      "drawingId": "garden",
+      "removed": false
+    },
+    {
+      "word": "garden hose",
+      "synonyms": [
+        "hose"
+      ],
+      "drawingId": "garden hose",
+      "removed": true
+    },
+    {
+      "word": "giraffe",
+      "synonyms": [],
+      "drawingId": "giraffe",
+      "removed": false
+    },
+    {
+      "word": "goatee",
+      "synonyms": [],
+      "drawingId": "goatee",
+      "removed": false
+    },
+    {
+      "word": "golf club",
+      "synonyms": [
+        "club"
+      ],
+      "drawingId": "golf club",
+      "removed": false
+    },
+    {
+      "word": "grapes",
+      "synonyms": [],
+      "drawingId": "grapes",
+      "removed": false
+    },
+    {
+      "word": "grass",
+      "synonyms": [],
+      "drawingId": "grass",
+      "removed": false
+    },
+    {
+      "word": "guitar",
+      "synonyms": [],
+      "drawingId": "guitar",
+      "removed": false
+    },
+    {
+      "word": "hamburger",
+      "synonyms": [
+        "burger"
+      ],
+      "drawingId": "hamburger",
+      "removed": false
+    },
+    {
+      "word": "hammer",
+      "synonyms": [],
+      "drawingId": "hammer",
+      "removed": false
+    },
+    {
+      "word": "hand",
+      "synonyms": [],
+      "drawingId": "hand",
+      "removed": false
+    },
+    {
+      "word": "harp",
+      "synonyms": [],
+      "drawingId": "harp",
+      "removed": false
+    },
+    {
+      "word": "hat",
+      "synonyms": [
+        "cap"
+      ],
+      "drawingId": "hat",
+      "removed": false
+    },
+    {
+      "word": "headphones",
+      "synonyms": [
+        "earphones",
+        "earbuds"
+      ],
+      "drawingId": "headphones",
+      "removed": false
+    },
+    {
+      "word": "hedgehog",
+      "synonyms": [],
+      "drawingId": "hedgehog",
+      "removed": false
+    },
+    {
+      "word": "helicopter",
+      "synonyms": [
+        "chopper",
+        "copter"
+      ],
+      "drawingId": "helicopter",
+      "removed": false
+    },
+    {
+      "word": "helmet",
+      "synonyms": [],
+      "drawingId": "helmet",
+      "removed": false
+    },
+    {
+      "word": "hexagon",
+      "synonyms": [],
+      "drawingId": "hexagon",
+      "removed": false
+    },
+    {
+      "word": "hockey puck",
+      "synonyms": [
+        "puck"
+      ],
+      "drawingId": "hockey puck",
+      "removed": true
+    },
+    {
+      "word": "hockey stick",
+      "synonyms": [
+        "stick"
+      ],
+      "drawingId": "hockey stick",
+      "removed": true
+    },
+    {
+      "word": "horse",
+      "synonyms": [],
+      "drawingId": "horse",
+      "removed": false
+    },
+    {
+      "word": "hospital",
+      "synonyms": [],
+      "drawingId": "hospital",
+      "removed": false
+    },
+    {
+      "word": "hot air balloon",
+      "synonyms": [
+        "balloon"
+      ],
+      "drawingId": "hot air balloon",
+      "removed": false
+    },
+    {
+      "word": "hot dog",
+      "synonyms": [
+        "hotdog"
+      ],
+      "drawingId": "hot dog",
+      "removed": false
+    },
+    {
+      "word": "hot tub",
+      "synonyms": [
+        "jacuzzi",
+        "spa"
+      ],
+      "drawingId": "hot tub",
+      "removed": false
+    },
+    {
+      "word": "hourglass",
+      "synonyms": [
+        "sand timer"
+      ],
+      "drawingId": "hourglass",
+      "removed": false
+    },
+    {
+      "word": "house",
+      "synonyms": [
+        "home"
+      ],
+      "drawingId": "house",
+      "removed": false
+    },
+    {
+      "word": "house plant",
+      "synonyms": [
+        "houseplant",
+        "plant"
+      ],
+      "drawingId": "house plant",
+      "removed": false
+    },
+    {
+      "word": "hurricane",
+      "synonyms": [],
+      "drawingId": "hurricane",
+      "removed": false
+    },
+    {
+      "word": "ice cream",
+      "synonyms": [
+        "icecream"
+      ],
+      "drawingId": "ice cream",
+      "removed": false
+    },
+    {
+      "word": "jacket",
+      "synonyms": [
+        "coat"
+      ],
+      "drawingId": "jacket",
+      "removed": false
+    },
+    {
+      "word": "jail",
+      "synonyms": [
+        "prison"
+      ],
+      "drawingId": "jail",
+      "removed": false
+    },
+    {
+      "word": "kangaroo",
+      "synonyms": [],
+      "drawingId": "kangaroo",
+      "removed": false
+    },
+    {
+      "word": "key",
+      "synonyms": [],
+      "drawingId": "key",
+      "removed": false
+    },
+    {
+      "word": "keyboard",
+      "synonyms": [],
+      "drawingId": "keyboard",
+      "removed": false
+    },
+    {
+      "word": "knee",
+      "synonyms": [],
+      "drawingId": "knee",
+      "removed": false
+    },
+    {
+      "word": "knife",
+      "synonyms": [],
+      "drawingId": "knife",
+      "removed": false
+    },
+    {
+      "word": "ladder",
+      "synonyms": [],
+      "drawingId": "ladder",
+      "removed": false
+    },
+    {
+      "word": "lantern",
+      "synonyms": [],
+      "drawingId": "lantern",
+      "removed": false
+    },
+    {
+      "word": "laptop",
+      "synonyms": [
+        "notebook"
+      ],
+      "drawingId": "laptop",
+      "removed": false
+    },
+    {
+      "word": "leaf",
+      "synonyms": [],
+      "drawingId": "leaf",
+      "removed": false
+    },
+    {
+      "word": "leg",
+      "synonyms": [],
+      "drawingId": "leg",
+      "removed": false
+    },
+    {
+      "word": "light bulb",
+      "synonyms": [
+        "bulb",
+        "light"
+      ],
+      "drawingId": "light bulb",
+      "removed": false
+    },
+    {
+      "word": "lighter",
+      "synonyms": [],
+      "drawingId": "lighter",
+      "removed": false
+    },
+    {
+      "word": "lighthouse",
+      "synonyms": [],
+      "drawingId": "lighthouse",
+      "removed": false
+    },
+    {
+      "word": "lightning",
+      "synonyms": [],
+      "drawingId": "lightning",
+      "removed": false
+    },
+    {
+      "word": "line",
+      "synonyms": [],
+      "drawingId": "line",
+      "removed": false
+    },
+    {
+      "word": "lion",
+      "synonyms": [],
+      "drawingId": "lion",
+      "removed": false
+    },
+    {
+      "word": "lipstick",
+      "synonyms": [],
+      "drawingId": "lipstick",
+      "removed": false
+    },
+    {
+      "word": "lobster",
+      "synonyms": [],
+      "drawingId": "lobster",
+      "removed": false
+    },
+    {
+      "word": "lollipop",
+      "synonyms": [
+        "lolly",
+        "sucker"
+      ],
+      "drawingId": "lollipop",
+      "removed": false
+    },
+    {
+      "word": "mailbox",
+      "synonyms": [
+        "post box",
+        "letter box"
+      ],
+      "drawingId": "mailbox",
+      "removed": false
+    },
+    {
+      "word": "map",
+      "synonyms": [],
+      "drawingId": "map",
+      "removed": false
+    },
+    {
+      "word": "marker",
+      "synonyms": [],
+      "drawingId": "marker",
+      "removed": true
+    },
+    {
+      "word": "matches",
+      "synonyms": [
+        "matchsticks"
+      ],
+      "drawingId": "matches",
+      "removed": false
+    },
+    {
+      "word": "megaphone",
+      "synonyms": [],
+      "drawingId": "megaphone",
+      "removed": false
+    },
+    {
+      "word": "mermaid",
+      "synonyms": [],
+      "drawingId": "mermaid",
+      "removed": false
+    },
+    {
+      "word": "microphone",
+      "synonyms": [
+        "mic",
+        "mike"
+      ],
+      "drawingId": "microphone",
+      "removed": false
+    },
+    {
+      "word": "microwave",
+      "synonyms": [
+        "microwave oven"
+      ],
+      "drawingId": "microwave",
+      "removed": false
+    },
+    {
+      "word": "monkey",
+      "synonyms": [],
+      "drawingId": "monkey",
+      "removed": false
+    },
+    {
+      "word": "moon",
+      "synonyms": [],
+      "drawingId": "moon",
+      "removed": false
+    },
+    {
+      "word": "mosquito",
+      "synonyms": [],
+      "drawingId": "mosquito",
+      "removed": false
+    },
+    {
+      "word": "motorbike",
+      "synonyms": [
+        "motorcycle"
+      ],
+      "drawingId": "motorbike",
+      "removed": false
+    },
+    {
+      "word": "mountain",
+      "synonyms": [],
+      "drawingId": "mountain",
+      "removed": false
+    },
+    {
+      "word": "mouse",
+      "synonyms": [],
+      "drawingId": "mouse",
+      "removed": false
+    },
+    {
+      "word": "moustache",
+      "synonyms": [
+        "mustache"
+      ],
+      "drawingId": "moustache",
+      "removed": false
+    },
+    {
+      "word": "mouth",
+      "synonyms": [],
+      "drawingId": "mouth",
+      "removed": false
+    },
+    {
+      "word": "mug",
+      "synonyms": [],
+      "drawingId": "mug",
+      "removed": false
+    },
+    {
+      "word": "mushroom",
+      "synonyms": [],
+      "drawingId": "mushroom",
+      "removed": false
+    },
+    {
+      "word": "nail",
+      "synonyms": [],
+      "drawingId": "nail",
+      "removed": false
+    },
+    {
+      "word": "necklace",
+      "synonyms": [],
+      "drawingId": "necklace",
+      "removed": false
+    },
+    {
+      "word": "nose",
+      "synonyms": [],
+      "drawingId": "nose",
+      "removed": false
+    },
+    {
+      "word": "ocean",
+      "synonyms": [
+        "sea"
+      ],
+      "drawingId": "ocean",
+      "removed": false
+    },
+    {
+      "word": "octagon",
+      "synonyms": [],
+      "drawingId": "octagon",
+      "removed": false
+    },
+    {
+      "word": "octopus",
+      "synonyms": [],
+      "drawingId": "octopus",
+      "removed": false
+    },
+    {
+      "word": "onion",
+      "synonyms": [],
+      "drawingId": "onion",
+      "removed": false
+    },
+    {
+      "word": "oven",
+      "synonyms": [],
+      "drawingId": "oven",
+      "removed": false
+    },
+    {
+      "word": "owl",
+      "synonyms": [],
+      "drawingId": "owl",
+      "removed": false
+    },
+    {
+      "word": "paintbrush",
+      "synonyms": [
+        "brush",
+        "paint brush"
+      ],
+      "drawingId": "paintbrush",
+      "removed": false
+    },
+    {
+      "word": "paint can",
+      "synonyms": [
+        "paint canister",
+        "paint tin"
+      ],
+      "drawingId": "paint can",
+      "removed": false
+    },
+    {
+      "word": "palm tree",
+      "synonyms": [
+        "palm"
+      ],
+      "drawingId": "palm tree",
+      "removed": false
+    },
+    {
+      "word": "panda",
+      "synonyms": [],
+      "drawingId": "panda",
+      "removed": false
+    },
+    {
+      "word": "pants",
+      "synonyms": [
+        "trousers"
+      ],
+      "drawingId": "pants",
+      "removed": false
+    },
+    {
+      "word": "paper clip",
+      "synonyms": [
+        "paperclip"
+      ],
+      "drawingId": "paper clip",
+      "removed": false
+    },
+    {
+      "word": "parachute",
+      "synonyms": [],
+      "drawingId": "parachute",
+      "removed": false
+    },
+    {
+      "word": "parrot",
+      "synonyms": [],
+      "drawingId": "parrot",
+      "removed": false
+    },
+    {
+      "word": "passport",
+      "synonyms": [],
+      "drawingId": "passport",
+      "removed": false
+    },
+    {
+      "word": "peanut",
+      "synonyms": [],
+      "drawingId": "peanut",
+      "removed": false
+    },
+    {
+      "word": "pear",
+      "synonyms": [],
+      "drawingId": "pear",
+      "removed": false
+    },
+    {
+      "word": "peas",
+      "synonyms": [],
+      "drawingId": "peas",
+      "removed": false
+    },
+    {
+      "word": "pencil",
+      "synonyms": [],
+      "drawingId": "pencil",
+      "removed": false
+    },
+    {
+      "word": "penguin",
+      "synonyms": [],
+      "drawingId": "penguin",
+      "removed": false
+    },
+    {
+      "word": "piano",
+      "synonyms": [],
+      "drawingId": "piano",
+      "removed": false
+    },
+    {
+      "word": "pickup truck",
+      "synonyms": [
+        "pickup",
+        "truck"
+      ],
+      "drawingId": "pickup truck",
+      "removed": true
+    },
+    {
+      "word": "picture frame",
+      "synonyms": [
+        "frame"
+      ],
+      "drawingId": "picture frame",
+      "removed": false
+    },
+    {
+      "word": "pig",
+      "synonyms": [
+        "hog"
+      ],
+      "drawingId": "pig",
+      "removed": false
+    },
+    {
+      "word": "pillow",
+      "synonyms": [],
+      "drawingId": "pillow",
+      "removed": false
+    },
+    {
+      "word": "pineapple",
+      "synonyms": [],
+      "drawingId": "pineapple",
+      "removed": false
+    },
+    {
+      "word": "pizza",
+      "synonyms": [],
+      "drawingId": "pizza",
+      "removed": false
+    },
+    {
+      "word": "pliers",
+      "synonyms": [],
+      "drawingId": "pliers",
+      "removed": false
+    },
+    {
+      "word": "police car",
+      "synonyms": [
+        "police",
+        "cop car"
+      ],
+      "drawingId": "police car",
+      "removed": false
+    },
+    {
+      "word": "pond",
+      "synonyms": [],
+      "drawingId": "pond",
+      "removed": false
+    },
+    {
+      "word": "pool",
+      "synonyms": [
+        "swimming pool"
+      ],
+      "drawingId": "pool",
+      "removed": false
+    },
+    {
+      "word": "popsicle",
+      "synonyms": [
+        "ice pop",
+        "ice lolly"
+      ],
+      "drawingId": "popsicle",
+      "removed": false
+    },
+    {
+      "word": "postcard",
+      "synonyms": [],
+      "drawingId": "postcard",
+      "removed": false
+    },
+    {
+      "word": "potato",
+      "synonyms": [],
+      "drawingId": "potato",
+      "removed": false
+    },
+    {
+      "word": "power outlet",
+      "synonyms": [
+        "outlet",
+        "socket",
+        "power socket"
+      ],
+      "drawingId": "power outlet",
+      "removed": false
+    },
+    {
+      "word": "purse",
+      "synonyms": [
+        "handbag"
+      ],
+      "drawingId": "purse",
+      "removed": false
+    },
+    {
+      "word": "rabbit",
+      "synonyms": [
+        "bunny"
+      ],
+      "drawingId": "rabbit",
+      "removed": false
+    },
+    {
+      "word": "raccoon",
+      "synonyms": [],
+      "drawingId": "raccoon",
+      "removed": false
+    },
+    {
+      "word": "radio",
+      "synonyms": [],
+      "drawingId": "radio",
+      "removed": false
+    },
+    {
+      "word": "rain",
+      "synonyms": [],
+      "drawingId": "rain",
+      "removed": false
+    },
+    {
+      "word": "rainbow",
+      "synonyms": [],
+      "drawingId": "rainbow",
+      "removed": false
+    },
+    {
+      "word": "rake",
+      "synonyms": [],
+      "drawingId": "rake",
+      "removed": false
+    },
+    {
+      "word": "remote control",
+      "synonyms": [
+        "remote"
+      ],
+      "drawingId": "remote control",
+      "removed": false
+    },
+    {
+      "word": "rhinoceros",
+      "synonyms": [
+        "rhino"
+      ],
+      "drawingId": "rhinoceros",
+      "removed": false
+    },
+    {
+      "word": "rifle",
+      "synonyms": [],
+      "drawingId": "rifle",
+      "removed": false
+    },
+    {
+      "word": "river",
+      "synonyms": [],
+      "drawingId": "river",
+      "removed": false
+    },
+    {
+      "word": "roller coaster",
+      "synonyms": [
+        "coaster"
+      ],
+      "drawingId": "roller coaster",
+      "removed": false
+    },
+    {
+      "word": "rollerskates",
+      "synonyms": [
+        "roller skates",
+        "skates"
+      ],
+      "drawingId": "rollerskates",
+      "removed": false
+    },
+    {
+      "word": "sailboat",
+      "synonyms": [
+        "sail boat",
+        "sailing boat"
+      ],
+      "drawingId": "sailboat",
+      "removed": false
+    },
+    {
+      "word": "sandwich",
+      "synonyms": [
+        "sandwich"
+      ],
+      "drawingId": "sandwich",
+      "removed": false
+    },
+    {
+      "word": "saw",
+      "synonyms": [],
+      "drawingId": "saw",
+      "removed": false
+    },
+    {
+      "word": "saxophone",
+      "synonyms": [
+        "sax"
+      ],
+      "drawingId": "saxophone",
+      "removed": false
+    },
+    {
+      "word": "school bus",
+      "synonyms": [
+        "bus"
+      ],
+      "drawingId": "school bus",
+      "removed": true
+    },
+    {
+      "word": "scissors",
+      "synonyms": [],
+      "drawingId": "scissors",
+      "removed": false
+    },
+    {
+      "word": "scorpion",
+      "synonyms": [],
+      "drawingId": "scorpion",
+      "removed": false
+    },
+    {
+      "word": "screwdriver",
+      "synonyms": [],
+      "drawingId": "screwdriver",
+      "removed": false
+    },
+    {
+      "word": "sea turtle",
+      "synonyms": [
+        "turtle"
+      ],
+      "drawingId": "sea turtle",
+      "removed": false
+    },
+    {
+      "word": "see saw",
+      "synonyms": [
+        "seesaw",
+        "teeter totter"
+      ],
+      "drawingId": "see saw",
+      "removed": false
+    },
+    {
+      "word": "shark",
+      "synonyms": [],
+      "drawingId": "shark",
+      "removed": false
+    },
+    {
+      "word": "sheep",
+      "synonyms": [],
+      "drawingId": "sheep",
+      "removed": false
+    },
+    {
+      "word": "shoe",
+      "synonyms": [],
+      "drawingId": "shoe",
+      "removed": false
+    },
+    {
+      "word": "shorts",
+      "synonyms": [],
+      "drawingId": "shorts",
+      "removed": false
+    },
+    {
+      "word": "shovel",
+      "synonyms": [],
+      "drawingId": "shovel",
+      "removed": false
+    },
+    {
+      "word": "sink",
+      "synonyms": [],
+      "drawingId": "sink",
+      "removed": false
+    },
+    {
+      "word": "skateboard",
+      "synonyms": [
+        "skate board"
+      ],
+      "drawingId": "skateboard",
+      "removed": false
+    },
+    {
+      "word": "skull",
+      "synonyms": [],
+      "drawingId": "skull",
+      "removed": false
+    },
+    {
+      "word": "skyscraper",
+      "synonyms": [],
+      "drawingId": "skyscraper",
+      "removed": false
+    },
+    {
+      "word": "sleeping bag",
+      "synonyms": [],
+      "drawingId": "sleeping bag",
+      "removed": true
+    },
+    {
+      "word": "smiley face",
+      "synonyms": [
+        "smiley",
+        "smile"
+      ],
+      "drawingId": "smiley face",
+      "removed": false
+    },
+    {
+      "word": "snail",
+      "synonyms": [],
+      "drawingId": "snail",
+      "removed": false
+    },
+    {
+      "word": "snake",
+      "synonyms": [],
+      "drawingId": "snake",
+      "removed": false
+    },
+    {
+      "word": "snorkel",
+      "synonyms": [],
+      "drawingId": "snorkel",
+      "removed": true
+    },
+    {
+      "word": "snowflake",
+      "synonyms": [],
+      "drawingId": "snowflake",
+      "removed": false
+    },
+    {
+      "word": "snowman",
+      "synonyms": [],
+      "drawingId": "snowman",
+      "removed": false
+    },
+    {
+      "word": "soccer ball",
+      "synonyms": [
+        "football"
+      ],
+      "drawingId": "soccer ball",
+      "removed": false
+    },
+    {
+      "word": "sock",
+      "synonyms": [],
+      "drawingId": "sock",
+      "removed": false
+    },
+    {
+      "word": "speedboat",
+      "synonyms": [
+        "speed boat"
+      ],
+      "drawingId": "speedboat",
+      "removed": true
+    },
+    {
+      "word": "spider",
+      "synonyms": [],
+      "drawingId": "spider",
+      "removed": false
+    },
+    {
+      "word": "spoon",
+      "synonyms": [],
+      "drawingId": "spoon",
+      "removed": false
+    },
+    {
+      "word": "spreadsheet",
+      "synonyms": [],
+      "drawingId": "spreadsheet",
+      "removed": false
+    },
+    {
+      "word": "square",
+      "synonyms": [],
+      "drawingId": "square",
+      "removed": false
+    },
+    {
+      "word": "squiggle",
+      "synonyms": [],
+      "drawingId": "squiggle",
+      "removed": false
+    },
+    {
+      "word": "squirrel",
+      "synonyms": [],
+      "drawingId": "squirrel",
+      "removed": false
+    },
+    {
+      "word": "stairs",
+      "synonyms": [
+        "steps",
+        "staircase"
+      ],
+      "drawingId": "stairs",
+      "removed": false
+    },
+    {
+      "word": "star",
+      "synonyms": [],
+      "drawingId": "star",
+      "removed": false
+    },
+    {
+      "word": "steak",
+      "synonyms": [],
+      "drawingId": "steak",
+      "removed": false
+    },
+    {
+      "word": "stereo",
+      "synonyms": [],
+      "drawingId": "stereo",
+      "removed": false
+    },
+    {
+      "word": "stethoscope",
+      "synonyms": [],
+      "drawingId": "stethoscope",
+      "removed": false
+    },
+    {
+      "word": "stitches",
+      "synonyms": [],
+      "drawingId": "stitches",
+      "removed": false
+    },
+    {
+      "word": "stop sign",
+      "synonyms": [
+        "stop"
+      ],
+      "drawingId": "stop sign",
+      "removed": false
+    },
+    {
+      "word": "stove",
+      "synonyms": [
+        "cooker"
+      ],
+      "drawingId": "stove",
+      "removed": false
+    },
+    {
+      "word": "strawberry",
+      "synonyms": [],
+      "drawingId": "strawberry",
+      "removed": false
+    },
+    {
+      "word": "streetlight",
+      "synonyms": [
+        "street light",
+        "street lamp"
+      ],
+      "drawingId": "streetlight",
+      "removed": false
+    },
+    {
+      "word": "string bean",
+      "synonyms": [
+        "green bean"
+      ],
+      "drawingId": "string bean",
+      "removed": true
+    },
+    {
+      "word": "submarine",
+      "synonyms": [
+        "sub"
+      ],
+      "drawingId": "submarine",
+      "removed": false
+    },
+    {
+      "word": "suitcase",
+      "synonyms": [
+        "luggage"
+      ],
+      "drawingId": "suitcase",
+      "removed": false
+    },
+    {
+      "word": "sun",
+      "synonyms": [],
+      "drawingId": "sun",
+      "removed": false
+    },
+    {
+      "word": "swan",
+      "synonyms": [],
+      "drawingId": "swan",
+      "removed": false
+    },
+    {
+      "word": "sweater",
+      "synonyms": [
+        "jumper"
+      ],
+      "drawingId": "sweater",
+      "removed": false
+    },
+    {
+      "word": "swing set",
+      "synonyms": [
+        "swings",
+        "swing"
+      ],
+      "drawingId": "swing set",
+      "removed": false
+    },
+    {
+      "word": "sword",
+      "synonyms": [],
+      "drawingId": "sword",
+      "removed": false
+    },
+    {
+      "word": "syringe",
+      "synonyms": [],
+      "drawingId": "syringe",
+      "removed": false
+    },
+    {
+      "word": "table",
+      "synonyms": [],
+      "drawingId": "table",
+      "removed": false
+    },
+    {
+      "word": "teapot",
+      "synonyms": [
+        "tea pot"
+      ],
+      "drawingId": "teapot",
+      "removed": false
+    },
+    {
+      "word": "teddy-bear",
+      "synonyms": [
+        "teddy bear",
+        "teddy",
+        "bear"
+      ],
+      "drawingId": "teddy-bear",
+      "removed": false
+    },
+    {
+      "word": "telephone",
+      "synonyms": [
+        "phone"
+      ],
+      "drawingId": "telephone",
+      "removed": false
+    },
+    {
+      "word": "television",
+      "synonyms": [
+        "tv",
+        "telly"
+      ],
+      "drawingId": "television",
+      "removed": false
+    },
+    {
+      "word": "tennis racquet",
+      "synonyms": [
+        "tennis racket",
+        "racket"
+      ],
+      "drawingId": "tennis racquet",
+      "removed": false
+    },
+    {
+      "word": "tent",
+      "synonyms": [],
+      "drawingId": "tent",
+      "removed": false
+    },
+    {
+      "word": "The Eiffel Tower",
+      "synonyms": [
+        "eiffel tower"
+      ],
+      "drawingId": "The Eiffel Tower",
+      "removed": false
+    },
+    {
+      "word": "The Great Wall of China",
+      "synonyms": [
+        "great wall",
+        "great wall of china"
+      ],
+      "drawingId": "The Great Wall of China",
+      "removed": false
+    },
+    {
+      "word": "The Mona Lisa",
+      "synonyms": [
+        "mona lisa"
+      ],
+      "drawingId": "The Mona Lisa",
+      "removed": false
+    },
+    {
+      "word": "tiger",
+      "synonyms": [],
+      "drawingId": "tiger",
+      "removed": false
+    },
+    {
+      "word": "toaster",
+      "synonyms": [],
+      "drawingId": "toaster",
+      "removed": false
+    },
+    {
+      "word": "toe",
+      "synonyms": [],
+      "drawingId": "toe",
+      "removed": false
+    },
+    {
+      "word": "toilet",
+      "synonyms": [
+        "loo",
+        "bathroom"
+      ],
+      "drawingId": "toilet",
+      "removed": false
+    },
+    {
+      "word": "tooth",
+      "synonyms": [],
+      "drawingId": "tooth",
+      "removed": false
+    },
+    {
+      "word": "toothbrush",
+      "synonyms": [],
+      "drawingId": "toothbrush",
+      "removed": false
+    },
+    {
+      "word": "toothpaste",
+      "synonyms": [],
+      "drawingId": "toothpaste",
+      "removed": false
+    },
+    {
+      "word": "tornado",
+      "synonyms": [],
+      "drawingId": "tornado",
+      "removed": false
+    },
+    {
+      "word": "tractor",
+      "synonyms": [],
+      "drawingId": "tractor",
+      "removed": false
+    },
+    {
+      "word": "traffic light",
+      "synonyms": [
+        "traffic lights",
+        "stoplight"
+      ],
+      "drawingId": "traffic light",
+      "removed": false
+    },
+    {
+      "word": "train",
+      "synonyms": [],
+      "drawingId": "train",
+      "removed": false
+    },
+    {
+      "word": "tree",
+      "synonyms": [],
+      "drawingId": "tree",
+      "removed": false
+    },
+    {
+      "word": "triangle",
+      "synonyms": [],
+      "drawingId": "triangle",
+      "removed": false
+    },
+    {
+      "word": "trombone",
+      "synonyms": [],
+      "drawingId": "trombone",
+      "removed": false
+    },
+    {
+      "word": "truck",
+      "synonyms": [],
+      "drawingId": "truck",
+      "removed": false
+    },
+    {
+      "word": "trumpet",
+      "synonyms": [],
+      "drawingId": "trumpet",
+      "removed": false
+    },
+    {
+      "word": "t-shirt",
+      "synonyms": [
+        "tee",
+        "tshirt",
+        "t shirt"
+      ],
+      "drawingId": "t-shirt",
+      "removed": false
+    },
+    {
+      "word": "umbrella",
+      "synonyms": [],
+      "drawingId": "umbrella",
+      "removed": false
+    },
+    {
+      "word": "underwear",
+      "synonyms": [],
+      "drawingId": "underwear",
+      "removed": false
+    },
+    {
+      "word": "van",
+      "synonyms": [],
+      "drawingId": "van",
+      "removed": false
+    },
+    {
+      "word": "vase",
+      "synonyms": [],
+      "drawingId": "vase",
+      "removed": false
+    },
+    {
+      "word": "violin",
+      "synonyms": [
+        "fiddle"
+      ],
+      "drawingId": "violin",
+      "removed": false
+    },
+    {
+      "word": "washing machine",
+      "synonyms": [
+        "washer"
+      ],
+      "drawingId": "washing machine",
+      "removed": false
+    },
+    {
+      "word": "watermelon",
+      "synonyms": [],
+      "drawingId": "watermelon",
+      "removed": false
+    },
+    {
+      "word": "waterslide",
+      "synonyms": [
+        "water slide"
+      ],
+      "drawingId": "waterslide",
+      "removed": false
+    },
+    {
+      "word": "whale",
+      "synonyms": [],
+      "drawingId": "whale",
+      "removed": false
+    },
+    {
+      "word": "wheel",
+      "synonyms": [],
+      "drawingId": "wheel",
+      "removed": false
+    },
+    {
+      "word": "windmill",
+      "synonyms": [],
+      "drawingId": "windmill",
+      "removed": false
+    },
+    {
+      "word": "wine bottle",
+      "synonyms": [
+        "bottle"
+      ],
+      "drawingId": "wine bottle",
+      "removed": false
+    },
+    {
+      "word": "wine glass",
+      "synonyms": [
+        "glass"
+      ],
+      "drawingId": "wine glass",
+      "removed": false
+    },
+    {
+      "word": "wristwatch",
+      "synonyms": [
+        "watch"
+      ],
+      "drawingId": "wristwatch",
+      "removed": false
+    },
+    {
+      "word": "yoga",
+      "synonyms": [],
+      "drawingId": "yoga",
+      "removed": false
+    },
+    {
+      "word": "zebra",
+      "synonyms": [],
+      "drawingId": "zebra",
+      "removed": false
+    },
+    {
+      "word": "zigzag",
+      "synonyms": [],
+      "drawingId": "zigzag",
+      "removed": true
+    }
+  ],
+  "zh-CN": [
+    {
+      "word": "航空母舰",
+      "synonyms": [
+        "航母"
+      ],
+      "drawingId": "aircraft carrier",
+      "pinyin": [
+        [
+          "h",
+          "ang"
+        ],
+        [
+          "k",
+          "ong"
+        ],
+        [
+          "m",
+          "u"
+        ],
+        [
+          "j",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "飞机",
+      "synonyms": [
+        "飞行器"
+      ],
+      "drawingId": "airplane",
+      "pinyin": [
+        [
+          "f",
+          "ei"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "闹钟",
+      "synonyms": [
+        "闹表"
+      ],
+      "drawingId": "alarm clock",
+      "pinyin": [
+        [
+          "n",
+          "ao"
+        ],
+        [
+          "zh",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "救护车",
+      "synonyms": [],
+      "drawingId": "ambulance",
+      "pinyin": [
+        [
+          "j",
+          "iu"
+        ],
+        [
+          "h",
+          "u"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "天使",
+      "synonyms": [],
+      "drawingId": "angel",
+      "pinyin": [
+        [
+          "t",
+          "ian"
+        ],
+        [
+          "sh",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "动物迁徙",
+      "synonyms": [
+        "动物迁移"
+      ],
+      "drawingId": "animal migration",
+      "pinyin": [
+        [
+          "d",
+          "ong"
+        ],
+        [
+          "w",
+          "u"
+        ],
+        [
+          "q",
+          "ian"
+        ],
+        [
+          "x",
+          "i"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "蚂蚁",
+      "synonyms": [],
+      "drawingId": "ant",
+      "pinyin": [
+        [
+          "m",
+          "a"
+        ],
+        [
+          "y",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "铁砧",
+      "synonyms": [
+        "砧子"
+      ],
+      "drawingId": "anvil",
+      "pinyin": [
+        [
+          "t",
+          "ie"
+        ],
+        [
+          "zh",
+          "en"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "苹果",
+      "synonyms": [],
+      "drawingId": "apple",
+      "pinyin": [
+        [
+          "p",
+          "ing"
+        ],
+        [
+          "g",
+          "uo"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "手臂",
+      "synonyms": [
+        "胳膊",
+        "臂"
+      ],
+      "drawingId": "arm",
+      "pinyin": [
+        [
+          "sh",
+          "ou"
+        ],
+        [
+          "b",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "芦笋",
+      "synonyms": [
+        "龙须菜"
+      ],
+      "drawingId": "asparagus",
+      "pinyin": [
+        [
+          "l",
+          "u"
+        ],
+        [
+          "s",
+          "un"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "斧头",
+      "synonyms": [
+        "斧子"
+      ],
+      "drawingId": "axe",
+      "pinyin": [
+        [
+          "f",
+          "u"
+        ],
+        [
+          "t",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "背包",
+      "synonyms": [
+        "双肩包"
+      ],
+      "drawingId": "backpack",
+      "pinyin": [
+        [
+          "b",
+          "ei"
+        ],
+        [
+          "b",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "香蕉",
+      "synonyms": [],
+      "drawingId": "banana",
+      "pinyin": [
+        [
+          "x",
+          "iang"
+        ],
+        [
+          "j",
+          "iao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "绷带",
+      "synonyms": [
+        "纱布"
+      ],
+      "drawingId": "bandage",
+      "pinyin": [
+        [
+          "b",
+          "eng"
+        ],
+        [
+          "d",
+          "ai"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "谷仓",
+      "synonyms": [
+        "仓库"
+      ],
+      "drawingId": "barn",
+      "pinyin": [
+        [
+          "g",
+          "u"
+        ],
+        [
+          "c",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "棒球",
+      "synonyms": [],
+      "drawingId": "baseball",
+      "pinyin": [
+        [
+          "b",
+          "ang"
+        ],
+        [
+          "q",
+          "iu"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "棒球棒",
+      "synonyms": [
+        "球棒"
+      ],
+      "drawingId": "baseball bat",
+      "pinyin": [
+        [
+          "b",
+          "ang"
+        ],
+        [
+          "q",
+          "iu"
+        ],
+        [
+          "b",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "篮子",
+      "synonyms": [
+        "筐"
+      ],
+      "drawingId": "basket",
+      "pinyin": [
+        [
+          "l",
+          "an"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "篮球",
+      "synonyms": [],
+      "drawingId": "basketball",
+      "pinyin": [
+        [
+          "l",
+          "an"
+        ],
+        [
+          "q",
+          "iu"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蝙蝠",
+      "synonyms": [],
+      "drawingId": "bat",
+      "pinyin": [
+        [
+          "b",
+          "ian"
+        ],
+        [
+          "f",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "浴缸",
+      "synonyms": [
+        "浴盆"
+      ],
+      "drawingId": "bathtub",
+      "pinyin": [
+        [
+          "y",
+          "u"
+        ],
+        [
+          "g",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "海滩",
+      "synonyms": [
+        "沙滩"
+      ],
+      "drawingId": "beach",
+      "pinyin": [
+        [
+          "h",
+          "ai"
+        ],
+        [
+          "t",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "熊",
+      "synonyms": [],
+      "drawingId": "bear",
+      "pinyin": [
+        [
+          "x",
+          "iong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "胡须",
+      "synonyms": [
+        "胡子"
+      ],
+      "drawingId": "beard",
+      "pinyin": [
+        [
+          "h",
+          "u"
+        ],
+        [
+          "x",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "床",
+      "synonyms": [],
+      "drawingId": "bed",
+      "pinyin": [
+        [
+          "ch",
+          "uang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蜜蜂",
+      "synonyms": [],
+      "drawingId": "bee",
+      "pinyin": [
+        [
+          "m",
+          "i"
+        ],
+        [
+          "f",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "腰带",
+      "synonyms": [
+        "皮带"
+      ],
+      "drawingId": "belt",
+      "pinyin": [
+        [
+          "y",
+          "ao"
+        ],
+        [
+          "d",
+          "ai"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "长凳",
+      "synonyms": [
+        "板凳"
+      ],
+      "drawingId": "bench",
+      "pinyin": [
+        [
+          "ch",
+          "ang"
+        ],
+        [
+          "d",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "自行车",
+      "synonyms": [
+        "单车",
+        "脚踏车"
+      ],
+      "drawingId": "bicycle",
+      "pinyin": [
+        [
+          "z",
+          "i"
+        ],
+        [
+          "x",
+          "ing"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "望远镜",
+      "synonyms": [],
+      "drawingId": "binoculars",
+      "pinyin": [
+        [
+          "w",
+          "ang"
+        ],
+        [
+          "y",
+          "uan"
+        ],
+        [
+          "j",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "鸟",
+      "synonyms": [],
+      "drawingId": "bird",
+      "pinyin": [
+        [
+          "n",
+          "iao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "生日蛋糕",
+      "synonyms": [
+        "生日蛋糕"
+      ],
+      "drawingId": "birthday cake",
+      "pinyin": [
+        [
+          "sh",
+          "eng"
+        ],
+        [
+          "r",
+          "i"
+        ],
+        [
+          "d",
+          "an"
+        ],
+        [
+          "g",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "黑莓",
+      "synonyms": [],
+      "drawingId": "blackberry",
+      "pinyin": [
+        [
+          "h",
+          "ei"
+        ],
+        [
+          "m",
+          "ei"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蓝莓",
+      "synonyms": [],
+      "drawingId": "blueberry",
+      "pinyin": [
+        [
+          "l",
+          "an"
+        ],
+        [
+          "m",
+          "ei"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "书",
+      "synonyms": [
+        "书籍"
+      ],
+      "drawingId": "book",
+      "pinyin": [
+        [
+          "sh",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "回旋镖",
+      "synonyms": [
+        "回力镖"
+      ],
+      "drawingId": "boomerang",
+      "pinyin": [
+        [
+          "h",
+          "ui"
+        ],
+        [
+          "x",
+          "uan"
+        ],
+        [
+          "b",
+          "iao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "瓶盖",
+      "synonyms": [],
+      "drawingId": "bottlecap",
+      "pinyin": [
+        [
+          "p",
+          "ing"
+        ],
+        [
+          "g",
+          "ai"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "领结",
+      "synonyms": [
+        "蝴蝶结"
+      ],
+      "drawingId": "bowtie",
+      "pinyin": [
+        [
+          "l",
+          "ing"
+        ],
+        [
+          "j",
+          "ie"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "手镯",
+      "synonyms": [
+        "手环"
+      ],
+      "drawingId": "bracelet",
+      "pinyin": [
+        [
+          "sh",
+          "ou"
+        ],
+        [
+          "zh",
+          "uo"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "大脑",
+      "synonyms": [
+        "脑"
+      ],
+      "drawingId": "brain",
+      "pinyin": [
+        [
+          "d",
+          "a"
+        ],
+        [
+          "n",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "面包",
+      "synonyms": [],
+      "drawingId": "bread",
+      "pinyin": [
+        [
+          "m",
+          "ian"
+        ],
+        [
+          "b",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "桥",
+      "synonyms": [],
+      "drawingId": "bridge",
+      "pinyin": [
+        [
+          "q",
+          "iao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "西兰花",
+      "synonyms": [
+        "花椰菜"
+      ],
+      "drawingId": "broccoli",
+      "pinyin": [
+        [
+          "x",
+          "i"
+        ],
+        [
+          "l",
+          "an"
+        ],
+        [
+          "h",
+          "ua"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "扫帚",
+      "synonyms": [
+        "扫把"
+      ],
+      "drawingId": "broom",
+      "pinyin": [
+        [
+          "s",
+          "ao"
+        ],
+        [
+          "zh",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "水桶",
+      "synonyms": [
+        "桶"
+      ],
+      "drawingId": "bucket",
+      "pinyin": [
+        [
+          "sh",
+          "ui"
+        ],
+        [
+          "t",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "推土机",
+      "synonyms": [],
+      "drawingId": "bulldozer",
+      "pinyin": [
+        [
+          "t",
+          "ui"
+        ],
+        [
+          "t",
+          "u"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "公共汽车",
+      "synonyms": [
+        "公交车",
+        "巴士"
+      ],
+      "drawingId": "bus",
+      "pinyin": [
+        [
+          "g",
+          "ong"
+        ],
+        [
+          "g",
+          "ong"
+        ],
+        [
+          "q",
+          "i"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "灌木",
+      "synonyms": [
+        "树丛",
+        "草丛"
+      ],
+      "drawingId": "bush",
+      "pinyin": [
+        [
+          "g",
+          "uan"
+        ],
+        [
+          "m",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蝴蝶",
+      "synonyms": [],
+      "drawingId": "butterfly",
+      "pinyin": [
+        [
+          "h",
+          "u"
+        ],
+        [
+          "d",
+          "ie"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "仙人掌",
+      "synonyms": [],
+      "drawingId": "cactus",
+      "pinyin": [
+        [
+          "x",
+          "ian"
+        ],
+        [
+          "r",
+          "en"
+        ],
+        [
+          "zh",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蛋糕",
+      "synonyms": [
+        "糕点"
+      ],
+      "drawingId": "cake",
+      "pinyin": [
+        [
+          "d",
+          "an"
+        ],
+        [
+          "g",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "计算器",
+      "synonyms": [
+        "计算器"
+      ],
+      "drawingId": "calculator",
+      "pinyin": [
+        [
+          "j",
+          "i"
+        ],
+        [
+          "s",
+          "uan"
+        ],
+        [
+          "q",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "日历",
+      "synonyms": [
+        "月历"
+      ],
+      "drawingId": "calendar",
+      "pinyin": [
+        [
+          "r",
+          "i"
+        ],
+        [
+          "l",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "骆驼",
+      "synonyms": [],
+      "drawingId": "camel",
+      "pinyin": [
+        [
+          "l",
+          "uo"
+        ],
+        [
+          "t",
+          "uo"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "相机",
+      "synonyms": [
+        "照相机",
+        "摄像机"
+      ],
+      "drawingId": "camera",
+      "pinyin": [
+        [
+          "x",
+          "iang"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "伪装",
+      "synonyms": [
+        "迷彩"
+      ],
+      "drawingId": "camouflage",
+      "pinyin": [
+        [
+          "w",
+          "ei"
+        ],
+        [
+          "zh",
+          "uang"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "篝火",
+      "synonyms": [
+        "营火"
+      ],
+      "drawingId": "campfire",
+      "pinyin": [
+        [
+          "g",
+          "ou"
+        ],
+        [
+          "h",
+          "uo"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蜡烛",
+      "synonyms": [],
+      "drawingId": "candle",
+      "pinyin": [
+        [
+          "l",
+          "a"
+        ],
+        [
+          "zh",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "大炮",
+      "synonyms": [
+        "加农炮"
+      ],
+      "drawingId": "cannon",
+      "pinyin": [
+        [
+          "d",
+          "a"
+        ],
+        [
+          "p",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "独木舟",
+      "synonyms": [
+        "小舟"
+      ],
+      "drawingId": "canoe",
+      "pinyin": [
+        [
+          "d",
+          "u"
+        ],
+        [
+          "m",
+          "u"
+        ],
+        [
+          "zh",
+          "ou"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "汽车",
+      "synonyms": [
+        "小汽车",
+        "轿车"
+      ],
+      "drawingId": "car",
+      "pinyin": [
+        [
+          "q",
+          "i"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "胡萝卜",
+      "synonyms": [],
+      "drawingId": "carrot",
+      "pinyin": [
+        [
+          "h",
+          "u"
+        ],
+        [
+          "l",
+          "uo"
+        ],
+        [
+          "b",
+          "o"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "城堡",
+      "synonyms": [],
+      "drawingId": "castle",
+      "pinyin": [
+        [
+          "ch",
+          "eng"
+        ],
+        [
+          "b",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "猫",
+      "synonyms": [],
+      "drawingId": "cat",
+      "pinyin": [
+        [
+          "m",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "吊扇",
+      "synonyms": [
+        "风扇"
+      ],
+      "drawingId": "ceiling fan",
+      "pinyin": [
+        [
+          "d",
+          "iao"
+        ],
+        [
+          "sh",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "大提琴",
+      "synonyms": [],
+      "drawingId": "cello",
+      "pinyin": [
+        [
+          "d",
+          "a"
+        ],
+        [
+          "t",
+          "i"
+        ],
+        [
+          "q",
+          "in"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "手机",
+      "synonyms": [
+        "移动电话",
+        "电话"
+      ],
+      "drawingId": "cell phone",
+      "pinyin": [
+        [
+          "sh",
+          "ou"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "椅子",
+      "synonyms": [],
+      "drawingId": "chair",
+      "pinyin": [
+        [
+          "y",
+          "i"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "枝形吊灯",
+      "synonyms": [
+        "吊灯"
+      ],
+      "drawingId": "chandelier",
+      "pinyin": [
+        [
+          "zh",
+          "i"
+        ],
+        [
+          "x",
+          "ing"
+        ],
+        [
+          "d",
+          "iao"
+        ],
+        [
+          "d",
+          "eng"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "教堂",
+      "synonyms": [],
+      "drawingId": "church",
+      "pinyin": [
+        [
+          "j",
+          "iao"
+        ],
+        [
+          "t",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "圆形",
+      "synonyms": [
+        "圆圈",
+        "圈"
+      ],
+      "drawingId": "circle",
+      "pinyin": [
+        [
+          "y",
+          "uan"
+        ],
+        [
+          "x",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "单簧管",
+      "synonyms": [
+        "黑管"
+      ],
+      "drawingId": "clarinet",
+      "pinyin": [
+        [
+          "d",
+          "an"
+        ],
+        [
+          "h",
+          "uang"
+        ],
+        [
+          "g",
+          "uan"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "时钟",
+      "synonyms": [
+        "钟表"
+      ],
+      "drawingId": "clock",
+      "pinyin": [
+        [
+          "sh",
+          "i"
+        ],
+        [
+          "zh",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "云",
+      "synonyms": [
+        "云朵"
+      ],
+      "drawingId": "cloud",
+      "pinyin": [
+        [
+          "y",
+          "un"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "咖啡杯",
+      "synonyms": [],
+      "drawingId": "coffee cup",
+      "pinyin": [
+        [
+          "k",
+          "a"
+        ],
+        [
+          "f",
+          "ei"
+        ],
+        [
+          "b",
+          "ei"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "指南针",
+      "synonyms": [
+        "罗盘"
+      ],
+      "drawingId": "compass",
+      "pinyin": [
+        [
+          "zh",
+          "i"
+        ],
+        [
+          "n",
+          "an"
+        ],
+        [
+          "zh",
+          "en"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "电脑",
+      "synonyms": [
+        "计算机"
+      ],
+      "drawingId": "computer",
+      "pinyin": [
+        [
+          "d",
+          "ian"
+        ],
+        [
+          "n",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "饼干",
+      "synonyms": [
+        "曲奇"
+      ],
+      "drawingId": "cookie",
+      "pinyin": [
+        [
+          "b",
+          "ing"
+        ],
+        [
+          "g",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "冷却器",
+      "synonyms": [
+        "冰桶"
+      ],
+      "drawingId": "cooler",
+      "pinyin": [
+        [
+          "l",
+          "eng"
+        ],
+        [
+          "q",
+          "ue"
+        ],
+        [
+          "q",
+          "i"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "沙发",
+      "synonyms": [],
+      "drawingId": "couch",
+      "pinyin": [
+        [
+          "sh",
+          "a"
+        ],
+        [
+          "f",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "牛",
+      "synonyms": [],
+      "drawingId": "cow",
+      "pinyin": [
+        [
+          "n",
+          "iu"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "螃蟹",
+      "synonyms": [],
+      "drawingId": "crab",
+      "pinyin": [
+        [
+          "p",
+          "ang"
+        ],
+        [
+          "x",
+          "ie"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蜡笔",
+      "synonyms": [
+        "彩色笔"
+      ],
+      "drawingId": "crayon",
+      "pinyin": [
+        [
+          "l",
+          "a"
+        ],
+        [
+          "b",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "鳄鱼",
+      "synonyms": [],
+      "drawingId": "crocodile",
+      "pinyin": [
+        [
+          null,
+          "e"
+        ],
+        [
+          "y",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "王冠",
+      "synonyms": [
+        "皇冠"
+      ],
+      "drawingId": "crown",
+      "pinyin": [
+        [
+          "w",
+          "ang"
+        ],
+        [
+          "g",
+          "uan"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "游轮",
+      "synonyms": [
+        "邮轮"
+      ],
+      "drawingId": "cruise ship",
+      "pinyin": [
+        [
+          "y",
+          "ou"
+        ],
+        [
+          "l",
+          "un"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "杯子",
+      "synonyms": [
+        "茶杯"
+      ],
+      "drawingId": "cup",
+      "pinyin": [
+        [
+          "b",
+          "ei"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "钻石",
+      "synonyms": [],
+      "drawingId": "diamond",
+      "pinyin": [
+        [
+          "z",
+          "uan"
+        ],
+        [
+          "sh",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "洗碗机",
+      "synonyms": [],
+      "drawingId": "dishwasher",
+      "pinyin": [
+        [
+          "x",
+          "i"
+        ],
+        [
+          "w",
+          "an"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "跳板",
+      "synonyms": [
+        "跳水板"
+      ],
+      "drawingId": "diving board",
+      "pinyin": [
+        [
+          "t",
+          "iao"
+        ],
+        [
+          "b",
+          "an"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "狗",
+      "synonyms": [],
+      "drawingId": "dog",
+      "pinyin": [
+        [
+          "g",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "海豚",
+      "synonyms": [],
+      "drawingId": "dolphin",
+      "pinyin": [
+        [
+          "h",
+          "ai"
+        ],
+        [
+          "t",
+          "un"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "甜甜圈",
+      "synonyms": [
+        "多纳圈"
+      ],
+      "drawingId": "donut",
+      "pinyin": [
+        [
+          "t",
+          "ian"
+        ],
+        [
+          "t",
+          "ian"
+        ],
+        [
+          "q",
+          "uan"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "门",
+      "synonyms": [],
+      "drawingId": "door",
+      "pinyin": [
+        [
+          "m",
+          "en"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "龙",
+      "synonyms": [],
+      "drawingId": "dragon",
+      "pinyin": [
+        [
+          "l",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "梳妆台",
+      "synonyms": [
+        "衣柜",
+        "柜子"
+      ],
+      "drawingId": "dresser",
+      "pinyin": [
+        [
+          "sh",
+          "u"
+        ],
+        [
+          "zh",
+          "uang"
+        ],
+        [
+          "t",
+          "ai"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "钻头",
+      "synonyms": [
+        "电钻"
+      ],
+      "drawingId": "drill",
+      "pinyin": [
+        [
+          "z",
+          "uan"
+        ],
+        [
+          "t",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "鼓",
+      "synonyms": [],
+      "drawingId": "drums",
+      "pinyin": [
+        [
+          "g",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "鸭子",
+      "synonyms": [],
+      "drawingId": "duck",
+      "pinyin": [
+        [
+          "y",
+          "a"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "哑铃",
+      "synonyms": [],
+      "drawingId": "dumbbell",
+      "pinyin": [
+        [
+          "y",
+          "a"
+        ],
+        [
+          "l",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "耳朵",
+      "synonyms": [
+        "耳"
+      ],
+      "drawingId": "ear",
+      "pinyin": [
+        [
+          null,
+          "er"
+        ],
+        [
+          "d",
+          "uo"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "肘部",
+      "synonyms": [
+        "手肘"
+      ],
+      "drawingId": "elbow",
+      "pinyin": [
+        [
+          "zh",
+          "ou"
+        ],
+        [
+          "b",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "大象",
+      "synonyms": [],
+      "drawingId": "elephant",
+      "pinyin": [
+        [
+          "d",
+          "a"
+        ],
+        [
+          "x",
+          "iang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "信封",
+      "synonyms": [],
+      "drawingId": "envelope",
+      "pinyin": [
+        [
+          "x",
+          "in"
+        ],
+        [
+          "f",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "橡皮擦",
+      "synonyms": [
+        "橡皮"
+      ],
+      "drawingId": "eraser",
+      "pinyin": [
+        [
+          "x",
+          "iang"
+        ],
+        [
+          "p",
+          "i"
+        ],
+        [
+          "c",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "眼睛",
+      "synonyms": [
+        "眼"
+      ],
+      "drawingId": "eye",
+      "pinyin": [
+        [
+          "y",
+          "an"
+        ],
+        [
+          "j",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "眼镜",
+      "synonyms": [],
+      "drawingId": "eyeglasses",
+      "pinyin": [
+        [
+          "y",
+          "an"
+        ],
+        [
+          "j",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "脸",
+      "synonyms": [
+        "面部"
+      ],
+      "drawingId": "face",
+      "pinyin": [
+        [
+          "l",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "风扇",
+      "synonyms": [
+        "电扇"
+      ],
+      "drawingId": "fan",
+      "pinyin": [
+        [
+          "f",
+          "eng"
+        ],
+        [
+          "sh",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "羽毛",
+      "synonyms": [],
+      "drawingId": "feather",
+      "pinyin": [
+        [
+          "y",
+          "u"
+        ],
+        [
+          "m",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "栅栏",
+      "synonyms": [
+        "围栏"
+      ],
+      "drawingId": "fence",
+      "pinyin": [
+        [
+          "zh",
+          "a"
+        ],
+        [
+          "l",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "手指",
+      "synonyms": [
+        "指头"
+      ],
+      "drawingId": "finger",
+      "pinyin": [
+        [
+          "sh",
+          "ou"
+        ],
+        [
+          "zh",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "消防栓",
+      "synonyms": [
+        "消火栓"
+      ],
+      "drawingId": "fire hydrant",
+      "pinyin": [
+        [
+          "x",
+          "iao"
+        ],
+        [
+          "f",
+          "ang"
+        ],
+        [
+          "sh",
+          "uan"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "壁炉",
+      "synonyms": [
+        "火炉"
+      ],
+      "drawingId": "fireplace",
+      "pinyin": [
+        [
+          "b",
+          "i"
+        ],
+        [
+          "l",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "消防车",
+      "synonyms": [],
+      "drawingId": "firetruck",
+      "pinyin": [
+        [
+          "x",
+          "iao"
+        ],
+        [
+          "f",
+          "ang"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "鱼",
+      "synonyms": [],
+      "drawingId": "fish",
+      "pinyin": [
+        [
+          "y",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "火烈鸟",
+      "synonyms": [
+        "红鹤"
+      ],
+      "drawingId": "flamingo",
+      "pinyin": [
+        [
+          "h",
+          "uo"
+        ],
+        [
+          "l",
+          "ie"
+        ],
+        [
+          "n",
+          "iao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "手电筒",
+      "synonyms": [
+        "电筒"
+      ],
+      "drawingId": "flashlight",
+      "pinyin": [
+        [
+          "sh",
+          "ou"
+        ],
+        [
+          "d",
+          "ian"
+        ],
+        [
+          "t",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "人字拖",
+      "synonyms": [
+        "拖鞋"
+      ],
+      "drawingId": "flip flops",
+      "pinyin": [
+        [
+          "r",
+          "en"
+        ],
+        [
+          "z",
+          "i"
+        ],
+        [
+          "t",
+          "uo"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "落地灯",
+      "synonyms": [
+        "台灯"
+      ],
+      "drawingId": "floor lamp",
+      "pinyin": [
+        [
+          "l",
+          "uo"
+        ],
+        [
+          "d",
+          "i"
+        ],
+        [
+          "d",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "花",
+      "synonyms": [
+        "花朵",
+        "鲜花"
+      ],
+      "drawingId": "flower",
+      "pinyin": [
+        [
+          "h",
+          "ua"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "飞碟",
+      "synonyms": [
+        "UFO"
+      ],
+      "drawingId": "flying saucer",
+      "pinyin": [
+        [
+          "f",
+          "ei"
+        ],
+        [
+          "d",
+          "ie"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "脚",
+      "synonyms": [
+        "足"
+      ],
+      "drawingId": "foot",
+      "pinyin": [
+        [
+          "j",
+          "iao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "叉子",
+      "synonyms": [
+        "餐叉"
+      ],
+      "drawingId": "fork",
+      "pinyin": [
+        [
+          "ch",
+          "a"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "青蛙",
+      "synonyms": [],
+      "drawingId": "frog",
+      "pinyin": [
+        [
+          "q",
+          "ing"
+        ],
+        [
+          "w",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "平底锅",
+      "synonyms": [
+        "煎锅"
+      ],
+      "drawingId": "frying pan",
+      "pinyin": [
+        [
+          "p",
+          "ing"
+        ],
+        [
+          "d",
+          "i"
+        ],
+        [
+          "g",
+          "uo"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "花园",
+      "synonyms": [
+        "庭院"
+      ],
+      "drawingId": "garden",
+      "pinyin": [
+        [
+          "h",
+          "ua"
+        ],
+        [
+          "y",
+          "uan"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "花园软管",
+      "synonyms": [
+        "水管"
+      ],
+      "drawingId": "garden hose",
+      "pinyin": [
+        [
+          "h",
+          "ua"
+        ],
+        [
+          "y",
+          "uan"
+        ],
+        [
+          "r",
+          "uan"
+        ],
+        [
+          "g",
+          "uan"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "长颈鹿",
+      "synonyms": [],
+      "drawingId": "giraffe",
+      "pinyin": [
+        [
+          "ch",
+          "ang"
+        ],
+        [
+          "j",
+          "ing"
+        ],
+        [
+          "l",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "山羊胡",
+      "synonyms": [
+        "小胡子"
+      ],
+      "drawingId": "goatee",
+      "pinyin": [
+        [
+          "sh",
+          "an"
+        ],
+        [
+          "y",
+          "ang"
+        ],
+        [
+          "h",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "高尔夫球杆",
+      "synonyms": [
+        "球杆"
+      ],
+      "drawingId": "golf club",
+      "pinyin": [
+        [
+          "g",
+          "ao"
+        ],
+        [
+          null,
+          "er"
+        ],
+        [
+          "f",
+          "u"
+        ],
+        [
+          "q",
+          "iu"
+        ],
+        [
+          "g",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "葡萄",
+      "synonyms": [],
+      "drawingId": "grapes",
+      "pinyin": [
+        [
+          "p",
+          "u"
+        ],
+        [
+          "t",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "草",
+      "synonyms": [
+        "青草"
+      ],
+      "drawingId": "grass",
+      "pinyin": [
+        [
+          "c",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "吉他",
+      "synonyms": [],
+      "drawingId": "guitar",
+      "pinyin": [
+        [
+          "j",
+          "i"
+        ],
+        [
+          "t",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "汉堡包",
+      "synonyms": [
+        "汉堡"
+      ],
+      "drawingId": "hamburger",
+      "pinyin": [
+        [
+          "h",
+          "an"
+        ],
+        [
+          "b",
+          "ao"
+        ],
+        [
+          "b",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "锤子",
+      "synonyms": [
+        "铁锤"
+      ],
+      "drawingId": "hammer",
+      "pinyin": [
+        [
+          "ch",
+          "ui"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "手",
+      "synonyms": [],
+      "drawingId": "hand",
+      "pinyin": [
+        [
+          "sh",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "竖琴",
+      "synonyms": [],
+      "drawingId": "harp",
+      "pinyin": [
+        [
+          "sh",
+          "u"
+        ],
+        [
+          "q",
+          "in"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "帽子",
+      "synonyms": [],
+      "drawingId": "hat",
+      "pinyin": [
+        [
+          "m",
+          "ao"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "耳机",
+      "synonyms": [
+        "头戴式耳机"
+      ],
+      "drawingId": "headphones",
+      "pinyin": [
+        [
+          null,
+          "er"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "刺猬",
+      "synonyms": [],
+      "drawingId": "hedgehog",
+      "pinyin": [
+        [
+          "c",
+          "i"
+        ],
+        [
+          "w",
+          "ei"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "直升机",
+      "synonyms": [
+        "直升飞机"
+      ],
+      "drawingId": "helicopter",
+      "pinyin": [
+        [
+          "zh",
+          "i"
+        ],
+        [
+          "sh",
+          "eng"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "头盔",
+      "synonyms": [
+        "安全帽"
+      ],
+      "drawingId": "helmet",
+      "pinyin": [
+        [
+          "t",
+          "ou"
+        ],
+        [
+          "k",
+          "ui"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "六边形",
+      "synonyms": [
+        "六角形"
+      ],
+      "drawingId": "hexagon",
+      "pinyin": [
+        [
+          "l",
+          "iu"
+        ],
+        [
+          "b",
+          "ian"
+        ],
+        [
+          "x",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "冰球",
+      "synonyms": [
+        "曲棍球"
+      ],
+      "drawingId": "hockey puck",
+      "pinyin": [
+        [
+          "b",
+          "ing"
+        ],
+        [
+          "q",
+          "iu"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "曲棍球杆",
+      "synonyms": [
+        "球杆"
+      ],
+      "drawingId": "hockey stick",
+      "pinyin": [
+        [
+          "q",
+          "u"
+        ],
+        [
+          "g",
+          "un"
+        ],
+        [
+          "q",
+          "iu"
+        ],
+        [
+          "g",
+          "an"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "马",
+      "synonyms": [],
+      "drawingId": "horse",
+      "pinyin": [
+        [
+          "m",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "医院",
+      "synonyms": [],
+      "drawingId": "hospital",
+      "pinyin": [
+        [
+          "y",
+          "i"
+        ],
+        [
+          "y",
+          "uan"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "热气球",
+      "synonyms": [],
+      "drawingId": "hot air balloon",
+      "pinyin": [
+        [
+          "r",
+          "e"
+        ],
+        [
+          "q",
+          "i"
+        ],
+        [
+          "q",
+          "iu"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "热狗",
+      "synonyms": [],
+      "drawingId": "hot dog",
+      "pinyin": [
+        [
+          "r",
+          "e"
+        ],
+        [
+          "g",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "浴缸",
+      "synonyms": [
+        "按摩浴缸",
+        "热水浴缸"
+      ],
+      "drawingId": "hot tub",
+      "pinyin": [
+        [
+          "y",
+          "u"
+        ],
+        [
+          "g",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "沙漏",
+      "synonyms": [],
+      "drawingId": "hourglass",
+      "pinyin": [
+        [
+          "sh",
+          "a"
+        ],
+        [
+          "l",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "房子",
+      "synonyms": [
+        "房屋"
+      ],
+      "drawingId": "house",
+      "pinyin": [
+        [
+          "f",
+          "ang"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "盆栽",
+      "synonyms": [
+        "室内植物"
+      ],
+      "drawingId": "house plant",
+      "pinyin": [
+        [
+          "p",
+          "en"
+        ],
+        [
+          "z",
+          "ai"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "飓风",
+      "synonyms": [
+        "台风"
+      ],
+      "drawingId": "hurricane",
+      "pinyin": [
+        [
+          "j",
+          "u"
+        ],
+        [
+          "f",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "冰淇淋",
+      "synonyms": [
+        "冰激凌"
+      ],
+      "drawingId": "ice cream",
+      "pinyin": [
+        [
+          "b",
+          "ing"
+        ],
+        [
+          "q",
+          "i"
+        ],
+        [
+          "l",
+          "in"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "夹克",
+      "synonyms": [
+        "外套"
+      ],
+      "drawingId": "jacket",
+      "pinyin": [
+        [
+          "j",
+          "ia"
+        ],
+        [
+          "k",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "监狱",
+      "synonyms": [
+        "牢房"
+      ],
+      "drawingId": "jail",
+      "pinyin": [
+        [
+          "j",
+          "ian"
+        ],
+        [
+          "y",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "袋鼠",
+      "synonyms": [],
+      "drawingId": "kangaroo",
+      "pinyin": [
+        [
+          "d",
+          "ai"
+        ],
+        [
+          "sh",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "钥匙",
+      "synonyms": [],
+      "drawingId": "key",
+      "pinyin": [
+        [
+          "y",
+          "ao"
+        ],
+        [
+          "sh",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "键盘",
+      "synonyms": [],
+      "drawingId": "keyboard",
+      "pinyin": [
+        [
+          "j",
+          "ian"
+        ],
+        [
+          "p",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "膝盖",
+      "synonyms": [
+        "膝"
+      ],
+      "drawingId": "knee",
+      "pinyin": [
+        [
+          "x",
+          "i"
+        ],
+        [
+          "g",
+          "ai"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "刀",
+      "synonyms": [
+        "刀子"
+      ],
+      "drawingId": "knife",
+      "pinyin": [
+        [
+          "d",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "梯子",
+      "synonyms": [],
+      "drawingId": "ladder",
+      "pinyin": [
+        [
+          "t",
+          "i"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "灯笼",
+      "synonyms": [],
+      "drawingId": "lantern",
+      "pinyin": [
+        [
+          "d",
+          "eng"
+        ],
+        [
+          "l",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "笔记本电脑",
+      "synonyms": [
+        "笔记本"
+      ],
+      "drawingId": "laptop",
+      "pinyin": [
+        [
+          "b",
+          "i"
+        ],
+        [
+          "j",
+          "i"
+        ],
+        [
+          "b",
+          "en"
+        ],
+        [
+          "d",
+          "ian"
+        ],
+        [
+          "n",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "叶子",
+      "synonyms": [
+        "树叶"
+      ],
+      "drawingId": "leaf",
+      "pinyin": [
+        [
+          "y",
+          "e"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "腿",
+      "synonyms": [],
+      "drawingId": "leg",
+      "pinyin": [
+        [
+          "t",
+          "ui"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "灯泡",
+      "synonyms": [
+        "电灯泡"
+      ],
+      "drawingId": "light bulb",
+      "pinyin": [
+        [
+          "d",
+          "eng"
+        ],
+        [
+          "p",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "打火机",
+      "synonyms": [],
+      "drawingId": "lighter",
+      "pinyin": [
+        [
+          "d",
+          "a"
+        ],
+        [
+          "h",
+          "uo"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "灯塔",
+      "synonyms": [],
+      "drawingId": "lighthouse",
+      "pinyin": [
+        [
+          "d",
+          "eng"
+        ],
+        [
+          "t",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "闪电",
+      "synonyms": [],
+      "drawingId": "lightning",
+      "pinyin": [
+        [
+          "sh",
+          "an"
+        ],
+        [
+          "d",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "线",
+      "synonyms": [
+        "线条"
+      ],
+      "drawingId": "line",
+      "pinyin": [
+        [
+          "x",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "狮子",
+      "synonyms": [],
+      "drawingId": "lion",
+      "pinyin": [
+        [
+          "sh",
+          "i"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "口红",
+      "synonyms": [
+        "唇膏"
+      ],
+      "drawingId": "lipstick",
+      "pinyin": [
+        [
+          "k",
+          "ou"
+        ],
+        [
+          "h",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "龙虾",
+      "synonyms": [],
+      "drawingId": "lobster",
+      "pinyin": [
+        [
+          "l",
+          "ong"
+        ],
+        [
+          "x",
+          "ia"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "棒棒糖",
+      "synonyms": [],
+      "drawingId": "lollipop",
+      "pinyin": [
+        [
+          "b",
+          "ang"
+        ],
+        [
+          "b",
+          "ang"
+        ],
+        [
+          "t",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "邮箱",
+      "synonyms": [
+        "信箱"
+      ],
+      "drawingId": "mailbox",
+      "pinyin": [
+        [
+          "y",
+          "ou"
+        ],
+        [
+          "x",
+          "iang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "地图",
+      "synonyms": [],
+      "drawingId": "map",
+      "pinyin": [
+        [
+          "d",
+          "i"
+        ],
+        [
+          "t",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "马克笔",
+      "synonyms": [
+        "记号笔"
+      ],
+      "drawingId": "marker",
+      "pinyin": [
+        [
+          "m",
+          "a"
+        ],
+        [
+          "k",
+          "e"
+        ],
+        [
+          "b",
+          "i"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "火柴",
+      "synonyms": [],
+      "drawingId": "matches",
+      "pinyin": [
+        [
+          "h",
+          "uo"
+        ],
+        [
+          "ch",
+          "ai"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "喇叭",
+      "synonyms": [
+        "扩音器"
+      ],
+      "drawingId": "megaphone",
+      "pinyin": [
+        [
+          "l",
+          "a"
+        ],
+        [
+          "b",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "美人鱼",
+      "synonyms": [],
+      "drawingId": "mermaid",
+      "pinyin": [
+        [
+          "m",
+          "ei"
+        ],
+        [
+          "r",
+          "en"
+        ],
+        [
+          "y",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "麦克风",
+      "synonyms": [
+        "话筒"
+      ],
+      "drawingId": "microphone",
+      "pinyin": [
+        [
+          "m",
+          "ai"
+        ],
+        [
+          "k",
+          "e"
+        ],
+        [
+          "f",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "微波炉",
+      "synonyms": [],
+      "drawingId": "microwave",
+      "pinyin": [
+        [
+          "w",
+          "ei"
+        ],
+        [
+          "b",
+          "o"
+        ],
+        [
+          "l",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "猴子",
+      "synonyms": [],
+      "drawingId": "monkey",
+      "pinyin": [
+        [
+          "h",
+          "ou"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "月亮",
+      "synonyms": [
+        "月球"
+      ],
+      "drawingId": "moon",
+      "pinyin": [
+        [
+          "y",
+          "ue"
+        ],
+        [
+          "l",
+          "iang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蚊子",
+      "synonyms": [],
+      "drawingId": "mosquito",
+      "pinyin": [
+        [
+          "w",
+          "en"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "摩托车",
+      "synonyms": [
+        "摩托"
+      ],
+      "drawingId": "motorbike",
+      "pinyin": [
+        [
+          "m",
+          "o"
+        ],
+        [
+          "t",
+          "uo"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "山",
+      "synonyms": [
+        "山峰"
+      ],
+      "drawingId": "mountain",
+      "pinyin": [
+        [
+          "sh",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "老鼠",
+      "synonyms": [
+        "鼠"
+      ],
+      "drawingId": "mouse",
+      "pinyin": [
+        [
+          "l",
+          "ao"
+        ],
+        [
+          "sh",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "小胡子",
+      "synonyms": [
+        "八字胡"
+      ],
+      "drawingId": "moustache",
+      "pinyin": [
+        [
+          "x",
+          "iao"
+        ],
+        [
+          "h",
+          "u"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "嘴",
+      "synonyms": [
+        "嘴巴"
+      ],
+      "drawingId": "mouth",
+      "pinyin": [
+        [
+          "z",
+          "ui"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "马克杯",
+      "synonyms": [
+        "杯子"
+      ],
+      "drawingId": "mug",
+      "pinyin": [
+        [
+          "m",
+          "a"
+        ],
+        [
+          "k",
+          "e"
+        ],
+        [
+          "b",
+          "ei"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蘑菇",
+      "synonyms": [],
+      "drawingId": "mushroom",
+      "pinyin": [
+        [
+          "m",
+          "o"
+        ],
+        [
+          "g",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "钉子",
+      "synonyms": [],
+      "drawingId": "nail",
+      "pinyin": [
+        [
+          "d",
+          "ing"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "项链",
+      "synonyms": [],
+      "drawingId": "necklace",
+      "pinyin": [
+        [
+          "x",
+          "iang"
+        ],
+        [
+          "l",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "鼻子",
+      "synonyms": [
+        "鼻"
+      ],
+      "drawingId": "nose",
+      "pinyin": [
+        [
+          "b",
+          "i"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "海洋",
+      "synonyms": [
+        "大海"
+      ],
+      "drawingId": "ocean",
+      "pinyin": [
+        [
+          "h",
+          "ai"
+        ],
+        [
+          "y",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "八边形",
+      "synonyms": [
+        "八角形"
+      ],
+      "drawingId": "octagon",
+      "pinyin": [
+        [
+          "b",
+          "a"
+        ],
+        [
+          "b",
+          "ian"
+        ],
+        [
+          "x",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "章鱼",
+      "synonyms": [],
+      "drawingId": "octopus",
+      "pinyin": [
+        [
+          "zh",
+          "ang"
+        ],
+        [
+          "y",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "洋葱",
+      "synonyms": [],
+      "drawingId": "onion",
+      "pinyin": [
+        [
+          "y",
+          "ang"
+        ],
+        [
+          "c",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "烤箱",
+      "synonyms": [
+        "烤炉"
+      ],
+      "drawingId": "oven",
+      "pinyin": [
+        [
+          "k",
+          "ao"
+        ],
+        [
+          "x",
+          "iang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "猫头鹰",
+      "synonyms": [
+        "枭"
+      ],
+      "drawingId": "owl",
+      "pinyin": [
+        [
+          "m",
+          "ao"
+        ],
+        [
+          "t",
+          "ou"
+        ],
+        [
+          "y",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "画笔",
+      "synonyms": [
+        "画刷"
+      ],
+      "drawingId": "paintbrush",
+      "pinyin": [
+        [
+          "h",
+          "ua"
+        ],
+        [
+          "b",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "油漆桶",
+      "synonyms": [
+        "颜料桶"
+      ],
+      "drawingId": "paint can",
+      "pinyin": [
+        [
+          "y",
+          "ou"
+        ],
+        [
+          "q",
+          "i"
+        ],
+        [
+          "t",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "棕榈树",
+      "synonyms": [
+        "椰子树"
+      ],
+      "drawingId": "palm tree",
+      "pinyin": [
+        [
+          "z",
+          "ong"
+        ],
+        [
+          "l",
+          "ü"
+        ],
+        [
+          "sh",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "熊猫",
+      "synonyms": [],
+      "drawingId": "panda",
+      "pinyin": [
+        [
+          "x",
+          "iong"
+        ],
+        [
+          "m",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "裤子",
+      "synonyms": [
+        "长裤"
+      ],
+      "drawingId": "pants",
+      "pinyin": [
+        [
+          "k",
+          "u"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "回形针",
+      "synonyms": [
+        "曲别针"
+      ],
+      "drawingId": "paper clip",
+      "pinyin": [
+        [
+          "h",
+          "ui"
+        ],
+        [
+          "x",
+          "ing"
+        ],
+        [
+          "zh",
+          "en"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "降落伞",
+      "synonyms": [],
+      "drawingId": "parachute",
+      "pinyin": [
+        [
+          "j",
+          "iang"
+        ],
+        [
+          "l",
+          "uo"
+        ],
+        [
+          "s",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "鹦鹉",
+      "synonyms": [],
+      "drawingId": "parrot",
+      "pinyin": [
+        [
+          "y",
+          "ing"
+        ],
+        [
+          "w",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "护照",
+      "synonyms": [],
+      "drawingId": "passport",
+      "pinyin": [
+        [
+          "h",
+          "u"
+        ],
+        [
+          "zh",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "花生",
+      "synonyms": [],
+      "drawingId": "peanut",
+      "pinyin": [
+        [
+          "h",
+          "ua"
+        ],
+        [
+          "sh",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "梨",
+      "synonyms": [],
+      "drawingId": "pear",
+      "pinyin": [
+        [
+          "l",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "豌豆",
+      "synonyms": [],
+      "drawingId": "peas",
+      "pinyin": [
+        [
+          "w",
+          "an"
+        ],
+        [
+          "d",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "铅笔",
+      "synonyms": [],
+      "drawingId": "pencil",
+      "pinyin": [
+        [
+          "q",
+          "ian"
+        ],
+        [
+          "b",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "企鹅",
+      "synonyms": [],
+      "drawingId": "penguin",
+      "pinyin": [
+        [
+          "q",
+          "i"
+        ],
+        [
+          null,
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "钢琴",
+      "synonyms": [],
+      "drawingId": "piano",
+      "pinyin": [
+        [
+          "g",
+          "ang"
+        ],
+        [
+          "q",
+          "in"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "皮卡车",
+      "synonyms": [
+        "小货车"
+      ],
+      "drawingId": "pickup truck",
+      "pinyin": [
+        [
+          "p",
+          "i"
+        ],
+        [
+          "k",
+          "a"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "相框",
+      "synonyms": [
+        "画框"
+      ],
+      "drawingId": "picture frame",
+      "pinyin": [
+        [
+          "x",
+          "iang"
+        ],
+        [
+          "k",
+          "uang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "猪",
+      "synonyms": [],
+      "drawingId": "pig",
+      "pinyin": [
+        [
+          "zh",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "枕头",
+      "synonyms": [],
+      "drawingId": "pillow",
+      "pinyin": [
+        [
+          "zh",
+          "en"
+        ],
+        [
+          "t",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "菠萝",
+      "synonyms": [
+        "凤梨"
+      ],
+      "drawingId": "pineapple",
+      "pinyin": [
+        [
+          "b",
+          "o"
+        ],
+        [
+          "l",
+          "uo"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "披萨",
+      "synonyms": [
+        "比萨饼"
+      ],
+      "drawingId": "pizza",
+      "pinyin": [
+        [
+          "p",
+          "i"
+        ],
+        [
+          "s",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "钳子",
+      "synonyms": [
+        "老虎钳"
+      ],
+      "drawingId": "pliers",
+      "pinyin": [
+        [
+          "q",
+          "ian"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "警车",
+      "synonyms": [],
+      "drawingId": "police car",
+      "pinyin": [
+        [
+          "j",
+          "ing"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "池塘",
+      "synonyms": [
+        "池子"
+      ],
+      "drawingId": "pond",
+      "pinyin": [
+        [
+          "ch",
+          "i"
+        ],
+        [
+          "t",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "游泳池",
+      "synonyms": [
+        "泳池"
+      ],
+      "drawingId": "pool",
+      "pinyin": [
+        [
+          "y",
+          "ou"
+        ],
+        [
+          "y",
+          "ong"
+        ],
+        [
+          "ch",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "冰棒",
+      "synonyms": [
+        "冰棍"
+      ],
+      "drawingId": "popsicle",
+      "pinyin": [
+        [
+          "b",
+          "ing"
+        ],
+        [
+          "b",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "明信片",
+      "synonyms": [],
+      "drawingId": "postcard",
+      "pinyin": [
+        [
+          "m",
+          "ing"
+        ],
+        [
+          "x",
+          "in"
+        ],
+        [
+          "p",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "土豆",
+      "synonyms": [
+        "马铃薯"
+      ],
+      "drawingId": "potato",
+      "pinyin": [
+        [
+          "t",
+          "u"
+        ],
+        [
+          "d",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "电源插座",
+      "synonyms": [
+        "插座"
+      ],
+      "drawingId": "power outlet",
+      "pinyin": [
+        [
+          "d",
+          "ian"
+        ],
+        [
+          "y",
+          "uan"
+        ],
+        [
+          "ch",
+          "a"
+        ],
+        [
+          "z",
+          "uo"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "钱包",
+      "synonyms": [
+        "手提包"
+      ],
+      "drawingId": "purse",
+      "pinyin": [
+        [
+          "q",
+          "ian"
+        ],
+        [
+          "b",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "兔子",
+      "synonyms": [],
+      "drawingId": "rabbit",
+      "pinyin": [
+        [
+          "t",
+          "u"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "浣熊",
+      "synonyms": [],
+      "drawingId": "raccoon",
+      "pinyin": [
+        [
+          "h",
+          "uan"
+        ],
+        [
+          "x",
+          "iong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "收音机",
+      "synonyms": [
+        "无线电"
+      ],
+      "drawingId": "radio",
+      "pinyin": [
+        [
+          "sh",
+          "ou"
+        ],
+        [
+          "y",
+          "in"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "雨",
+      "synonyms": [],
+      "drawingId": "rain",
+      "pinyin": [
+        [
+          "y",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "彩虹",
+      "synonyms": [],
+      "drawingId": "rainbow",
+      "pinyin": [
+        [
+          "c",
+          "ai"
+        ],
+        [
+          "h",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "耙子",
+      "synonyms": [],
+      "drawingId": "rake",
+      "pinyin": [
+        [
+          "p",
+          "a"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "遥控器",
+      "synonyms": [],
+      "drawingId": "remote control",
+      "pinyin": [
+        [
+          "y",
+          "ao"
+        ],
+        [
+          "k",
+          "ong"
+        ],
+        [
+          "q",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "犀牛",
+      "synonyms": [],
+      "drawingId": "rhinoceros",
+      "pinyin": [
+        [
+          "x",
+          "i"
+        ],
+        [
+          "n",
+          "iu"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "步枪",
+      "synonyms": [
+        "来复枪"
+      ],
+      "drawingId": "rifle",
+      "pinyin": [
+        [
+          "b",
+          "u"
+        ],
+        [
+          "q",
+          "iang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "河",
+      "synonyms": [
+        "河流"
+      ],
+      "drawingId": "river",
+      "pinyin": [
+        [
+          "h",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "过山车",
+      "synonyms": [
+        "云霄飞车"
+      ],
+      "drawingId": "roller coaster",
+      "pinyin": [
+        [
+          "g",
+          "uo"
+        ],
+        [
+          "sh",
+          "an"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "轮滑鞋",
+      "synonyms": [
+        "旱冰鞋"
+      ],
+      "drawingId": "rollerskates",
+      "pinyin": [
+        [
+          "l",
+          "un"
+        ],
+        [
+          "h",
+          "ua"
+        ],
+        [
+          "x",
+          "ie"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "帆船",
+      "synonyms": [],
+      "drawingId": "sailboat",
+      "pinyin": [
+        [
+          "f",
+          "an"
+        ],
+        [
+          "ch",
+          "uan"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "三明治",
+      "synonyms": [
+        "三文治"
+      ],
+      "drawingId": "sandwich",
+      "pinyin": [
+        [
+          "s",
+          "an"
+        ],
+        [
+          "m",
+          "ing"
+        ],
+        [
+          "zh",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "锯子",
+      "synonyms": [
+        "锯"
+      ],
+      "drawingId": "saw",
+      "pinyin": [
+        [
+          "j",
+          "u"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "萨克斯管",
+      "synonyms": [
+        "萨克斯"
+      ],
+      "drawingId": "saxophone",
+      "pinyin": [
+        [
+          "s",
+          "a"
+        ],
+        [
+          "k",
+          "e"
+        ],
+        [
+          "s",
+          "i"
+        ],
+        [
+          "g",
+          "uan"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "校车",
+      "synonyms": [],
+      "drawingId": "school bus",
+      "pinyin": [
+        [
+          "x",
+          "iao"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "剪刀",
+      "synonyms": [],
+      "drawingId": "scissors",
+      "pinyin": [
+        [
+          "j",
+          "ian"
+        ],
+        [
+          "d",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蝎子",
+      "synonyms": [],
+      "drawingId": "scorpion",
+      "pinyin": [
+        [
+          "x",
+          "ie"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "螺丝刀",
+      "synonyms": [
+        "改锥"
+      ],
+      "drawingId": "screwdriver",
+      "pinyin": [
+        [
+          "l",
+          "uo"
+        ],
+        [
+          "s",
+          "i"
+        ],
+        [
+          "d",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "海龟",
+      "synonyms": [],
+      "drawingId": "sea turtle",
+      "pinyin": [
+        [
+          "h",
+          "ai"
+        ],
+        [
+          "g",
+          "ui"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "跷跷板",
+      "synonyms": [],
+      "drawingId": "see saw",
+      "pinyin": [
+        [
+          "q",
+          "iao"
+        ],
+        [
+          "q",
+          "iao"
+        ],
+        [
+          "b",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "鲨鱼",
+      "synonyms": [],
+      "drawingId": "shark",
+      "pinyin": [
+        [
+          "sh",
+          "a"
+        ],
+        [
+          "y",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "羊",
+      "synonyms": [
+        "绵羊"
+      ],
+      "drawingId": "sheep",
+      "pinyin": [
+        [
+          "y",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "鞋",
+      "synonyms": [
+        "鞋子"
+      ],
+      "drawingId": "shoe",
+      "pinyin": [
+        [
+          "x",
+          "ie"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "短裤",
+      "synonyms": [],
+      "drawingId": "shorts",
+      "pinyin": [
+        [
+          "d",
+          "uan"
+        ],
+        [
+          "k",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "铲子",
+      "synonyms": [
+        "铁锹"
+      ],
+      "drawingId": "shovel",
+      "pinyin": [
+        [
+          "ch",
+          "an"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "水槽",
+      "synonyms": [
+        "洗手池"
+      ],
+      "drawingId": "sink",
+      "pinyin": [
+        [
+          "sh",
+          "ui"
+        ],
+        [
+          "c",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "滑板",
+      "synonyms": [],
+      "drawingId": "skateboard",
+      "pinyin": [
+        [
+          "h",
+          "ua"
+        ],
+        [
+          "b",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "头骨",
+      "synonyms": [
+        "骷髅"
+      ],
+      "drawingId": "skull",
+      "pinyin": [
+        [
+          "t",
+          "ou"
+        ],
+        [
+          "g",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "摩天大楼",
+      "synonyms": [
+        "高楼"
+      ],
+      "drawingId": "skyscraper",
+      "pinyin": [
+        [
+          "m",
+          "o"
+        ],
+        [
+          "t",
+          "ian"
+        ],
+        [
+          "d",
+          "a"
+        ],
+        [
+          "l",
+          "ou"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "睡袋",
+      "synonyms": [],
+      "drawingId": "sleeping bag",
+      "pinyin": [
+        [
+          "sh",
+          "ui"
+        ],
+        [
+          "d",
+          "ai"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "笑脸",
+      "synonyms": [
+        "笑脸"
+      ],
+      "drawingId": "smiley face",
+      "pinyin": [
+        [
+          "x",
+          "iao"
+        ],
+        [
+          "l",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蜗牛",
+      "synonyms": [],
+      "drawingId": "snail",
+      "pinyin": [
+        [
+          "w",
+          "o"
+        ],
+        [
+          "n",
+          "iu"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蛇",
+      "synonyms": [],
+      "drawingId": "snake",
+      "pinyin": [
+        [
+          "sh",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "呼吸管",
+      "synonyms": [
+        "通气管"
+      ],
+      "drawingId": "snorkel",
+      "pinyin": [
+        [
+          "h",
+          "u"
+        ],
+        [
+          "x",
+          "i"
+        ],
+        [
+          "g",
+          "uan"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "雪花",
+      "synonyms": [],
+      "drawingId": "snowflake",
+      "pinyin": [
+        [
+          "x",
+          "ue"
+        ],
+        [
+          "h",
+          "ua"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "雪人",
+      "synonyms": [],
+      "drawingId": "snowman",
+      "pinyin": [
+        [
+          "x",
+          "ue"
+        ],
+        [
+          "r",
+          "en"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "足球",
+      "synonyms": [],
+      "drawingId": "soccer ball",
+      "pinyin": [
+        [
+          "z",
+          "u"
+        ],
+        [
+          "q",
+          "iu"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "袜子",
+      "synonyms": [],
+      "drawingId": "sock",
+      "pinyin": [
+        [
+          "w",
+          "a"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "快艇",
+      "synonyms": [
+        "快船"
+      ],
+      "drawingId": "speedboat",
+      "pinyin": [
+        [
+          "k",
+          "uai"
+        ],
+        [
+          "t",
+          "ing"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "蜘蛛",
+      "synonyms": [],
+      "drawingId": "spider",
+      "pinyin": [
+        [
+          "zh",
+          "i"
+        ],
+        [
+          "zh",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "勺子",
+      "synonyms": [
+        "汤匙"
+      ],
+      "drawingId": "spoon",
+      "pinyin": [
+        [
+          "sh",
+          "ao"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "电子表格",
+      "synonyms": [
+        "表格"
+      ],
+      "drawingId": "spreadsheet",
+      "pinyin": [
+        [
+          "d",
+          "ian"
+        ],
+        [
+          "z",
+          "i"
+        ],
+        [
+          "b",
+          "iao"
+        ],
+        [
+          "g",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "正方形",
+      "synonyms": [
+        "方形"
+      ],
+      "drawingId": "square",
+      "pinyin": [
+        [
+          "zh",
+          "eng"
+        ],
+        [
+          "f",
+          "ang"
+        ],
+        [
+          "x",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "波浪线",
+      "synonyms": [
+        "曲线"
+      ],
+      "drawingId": "squiggle",
+      "pinyin": [
+        [
+          "b",
+          "o"
+        ],
+        [
+          "l",
+          "ang"
+        ],
+        [
+          "x",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "松鼠",
+      "synonyms": [],
+      "drawingId": "squirrel",
+      "pinyin": [
+        [
+          "s",
+          "ong"
+        ],
+        [
+          "sh",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "楼梯",
+      "synonyms": [
+        "阶梯"
+      ],
+      "drawingId": "stairs",
+      "pinyin": [
+        [
+          "l",
+          "ou"
+        ],
+        [
+          "t",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "星星",
+      "synonyms": [
+        "星"
+      ],
+      "drawingId": "star",
+      "pinyin": [
+        [
+          "x",
+          "ing"
+        ],
+        [
+          "x",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "牛排",
+      "synonyms": [],
+      "drawingId": "steak",
+      "pinyin": [
+        [
+          "n",
+          "iu"
+        ],
+        [
+          "p",
+          "ai"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "立体声音响",
+      "synonyms": [
+        "音响"
+      ],
+      "drawingId": "stereo",
+      "pinyin": [
+        [
+          "l",
+          "i"
+        ],
+        [
+          "t",
+          "i"
+        ],
+        [
+          "sh",
+          "eng"
+        ],
+        [
+          "y",
+          "in"
+        ],
+        [
+          "x",
+          "iang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "听诊器",
+      "synonyms": [],
+      "drawingId": "stethoscope",
+      "pinyin": [
+        [
+          "t",
+          "ing"
+        ],
+        [
+          "zh",
+          "en"
+        ],
+        [
+          "q",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "缝线",
+      "synonyms": [
+        "针脚"
+      ],
+      "drawingId": "stitches",
+      "pinyin": [
+        [
+          "f",
+          "eng"
+        ],
+        [
+          "x",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "停止标志",
+      "synonyms": [
+        "停车标志"
+      ],
+      "drawingId": "stop sign",
+      "pinyin": [
+        [
+          "t",
+          "ing"
+        ],
+        [
+          "zh",
+          "i"
+        ],
+        [
+          "b",
+          "iao"
+        ],
+        [
+          "zh",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "炉子",
+      "synonyms": [
+        "火炉"
+      ],
+      "drawingId": "stove",
+      "pinyin": [
+        [
+          "l",
+          "u"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "草莓",
+      "synonyms": [],
+      "drawingId": "strawberry",
+      "pinyin": [
+        [
+          "c",
+          "ao"
+        ],
+        [
+          "m",
+          "ei"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "路灯",
+      "synonyms": [
+        "街灯"
+      ],
+      "drawingId": "streetlight",
+      "pinyin": [
+        [
+          "l",
+          "u"
+        ],
+        [
+          "d",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "豆角",
+      "synonyms": [
+        "四季豆"
+      ],
+      "drawingId": "string bean",
+      "pinyin": [
+        [
+          "d",
+          "ou"
+        ],
+        [
+          "j",
+          "iao"
+        ]
+      ],
+      "removed": true
+    },
+    {
+      "word": "潜艇",
+      "synonyms": [
+        "潜水艇"
+      ],
+      "drawingId": "submarine",
+      "pinyin": [
+        [
+          "q",
+          "ian"
+        ],
+        [
+          "t",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "行李箱",
+      "synonyms": [
+        "手提箱"
+      ],
+      "drawingId": "suitcase",
+      "pinyin": [
+        [
+          "x",
+          "ing"
+        ],
+        [
+          "l",
+          "i"
+        ],
+        [
+          "x",
+          "iang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "太阳",
+      "synonyms": [
+        "日"
+      ],
+      "drawingId": "sun",
+      "pinyin": [
+        [
+          "t",
+          "ai"
+        ],
+        [
+          "y",
+          "ang"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "天鹅",
+      "synonyms": [],
+      "drawingId": "swan",
+      "pinyin": [
+        [
+          "t",
+          "ian"
+        ],
+        [
+          null,
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "毛衣",
+      "synonyms": [
+        "针织衫"
+      ],
+      "drawingId": "sweater",
+      "pinyin": [
+        [
+          "m",
+          "ao"
+        ],
+        [
+          "y",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "秋千",
+      "synonyms": [
+        "荡秋千"
+      ],
+      "drawingId": "swing set",
+      "pinyin": [
+        [
+          "q",
+          "iu"
+        ],
+        [
+          "q",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "剑",
+      "synonyms": [],
+      "drawingId": "sword",
+      "pinyin": [
+        [
+          "j",
+          "ian"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "注射器",
+      "synonyms": [
+        "针管",
+        "针筒"
+      ],
+      "drawingId": "syringe",
+      "pinyin": [
+        [
+          "zh",
+          "u"
+        ],
+        [
+          "sh",
+          "e"
+        ],
+        [
+          "q",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "桌子",
+      "synonyms": [
+        "台子"
+      ],
+      "drawingId": "table",
+      "pinyin": [
+        [
+          "zh",
+          "uo"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "茶壶",
+      "synonyms": [],
+      "drawingId": "teapot",
+      "pinyin": [
+        [
+          "ch",
+          "a"
+        ],
+        [
+          "h",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "泰迪熊",
+      "synonyms": [
+        "玩具熊",
+        "小熊",
+        "熊"
+      ],
+      "drawingId": "teddy-bear",
+      "pinyin": [
+        [
+          "t",
+          "ai"
+        ],
+        [
+          "d",
+          "i"
+        ],
+        [
+          "x",
+          "iong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "电话",
+      "synonyms": [],
+      "drawingId": "telephone",
+      "pinyin": [
+        [
+          "d",
+          "ian"
+        ],
+        [
+          "h",
+          "ua"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "电视",
+      "synonyms": [
+        "电视机"
+      ],
+      "drawingId": "television",
+      "pinyin": [
+        [
+          "d",
+          "ian"
+        ],
+        [
+          "sh",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "网球拍",
+      "synonyms": [
+        "球拍"
+      ],
+      "drawingId": "tennis racquet",
+      "pinyin": [
+        [
+          "w",
+          "ang"
+        ],
+        [
+          "q",
+          "iu"
+        ],
+        [
+          "p",
+          "ai"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "帐篷",
+      "synonyms": [],
+      "drawingId": "tent",
+      "pinyin": [
+        [
+          "zh",
+          "ang"
+        ],
+        [
+          "p",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "埃菲尔铁塔",
+      "synonyms": [],
+      "drawingId": "The Eiffel Tower",
+      "pinyin": [
+        [
+          null,
+          "ai"
+        ],
+        [
+          "f",
+          "ei"
+        ],
+        [
+          null,
+          "er"
+        ],
+        [
+          "t",
+          "ie"
+        ],
+        [
+          "t",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "长城",
+      "synonyms": [
+        "万里长城"
+      ],
+      "drawingId": "The Great Wall of China",
+      "pinyin": [
+        [
+          "ch",
+          "ang"
+        ],
+        [
+          "ch",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "蒙娜丽莎",
+      "synonyms": [],
+      "drawingId": "The Mona Lisa",
+      "pinyin": [
+        [
+          "m",
+          "eng"
+        ],
+        [
+          "n",
+          "a"
+        ],
+        [
+          "l",
+          "i"
+        ],
+        [
+          "sh",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "老虎",
+      "synonyms": [
+        "虎"
+      ],
+      "drawingId": "tiger",
+      "pinyin": [
+        [
+          "l",
+          "ao"
+        ],
+        [
+          "h",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "烤面包机",
+      "synonyms": [
+        "吐司机"
+      ],
+      "drawingId": "toaster",
+      "pinyin": [
+        [
+          "k",
+          "ao"
+        ],
+        [
+          "m",
+          "ian"
+        ],
+        [
+          "b",
+          "ao"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "脚趾",
+      "synonyms": [
+        "趾"
+      ],
+      "drawingId": "toe",
+      "pinyin": [
+        [
+          "j",
+          "iao"
+        ],
+        [
+          "zh",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "马桶",
+      "synonyms": [
+        "厕所"
+      ],
+      "drawingId": "toilet",
+      "pinyin": [
+        [
+          "m",
+          "a"
+        ],
+        [
+          "t",
+          "ong"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "牙齿",
+      "synonyms": [
+        "牙"
+      ],
+      "drawingId": "tooth",
+      "pinyin": [
+        [
+          "y",
+          "a"
+        ],
+        [
+          "ch",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "牙刷",
+      "synonyms": [],
+      "drawingId": "toothbrush",
+      "pinyin": [
+        [
+          "y",
+          "a"
+        ],
+        [
+          "sh",
+          "ua"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "牙膏",
+      "synonyms": [],
+      "drawingId": "toothpaste",
+      "pinyin": [
+        [
+          "y",
+          "a"
+        ],
+        [
+          "g",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "龙卷风",
+      "synonyms": [
+        "旋风"
+      ],
+      "drawingId": "tornado",
+      "pinyin": [
+        [
+          "l",
+          "ong"
+        ],
+        [
+          "j",
+          "uan"
+        ],
+        [
+          "f",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "拖拉机",
+      "synonyms": [],
+      "drawingId": "tractor",
+      "pinyin": [
+        [
+          "t",
+          "uo"
+        ],
+        [
+          "l",
+          "a"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "红绿灯",
+      "synonyms": [
+        "交通灯"
+      ],
+      "drawingId": "traffic light",
+      "pinyin": [
+        [
+          "h",
+          "ong"
+        ],
+        [
+          "l",
+          "ü"
+        ],
+        [
+          "d",
+          "eng"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "火车",
+      "synonyms": [],
+      "drawingId": "train",
+      "pinyin": [
+        [
+          "h",
+          "uo"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "树",
+      "synonyms": [],
+      "drawingId": "tree",
+      "pinyin": [
+        [
+          "sh",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "三角形",
+      "synonyms": [],
+      "drawingId": "triangle",
+      "pinyin": [
+        [
+          "s",
+          "an"
+        ],
+        [
+          "j",
+          "iao"
+        ],
+        [
+          "x",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "长号",
+      "synonyms": [],
+      "drawingId": "trombone",
+      "pinyin": [
+        [
+          "ch",
+          "ang"
+        ],
+        [
+          "h",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "卡车",
+      "synonyms": [
+        "货车"
+      ],
+      "drawingId": "truck",
+      "pinyin": [
+        [
+          "k",
+          "a"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "小号",
+      "synonyms": [
+        "喇叭"
+      ],
+      "drawingId": "trumpet",
+      "pinyin": [
+        [
+          "x",
+          "iao"
+        ],
+        [
+          "h",
+          "ao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "T恤",
+      "synonyms": [
+        "短袖衫"
+      ],
+      "drawingId": "t-shirt",
+      "pinyin": [
+        [
+          "t",
+          "i"
+        ],
+        [
+          "x",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "雨伞",
+      "synonyms": [
+        "伞"
+      ],
+      "drawingId": "umbrella",
+      "pinyin": [
+        [
+          "y",
+          "u"
+        ],
+        [
+          "s",
+          "an"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "内衣",
+      "synonyms": [
+        "内裤"
+      ],
+      "drawingId": "underwear",
+      "pinyin": [
+        [
+          "n",
+          "ei"
+        ],
+        [
+          "y",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "面包车",
+      "synonyms": [
+        "厢式货车"
+      ],
+      "drawingId": "van",
+      "pinyin": [
+        [
+          "m",
+          "ian"
+        ],
+        [
+          "b",
+          "ao"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "花瓶",
+      "synonyms": [],
+      "drawingId": "vase",
+      "pinyin": [
+        [
+          "h",
+          "ua"
+        ],
+        [
+          "p",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "小提琴",
+      "synonyms": [],
+      "drawingId": "violin",
+      "pinyin": [
+        [
+          "x",
+          "iao"
+        ],
+        [
+          "t",
+          "i"
+        ],
+        [
+          "q",
+          "in"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "洗衣机",
+      "synonyms": [],
+      "drawingId": "washing machine",
+      "pinyin": [
+        [
+          "x",
+          "i"
+        ],
+        [
+          "y",
+          "i"
+        ],
+        [
+          "j",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "西瓜",
+      "synonyms": [],
+      "drawingId": "watermelon",
+      "pinyin": [
+        [
+          "x",
+          "i"
+        ],
+        [
+          "g",
+          "ua"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "水滑梯",
+      "synonyms": [],
+      "drawingId": "waterslide",
+      "pinyin": [
+        [
+          "sh",
+          "ui"
+        ],
+        [
+          "h",
+          "ua"
+        ],
+        [
+          "t",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "鲸鱼",
+      "synonyms": [],
+      "drawingId": "whale",
+      "pinyin": [
+        [
+          "j",
+          "ing"
+        ],
+        [
+          "y",
+          "u"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "轮子",
+      "synonyms": [
+        "车轮"
+      ],
+      "drawingId": "wheel",
+      "pinyin": [
+        [
+          "l",
+          "un"
+        ],
+        [
+          "z",
+          "i"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "风车",
+      "synonyms": [],
+      "drawingId": "windmill",
+      "pinyin": [
+        [
+          "f",
+          "eng"
+        ],
+        [
+          "ch",
+          "e"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "酒瓶",
+      "synonyms": [],
+      "drawingId": "wine bottle",
+      "pinyin": [
+        [
+          "j",
+          "iu"
+        ],
+        [
+          "p",
+          "ing"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "酒杯",
+      "synonyms": [
+        "高脚杯"
+      ],
+      "drawingId": "wine glass",
+      "pinyin": [
+        [
+          "j",
+          "iu"
+        ],
+        [
+          "b",
+          "ei"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "手表",
+      "synonyms": [],
+      "drawingId": "wristwatch",
+      "pinyin": [
+        [
+          "sh",
+          "ou"
+        ],
+        [
+          "b",
+          "iao"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "瑜伽",
+      "synonyms": [],
+      "drawingId": "yoga",
+      "pinyin": [
+        [
+          "y",
+          "u"
+        ],
+        [
+          "j",
+          "ia"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "斑马",
+      "synonyms": [],
+      "drawingId": "zebra",
+      "pinyin": [
+        [
+          "b",
+          "an"
+        ],
+        [
+          "m",
+          "a"
+        ]
+      ],
+      "removed": false
+    },
+    {
+      "word": "锯齿形",
+      "synonyms": [
+        "之字形"
+      ],
+      "drawingId": "zigzag",
+      "pinyin": [
+        [
+          "j",
+          "u"
+        ],
+        [
+          "ch",
+          "i"
+        ],
+        [
+          "x",
+          "ing"
+        ]
+      ],
+      "removed": true
+    }
+  ]
+}

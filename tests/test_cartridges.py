@@ -59,16 +59,26 @@ def test_chat() -> None:
 
 
 def test_codenames() -> None:
-    cartridge = CodenamesCartridge()
-    cartridge.dispatch("player", {"type": "startGame", "settings": {"tokens": 9, "seed": 10}})
-    game = cartridge.state["gameState"]
-    assert len(game["board"]) == len(game["cells"]) == 25
-    cartridge.dispatch("player", {"type": "submitClue", "clue": {"word": "NORI", "count": 1}})
-    game = cartridge.state["gameState"]
-    assert game["history"][-1]["clue"]["word"] == "NORI"
-    action = cartridge.agent_next_command()
-    assert action and action["type"] == "submitGuess"
-    cartridge.dispatch("agent", action)
+    # 1. Test Chinese (zh-CN) localization
+    cartridge_zh = CodenamesCartridge()
+    cartridge_zh.dispatch("player", {"type": "startGame", "settings": {"tokens": 9, "seed": 10, "wordLocale": "zh-CN"}})
+    game_zh = cartridge_zh.state["gameState"]
+    assert len(game_zh["board"]) == len(game_zh["cells"]) == 25
+    assert any("\u4e00" <= char <= "\u9fff" for char in game_zh["board"][0]["text"])
+    cartridge_zh.dispatch("player", {"type": "submitClue", "clue": {"word": "诺莉", "count": 2}})
+    assert cartridge_zh.state["gameState"]["history"][-1]["clue"]["word"] == "诺莉"
+    action_zh = cartridge_zh.agent_next_command()
+    assert action_zh and action_zh["type"] == "submitGuess"
+    cartridge_zh.dispatch("agent", action_zh)
+
+    # 2. Test English (en) localization
+    cartridge_en = CodenamesCartridge()
+    cartridge_en.dispatch("player", {"type": "startGame", "settings": {"tokens": 9, "seed": 10, "wordLocale": "en"}})
+    game_en = cartridge_en.state["gameState"]
+    assert len(game_en["board"]) == 25
+    assert all(entry["text"].isupper() for entry in game_en["board"])
+    cartridge_en.dispatch("player", {"type": "submitClue", "clue": {"word": "NORI", "count": 1}})
+    assert cartridge_en.state["gameState"]["history"][-1]["clue"]["word"] == "NORI"
 
 
 def test_cakeduel() -> None:
@@ -99,18 +109,34 @@ def test_chess() -> None:
 
 
 def test_pictionary() -> None:
-    cartridge = PictionaryCartridge()
-    cartridge.dispatch("player", {"type": "startSession", "atMs": 1_000, "settings": {"sessionDurationMs": 60_000, "locale": "en"}})
-    game = cartridge.state["gameState"]
-    assert game["phase"] == "PLAYING" and game["round"]["roles"] == {"drawer": "player", "guesser": "agent"}
+    # 1. Test Chinese (zh-CN) localization and synonym matching
+    cartridge_zh = PictionaryCartridge()
+    cartridge_zh.dispatch("player", {"type": "startSession", "atMs": 1_000, "settings": {"sessionDurationMs": 60_000, "locale": "zh-CN"}})
+    game_zh = cartridge_zh.state["gameState"]
+    round_zh = game_zh["round"]
+    assert game_zh["phase"] == "PLAYING" and round_zh["roles"] == {"drawer": "player", "guesser": "agent"}
+    assert isinstance(round_zh["pinyin"], list)
+    assert len(round_zh["drawingId"]) > 0
+
+    # Test Chinese guess matching
+    correct_word = round_zh["word"]
+    guess_res = cartridge_zh.dispatch("agent", {"type": "submitGuess", "atMs": 1_005, "text": correct_word})
+    assert guess_res.result["correct"] is True
+    assert cartridge_zh.state["gameState"]["round"]["status"] == "solved"
+
+    # 2. Test English (en) localization
+    cartridge_en = PictionaryCartridge()
+    cartridge_en.dispatch("player", {"type": "startSession", "atMs": 1_000, "settings": {"sessionDurationMs": 60_000, "locale": "en"}})
+    game_en = cartridge_en.state["gameState"]
+    assert game_en["phase"] == "PLAYING"
     # Strokes are deliberately no-op runtime commands in the shipped reducer.
-    committed = cartridge.dispatch(
+    committed = cartridge_en.dispatch(
         "player",
         {"type": "submitStrokeBatch", "atMs": 1_001, "batch": [{"points": [{"x": 0, "y": 0}, {"x": 1, "y": 1}]}]},
     )
     assert committed.committed is False
-    cartridge.dispatch("player", {"type": "skipRound", "atMs": 1_002})
-    assert cartridge.state["gameState"]["round"]["status"] == "skipped"
+    cartridge_en.dispatch("player", {"type": "skipRound", "atMs": 1_002})
+    assert cartridge_en.state["gameState"]["round"]["status"] == "skipped"
 
 
 def test_manifold() -> None:

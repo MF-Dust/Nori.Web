@@ -1,4 +1,4 @@
-"""`pictionary` / Draw & Guess cartridge contract from GameScreen-CgEXO_XJ.js."""
+"""`pictionary` / Draw & Guess cartridge contract with full multi-locale vocabulary and synonym matching."""
 
 from __future__ import annotations
 
@@ -15,11 +15,14 @@ from .base import BaseCartridge, CommandRejected, ReducerResult
 PLAYING = "PLAYING"
 RESULTS = "RESULTS"
 
-_DRAWINGS_PATH = Path(__file__).resolve().parents[2] / "public" / "pictionary" / "drawings.json"
+_VOCAB_PATH = Path(__file__).resolve().parents[1] / "data" / "pictionary_words.json"
 try:
-    _DRAWING_IDS = list(json.loads(_DRAWINGS_PATH.read_text(encoding="utf-8")).keys())
+    _VOCAB_DATA: Dict[str, List[Dict[str, Any]]] = json.loads(_VOCAB_PATH.read_text(encoding="utf-8"))
 except (OSError, json.JSONDecodeError):
-    _DRAWING_IDS = ["apple", "cat", "house", "tree", "sun"]
+    _VOCAB_DATA = {
+        "en": [{"word": "apple", "synonyms": [], "drawingId": "apple", "removed": False}],
+        "zh-CN": [{"word": "苹果", "synonyms": [], "drawingId": "apple", "pinyin": [["p", "ing"], ["g", "uo"]], "removed": False}],
+    }
 
 
 class PictionaryCartridge(BaseCartridge):
@@ -31,7 +34,7 @@ class PictionaryCartridge(BaseCartridge):
                 "settings": {
                     "sessionDurationMs": 180_000,
                     "inferenceMode": "fast",
-                    "locale": "en",
+                    "locale": "zh-CN",
                 },
             },
         )
@@ -47,29 +50,38 @@ class PictionaryCartridge(BaseCartridge):
 
     @staticmethod
     def _normalize_guess(value: Any) -> str:
+        """Normalize user guess preserving alphanumeric, Chinese, and Japanese characters."""
         if not isinstance(value, str):
             raise CommandRejected("text must be a string")
         value = value.strip().lower()
-        value = re.sub(r"\s+", " ", value)
-        value = re.sub(r"[^a-z0-9\s-]", " ", value)
-        return re.sub(r"\s+", " ", value).strip()[:50]
+        # Remove whitespace and common punctuation, retaining letters, numbers, Chinese and Japanese characters
+        value = re.sub(r"[\s\.,!?'\"-_/\\，。！？、“”‘’（）()【】\[\]]+", "", value)
+        return value[:50]
 
     @staticmethod
-    def _word_from_id(drawing_id: str) -> str:
-        return drawing_id.replace("-", " ")
+    def _resolve_vocab(locale: Optional[str]) -> List[Dict[str, Any]]:
+        loc = (locale or "zh-CN").lower().replace("_", "-")
+        if loc.startswith("zh") or loc in {"cn", "zh-cn", "zh-tw", "zh-hk"}:
+            vocab = _VOCAB_DATA.get("zh-CN") or _VOCAB_DATA.get("en", [])
+        else:
+            vocab = _VOCAB_DATA.get("en") or _VOCAB_DATA.get("zh-CN", [])
+        return [item for item in vocab if not item.get("removed", False)]
 
-    def _choose_word(self, excluded: List[str]) -> str:
-        candidates = [entry for entry in _DRAWING_IDS if entry.lower() not in {x.lower() for x in excluded}]
-        return self._rng.choice(candidates or _DRAWING_IDS)
+    def _choose_item(self, locale: str, excluded_ids: List[str]) -> Dict[str, Any]:
+        pool = self._resolve_vocab(locale)
+        excluded_set = {x.lower() for x in excluded_ids}
+        candidates = [item for item in pool if item["drawingId"].lower() not in excluded_set]
+        return self._rng.choice(candidates or pool)
 
     @staticmethod
-    def _round(at_ms: int, drawing_id: str, roles: Dict[str, str]) -> Dict[str, Any]:
+    def _round(at_ms: int, item: Dict[str, Any], roles: Dict[str, str]) -> Dict[str, Any]:
         return {
             "roundId": f"round_{at_ms}_{random.randrange(36**6):06x}",
             "startedAtMs": at_ms,
-            "word": PictionaryCartridge._word_from_id(drawing_id),
-            "drawingId": drawing_id,
-            "pinyin": [],
+            "word": item["word"],
+            "drawingId": item["drawingId"],
+            "pinyin": item.get("pinyin", []),
+            "synonyms": item.get("synonyms", []),
             "roles": roles,
             "status": "active",
             "noriRedrawEpoch": 0,
@@ -107,6 +119,27 @@ class PictionaryCartridge(BaseCartridge):
         elapsed = sum(int(entry.get("elapsedMs", 0)) for entry in history)
         return elapsed >= settings["sessionDurationMs"]
 
+    @classmethod
+    def _check_guess(cls, raw_guess: str, round_data: Dict[str, Any]) -> bool:
+        guess = cls._normalize_guess(raw_guess)
+        if not guess:
+            return False
+
+        target_word = cls._normalize_guess(round_data["word"])
+        target_drawing = cls._normalize_guess(round_data["drawingId"])
+        target_synonyms = [cls._normalize_guess(s) for s in round_data.get("synonyms", [])]
+        all_targets = [t for t in [target_word, target_drawing, *target_synonyms] if t]
+
+        if guess in all_targets:
+            return True
+
+        for target in all_targets:
+            if len(guess) >= 2 and (guess in target or target in guess):
+                return True
+            if len(target) == 1 and guess == target:
+                return True
+        return False
+
     def reduce(self, actor: str, cmd: Dict[str, Any]) -> ReducerResult:
         command_type = cmd["type"]
         state = deepcopy(self.state)
@@ -121,8 +154,9 @@ class PictionaryCartridge(BaseCartridge):
             if isinstance(at_ms, bool) or not isinstance(at_ms, int):
                 raise CommandRejected("atMs must be an integer")
             settings = self._settings(state["settings"], cmd.get("settings"))
-            drawing_id = self._choose_word([])
-            round_data = self._round(at_ms, drawing_id, {"drawer": "player", "guesser": "agent"})
+            locale = settings.get("locale", "zh-CN")
+            item = self._choose_item(locale, [])
+            round_data = self._round(at_ms, item, {"drawer": "player", "guesser": "agent"})
             state["settings"] = settings
             state["gameState"] = {
                 "phase": PLAYING,
@@ -135,7 +169,12 @@ class PictionaryCartridge(BaseCartridge):
                 {"success": True, "roundId": round_data["roundId"]},
                 [
                     {"type": "session_started"},
-                    {"type": "round_started", "roundId": round_data["roundId"], "roles": round_data["roles"], "drawingId": drawing_id},
+                    {
+                        "type": "round_started",
+                        "roundId": round_data["roundId"],
+                        "roles": round_data["roles"],
+                        "drawingId": item["drawingId"],
+                    },
                 ],
             )
 
@@ -152,15 +191,16 @@ class PictionaryCartridge(BaseCartridge):
             at_ms = cmd.get("atMs")
             if isinstance(at_ms, bool) or not isinstance(at_ms, int):
                 raise CommandRejected("atMs must be an integer")
-            used = [round_data["drawingId"], *[entry["word"].replace(" ", "-") for entry in game["history"]]]
-            drawing_id = self._choose_word(used)
+            used = [round_data["drawingId"], *[entry.get("drawingId", entry["word"]).replace(" ", "-") for entry in game["history"]]]
+            locale = state["settings"].get("locale", "zh-CN")
+            item = self._choose_item(locale, used)
             roles = self._roles_after(round_data["roles"])
-            next_round = self._round(at_ms, drawing_id, roles)
+            next_round = self._round(at_ms, item, roles)
             game["round"] = next_round
             return ReducerResult(
                 state,
                 {"success": True, "roundId": next_round["roundId"]},
-                [{"type": "round_started", "roundId": next_round["roundId"], "roles": roles, "drawingId": drawing_id}],
+                [{"type": "round_started", "roundId": next_round["roundId"], "roles": roles, "drawingId": item["drawingId"]}],
             )
 
         if command_type == "submitStrokeBatch":
@@ -182,11 +222,9 @@ class PictionaryCartridge(BaseCartridge):
             if isinstance(at_ms, bool) or not isinstance(at_ms, int):
                 raise CommandRejected("atMs must be an integer")
             raw_text = cmd.get("text")
-            guess = self._normalize_guess(raw_text)
-            if not guess:
+            if not isinstance(raw_text, str) or not raw_text.strip():
                 raise CommandRejected("Empty guess")
-            word = self._normalize_guess(round_data["word"])
-            correct = word in guess or guess in word
+            correct = self._check_guess(raw_text, round_data)
             round_data["lastGuess"] = {"by": actor, "text": str(raw_text).strip(), "atMs": at_ms, "correct": correct}
             events: List[Dict[str, Any]] = [
                 {"type": "guess_submitted", "roundId": round_data["roundId"], "by": actor, "text": str(raw_text).strip(), "correct": correct}
@@ -195,7 +233,13 @@ class PictionaryCartridge(BaseCartridge):
                 elapsed = max(0, at_ms - round_data["startedAtMs"])
                 history = [
                     *game["history"],
-                    {"word": round_data["word"], "roles": deepcopy(round_data["roles"]), "elapsedMs": elapsed, "outcome": "solved"},
+                    {
+                        "word": round_data["word"],
+                        "drawingId": round_data["drawingId"],
+                        "roles": deepcopy(round_data["roles"]),
+                        "elapsedMs": elapsed,
+                        "outcome": "solved",
+                    },
                 ]
                 game["history"] = history
                 game["score"]["solved"] += 1
@@ -218,7 +262,13 @@ class PictionaryCartridge(BaseCartridge):
             elapsed = max(0, at_ms - round_data["startedAtMs"])
             history = [
                 *game["history"],
-                {"word": round_data["word"], "roles": deepcopy(round_data["roles"]), "elapsedMs": elapsed, "outcome": "skipped"},
+                {
+                    "word": round_data["word"],
+                    "drawingId": round_data["drawingId"],
+                    "roles": deepcopy(round_data["roles"]),
+                    "elapsedMs": elapsed,
+                    "outcome": "skipped",
+                },
             ]
             game["history"] = history
             game["score"]["skipped"] += 1
@@ -246,7 +296,13 @@ class PictionaryCartridge(BaseCartridge):
             elapsed = max(0, at_ms - round_data["startedAtMs"])
             round_data["status"] = "unfinished"
             game["history"].append(
-                {"word": round_data["word"], "roles": deepcopy(round_data["roles"]), "elapsedMs": elapsed, "outcome": "unfinished"}
+                {
+                    "word": round_data["word"],
+                    "drawingId": round_data["drawingId"],
+                    "roles": deepcopy(round_data["roles"]),
+                    "elapsedMs": elapsed,
+                    "outcome": "unfinished",
+                }
             )
             game["phase"] = RESULTS
             return ReducerResult(state, {"success": True}, [{"type": "session_finished"}])
