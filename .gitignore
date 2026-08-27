@@ -5,3 +5,11 @@ __pycache__/
 .research/
 data/*.sqlite3
 data/*.db
+
+# --- scraper secrets & archive ---
+.scraper_token.txt
+.scraper_jwt.txt
+scraper/.scraper_token.txt
+live_archive/
+NoriOS_live_archive_*.zip
+backend/data/*.sqlite3

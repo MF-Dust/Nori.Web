@@ -1,10 +1,20 @@
-"""Virtual Mail application service."""
+"""Virtual Mail application service.
+
+When `backend/data/live_world_pack.json` is installed (see
+`scraper/import_pack.py`), the archived production mail artifacts are served
+verbatim for maximum fidelity, while runtime-sent mail still works on top.
+"""
 
 from __future__ import annotations
 
 import time
 from typing import Any, Dict, List
 
+from . import live_pack
+
+# ---------------------------------------------------------------------------
+# Fallback demo mailbox (used only when no live pack is installed).
+# ---------------------------------------------------------------------------
 EMAILS: List[Dict[str, Any]] = [
     {
         "id": "mail_welcome",
@@ -31,16 +41,19 @@ EMAILS: List[Dict[str, Any]] = [
     },
 ]
 
+_runtime_sent: List[Dict[str, Any]] = []
+
 
 def get_inbox_emails() -> List[Dict[str, Any]]:
     return [e for e in EMAILS if not e.get("archived", False)]
 
 
 def mark_email_read(mail_id: str) -> bool:
-    for e in EMAILS:
-        if e["id"] == mail_id:
-            e["read"] = True
-            return True
+    for pool in (EMAILS, _runtime_sent):
+        for e in pool:
+            if e["id"] == mail_id:
+                e["read"] = True
+                return True
     return False
 
 
@@ -56,19 +69,43 @@ def send_email(to_addr: str, subject: str, body: str) -> Dict[str, Any]:
         "read": True,
         "archived": False,
     }
-    EMAILS.append(new_mail)
+    _runtime_sent.append(new_mail)
     return new_mail
 
 
-def get_mail_artifacts(now_ms: int) -> List[Dict[str, Any]]:
+def _record_to_artifact(mail: Dict[str, Any], index: int) -> Dict[str, Any]:
+    now_ms = int(time.time() * 1000)
+    return {
+        "id": mail["id"],
+        "type": "mail",
+        "surfacedAt": now_ms - (3600000 - index * 1800000),
+        "data": {
+            key: value
+            for key, value in mail.items()
+            if key not in {"id", "archived", "read"} and value is not None
+        },
+    }
+
+
+def get_mail_artifacts(now_ms: int | None = None) -> List[Dict[str, Any]]:
     """Export mail objects formatted as Manifold artifacts."""
+    if live_pack.is_available():
+        artifacts = live_pack.mail_artifacts()
+        # include any mails composed during this session on top of the archive
+        known_ids = {a["id"] for a in artifacts}
+        for i, mail in enumerate(_runtime_sent):
+            if mail["id"] not in known_ids:
+                artifacts.append(_record_to_artifact(mail, i))
+        return artifacts
+
+    now = int(time.time() * 1000) if now_ms is None else now_ms
     artifacts = []
     for index, mail in enumerate(EMAILS):
         artifacts.append(
             {
                 "id": mail["id"],
                 "type": "mail",
-                "surfacedAt": now_ms - (3600000 - index * 1800000),
+                "surfacedAt": now - (3600000 - index * 1800000),
                 "data": {
                     "from": mail["from"],
                     "to": mail["to"],

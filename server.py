@@ -36,6 +36,9 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
 
+    from backend.virtual_apps import live_pack
+
     print(f"NoriOS local compatibility server: http://{HOST}:{PORT}")
     print(f"Arcade WebSocket: ws://{HOST}:{PORT}/api/arcade/web/v1")
+    print(live_pack.summary())
     uvicorn.run("server:app", host=HOST, port=PORT, reload=DEBUG)

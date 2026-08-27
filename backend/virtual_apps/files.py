@@ -1,8 +1,15 @@
-"""Virtual Files application service."""
+"""Virtual Files application service.
+
+Serves archived production file artifacts verbatim when the live pack is
+installed; otherwise falls back to the built-in demo volume set.
+"""
 
 from __future__ import annotations
 
+import time
 from typing import Any, Dict, List
+
+from . import live_pack
 
 COLD_VOLUMES = [
     {
@@ -50,14 +57,18 @@ def unseal_volume(volume_id: str, key: str) -> Dict[str, Any]:
     return {"success": False, "error": "Volume not found"}
 
 
-def get_file_artifacts(now_ms: int) -> List[Dict[str, Any]]:
+def get_file_artifacts(now_ms: int | None = None) -> List[Dict[str, Any]]:
     """Export file objects formatted as Manifold artifacts."""
+    if live_pack.is_available():
+        return live_pack.file_artifacts()
+
+    now = int(time.time() * 1000) if now_ms is None else now_ms
     artifacts = []
     for file_info in VIRTUAL_FILES:
-        artifact: Dict[str, Any] = {
+        artifact = {
             "id": file_info["id"],
             "type": "file",
-            "surfacedAt": now_ms - 3600000,
+            "surfacedAt": now - 3600000,
             "data": {
                 "display_path": file_info["display_path"],
                 "mime": file_info["mime"],

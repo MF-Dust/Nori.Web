@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Futurum">
+  <path d="M16 2 C24.4 2 27.3 2 28.65 4.18 30 6.36 30 9.4 30 16 30 22.6 30 25.64 28.65 27.82 27.3 30 24.4 30 16 30 7.6 30 4.7 30 3.35 27.82 2 25.64 2 22.6 2 16 2 9.4 2 6.36 3.35 4.18 4.7 2 7.6 2 16 2 Z" fill="#08090C"/>
+  <!-- 地层 mark: disk cut into three strata, shear 0 / 4.5 / 9 (gen: prototypes/futurum-logo) -->
+  <g transform="translate(3.61 2.84) scale(0.56)" fill="#EEF1F6">
+    <path d="M 3.36 18.5 L 31.64 18.5 A 15 15 0 0 0 3.36 18.5 Z"/>
+    <path d="M 7.39 20.1 L 36.61 20.1 A 15 15 0 0 1 36.77 26.1 L 7.23 26.1 A 15 15 0 0 0 7.39 20.1 Z"/>
+    <path d="M 12.1 27.7 L 40.9 27.7 A 15 15 0 0 1 12.1 27.7 Z"/>
+  </g>
+</svg>

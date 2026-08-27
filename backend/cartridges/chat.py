@@ -15,13 +15,18 @@ from ..services.llm_service import EMOTION_ALIASES, EMOTIONS, LLM_SERVICE
 
 class ChatCartridge(BaseCartridge):
     def __init__(self) -> None:
+        from ..virtual_apps import live_pack
+
+        # Production worlds boot in text mode; the local demo default was
+        # audio-only. Match the archived snapshot whenever the pack exists.
+        mode = "text" if live_pack.is_available() else "audio"
         super().__init__(
             "chat",
             {
                 "operations": {},
                 "nextMessageId": 1,
                 "turn": self._idle_turn(),
-                "presentationMode": "audio",
+                "presentationMode": mode,
             },
         )
 

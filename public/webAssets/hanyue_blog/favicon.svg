@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="hanyue.tech">
+  <defs>
+    <clipPath id="c"><circle cx="16" cy="16" r="15"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect x="0" y="0" width="32" height="32" fill="#2b5fff"/>
+    <path d="M32 0 L32 32 L0 32 Z" fill="#1c40c2"/>
+  </g>
+  <path d="M11.5 8 v16 M11.5 16 q0 -5 4.5 -5 q4.5 0 4.5 5 v8"
+        fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

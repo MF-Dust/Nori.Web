@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="buckonair.live">
+  <!-- Alert-red full-bleed tile (the styles.css red var) + white studio mic: the independent truth radio -->
+  <rect width="32" height="32" rx="7" fill="#EC1C24"/>
+  <rect x="12.6" y="5" width="6.8" height="12.2" rx="3.4" fill="#ffffff"/>
+  <path d="M9.2 14.2 a6.8 6.8 0 0 0 13.6 0" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M16 21.4 V25 M11.6 26.6 H20.4" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

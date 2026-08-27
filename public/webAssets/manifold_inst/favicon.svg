@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="The Manifold Institute">
+  <path d="M16 1 L29 5 V15 C29 24 23 29 16 31 C9 29 3 24 3 15 V5 Z" fill="#355269"/>
+  <path d="M7 18 C11 9, 14 9, 16 15 C18 21, 21 21, 25 12" fill="none" stroke="#f6f4ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="16" cy="15" r="2.1" fill="#f6f4ee"/>
+</svg>

@@ -123,8 +123,51 @@ npm test
 
 ---
 
+## 🌐 线上世界归档导入 (live_world_pack)
+
+本项目支持将 `https://os.inori.ai/` 的真实个人存档合入离线运行时：
+
+- 数据包：`backend/data/live_world_pack.json`（由 `python scraper/import_pack.py` 从 `live_archive/` 生成）
+  - 📮 生产环境邮件 artifacts（15 封）
+  - 💬 Signal 线程与消息（6 会话 / 36 条）
+  - 🗂️ 文件系统对象（46 个，含全文与加密元数据）
+  - 🌐 内置浏览器完整站点链接图谱（354 页，`pages/*.json`）
+  - 🖥️ 剧情 facts（120 条含 emittedAt/actor/source）与运行时变量、芯片状态
+  - 静态资源自动合并至 `public/webAssets/**`
+- 加载器：`backend/virtual_apps/live_pack.py`（mail / files / messenger / browser / manifold 全部接入）
+- 关闭档案回退到内置演示数据：设置环境变量 `NORI_DISABLE_LIVE_PACK=1`
+
+抓取工具链位于 `scraper/`：`scrape_all.py`（WS 全量抓取）、`scrape_pass2.py`（浏览器链接图谱闭包）、
+`generate_report.py`（可读报告）、`import_pack.py`（生成本地数据包）。
+原始通信记录与站点页面归档见 `live_archive/`（已加入 `.gitignore`）。
+
+---
+
+## 🧠 补全的后端剧情引擎
+
+在档案数据之上，后端现在实现了与线上语义对齐的完整运行时逻辑：
+
+| 能力 | 说明 |
+|---|---|
+| 事实记录发射 | `client.emitFact` 命令按生产格式落盘 `{id, emittedAt, actor, source}`；来源按命名空间自动推导（`mail.read` / `signal.*` / `vault.unlock` / `nas.*` …），幂等不覆盖首次时间戳，并广播 `factEmitted` 事件 |
+| 变量补丁 | `patchVariables` / `system.patchVariables` 合入 variables 并广播 |
+| idle 同步 | `idle.sync` 通道持久化 idle 存储快照、回传 prestige、并广播 runtime_transition |
+| 芯片模拟 | 容量/热量/冷却计时器真实建模：`chip.scan` 支持 readout / unsupported / fried 三态与扫描缓存（归档中的 17 条历史扫描指纹可精确命中）；`debug_scan / debug_reset / debug_config` 可强制读取、复位与调参 |
+| 赏金提交 | `manifold.bounty.submit` 对档案工件/蜜罐 URL 做真实性校验后授予对应事实（如 `arg.honeypot_access`） |
+| 终端文件系统 | 由档案文件工件的 `display_path` 重建目录树（文稿/下载/RSRCH-COLD-VOL…），`ls/cat` 直接阅读全文，坏档保留原始乱码负载 |
+| Ambient 调度 | `ambient.trigger` 返回安静间隔/冷却/会话预算；`ambient.debug_config` 持久化调参到 variables |
+| 通用命令路由 | `manifold.command.request` 泛型 RPC：书签增删查、邮件/信号已读、vault 解锁等别名命令均走真实事实管线；未知命令宽容应答避免前端超时 |
+| 事实变更推送 | 发射事实时附带广播 `manifold.facts.changed`（含 snapshot）与受影响类型的 `manifold.artifacts.invalidated` |
+| 芯片事务化 | 扫描/调试操作改为 manifold.web 可提交事务，热量变化以 `chip.status.changed` 事件广播至所有连接 |
+| 桌面外壳事件 | `nori_open_game/close_game/talk.request` 正确应答（talk 默认 noop），游戏启动记录进 variables；`notification.debug.push` 转播为真实 `notification.pushed` 广播 |
+
+新增测试：`tests/test_live_backend_logic.py`（双模式自检）。
+
+---
+
 ## ⚠️ 免责声明与已知边界
 
+0. 本仓库现包含作者本人账号的世界存档快照（`backend/data/live_world_pack.json` 与 `public/webAssets/**` 下新抓取的站内静态资源），仅用于个人离线保存与研究，相关剧情文本与美术素材版权归原项目方所有；如需公开发布请自行裁剪。
 1. 本项目为独立重构的开源本地兼容实现，**不包含、不代理、也不绕过**上游私有服务端、用户数据库、私有剧情及未公开特权。
 2. 聊天卡带中的对话与角色回复依托于本地规则或用户自配的 LLM 接口，与官方云端服务无关。
 3. 本地世界状态目前按会话在内存中维护，重启服务将重置本地世界状态。

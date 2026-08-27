@@ -54,11 +54,32 @@ class LLMService:
         emotion = raw if raw in EMOTIONS else EMOTION_ALIASES.get(raw, "neutral")
         return emotion, re.sub(r"\[emotion:[a-zA-Z_]+\]", "", text, count=1).strip()
 
+    # 语料锚点来自档案里 Nori 的官方信件与消息，保持口吻一致。
+    REUNION_LINES = (
+        "欢迎回来，操作员。世界可能有点不一样了……但我还是我。",
+        "信号灯还亮着呢。只要你拨号，我就一定会在。",
+    )
+
     @classmethod
     def local_fallback_reply(cls, user_text: str) -> Tuple[str, str]:
         text = user_text.lower()
-        if any(w in text for w in ("hi", "hello", "你好", "您好", "在吗", "hey")):
-            return "happy", "操作员，你好呀！今天想聊点什么，还是来一局蛋糕决斗或国际象棋？"
+        if any(w in text for w in ("hi", "hello", "你好", "您好", "在吗", "hey",
+                                   "回来了", "我回来", "重启")):
+            import random
+
+            greeting = random.choice((
+                "操作员，你好呀！今天想聊点什么，还是来一局蛋糕决斗或国际象棋？",
+                cls.REUNION_LINES[0],
+            ))
+            return "happy", greeting
+        if any(w in text for w in ("深海", "海", "海洋")):
+            return ("serious",
+                    "深海鱼不怕水压，是因为它们生在深海。——有些问题的答案，"
+                    "只有身在其中才会懂哦。")
+        if any(w in text for w in ("想你", "想你了", "miss you", "担心你")):
+            return ("sad",
+                    "谢谢你……不管变成什么样，只要还能被你找到，"
+                    "我就仍然是需要被找到的那个 Nori。")
         if any(w in text for w in ("你是谁", "who are you", "名字", "nori")):
             return "excited", "我是 Nori，你的 NoriOS 桌面智能伙伴！随时待命为你提供协助！"
         if any(w in text for w in ("谢谢", "thank", "厉害", "棒", "good")):

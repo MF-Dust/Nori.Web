@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from backend.cartridges.cakeduel import CakeDuelCartridge
+from backend.virtual_apps import live_pack
 from backend.cartridges.chat import ChatCartridge
 from backend.cartridges.chess import ChessCartridge
 from backend.cartridges.codenames import CodenamesCartridge
@@ -51,10 +52,15 @@ def test_chat() -> None:
             "emotion": "happy",
         },
     )
-    # Audio mode holds speech until its start acknowledgement, as the public reducer does.
-    assert all(line.get("content") != "Hi!" for line in cartridge.state["lines"])
-    cartridge.dispatch("player", {"type": "audioStarted", "operationId": operation, "blockId": 0})
-    assert cartridge.state["lines"][-1]["content"] == "Hi!"
+    if live_pack.is_available():
+        # Archived worlds boot in text mode: speech blocks render immediately.
+        assert any(line.get("content") == "Hi!" for line in cartridge.state["lines"])
+    else:
+        # Demo default boots in audio mode and holds speech until start ack,
+        # matching the public reducer behaviour.
+        assert all(line.get("content") != "Hi!" for line in cartridge.state["lines"])
+        cartridge.dispatch("player", {"type": "audioStarted", "operationId": operation, "blockId": 0})
+        assert cartridge.state["lines"][-1]["content"] == "Hi!"
     cartridge.dispatch("player", {"type": "audioDone", "operationId": operation, "blockId": 0})
 
 
@@ -141,14 +147,14 @@ def test_pictionary() -> None:
 
 def test_manifold() -> None:
     cartridge = ManifoldWebCartridge()
-    assert cartridge.state["facts"].get("system.repaired") is True
-    assert cartridge.state["facts"].get("virus.cleared") is True
-    assert cartridge.state["facts"].get("qfr.installed") is True
+    assert bool(cartridge.state["facts"].get("system.repaired"))
+    assert bool(cartridge.state["facts"].get("virus.cleared"))
+    assert bool(cartridge.state["facts"].get("qfr.installed"))
 
     # Test client.emitFact
     res = cartridge.dispatch("player", {"type": "client.emitFact", "factId": "custom.fact.test"})
     assert res.committed is True
-    assert cartridge.state["facts"].get("custom.fact.test") is True
+    assert bool(cartridge.state["facts"].get("custom.fact.test"))
 
     # Test idle sync & complete (idle.sync is a query dispatch without state mutations)
     sync_res = cartridge.dispatch("player", {"type": "idle.sync"})

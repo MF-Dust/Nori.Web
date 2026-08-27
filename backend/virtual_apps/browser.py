@@ -1,13 +1,84 @@
-"""Virtual Browser application service."""
+"""Virtual Browser application service.
+
+Serves archived production pages (fetched via the in-game Browser link graph)
+when the live pack is installed; falls back to a small simulated net for any
+URL that was not captured.
+"""
 
 from __future__ import annotations
 
 from typing import Any, Dict
+from urllib.parse import urlsplit
 
-SITES: Dict[str, Dict[str, Any]] = {
-    "https://doodle.search/": {
-        "title": "Doodle Search",
-        "html": """<!DOCTYPE html>
+from . import live_pack
+
+
+def _mock_sites() -> Dict[str, Dict[str, Any]]:
+    return {
+        "https://doodle.search/": {
+            "title": "Doodle Search",
+            "html": _DOODLE_HTML,
+        },
+        "https://meridianpost.com/": {
+            "title": "The Meridian Post",
+            "html": _MERIDIAN_HTML,
+        },
+        "https://pulse.social/": {
+            "title": "Pulse Social",
+            "html": _PULSE_HTML,
+        },
+    }
+
+
+def _canon(url: str) -> str:
+    """Normalize a URL for lookup: strip fragment/query, host lowercase."""
+    raw = (url or "").strip()
+    try:
+        parts = urlsplit(raw)
+    except Exception:
+        return raw.lower().rstrip("/")
+    if not parts.netloc:
+        return raw.lower().rstrip("/")
+    path = (parts.path or "").replace("//", "/")
+    return f"{parts.scheme.lower()}://{parts.netloc.lower()}{path}".rstrip("/")
+
+
+def get_browser_page(url: str) -> Dict[str, Any]:
+    """Resolve an archived page, else the simulated-net fallback."""
+    if live_pack.is_available():
+        entry = live_pack.page(url)
+        if entry is not None:
+            data = dict(entry.get("data") or {})
+            data.setdefault("body_html", "")
+            return data
+
+    clean = url.split("?")[0].rstrip("/") + "/"
+    sites = _mock_sites()
+    if clean in sites:
+        page = sites[clean]
+    else:
+        for key, value in sites.items():
+            if key.rstrip("/") == clean.rstrip("/"):
+                page = value
+                break
+        else:
+            page = {
+                "title": "Simulated Net Page",
+                "html": (
+                    "<html><body style='font-family:sans-serif;background:#111;"
+                    "color:#eee;padding:40px;text-align:center;'>"
+                    f"<h2>Page: {url}</h2>"
+                    "<p>Simulated web page hosted inside NoriOS network.</p></body></html>"
+                ),
+            }
+    # Real frontend renders `body_html`; expose the legacy markup through it too.
+    out = dict(page)
+    out.setdefault("supported_locales", ["zh-CN"])
+    out.setdefault("body_html", page.get("html", ""))
+    return out
+
+
+_DOODLE_HTML = """<!DOCTYPE html>
 <html>
 <head>
     <style>
@@ -34,11 +105,9 @@ SITES: Dict[str, Dict[str, Any]] = {
         </div>
     </div>
 </body>
-</html>""",
-    },
-    "https://meridianpost.com/": {
-        "title": "The Meridian Post",
-        "html": """<!DOCTYPE html>
+</html>"""
+
+_MERIDIAN_HTML = """<!DOCTYPE html>
 <html>
 <head>
     <style>
@@ -53,11 +122,9 @@ SITES: Dict[str, Dict[str, Any]] = {
     <h2>NoriOS: The Convergence of Live Virtual Companions and Realtime Runtimes</h2>
     <p>In a breakthrough development, NoriOS has seamlessly integrated Live2D emotional state tracking, WebSocket-based world presence, and local cognitive models into a unified desktop interface.</p>
 </body>
-</html>""",
-    },
-    "https://pulse.social/": {
-        "title": "Pulse Social",
-        "html": """<!DOCTYPE html>
+</html>"""
+
+_PULSE_HTML = """<!DOCTYPE html>
 <html>
 <head>
     <style>
@@ -77,19 +144,7 @@ SITES: Dict[str, Dict[str, Any]] = {
         <div>Connected to NoriOS node. Ready for party games and chat.</div>
     </div>
 </body>
-</html>""",
-    },
-}
+</html>"""
 
-
-def get_browser_page(url: str) -> Dict[str, Any]:
-    clean = url.split("?")[0].rstrip("/") + "/"
-    if clean in SITES:
-        return SITES[clean]
-    for k, v in SITES.items():
-        if k.rstrip("/") == clean.rstrip("/"):
-            return v
-    return {
-        "title": "Simulated Net Page",
-        "html": f"<html><body style='font-family:sans-serif;background:#111;color:#eee;padding:40px;text-align:center;'><h2>Page: {url}</h2><p>Simulated web page hosted inside NoriOS network.</p></body></html>",
-    }
+# Backwards-compatible module-level view of the fallback site table.
+SITES = _mock_sites()
