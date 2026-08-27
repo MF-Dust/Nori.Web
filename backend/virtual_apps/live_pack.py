@@ -24,6 +24,21 @@ _DISABLED = os.getenv("NORI_DISABLE_LIVE_PACK", "").strip().lower() in {"1", "tr
 
 _lock = threading.Lock()
 _cache: Optional[Dict[str, Any]] = None
+_PAGE_INDEX: Optional[Dict[str, Dict[str, Any]]] = None
+
+
+def set_disabled(disabled: bool) -> None:
+    """Enable or disable the archive loader at runtime.
+
+    Cloudflare Workers receive vars/secrets through request bindings rather
+    than ``os.environ``. The Worker entrypoint calls this before dispatching
+    requests so the large local archive can stay disabled in edge deployments.
+    """
+    global _DISABLED, _cache, _PAGE_INDEX
+    _DISABLED = disabled
+    if disabled:
+        _cache = None
+        _PAGE_INDEX = None
 
 
 def _pack() -> Optional[Dict[str, Any]]:
@@ -88,9 +103,6 @@ def signal_thread_artifacts() -> List[Dict[str, Any]]:
 
 def signal_message_artifacts() -> List[Dict[str, Any]]:
     return _list("signal_message_artifacts")
-
-
-_PAGE_INDEX: Optional[Dict[str, Dict[str, Any]]] = None
 
 
 def _canonical(url: str) -> str:
