@@ -7,7 +7,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, Request
 
 from .auth import get_current_user_id
-from ..session.manager import WORLD_MANAGER
+from ..session.manager import get_world_manager
 
 convex_router = APIRouter(tags=["convex"])
 
@@ -22,7 +22,8 @@ async def _convex_local_response(request: Request) -> Dict[str, Any]:
         user_id = get_current_user_id(request)
         if not user_id:
             return {"status": "error", "errorMessage": "Unauthorized", "logLines": []}
-        return {"status": "success", "value": {"ticket": await WORLD_MANAGER.issue_ticket(user_id)}, "logLines": []}
+        ticket = await get_world_manager().issue_ticket(user_id)
+        return {"status": "success", "value": {"ticket": ticket}, "logLines": []}
     if path == "auth/otpEmail:preflightOtpSend":
         return {"status": "success", "value": None, "logLines": []}
     return {"status": "error", "errorMessage": f"Unsupported local Convex function: {path or '<missing>'}", "logLines": []}

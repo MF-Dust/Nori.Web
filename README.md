@@ -1,6 +1,6 @@
 # Nori.Web - NoriOS 本地兼容后端与离线服务
 
-[![GitHub](https://img.shields.io/badge/GitHub-FuturumTech%2FNori.Web-blue?logo=github)](https://github.com/FuturumTech/Nori.Web)
+[![GitHub](https://img.shields.io/badge/GitHub-MF--Dust%2FNori.Web-blue?logo=github)](https://github.com/MF-Dust/Nori.Web)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-brightgreen?logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -18,6 +18,11 @@
   - **主通道 WebSocket (`/api/arcade/web/v1`)**：支持 `arcade.v1` 子协议、ticket 校验、世界生命周期管理（创建/加入/重置/挂载/卸载）、版本栅栏同步与双向事件分发。
   - **媒体流 WebSocket (`/api/arcade/web/v1/media`)**：支持 `open_media` 授权与 `chatAudio` 二进制音频帧推送。
   - **Better-Auth 兼容**：内置本地会话、访客自动登录、开发 OTP 验证及 Convex 兼容端点。
+- **Cloudflare Workers 部署支持**
+  - Python Workers + FastAPI ASGI 后端。
+  - Workers Static Assets 托管 SPA、Live2D、音效和桌面资源。
+  - Durable Objects 将同一 Arcade ticket 的主通道与媒体通道路由到同一状态所有者。
+  - 签名 WebSocket ticket 可跨 Worker isolate 验证，不依赖单进程内存。
 - **全套内置卡带状态机 (Cartridges)**
   - 💬 **Chat**：支持操作/分块/音频确认状态机，可无缝对接 OpenAI 兼容接口，未配置时提供本地智能回退。
   - 🍰 **Cake Duel**：支持完整基础牌组规则、回合轮替、虚张声势/质疑机制、蛋糕结算与本地 AI 对手。
@@ -31,7 +36,7 @@
 
 ---
 
-## 🚀 快速开始
+## 🚀 本地运行
 
 ### 运行环境要求
 - **Python** 3.11 或更高版本（已在 Python 3.11 / 3.13 验证）
@@ -40,9 +45,15 @@
 ### 1. 安装依赖
 
 ```bash
-git clone https://github.com/FuturumTech/Nori.Web.git
+git clone https://github.com/MF-Dust/Nori.Web.git
 cd Nori.Web
-python -m pip install -r requirements.txt
+python -m pip install -e ".[local]"
+```
+
+也可以使用 `uv`：
+
+```bash
+uv sync --extra local
 ```
 
 ### 2. 启动服务
@@ -59,15 +70,70 @@ python server.py
 
 ---
 
+## ☁️ Cloudflare Workers 部署
+
+项目根目录已经包含 `worker.py` 与 `wrangler.jsonc`，部署结构如下：
+
+```text
+Browser
+  ├─ /assets, Live2D, audio ... → Workers Static Assets
+  ├─ /api/*                    → FastAPI / Python Worker
+  └─ Arcade WebSocket          → Durable Object per signed ticket
+```
+
+### 1. 准备 Cloudflare Python Workers 环境
+
+需要安装 Node.js 与 `uv`，然后同步 Worker 依赖：
+
+```bash
+uv sync --group dev
+```
+
+### 2. 本地运行 Cloudflare Worker
+
+```bash
+uv run pywrangler dev
+```
+
+### 3. 配置部署 Secret
+
+生产部署建议至少设置一个独立的 `SECRET_KEY`，用于签名 Arcade WebSocket ticket：
+
+```bash
+uv run pywrangler secret put SECRET_KEY
+```
+
+如需启用 OpenAI 兼容接口：
+
+```bash
+uv run pywrangler secret put OPENAI_API_KEY
+```
+
+`OPENAI_BASE_URL` 和 `OPENAI_MODEL` 可以继续放在 Workers Vars 中；代码会从 Cloudflare runtime bindings 动态读取这些配置。
+
+### 4. 部署
+
+```bash
+uv run pywrangler deploy
+```
+
+Cloudflare 部署默认设置 `NORI_DISABLE_LIVE_PACK=1`，因此不会加载本地账号的 `live_world_pack.json` 内容。若是私有部署并明确希望启用归档，可修改 `wrangler.jsonc` 中对应变量。
+
+> Cloudflare Worker 使用 Durable Object 保持一个 Arcade ticket 对应的实时世界状态。当前世界本身仍是内存状态；代码更新、Durable Object 重启或连接生命周期结束后，不保证跨实例持久化。
+
+---
+
 ## ⚙️ 可选配置 (AI 对话)
 
-默认情况下，聊天卡带使用本地回退回复规则。如需启用大语言模型对话，可在环境变量或 `.env` 中配置 OpenAI 兼容 API：
+默认情况下，聊天卡带使用本地回退回复规则。如需启用大语言模型对话，可在本地环境变量中配置 OpenAI 兼容 API：
 
 ```env
 OPENAI_API_KEY=sk-...
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4o-mini
 ```
+
+Cloudflare Workers 部署请使用上一节的 Workers Secret / Vars。
 
 ---
 
@@ -80,7 +146,7 @@ Nori.Web/
 │   ├── cartridges/           # 领域卡带层与注册中心 (Chat, CakeDuel, Chess, Codenames, Manifold, Pictionary)
 │   ├── core/                 # 核心基础设施层 (Config, Media, Protocol)
 │   ├── services/             # 领域应用服务层 (EventDispatcher, LLMService)
-│   ├── session/              # 运行时会话层 (WorldSession, WorldManager, Ticket)
+│   ├── session/              # 运行时会话层 (WorldSession, WorldManager)
 │   ├── virtual_apps/         # 虚拟应用服务 (Browser, Files, Mail, Messenger, Terminal)
 │   └── data/                 # 词库与运行时资源
 ├── docs/                     # 协议逆向与技术文档
@@ -92,8 +158,10 @@ Nori.Web/
 │   ├── test_backend_integration.py # 后端协议与 WebSocket 集成测试
 │   ├── test_client_schema.mjs# 前端 Zod 校验规则验证
 │   └── test_browser_bootstrap.mjs # 浏览器全流程引导测试
-├── server.py                 # FastAPI 入口服务
-├── requirements.txt          # Python 依赖清单
+├── server.py                 # 本地 FastAPI / Uvicorn 入口
+├── worker.py                 # Cloudflare Python Worker / Durable Object 入口
+├── wrangler.jsonc            # Cloudflare Workers 配置
+├── pyproject.toml            # Python / Worker 依赖清单
 ├── package.json              # 测试与辅助脚本配置
 └── start.bat                 # Windows 一键启动脚本
 ```
@@ -117,7 +185,7 @@ python tests/test_backend_integration.py
 # 4. 使用前端 bundle 内置的 Zod parser 校验服务端消息信封
 node tests/test_client_schema.mjs
 
-# 5. 执行完整测试套件 (需安装 Node 依赖)
+# 5. 执行完整测试套件
 npm test
 ```
 
@@ -170,4 +238,4 @@ npm test
 0. 本仓库现包含作者本人账号的世界存档快照（`backend/data/live_world_pack.json` 与 `public/webAssets/**` 下新抓取的站内静态资源），仅用于个人离线保存与研究，相关剧情文本与美术素材版权归原项目方所有；如需公开发布请自行裁剪。
 1. 本项目为独立重构的开源本地兼容实现，**不包含、不代理、也不绕过**上游私有服务端、用户数据库、私有剧情及未公开特权。
 2. 聊天卡带中的对话与角色回复依托于本地规则或用户自配的 LLM 接口，与官方云端服务无关。
-3. 本地世界状态目前按会话在内存中维护，重启服务将重置本地世界状态。
+3. 本地运行时世界状态按会话保存在内存中；Cloudflare 部署会用 Durable Object 隔离同一 ticket 的实时状态，但当前仍不提供跨重启持久化。

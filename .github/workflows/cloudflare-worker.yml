@@ -1,0 +1,43 @@
+name: Cloudflare Worker
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  validate-worker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Sync Python dependencies
+        run: uv sync --group dev --python 3.13
+
+      - name: Verify stateless tickets
+        run: uv run python tests/test_cloudflare_ticket.py
+
+      - name: Compile Python sources
+        run: uv run python -m compileall -q backend server.py worker.py
+
+      - name: Dry-run Cloudflare bundle
+        shell: bash
+        run: |
+          set +e
+          uv run pywrangler deploy --dry-run --outdir .worker-dist > /tmp/pywrangler.log 2>&1
+          code=$?
+          tail -n 120 /tmp/pywrangler.log
+          exit $code

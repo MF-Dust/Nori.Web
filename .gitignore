@@ -6,6 +6,12 @@ __pycache__/
 data/*.sqlite3
 data/*.db
 
+# --- Cloudflare Python Workers ---
+.venv-workers/
+python_modules/
+.wrangler/
+.dev.vars
+
 # --- scraper secrets & archive ---
 .scraper_token.txt
 .scraper_jwt.txt

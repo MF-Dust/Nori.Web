@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from .auth import get_current_user_id
-from ..session.manager import WORLD_MANAGER
+from ..session.manager import get_world_manager
 
 system_router = APIRouter(tags=["system"])
 MACHINE_ID = os.getenv("NORI_MACHINE_ID", "nori-local")
@@ -30,4 +30,4 @@ async def issue_ws_ticket(request: Request):
     user_id = get_current_user_id(request)
     if not user_id:
         return JSONResponse(status_code=401, content={"error": "Unauthorized"})
-    return {"ticket": await WORLD_MANAGER.issue_ticket(user_id)}
+    return {"ticket": await get_world_manager().issue_ticket(user_id)}

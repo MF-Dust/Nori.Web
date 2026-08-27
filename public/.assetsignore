@@ -1,0 +1,2 @@
+# Served from the private R2 binding because Workers Static Assets has a 25 MiB per-file limit.
+datasea/cosmicweb.min.glb

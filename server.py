@@ -15,8 +15,13 @@ from backend.core.config import DEBUG, HOST, PORT
 register_mimetypes()
 
 
-def create_app() -> FastAPI:
-    """Create and configure the FastAPI application."""
+def create_app(*, include_static: bool = True) -> FastAPI:
+    """Create and configure the FastAPI application.
+
+    Local mode serves the frontend through FastAPI. Cloudflare Workers use
+    Workers Static Assets instead, so the Worker entrypoint disables the
+    filesystem-backed static router while keeping all HTTP/WebSocket APIs.
+    """
     application = FastAPI(title="NoriOS Local Compatibility Server", version="2.0.0")
     application.add_middleware(GZipMiddleware, minimum_size=500)
     application.add_middleware(
@@ -27,7 +32,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     application.include_router(api_router)
-    application.include_router(static_router)
+    if include_static:
+        application.include_router(static_router)
     return application
 
 

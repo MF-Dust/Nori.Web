@@ -8,7 +8,7 @@ from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ..core.protocol import error_message
-from ..session.manager import WORLD_MANAGER
+from ..session.manager import get_world_manager
 
 arcade_ws_router = APIRouter(tags=["arcade_ws"])
 
@@ -26,7 +26,7 @@ async def _accept_arcade_socket(websocket: WebSocket) -> Optional[str]:
     if "arcade.v1" not in protocols:
         await websocket.close(code=1002, reason="arcade.v1 subprotocol required")
         return None
-    user_id = await WORLD_MANAGER.resolve_ticket(ticket)
+    user_id = await get_world_manager().resolve_ticket(ticket)
     if user_id is None:
         await websocket.close(code=1008, reason="session_invalid")
         return None
@@ -36,10 +36,11 @@ async def _accept_arcade_socket(websocket: WebSocket) -> Optional[str]:
 
 @arcade_ws_router.websocket("/api/arcade/web/v1")
 async def arcade_websocket(websocket: WebSocket) -> None:
+    manager = get_world_manager()
     user_id = await _accept_arcade_socket(websocket)
     if user_id is None:
         return
-    world = await WORLD_MANAGER.get_world(user_id)
+    world = await manager.get_world(user_id)
     await world.add_client(websocket)
     try:
         while True:
@@ -53,7 +54,7 @@ async def arcade_websocket(websocket: WebSocket) -> None:
                 await world.send_direct(websocket, error_message("bad_request", "message must be an object"))
                 continue
             if message.get("type") == "reset_my_web_world":
-                new_world = await WORLD_MANAGER.reset_world(
+                new_world = await manager.reset_world(
                     user_id, message.get("locale") if isinstance(message.get("locale"), str) else None
                 )
                 await world.remove_client(websocket)
@@ -74,6 +75,7 @@ async def arcade_websocket(websocket: WebSocket) -> None:
 
 @arcade_ws_router.websocket("/api/arcade/web/v1/media")
 async def arcade_media_websocket(websocket: WebSocket) -> None:
+    manager = get_world_manager()
     user_id = await _accept_arcade_socket(websocket)
     if user_id is None:
         return
@@ -89,7 +91,7 @@ async def arcade_media_websocket(websocket: WebSocket) -> None:
         ):
             await websocket.close(code=4005, reason="media_grant_invalid")
             return
-        world = await WORLD_MANAGER.world_for_grant(user_id, message["grant"])
+        world = await manager.world_for_grant(user_id, message["grant"])
         if world is None:
             await websocket.close(code=4005, reason="media_grant_invalid")
             return
