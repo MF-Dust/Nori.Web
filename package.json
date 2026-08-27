@@ -5,6 +5,8 @@
   "description": "Local protocol-compatible backend for the publicly shipped NoriOS web client",
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
     "start": "python server.py",
     "start:py": "python server.py",
     "test:cartridges": "python tests/test_cartridges.py",
@@ -19,8 +21,24 @@
     "node": ">=18"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^4.7.0",
     "js-beautify": "^2.0.3",
     "playwright": "^1.62.1",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.3"
+  },
+  "dependencies": {
+    "@xterm/xterm": "^5.5.0",
+    "canvas-confetti": "^1.9.4",
+    "lucide-react": "^0.475.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^3.25.76",
+    "zustand": "^5.0.15"
   }
 }
