@@ -34,4 +34,10 @@ jobs:
         run: uv run python -m compileall -q backend server.py worker.py
 
       - name: Dry-run Cloudflare bundle
-        run: uv run pywrangler deploy --dry-run --outdir .worker-dist
+        shell: bash
+        run: |
+          set +e
+          uv run pywrangler deploy --dry-run --outdir .worker-dist > /tmp/pywrangler.log 2>&1
+          code=$?
+          tail -n 120 /tmp/pywrangler.log
+          exit $code
