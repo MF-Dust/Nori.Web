@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
 
 # Base Paths
 CORE_DIR = Path(__file__).resolve().parent
@@ -33,3 +34,50 @@ ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
 
 # TTS Config
 TTS_ENGINE = os.getenv("TTS_ENGINE", "built-in")  # "built-in", "openai", "edge"
+
+# Cloudflare-only behavior. The live archive is intentionally disabled by
+# default in the public Worker deployment; local mode keeps the current default.
+NORI_DISABLE_LIVE_PACK = os.getenv("NORI_DISABLE_LIVE_PACK", "")
+
+_RUNTIME_BINDINGS = (
+    "SECRET_KEY",
+    "OPENAI_API_KEY",
+    "OPENAI_BASE_URL",
+    "OPENAI_MODEL",
+    "ANTHROPIC_API_KEY",
+    "ANTHROPIC_MODEL",
+    "TTS_ENGINE",
+    "NORI_DISABLE_LIVE_PACK",
+)
+
+
+def _binding_value(env: Any, name: str) -> str | None:
+    """Read a string-like Workers binding without depending on Pyodide types."""
+    try:
+        value = getattr(env, name)
+    except Exception:
+        return None
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    try:
+        converted = value.to_py()
+    except Exception:
+        converted = value
+    return converted if isinstance(converted, str) else str(converted)
+
+
+def apply_runtime_bindings(env: Any) -> None:
+    """Overlay Cloudflare vars/secrets onto the module-level configuration.
+
+    Workers bindings are passed through the request environment rather than the
+    host process environment, so regular ``os.getenv`` calls cannot see them.
+    Local Uvicorn behavior is unchanged because this function is only invoked by
+    the Cloudflare entrypoint.
+    """
+    namespace = globals()
+    for name in _RUNTIME_BINDINGS:
+        value = _binding_value(env, name)
+        if value is not None:
+            namespace[name] = value
