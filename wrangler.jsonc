@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "nori-web",
+  "main": "worker.py",
+  "compatibility_date": "2026-08-28",
+  "compatibility_flags": ["python_workers"],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NORI_ARCADE",
+        "class_name": "NoriArcadeSession"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["NoriArcadeSession"]
+    }
+  ],
+  "vars": {
+    "NORI_DISABLE_LIVE_PACK": "1"
+  },
+  "python_modules": {
+    "excludes": ["**/*.pyc", "**/__pycache__"]
+  }
+}
