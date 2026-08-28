@@ -100,12 +100,16 @@ async def main() -> None:
     assert "Keep Nori curious and concise." in captured["system_prompt"]
     assert "NoriOS rendering contract" in captured["system_prompt"]
 
-    # Static integration checks: the compatibility extension loads before the
-    # app and uses browser persistence plus the non-stateful config event.
+    # Static integration checks: the compatibility extension executes before
+    # the main module script. The Vite modulepreload link may appear earlier
+    # and is intentionally ignored because it does not execute application JS.
     index_html = (ROOT / "public" / "index.html").read_text(encoding="utf-8")
     client_js = (ROOT / "public" / "nori-ai-settings.js").read_text(encoding="utf-8")
-    assert '<script src="/nori-ai-settings.js"></script>' in index_html
-    assert index_html.index('/nori-ai-settings.js') < index_html.index('/assets/index-CyHAbkO5.js')
+    ai_script = '<script src="/nori-ai-settings.js"></script>'
+    app_script = '<script type="module" crossorigin src="/assets/index-CyHAbkO5.js"></script>'
+    assert ai_script in index_html
+    assert app_script in index_html
+    assert index_html.index(ai_script) < index_html.index(app_script)
     assert "localStorage" in client_js
     assert "sessionStorage" in client_js
     assert 'channel: "nori.ai.config"' in client_js
