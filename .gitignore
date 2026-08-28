@@ -11,6 +11,9 @@ data/*.db
 python_modules/
 .wrangler/
 .dev.vars
+cloudflare/worker_runtime.py
+cloudflare/server.py
+cloudflare/backend/
 
 # --- scraper secrets & archive ---
 .scraper_token.txt
