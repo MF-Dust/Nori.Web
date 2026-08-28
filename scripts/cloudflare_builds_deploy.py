@@ -26,7 +26,13 @@ R2_MARKER_KEY = "runtime/live/source-fingerprint.txt"
 FINGERPRINT_VERSION = "v1"
 
 
-def _run(command: list[str], *, check: bool = True, capture: bool = False) -> subprocess.CompletedProcess[str]:
+def _run(
+    command: list[str],
+    *,
+    check: bool = True,
+    capture: bool = False,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     printable = " ".join(command)
     print(f"+ {printable}")
     return subprocess.run(
@@ -36,6 +42,7 @@ def _run(command: list[str], *, check: bool = True, capture: bool = False) -> su
         text=True,
         stdout=subprocess.PIPE if capture else None,
         stderr=subprocess.PIPE if capture else None,
+        env=env,
     )
 
 
@@ -139,10 +146,13 @@ def prepare_runtime() -> None:
 
 
 def deploy_worker(base: list[str]) -> None:
-    # Workers Builds is non-interactive. --yes prevents a harmless Dashboard-vs-
-    # source metadata prompt (for example expanded route metadata) from blocking
-    # the production build.
-    _run([*base, "deploy", "--yes"])
+    # Wrangler 4.127 rejects `wrangler deploy --yes` when a Wrangler config file
+    # already exists. Workers Builds is a CI environment, so force CI mode and
+    # let Wrangler use its documented non-interactive fallback for confirmation
+    # prompts while keeping the deploy command itself standard.
+    deploy_env = os.environ.copy()
+    deploy_env["CI"] = "true"
+    _run([*base, "deploy"], env=deploy_env)
 
 
 def main() -> None:

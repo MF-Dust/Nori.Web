@@ -10,12 +10,13 @@ production deploy entrypoint.
 Cloudflare Workers Builds does not automatically honor Wrangler Custom Builds.
 Nori.Web requires `scripts/prepare_cloudflare_runtime.py` to stage the Python
 Worker runtime before deployment, so the wrapper runs that preparation
-explicitly and then invokes `pywrangler deploy --yes`.
+explicitly and then invokes `pywrangler deploy`.
 
-`--yes` is deliberate: Workers Builds is non-interactive, while Cloudflare may
-report harmless differences between source configuration and Dashboard-expanded
-metadata (for example route metadata). A production build must never stop waiting
-for a confirmation prompt.
+The wrapper forces `CI=true` for the final Worker deployment. Wrangler uses its
+non-interactive fallback for confirmation prompts in CI, including harmless
+Dashboard-vs-source metadata differences. Do not add `--yes` to the deploy
+command: Wrangler 4.127 rejects that flag when a Wrangler configuration file is
+already present.
 
 The same wrapper also synchronizes the private R2 live-world layout. It compares
 `runtime/live/source-fingerprint.txt` with a fingerprint derived from both:
@@ -60,8 +61,8 @@ The Workers API exposes `observability.redact_query_string`, but Wrangler
 4.127's `wrangler.jsonc` schema does not currently accept that field. It is
 therefore intentionally not committed to this repository. If the Dashboard
 shows `redact_query_string: false` as remote-only metadata, leave it in the
-Dashboard; the CI deploy wrapper's non-interactive confirmation handles that
-metadata difference.
+Dashboard; Wrangler's CI fallback handles that metadata difference without an
+interactive prompt.
 
 GitHub Actions fails if Wrangler reports `Unexpected fields found`, preventing
 unsupported Dashboard/API fields from silently creeping back into

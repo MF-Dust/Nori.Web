@@ -47,19 +47,30 @@ def main() -> None:
         module.SOURCE_PACK = original_source
         module.LIVE_PACK_TOOL = original_tool
 
-    # Production deploys must never wait for an interactive Dashboard-vs-source
-    # configuration confirmation inside Workers Builds.
-    calls: list[list[str]] = []
+    # Wrangler 4.127 rejects `deploy --yes` for configured Workers. Production
+    # deploys instead force CI mode, which lets Wrangler use its non-interactive
+    # fallback for any Dashboard-vs-source confirmation prompts.
+    calls: list[tuple[list[str], dict[str, object]]] = []
     original_run = module._run
     try:
-        module._run = lambda command, **kwargs: calls.append(list(command))
+        def fake_run(command, **kwargs):
+            calls.append((list(command), dict(kwargs)))
+
+        module._run = fake_run
         module.deploy_worker(["pywrangler"])
     finally:
         module._run = original_run
-    assert calls == [["pywrangler", "deploy", "--yes"]]
+
+    assert len(calls) == 1
+    command, kwargs = calls[0]
+    assert command == ["pywrangler", "deploy"]
+    assert "--yes" not in command
+    deploy_env = kwargs.get("env")
+    assert isinstance(deploy_env, dict)
+    assert deploy_env.get("CI") == "true"
 
     print(
-        "[ok] Workers Builds deploy fingerprint tracks world data/layout and deploys non-interactively"
+        "[ok] Workers Builds deploy fingerprint tracks world data/layout and deploys in CI mode"
     )
 
 
