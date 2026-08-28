@@ -4,6 +4,8 @@
   "main": "cloudflare/entry.py",
   "compatibility_date": "2026-08-28",
   "compatibility_flags": ["python_workers"],
+  "workers_dev": true,
+  "preview_urls": true,
   "base_dir": "./cloudflare",
   "find_additional_modules": true,
   "rules": [
