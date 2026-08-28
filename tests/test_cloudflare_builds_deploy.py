@@ -47,7 +47,20 @@ def main() -> None:
         module.SOURCE_PACK = original_source
         module.LIVE_PACK_TOOL = original_tool
 
-    print("[ok] Workers Builds deploy fingerprint tracks world data and R2 layout logic")
+    # Production deploys must never wait for an interactive Dashboard-vs-source
+    # configuration confirmation inside Workers Builds.
+    calls: list[list[str]] = []
+    original_run = module._run
+    try:
+        module._run = lambda command, **kwargs: calls.append(list(command))
+        module.deploy_worker(["pywrangler"])
+    finally:
+        module._run = original_run
+    assert calls == [["pywrangler", "deploy", "--yes"]]
+
+    print(
+        "[ok] Workers Builds deploy fingerprint tracks world data/layout and deploys non-interactively"
+    )
 
 
 if __name__ == "__main__":
