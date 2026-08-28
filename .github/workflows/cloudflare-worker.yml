@@ -39,6 +39,9 @@ jobs:
       - name: Verify Durable Object hibernation snapshots
         run: uv run python tests/test_durable_world_snapshot.py
 
+      - name: Verify Durable Object hibernation source path
+        run: uv run python tests/test_durable_object_hibernation.py
+
       - name: Verify Workers Builds deploy wrapper
         run: uv run python tests/test_cloudflare_builds_deploy.py
 
