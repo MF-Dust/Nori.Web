@@ -60,7 +60,7 @@
     }
   ],
   "vars": {
-    "NORI_DISABLE_LIVE_PACK": "1"
+    "NORI_DISABLE_LIVE_PACK": "0"
   },
   "python_modules": {
     "excludes": ["**/*.pyc", "**/__pycache__"]
