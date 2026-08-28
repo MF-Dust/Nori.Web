@@ -36,6 +36,12 @@ jobs:
       - name: Verify runtime live pack injection
         run: uv run python tests/test_live_pack_runtime.py
 
+      - name: Verify browser AI settings
+        run: uv run python tests/test_ai_runtime_settings.py
+
+      - name: Verify browser AI settings JavaScript
+        run: node --check public/nori-ai-settings.js
+
       - name: Compile Python sources
         run: uv run python -m compileall -q backend server.py worker.py
 
