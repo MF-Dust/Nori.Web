@@ -14,6 +14,10 @@
     <link rel="modulepreload" crossorigin href="/assets/i18n-DtIC1LRi.js" />
     <link rel="modulepreload" crossorigin href="/assets/NormalApp-Cn6agT0F.js" />
     <script defer src="/cubism_sdk/Core/live2dcubismcore.js"></script>
+    <!-- Load the compatibility extension before the Vite application so its
+         WebSocket hook can attach per-browser AI configuration without
+         changing the shipped cartridge protocol. -->
+    <script src="/nori-ai-settings.js"></script>
     <!-- No model warmup here: dev-bypass preloads via preloadLive2DModel in
          main.tsx (fetch + decode + stage, strictly stronger than an HTTP
          warmer and not duplicated — fetch() does not coalesce identical
