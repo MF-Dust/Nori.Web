@@ -15,6 +15,11 @@ spec.loader.exec_module(module)
 
 
 def main() -> None:
+    # Workers Builds already supplies Python. A repository .python-version makes
+    # Cloudflare's environment manager install another interpreter before every
+    # production deploy, which was the largest observed build-time cost.
+    assert not (ROOT / ".python-version").exists()
+
     first = module.live_pack_fingerprint()
     second = module.live_pack_fingerprint()
     assert first == second
@@ -104,7 +109,7 @@ def main() -> None:
         module.deploy_worker = original_deploy
 
     print(
-        "[ok] Workers Builds deploy fingerprint, CI mode, and single-stage runtime path behave correctly"
+        "[ok] Workers Builds deploy fingerprint, bundled Python, CI mode, and single-stage runtime path behave correctly"
     )
 
 
