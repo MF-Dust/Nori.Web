@@ -97,6 +97,11 @@ def install_runtime_ai_config(raw: Any) -> Dict[str, Any]:
     return config
 
 
+def clear_runtime_ai_config() -> None:
+    """Drop the current task's browser override (mainly useful in tests)."""
+    _RUNTIME_AI_CONFIG.set(None)
+
+
 def get_runtime_ai_config() -> Dict[str, Any]:
     config = _RUNTIME_AI_CONFIG.get()
     return dict(config) if isinstance(config, dict) else {}
