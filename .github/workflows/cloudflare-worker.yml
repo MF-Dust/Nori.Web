@@ -36,6 +36,9 @@ jobs:
       - name: Verify runtime live pack injection
         run: uv run python tests/test_live_pack_runtime.py
 
+      - name: Verify Workers Builds deploy wrapper
+        run: uv run python tests/test_cloudflare_builds_deploy.py
+
       - name: Verify browser AI settings
         run: uv run python tests/test_ai_runtime_settings.py
 
@@ -43,7 +46,7 @@ jobs:
         run: node --check public/nori-ai-settings.js
 
       - name: Compile Python sources
-        run: uv run python -m compileall -q backend server.py worker.py
+        run: uv run python -m compileall -q backend scripts server.py worker.py
 
       - name: Dry-run Cloudflare bundle
         shell: bash
