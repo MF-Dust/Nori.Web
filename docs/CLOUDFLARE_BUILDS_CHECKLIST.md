@@ -8,10 +8,9 @@
 6. Deploy command:
    `pipx run --spec uv==0.12.7 uv run python scripts/cloudflare_builds_deploy.py`
 7. Disable non-production branch builds (Durable Object previews do not get Preview URLs).
-8. Add build variables:
-   - `SKIP_DEPENDENCY_INSTALL=1`
-   - `PYTHON_VERSION=3.13`
-9. Keep runtime secrets under Worker Variables & Secrets, not Build variables.
-10. Save the integration, then merge or push a new commit to `master` after the GitHub connection is enabled to trigger the first production build.
+8. Add build variable `SKIP_DEPENDENCY_INSTALL=1`.
+9. Remove `PYTHON_VERSION` if it was previously configured. The build image's bundled Python is used instead so Workers Builds does not install another Python on every deploy.
+10. Keep runtime secrets under Worker Variables & Secrets, not Build variables.
+11. Save the integration, then merge or push a new commit to `master` to trigger a production build.
 
-After this, merging to `master` automatically deploys the Worker. The deploy wrapper only re-uploads the R2 live-world layout when its fingerprint changes.
+After this, merging to `master` automatically deploys the Worker. The deploy wrapper only re-uploads the R2 live-world layout when its fingerprint changes, and normal deploys let Wrangler execute runtime staging exactly once.

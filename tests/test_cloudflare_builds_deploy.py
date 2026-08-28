@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -14,6 +15,11 @@ spec.loader.exec_module(module)
 
 
 def main() -> None:
+    # Workers Builds already supplies Python. A repository .python-version makes
+    # Cloudflare's environment manager install another interpreter before every
+    # production deploy, which was the largest observed build-time cost.
+    assert not (ROOT / ".python-version").exists()
+
     first = module.live_pack_fingerprint()
     second = module.live_pack_fingerprint()
     assert first == second
@@ -69,8 +75,41 @@ def main() -> None:
     assert isinstance(deploy_env, dict)
     assert deploy_env.get("CI") == "true"
 
+    # Normal production deployment must not pre-stage the runtime. pywrangler
+    # invokes Wrangler, and Wrangler executes the custom build hook exactly once.
+    # `--prepare-only` remains the explicit diagnostic staging path.
+    original_argv = sys.argv
+    original_prepare = module.prepare_runtime
+    original_pywrangler = module.pywrangler_command
+    original_sync = module.sync_live_pack
+    original_deploy = module.deploy_worker
+    try:
+        normal_calls: list[object] = []
+        sys.argv = ["cloudflare_builds_deploy.py", "--skip-live-pack"]
+        module.prepare_runtime = lambda: normal_calls.append("prepare")
+        module.pywrangler_command = lambda: ["pywrangler"]
+        module.sync_live_pack = lambda *args, **kwargs: normal_calls.append("sync")
+        module.deploy_worker = lambda base: normal_calls.append(("deploy", list(base)))
+        module.main()
+        assert "prepare" not in normal_calls
+        assert "sync" not in normal_calls
+        assert ("deploy", ["pywrangler"]) in normal_calls
+
+        prepare_calls: list[object] = []
+        sys.argv = ["cloudflare_builds_deploy.py", "--prepare-only"]
+        module.prepare_runtime = lambda: prepare_calls.append("prepare")
+        module.deploy_worker = lambda base: prepare_calls.append(("deploy", list(base)))
+        module.main()
+        assert prepare_calls == ["prepare"]
+    finally:
+        sys.argv = original_argv
+        module.prepare_runtime = original_prepare
+        module.pywrangler_command = original_pywrangler
+        module.sync_live_pack = original_sync
+        module.deploy_worker = original_deploy
+
     print(
-        "[ok] Workers Builds deploy fingerprint tracks world data/layout and deploys in CI mode"
+        "[ok] Workers Builds deploy fingerprint, bundled Python, CI mode, and single-stage runtime path behave correctly"
     )
 
 
