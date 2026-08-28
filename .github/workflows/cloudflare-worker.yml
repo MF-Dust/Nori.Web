@@ -33,6 +33,9 @@ jobs:
       - name: Verify Cloudflare import safety
         run: uv run python tests/test_cloudflare_import_safety.py
 
+      - name: Verify runtime live pack injection
+        run: uv run python tests/test_live_pack_runtime.py
+
       - name: Compile Python sources
         run: uv run python -m compileall -q backend server.py worker.py
 
@@ -52,6 +55,10 @@ jobs:
           fi
           if ! grep -Fq "backend/data/pictionary_words.json" /tmp/pywrangler.log; then
             echo "::error::Cloudflare bundle is missing backend/data/pictionary_words.json"
+            exit 1
+          fi
+          if grep -Fq "backend/data/live_world_pack.json" /tmp/pywrangler.log; then
+            echo "::error::The large live-world archive leaked into the Worker bundle instead of R2"
             exit 1
           fi
           if grep -Eq "public/.*\.(bin|wasm)" /tmp/pywrangler.log; then

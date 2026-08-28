@@ -5,6 +5,10 @@ the production NoriOS world. When present, the backend replays the user's
 real mail / files / Signal threads / browser sites / story facts instead of
 the built-in mock data. Every accessor returns deep copies so handlers can
 mutate freely without corrupting the shared cache.
+
+Local deployments can load the JSON from disk. Cloudflare Workers inject the
+same decoded pack from a private R2 binding so the large archive does not count
+toward the Worker script-size limit.
 """
 
 from __future__ import annotations
@@ -31,14 +35,36 @@ def set_disabled(disabled: bool) -> None:
     """Enable or disable the archive loader at runtime.
 
     Cloudflare Workers receive vars/secrets through request bindings rather
-    than ``os.environ``. The Worker entrypoint calls this before dispatching
-    requests so the large local archive can stay disabled in edge deployments.
+    than ``os.environ``. Disabling also drops an already-loaded R2 pack so the
+    setting takes effect immediately.
     """
     global _DISABLED, _cache, _PAGE_INDEX
     _DISABLED = disabled
     if disabled:
         _cache = None
         _PAGE_INDEX = None
+
+
+def install_pack(data: Dict[str, Any]) -> bool:
+    """Install an already-decoded archive into the process/isolate cache.
+
+    This is used by Cloudflare Workers after retrieving the archive from R2.
+    The object is treated as immutable; public accessors still return deep
+    copies exactly as they do for the local on-disk pack.
+    """
+    if not isinstance(data, dict):
+        return False
+    global _DISABLED, _cache, _PAGE_INDEX
+    with _lock:
+        _cache = data
+        _PAGE_INDEX = None
+        _DISABLED = False
+    return True
+
+
+def has_loaded_pack() -> bool:
+    """Return whether an archive is already resident in the runtime cache."""
+    return not _DISABLED and _cache is not None
 
 
 def _pack() -> Optional[Dict[str, Any]]:
