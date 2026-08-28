@@ -43,4 +43,14 @@ jobs:
           uv run pywrangler deploy --dry-run --outdir .worker-dist > /tmp/pywrangler.log 2>&1
           code=$?
           tail -n 120 /tmp/pywrangler.log
-          exit $code
+          if [ "$code" -ne 0 ]; then
+            exit "$code"
+          fi
+          if ! grep -Fq "backend/data/codenames_words.json" /tmp/pywrangler.log; then
+            echo "::error::Cloudflare bundle is missing backend/data/codenames_words.json"
+            exit 1
+          fi
+          if ! grep -Fq "backend/data/pictionary_words.json" /tmp/pywrangler.log; then
+            echo "::error::Cloudflare bundle is missing backend/data/pictionary_words.json"
+            exit 1
+          fi

@@ -4,6 +4,17 @@
   "main": "worker.py",
   "compatibility_date": "2026-08-28",
   "compatibility_flags": ["python_workers"],
+  "find_additional_modules": true,
+  "rules": [
+    {
+      "type": "Text",
+      "globs": [
+        "backend/data/codenames_words.json",
+        "backend/data/pictionary_words.json"
+      ],
+      "fallthrough": true
+    }
+  ],
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
