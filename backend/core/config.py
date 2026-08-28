@@ -12,7 +12,11 @@ BACKEND_DIR = CORE_DIR.parent
 BASE_DIR = BACKEND_DIR.parent
 PUBLIC_DIR = BASE_DIR / "public"
 DATA_DIR = BACKEND_DIR / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+# Do not create directories at import time. Cloudflare Python Workers load the
+# application from a read-only metadata filesystem, so import-time filesystem
+# mutations make deployment validation fail before the Worker can start.
+# Local code that creates new files should create its writable target directory
+# at the point of use instead.
 
 # Server Config
 HOST = os.getenv("HOST", "127.0.0.1")
