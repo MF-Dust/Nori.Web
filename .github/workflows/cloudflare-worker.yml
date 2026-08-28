@@ -30,6 +30,9 @@ jobs:
       - name: Verify stateless tickets
         run: uv run python tests/test_cloudflare_ticket.py
 
+      - name: Verify Cloudflare import safety
+        run: uv run python tests/test_cloudflare_import_safety.py
+
       - name: Compile Python sources
         run: uv run python -m compileall -q backend server.py worker.py
 
