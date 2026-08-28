@@ -14,6 +14,9 @@
     <link rel="modulepreload" crossorigin href="/assets/i18n-DtIC1LRi.js" />
     <link rel="modulepreload" crossorigin href="/assets/NormalApp-Cn6agT0F.js" />
     <script defer src="/cubism_sdk/Core/live2dcubismcore.js"></script>
+    <!-- Keep optional debug telemetry local so privacy/ad-blocking extensions
+         do not create ERR_BLOCKED_BY_CLIENT noise for the shipped bundle. -->
+    <script src="/nori-runtime-shims.js"></script>
     <!-- Load the compatibility extension before the Vite application so its
          WebSocket hook can attach per-browser AI configuration without
          changing the shipped cartridge protocol. -->
