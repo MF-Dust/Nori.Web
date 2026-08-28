@@ -7,10 +7,12 @@ production deploy entrypoint.
 
 ## Why a deploy wrapper exists
 
-Cloudflare Workers Builds does not automatically honor Wrangler Custom Builds.
-Nori.Web requires `scripts/prepare_cloudflare_runtime.py` to stage the Python
-Worker runtime before deployment, so the wrapper runs that preparation
-explicitly and then invokes `pywrangler deploy`.
+The wrapper synchronizes the private R2 live-world layout and then invokes
+`pywrangler deploy`. Normal production deploys intentionally do **not** call
+`scripts/prepare_cloudflare_runtime.py` first: pywrangler invokes Wrangler, and
+Wrangler executes the repository's Custom Build hook itself. This keeps runtime
+staging to one pass instead of two. The explicit `--prepare-only` mode remains
+available for diagnostics.
 
 The wrapper forces `CI=true` for the final Worker deployment. Wrangler uses its
 non-interactive fallback for confirmation prompts in CI, including harmless
@@ -18,7 +20,7 @@ Dashboard-vs-source metadata differences. Do not add `--yes` to the deploy
 command: Wrangler 4.127 rejects that flag when a Wrangler configuration file is
 already present.
 
-The same wrapper also synchronizes the private R2 live-world layout. It compares
+The same wrapper synchronizes the private R2 live-world layout. It compares
 `runtime/live/source-fingerprint.txt` with a fingerprint derived from both:
 
 - `backend/data/live_world_pack.json`
@@ -43,13 +45,24 @@ Use these production settings:
 - Non-production branch builds: disabled
 - Build caching: enabled
 
-Add these build variables:
+Add only this build variable:
 
 - `SKIP_DEPENDENCY_INSTALL=1`
-- `PYTHON_VERSION=3.13`
+
+Do **not** set `PYTHON_VERSION`, and do not add a repository `.python-version`
+file for Workers Builds. Cloudflare's build image already supplies a compatible
+Python 3 runtime, while an explicit Python pin makes the environment manager
+install another Python before every production build. Nori.Web itself supports
+Python `>=3.11`, so the bundled Workers Builds interpreter is sufficient.
 
 `SKIP_DEPENDENCY_INSTALL` avoids an unnecessary automatic pip install because
 `uv run` manages the project environment itself.
+
+The deploy command deliberately keeps `pipx run --spec uv==0.12.7` even when a
+particular Cloudflare image happens to have `uv` on PATH. `pipx` is part of the
+supported build image toolchain and this keeps the deployment entrypoint pinned
+and reproducible; its overhead is small compared with installing another Python
+runtime.
 
 Use Cloudflare's generated Workers Builds API token unless there is a reason to
 supply a custom one. The generated token includes the permissions required to
