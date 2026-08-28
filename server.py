@@ -11,8 +11,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from backend.api import api_router, register_mimetypes, static_router
 from backend.core.config import DEBUG, HOST, PORT
+from backend.services.ai_event_bridge import install_ai_event_bridge
 
 register_mimetypes()
+install_ai_event_bridge()
 
 
 def create_app(*, include_static: bool = True) -> FastAPI:
