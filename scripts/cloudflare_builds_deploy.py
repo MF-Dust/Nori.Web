@@ -2,7 +2,7 @@
 
 Workers Builds currently does not honor Wrangler custom-build configuration, so
 this wrapper explicitly prepares the staged Python runtime before invoking
-pywrangler.  It also keeps the private R2 live-world layout synchronized without
+pywrangler. It also keeps the private R2 live-world layout synchronized without
 re-uploading it on every unrelated code change.
 """
 
@@ -42,7 +42,7 @@ def _run(command: list[str], *, check: bool = True, capture: bool = False) -> su
 def pywrangler_command() -> list[str]:
     """Return pywrangler from the active uv environment.
 
-    Workers Builds should invoke this script through ``uv run python``.  uv adds
+    Workers Builds should invoke this script through ``uv run python``. uv adds
     the project environment's executable directory to PATH, so pywrangler is
     normally directly discoverable here.
     """
@@ -139,7 +139,10 @@ def prepare_runtime() -> None:
 
 
 def deploy_worker(base: list[str]) -> None:
-    _run([*base, "deploy"])
+    # Workers Builds is non-interactive. --yes prevents a harmless Dashboard-vs-
+    # source metadata prompt (for example expanded route metadata) from blocking
+    # the production build.
+    _run([*base, "deploy", "--yes"])
 
 
 def main() -> None:
