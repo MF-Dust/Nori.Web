@@ -1,19 +1,12 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "nori-web",
-  "main": "worker.py",
+  "main": "cloudflare/entry.py",
   "compatibility_date": "2026-08-28",
   "compatibility_flags": ["python_workers"],
+  "base_dir": "./cloudflare",
   "find_additional_modules": true,
   "rules": [
-    {
-      "type": "PythonModule",
-      "globs": [
-        "backend/**/*.py",
-        "server.py"
-      ],
-      "fallthrough": false
-    },
     {
       "type": "Text",
       "globs": [
@@ -33,6 +26,10 @@
       "fallthrough": false
     }
   ],
+  "build": {
+    "command": "uv run python scripts/prepare_cloudflare_runtime.py",
+    "cwd": "."
+  },
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
