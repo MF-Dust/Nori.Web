@@ -51,6 +51,12 @@ jobs:
       - name: Verify browser AI settings JavaScript
         run: node --check public/nori-ai-settings.js
 
+      - name: Verify browser runtime shim
+        run: uv run python tests/test_browser_runtime_shims.py
+
+      - name: Verify browser runtime shim JavaScript
+        run: node --check public/nori-runtime-shims.js
+
       - name: Compile Python sources
         run: uv run python -m compileall -q backend scripts server.py worker.py
 
