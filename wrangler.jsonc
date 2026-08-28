@@ -4,13 +4,14 @@
   "main": "worker.py",
   "compatibility_date": "2026-08-28",
   "compatibility_flags": ["python_workers"],
+  "base_dir": "./backend",
   "find_additional_modules": true,
   "rules": [
     {
       "type": "Text",
       "globs": [
-        "backend/data/codenames_words.json",
-        "backend/data/pictionary_words.json"
+        "data/codenames_words.json",
+        "data/pictionary_words.json"
       ],
       "fallthrough": true
     }
