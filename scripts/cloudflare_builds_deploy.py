@@ -1,9 +1,9 @@
 """Production deploy entrypoint for Cloudflare Workers Builds.
 
-Workers Builds currently does not honor Wrangler custom-build configuration, so
-this wrapper explicitly prepares the staged Python runtime before invoking
-pywrangler. It also keeps the private R2 live-world layout synchronized without
-re-uploading it on every unrelated code change.
+The wrapper keeps the private R2 live-world layout synchronized before invoking
+pywrangler. Normal deployments intentionally do not pre-stage the Python Worker:
+`pywrangler deploy` invokes Wrangler, and Wrangler runs the repository's custom
+build hook exactly once. `--prepare-only` remains available for diagnostics.
 """
 
 from __future__ import annotations
@@ -49,8 +49,8 @@ def _run(
 def pywrangler_command() -> list[str]:
     """Return pywrangler from the active uv environment.
 
-    Workers Builds should invoke this script through ``uv run python``. uv adds
-    the project environment's executable directory to PATH, so pywrangler is
+    Workers Builds invokes this script through ``uv run python``. uv adds the
+    project environment's executable directory to PATH, so pywrangler is
     normally directly discoverable here.
     """
     executable = shutil.which("pywrangler")
@@ -140,16 +140,14 @@ def sync_live_pack(base: list[str], *, force: bool = False) -> bool:
 
 
 def prepare_runtime() -> None:
-    # Do not rely on Wrangler's custom-build hook here. Workers Builds documents
-    # that its build pipeline does not honor that configuration automatically.
+    """Prepare the staging tree for diagnostics without deploying."""
     _run([sys.executable, str(PREPARE_TOOL)])
 
 
 def deploy_worker(base: list[str]) -> None:
     # Wrangler 4.127 rejects `wrangler deploy --yes` when a Wrangler config file
     # already exists. Workers Builds is a CI environment, so force CI mode and
-    # let Wrangler use its documented non-interactive fallback for confirmation
-    # prompts while keeping the deploy command itself standard.
+    # let Wrangler use its non-interactive fallback for confirmation prompts.
     deploy_env = os.environ.copy()
     deploy_env["CI"] = "true"
     _run([*base, "deploy"], env=deploy_env)
@@ -179,8 +177,9 @@ def main() -> None:
         f"(branch={os.getenv('WORKERS_CI_BRANCH', 'local')}, "
         f"commit={os.getenv('WORKERS_CI_COMMIT_SHA', 'local')})"
     )
-    prepare_runtime()
+
     if args.prepare_only:
+        prepare_runtime()
         print("Prepare-only mode complete.")
         return
 
