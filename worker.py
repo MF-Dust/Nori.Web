@@ -4,6 +4,11 @@ HTTP APIs are served through Cloudflare's Python ASGI adapter, static frontend
 files through Workers Static Assets, and Arcade WebSockets through a Durable
 Object. Large immutable assets and the live-world archive live in private R2.
 
+Arcade sockets use Cloudflare's WebSocket Hibernation API. Idle browsers keep
+their connections without pinning a 128 MiB Durable Object in memory, while a
+small JSON world snapshot in SQLite storage restores cartridge progress after a
+hibernate/wake cycle.
+
 The live archive is deliberately partitioned: only a small core is resident
 when a world starts, artifact sections are fetched before the corresponding
 WebSocket RPC is dispatched, and browser pages are loaded one shard at a time.
@@ -16,22 +21,36 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import secrets
 import time
 from urllib.parse import urlsplit
 
 from workers import DurableObject, Response, WorkerEntrypoint, asgi
 
+try:
+    from js import WebSocketPair
+except ImportError:  # Local CPython compile/tests; available inside Python Workers.
+    WebSocketPair = None
+
 from backend.core import config
+from backend.core.protocol import error_message
+from backend.services.ai_runtime_config import (
+    clear_runtime_ai_config,
+    install_runtime_ai_config,
+    sanitize_runtime_ai_config,
+)
 from backend.session.manager import (
     WorldManager,
     bind_world_manager,
     reset_world_manager,
 )
+from backend.session.persistence import world_from_snapshot_json, world_snapshot_json
 from backend.virtual_apps import live_pack
 from server import create_app
 
 _FASTAPI_APP = create_app(include_static=False)
 _TRUE_VALUES = {"1", "true", "yes", "on"}
+_EDGE_TICKET_MANAGER = WorldManager()
 
 _R2_MODEL_PATH = "/datasea/cosmicweb.min.glb"
 _R2_MODEL_KEY = "datasea/cosmicweb.min.glb"
@@ -48,6 +67,10 @@ _R2_LIVE_SECTION_KEYS = {
 }
 _R2_BROWSER_INDEX_KEY = f"{_R2_LIVE_PREFIX}/browser-index.json"
 _R2_BROWSER_SHARD_PREFIX = f"{_R2_LIVE_PREFIX}/browser"
+
+_DO_WORLD_STATE_KEY = "nori:world:v1"
+_DO_AI_CONFIG_KEY = "nori:ai-public:v1"
+_SOCKET_ATTACHMENT_VERSION = 1
 
 _LIVE_PACK_LOAD_LOCK = asyncio.Lock()
 _LIVE_PACK_RETRY_SECONDS = 60.0
@@ -281,8 +304,8 @@ def _ticket_from_request(request) -> str | None:
     return None
 
 
-def _durable_object_name(ticket: str | None) -> str:
-    seed = ticket or "missing-ticket"
+def _durable_object_name(user_id: str | None) -> str:
+    seed = user_id or "missing-user"
     return hashlib.sha256(seed.encode("utf-8")).hexdigest()
 
 
@@ -321,7 +344,7 @@ async def _serve_r2_model(env, request):
 
 
 async def _cloudflare_asgi_app(scope, receive, send) -> None:
-    """Patch subprotocols and lazily prefetch R2 sections for WS messages."""
+    """Patch subprotocols for non-Durable-Object ASGI WebSocket callers."""
     if scope.get("type") == "websocket" and not scope.get("subprotocols"):
         protocols: list[str] = []
         for key, value in scope.get("headers", []):
@@ -333,52 +356,334 @@ async def _cloudflare_asgi_app(scope, receive, send) -> None:
                 )
         scope = dict(scope)
         scope["subprotocols"] = protocols
+    await _FASTAPI_APP(scope, receive, send)
 
-    if scope.get("type") != "websocket":
-        await _FASTAPI_APP(scope, receive, send)
-        return
 
-    env = scope.get("env")
+class _HibernatingSocketAdapter:
+    """Duck-type the subset of FastAPI WebSocket used by WorldSession."""
 
-    async def receive_with_prefetch():
-        event = await receive()
-        if event.get("type") == "websocket.receive" and env is not None:
-            raw = event.get("text")
-            if raw is None and isinstance(event.get("bytes"), (bytes, bytearray)):
-                try:
-                    raw = bytes(event["bytes"]).decode("utf-8")
-                except UnicodeDecodeError:
-                    raw = None
-            if isinstance(raw, str):
-                await _prefetch_for_arcade_message(env, raw)
-        return event
+    def __init__(self, websocket, socket_id: str):
+        self.websocket = websocket
+        self.socket_id = socket_id
 
-    await _FASTAPI_APP(scope, receive_with_prefetch, send)
+    def __hash__(self) -> int:
+        return hash(self.socket_id)
+
+    def __eq__(self, other) -> bool:
+        return (
+            isinstance(other, _HibernatingSocketAdapter)
+            and self.socket_id == other.socket_id
+        )
+
+    async def send_text(self, text: str) -> None:
+        self.websocket.send(text)
+
+    async def send_bytes(self, data: bytes) -> None:
+        self.websocket.send(data)
+
+    async def close(self, code: int = 1000, reason: str = "") -> None:
+        self.websocket.close(code, reason)
+
+
+def _socket_attachment(websocket) -> dict:
+    try:
+        raw = websocket.deserializeAttachment()
+    except Exception:
+        return {}
+    if isinstance(raw, dict):
+        return dict(raw)
+    if not isinstance(raw, str) or not raw:
+        return {}
+    try:
+        decoded = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return decoded if isinstance(decoded, dict) else {}
+
+
+def _save_socket_attachment(websocket, attachment: dict) -> None:
+    websocket.serializeAttachment(
+        json.dumps(attachment, ensure_ascii=False, separators=(",", ":"))
+    )
+
+
+def _public_ai_config(config_value: dict) -> dict:
+    return {key: value for key, value in config_value.items() if key != "apiKey"}
+
+
+async def _drain_world_tasks(world) -> None:
+    """Finish short follow-up work before persisting and allowing hibernation."""
+    for _ in range(16):
+        tasks = list(world._tasks)
+        if not tasks:
+            return
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if isinstance(result, Exception):
+                print(f"[arcade] background task failed: {result}")
+    if world._tasks:
+        print(f"[arcade] {len(world._tasks)} background tasks remain after drain limit")
 
 
 class NoriArcadeSession(DurableObject):
-    """Pin both Arcade WebSockets for one ticket to a single state owner."""
+    """Hibernatable state owner for one user's Arcade main/media sockets."""
 
     def __init__(self, ctx, env):
         super().__init__(ctx, env)
         self.manager = WorldManager()
+        self._world_load_lock = asyncio.Lock()
+        self._public_ai_config_cache: dict | None = None
+
+    async def _load_world(self, user_id: str):
+        world = self.manager.worlds_by_user.get(user_id)
+        if world is not None:
+            return world
+
+        async with self._world_load_lock:
+            world = self.manager.worlds_by_user.get(user_id)
+            if world is not None:
+                return world
+
+            if not await live_pack.ensure_runtime_pack():
+                print("[arcade] live-world archive unavailable; continuing with mock data")
+
+            raw = await self.ctx.storage.get(_DO_WORLD_STATE_KEY)
+            world = world_from_snapshot_json(raw)
+            if world is None or world.owner_id != user_id:
+                world = await self.manager.get_world(user_id)
+            else:
+                self.manager.worlds_by_user[user_id] = world
+                print(f"[arcade] restored hibernated world {world.world_id}")
+            return world
+
+    async def _persist_world(self, world, *, force: bool = False, before: str | None = None) -> str:
+        snapshot = world_snapshot_json(world)
+        if force or snapshot != before:
+            await self.ctx.storage.put(_DO_WORLD_STATE_KEY, snapshot)
+        return snapshot
+
+    async def _load_public_ai_config(self) -> dict:
+        if self._public_ai_config_cache is not None:
+            return dict(self._public_ai_config_cache)
+        raw = await self.ctx.storage.get(_DO_AI_CONFIG_KEY)
+        config_value = {}
+        if isinstance(raw, str) and raw:
+            try:
+                parsed = json.loads(raw)
+            except json.JSONDecodeError:
+                parsed = None
+            if isinstance(parsed, dict):
+                config_value = parsed
+        self._public_ai_config_cache = dict(config_value)
+        return config_value
+
+    async def _install_ai_for_socket(self, attachment: dict) -> None:
+        config_value = await self._load_public_ai_config()
+        api_key = attachment.get("apiKey")
+        if isinstance(api_key, str) and api_key:
+            config_value["apiKey"] = api_key
+        install_runtime_ai_config(config_value)
+
+    async def _capture_ai_settings(self, websocket, attachment: dict, message: dict) -> dict:
+        if message.get("type") != "event" or message.get("channel") != "nori.ai.config":
+            return attachment
+        payload = message.get("payload") if isinstance(message.get("payload"), dict) else {}
+        config_value = sanitize_runtime_ai_config(payload)
+        public = _public_ai_config(config_value)
+        await self.ctx.storage.put(
+            _DO_AI_CONFIG_KEY,
+            json.dumps(public, ensure_ascii=False, separators=(",", ":")),
+        )
+        self._public_ai_config_cache = dict(public)
+        attachment = dict(attachment)
+        attachment["apiKey"] = str(config_value.get("apiKey") or "")
+        _save_socket_attachment(websocket, attachment)
+        install_runtime_ai_config(config_value)
+        return attachment
+
+    def _refresh_world_clients(self, world) -> None:
+        main_clients = set()
+        media_clients = set()
+        for websocket in self.ctx.get_websockets():
+            attachment = _socket_attachment(websocket)
+            if attachment.get("userId") != world.owner_id:
+                continue
+            socket_id = attachment.get("socketId")
+            if not isinstance(socket_id, str) or not socket_id:
+                continue
+            role = attachment.get("role")
+            adapter = _HibernatingSocketAdapter(websocket, socket_id)
+            if role == "main":
+                main_clients.add(adapter)
+            elif role == "media" and attachment.get("worldId") == world.world_id:
+                media_clients.add(adapter)
+        world.clients = main_clients
+        world.media_clients = media_clients
 
     async def fetch(self, request):
         _apply_runtime_bindings(self.env)
+        if not _is_websocket(request):
+            return Response("WebSocket upgrade required", status=426)
+        protocols = _requested_protocols(request)
+        if "arcade.v1" not in protocols:
+            return Response("arcade.v1 subprotocol required", status=400)
+
+        ticket = _ticket_from_request(request)
+        user_id = await self.manager.resolve_ticket(ticket)
+        if user_id is None:
+            return Response("session_invalid", status=401)
+        if WebSocketPair is None:
+            return Response("WebSocketPair unavailable", status=500)
+
+        client, server = WebSocketPair.new().object_values()
+        path = urlsplit(request.url).path
+        role = "pending_media" if path.endswith("/media") else "main"
+        attachment = {
+            "version": _SOCKET_ATTACHMENT_VERSION,
+            "socketId": secrets.token_urlsafe(12),
+            "userId": user_id,
+            "role": role,
+        }
+        _save_socket_attachment(server, attachment)
+        self.ctx.acceptWebSocket(server)
+
+        return Response(
+            None,
+            status=101,
+            headers={"Sec-WebSocket-Protocol": "arcade.v1"},
+            web_socket=client,
+        )
+
+    async def _handle_pending_media(self, websocket, attachment: dict, message) -> None:
+        if not isinstance(message, str):
+            websocket.close(1002, "invalid_media_open")
+            return
+        try:
+            parsed = json.loads(message)
+        except json.JSONDecodeError:
+            websocket.close(1002, "invalid_media_open")
+            return
+        if (
+            not isinstance(parsed, dict)
+            or parsed.get("type") != "open_media"
+            or not isinstance(parsed.get("grant"), str)
+            or not parsed["grant"]
+        ):
+            websocket.close(4005, "media_grant_invalid")
+            return
+
+        user_id = attachment.get("userId")
+        if not isinstance(user_id, str):
+            websocket.close(1008, "session_invalid")
+            return
+        world = await self._load_world(user_id)
+        if parsed["grant"] not in world.media_grants:
+            websocket.close(4005, "media_grant_invalid")
+            return
+
+        updated = dict(attachment)
+        updated["role"] = "media"
+        updated["worldId"] = world.world_id
+        updated.pop("apiKey", None)
+        _save_socket_attachment(websocket, updated)
+        self._refresh_world_clients(world)
+
+    async def _handle_main_message(self, websocket, attachment: dict, raw: str) -> None:
+        user_id = attachment.get("userId")
+        if not isinstance(user_id, str) or not user_id:
+            websocket.close(1008, "session_invalid")
+            return
+
+        world = await self._load_world(user_id)
+        self._refresh_world_clients(world)
+        socket_id = attachment.get("socketId")
+        if not isinstance(socket_id, str) or not socket_id:
+            websocket.close(1008, "session_invalid")
+            return
+        adapter = _HibernatingSocketAdapter(websocket, socket_id)
+        before = world_snapshot_json(world)
+
+        await _prefetch_for_arcade_message(self.env, raw)
+        try:
+            message = json.loads(raw)
+        except json.JSONDecodeError:
+            await world.send_direct(adapter, error_message("bad_request", "Invalid JSON"))
+            return
+        if not isinstance(message, dict):
+            await world.send_direct(
+                adapter,
+                error_message("bad_request", "message must be an object"),
+            )
+            return
+
+        attachment = await self._capture_ai_settings(websocket, attachment, message)
+
+        if message.get("type") == "reset_my_web_world":
+            locale = message.get("locale") if isinstance(message.get("locale"), str) else None
+            world = await self.manager.reset_world(user_id, locale)
+            self._refresh_world_clients(world)
+            await self._persist_world(world, force=True)
+            await world.send_direct(
+                adapter,
+                {"type": "web_world_reset_ack", "worldId": world.world_id},
+            )
+            await world.send_direct(
+                adapter,
+                {
+                    "type": "world_created",
+                    "world": world.world_payload(),
+                    "session": {"isAdmin": True},
+                },
+            )
+            return
+
+        await world.handle_client_message(adapter, message)
+        await _drain_world_tasks(world)
+        await self._persist_world(world, before=before)
+
+    async def webSocketMessage(self, websocket, message):
+        _apply_runtime_bindings(self.env)
+        attachment = _socket_attachment(websocket)
+        role = attachment.get("role")
         manager_token = bind_world_manager(self.manager)
         loader_token = live_pack.bind_runtime_loader(
             lambda: _load_live_core_from_r2(self.env)
         )
         try:
-            if _is_websocket(request):
-                response = await asgi.websocket(_cloudflare_asgi_app, request, self.env)
-                if "arcade.v1" in _requested_protocols(request):
-                    response.headers.set("Sec-WebSocket-Protocol", "arcade.v1")
-                return response
-            return await asgi.fetch(_cloudflare_asgi_app, request, self.env)
+            if role == "pending_media":
+                await self._handle_pending_media(websocket, attachment, message)
+                return
+            if role == "media":
+                # Media is server-to-browser. Client frames are intentionally ignored.
+                return
+            if role != "main" or not isinstance(message, str):
+                websocket.close(1002, "invalid_arcade_message")
+                return
+
+            await self._install_ai_for_socket(attachment)
+            await self._handle_main_message(websocket, attachment, message)
+        except Exception as exc:
+            print(f"[arcade] hibernation message error: {exc}")
+            try:
+                websocket.close(1011, "arcade_runtime_error")
+            except Exception:
+                pass
         finally:
+            clear_runtime_ai_config()
             live_pack.reset_runtime_loader(loader_token)
             reset_world_manager(manager_token)
+
+    async def webSocketClose(self, websocket, code, reason, was_clean):
+        # With compatibility_date >= 2026-04-07 Cloudflare automatically
+        # replies to peer Close frames. No world state needs to be persisted for
+        # connection membership; ctx.get_websockets() is the source of truth.
+        try:
+            websocket.close(code, reason)
+        except Exception:
+            pass
+
+    async def webSocketError(self, websocket, error):
+        print(f"[arcade] WebSocket error: {error}")
 
 
 class Default(WorkerEntrypoint):
@@ -393,7 +698,10 @@ class Default(WorkerEntrypoint):
 
         if _is_websocket(request) and path.startswith("/api/arcade/web/v1"):
             ticket = _ticket_from_request(request)
-            stub = self.env.NORI_ARCADE.getByName(_durable_object_name(ticket))
+            user_id = await _EDGE_TICKET_MANAGER.resolve_ticket(ticket)
+            if user_id is None:
+                return Response("session_invalid", status=401)
+            stub = self.env.NORI_ARCADE.getByName(_durable_object_name(user_id))
             return await stub.fetch(request)
 
         if path.startswith("/api/"):
