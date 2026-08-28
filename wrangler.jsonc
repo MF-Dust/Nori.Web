@@ -7,6 +7,14 @@
   "find_additional_modules": true,
   "rules": [
     {
+      "type": "PythonModule",
+      "globs": [
+        "backend/**/*.py",
+        "server.py"
+      ],
+      "fallthrough": false
+    },
+    {
       "type": "Text",
       "globs": [
         "backend/data/codenames_words.json",
