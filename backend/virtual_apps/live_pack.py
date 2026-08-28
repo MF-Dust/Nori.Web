@@ -18,8 +18,9 @@ import json
 import os
 import re
 import threading
+from contextvars import ContextVar
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 from urllib.parse import urlsplit
 
 PACK_PATH = Path(__file__).resolve().parents[1] / "data" / "live_world_pack.json"
@@ -29,6 +30,10 @@ _DISABLED = os.getenv("NORI_DISABLE_LIVE_PACK", "").strip().lower() in {"1", "tr
 _lock = threading.Lock()
 _cache: Optional[Dict[str, Any]] = None
 _PAGE_INDEX: Optional[Dict[str, Dict[str, Any]]] = None
+RuntimePackLoader = Callable[[], Awaitable[bool]]
+_RUNTIME_PACK_LOADER: ContextVar[Optional[RuntimePackLoader]] = ContextVar(
+    "nori_runtime_pack_loader", default=None
+)
 
 
 def set_disabled(disabled: bool) -> None:
@@ -65,6 +70,40 @@ def install_pack(data: Dict[str, Any]) -> bool:
 def has_loaded_pack() -> bool:
     """Return whether an archive is already resident in the runtime cache."""
     return not _DISABLED and _cache is not None
+
+
+def bind_runtime_loader(loader: RuntimePackLoader):
+    """Bind an async runtime loader for the current execution context."""
+    return _RUNTIME_PACK_LOADER.set(loader)
+
+
+def reset_runtime_loader(token) -> None:
+    """Restore the previous runtime-pack loader binding."""
+    _RUNTIME_PACK_LOADER.reset(token)
+
+
+async def ensure_runtime_pack() -> bool:
+    """Ensure the live archive is ready before a world is constructed.
+
+    Local execution falls back to the on-disk JSON. Cloudflare binds an async
+    R2 loader around the ASGI task so WebSocket handlers can accept the socket
+    first, then await the large archive without delaying the HTTP 101 upgrade.
+    """
+    if _DISABLED:
+        return False
+    if has_loaded_pack():
+        return True
+
+    loader = _RUNTIME_PACK_LOADER.get()
+    if loader is not None:
+        try:
+            await loader()
+        except Exception as exc:
+            print(f"[live_pack] runtime loader failed: {exc}")
+        if has_loaded_pack():
+            return True
+
+    return _pack() is not None
 
 
 def _pack() -> Optional[Dict[str, Any]]:

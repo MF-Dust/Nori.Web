@@ -39,27 +39,39 @@ _LIVE_PACK_RETRY_SECONDS = 60.0
 _live_pack_retry_at = 0.0
 
 
-async def _configure_runtime(env) -> None:
-    """Apply runtime bindings and make the private live archive available."""
-    global _live_pack_retry_at
-
+def _apply_runtime_bindings(env) -> None:
+    """Apply Workers vars/secrets without doing any blocking R2 I/O."""
     config.apply_runtime_bindings(env)
     disabled = config.NORI_DISABLE_LIVE_PACK.strip().lower() in _TRUE_VALUES
     live_pack.set_disabled(disabled)
-    if disabled or live_pack.has_loaded_pack():
-        return
+
+
+async def _load_live_pack_from_r2(env) -> bool:
+    """Load the private live archive into the current Worker/DO isolate.
+
+    This function is intentionally invoked from the Arcade ASGI handler only
+    after ``websocket.accept()``. Keeping the 11.7 MB R2 download and JSON
+    decode off the HTTP upgrade path prevents browsers from timing out while a
+    cold Durable Object initializes.
+    """
+    global _live_pack_retry_at
+
+    if config.NORI_DISABLE_LIVE_PACK.strip().lower() in _TRUE_VALUES:
+        return False
+    if live_pack.has_loaded_pack():
+        return True
 
     now = time.monotonic()
     if now < _live_pack_retry_at:
-        return
+        return False
 
     async with _LIVE_PACK_LOAD_LOCK:
         if live_pack.has_loaded_pack():
-            return
+            return True
 
         now = time.monotonic()
         if now < _live_pack_retry_at:
-            return
+            return False
 
         try:
             obj = await env.NORI_ASSETS_R2.get(_R2_LIVE_PACK_KEY)
@@ -69,7 +81,7 @@ async def _configure_runtime(env) -> None:
                     "falling back to mock data"
                 )
                 _live_pack_retry_at = now + _LIVE_PACK_RETRY_SECONDS
-                return
+                return False
 
             raw = await obj.text()
             data = json.loads(raw)
@@ -77,13 +89,15 @@ async def _configure_runtime(env) -> None:
             if not live_pack.install_pack(data):
                 print("[live_pack] R2 archive root is not a JSON object; using mock data")
                 _live_pack_retry_at = now + _LIVE_PACK_RETRY_SECONDS
-                return
+                return False
 
             _live_pack_retry_at = 0.0
             print(f"[live_pack] loaded from R2: {live_pack.summary()}")
+            return True
         except Exception as exc:
             print(f"[live_pack] failed to load R2 archive: {exc}")
             _live_pack_retry_at = now + _LIVE_PACK_RETRY_SECONDS
+            return False
 
 
 def _is_websocket(request) -> bool:
@@ -174,8 +188,11 @@ class NoriArcadeSession(DurableObject):
         self.manager = WorldManager()
 
     async def fetch(self, request):
-        await _configure_runtime(self.env)
+        _apply_runtime_bindings(self.env)
         manager_token = bind_world_manager(self.manager)
+        loader_token = live_pack.bind_runtime_loader(
+            lambda: _load_live_pack_from_r2(self.env)
+        )
         try:
             if _is_websocket(request):
                 response = await asgi.websocket(_cloudflare_asgi_app, request, self.env)
@@ -187,6 +204,7 @@ class NoriArcadeSession(DurableObject):
                 return response
             return await asgi.fetch(_cloudflare_asgi_app, request, self.env)
         finally:
+            live_pack.reset_runtime_loader(loader_token)
             reset_world_manager(manager_token)
 
 
@@ -194,7 +212,10 @@ class Default(WorkerEntrypoint):
     """Route API, R2 assets, and frontend traffic to the correct service."""
 
     async def fetch(self, request):
-        await _configure_runtime(self.env)
+        # Authentication, entry-status and ticket issuance must stay fast.
+        # Do not fetch/decode the live archive in the ordinary Worker isolate;
+        # the Durable Object loads it after the WebSocket has been accepted.
+        _apply_runtime_bindings(self.env)
         path = urlsplit(request.url).path
 
         if path == _R2_MODEL_PATH:
