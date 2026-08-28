@@ -58,6 +58,10 @@ jobs:
           if [ "$code" -ne 0 ]; then
             exit "$code"
           fi
+          if grep -Fq "Unexpected fields found" /tmp/pywrangler.log; then
+            echo "::error::Wrangler rejected one or more configuration fields"
+            exit 1
+          fi
           if ! grep -Fq "backend/data/codenames_words.json" /tmp/pywrangler.log; then
             echo "::error::Cloudflare bundle is missing backend/data/codenames_words.json"
             exit 1
