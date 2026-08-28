@@ -3,13 +3,17 @@
 HTTP API requests are served through Cloudflare's Python ASGI adapter. Static
 frontend files are served by Workers Static Assets. Arcade WebSocket pairs are
 routed by their signed ticket into a Durable Object so the main and media
-channels share one in-memory WorldManager. Oversized static assets are streamed
-from R2 while keeping their original public URL.
+channels share one in-memory WorldManager. Oversized static assets and the
+private live-world archive are read from R2 so they do not consume Worker
+script-size quota.
 """
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
+import json
+import time
 from urllib.parse import urlsplit
 
 from workers import DurableObject, Response, WorkerEntrypoint, asgi
@@ -29,13 +33,57 @@ _R2_MODEL_PATH = "/datasea/cosmicweb.min.glb"
 _R2_MODEL_KEY = "datasea/cosmicweb.min.glb"
 _R2_MODEL_CONTENT_TYPE = "model/gltf-binary"
 _R2_MODEL_CACHE_CONTROL = "public, max-age=604800, immutable"
+_R2_LIVE_PACK_KEY = "runtime/live_world_pack.json"
+_LIVE_PACK_LOAD_LOCK = asyncio.Lock()
+_LIVE_PACK_RETRY_SECONDS = 60.0
+_live_pack_retry_at = 0.0
 
 
-def _configure_runtime(env) -> None:
-    """Apply Workers vars/secrets before an ASGI request is dispatched."""
+async def _configure_runtime(env) -> None:
+    """Apply runtime bindings and make the private live archive available."""
+    global _live_pack_retry_at
+
     config.apply_runtime_bindings(env)
     disabled = config.NORI_DISABLE_LIVE_PACK.strip().lower() in _TRUE_VALUES
     live_pack.set_disabled(disabled)
+    if disabled or live_pack.has_loaded_pack():
+        return
+
+    now = time.monotonic()
+    if now < _live_pack_retry_at:
+        return
+
+    async with _LIVE_PACK_LOAD_LOCK:
+        if live_pack.has_loaded_pack():
+            return
+
+        now = time.monotonic()
+        if now < _live_pack_retry_at:
+            return
+
+        try:
+            obj = await env.NORI_ASSETS_R2.get(_R2_LIVE_PACK_KEY)
+            if obj is None:
+                print(
+                    f"[live_pack] R2 object missing: {_R2_LIVE_PACK_KEY}; "
+                    "falling back to mock data"
+                )
+                _live_pack_retry_at = now + _LIVE_PACK_RETRY_SECONDS
+                return
+
+            raw = await obj.text()
+            data = json.loads(raw)
+            del raw
+            if not live_pack.install_pack(data):
+                print("[live_pack] R2 archive root is not a JSON object; using mock data")
+                _live_pack_retry_at = now + _LIVE_PACK_RETRY_SECONDS
+                return
+
+            _live_pack_retry_at = 0.0
+            print(f"[live_pack] loaded from R2: {live_pack.summary()}")
+        except Exception as exc:
+            print(f"[live_pack] failed to load R2 archive: {exc}")
+            _live_pack_retry_at = now + _LIVE_PACK_RETRY_SECONDS
 
 
 def _is_websocket(request) -> bool:
@@ -126,7 +174,7 @@ class NoriArcadeSession(DurableObject):
         self.manager = WorldManager()
 
     async def fetch(self, request):
-        _configure_runtime(self.env)
+        await _configure_runtime(self.env)
         manager_token = bind_world_manager(self.manager)
         try:
             if _is_websocket(request):
@@ -146,7 +194,7 @@ class Default(WorkerEntrypoint):
     """Route API, R2 assets, and frontend traffic to the correct service."""
 
     async def fetch(self, request):
-        _configure_runtime(self.env)
+        await _configure_runtime(self.env)
         path = urlsplit(request.url).path
 
         if path == _R2_MODEL_PATH:
