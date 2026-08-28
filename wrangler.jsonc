@@ -33,11 +33,21 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,
+    "redact_query_string": false,
     "traces": {
       "enabled": true,
       "head_sampling_rate": 1
     }
   },
+  "placement": {
+    "mode": "smart"
+  },
+  "routes": [
+    {
+      "pattern": "nori-expermintal.088092111.xyz",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
