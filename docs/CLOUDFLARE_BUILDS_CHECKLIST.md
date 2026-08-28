@@ -12,6 +12,6 @@
    - `SKIP_DEPENDENCY_INSTALL=1`
    - `PYTHON_VERSION=3.13`
 9. Keep runtime secrets under Worker Variables & Secrets, not Build variables.
-10. Save, then trigger the first production build from `master`.
+10. Save the integration, then merge or push a new commit to `master` after the GitHub connection is enabled to trigger the first production build.
 
 After this, merging to `master` automatically deploys the Worker. The deploy wrapper only re-uploads the R2 live-world layout when its fingerprint changes.
