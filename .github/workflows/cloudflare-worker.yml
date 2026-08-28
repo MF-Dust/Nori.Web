@@ -54,3 +54,25 @@ jobs:
             echo "::error::Cloudflare bundle is missing backend/data/pictionary_words.json"
             exit 1
           fi
+          if grep -Eq "public/.*\.(bin|wasm)" /tmp/pywrangler.log; then
+            echo "::error::Static public binary/WASM assets leaked into the Worker module bundle"
+            exit 1
+          fi
+          if grep -Eq "node_modules/.*\.wasm" /tmp/pywrangler.log; then
+            echo "::error::Node development WASM leaked into the Worker module bundle"
+            exit 1
+          fi
+          if grep -Eq '│ (tests/|scraper/|\.venv[^/]*/)' /tmp/pywrangler.log; then
+            echo "::error::Development Python files leaked into the Worker module bundle"
+            exit 1
+          fi
+          gzip_kib=$(sed -n 's/.*gzip: \([0-9.]*\) KiB.*/\1/p' /tmp/pywrangler.log | tail -n 1)
+          if [ -z "$gzip_kib" ]; then
+            echo "::error::Unable to determine Cloudflare Worker gzip size"
+            exit 1
+          fi
+          echo "Cloudflare Worker gzip size: ${gzip_kib} KiB"
+          awk -v size="$gzip_kib" 'BEGIN { if (size >= 3072) exit 1 }' || {
+            echo "::error::Cloudflare Worker gzip bundle must stay below the Free-plan 3 MiB limit (3072 KiB)"
+            exit 1
+          }
