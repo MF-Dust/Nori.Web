@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 from backend.virtual_apps import live_pack
 
@@ -29,7 +31,7 @@ def _sample() -> dict:
     }
 
 
-def _assert_accessors() -> None:
+def _assert_full_accessors() -> None:
     assert live_pack.has_loaded_pack()
     assert live_pack.is_available()
     assert live_pack.mail_artifacts()[0]["id"] == "mail-1"
@@ -47,22 +49,44 @@ def _assert_accessors() -> None:
     assert live_pack.mail_artifacts()[0]["subject"] == "hello"
 
 
-async def main() -> None:
-    # Existing direct injection path remains valid.
-    live_pack.set_disabled(False)
-    assert live_pack.install_pack(_sample())
-    _assert_accessors()
+def _load_partition_module():
+    path = ROOT / "scripts" / "upload_cloudflare_live_pack.py"
+    spec = importlib.util.spec_from_file_location("nori_live_partition", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
-    # Cloudflare binds a loader before dispatching the ASGI WebSocket task,
-    # but simply binding it must not trigger any I/O. The load happens only
-    # when the accepted Arcade handler explicitly calls ensure_runtime_pack().
+
+async def main() -> None:
+    sample = _sample()
+
+    # Local/direct complete injection remains valid.
+    live_pack.set_disabled(False)
+    assert live_pack.install_pack(sample)
+    _assert_full_accessors()
+
+    # Cloudflare binds a loader before dispatching the ASGI WebSocket task.
+    # The loader now installs only the small core needed for WorldSession.
     live_pack.set_disabled(True)
     live_pack.set_disabled(False)
     calls: list[str] = []
 
     async def deferred_loader() -> bool:
         calls.append("load")
-        return live_pack.install_pack(_sample())
+        core = {
+            key: value
+            for key, value in sample.items()
+            if key
+            not in {
+                "mail_artifacts",
+                "file_artifacts",
+                "signal_thread_artifacts",
+                "signal_message_artifacts",
+                "browser_pages",
+            }
+        }
+        return live_pack.install_core(core)
 
     token = live_pack.bind_runtime_loader(deferred_loader)
     try:
@@ -70,17 +94,58 @@ async def main() -> None:
         assert not live_pack.has_loaded_pack()
         assert await live_pack.ensure_runtime_pack()
         assert calls == ["load"]
-        _assert_accessors()
-        # Once resident, subsequent world opens do not re-fetch R2.
+        assert live_pack.facts()["chapter"] == 7
+        assert live_pack.variables()["flag"] is True
+        assert live_pack.chip_status()["online"] is True
+        assert not live_pack.section_loaded("mail_artifacts")
+        assert live_pack.mail_artifacts() == []
+        assert "mails=lazy" in live_pack.summary()
+
+        # Artifact sections can be attached independently without replacing core.
+        assert live_pack.install_section("mail_artifacts", sample["mail_artifacts"])
+        assert live_pack.install_section("file_artifacts", sample["file_artifacts"])
+        assert live_pack.install_section(
+            "signal_thread_artifacts", sample["signal_thread_artifacts"]
+        )
+        assert live_pack.install_section(
+            "signal_message_artifacts", sample["signal_message_artifacts"]
+        )
+        assert live_pack.mail_artifacts()[0]["subject"] == "hello"
+        assert live_pack.file_artifacts()[0]["id"] == "file-1"
+
+        # Browser replay is explicitly replaceable so only one R2 shard must
+        # remain resident at a time.
+        assert live_pack.replace_browser_pages(sample["browser_pages"])
+        assert live_pack.page("https://example.test/page?q=1")["data"]["title"] == "Example"
+        assert live_pack.page("http://example.test/page?q=1")["data"]["title"] == "Example"
+        assert live_pack.replace_browser_pages([])
+        assert live_pack.page("https://example.test/page?q=1") is None
+
+        # Once the core is resident, a second world open does not re-fetch it.
         assert await live_pack.ensure_runtime_pack()
         assert calls == ["load"]
     finally:
         live_pack.reset_runtime_loader(token)
 
+    # The uploader must produce a core with no heavy arrays plus an alias index
+    # that points both http/https forms to the same browser shard.
+    partition = _load_partition_module()
+    objects = partition.partition_pack(sample, shard_count=4)
+    core = objects["runtime/live/core.json"]
+    assert "browser_pages" not in core
+    assert "mail_artifacts" not in core
+    index = objects["runtime/live/browser-index.json"]["entries"]
+    assert index["https://example.test/page?q=1"] == index[
+        "http://example.test/page?q=1"
+    ]
+    shard = index["https://example.test/page?q=1"]
+    pages = objects[f"runtime/live/browser/{shard}.json"]
+    assert pages[0]["data"]["title"] == "Example"
+
     live_pack.set_disabled(True)
     assert not live_pack.has_loaded_pack()
     assert live_pack.mail_artifacts() == []
-    print("[ok] runtime live-world pack loading is deferred until explicitly ensured")
+    print("[ok] live-world core, lazy sections, and browser sharding behave correctly")
 
 
 if __name__ == "__main__":
