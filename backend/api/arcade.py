@@ -9,6 +9,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ..core.protocol import error_message
 from ..session.manager import get_world_manager
+from ..virtual_apps import live_pack
 
 arcade_ws_router = APIRouter(tags=["arcade_ws"])
 
@@ -40,6 +41,14 @@ async def arcade_websocket(websocket: WebSocket) -> None:
     user_id = await _accept_arcade_socket(websocket)
     if user_id is None:
         return
+
+    # The socket is deliberately accepted before a cold Cloudflare Durable
+    # Object downloads/decodes the large R2 live-world archive. This keeps the
+    # browser's WebSocket upgrade from timing out while still guaranteeing that
+    # the archive is ready before WorldSession builds its default cartridges.
+    if not await live_pack.ensure_runtime_pack():
+        print("[arcade] live-world archive unavailable; continuing with mock data")
+
     world = await manager.get_world(user_id)
     await world.add_client(websocket)
     try:
