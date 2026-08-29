@@ -19,6 +19,7 @@ export * from "./apps/files";
 export * from "./apps/mail";
 export * from "./apps/messenger";
 export * from "./apps/production-catalog";
+export * from "./apps/production-icons";
 export * from "./apps/recovered-presentation";
 export * from "./apps/signal-presentation";
 export * from "./apps/terminal";
