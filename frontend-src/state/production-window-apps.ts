@@ -139,7 +139,14 @@ export function createProductionWindowAppDefinition(
 
   return {
     id: descriptor.id,
+    title: descriptor.title,
+    sourceBinding: descriptor.sourceBinding,
     pinned: descriptor.pinned,
+    bootstrap: descriptor.bootstrap,
+    installWhen: descriptor.installWhen,
+    dockWhen: descriptor.dockWhen,
+    accentColor: descriptor.accentColor,
+    recoveryStatus: descriptor.recoveryStatus,
     exclusive: descriptor.exclusive,
     keepAlive: descriptor.keepAlive,
     runtime: descriptor.runtime
