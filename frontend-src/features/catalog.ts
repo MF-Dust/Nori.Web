@@ -34,6 +34,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
   {
     feature: "shell",
     shippedChunkPatterns: [
+      /NormalApp/i,
       /IntroPage/i,
       /SidebarNavButton/i,
       /useCompactHeight/i,
@@ -44,6 +45,10 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "components/sidebar-nav-button.tsx",
       "hooks/use-compact-height.ts",
       "hooks/use-element-size.ts",
+      "state/window-types.ts",
+      "state/window-geometry.ts",
+      "state/window-repair.ts",
+      "state/window-store.ts",
     ],
     status: "ui-partial",
   },
