@@ -76,6 +76,7 @@ export function WindowContentHost({
       appId: managedWindow.appId,
       windowType: managedWindow.windowType,
       focused,
+      snap: managedWindow.snap,
       focus: () => store.getState().focusWindow(managedWindow.instanceId),
       close: () => store.getState().closeWindow(managedWindow.instanceId),
       setTitle: (title: string) =>
