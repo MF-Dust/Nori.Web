@@ -33,6 +33,9 @@ jobs:
       - name: Verify Cloudflare import safety
         run: uv run python tests/test_cloudflare_import_safety.py
 
+      - name: Verify HTTP API runtime
+        run: uv run python tests/test_http_api_runtime.py
+
       - name: Verify runtime live pack injection
         run: uv run python tests/test_live_pack_runtime.py
 
