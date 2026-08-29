@@ -19,8 +19,8 @@ export class FilesAppModel {
   constructor(private readonly artifacts: ArtifactService, private readonly manifold: ManifoldService) {}
 
   async list(): Promise<FileArtifact[]> {
-    return (await this.artifacts.files())
-      .filter((item): item is FileArtifact => item.type === "file")
+    return (await this.artifacts.files<FileData>())
+      .filter((item) => item.type === "file")
       .sort((a, b) => String(a.data.display_path ?? a.id).localeCompare(String(b.data.display_path ?? b.id)));
   }
 
