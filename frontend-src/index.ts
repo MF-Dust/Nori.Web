@@ -28,6 +28,7 @@ export * from "./hooks/use-compact-height";
 export * from "./hooks/use-element-size";
 export * from "./hooks/use-window-interaction";
 export * from "./components/chat-panel";
+export * from "./components/desktop-dock";
 export * from "./components/desktop-root";
 export * from "./components/desktop-topbar";
 export * from "./components/managed-window-host";
