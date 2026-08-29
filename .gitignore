@@ -6,6 +6,7 @@ __pycache__/
 .frontend-recovery/
 .frontend-recovery-ci/
 .frontend-build/
+.frontend-app-build/
 data/*.sqlite3
 data/*.db
 
