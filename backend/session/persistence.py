@@ -28,12 +28,20 @@ def _non_negative_int(value: Any, default: int = 0) -> int:
     return max(0, parsed)
 
 
-def world_to_snapshot(world: WorldSession) -> Dict[str, Json]:
-    """Return the durable, JSON-safe portion of one world session."""
+def _world_snapshot_view(world: WorldSession) -> Dict[str, Json]:
+    """Build a read-only serialization view without cloning cartridge state.
+
+    ``json.dumps`` never mutates its input, so the hot persistence path can
+    reference each cartridge's current state directly. This avoids holding a
+    second complete world object graph while a Durable Object is being
+    serialized. Callers that need an independently mutable Python snapshot
+    should use :func:`world_to_snapshot`, which preserves the old deep-copy
+    contract.
+    """
     cartridges: Dict[str, Json] = {}
     for cartridge_id, cartridge in world.cartridges.items():
         cartridges[cartridge_id] = {
-            "state": deepcopy(cartridge.state),
+            "state": cartridge.state,
             "headVersion": int(cartridge.head_version),
             "visibleVersion": int(cartridge.visible_version),
         }
@@ -43,15 +51,23 @@ def world_to_snapshot(world: WorldSession) -> Dict[str, Json]:
         "ownerId": world.owner_id,
         "worldId": world.world_id,
         "locale": world.locale,
-        "mediaGrants": sorted(grant for grant in world.media_grants if isinstance(grant, str)),
+        "mediaGrants": sorted(
+            grant for grant in world.media_grants if isinstance(grant, str)
+        ),
         "mediaSequence": int(world._media_sequence),
         "cartridges": cartridges,
     }
 
 
+def world_to_snapshot(world: WorldSession) -> Dict[str, Json]:
+    """Return an independently mutable JSON-safe snapshot of one world."""
+    return deepcopy(_world_snapshot_view(world))
+
+
 def world_snapshot_json(world: WorldSession) -> str:
+    """Serialize one world without first duplicating the full state graph."""
     return json.dumps(
-        world_to_snapshot(world),
+        _world_snapshot_view(world),
         ensure_ascii=False,
         separators=(",", ":"),
         sort_keys=True,
@@ -59,7 +75,7 @@ def world_snapshot_json(world: WorldSession) -> str:
 
 
 def world_from_snapshot(payload: Any) -> WorldSession | None:
-    """Restore a world from a validated snapshot, or return ``None`` if corrupt."""
+    """Restore a world from a validated snapshot, or ``None`` if corrupt."""
     if not isinstance(payload, dict) or payload.get("version") != SNAPSHOT_VERSION:
         return None
 
@@ -87,6 +103,9 @@ def world_from_snapshot(payload: Any) -> WorldSession | None:
         cartridge = CARTRIDGE_REGISTRY.create(cartridge_id)
         if cartridge is None:
             continue
+        # Restore is comparatively cold (only on wake/recovery), so keep the
+        # defensive copy here. The CPU/memory win is in the per-message write
+        # path above, not in weakening the public restore isolation contract.
         cartridge.state = deepcopy(state)
         cartridge.head_version = _non_negative_int(saved.get("headVersion"))
         cartridge.visible_version = min(
