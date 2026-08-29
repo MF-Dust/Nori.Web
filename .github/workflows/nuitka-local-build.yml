@@ -1,0 +1,55 @@
+name: Nuitka Local Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+          - name: Linux
+            os: ubuntu-latest
+          - name: macOS
+            os: macos-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Sync local + Nuitka build dependencies
+        run: uv sync --extra local --group build --python 3.13
+
+      - name: Show Nuitka version
+        run: uv run python -m nuitka --version
+
+      - name: Build standalone distribution
+        run: uv run python scripts/build_nuitka.py
+
+      - name: Smoke test compiled distribution
+        run: uv run python scripts/smoke_nuitka.py
+
+      - name: Upload local distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nori.Web-${{ runner.os }}-${{ runner.arch }}
+          path: build/release/Nori.Web-*
+          if-no-files-found: error
+          retention-days: 14
