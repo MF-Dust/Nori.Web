@@ -12,6 +12,7 @@ export interface WindowScreenRouterProps {
   windowType: string;
   lookupApp(appId: string): WindowAppDefinition | undefined;
   fallback?: ReactNode;
+  missingFallback?: ReactNode;
 }
 
 export function WindowScreenRouter({
@@ -21,6 +22,7 @@ export function WindowScreenRouter({
   windowType,
   lookupApp,
   fallback = null,
+  missingFallback = null,
 }: WindowScreenRouterProps) {
   const screenStack = store((state) => state.windows[instanceId]?.screenStack);
   const screenDefinition = lookupApp(appId)?.windows[windowType]?.screens;
@@ -46,12 +48,14 @@ export function WindowScreenRouter({
     };
   }, [goBack, navigate, screenStack]);
 
-  if (!screenDefinition || !screenStack || !screenProps) return null;
+  if (!screenDefinition || !screenStack || !screenProps) return missingFallback;
 
   const current = screenDefinition.screens[screenStack.current];
   if (!current) {
-    console.warn(`[ScreenContainer] Missing screen config for ${instanceId}`);
-    return null;
+    console.warn(
+      `[ScreenContainer] Missing screen config for ${instanceId}: ${screenStack.current}`,
+    );
+    return missingFallback;
   }
 
   const Screen = current.component;
