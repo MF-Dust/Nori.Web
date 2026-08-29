@@ -82,6 +82,7 @@ jobs:
         run: |
           node --check scripts/recover_frontend.mjs
           node --check scripts/inventory_frontend_symbols.mjs
+          node --check scripts/inspect_frontend_chunk.mjs
           node --check scripts/run_frontend_recovery.mjs
           node --check scripts/verify_frontend_recovery.mjs
 
@@ -151,6 +152,11 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Inspect NormalApp exported ABI
+        env:
+          FRONTEND_INSPECT_SNIPPET: "1200"
+        run: npm run frontend:inspect:normalapp
 
       - name: Typecheck reconstructed frontend source
         run: npm run frontend:typecheck
