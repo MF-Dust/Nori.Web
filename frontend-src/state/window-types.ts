@@ -51,6 +51,8 @@ export interface WindowRuntimeProps {
   instanceId: string;
   appId: string;
   windowType: string;
+  /** Mirrors the shipped per-instance focused-window selector. */
+  focused?: boolean;
   close(): void;
   setTitle(title: string): void;
 }
