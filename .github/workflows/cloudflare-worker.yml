@@ -79,7 +79,11 @@ jobs:
         run: node --check public/nori-runtime-shims.js
 
       - name: Verify frontend recovery tool JavaScript
-        run: node --check scripts/recover_frontend.mjs
+        run: |
+          node --check scripts/recover_frontend.mjs
+          node --check scripts/inventory_frontend_symbols.mjs
+          node --check scripts/run_frontend_recovery.mjs
+          node --check scripts/verify_frontend_recovery.mjs
 
       - name: Compile Python sources
         run: uv run python -m compileall -q backend scripts server.py worker.py
@@ -132,3 +136,24 @@ jobs:
             echo "::error::Cloudflare Worker gzip bundle must stay below the Free-plan 3 MiB limit (3072 KiB)"
             exit 1
           }
+
+  frontend-maintenance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Typecheck reconstructed frontend source
+        run: npm run frontend:typecheck
+
+      - name: Verify complete bundle recovery coverage
+        run: npm run frontend:recover:check
