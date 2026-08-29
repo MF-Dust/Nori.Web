@@ -1,4 +1,5 @@
 import { Cpu, Volume1, Volume2, VolumeX, type LucideIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { DesktopRuntime } from "../state/desktop-runtime";
 import {
   formatDesktopCompute,
@@ -38,19 +39,23 @@ export function DesktopComputeSummary({ state }: { state: DesktopComputeState })
 export interface DesktopSoundIndicatorProps {
   runtime: DesktopRuntime;
   translate: TopBarTranslate;
-  expanded: boolean;
-  onToggle(): void;
-  closeMenu(): void;
+  /** Supply these three props when a parent menu controller owns exclusivity. */
+  expanded?: boolean;
+  onToggle?: () => void;
+  closeMenu?: () => void;
 }
 
 /** Maintainable reconstruction of NormalApp's `$Ge` sound menu. */
 export function DesktopSoundIndicator({
   runtime,
   translate,
-  expanded,
+  expanded: controlledExpanded,
   onToggle,
   closeMenu,
 }: DesktopSoundIndicatorProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [internalExpanded, setInternalExpanded] = useState(false);
+  const expanded = controlledExpanded ?? internalExpanded;
   const masterVolume = useAudioSettings((state) => state.masterVolume);
   const isMuted = useAudioSettings((state) => state.isMuted);
   const setMasterVolume = useAudioSettings((state) => state.setMasterVolume);
@@ -58,22 +63,47 @@ export function DesktopSoundIndicator({
   const TriggerIcon = getVolumeIcon(masterVolume, isMuted);
   const SliderIcon = getVolumeIcon(isMuted ? 0 : masterVolume, false);
 
+  const close = () => {
+    closeMenu?.();
+    if (controlledExpanded === undefined) setInternalExpanded(false);
+  };
+  const toggle = () => {
+    if (onToggle) onToggle();
+    else setInternalExpanded((value) => !value);
+  };
+
+  useEffect(() => {
+    if (controlledExpanded !== undefined || !expanded) return;
+    const pointer = (event: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) close();
+    };
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    document.addEventListener("pointerdown", pointer);
+    window.addEventListener("keydown", keyboard, true);
+    return () => {
+      document.removeEventListener("pointerdown", pointer);
+      window.removeEventListener("keydown", keyboard, true);
+    };
+  }, [controlledExpanded, expanded]);
+
   const openSettings = () => {
     const state = runtime.store.getState();
     if (!state.processes.settings) {
       void state.launchApp({ appId: "settings", mode: "activate" });
     }
-    closeMenu();
+    close();
   };
 
   return (
-    <div className="relative" data-nori-sound-indicator="true">
+    <div ref={rootRef} className="relative" data-nori-sound-indicator="true">
       <button
         type="button"
         className="topbar-indicator-trigger"
         aria-haspopup="menu"
         aria-expanded={expanded}
-        onClick={onToggle}
+        onClick={toggle}
       >
         <TriggerIcon className="size-4" />
       </button>
