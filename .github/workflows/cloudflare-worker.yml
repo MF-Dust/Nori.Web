@@ -172,7 +172,7 @@ jobs:
           npm run frontend:inspect:identifier -- NormalApp- ed mi gX NOe OOe s2e LOe bOe oOe cOe fOe fX xAe UPe jPe rOe a2e c2e sAe mOe > normalapp-inspection/app-registry-identifiers.json
           npm run frontend:inspect:identifier -- NormalApp- vV ZGe VGe YGe KGe > normalapp-inspection/desktop-shell-identifiers.json
           npm run frontend:inspect:identifier -- NormalApp- UGe wGe xGe yGe SGe OGe z4 HS J9e uGe pGe mGe lGe cGe _Ge fGe MOe PGe IGe BGe > normalapp-inspection/dock-identifiers.json
-          npm run frontend:inspect:identifier -- NormalApp- H8e '$Ge' qGe XGe '$K' q4 Z9e So '$4' rl > normalapp-inspection/shell-presentation-identifiers.json
+          npm run frontend:inspect:identifier -- NormalApp- H8e '$Ge' qGe XGe '$K' q4 Z9e So '$4' rl eY > normalapp-inspection/shell-presentation-identifiers.json
           FRONTEND_INSPECT_EXPORTS="co,cp,cq,cr,ct,cu,cv" FRONTEND_INSPECT_DEPTH="2" FRONTEND_INSPECT_SNIPPET="20000" node scripts/inspect_frontend_chunk.mjs index-CyHAbkO5.js > normalapp-inspection/window-layout-exports.json
 
       - name: Upload NormalApp inspection report
