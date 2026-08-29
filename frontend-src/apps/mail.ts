@@ -19,9 +19,9 @@ export class MailAppModel {
   constructor(private readonly artifacts: ArtifactService, private readonly manifold: ManifoldService) {}
 
   async inbox(): Promise<MailArtifact[]> {
-    const items = await this.artifacts.mail();
+    const items = await this.artifacts.mail<MailData>();
     return items
-      .filter((item): item is MailArtifact => item.type === "mail")
+      .filter((item) => item.type === "mail")
       .filter((item) => item.data.folder !== "sent")
       .sort((a, b) => String(b.data.date ?? "").localeCompare(String(a.data.date ?? "")));
   }
