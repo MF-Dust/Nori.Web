@@ -10,6 +10,13 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ASSET_DIR = path.join(ROOT, "public", "assets");
 const selector = process.argv[2] || "NormalApp-";
 const maxSnippet = Number(process.env.FRONTEND_INSPECT_SNIPPET || 2400);
+const dependencyDepth = Math.max(0, Number(process.env.FRONTEND_INSPECT_DEPTH || 0));
+const exportFilter = new Set(
+  (process.env.FRONTEND_INSPECT_EXPORTS || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
+);
 
 function uniq(values) {
   return [...new Set(values)].sort();
@@ -110,7 +117,7 @@ function usageContexts(sourceFile, sourceText, identifier) {
   return contexts.slice(0, 6);
 }
 
-function declarationReport(sourceFile, sourceText, declaration) {
+function declarationReport(sourceFile, declaration) {
   if (!declaration) return null;
   const raw = declaration.node.getText(sourceFile).replaceAll(/\s+/g, " ").trim();
   return {
@@ -118,6 +125,48 @@ function declarationReport(sourceFile, sourceText, declaration) {
     snippet: raw.length > maxSnippet ? `${raw.slice(0, maxSnippet)} …` : raw,
     hints: semanticHints(declaration.node),
   };
+}
+
+function referencedTopLevelNames(node, declarations, ownName) {
+  const names = new Set();
+  walk(node, (child) => {
+    if (!ts.isIdentifier(child) || child.text === ownName || !declarations.has(child.text)) return;
+    const parent = child.parent;
+    if (ts.isPropertyAccessExpression(parent) && parent.name === child) return;
+    if (ts.isPropertyAssignment(parent) && parent.name === child && parent.initializer !== child) return;
+    if (ts.isMethodDeclaration(parent) && parent.name === child) return;
+    names.add(child.text);
+  });
+  return [...names].sort();
+}
+
+function dependencyClosure(sourceFile, declarations, rootName, maxDepth) {
+  if (maxDepth <= 0) return [];
+  const result = [];
+  const visited = new Set([rootName]);
+  let frontier = [{ name: rootName, depth: 0 }];
+
+  while (frontier.length) {
+    const current = frontier.shift();
+    if (!current || current.depth >= maxDepth) continue;
+    const declaration = declarations.get(current.name);
+    if (!declaration) continue;
+    for (const name of referencedTopLevelNames(declaration.node, declarations, current.name)) {
+      if (visited.has(name)) continue;
+      visited.add(name);
+      const dependency = declarations.get(name);
+      if (!dependency) continue;
+      const depth = current.depth + 1;
+      result.push({
+        name,
+        depth,
+        declaration: declarationReport(sourceFile, dependency),
+      });
+      frontier.push({ name, depth });
+    }
+  }
+
+  return result;
 }
 
 async function main() {
@@ -130,16 +179,24 @@ async function main() {
   const sourceText = await fs.readFile(path.join(ASSET_DIR, file), "utf8");
   const sourceFile = ts.createSourceFile(file, sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   const declarations = topLevelDeclarationIndex(sourceFile);
-  const exports = exportBindings(sourceFile).map((binding) => ({
+  const bindings = exportBindings(sourceFile);
+  const selectedBindings = exportFilter.size
+    ? bindings.filter((binding) => exportFilter.has(binding.exported))
+    : bindings;
+  const exports = selectedBindings.map((binding) => ({
     ...binding,
-    declaration: declarationReport(sourceFile, sourceText, declarations.get(binding.local)),
+    declaration: declarationReport(sourceFile, declarations.get(binding.local)),
+    dependencies: dependencyClosure(sourceFile, declarations, binding.local, dependencyDepth),
     usageContexts: usageContexts(sourceFile, sourceText, binding.local),
   }));
 
   const report = {
     file,
     bytes: Buffer.byteLength(sourceText),
-    exportCount: exports.length,
+    totalExportCount: bindings.length,
+    selectedExportCount: exports.length,
+    dependencyDepth,
+    exportFilter: [...exportFilter],
     exports,
   };
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
