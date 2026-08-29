@@ -154,18 +154,19 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Inspect NormalApp window ABI
+      - name: Inspect NormalApp window store
         shell: bash
         env:
           FRONTEND_INSPECT_SNIPPET: "12000"
           FRONTEND_INSPECT_DEPTH: "2"
           FRONTEND_INSPECT_EXPORTS: "O,aD,aE,bA,bD,bg,bi,g,h,v,w,x,y,z"
-          FRONTEND_IDENTIFIER_CONTEXT: "2400"
-          FRONTEND_IDENTIFIER_STATEMENT: "16000"
+          FRONTEND_IDENTIFIER_CONTEXT: "3200"
+          FRONTEND_IDENTIFIER_STATEMENT: "20000"
+          FRONTEND_IDENTIFIER_MATCHES: "120"
         run: |
           mkdir -p normalapp-inspection
           npm run frontend:inspect:normalapp > normalapp-inspection/abi.json
-          npm run frontend:inspect:identifier -- NormalApp- st > normalapp-inspection/store-identifier.json
+          npm run frontend:inspect:identifier -- NormalApp- st XOe GOe launchApp quitApp createWindow focusWindow closeWindow minimizeWindow snapWindow toggleMaximize updateWindowPosition updateWindowRect setWindowTitle navigateScreen goBackScreen getAppContext > normalapp-inspection/window-store-identifiers.json
 
       - name: Upload NormalApp inspection report
         uses: actions/upload-artifact@v4
