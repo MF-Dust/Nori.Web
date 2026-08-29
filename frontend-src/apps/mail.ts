@@ -2,7 +2,7 @@ import type { Artifact, ArtifactService } from "../services/artifacts";
 import type { ManifoldService } from "../services/manifold";
 import type { JsonValue } from "../runtime/protocol";
 
-export interface MailData extends Record<string, JsonValue> {
+export interface MailData {
   from: string;
   to: string;
   subject: string;
@@ -10,6 +10,7 @@ export interface MailData extends Record<string, JsonValue> {
   folder: string;
   date: string;
   read_fact?: string;
+  [key: string]: JsonValue | undefined;
 }
 
 export type MailArtifact = Artifact<MailData>;
