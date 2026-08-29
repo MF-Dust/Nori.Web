@@ -9,11 +9,19 @@ Cloudflare's DurableObjectState WebSocket enumeration API is exposed as
 ``getWebSockets`` by the production runtime. Some Python-facing documentation
 and SDK surfaces have also used ``get_websockets``. Keep the compatibility
 bridge here so the hibernation runtime does not depend on one spelling.
+
+The local compatibility server intentionally keeps small presentation delays so
+its demo/game pacing feels natural. Durable Objects are billed by active wall
+clock time, so the Cloudflare entrypoint specializes those follow-up methods:
+text-mode chat settles immediately without generating fallback audio, while
+game follow-ups keep their ordering but omit artificial sleeps.
 """
 
 import json
 
 import worker_runtime as _runtime
+from backend.cartridges.chat import ChatCartridge as _ChatCartridge
+from backend.session.world import WorldSession as _WorldSession
 
 Default = _runtime.Default
 
@@ -32,6 +40,96 @@ def _runtime_websockets(ctx):
     raise AttributeError(
         "DurableObjectState exposes neither getWebSockets nor get_websockets"
     )
+
+
+async def _cloudflare_run_chat_reply(self, user_text: str) -> None:
+    """Generate a reply without billing presentation-only wall-clock delays."""
+    chat = self.cartridges.get("chat")
+    if not isinstance(chat, _ChatCartridge):
+        return
+
+    # The local runtime inserts 150 ms of theatrical latency before starting
+    # generation. It has no protocol meaning and only extends DO active time.
+    emotion, reply = await chat.generate_reply(user_text)
+    operation_id, message_id, commands = chat.build_agent_turn(reply, emotion)
+    for command in commands:
+        await self._dispatch_internal("chat", "agent", command)
+
+    # Production live-pack worlds default to text presentation. In text mode
+    # the reducer has already revealed/presented the block during ingestBlock,
+    # so generating synthetic PCM and waiting 1.1 + 0.45 + 0.1 seconds before
+    # settling cannot improve the UI; it only keeps the DO active.
+    if chat.state.get("presentationMode") == "text":
+        await self._dispatch_internal(
+            "chat",
+            "agent",
+            {
+                "type": "operationSettled",
+                "operationId": operation_id,
+                "outcome": "completed",
+            },
+        )
+        return
+
+    # Audio mode still keeps the existing fallback/audio-ack timeout behavior.
+    self._spawn(self._stream_chat_fallback(operation_id, message_id, reply))
+    self._spawn(self._ensure_chat_progress(operation_id))
+
+
+async def _cloudflare_settle_chat_after_audio(self, operation_id: str) -> None:
+    """Audio completion is already an acknowledgement; settle without 100 ms."""
+    await self._dispatch_internal(
+        "chat",
+        "agent",
+        {
+            "type": "operationSettled",
+            "operationId": operation_id,
+            "outcome": "completed",
+        },
+    )
+
+
+async def _cloudflare_run_agent_turns(self, cartridge_id: str) -> None:
+    """Preserve ordered agent turns without 350 ms of billed delay per turn."""
+    for _ in range(8):
+        # Yield cooperatively without scheduling a real timer. This preserves
+        # event-loop fairness while avoiding presentation-only wall time.
+        await _runtime.asyncio.sleep(0)
+        cartridge = self.cartridges.get(cartridge_id)
+        if cartridge is None:
+            return
+        command = getattr(cartridge, "agent_next_command", lambda: None)()
+        if not command:
+            return
+        commit = await self._dispatch_internal(cartridge_id, "agent", command)
+        if commit is None:
+            return
+
+
+async def _cloudflare_start_next_pictionary_round(self) -> None:
+    """Start the next valid round without a presentation-only 1.2 s wait."""
+    cartridge = self.cartridges.get("pictionary")
+    if cartridge is None:
+        return
+    game = cartridge.state.get("gameState")
+    if (
+        isinstance(game, dict)
+        and game.get("phase") == "PLAYING"
+        and game.get("round", {}).get("status") != "active"
+    ):
+        await self._dispatch_internal(
+            "pictionary",
+            "agent",
+            {"type": "startNextRound", "atMs": int(_runtime.time.time() * 1000)},
+        )
+
+
+# Apply pacing specialization only in the Cloudflare build entrypoint. Local
+# Uvicorn continues using backend.session.world's original human-facing delays.
+_WorldSession._run_chat_reply = _cloudflare_run_chat_reply
+_WorldSession._settle_chat_after_audio = _cloudflare_settle_chat_after_audio
+_WorldSession._run_agent_turns = _cloudflare_run_agent_turns
+_WorldSession._start_next_pictionary_round = _cloudflare_start_next_pictionary_round
 
 
 class NoriArcadeSession(_runtime.NoriArcadeSession):
