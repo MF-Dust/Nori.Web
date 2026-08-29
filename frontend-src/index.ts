@@ -26,4 +26,5 @@ export * from "./screens/intro-page";
 export * from "./screens/signal-login-screen";
 export * from "./screens/signal-reset-screen";
 export * from "./screens/signal-temp-password-screen";
+export * from "./state/marginal-growth-store";
 export * from "./features/catalog";
