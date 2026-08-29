@@ -1,4 +1,8 @@
 import {
+  createAppInstallRuntime,
+  type AppInstallRuntime,
+} from "./app-install-runtime";
+import {
   createProductionWindowAppRegistry,
   type CreateProductionWindowAppsOptions,
 } from "./production-window-apps";
@@ -17,13 +21,19 @@ import type { WindowAppRegistry } from "./window-app-registry";
 export interface DesktopRuntime {
   registry: WindowAppRegistry;
   layout: WindowLayoutRuntime;
+  installs: AppInstallRuntime;
   store: WindowStore;
+  dispose(): void;
 }
 
 export interface CreateDesktopRuntimeOptions
   extends CreateProductionWindowAppsOptions {
   registry?: WindowAppRegistry;
   layout?: WindowLayoutRuntime;
+  installRuntime?: AppInstallRuntime;
+  enableInstallGuard?: boolean;
+  initialInstallFacts?: ReadonlySet<string>;
+  installFactsReady?: boolean;
   playCue?: (cue: string) => void;
   launchGuard?: (request: {
     appId: string;
@@ -54,16 +64,45 @@ export function createDesktopRuntime(
       warn: options.warn,
     });
   const layout = options.layout ?? createNoriWindowLayoutRuntime();
+  const ownsInstallRuntime = !options.installRuntime;
+  const installs =
+    options.installRuntime ??
+    createAppInstallRuntime({
+      registry,
+      playCue: options.playCue,
+    });
+
+  if (options.initialInstallFacts) {
+    installs.syncFacts(
+      options.initialInstallFacts,
+      options.installFactsReady ?? true,
+    );
+  }
+
   const store = createWindowStore({
     lookupApp: registry.lookupApp,
     layout,
     playCue: options.playCue,
-    launchGuard: options.launchGuard,
+    launchGuard: (request) => {
+      if (options.enableInstallGuard !== false) {
+        const installResult = installs.launchGuard(request);
+        if (installResult.type === "veto") return installResult;
+      }
+      return options.launchGuard?.(request) ?? { type: "allow" };
+    },
     persistName: options.persistName,
     now: options.now,
     warn: options.warn,
     error: options.error,
   });
 
-  return { registry, layout, store };
+  return {
+    registry,
+    layout,
+    installs,
+    store,
+    dispose() {
+      if (ownsInstallRuntime) installs.dispose();
+    },
+  };
 }
