@@ -160,13 +160,14 @@ jobs:
           FRONTEND_INSPECT_SNIPPET: "12000"
           FRONTEND_INSPECT_DEPTH: "2"
           FRONTEND_INSPECT_EXPORTS: "O,aD,aE,bA,bD,bg,bi,g,h,v,w,x,y,z"
-          FRONTEND_IDENTIFIER_CONTEXT: "3200"
-          FRONTEND_IDENTIFIER_STATEMENT: "20000"
-          FRONTEND_IDENTIFIER_MATCHES: "120"
+          FRONTEND_IDENTIFIER_CONTEXT: "7000"
+          FRONTEND_IDENTIFIER_STATEMENT: "30000"
+          FRONTEND_IDENTIFIER_MATCHES: "160"
         run: |
           mkdir -p normalapp-inspection
           npm run frontend:inspect:normalapp > normalapp-inspection/abi.json
           npm run frontend:inspect:identifier -- NormalApp- st XOe GOe launchApp quitApp createWindow focusWindow closeWindow minimizeWindow snapWindow toggleMaximize updateWindowPosition updateWindowRect setWindowTitle navigateScreen goBackScreen getAppContext > normalapp-inspection/window-store-identifiers.json
+          npm run frontend:inspect:identifier -- NormalApp- Ti Wt sr dl qh S1 WOe _F xv qn ph B4 '$9e' Y9e VK GK H9e j9e JK ZK > normalapp-inspection/window-ui-identifiers.json
 
       - name: Upload NormalApp inspection report
         uses: actions/upload-artifact@v4
