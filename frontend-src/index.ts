@@ -29,6 +29,7 @@ export * from "./screens/signal-login-screen";
 export * from "./screens/signal-reset-screen";
 export * from "./screens/signal-temp-password-screen";
 export * from "./state/marginal-growth-store";
+export * from "./state/window-store";
 export * from "./terminal/line-editor";
 export * from "./terminal/shell";
 export * from "./features/catalog";
