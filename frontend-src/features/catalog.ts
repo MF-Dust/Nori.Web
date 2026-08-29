@@ -43,6 +43,10 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
     maintenanceModules: [
       "screens/intro-page.tsx",
       "components/sidebar-nav-button.tsx",
+      "components/window-content-host.tsx",
+      "components/window-layer.tsx",
+      "components/window-runtime-context.tsx",
+      "components/window-screen-router.tsx",
       "hooks/use-compact-height.ts",
       "hooks/use-element-size.ts",
       "state/window-types.ts",
