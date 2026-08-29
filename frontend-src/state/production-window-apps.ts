@@ -130,6 +130,15 @@ function createWindowDefinition(
   };
 }
 
+/**
+ * The shipped `system` app is the startup bootstrap process and deliberately
+ * has no onLaunch handler. Launching it creates the process/runtime only; the
+ * About and alert windows are opened explicitly by shell actions.
+ */
+function hasRecoveredDefaultLaunchWindow(descriptor: ProductionAppDescriptor): boolean {
+  return !(descriptor.id === "system" && descriptor.bootstrap === "startup");
+}
+
 export function createProductionWindowAppDefinition(
   descriptor: ProductionAppDescriptor,
   windows: ProductionWindowBindings = {},
@@ -145,6 +154,22 @@ export function createProductionWindowAppDefinition(
       ),
     ]),
   );
+
+  const onLaunch = lifecycle?.onLaunch
+    ? async (context: WindowAppContext, request: WindowLaunchRequest) => {
+        await lifecycle.onLaunch?.(context, request);
+      }
+    : hasRecoveredDefaultLaunchWindow(descriptor)
+      ? async (context: WindowAppContext, request: WindowLaunchRequest) => {
+          const windowType = requestWindowType(descriptor, request);
+          if (!windowType) return;
+
+          // The shipped store handles `activate` for an already-running process
+          // before invoking onLaunch. When onLaunch does run, `launch` is allowed
+          // to create another window of the same type.
+          context.createWindow(windowType, requestWindowProps(request));
+        }
+      : undefined;
 
   return {
     id: descriptor.id,
@@ -162,20 +187,7 @@ export function createProductionWindowAppDefinition(
       ? { ownsCartridge: descriptor.runtime.ownsCartridge }
       : undefined,
     windows: definitions,
-    async onLaunch(context, request) {
-      if (lifecycle?.onLaunch) {
-        await lifecycle.onLaunch(context, request);
-        return;
-      }
-
-      const windowType = requestWindowType(descriptor, request);
-      if (!windowType) return;
-
-      // The shipped store handles `activate` for an already-running process
-      // before invoking onLaunch. When onLaunch does run, `launch` is allowed
-      // to create another window of the same type.
-      context.createWindow(windowType, requestWindowProps(request));
-    },
+    onLaunch,
     onQuit: lifecycle?.onQuit,
     onRestore: lifecycle?.onRestore,
   };
