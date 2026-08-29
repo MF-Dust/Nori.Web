@@ -133,6 +133,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
     feature: "signal",
     shippedChunkPatterns: [/LoginScreen/i, /ResetScreen/i, /TempPasswordScreen/i, /commands/i],
     maintenanceModules: [
+      "apps/signal-presentation.tsx",
       "services/signal.ts",
       "screens/signal-login-screen.tsx",
       "screens/signal-reset-screen.tsx",
@@ -145,7 +146,9 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
     shippedChunkPatterns: [/TerminalWindow/i, /commands/i],
     maintenanceModules: [
       "apps/terminal.ts",
+      "apps/terminal-presentation.tsx",
       "services/manifold.ts",
+      "screens/terminal-window.tsx",
       "terminal/line-editor.ts",
       "terminal/shell.ts",
     ],
