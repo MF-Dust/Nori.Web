@@ -50,6 +50,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "components/window-screen-router.tsx",
       "hooks/use-compact-height.ts",
       "hooks/use-element-size.ts",
+      "state/window-app-registry.ts",
       "state/window-types.ts",
       "state/window-geometry.ts",
       "state/window-layout-runtime.ts",
