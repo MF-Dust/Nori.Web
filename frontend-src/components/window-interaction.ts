@@ -1,4 +1,9 @@
-import type { WindowBounds, WindowRect } from "../state/window-store";
+import {
+  NORI_SNAP_CORNER_PX,
+  NORI_SNAP_EDGE_PX,
+  NORI_TOPBAR_HEIGHT,
+} from "../state/window-layout-runtime";
+import type { WindowBounds, WindowRect, WindowSnap } from "../state/window-store";
 
 export type WindowResizeDirection =
   | "n"
@@ -9,6 +14,8 @@ export type WindowResizeDirection =
   | "nw"
   | "se"
   | "sw";
+
+export type DragSnapTarget = Exclude<WindowSnap, "none" | "vertical-maximized">;
 
 export interface PointerPosition {
   x: number;
@@ -85,10 +92,12 @@ export function clampActiveResize(
     height -= clampedY - rect.y;
   }
 
-  const maxBottom = bounds.bottom;
   height = Math.max(
     minimums.minHeight,
-    Math.min(height, Math.max(minimums.minHeight, maxBottom - clampedY)),
+    Math.min(
+      height,
+      Math.max(minimums.minHeight, bounds.bottom - clampedY),
+    ),
   );
 
   const clampedX = Math.max(0, rect.x);
@@ -102,6 +111,55 @@ export function clampActiveResize(
   );
 
   return { x: clampedX, y: clampedY, width, height };
+}
+
+export interface SnapTargetOptions {
+  edgePx?: number;
+  cornerPx?: number;
+  topbarHeight?: number;
+}
+
+/** Exact FOe snap-zone precedence recovered from NormalApp. */
+export function detectWindowSnapTarget(
+  pointer: PointerPosition,
+  viewportWidth: number,
+  viewportHeight: number,
+  options: SnapTargetOptions = {},
+): DragSnapTarget | null {
+  const edge = options.edgePx ?? NORI_SNAP_EDGE_PX;
+  const corner = options.cornerPx ?? NORI_SNAP_CORNER_PX;
+  const topbarHeight = options.topbarHeight ?? NORI_TOPBAR_HEIGHT;
+
+  const atTop = pointer.y < topbarHeight;
+  const atBottomEdge = pointer.y >= viewportHeight - edge;
+  const atLeftEdge = pointer.x <= edge;
+  const atRightEdge = pointer.x >= viewportWidth - edge;
+  const inLeftCornerBand = pointer.x <= corner;
+  const inRightCornerBand = pointer.x >= viewportWidth - corner;
+  const inBottomCornerBand = pointer.y >= viewportHeight - corner;
+
+  if (atTop && inLeftCornerBand) return "top-left";
+  if (atTop && inRightCornerBand) return "top-right";
+  if (atBottomEdge && inLeftCornerBand) return "bottom-left";
+  if (atBottomEdge && inRightCornerBand) return "bottom-right";
+  if (atLeftEdge && inBottomCornerBand) return "bottom-left";
+  if (atRightEdge && inBottomCornerBand) return "bottom-right";
+  if (atTop) return "maximized";
+  if (atLeftEdge) return "left";
+  if (atRightEdge) return "right";
+  return null;
+}
+
+/** Exact BOe edge test used while resizing north/south handles. */
+export function shouldPreviewVerticalMaximize(
+  direction: WindowResizeDirection,
+  pointerY: number,
+  bounds: WindowBounds,
+  edgePx = NORI_SNAP_EDGE_PX,
+): boolean {
+  if (direction.includes("n")) return pointerY <= bounds.top + edgePx;
+  if (direction.includes("s")) return pointerY >= bounds.bottom - edgePx;
+  return false;
 }
 
 export interface SnapTearoffInput {
