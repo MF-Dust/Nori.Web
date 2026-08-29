@@ -34,7 +34,7 @@ export const FRONTEND_CUTOVER_BOUNDARIES: readonly FrontendCutoverBoundary[] = [
   { id: "browser-popup", complete: true, note: "Browser popup shell and production window binding are source-owned." },
   { id: "browser-main", complete: false, note: "BrowserPageView main renderer and sandbox behavior still need migration." },
   { id: "signal-messenger", complete: false, note: "Signal Messenger and broader chat/media presentation still need migration." },
-  { id: "mail", complete: false, note: "Mail application presentation still needs migration." },
+  { id: "mail", complete: true, note: "Mail data normalization, read/download commands, three-pane presentation, compose failure flow, attachment handling and production binding are source-owned." },
   { id: "files", complete: false, note: "Files application presentation still needs migration." },
   { id: "messenger", complete: false, note: "Messenger application presentation still needs migration." },
   { id: "games", complete: false, note: "Cake Duel, Codenames, Chess and Pictionary presentation still need migration." },
