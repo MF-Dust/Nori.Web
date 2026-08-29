@@ -1,34 +1,49 @@
 import { useEffect, useMemo } from "react";
 import { createRecoveredDesktopRuntime } from "./apps/recovered-presentation";
 import { RecoveredDesktopShell } from "./components/recovered-desktop-shell";
+import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
 
 /**
  * Source-driven application root used by the migration build.
  *
- * Feature-specific runtime providers are intentionally added as their cutover
- * boundaries are recovered. Until then, unrecovered windows continue through
- * the explicit presentation fallback rather than importing historical JS.
+ * Feature-specific runtime providers are added here as their cutover boundaries
+ * become source-owned. Unrecovered windows continue through the explicit
+ * presentation fallback rather than importing historical JavaScript.
  */
 export function SourceApp() {
-  const bundle = useMemo(
-    () =>
-      createRecoveredDesktopRuntime({
-        desktop: {
-          // The source-app smoke build has no world-fact provider yet. Keep the
-          // install guard out of the bootstrap path until that provider is
-          // migrated instead of inventing production facts.
-          enableInstallGuard: false,
-          persistName: "os-store-source-preview",
-        },
-      }),
-    [],
-  );
+  const source = useMemo(() => {
+    const frontend = new NoriFrontendRuntime();
+    const bundle = createRecoveredDesktopRuntime({
+      mail: {
+        model: frontend.mail,
+      },
+      desktop: {
+        // The source-app smoke build does not yet own the complete production
+        // facts provider. Keep install gating out of bootstrap until that
+        // boundary is migrated instead of inventing facts.
+        enableInstallGuard: false,
+        persistName: "os-store-source-preview",
+      },
+    });
+    return { frontend, bundle };
+  }, []);
 
-  useEffect(() => () => bundle.runtime.dispose(), [bundle]);
+  useEffect(() => {
+    let disposed = false;
+    void source.frontend.start(navigator.language).catch((error) => {
+      if (!disposed) console.warn("[SourceApp] Frontend runtime startup failed", error);
+    });
+
+    return () => {
+      disposed = true;
+      source.bundle.runtime.dispose();
+      source.frontend.dispose();
+    };
+  }, [source]);
 
   return (
     <RecoveredDesktopShell
-      bundle={bundle}
+      bundle={source.bundle}
       factsReady={false}
       bootstrapStartupApps
       className="source-frontend-root"
