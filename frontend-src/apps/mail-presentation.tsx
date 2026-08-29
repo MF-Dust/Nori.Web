@@ -1,12 +1,14 @@
-import type { WindowComponent } from "../state/window-types";
+import type { ProductionWindowBinding } from "../state/production-window-apps";
 import { MailScreen, type MailScreenRuntime } from "../screens/mail-screen";
 
 export type MailPresentationRuntime = MailScreenRuntime;
 
 export function createMailProductionWindowBinding(
   runtime: MailPresentationRuntime,
-): WindowComponent {
-  return function MailProductionWindow() {
+): ProductionWindowBinding {
+  function MailProductionWindow() {
     return <MailScreen runtime={runtime} />;
-  };
+  }
+
+  return { component: MailProductionWindow };
 }
