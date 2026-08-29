@@ -42,6 +42,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
     ],
     maintenanceModules: [
       "apps/production-catalog.ts",
+      "apps/recovered-presentation.ts",
       "screens/intro-page.tsx",
       "components/desktop-root.tsx",
       "components/managed-window-host.tsx",
@@ -104,6 +105,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
     ],
     maintenanceModules: [
       "apps/browser.ts",
+      "apps/browser-presentation.tsx",
       "services/artifacts.ts",
       "services/manifold.ts",
       "intents/browser-intent.ts",
