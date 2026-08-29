@@ -19,6 +19,8 @@ export interface DesktopRootProps {
   runtimeOptions?: CreateDesktopRuntimeOptions;
   restoreOnMount?: boolean;
   initialLaunches?: readonly WindowLaunchRequest[];
+  installFacts?: ReadonlySet<string>;
+  installFactsReady?: boolean;
   isRuntimeReady?: (app: WindowAppDefinition) => boolean;
   playCue?: (cue: string) => void;
   suspenseFallback?: ReactNode;
@@ -46,6 +48,8 @@ export function DesktopRoot({
   runtimeOptions,
   restoreOnMount = true,
   initialLaunches = [],
+  installFacts,
+  installFactsReady = true,
   isRuntimeReady,
   playCue,
   suspenseFallback,
@@ -63,6 +67,17 @@ export function DesktopRoot({
     providedRuntime ?? createDesktopRuntime(runtimeOptions),
   );
   const runtime = providedRuntime ?? ownedRuntime;
+  const ownsRuntime = providedRuntime == null;
+
+  useEffect(() => {
+    if (!installFacts) return;
+    runtime.installs.syncFacts(installFacts, installFactsReady);
+  }, [installFacts, installFactsReady, runtime]);
+
+  useEffect(() => {
+    if (!ownsRuntime) return;
+    return () => runtime.dispose();
+  }, [ownsRuntime, runtime]);
 
   useEffect(() => {
     let cancelled = false;
