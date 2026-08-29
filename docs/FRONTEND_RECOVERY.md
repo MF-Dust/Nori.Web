@@ -1,10 +1,10 @@
 # Frontend recovery and maintenance workflow
 
-Nori.Web ships a production Vite frontend in `public/assets/`. The JavaScript chunks are minified/renamed and no `sourceMappingURL` references are present, so exact original source recovery is not technically possible from the repository alone. In particular, original TypeScript types, comments, local variable names, pre-bundle file boundaries and JSX source locations are unavailable.
+Nori.Web ships a production Vite frontend in `public/assets/`. The JavaScript chunks are minified/renamed and contain no `sourceMappingURL` references, so the exact original TypeScript/TSX files, comments, local names, types and pre-bundle file boundaries are not recoverable from the repository alone.
 
-The repository therefore uses a three-part recovery model: exhaustive shipped-bundle analysis, maintainable clean-room source, and an independently buildable recovered-source artifact.
+The repository therefore uses three layers: exhaustive shipped-bundle evidence, maintainable clean-room source, and an independently buildable recovered-source artifact.
 
-## 1. Exhaustive shipped-bundle analysis
+## 1. Exhaustive shipped-bundle evidence
 
 Run:
 
@@ -13,22 +13,9 @@ npm ci
 npm run frontend:recover
 ```
 
-The analyzer walks every JavaScript and CSS chunk in `public/assets/` and records stable evidence useful for maintenance:
+The analyzer walks every JavaScript/CSS chunk and records hashes, byte sizes, imports/re-exports, symbol inventories, Vite references, API/storage/protocol strings, external URLs, runtime signals, CSS selectors/variables/assets/media queries/keyframes and feature classification.
 
-- hashes and byte sizes;
-- static/dynamic imports and re-exports;
-- exported/imported alias bindings;
-- top-level function/class/variable inventory;
-- runtime signals such as fetch/WebSocket/timers/storage/animation-frame use;
-- `/api/*` endpoints, storage keys, protocol/event strings and external URLs;
-- Vite lazy chunk references and dependency graph;
-- feature classification for auth, Arcade, chat, Browser, Mail, Files, Messenger, Terminal, games and debug tooling;
-- CSS selectors, variables, asset URLs, media queries and keyframes;
-- optional beautified local copies for reading during analysis.
-
-Generated files live under `.frontend-recovery/` and are ignored by Git. They are analysis material rather than project source.
-
-The output set is:
+Generated output lives under ignored `.frontend-recovery/`:
 
 ```text
 .frontend-recovery/
@@ -43,56 +30,72 @@ The output set is:
 └── pretty/assets/*
 ```
 
-Use `npm run frontend:recover -- --metadata-only` to skip the formatted JavaScript/CSS copies while keeping the complete structural inventory.
+Use `npm run frontend:recover -- --metadata-only` when beautified bundle copies are unnecessary. The copies are evidence only and must not be edited as project source.
+
+Large/minified boundaries such as `NormalApp-*` are additionally inspected by targeted AST tooling. Pull-request CI uploads a short-lived NormalApp inspection artifact so recovered behavior remains traceable to the shipped bundle.
 
 ## 2. Clean-room maintenance source
 
-`frontend-src/` contains stable TypeScript/TSX reconstructed from verified HTTP/WebSocket protocol behavior and observable application behavior.
+`frontend-src/` contains stable TypeScript/TSX reconstructed from verified behavior.
 
-The recovered runtime currently covers:
+### Runtime and application contracts
 
-- local auth/session and ticket HTTP calls;
-- Arcade main WebSocket negotiation (`arcade.v1` + `ticket.*` subprotocol);
-- reconnect behavior with protocol-level keepalive disabled by default to avoid waking hibernating Durable Objects unnecessarily;
-- Arcade media WebSocket negotiation;
-- correlated event-channel RPC;
-- RFC 6902 cartridge patch application;
-- replicated world/cartridge store;
-- Manifold artifact, chip, command, bookmark and bounty operations;
-- Browser, Mail, Files, Messenger and Terminal application models;
-- Chat commands and audio acknowledgements;
-- Cake Duel, Codenames, Chess and Pictionary cartridge transport;
-- desktop game/talk/network event channels.
+Recovered source covers:
 
-Recovered UI/state slices now include:
+- local auth/session/ticket HTTP calls;
+- Arcade and media WebSocket negotiation;
+- correlated event RPC and RFC 6902 cartridge patching;
+- replicated world/cartridge state;
+- Manifold artifact/chip/command/bookmark/bounty operations;
+- Browser, Mail, Files, Messenger and Terminal models;
+- chat/audio acknowledgements;
+- Cake Duel, Codenames, Chess and Pictionary transport;
+- desktop game/talk/network channels.
 
-- public `IntroPage` structure and interaction behavior with content separated into typed data;
-- `SidebarNavButton`;
-- `useCompactHeight` and `useElementSize`;
-- Browser app intent/open semantics;
-- Browser popup/window shell around the still-separate `BrowserPageView` migration boundary;
-- Signal login, recovery and temporary-password screens plus `signal.login` / `signal.recover` command adapters;
-- `marginalGrowthStore` state transitions and camera-clamp interpolation, with defaults that still belong to `NormalApp` passed in explicitly.
+### Desktop shell
 
-The clean-room source is intentionally named and typed for maintainability rather than trying to preserve meaningless minifier identifiers. Hidden values are not guessed: unresolved constants remain explicit dependencies until their owning bundle boundary is verified.
+The former `NormalApp-*` desktop-shell boundary has been decomposed into maintainable modules:
+
+- insertion-ordered production application registry and metadata catalog;
+- persisted OS/window store with rehydration repair;
+- app install/download/damaged runtime;
+- exact work-area, z-layer, animation, snap, cascade and geometry constants;
+- focus/minimize/maximize/close/quit/navigation behavior;
+- drag/resize interactions, window chrome, controls, overlays and screen router;
+- regular/exclusive managed window hosts and window layer;
+- `DesktopRoot` and the recovered `DesktopSurface` grid;
+- production-style Dock with responsive icon sizing, 1.7x cosine magnification, glass container, running indicator, download state, damaged feedback, context/long-press menu and per-window focus actions;
+- production Dock app icon paths and Credits special-case icon layering;
+- TopBar system/app menus, battery/Wi-Fi/date presentation and Blue Bay clock behavior;
+- Terminal `Shell / Edit / View` app menus and edit bridge;
+- persisted `audio-store` (`masterVolume`, track volumes/mutes, spatial voice and voice rate) plus recovered master-volume TopBar control;
+- QFR compute display with the recovered compute-drain cap formula and scientific-number formatter;
+- fact-driven Dock visibility and app-install gating;
+- startup bootstrap semantics, including the `system` process without incorrectly opening About;
+- `RecoveredDesktopShell` composing startup lifecycle, desktop surface, windows, TopBar and Dock;
+- `createRecoveredDesktopRuntime()` turnkey assembly for production registry plus recovered Signal/Terminal/Browser-popup bindings.
+
+### Recovered feature presentation
+
+Presentation source additionally includes:
+
+- Intro and SidebarNavButton;
+- shared ChatPanel and responsive/window hooks;
+- Signal login/recovery/temporary-password screens;
+- Terminal line editor, shell and xterm window;
+- Browser popup shell around the separate BrowserPageView renderer boundary.
+
+Missing presentation is explicit: an unrecovered window/screen renders a migration fallback instead of silently pretending the original source was recovered.
 
 ## 3. Independent recovered-source build
-
-The clean-room source has its own Vite library build:
 
 ```bash
 npm run frontend:build
 ```
 
-It writes an ignored `.frontend-build/` ES-module artifact with source maps. This build does not replace the historical production entry yet. Its purpose during migration is to prove that recovered modules form a coherent, bundleable source tree.
+This writes ignored `.frontend-build/` ES modules with source maps. It proves that the reconstructed source is a coherent buildable program while the historical production entry remains available for behavior comparison.
 
-The production cutover should happen only after the desktop React root, window manager and required presentation layers are reconstructed and behavior-checked. At that point the source build can become the producer of `public/assets` rather than a parallel maintenance artifact.
-
-## Drift protection
-
-`npm run frontend:recover:check` performs a metadata-only full scan and requires every analyzed JavaScript chunk to also exist in the symbol inventory. It additionally asserts that the major shipped feature chunks remain discoverable and that CSS recovery is non-empty.
-
-The normal GitHub pull-request CI runs:
+The normal pull-request validation runs:
 
 ```bash
 npm run frontend:typecheck
@@ -100,24 +103,22 @@ npm run frontend:build
 npm run frontend:recover:check
 ```
 
-so type errors, bundling failures and upstream asset replacement are checked independently.
+alongside the existing Worker, hibernation, runtime-efficiency and Cloudflare dry-run checks.
 
-## Manual full recovery artifact
+## Drift protection
 
-The **Frontend Recovery** GitHub Actions workflow is manually triggered. Before generating its artifact it typechecks and builds the clean-room source, then produces the complete recovery analysis. Unless `metadata_only` is selected, the artifact also contains locally beautified JavaScript/CSS copies for inspection.
+`frontend:recover:check` performs a metadata-only scan, requires analyzed JavaScript chunks to be represented in the symbol inventory, verifies major feature chunks remain discoverable and verifies CSS recovery remains non-empty. This catches a replaced production bundle independently from TypeScript/build failures.
 
-Those generated copies are deliberately not committed. Future code changes should be implemented in `frontend-src/` and verified against protocol behavior/tests rather than editing hashed production bundles directly.
+## Remaining migration boundary
 
-## Current migration boundary
+The general desktop/window-manager reconstruction is complete enough to be maintained from source. Remaining high-value work is feature-specific presentation and final cutover:
 
-The main remaining high-value boundaries are:
+1. `BrowserPageView-*` / Browser main renderer and sandbox behavior.
+2. Signal Messenger and broader chat/media presentation.
+3. Mail, Files and Messenger window presentation.
+4. Game presentation layers.
+5. Live2D/Nori scene presentation.
+6. Remaining source-owned CSS/visual-system migration.
+7. Final production `main.tsx` cutover plus behavior-comparison tests.
 
-1. `NormalApp-*`: desktop/window manager, shared stores, sound/UI primitives and presentation glue.
-2. `BrowserPageView-*` and `BrowserApp-*`: browser rendering/sandbox/UI behavior beyond the recovered popup shell and app model.
-3. `ChatPanel-*` and media presentation.
-4. Mail, Files, Messenger and Terminal presentation layers.
-5. Game presentation layers.
-6. Live2D/Nori scene and desktop presentation.
-7. Maintainable CSS ownership and final production source entry.
-
-Prefer extracting small, independently observable chunks and stable contracts before cutting into the large `NormalApp` bundle. Every migrated boundary should remain traceable to its shipped chunk and should pass typecheck, source build and recovery drift checks.
+These boundaries should be recovered only from observable evidence. Absence of source maps is a hard limit: original comments, original local names and exact historical file boundaries must not be fabricated.
