@@ -2,6 +2,7 @@ import { ArcadeClient, type ArcadeClientOptions } from "./arcade-client";
 import { LocalAuthController } from "./auth";
 import { EventRpcClient } from "./event-rpc";
 import { ArcadeMediaClient } from "./media-client";
+import type { JsonValue } from "./protocol";
 import { WorldStore } from "./world-store";
 import { BrowserAppModel } from "../apps/browser";
 import { FilesAppModel } from "../apps/files";
@@ -13,7 +14,10 @@ import { ChatService } from "../services/chat";
 import { DesktopService } from "../services/desktop";
 import { GameService } from "../services/games";
 import { ManifoldService } from "../services/manifold";
-import { SignalService } from "../services/signal";
+import {
+  SignalService,
+  type CommandTransport,
+} from "../services/signal";
 
 export class NoriFrontendRuntime {
   readonly auth = new LocalAuthController();
@@ -43,12 +47,13 @@ export class NoriFrontendRuntime {
     this.desktop = new DesktopService(this.rpc);
     this.chat = new ChatService(this.arcade, this.world);
     this.games = new GameService(this.arcade, this.world);
-    this.signal = new SignalService({
-      execute: async (command, payload) => {
+
+    const signalTransport: CommandTransport = {
+      execute: async <T = JsonValue>(command: string, payload: Record<string, JsonValue>) => {
         try {
           return {
             ok: true,
-            result: await this.manifold.command(command, payload),
+            result: (await this.manifold.command(command, payload)) as T,
           };
         } catch (error) {
           return {
@@ -57,7 +62,9 @@ export class NoriFrontendRuntime {
           };
         }
       },
-    });
+    };
+    this.signal = new SignalService(signalTransport);
+
     this.browser = new BrowserAppModel(this.artifacts, this.manifold);
     this.files = new FilesAppModel(this.artifacts, this.manifold);
     this.mail = new MailAppModel(this.artifacts, this.manifold);
