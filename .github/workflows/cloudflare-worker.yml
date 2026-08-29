@@ -167,7 +167,7 @@ jobs:
           mkdir -p normalapp-inspection
           npm run frontend:inspect:normalapp > normalapp-inspection/abi.json
           npm run frontend:inspect:identifier -- NormalApp- st XOe GOe launchApp quitApp createWindow focusWindow closeWindow minimizeWindow snapWindow toggleMaximize updateWindowPosition updateWindowRect setWindowTitle navigateScreen goBackScreen getAppContext > normalapp-inspection/window-store-identifiers.json
-          npm run frontend:inspect:identifier -- NormalApp- Ti Wt sr dl qh S1 WOe _F xv qn ph B4 '$9e' Y9e VK GK H9e j9e JK ZK > normalapp-inspection/window-ui-identifiers.json
+          npm run frontend:inspect:identifier -- NormalApp- Ti Wt sr dl qh S1 WOe _F xv qn ph B4 '$9e' Y9e VK GK H9e j9e JK ZK OS FS Dv a9e FOe BOe D4 u9e l9e n9e t9e f9e h9e > normalapp-inspection/window-ui-identifiers.json
           FRONTEND_INSPECT_EXPORTS="co,cp,cq,cr,ct,cu,cv" FRONTEND_INSPECT_DEPTH="2" FRONTEND_INSPECT_SNIPPET="20000" node scripts/inspect_frontend_chunk.mjs index-CyHAbkO5.js > normalapp-inspection/window-layout-exports.json
 
       - name: Upload NormalApp inspection report
