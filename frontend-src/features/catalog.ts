@@ -41,7 +41,9 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       /useElementSize/i,
     ],
     maintenanceModules: [
+      "apps/production-catalog.ts",
       "screens/intro-page.tsx",
+      "components/managed-window-host.tsx",
       "components/sidebar-nav-button.tsx",
       "components/window-chrome.tsx",
       "components/window-content-host.tsx",
