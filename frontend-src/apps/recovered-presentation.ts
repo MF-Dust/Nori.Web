@@ -3,6 +3,10 @@ import {
   type BrowserPopupPresentationRuntime,
 } from "./browser-presentation";
 import {
+  createMailProductionWindowBinding,
+  type MailPresentationRuntime,
+} from "./mail-presentation";
+import {
   createSignalProductionWindowBinding,
   type SignalPresentationRuntime,
 } from "./signal-presentation";
@@ -26,6 +30,7 @@ export interface RecoveredProductionPresentationOptions {
   signal?: SignalPresentationRuntime;
   terminal?: TerminalPresentationRuntime;
   browserPopup?: BrowserPopupPresentationRuntime;
+  mail?: MailPresentationRuntime;
 }
 
 /**
@@ -53,6 +58,12 @@ export function createRecoveredProductionWindowBindings(
   if (options.browserPopup) {
     bindings.browser = {
       popup: createBrowserPopupProductionWindowBinding(options.browserPopup),
+    };
+  }
+
+  if (options.mail) {
+    bindings.mail = {
+      main: createMailProductionWindowBinding(options.mail),
     };
   }
 
@@ -103,6 +114,7 @@ export function createRecoveredDesktopRuntime(
   const presentation: RecoveredProductionPresentationOptions = {
     signal: options.signal,
     browserPopup: options.browserPopup,
+    mail: options.mail,
     terminal:
       options.terminal && terminalEditBridges
         ? withTerminalEditBridgeRegistry(options.terminal, terminalEditBridges)
