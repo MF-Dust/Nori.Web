@@ -43,6 +43,7 @@ export function WindowContentHost({
   runtimeFallback = null,
 }: WindowContentHostProps) {
   const managedWindow = store((state) => state.windows[instanceId] ?? null);
+  const focused = store((state) => state.focusedWindowId === instanceId);
   const app = managedWindow ? lookupApp(managedWindow.appId) : undefined;
   const definition = managedWindow ? app?.windows[managedWindow.windowType] : undefined;
 
@@ -52,11 +53,12 @@ export function WindowContentHost({
       instanceId: managedWindow.instanceId,
       appId: managedWindow.appId,
       windowType: managedWindow.windowType,
+      focused,
       close: () => store.getState().closeWindow(managedWindow.instanceId),
       setTitle: (title: string) =>
         store.getState().setWindowTitle(managedWindow.instanceId, title),
     };
-  }, [managedWindow, store]);
+  }, [focused, managedWindow, store]);
 
   const componentProps = useMemo<WindowComponentProps | null>(() => {
     if (!runtimeProps || !managedWindow) return null;
