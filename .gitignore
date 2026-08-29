@@ -3,6 +3,9 @@ __pycache__/
 **/__pycache__/
 *.py[cod]
 .research/
+.frontend-recovery/
+.frontend-recovery-ci/
+.frontend-build/
 data/*.sqlite3
 data/*.db
 

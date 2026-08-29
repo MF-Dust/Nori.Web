@@ -78,6 +78,15 @@ jobs:
       - name: Verify browser runtime shim JavaScript
         run: node --check public/nori-runtime-shims.js
 
+      - name: Verify frontend recovery tool JavaScript
+        run: |
+          node --check scripts/recover_frontend.mjs
+          node --check scripts/inventory_frontend_symbols.mjs
+          node --check scripts/inspect_frontend_chunk.mjs
+          node --check scripts/inspect_frontend_identifier.mjs
+          node --check scripts/run_frontend_recovery.mjs
+          node --check scripts/verify_frontend_recovery.mjs
+
       - name: Compile Python sources
         run: uv run python -m compileall -q backend scripts server.py worker.py
 
@@ -129,3 +138,55 @@ jobs:
             echo "::error::Cloudflare Worker gzip bundle must stay below the Free-plan 3 MiB limit (3072 KiB)"
             exit 1
           }
+
+  frontend-maintenance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Inspect NormalApp window store
+        shell: bash
+        env:
+          FRONTEND_INSPECT_SNIPPET: "12000"
+          FRONTEND_INSPECT_DEPTH: "2"
+          FRONTEND_INSPECT_EXPORTS: "O,aD,aE,bA,bD,bg,bi,g,h,v,w,x,y,z"
+          FRONTEND_IDENTIFIER_CONTEXT: "7000"
+          FRONTEND_IDENTIFIER_STATEMENT: "30000"
+          FRONTEND_IDENTIFIER_MATCHES: "160"
+        run: |
+          mkdir -p normalapp-inspection
+          npm run frontend:inspect:normalapp > normalapp-inspection/abi.json
+          npm run frontend:inspect:identifier -- NormalApp- st XOe GOe launchApp quitApp createWindow focusWindow closeWindow minimizeWindow snapWindow toggleMaximize updateWindowPosition updateWindowRect setWindowTitle navigateScreen goBackScreen getAppContext > normalapp-inspection/window-store-identifiers.json
+          npm run frontend:inspect:identifier -- NormalApp- Ti Wt sr dl qh S1 WOe _F xv qn ph B4 '$9e' Y9e VK GK H9e j9e JK ZK OS FS Dv a9e FOe BOe D4 u9e l9e n9e t9e f9e h9e > normalapp-inspection/window-ui-identifiers.json
+          npm run frontend:inspect:identifier -- NormalApp- ed mi gX NOe OOe s2e LOe bOe oOe cOe fOe fX xAe UPe jPe rOe a2e c2e sAe mOe > normalapp-inspection/app-registry-identifiers.json
+          npm run frontend:inspect:identifier -- NormalApp- vV ZGe VGe YGe KGe > normalapp-inspection/desktop-shell-identifiers.json
+          npm run frontend:inspect:identifier -- NormalApp- UGe wGe xGe yGe SGe OGe z4 HS J9e uGe pGe mGe lGe cGe _Ge fGe MOe PGe IGe BGe > normalapp-inspection/dock-identifiers.json
+          npm run frontend:inspect:identifier -- NormalApp- H8e '$Ge' qGe XGe '$K' q4 Z9e So '$4' rl > normalapp-inspection/shell-presentation-identifiers.json
+          FRONTEND_INSPECT_EXPORTS="co,cp,cq,cr,ct,cu,cv" FRONTEND_INSPECT_DEPTH="2" FRONTEND_INSPECT_SNIPPET="20000" node scripts/inspect_frontend_chunk.mjs index-CyHAbkO5.js > normalapp-inspection/window-layout-exports.json
+
+      - name: Upload NormalApp inspection report
+        uses: actions/upload-artifact@v4
+        with:
+          name: normalapp-inspection-${{ github.sha }}
+          path: normalapp-inspection/
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Typecheck reconstructed frontend source
+        run: npm run frontend:typecheck
+
+      - name: Build reconstructed frontend source
+        run: npm run frontend:build
+
+      - name: Verify complete bundle recovery coverage
+        run: npm run frontend:recover:check

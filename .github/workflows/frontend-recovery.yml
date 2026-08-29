@@ -1,0 +1,56 @@
+name: Frontend Recovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      metadata_only:
+        description: "Only generate structure metadata; skip beautified bundle copies"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install frontend analysis dependencies
+        run: npm ci
+
+      - name: Typecheck clean-room frontend source
+        run: npm run frontend:typecheck
+
+      - name: Build clean-room frontend source
+        run: npm run frontend:build
+
+      - name: Recover frontend structure
+        shell: bash
+        run: |
+          args=()
+          if [ "${{ inputs.metadata_only }}" = "true" ]; then
+            args+=(--metadata-only)
+          fi
+          npm run frontend:recover -- "${args[@]}"
+
+      - name: Show recovery summary
+        run: |
+          cat .frontend-recovery/MODULE_MAP.md | head -n 120
+
+      - name: Upload recovery artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nori.Web-frontend-recovery-${{ github.sha }}
+          path: .frontend-recovery/
+          if-no-files-found: error
+          retention-days: 14
