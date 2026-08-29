@@ -19,6 +19,7 @@ export type FrontendFeature =
 export type RecoveryStatus =
   | "protocol-recovered"
   | "runtime-recovered"
+  | "ui-partial"
   | "ui-recovered"
   | "analysis-only";
 
@@ -44,7 +45,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "hooks/use-compact-height.ts",
       "hooks/use-element-size.ts",
     ],
-    status: "ui-recovered",
+    status: "ui-partial",
   },
   {
     feature: "auth",
@@ -67,8 +68,8 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
   {
     feature: "chat",
     shippedChunkPatterns: [/ChatPanel/i],
-    maintenanceModules: ["services/chat.ts"],
-    status: "runtime-recovered",
+    maintenanceModules: ["services/chat.ts", "components/chat-panel.tsx"],
+    status: "ui-partial",
   },
   {
     feature: "browser",
@@ -86,7 +87,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "intents/browser-intent.ts",
       "screens/browser-popup-screen.tsx",
     ],
-    status: "runtime-recovered",
+    status: "ui-partial",
   },
   {
     feature: "mail",
@@ -115,7 +116,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "screens/signal-reset-screen.tsx",
       "screens/signal-temp-password-screen.tsx",
     ],
-    status: "ui-recovered",
+    status: "ui-partial",
   },
   {
     feature: "terminal",
