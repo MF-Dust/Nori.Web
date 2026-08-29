@@ -36,6 +36,9 @@ jobs:
       - name: Verify HTTP API runtime
         run: uv run python tests/test_http_api_runtime.py
 
+      - name: Verify edge Convex API
+        run: uv run python tests/test_edge_convex_api.py
+
       - name: Verify runtime live pack injection
         run: uv run python tests/test_live_pack_runtime.py
 
