@@ -20,8 +20,8 @@ export class BrowserAppModel {
   constructor(private readonly artifacts: ArtifactService, private readonly manifold: ManifoldService) {}
 
   async navigate(url: string): Promise<BrowserPageData | null> {
-    const artifact = await this.artifacts.fetchBrowserPage(url);
-    return artifact ? artifact.data as BrowserPageData : null;
+    const artifact = await this.artifacts.fetchBrowserPage<BrowserPageData>(url);
+    return artifact?.data ?? null;
   }
 
   async bookmarks(): Promise<BrowserBookmark[]> {
