@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { renderProductionDockIcon } from "../apps/production-icons";
+import type { RecoveredDesktopRuntimeBundle } from "../apps/recovered-presentation";
 import {
   createDesktopRuntime,
   type CreateDesktopRuntimeOptions,
@@ -18,6 +19,9 @@ import { DesktopRoot } from "./desktop-root";
 import { DesktopTopBar, type TopBarTranslate } from "./desktop-topbar";
 
 export interface RecoveredDesktopShellProps {
+  /** Turnkey result from createRecoveredDesktopRuntime(). */
+  bundle?: RecoveredDesktopRuntimeBundle;
+  /** Explicit runtime takes precedence over bundle.runtime. */
   runtime?: DesktopRuntime;
   runtimeOptions?: CreateDesktopRuntimeOptions;
   facts?: ReadonlySet<string>;
@@ -91,6 +95,7 @@ function mergeLaunches(
  * injectable until their bundle boundaries are reconstructed.
  */
 export function RecoveredDesktopShell({
+  bundle,
   runtime: providedRuntime,
   runtimeOptions,
   facts = new Set<string>(),
@@ -129,11 +134,12 @@ export function RecoveredDesktopShell({
   style,
   onReady,
 }: RecoveredDesktopShellProps) {
+  const suppliedRuntime = providedRuntime ?? bundle?.runtime;
   const [ownedRuntime] = useState<DesktopRuntime>(() =>
-    providedRuntime ?? createDesktopRuntime(runtimeOptions),
+    suppliedRuntime ?? createDesktopRuntime(runtimeOptions),
   );
-  const runtime = providedRuntime ?? ownedRuntime;
-  const ownsRuntime = providedRuntime == null;
+  const runtime = suppliedRuntime ?? ownedRuntime;
+  const ownsRuntime = suppliedRuntime == null;
   const exclusiveAppId = runtime.store((state) => state.exclusiveAppId);
 
   useEffect(() => {
@@ -153,6 +159,7 @@ export function RecoveredDesktopShell({
   const showDock = !exclusiveAppId && !cinematic && !chromeTopbarOnly;
   const showDesktopSurface = !cinematic && !chromeTopbarOnly;
   const effectivePlayCue = playCue ?? runtimeOptions?.playCue;
+  const effectiveResolveAppMenu = resolveAppMenu ?? bundle?.resolveAppMenu;
 
   const topbar = (
     <DesktopTopBar
@@ -168,7 +175,7 @@ export function RecoveredDesktopShell({
       soundIndicator={soundIndicator}
       onOpenComputeVolume={onOpenComputeVolume}
       onSignOut={onSignOut}
-      resolveAppMenu={resolveAppMenu}
+      resolveAppMenu={effectiveResolveAppMenu}
       resolveAppTitle={resolveAppTitle}
       playCue={effectivePlayCue}
     />
