@@ -22,6 +22,7 @@ export * from "./intents/browser-intent";
 export * from "./hooks/use-compact-height";
 export * from "./hooks/use-element-size";
 export * from "./components/sidebar-nav-button";
+export * from "./screens/intro-page";
 export * from "./screens/signal-login-screen";
 export * from "./screens/signal-reset-screen";
 export * from "./screens/signal-temp-password-screen";
