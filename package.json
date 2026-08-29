@@ -11,6 +11,7 @@
     "start:py": "python server.py",
     "frontend:build": "vite build --config frontend-src/vite.config.ts",
     "frontend:inspect:normalapp": "node scripts/inspect_frontend_chunk.mjs NormalApp-",
+    "frontend:inspect:identifier": "node scripts/inspect_frontend_identifier.mjs",
     "frontend:recover": "node scripts/run_frontend_recovery.mjs",
     "frontend:recover:check": "node scripts/verify_frontend_recovery.mjs",
     "frontend:typecheck": "tsc -p frontend-src/tsconfig.json --noEmit",
