@@ -51,6 +51,9 @@ jobs:
       - name: Verify static asset cache policy
         run: uv run python tests/test_static_asset_cache.py
 
+      - name: Verify local access gate
+        run: uv run python tests/test_local_access_gate.py
+
       - name: Verify Workers Builds deploy wrapper
         run: uv run python tests/test_cloudflare_builds_deploy.py
 
