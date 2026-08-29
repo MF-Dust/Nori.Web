@@ -31,6 +31,9 @@ jobs:
       - name: Typecheck clean-room frontend source
         run: npm run frontend:typecheck
 
+      - name: Build clean-room frontend source
+        run: npm run frontend:build
+
       - name: Recover frontend structure
         shell: bash
         run: |
