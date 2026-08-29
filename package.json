@@ -9,6 +9,7 @@
     "build": "vite build",
     "start": "python server.py",
     "start:py": "python server.py",
+    "frontend:build": "vite build --config frontend-src/vite.config.ts",
     "frontend:recover": "node scripts/run_frontend_recovery.mjs",
     "frontend:recover:check": "node scripts/verify_frontend_recovery.mjs",
     "frontend:typecheck": "tsc -p frontend-src/tsconfig.json --noEmit",
