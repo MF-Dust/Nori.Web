@@ -46,11 +46,18 @@ from backend.session.manager import (
 )
 from backend.session.persistence import world_from_snapshot_json, world_snapshot_json
 from backend.virtual_apps import live_pack
-from server import create_app
 
-_FASTAPI_APP = create_app(include_static=False)
+_FASTAPI_APP = None
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 _EDGE_TICKET_MANAGER = WorldManager()
+_EDGE_GUEST_USER_ID = "guest-user-001"
+_EDGE_GUEST_USER = {
+    "id": _EDGE_GUEST_USER_ID,
+    "name": "Operator",
+    "email": "operator@nori.local",
+    "image": "/icon.png",
+    "createdAt": 0,
+}
 
 _R2_MODEL_PATH = "/datasea/cosmicweb.min.glb"
 _R2_MODEL_KEY = "datasea/cosmicweb.min.glb"
@@ -83,6 +90,71 @@ def _apply_runtime_bindings(env) -> None:
     config.apply_runtime_bindings(env)
     disabled = config.NORI_DISABLE_LIVE_PACK.strip().lower() in _TRUE_VALUES
     live_pack.set_disabled(disabled)
+
+
+def _json_response(payload, *, status: int = 200, headers: dict[str, str] | None = None):
+    response_headers = {"Content-Type": "application/json; charset=utf-8"}
+    if headers:
+        response_headers.update(headers)
+    return Response(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        status=status,
+        headers=response_headers,
+    )
+
+
+def _edge_guest_session() -> dict:
+    now_ms = int(time.time() * 1000)
+    return {
+        "session": {
+            "id": "session-local-guest",
+            "userId": _EDGE_GUEST_USER_ID,
+            "token": "local-guest-token",
+            "expiresAt": now_ms + 30 * 24 * 60 * 60 * 1000,
+        },
+        "user": _EDGE_GUEST_USER,
+    }
+
+
+async def _serve_bootstrap_api(path: str, request):
+    """Serve startup-critical APIs without importing FastAPI/Pydantic.
+
+    Python Workers on the Free plan have a tight CPU budget. These endpoints
+    are called during every page bootstrap and contain only trivial local logic,
+    so routing them through the complete ASGI framework wastes most of the cold
+    request CPU budget before any application work happens.
+    """
+    method = request.method.upper()
+
+    if path == "/api/entry-status" and method == "GET":
+        return _json_response({"status": "ok", "machineId": "nori-local"})
+
+    if path == "/api/version" and method == "GET":
+        return _json_response(
+            {"version": "2.0.0", "service": "NoriOS local compatibility server"}
+        )
+
+    if path == "/api/auth/get-session" and method in {"GET", "POST"}:
+        return _json_response(_edge_guest_session())
+
+    if path == "/api/auth/convex/token" and method in {"GET", "POST"}:
+        return _json_response({"token": f"local-convex.{_EDGE_GUEST_USER_ID}"})
+
+    if path == "/api/arcade/ws-ticket" and method == "POST":
+        ticket = await _EDGE_TICKET_MANAGER.issue_ticket(_EDGE_GUEST_USER_ID)
+        return _json_response({"ticket": ticket})
+
+    return None
+
+
+def _get_fastapi_app():
+    """Import the full HTTP application only for non-bootstrap API traffic."""
+    global _FASTAPI_APP
+    if _FASTAPI_APP is None:
+        from server import app
+
+        _FASTAPI_APP = app
+    return _FASTAPI_APP
 
 
 async def _r2_json(env, key: str):
@@ -356,7 +428,7 @@ async def _cloudflare_asgi_app(scope, receive, send) -> None:
                 )
         scope = dict(scope)
         scope["subprotocols"] = protocols
-    await _FASTAPI_APP(scope, receive, send)
+    await _get_fastapi_app()(scope, receive, send)
 
 
 class _HibernatingSocketAdapter:
@@ -456,50 +528,57 @@ class NoriArcadeSession(DurableObject):
                 print(f"[arcade] restored hibernated world {world.world_id}")
             return world
 
-    async def _persist_world(self, world, *, force: bool = False, before: str | None = None) -> str:
+    async def _persist_world(self, world, *, force: bool = False, before=None) -> None:
         snapshot = world_snapshot_json(world)
         if force or snapshot != before:
             await self.ctx.storage.put(_DO_WORLD_STATE_KEY, snapshot)
-        return snapshot
 
     async def _load_public_ai_config(self) -> dict:
         if self._public_ai_config_cache is not None:
             return dict(self._public_ai_config_cache)
-        raw = await self.ctx.storage.get(_DO_AI_CONFIG_KEY)
-        config_value = {}
+        try:
+            raw = await self.ctx.storage.get(_DO_AI_CONFIG_KEY)
+        except Exception:
+            raw = None
         if isinstance(raw, str) and raw:
             try:
                 parsed = json.loads(raw)
             except json.JSONDecodeError:
-                parsed = None
-            if isinstance(parsed, dict):
-                config_value = parsed
-        self._public_ai_config_cache = dict(config_value)
-        return config_value
+                parsed = {}
+        else:
+            parsed = {}
+        self._public_ai_config_cache = parsed if isinstance(parsed, dict) else {}
+        return dict(self._public_ai_config_cache)
 
-    async def _install_ai_for_socket(self, attachment: dict) -> None:
-        config_value = await self._load_public_ai_config()
-        api_key = attachment.get("apiKey")
-        if isinstance(api_key, str) and api_key:
-            config_value["apiKey"] = api_key
-        install_runtime_ai_config(config_value)
+    async def _persist_public_ai_config(self, config_value: dict) -> None:
+        public = _public_ai_config(config_value)
+        raw = json.dumps(public, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+        await self.ctx.storage.put(_DO_AI_CONFIG_KEY, raw)
+        self._public_ai_config_cache = public
 
     async def _capture_ai_settings(self, websocket, attachment: dict, message: dict) -> dict:
         if message.get("type") != "event" or message.get("channel") != "nori.ai.config":
             return attachment
-        payload = message.get("payload") if isinstance(message.get("payload"), dict) else {}
-        config_value = sanitize_runtime_ai_config(payload)
-        public = _public_ai_config(config_value)
-        await self.ctx.storage.put(
-            _DO_AI_CONFIG_KEY,
-            json.dumps(public, ensure_ascii=False, separators=(",", ":")),
-        )
-        self._public_ai_config_cache = dict(public)
-        attachment = dict(attachment)
-        attachment["apiKey"] = str(config_value.get("apiKey") or "")
-        _save_socket_attachment(websocket, attachment)
+        payload = message.get("payload")
+        payload = payload if isinstance(payload, dict) else {}
+        sanitized = sanitize_runtime_ai_config(payload)
+        await self._persist_public_ai_config(sanitized)
+        updated = dict(attachment)
+        api_key = sanitized.get("apiKey")
+        if isinstance(api_key, str) and api_key:
+            updated["apiKey"] = api_key
+        else:
+            updated.pop("apiKey", None)
+        _save_socket_attachment(websocket, updated)
+        return updated
+
+    async def _install_ai_for_socket(self, attachment: dict) -> None:
+        public = await self._load_public_ai_config()
+        config_value = dict(public)
+        api_key = attachment.get("apiKey")
+        if isinstance(api_key, str) and api_key:
+            config_value["apiKey"] = api_key
         install_runtime_ai_config(config_value)
-        return attachment
 
     def _refresh_world_clients(self, world) -> None:
         main_clients = set()
@@ -674,9 +753,6 @@ class NoriArcadeSession(DurableObject):
             reset_world_manager(manager_token)
 
     async def webSocketClose(self, websocket, code, reason, was_clean):
-        # With compatibility_date >= 2026-04-07 Cloudflare automatically
-        # replies to peer Close frames. No world state needs to be persisted for
-        # connection membership; ctx.get_websockets() is the source of truth.
         try:
             websocket.close(code, reason)
         except Exception:
@@ -695,6 +771,10 @@ class Default(WorkerEntrypoint):
 
         if path == _R2_MODEL_PATH:
             return await _serve_r2_model(self.env, request)
+
+        bootstrap = await _serve_bootstrap_api(path, request)
+        if bootstrap is not None:
+            return bootstrap
 
         if _is_websocket(request) and path.startswith("/api/arcade/web/v1"):
             ticket = _ticket_from_request(request)

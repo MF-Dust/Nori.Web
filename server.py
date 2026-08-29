@@ -5,38 +5,15 @@ Run with `python server.py` and open http://127.0.0.1:4173.
 
 from __future__ import annotations
 
-from typing import Any
 
+def create_app(*, include_static: bool = True):
+    """Construct the FastAPI application used by local and Cloudflare HTTP APIs.
 
-class _LazyASGIApp:
-    """Build the FastAPI application only when it actually receives traffic.
-
-    Cloudflare Durable Object invocations import ``worker.py`` and therefore
-    import this module, but Arcade WebSocket handling does not need the HTTP
-    router stack. Keeping the application lazy avoids initializing FastAPI,
-    routers, middleware, mimetypes, and the HTTP AI bridge on every cold DO
-    wake. Local Uvicorn usage remains compatible because this object is a
-    normal ASGI callable and proxies attribute access to the realized app.
+    Keep this factory conventional: Cloudflare's Python ASGI bridge receives a
+    concrete FastAPI application rather than a proxy that performs imports on
+    the first request. Durable Object startup optimization belongs in the
+    Worker routing layer, not inside the ASGI application object itself.
     """
-
-    def __init__(self, *, include_static: bool) -> None:
-        self.include_static = include_static
-        self._app: Any | None = None
-
-    def _realize(self):
-        if self._app is None:
-            self._app = _build_app(include_static=self.include_static)
-        return self._app
-
-    async def __call__(self, scope, receive, send) -> None:
-        await self._realize()(scope, receive, send)
-
-    def __getattr__(self, name: str):
-        return getattr(self._realize(), name)
-
-
-def _build_app(*, include_static: bool):
-    """Import and construct the full HTTP stack on first use."""
     from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.middleware.gzip import GZipMiddleware
@@ -60,11 +37,6 @@ def _build_app(*, include_static: bool):
     if include_static:
         application.include_router(static_router)
     return application
-
-
-def create_app(*, include_static: bool = True) -> _LazyASGIApp:
-    """Return a lazily initialized local/Cloudflare HTTP application."""
-    return _LazyASGIApp(include_static=include_static)
 
 
 app = create_app()
