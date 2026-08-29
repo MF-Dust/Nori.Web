@@ -7,9 +7,12 @@ import json
 import secrets
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
-from fastapi import WebSocket
+if TYPE_CHECKING:
+    from fastapi import WebSocket
+else:
+    WebSocket = Any
 
 from ..cartridges.base import BaseCartridge, CommandRejected
 from ..cartridges.chat import ChatCartridge

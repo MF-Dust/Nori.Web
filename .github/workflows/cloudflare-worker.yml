@@ -42,6 +42,9 @@ jobs:
       - name: Verify Durable Object hibernation source path
         run: uv run python tests/test_durable_object_hibernation.py
 
+      - name: Verify Durable Object runtime efficiency
+        run: uv run python tests/test_do_runtime_efficiency.py
+
       - name: Verify Workers Builds deploy wrapper
         run: uv run python tests/test_cloudflare_builds_deploy.py
 
