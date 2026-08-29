@@ -31,6 +31,7 @@ export * from "./hooks/use-window-interaction";
 export * from "./components/chat-panel";
 export * from "./components/desktop-dock";
 export * from "./components/desktop-root";
+export * from "./components/desktop-surface";
 export * from "./components/desktop-topbar";
 export * from "./components/recovered-desktop-shell";
 export * from "./components/managed-window-host";
