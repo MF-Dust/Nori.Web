@@ -86,6 +86,7 @@ jobs:
           node --check scripts/inspect_frontend_identifier.mjs
           node --check scripts/run_frontend_recovery.mjs
           node --check scripts/verify_frontend_recovery.mjs
+          node --check scripts/verify_frontend_cutover.mjs
 
       - name: Compile Python sources
         run: uv run python -m compileall -q backend scripts server.py worker.py
@@ -185,8 +186,14 @@ jobs:
       - name: Typecheck reconstructed frontend source
         run: npm run frontend:typecheck
 
-      - name: Build reconstructed frontend source
+      - name: Build reconstructed frontend source library
         run: npm run frontend:build
+
+      - name: Build source-driven frontend application
+        run: npm run frontend:app:build
+
+      - name: Verify frontend cutover gate
+        run: npm run frontend:cutover:check
 
       - name: Verify complete bundle recovery coverage
         run: npm run frontend:recover:check
