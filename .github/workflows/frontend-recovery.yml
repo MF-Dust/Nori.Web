@@ -28,6 +28,9 @@ jobs:
       - name: Install frontend analysis dependencies
         run: npm ci
 
+      - name: Typecheck clean-room frontend source
+        run: npm run frontend:typecheck
+
       - name: Recover frontend structure
         shell: bash
         run: |
