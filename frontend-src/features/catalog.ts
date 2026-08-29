@@ -72,12 +72,19 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
   },
   {
     feature: "browser",
-    shippedChunkPatterns: [/BrowserApp/i, /BrowserPageView/i, /browserIntent/i, /openUrlInBrowser/i],
+    shippedChunkPatterns: [
+      /BrowserApp/i,
+      /BrowserPageView/i,
+      /PopupScreen/i,
+      /browserIntent/i,
+      /openUrlInBrowser/i,
+    ],
     maintenanceModules: [
       "apps/browser.ts",
       "services/artifacts.ts",
       "services/manifold.ts",
       "intents/browser-intent.ts",
+      "screens/browser-popup-screen.tsx",
     ],
     status: "runtime-recovered",
   },
