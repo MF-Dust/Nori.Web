@@ -2,12 +2,13 @@ import type { ArtifactService } from "../services/artifacts";
 import type { ManifoldService } from "../services/manifold";
 import type { JsonValue } from "../runtime/protocol";
 
-export interface BrowserPageData extends Record<string, JsonValue> {
+export interface BrowserPageData {
   url?: string;
   title?: string;
   body_html?: string;
   supported_locales?: string[];
   favicon?: string | null;
+  [key: string]: JsonValue | undefined;
 }
 
 export interface BrowserBookmark {
