@@ -155,5 +155,8 @@ jobs:
       - name: Typecheck reconstructed frontend source
         run: npm run frontend:typecheck
 
+      - name: Build reconstructed frontend source
+        run: npm run frontend:build
+
       - name: Verify complete bundle recovery coverage
         run: npm run frontend:recover:check
