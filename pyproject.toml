@@ -23,6 +23,9 @@ dev = [
     "uvicorn[standard]>=0.30",
     "websockets>=13",
 ]
+build = [
+    "nuitka==4.2",
+]
 
 [tool.ruff]
 target-version = "py311"
