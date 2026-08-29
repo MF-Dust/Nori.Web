@@ -186,12 +186,23 @@ def summary() -> str:
     )
 
 
-def _list(key: str) -> List[Dict[str, Any]]:
+def _section_view(key: str) -> List[Dict[str, Any]]:
+    """Return the resident section by reference for trusted read-only paths.
+
+    The R2-decoded object graph is already private to this isolate. Internal
+    Cloudflare hot paths can safely iterate it without materializing a second
+    deep copy. Public accessors below keep their defensive-copy semantics.
+    """
     p = _pack()
     if not p:
         return []
     val = p.get(key)
-    return copy.deepcopy(val) if isinstance(val, list) else []
+    return val if isinstance(val, list) else []
+
+
+def _list(key: str) -> List[Dict[str, Any]]:
+    # Preserve the historical public isolation contract for local callers.
+    return copy.deepcopy(_section_view(key))
 
 
 def mail_artifacts() -> List[Dict[str, Any]]:
@@ -245,7 +256,9 @@ def page(lookup_key: str) -> Optional[Dict[str, Any]]:
         return None
     if _PAGE_INDEX is None:
         idx: Dict[str, Dict[str, Any]] = {}
-        for entry in _list("browser_pages"):
+        # Index the resident shard directly. Previously `_list()` deep-copied
+        # every page first, keeping a second full page graph alive beside R2.
+        for entry in _section_view("browser_pages"):
             aliases = {
                 entry.get("key"),
                 (entry.get("data") or {}).get("url"),
@@ -269,11 +282,18 @@ def page(lookup_key: str) -> Optional[Dict[str, Any]]:
         }
         if len({id(value) for value in candidates.values()}) == 1:
             entry = next(iter(candidates.values()))
+    # Only the one page crossing the application boundary is copied.
     return copy.deepcopy(entry) if entry else None
 
 
 def all_pages_raw() -> List[Dict[str, Any]]:
-    return _list("browser_pages")
+    """Return a shallow list view for read-only archive scans.
+
+    The list container is detached so callers cannot append/remove cache
+    entries, while page dictionaries stay shared to avoid duplicating an
+    entire browser shard for one bounty lookup.
+    """
+    return list(_section_view("browser_pages"))
 
 
 def facts() -> Dict[str, Any]:
