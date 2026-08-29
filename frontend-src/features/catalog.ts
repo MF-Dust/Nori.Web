@@ -43,6 +43,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
     maintenanceModules: [
       "apps/production-catalog.ts",
       "screens/intro-page.tsx",
+      "components/desktop-root.tsx",
       "components/managed-window-host.tsx",
       "components/sidebar-nav-button.tsx",
       "components/window-chrome.tsx",
@@ -57,6 +58,8 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "hooks/use-compact-height.ts",
       "hooks/use-element-size.ts",
       "hooks/use-window-interaction.ts",
+      "state/desktop-runtime.ts",
+      "state/production-window-apps.ts",
       "state/window-app-registry.ts",
       "state/window-types.ts",
       "state/window-geometry.ts",
