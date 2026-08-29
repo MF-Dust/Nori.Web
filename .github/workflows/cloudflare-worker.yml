@@ -45,6 +45,9 @@ jobs:
       - name: Verify Durable Object runtime efficiency
         run: uv run python tests/test_do_runtime_efficiency.py
 
+      - name: Verify Durable Object active-window pacing
+        run: uv run python tests/test_do_active_window_pacing.py
+
       - name: Verify Workers Builds deploy wrapper
         run: uv run python tests/test_cloudflare_builds_deploy.py
 
