@@ -44,6 +44,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "apps/production-catalog.ts",
       "apps/recovered-presentation.ts",
       "screens/intro-page.tsx",
+      "components/desktop-dock.tsx",
       "components/desktop-root.tsx",
       "components/desktop-topbar.tsx",
       "components/managed-window-host.tsx",
