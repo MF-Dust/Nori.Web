@@ -14,16 +14,17 @@ def main() -> None:
     assert app_script in INDEX
     assert INDEX.index(shim_script) < INDEX.index(app_script)
 
-    assert 'url.pathname === "/api/debug/perf-vitals"' in SHIM
+    assert 'pathnameOf(value) === "/api/debug/perf-vitals"' in SHIM
     assert "window.fetch = function noriFetch" in SHIM
     assert "navigator.sendBeacon = function noriSendBeacon" in SHIM
 
-    # This shim must stay scoped to optional telemetry. Arcade transport and
-    # application APIs must remain untouched.
+    # Runtime compatibility additions may handle the local guest access gate,
+    # but they must never patch Arcade/WebSocket transport or intercept general
+    # application API traffic.
     assert "WebSocket.prototype" not in SHIM
     assert "/api/arcade" not in SHIM
 
-    print("[ok] browser runtime shim suppresses only optional perf-vitals telemetry")
+    print("[ok] browser runtime shim preserves telemetry and transport boundaries")
 
 
 if __name__ == "__main__":
