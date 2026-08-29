@@ -21,6 +21,7 @@ export * from "./apps/terminal";
 export * from "./intents/browser-intent";
 export * from "./hooks/use-compact-height";
 export * from "./hooks/use-element-size";
+export * from "./components/chat-panel";
 export * from "./components/sidebar-nav-button";
 export * from "./screens/browser-popup-screen";
 export * from "./screens/intro-page";
