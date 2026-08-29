@@ -24,15 +24,16 @@ function assert(condition, message) {
 async function main() {
   await fs.rm(OUTPUT, { recursive: true, force: true });
   try {
-    run("recover_frontend.mjs", ["--metadata-only", "--output", ".frontend-recovery-ci"]);
-    run("inventory_frontend_symbols.mjs", [".frontend-recovery-ci"]);
+    run("run_frontend_recovery.mjs", ["--metadata-only", "--output", ".frontend-recovery-ci"]);
 
     const manifest = JSON.parse(await fs.readFile(path.join(OUTPUT, "manifest.json"), "utf8"));
     const symbols = JSON.parse(await fs.readFile(path.join(OUTPUT, "SYMBOL_INDEX.json"), "utf8"));
+    const styles = JSON.parse(await fs.readFile(path.join(OUTPUT, "style-manifest.json"), "utf8"));
     const files = new Set(manifest.chunks.map((chunk) => chunk.file));
 
     assert(manifest.bundleCount >= 40, `expected at least 40 shipped JS chunks, got ${manifest.bundleCount}`);
-    assert(symbols.chunks.length === manifest.bundleCount, "symbol inventory must cover every analyzed chunk");
+    assert(symbols.chunks.length === manifest.bundleCount, "symbol inventory must cover every analyzed JS chunk");
+    assert(styles.count > 0, "style recovery must cover shipped CSS chunks");
 
     const requiredPrefixes = [
       "NormalApp-",
@@ -52,7 +53,7 @@ async function main() {
       assert(Array.isArray(symbols.byFeature[feature]) && symbols.byFeature[feature].length > 0, `missing recovered feature group: ${feature}`);
     }
 
-    console.log(`[ok] frontend recovery covers ${manifest.bundleCount} shipped JavaScript chunks`);
+    console.log(`[ok] frontend recovery covers ${manifest.bundleCount} JavaScript and ${styles.count} CSS chunks`);
   } finally {
     await fs.rm(OUTPUT, { recursive: true, force: true });
   }
