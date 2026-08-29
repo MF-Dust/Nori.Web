@@ -13,6 +13,7 @@ import { ChatService } from "../services/chat";
 import { DesktopService } from "../services/desktop";
 import { GameService } from "../services/games";
 import { ManifoldService } from "../services/manifold";
+import { SignalService } from "../services/signal";
 
 export class NoriFrontendRuntime {
   readonly auth = new LocalAuthController();
@@ -25,6 +26,7 @@ export class NoriFrontendRuntime {
   readonly desktop: DesktopService;
   readonly chat: ChatService;
   readonly games: GameService;
+  readonly signal: SignalService;
   readonly browser: BrowserAppModel;
   readonly files: FilesAppModel;
   readonly mail: MailAppModel;
@@ -41,6 +43,21 @@ export class NoriFrontendRuntime {
     this.desktop = new DesktopService(this.rpc);
     this.chat = new ChatService(this.arcade, this.world);
     this.games = new GameService(this.arcade, this.world);
+    this.signal = new SignalService({
+      execute: async (command, payload) => {
+        try {
+          return {
+            ok: true,
+            result: await this.manifold.command(command, payload),
+          };
+        } catch (error) {
+          return {
+            ok: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+    });
     this.browser = new BrowserAppModel(this.artifacts, this.manifold);
     this.files = new FilesAppModel(this.artifacts, this.manifold);
     this.mail = new MailAppModel(this.artifacts, this.manifold);
