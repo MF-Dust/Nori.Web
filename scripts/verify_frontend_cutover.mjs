@@ -1,17 +1,37 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 const sourceHtml = await readFile("frontend-src/index.html", "utf8");
 const publicHtml = await readFile("public/index.html", "utf8");
 const statusSource = await readFile("frontend-src/migration/cutover-status.ts", "utf8");
 
 const legacyJsPatterns = ["index-CyHAbkO5.js", "NormalApp-Cn6agT0F.js"];
-for (const pattern of legacyJsPatterns) {
-  if (sourceHtml.includes(pattern)) {
-    throw new Error(`source frontend must not import historical JavaScript chunk: ${pattern}`);
+const sourceExtensions = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".html"]);
+
+async function collectSourceFiles(directory) {
+  const files = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await collectSourceFiles(path)));
+      continue;
+    }
+    const extension = entry.name.slice(entry.name.lastIndexOf("."));
+    if (sourceExtensions.has(extension)) files.push(path);
+  }
+  return files;
+}
+
+for (const path of await collectSourceFiles("frontend-src")) {
+  const content = await readFile(path, "utf8");
+  for (const pattern of legacyJsPatterns) {
+    if (content.includes(pattern)) {
+      throw new Error(`source frontend file ${path} references historical JavaScript chunk: ${pattern}`);
+    }
   }
 }
 
-if (!sourceHtml.includes('/main.tsx')) {
+if (!sourceHtml.includes("/main.tsx")) {
   throw new Error("source frontend index must boot /main.tsx");
 }
 
