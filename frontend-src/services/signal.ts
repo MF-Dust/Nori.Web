@@ -1,6 +1,6 @@
 import type { JsonValue } from "../runtime/protocol";
 
-export interface CommandEnvelope<T extends JsonValue = JsonValue> {
+export interface CommandEnvelope<T = JsonValue> {
   ok: boolean;
   result?: T;
   error?: JsonValue;
@@ -12,7 +12,7 @@ export interface CommandEnvelope<T extends JsonValue = JsonValue> {
  * how that executor is internally wired.
  */
 export interface CommandTransport {
-  execute<T extends JsonValue = JsonValue>(
+  execute<T = JsonValue>(
     command: string,
     payload: { [key: string]: JsonValue },
   ): Promise<CommandEnvelope<T>>;
@@ -20,15 +20,15 @@ export interface CommandTransport {
 
 export interface SignalLoginResult {
   ok?: boolean;
-  [key: string]: JsonValue | undefined;
+  [key: string]: unknown;
 }
 
 export interface SignalRecoveryResult {
   ok?: boolean;
-  [key: string]: JsonValue | undefined;
+  [key: string]: unknown;
 }
 
-async function resultOrNull<T extends JsonValue>(
+async function resultOrNull<T>(
   transport: CommandTransport,
   command: string,
   payload: { [key: string]: JsonValue },
