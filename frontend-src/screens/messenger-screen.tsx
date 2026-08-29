@@ -24,6 +24,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type RefObject,
 } from "react";
 import type {
   MessengerAppModel,
@@ -118,7 +119,7 @@ function defaultTranslate(
   return STRINGS[key] ?? key;
 }
 
-function useContainerWidth(): [React.RefObject<HTMLDivElement | null>, number] {
+function useContainerWidth(): [RefObject<HTMLDivElement | null>, number] {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   useLayoutEffect(() => {
@@ -136,8 +137,9 @@ function useContainerWidth(): [React.RefObject<HTMLDivElement | null>, number] {
 
 function avatarInitials(title: string): string {
   const parts = title.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "?";
-  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("");
+  return parts.length
+    ? parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("")
+    : "?";
 }
 
 function avatarColor(seed: string): string {
@@ -202,20 +204,25 @@ function Avatar({
   );
 }
 
-function formatThreadTime(timestamp: string): string {
+function validDate(timestamp: string): Date | undefined {
   const date = new Date(timestamp);
-  if (!Number.isFinite(date.getTime())) return "";
-  const now = new Date();
-  if (date.toDateString() === now.toDateString()) {
+  return Number.isFinite(date.getTime()) ? date : undefined;
+}
+
+function formatThreadTime(timestamp: string): string {
+  const date = validDate(timestamp);
+  if (!date) return "";
+  if (date.toDateString() === new Date().toDateString()) {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
   return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
 function formatMessageTime(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (!Number.isFinite(date.getTime())) return "";
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return validDate(timestamp)?.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  }) ?? "";
 }
 
 function formatBytes(bytes: number): string {
@@ -276,6 +283,7 @@ function ThreadRow({
         : view.lastKind === "file"
           ? t("signal.message.filePreview")
           : view.lastBody.replaceAll("\n", " ");
+
   return (
     <button
       type="button"
@@ -287,7 +295,13 @@ function ThreadRow({
           : "border-l-transparent border-border/50 hover:bg-muted/40"
       }`}
     >
-      <Avatar title={thread.title} seed={thread.threadId} size={44} imageSrc={thread.avatarPath} t={t} />
+      <Avatar
+        title={thread.title}
+        seed={thread.threadId}
+        size={44}
+        imageSrc={thread.avatarPath}
+        t={t}
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
           <span className={`truncate text-sm text-foreground ${unread ? "font-semibold" : "font-medium"}`}>
@@ -331,10 +345,11 @@ function ThreadList({
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return views;
-    return views.filter(({ conversation, lastBody }) =>
-      `${conversation.thread.title} ${lastBody}`.toLowerCase().includes(normalized),
-    );
+    return normalized
+      ? views.filter(({ conversation, lastBody }) =>
+          `${conversation.thread.title} ${lastBody}`.toLowerCase().includes(normalized),
+        )
+      : views;
   }, [query, views]);
 
   return (
@@ -415,13 +430,13 @@ function FileAttachment({
   const downloaded = fact ? runtime.hasFact?.(fact) === true : false;
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const timeoutRef = useRef<number>();
-  const rafRef = useRef<number>();
+  const timeoutRef = useRef<number | undefined>(undefined);
+  const rafRef = useRef<number | undefined>(undefined);
 
   useEffect(
     () => () => {
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (timeoutRef.current !== undefined) window.clearTimeout(timeoutRef.current);
+      if (rafRef.current !== undefined) cancelAnimationFrame(rafRef.current);
     },
     [],
   );
@@ -449,7 +464,7 @@ function FileAttachment({
       type="button"
       onClick={download}
       aria-label={t(downloaded ? "signal.attachment.downloaded" : "signal.attachment.download")}
-      className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-left hover:bg-background/70"
+      className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-left transition-colors hover:bg-background/70"
     >
       <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
         <Download className="size-4" />
@@ -508,10 +523,6 @@ function linkedText(
   );
 }
 
-function isOwnMessage(message: SignalMessage, runtime: MessengerScreenRuntime): boolean {
-  return runtime.isOwnMessage?.(message) ?? message.self;
-}
-
 function MessageBubble({
   message,
   thread,
@@ -525,8 +536,13 @@ function MessageBubble({
   onViewImage(src: string): void;
   t: MessengerTranslate;
 }) {
-  const own = isOwnMessage(message, runtime);
+  const own = runtime.isOwnMessage?.(message) ?? message.self;
   const timestamp = message.timestamp ? formatMessageTime(message.timestamp) : "";
+  const stamp = timestamp ? (
+    <span className="flex items-center gap-1">
+      {timestamp}{own ? <CheckCheck className="size-3" /> : null}
+    </span>
+  ) : null;
 
   if (message.kind === "deleted") {
     return (
@@ -547,7 +563,7 @@ function MessageBubble({
             type="button"
             onClick={() => onViewImage(message.assetPath!)}
             aria-label={t("signal.conversation.viewPhoto")}
-            className="block w-full cursor-zoom-in outline-none hover:opacity-95"
+            className="block w-full cursor-zoom-in outline-none transition-opacity hover:opacity-95"
           >
             <img
               src={message.assetPath}
@@ -557,9 +573,9 @@ function MessageBubble({
               className="block h-auto max-w-full rounded-[14px] object-cover"
             />
           </button>
-          {timestamp ? (
-            <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
-              {timestamp}{own ? <CheckCheck className="size-3" /> : null}
+          {stamp ? (
+            <span className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
+              {stamp}
             </span>
           ) : null}
         </div>
@@ -596,9 +612,9 @@ function MessageBubble({
           {linkedText(message.body, own ? "text-primary-foreground" : "text-primary", runtime.openUrl)}
           {timestamp ? <span aria-hidden className="invisible ml-2 inline-flex text-[10px]">{timestamp}</span> : null}
         </div>
-        {timestamp ? (
-          <span className={`pointer-events-none absolute bottom-2 right-3.5 flex items-center gap-1 text-[10px] ${own ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-            {timestamp}{own ? <CheckCheck className="size-3" /> : null}
+        {stamp ? (
+          <span className={`pointer-events-none absolute bottom-2 right-3.5 text-[10px] ${own ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+            {stamp}
           </span>
         ) : null}
       </div>
@@ -619,13 +635,18 @@ function groupMessages(messages: readonly SignalMessage[]): MessageGroup[] {
   const yesterdayDate = new Date(now);
   yesterdayDate.setDate(now.getDate() - 1);
   const yesterday = yesterdayDate.toDateString();
+
   for (const message of messages) {
-    const date = new Date(message.timestamp);
-    const dateKey = Number.isFinite(date.getTime()) ? date.toDateString() : "unknown";
-    const label = dateKey === today ? "today" : dateKey === yesterday ? "yesterday" : Number.isFinite(date.getTime()) ? date.toLocaleDateString() : "";
+    const date = validDate(message.timestamp);
+    const key = date?.toDateString() ?? "unknown";
+    const label = key === today
+      ? "today"
+      : key === yesterday
+        ? "yesterday"
+        : date?.toLocaleDateString() ?? "";
     const previous = groups.at(-1);
-    if (previous?.key === dateKey) previous.messages.push(message);
-    else groups.push({ key: dateKey, label, messages: [message] });
+    if (previous?.key === key) previous.messages.push(message);
+    else groups.push({ key, label, messages: [message] });
   }
   return groups;
 }
@@ -637,6 +658,7 @@ function SealedComposer({ runtime, t }: { runtime: MessengerScreenRuntime; t: Me
     runtime.playCue?.("comms-signal-sealed-composer");
     setErrorOpen(true);
   };
+
   return (
     <div className="relative shrink-0 border-t border-border/50">
       {errorOpen ? (
@@ -647,14 +669,26 @@ function SealedComposer({ runtime, t }: { runtime: MessengerScreenRuntime; t: Me
               <div className="text-sm font-medium text-destructive">{t("signal.composer.errorTitle")}</div>
               <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">{t("signal.composer.errorBody")}</p>
               <div className="mt-2 flex items-center gap-2">
-                <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{SEALED_ERROR_CODE}</span>
+                <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{SEALED_ERROR_CODE}</span>
                 <button type="button" onClick={() => setDetailsOpen((value) => !value)} className="text-[11px] text-muted-foreground hover:text-foreground">
                   {t("signal.composer.details")}
                 </button>
               </div>
-              {detailsOpen ? <pre className="mt-2 whitespace-pre-wrap rounded bg-muted/50 p-2 font-mono text-[10px] leading-relaxed text-muted-foreground">{SEALED_ERROR_DETAILS.join("\n")}</pre> : null}
+              {detailsOpen ? (
+                <pre className="mt-2 whitespace-pre-wrap rounded bg-muted/50 p-2 font-mono text-[10px] leading-relaxed text-muted-foreground">
+                  {SEALED_ERROR_DETAILS.join("\n")}
+                </pre>
+              ) : null}
             </div>
-            <button type="button" onClick={() => { setErrorOpen(false); setDetailsOpen(false); }} aria-label={t("signal.composer.dismiss")} className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground">
+            <button
+              type="button"
+              onClick={() => {
+                setErrorOpen(false);
+                setDetailsOpen(false);
+              }}
+              aria-label={t("signal.composer.dismiss")}
+              className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+            >
               <X className="size-4" />
             </button>
           </div>
@@ -666,7 +700,19 @@ function SealedComposer({ runtime, t }: { runtime: MessengerScreenRuntime; t: Me
         </button>
         <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2">
           <Lock className="size-3.5 shrink-0 text-muted-foreground" />
-          <input type="text" readOnly value="" onMouseDown={(event) => { event.preventDefault(); reject(); }} onFocus={(event) => event.currentTarget.blur()} placeholder={t("signal.composer.placeholder")} aria-label={t("signal.composer.placeholder")} className="min-w-0 flex-1 cursor-not-allowed bg-transparent text-sm text-muted-foreground outline-none placeholder:text-muted-foreground" />
+          <input
+            type="text"
+            readOnly
+            value=""
+            onMouseDown={(event) => {
+              event.preventDefault();
+              reject();
+            }}
+            onFocus={(event) => event.currentTarget.blur()}
+            placeholder={t("signal.composer.placeholder")}
+            aria-label={t("signal.composer.placeholder")}
+            className="min-w-0 flex-1 cursor-not-allowed bg-transparent text-sm text-muted-foreground outline-none placeholder:text-muted-foreground"
+          />
           <button type="button" onClick={reject} aria-label={t("signal.composer.emoji")} title={t("signal.composer.disabledHint")} className="shrink-0 cursor-not-allowed text-muted-foreground/70">
             <Smile className="size-5" />
           </button>
@@ -702,6 +748,7 @@ function ServiceComposer({
       setSending(false);
     }
   };
+
   return (
     <div className="relative shrink-0 border-t border-border/50">
       <div className="flex items-end gap-2 px-3 py-2.5">
@@ -761,14 +808,19 @@ function ConversationView({
   const { thread, messages } = conversation;
   const grouped = useMemo(() => groupMessages(messages), [messages]);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const serviceRuntime = runtime.serviceConversation;
-  const interactive = serviceRuntime?.isInteractive?.(thread) === true;
-  const typing = serviceRuntime?.isTyping?.(thread) === true;
+  const interactive = runtime.serviceConversation?.isInteractive?.(thread) === true;
+  const typing = runtime.serviceConversation?.isTyping?.(thread) === true;
 
   useEffect(() => {
     const element = scrollRef.current;
     if (element) element.scrollTop = element.scrollHeight;
   }, [messages, typing]);
+
+  const actions = [
+    { Icon: Phone, label: "signal.conversation.call" },
+    { Icon: Video, label: "signal.conversation.video" },
+    { Icon: EllipsisVertical, label: "signal.conversation.menu" },
+  ] as const;
 
   return (
     <div className="flex h-full flex-col text-foreground">
@@ -778,7 +830,14 @@ function ConversationView({
             <ChevronLeft className="size-5" />
           </button>
         ) : null}
-        <Avatar title={thread.title} seed={thread.threadId} size={36} imageSrc={thread.avatarPath} onZoom={thread.avatarPath ? () => onViewImage(thread.avatarPath!) : undefined} t={t} />
+        <Avatar
+          title={thread.title}
+          seed={thread.threadId}
+          size={36}
+          imageSrc={thread.avatarPath}
+          onZoom={thread.avatarPath ? () => onViewImage(thread.avatarPath!) : undefined}
+          t={t}
+        />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-sm font-medium">{thread.title}</span>
@@ -788,40 +847,54 @@ function ConversationView({
               </span>
             ) : null}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Lock className="size-3" /><span>{t("signal.conversation.encrypted")}</span></div>
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Lock className="size-3" /><span>{t("signal.conversation.encrypted")}</span>
+          </div>
         </div>
         <div className="flex items-center gap-0.5">
-          {[
-            [Phone, "signal.conversation.call"],
-            [Video, "signal.conversation.video"],
-            [EllipsisVertical, "signal.conversation.menu"],
-          ].map(([Icon, label]) => {
-            const ActionIcon = Icon as typeof Phone;
-            return <button key={label as string} type="button" title={t("signal.conversation.unavailable")} aria-label={t(label as string)} className="flex size-8 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70"><ActionIcon className="size-[18px]" /></button>;
-          })}
+          {actions.map(({ Icon, label }) => (
+            <button key={label} type="button" title={t("signal.conversation.unavailable")} aria-label={t(label)} className="flex size-8 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70">
+              <Icon className="size-[18px]" />
+            </button>
+          ))}
         </div>
       </header>
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
         <div className="flex justify-center pb-3 pt-1">
-          <span className="max-w-[80%] rounded-lg bg-muted/60 px-3 py-1.5 text-center text-[11px] leading-relaxed text-muted-foreground">{t("signal.conversation.encryptionNotice")}</span>
+          <span className="max-w-[80%] rounded-lg bg-muted/60 px-3 py-1.5 text-center text-[11px] leading-relaxed text-muted-foreground">
+            {t("signal.conversation.encryptionNotice")}
+          </span>
         </div>
         <div className="space-y-2">
           {grouped.map((group) => (
             <div key={group.key} className="space-y-2">
               <div className="flex justify-center py-1">
                 <span className="rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground">
-                  {group.label === "today" ? t("signal.day.today") : group.label === "yesterday" ? t("signal.day.yesterday") : group.label}
+                  {group.label === "today"
+                    ? t("signal.day.today")
+                    : group.label === "yesterday"
+                      ? t("signal.day.yesterday")
+                      : group.label}
                 </span>
               </div>
               {group.messages.map((message) => (
-                <MessageBubble key={message.messageId} message={message} thread={thread} runtime={runtime} onViewImage={onViewImage} t={t} />
+                <MessageBubble
+                  key={message.messageId}
+                  message={message}
+                  thread={thread}
+                  runtime={runtime}
+                  onViewImage={onViewImage}
+                  t={t}
+                />
               ))}
             </div>
           ))}
           {typing ? <TypingBubble t={t} /> : null}
         </div>
       </div>
-      {interactive ? <ServiceComposer thread={thread} runtime={runtime} t={t} /> : <SealedComposer runtime={runtime} t={t} />}
+      {interactive
+        ? <ServiceComposer thread={thread} runtime={runtime} t={t} />
+        : <SealedComposer runtime={runtime} t={t} />}
     </div>
   );
 }
@@ -829,22 +902,43 @@ function ConversationView({
 function EmptyConversation({ t }: { t: MessengerTranslate }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center text-foreground">
-      <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10"><SendHorizontal className="size-8 text-primary" /></div>
-      <div><div className="text-base font-medium">{t("signal.empty.title")}</div><p className="mt-1 max-w-xs text-sm leading-relaxed text-muted-foreground">{t("signal.empty.subtitle")}</p></div>
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Lock className="size-3" /><span>{t("signal.empty.encrypted")}</span></div>
+      <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10">
+        <SendHorizontal className="size-8 text-primary" />
+      </div>
+      <div>
+        <div className="text-base font-medium">{t("signal.empty.title")}</div>
+        <p className="mt-1 max-w-xs text-sm leading-relaxed text-muted-foreground">{t("signal.empty.subtitle")}</p>
+      </div>
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <Lock className="size-3" /><span>{t("signal.empty.encrypted")}</span>
+      </div>
     </div>
   );
 }
 
-function ImageOverlay({ src, onClose, t }: { src: string; onClose(): void; t: MessengerTranslate }) {
+function ImageOverlay({
+  src,
+  onClose,
+  t,
+}: {
+  src: string;
+  onClose(): void;
+  t: MessengerTranslate;
+}) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => event.key === "Escape" && onClose();
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
+
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-6" role="dialog" aria-modal="true" onClick={onClose}>
-      <img src={src} alt={t("signal.conversation.viewPhoto")} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" onClick={(event) => event.stopPropagation()} />
+      <img
+        src={src}
+        alt={t("signal.conversation.viewPhoto")}
+        className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      />
     </div>
   );
 }
@@ -870,7 +964,9 @@ export function MessengerScreen({ runtime }: { runtime: MessengerScreenRuntime }
     }
   }, [runtime.model]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const views = useMemo(
     () => buildThreadViews(conversations, localReadFacts, runtime.hasFact),
@@ -885,15 +981,18 @@ export function MessengerScreen({ runtime }: { runtime: MessengerScreenRuntime }
     setSelectedThreadId(threadId);
     setRetainedThreadId(threadId);
     setImage(null);
+
     if (view && view.unreadCount > 0) {
       const pendingFacts = view.pendingReadFacts;
-      void runtime.model.markThreadRead(threadId).then(() => {
-        setLocalReadFacts((current) => {
-          const next = new Set(current);
-          for (const fact of pendingFacts) next.add(fact);
-          return next;
-        });
-      }).catch((error) => console.warn("[Signal] Failed to mark thread as read", error));
+      void runtime.model.markThreadRead(threadId)
+        .then(() => {
+          setLocalReadFacts((current) => {
+            const next = new Set(current);
+            for (const fact of pendingFacts) next.add(fact);
+            return next;
+          });
+        })
+        .catch((error) => console.warn("[Signal] Failed to mark thread as read", error));
     }
   }, [runtime, selectedThreadId, views]);
 
@@ -913,7 +1012,9 @@ export function MessengerScreen({ runtime }: { runtime: MessengerScreenRuntime }
           <ThreadList views={views} selectedThreadId={selectedThreadId} loading={loading} onSelect={selectThread} t={t} />
         </div>
         <div className="min-w-0 flex-1">
-          {selected ? <ConversationView conversation={selected} showBack={false} onBack={back} onViewImage={setImage} runtime={runtime} t={t} /> : <EmptyConversation t={t} />}
+          {selected
+            ? <ConversationView conversation={selected} showBack={false} onBack={back} onViewImage={setImage} runtime={runtime} t={t} />
+            : <EmptyConversation t={t} />}
         </div>
         {image ? <ImageOverlay src={image} onClose={() => setImage(null)} t={t} /> : null}
       </div>
@@ -925,11 +1026,22 @@ export function MessengerScreen({ runtime }: { runtime: MessengerScreenRuntime }
     <div ref={containerRef} className="relative h-full overflow-clip">
       <div
         className="flex h-full w-[200%]"
-        style={{ transform: `translateX(${opened ? "-50%" : "0%"})`, transition: "transform 250ms cubic-bezier(0.32,0.72,0,1)" }}
-        onTransitionEnd={() => { if (!opened) setRetainedThreadId(null); }}
+        style={{
+          transform: `translateX(${opened ? "-50%" : "0%"})`,
+          transition: "transform 250ms cubic-bezier(0.32,0.72,0,1)",
+        }}
+        onTransitionEnd={() => {
+          if (!opened) setRetainedThreadId(null);
+        }}
       >
-        <div className="h-full w-1/2 shrink-0"><ThreadList views={views} selectedThreadId={selectedThreadId} loading={loading} onSelect={selectThread} t={t} /></div>
-        <div className="h-full w-1/2 shrink-0">{retained ? <ConversationView conversation={retained} showBack onBack={back} onViewImage={setImage} runtime={runtime} t={t} /> : null}</div>
+        <div className="h-full w-1/2 shrink-0">
+          <ThreadList views={views} selectedThreadId={selectedThreadId} loading={loading} onSelect={selectThread} t={t} />
+        </div>
+        <div className="h-full w-1/2 shrink-0">
+          {retained
+            ? <ConversationView conversation={retained} showBack onBack={back} onViewImage={setImage} runtime={runtime} t={t} />
+            : null}
+        </div>
       </div>
       {image ? <ImageOverlay src={image} onClose={() => setImage(null)} t={t} /> : null}
     </div>
