@@ -3,6 +3,9 @@ import { createRecoveredDesktopRuntime } from "./apps/recovered-presentation";
 import { RecoveredDesktopShell } from "./components/recovered-desktop-shell";
 import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
 
+/** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
+const MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS = 1800;
+
 /**
  * Source-driven application root used by the migration build.
  *
@@ -16,6 +19,7 @@ export function SourceApp() {
     const bundle = createRecoveredDesktopRuntime({
       mail: {
         model: frontend.mail,
+        attachmentDownloadDurationMs: MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS,
       },
       desktop: {
         // The source-app smoke build does not yet own the complete production
