@@ -42,6 +42,73 @@ def _runtime_websockets(ctx):
     )
 
 
+def _cloudflare_archive_list(section: str):
+    """Shallow-copy a resident R2 section without duplicating artifact trees."""
+    return list(_runtime.live_pack._section_view(section))
+
+
+# The local compatibility API intentionally returns defensive deep copies.
+# Inside a Cloudflare isolate these consumers are trusted read-only paths; a
+# detached list shell is enough for Mail's runtime append behavior while the
+# large archived dict/string graph remains single-copy in memory.
+_runtime.live_pack.mail_artifacts = lambda: _cloudflare_archive_list("mail_artifacts")
+_runtime.live_pack.file_artifacts = lambda: _cloudflare_archive_list("file_artifacts")
+_runtime.live_pack.signal_thread_artifacts = lambda: _cloudflare_archive_list(
+    "signal_thread_artifacts"
+)
+_runtime.live_pack.signal_message_artifacts = lambda: _cloudflare_archive_list(
+    "signal_message_artifacts"
+)
+
+
+async def _prefetch_parsed_arcade_message(env, message: dict) -> None:
+    """Populate lazy R2 sections from an already-decoded Arcade message."""
+    if message.get("type") != "event":
+        return
+
+    channel = message.get("channel")
+    payload = message.get("payload")
+    payload = payload if isinstance(payload, dict) else {}
+
+    if channel == "manifold.artifacts.request":
+        req_type = payload.get("artifactType")
+        mapping = {
+            "mail": ("mail_artifacts",),
+            "file": ("file_artifacts",),
+            "signal_thread": ("signal_thread_artifacts",),
+            "signal_message": ("signal_message_artifacts",),
+            None: (
+                "mail_artifacts",
+                "file_artifacts",
+                "signal_thread_artifacts",
+                "signal_message_artifacts",
+            ),
+        }
+        for section in mapping.get(req_type, ()):
+            await _runtime._ensure_live_section(env, section)
+        return
+
+    if channel == "manifold.artifacts.fetch":
+        if payload.get("artifactType") == "browser_page":
+            lookup_key = payload.get("lookup_key")
+            if isinstance(lookup_key, str) and lookup_key:
+                await _runtime._ensure_browser_lookup(env, lookup_key)
+        return
+
+    if channel == "manifold.bounty.submit":
+        if payload.get("fileId"):
+            await _runtime._ensure_live_section(env, "file_artifacts")
+        url = payload.get("url")
+        if isinstance(url, str) and url:
+            await _runtime._ensure_browser_lookup(env, url, allow_contains=True)
+
+
+def _prune_transition_history(world) -> None:
+    """Drop transition bodies once their wire messages and snapshot are built."""
+    for cartridge in world.cartridges.values():
+        cartridge.transitions.clear()
+
+
 async def _cloudflare_run_chat_reply(self, user_text: str) -> None:
     """Generate a reply without billing presentation-only wall-clock delays."""
     chat = self.cartridges.get("chat")
@@ -165,10 +232,16 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
 
     async def _persist_world(self, world, *, force: bool = False, before=None) -> str:
         # Serialize once after message processing and compare against the exact
-        # snapshot already stored in SQLite. The base implementation serializes
-        # both before and after every message; this removes the pre-message copy
-        # and avoids redundant writes when a message does not mutate the world.
+        # snapshot already stored in SQLite. The JSON serializer references the
+        # live cartridge states directly, avoiding a second full world graph.
         snapshot = _runtime.world_snapshot_json(world)
+
+        # Transition bodies have already been emitted over the wire and are not
+        # part of durable snapshots. Release them before awaiting SQLite I/O so
+        # a long-lived isolate does not accumulate one deep-copied transition
+        # per commit.
+        _prune_transition_history(world)
+
         if force or snapshot != self._persisted_world_snapshot:
             await self.ctx.storage.put(_runtime._DO_WORLD_STATE_KEY, snapshot)
             self._persisted_world_snapshot = snapshot
@@ -207,7 +280,8 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
             return
         adapter = _runtime._HibernatingSocketAdapter(websocket, socket_id)
 
-        await _runtime._prefetch_for_arcade_message(self.env, raw)
+        # Decode once. The old path parsed here and then parsed the same raw
+        # payload again inside `_prefetch_for_arcade_message`.
         try:
             message = json.loads(raw)
         except json.JSONDecodeError:
@@ -223,6 +297,7 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
             )
             return
 
+        await _prefetch_parsed_arcade_message(self.env, message)
         attachment = await self._capture_ai_settings(websocket, attachment, message)
 
         if message.get("type") == "reset_my_web_world":
