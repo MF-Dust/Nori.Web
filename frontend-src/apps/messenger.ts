@@ -2,15 +2,16 @@ import type { Artifact, ArtifactService } from "../services/artifacts";
 import type { ManifoldService } from "../services/manifold";
 import type { JsonValue } from "../runtime/protocol";
 
-export interface SignalThreadData extends Record<string, JsonValue> {
+export interface SignalThreadData {
   thread_id: string;
   title: string;
   participants: string[];
   avatar_path?: string;
   status?: string;
+  [key: string]: JsonValue | undefined;
 }
 
-export interface SignalMessageData extends Record<string, JsonValue> {
+export interface SignalMessageData {
   thread_id: string;
   message_id: string;
   sender: string;
@@ -18,6 +19,7 @@ export interface SignalMessageData extends Record<string, JsonValue> {
   body_md: string;
   timestamp: string;
   read_fact?: string;
+  [key: string]: JsonValue | undefined;
 }
 
 export type SignalThreadArtifact = Artifact<SignalThreadData>;
