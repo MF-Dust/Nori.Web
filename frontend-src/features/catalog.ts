@@ -32,8 +32,14 @@ export interface RecoveredFeatureBoundary {
 export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
   {
     feature: "shell",
-    shippedChunkPatterns: [/SidebarNavButton/i, /useCompactHeight/i, /useElementSize/i],
+    shippedChunkPatterns: [
+      /IntroPage/i,
+      /SidebarNavButton/i,
+      /useCompactHeight/i,
+      /useElementSize/i,
+    ],
     maintenanceModules: [
+      "screens/intro-page.tsx",
       "components/sidebar-nav-button.tsx",
       "hooks/use-compact-height.ts",
       "hooks/use-element-size.ts",
@@ -95,8 +101,13 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
   },
   {
     feature: "signal",
-    shippedChunkPatterns: [/LoginScreen/i, /commands/i],
-    maintenanceModules: ["services/signal.ts", "screens/signal-login-screen.tsx"],
+    shippedChunkPatterns: [/LoginScreen/i, /ResetScreen/i, /TempPasswordScreen/i, /commands/i],
+    maintenanceModules: [
+      "services/signal.ts",
+      "screens/signal-login-screen.tsx",
+      "screens/signal-reset-screen.tsx",
+      "screens/signal-temp-password-screen.tsx",
+    ],
     status: "ui-recovered",
   },
   {
