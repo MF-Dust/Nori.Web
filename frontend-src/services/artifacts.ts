@@ -3,7 +3,7 @@ import type { JsonValue } from "../runtime/protocol";
 
 export type ArtifactType = "mail" | "file" | "signal_thread" | "signal_message" | "browser_page";
 
-export interface Artifact<T extends Record<string, JsonValue> = Record<string, JsonValue>> {
+export interface Artifact<T = Record<string, JsonValue>> {
   id: string;
   type: ArtifactType | string;
   data: T;
@@ -25,7 +25,8 @@ export class ArtifactService {
   constructor(private readonly rpc: EventRpcClient) {}
 
   async list(type?: Exclude<ArtifactType, "browser_page">): Promise<Artifact[]> {
-    const payload = type ? { artifactType: type } : {};
+    const payload: Record<string, JsonValue> = {};
+    if (type) payload.artifactType = type;
     const result = await this.rpc.call<ArtifactListResponse>(
       "manifold.artifacts.request",
       payload,
