@@ -1,81 +1,96 @@
-# Frontend recovery and clean-room maintenance
+# Frontend recovery and maintenance workflow
 
-The files under `public/assets/` are production Vite chunks. They retain useful chunk names and ESM dependency boundaries, but the repository does not contain source-map references for the shipped JavaScript. As a result, the original TypeScript/TSX source tree, original local identifiers, comments, and types cannot be reconstructed exactly.
+Nori.Web ships a production Vite frontend in `public/assets/`. The JavaScript chunks are minified/renamed and no `sourceMappingURL` references are present, so exact original source recovery is not technically possible from the repository alone. In particular, original TypeScript types, comments, local variable names, pre-bundle file boundaries and JSX source locations are unavailable.
 
-The repository therefore uses two separate layers:
+The repository therefore uses a two-stage recovery model.
 
-1. **Recovery artifacts** — generated locally from the shipped bundles for analysis. These are ignored by Git and are not treated as maintainable source.
-2. **Clean-room source** — code written in `frontend-src/` from the verified public protocol, observed module boundaries, and application behavior. This is the source that should gradually replace compatibility shims and hashed production chunks.
+## 1. Exhaustive shipped-bundle analysis
 
-## Generate recovery artifacts locally
-
-Install Node dependencies, then run:
+Run:
 
 ```bash
 npm ci
 npm run frontend:recover
 ```
 
-Output is written to `.frontend-recovery/`:
+The analyzer walks every JavaScript and CSS chunk in `public/assets/` and records stable evidence useful for maintenance:
+
+- hashes and byte sizes;
+- static/dynamic imports and re-exports;
+- exported/imported alias bindings;
+- top-level function/class/variable inventory;
+- runtime signals such as fetch/WebSocket/timers/storage/animation-frame use;
+- `/api/*` endpoints, storage keys, protocol/event strings and external URLs;
+- Vite lazy chunk references and dependency graph;
+- feature classification for auth, Arcade, chat, Browser, Mail, Files, Messenger, Terminal, games and debug tooling;
+- CSS selectors, variables, asset URLs, media queries and keyframes;
+- optional beautified local copies for reading during analysis.
+
+Generated files live under `.frontend-recovery/` and are ignored by Git. They are analysis material rather than project source.
+
+The output set is:
 
 ```text
 .frontend-recovery/
 ├── manifest.json
 ├── chunk-graph.json
 ├── MODULE_MAP.md
-└── pretty/
-    └── assets/
-        └── *.js
+├── SYMBOL_INDEX.json
+├── FEATURE_MAP.md
+├── style-manifest.json
+├── STYLE_MAP.md
+├── symbols/*.json
+└── pretty/assets/*
 ```
 
-`pretty/assets/` contains formatted analysis copies of the existing production chunks. They are useful for reading and tracing code, but are deliberately ignored by Git and should not become the project's source of truth.
+Use `npm run frontend:recover -- --metadata-only` to skip the formatted JavaScript/CSS copies while keeping the complete structural inventory.
 
-For a quicker structural pass without writing formatted bundle copies:
+## 2. Clean-room maintenance source
+
+`frontend-src/` contains stable TypeScript reconstructed from the verified HTTP/WebSocket protocol and observable application behavior. It currently covers:
+
+- local auth/session and ticket HTTP calls;
+- Arcade main WebSocket negotiation (`arcade.v1` + `ticket.*` subprotocol);
+- reconnect behavior with protocol-level keepalive disabled by default to avoid waking hibernating Durable Objects unnecessarily;
+- Arcade media WebSocket negotiation;
+- correlated event-channel RPC;
+- RFC 6902 cartridge patch application;
+- replicated world/cartridge store;
+- Manifold artifact, chip, command, bookmark and bounty operations;
+- Browser, Mail, Files, Messenger and Terminal application models;
+- Chat commands and audio acknowledgements;
+- Cake Duel, Codenames, Chess and Pictionary cartridge transport;
+- desktop game/talk/network event channels.
+
+This source is intentionally named and typed for maintainability rather than trying to preserve meaningless minifier identifiers.
+
+## Drift protection
+
+`npm run frontend:recover:check` performs a metadata-only full scan and requires every analyzed JavaScript chunk to also exist in the symbol inventory. It additionally asserts that the major shipped feature chunks remain discoverable and that CSS recovery is non-empty.
+
+The normal GitHub pull-request CI runs both:
 
 ```bash
-npm run frontend:recover -- --metadata-only
+npm run frontend:typecheck
+npm run frontend:recover:check
 ```
 
-## GitHub Actions
+so an upstream asset replacement cannot silently invalidate the maintenance map.
 
-The manual **Frontend Recovery** workflow runs the same analyzer and uploads `.frontend-recovery/` as a private workflow artifact. It is intentionally `workflow_dispatch` only.
+## Manual full recovery artifact
 
-Open:
+The **Frontend Recovery** GitHub Actions workflow is manually triggered. It produces a 14-day artifact containing the full analysis set and, unless `metadata_only` is selected, locally beautified JavaScript/CSS copies for inspection.
 
-```text
-Actions → Frontend Recovery → Run workflow
-```
+Those generated copies are deliberately not committed. Future code changes should be implemented in `frontend-src/` and verified against protocol behavior/tests rather than editing hashed production bundles directly.
 
-The `metadata_only` input can be enabled when only the dependency/API/storage report is needed.
+## Recommended migration order
 
-## What the analyzer recovers
+For future optimization work, prefer migrating functionality in this order:
 
-For every JavaScript chunk it records:
+1. Auth and Arcade transport/state replication.
+2. Manifold event RPC and virtual applications.
+3. Chat/media presentation.
+4. Game presentation layers.
+5. Desktop shell and Live2D presentation.
 
-- byte size and SHA-256 fingerprint;
-- static ESM imports and re-exports;
-- dynamic `import()` dependencies;
-- Vite asset references;
-- detected `/api/*` paths;
-- browser storage keys used through `localStorage` / `sessionStorage`;
-- protocol/event-like string constants;
-- external URLs;
-- whether a source-map reference exists.
-
-This is enough to build a stable dependency graph and identify which functionality belongs to chunks such as `NormalApp`, `LoginPage`, `ChatPanel`, `BrowserApp`, `MailScreen`, `FilesScreen`, and the game screens without pretending that minified names are original source names.
-
-## Clean-room migration strategy
-
-`frontend-src/` is the maintainable replacement workspace. New work should prefer implementing verified behavior there rather than editing large hashed bundles directly.
-
-A practical migration order is:
-
-1. protocol and transport contracts;
-2. authentication and Convex compatibility client;
-3. Arcade WebSocket client and stores;
-4. settings/runtime compatibility currently implemented as injected shims;
-5. smaller apps such as Mail/Files/Browser;
-6. game UIs;
-7. the large `NormalApp` shell and Live2D stage last.
-
-During migration, the shipped bundle remains the behavioral reference. New source should be tested against the existing backend protocol and browser integration tests before replacing a chunk in `public/index.html`.
+The transport/state layers are already represented in `frontend-src/`, so UI migration can happen without changing the server contract.
