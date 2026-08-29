@@ -121,8 +121,13 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
   {
     feature: "terminal",
     shippedChunkPatterns: [/TerminalWindow/i, /commands/i],
-    maintenanceModules: ["apps/terminal.ts", "services/manifold.ts"],
-    status: "protocol-recovered",
+    maintenanceModules: [
+      "apps/terminal.ts",
+      "services/manifold.ts",
+      "terminal/line-editor.ts",
+      "terminal/shell.ts",
+    ],
+    status: "ui-partial",
   },
   {
     feature: "cakeduel",
