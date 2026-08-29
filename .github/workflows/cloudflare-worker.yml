@@ -155,8 +155,16 @@ jobs:
 
       - name: Inspect NormalApp exported ABI
         env:
-          FRONTEND_INSPECT_SNIPPET: "1200"
-        run: npm run frontend:inspect:normalapp
+          FRONTEND_INSPECT_SNIPPET: "2200"
+        run: npm run frontend:inspect:normalapp > .normalapp-abi.json
+
+      - name: Upload NormalApp ABI report
+        uses: actions/upload-artifact@v4
+        with:
+          name: normalapp-abi-${{ github.sha }}
+          path: .normalapp-abi.json
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Typecheck reconstructed frontend source
         run: npm run frontend:typecheck
