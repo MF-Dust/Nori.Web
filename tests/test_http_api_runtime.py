@@ -30,7 +30,38 @@ async def main() -> None:
         token = ticket.json().get("ticket")
         assert isinstance(token, str) and "." in token
 
-    print("[ok] concrete FastAPI app serves entry-status and Arcade ticket endpoints")
+        # The shipped client also uses Convex-compatible HTTP RPCs. Keep their
+        # response contract stable even though Cloudflare serves these paths
+        # directly at the Worker edge to avoid an expensive ASGI cold start.
+        convex_ticket = await client.post(
+            "/api/query",
+            json={"path": "auth/wsTickets:issueWebUserWsTicket"},
+        )
+        assert convex_ticket.status_code == 200, convex_ticket.text
+        convex_payload = convex_ticket.json()
+        assert convex_payload.get("status") == "success"
+        convex_token = (convex_payload.get("value") or {}).get("ticket")
+        assert isinstance(convex_token, str) and "." in convex_token
+        assert convex_payload.get("logLines") == []
+
+        preflight = await client.post(
+            "/api/mutation",
+            json={"path": "auth/otpEmail:preflightOtpSend"},
+        )
+        assert preflight.status_code == 200, preflight.text
+        assert preflight.json() == {
+            "status": "success",
+            "value": None,
+            "logLines": [],
+        }
+
+        timestamp = await client.post("/api/query_ts")
+        assert timestamp.status_code == 200, timestamp.text
+        assert timestamp.json() == {"ts": "0"}
+
+    print(
+        "[ok] FastAPI compatibility routes preserve entry, ticket, and Convex contracts"
+    )
 
 
 if __name__ == "__main__":
