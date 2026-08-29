@@ -126,8 +126,15 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
   {
     feature: "mail",
     shippedChunkPatterns: [/MailScreen/i],
-    maintenanceModules: ["apps/mail.ts", "services/artifacts.ts", "services/manifold.ts"],
-    status: "protocol-recovered",
+    maintenanceModules: [
+      "apps/mail.ts",
+      "apps/mail-presentation.tsx",
+      "components/markdown-body.tsx",
+      "screens/mail-screen.tsx",
+      "services/artifacts.ts",
+      "services/manifold.ts",
+    ],
+    status: "ui-recovered",
   },
   {
     feature: "files",
@@ -138,15 +145,29 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
   {
     feature: "messenger",
     shippedChunkPatterns: [/MessengerScreen/i],
-    maintenanceModules: ["apps/messenger.ts", "services/artifacts.ts", "services/manifold.ts"],
-    status: "protocol-recovered",
+    maintenanceModules: [
+      "apps/messenger.ts",
+      "apps/signal-presentation.tsx",
+      "components/markdown-body.tsx",
+      "screens/messenger-screen.tsx",
+      "services/artifacts.ts",
+      "services/manifold.ts",
+    ],
+    status: "ui-partial",
   },
   {
     feature: "signal",
-    shippedChunkPatterns: [/LoginScreen/i, /ResetScreen/i, /TempPasswordScreen/i, /commands/i],
+    shippedChunkPatterns: [
+      /LoginScreen/i,
+      /ResetScreen/i,
+      /TempPasswordScreen/i,
+      /MessengerScreen/i,
+      /commands/i,
+    ],
     maintenanceModules: [
       "apps/signal-presentation.tsx",
       "services/signal.ts",
+      "screens/messenger-screen.tsx",
       "screens/signal-login-screen.tsx",
       "screens/signal-reset-screen.tsx",
       "screens/signal-temp-password-screen.tsx",
