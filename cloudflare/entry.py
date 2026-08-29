@@ -23,7 +23,67 @@ import worker_runtime as _runtime
 from backend.cartridges.chat import ChatCartridge as _ChatCartridge
 from backend.session.world import WorldSession as _WorldSession
 
-Default = _runtime.Default
+
+_EDGE_CONVEX_PATHS = {
+    "/api/query",
+    "/api/mutation",
+    "/api/action",
+    "/api/function",
+    "/api/query_at_ts",
+}
+
+
+async def _serve_edge_convex_api(path: str, request):
+    """Serve the tiny Convex compatibility surface without FastAPI/ASGI."""
+    method = request.method.upper()
+    if path == "/api/query_ts" and method == "POST":
+        return _runtime._json_response({"ts": "0"})
+    if path not in _EDGE_CONVEX_PATHS or method != "POST":
+        return None
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    function_path = body.get("path") if isinstance(body, dict) else None
+
+    if function_path == "auth/wsTickets:issueWebUserWsTicket":
+        ticket = await _runtime._EDGE_TICKET_MANAGER.issue_ticket(
+            _runtime._EDGE_GUEST_USER_ID
+        )
+        return _runtime._json_response(
+            {"status": "success", "value": {"ticket": ticket}, "logLines": []}
+        )
+
+    if function_path == "auth/otpEmail:preflightOtpSend":
+        return _runtime._json_response(
+            {"status": "success", "value": None, "logLines": []}
+        )
+
+    return _runtime._json_response(
+        {
+            "status": "error",
+            "errorMessage": (
+                "Unsupported local Convex function: "
+                f"{function_path or '<missing>'}"
+            ),
+            "logLines": [],
+        }
+    )
+
+
+class Default(_runtime.Default):
+    """Keep bootstrap and Convex compatibility requests off the ASGI cold path."""
+
+    async def fetch(self, request):
+        path = _runtime.urlsplit(request.url).path
+        if path == "/api/query_ts" or path in _EDGE_CONVEX_PATHS:
+            # Ticket signatures must use the runtime-bound SECRET_KEY.
+            _runtime._apply_runtime_bindings(self.env)
+            response = await _serve_edge_convex_api(path, request)
+            if response is not None:
+                return response
+        return await super().fetch(request)
 
 
 def _runtime_websockets(ctx):
