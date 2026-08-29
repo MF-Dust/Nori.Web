@@ -51,6 +51,7 @@ export * from "./components/window-screen-router";
 export * from "./screens/browser-popup-screen";
 export * from "./screens/intro-page";
 export * from "./screens/mail-screen";
+export * from "./screens/messenger-screen";
 export * from "./screens/signal-login-screen";
 export * from "./screens/signal-reset-screen";
 export * from "./screens/signal-temp-password-screen";
