@@ -78,6 +78,9 @@ jobs:
       - name: Verify browser runtime shim JavaScript
         run: node --check public/nori-runtime-shims.js
 
+      - name: Verify frontend recovery tool JavaScript
+        run: node --check scripts/recover_frontend.mjs
+
       - name: Compile Python sources
         run: uv run python -m compileall -q backend scripts server.py worker.py
 
