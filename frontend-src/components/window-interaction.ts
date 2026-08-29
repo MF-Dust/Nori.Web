@@ -17,6 +17,32 @@ export type WindowResizeDirection =
 
 export type DragSnapTarget = Exclude<WindowSnap, "none" | "vertical-maximized">;
 
+export const NORI_RESIZE_DIRECTIONS: readonly WindowResizeDirection[] = [
+  "nw",
+  "ne",
+  "sw",
+  "se",
+  "n",
+  "s",
+  "w",
+  "e",
+];
+
+export const NORI_WINDOW_DRAG_THRESHOLD_PX = 4;
+export const NORI_VERTICAL_MAXIMIZED_TEAROFF_PX = 24;
+export const NORI_SNAP_PREVIEW_SOUND_THROTTLE_MS = 120;
+
+export const NORI_RESIZE_CURSORS: Readonly<Record<WindowResizeDirection, string>> = {
+  n: "ns-resize",
+  s: "ns-resize",
+  e: "ew-resize",
+  w: "ew-resize",
+  ne: "nesw-resize",
+  sw: "nesw-resize",
+  nw: "nwse-resize",
+  se: "nwse-resize",
+};
+
 export interface PointerPosition {
   x: number;
   y: number;
@@ -214,7 +240,7 @@ export function clampVerticalMaximizedDragX(
 export function pointerDeltaExceeded(
   origin: PointerPosition,
   pointer: PointerPosition,
-  threshold: number,
+  threshold = NORI_WINDOW_DRAG_THRESHOLD_PX,
 ): boolean {
   return (
     Math.abs(pointer.x - origin.x) >= threshold ||
