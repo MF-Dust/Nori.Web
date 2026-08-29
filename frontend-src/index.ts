@@ -24,6 +24,7 @@ export * from "./hooks/use-element-size";
 export * from "./components/chat-panel";
 export * from "./components/sidebar-nav-button";
 export * from "./components/window-content-host";
+export * from "./components/window-interaction";
 export * from "./components/window-layer";
 export * from "./components/window-runtime-context";
 export * from "./components/window-screen-router";
