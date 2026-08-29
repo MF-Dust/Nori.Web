@@ -153,9 +153,11 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Inspect NormalApp exported ABI
+      - name: Inspect NormalApp window ABI
         env:
-          FRONTEND_INSPECT_SNIPPET: "2200"
+          FRONTEND_INSPECT_SNIPPET: "12000"
+          FRONTEND_INSPECT_DEPTH: "2"
+          FRONTEND_INSPECT_EXPORTS: "O,aD,aE,bA,bD,bg,bi,g,h,v,w,x,y,z"
         run: npm run frontend:inspect:normalapp > normalapp-abi.json
 
       - name: Upload NormalApp ABI report
