@@ -2,6 +2,14 @@ import type { WindowAppDefinition, WindowDefinition } from "./window-types";
 
 export interface RegisteredWindowAppDefinition extends WindowAppDefinition {
   pinned?: boolean;
+  /** Recovered presentation/catalog metadata used by the desktop shell. */
+  title?: string;
+  sourceBinding?: string;
+  bootstrap?: string;
+  installWhen?: string;
+  dockWhen?: string;
+  accentColor?: string;
+  recoveryStatus?: string;
 }
 
 export interface WindowAppRegistry {
