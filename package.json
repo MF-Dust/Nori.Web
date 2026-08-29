@@ -9,6 +9,7 @@
     "build": "vite build",
     "start": "python server.py",
     "start:py": "python server.py",
+    "recover:frontend": "node scripts/recover_frontend.mjs",
     "test:cartridges": "python tests/test_cartridges.py",
     "test:backend": "python tests/test_backend_integration.py",
     "test:virtual_apps": "python tests/test_virtual_apps.py",

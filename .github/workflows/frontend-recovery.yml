@@ -1,0 +1,57 @@
+name: Frontend Bundle Recovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref whose shipped frontend bundles should be recovered"
+        required: false
+        default: "master"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install frontend tooling
+        run: npm ci
+
+      - name: Recover shipped frontend bundles
+        run: npm run recover:frontend
+
+      - name: Show recovery summary
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const manifest = JSON.parse(fs.readFileSync('recovered-src/manifest.json', 'utf8'));
+          console.log(`Recovered chunks: ${manifest.chunks.length}`);
+          console.log(`Exact source-map files: ${manifest.sourceMapRecoveredFiles}`);
+          console.log('Largest chunks:');
+          for (const chunk of manifest.chunks.slice(0, 15)) {
+            console.log(`  ${chunk.bundle}: ${chunk.bytes} bytes`);
+          }
+          NODE
+
+      - name: Upload recovered source tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nori.Web-recovered-frontend-${{ github.run_number }}
+          path: recovered-src/
+          if-no-files-found: error
+          retention-days: 14

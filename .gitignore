@@ -5,6 +5,7 @@ __pycache__/
 .research/
 data/*.sqlite3
 data/*.db
+recovered-src/
 
 # --- Cloudflare Python Workers ---
 .venv-workers/
