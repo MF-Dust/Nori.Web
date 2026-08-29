@@ -42,10 +42,12 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
     ],
     maintenanceModules: [
       "apps/production-catalog.ts",
+      "apps/production-icons.tsx",
       "apps/recovered-presentation.ts",
       "screens/intro-page.tsx",
       "components/desktop-dock.tsx",
       "components/desktop-root.tsx",
+      "components/desktop-surface.tsx",
       "components/desktop-topbar.tsx",
       "components/recovered-desktop-shell.tsx",
       "components/managed-window-host.tsx",
