@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import type { StoreApi, UseBoundStore } from "zustand";
 
 export type WindowSnap =
@@ -46,14 +47,45 @@ export interface WindowLayoutRuntime {
   exclusiveTransitionMs: number;
 }
 
+export interface WindowRuntimeProps {
+  instanceId: string;
+  appId: string;
+  windowType: string;
+  close(): void;
+  setTitle(title: string): void;
+}
+
+export type WindowComponentProps = WindowRuntimeProps & Record<string, unknown>;
+export type WindowComponent = ComponentType<WindowComponentProps>;
+
+export type WindowScreenTransition =
+  | "fade"
+  | "slide-left"
+  | "slide-right"
+  | "slide-up"
+  | "none";
+
+export interface WindowScreenComponentProps {
+  navigate(screen: string, params?: unknown): void;
+  goBack(): void;
+  canGoBack: boolean;
+  params?: unknown;
+}
+
+export interface WindowScreenEntryDefinition {
+  component: ComponentType<WindowScreenComponentProps>;
+  transition?: WindowScreenTransition;
+}
+
 export interface WindowScreenDefinition {
   initial: string;
-  screens: Record<string, unknown>;
+  screens: Record<string, WindowScreenEntryDefinition>;
 }
 
 export interface WindowDefinition {
   title: string;
   defaultSize: { width: number; height: number };
+  component?: WindowComponent;
   resizable?: boolean;
   closable?: boolean;
   minimizable?: boolean;
