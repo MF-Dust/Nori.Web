@@ -7,6 +7,7 @@ import {
 } from "react";
 import { renderProductionDockIcon } from "../apps/production-icons";
 import type { RecoveredDesktopRuntimeBundle } from "../apps/recovered-presentation";
+import type { DesktopComputeState } from "../state/compute-runtime";
 import {
   createDesktopRuntime,
   type CreateDesktopRuntimeOptions,
@@ -15,6 +16,11 @@ import {
 import type { RegisteredWindowAppDefinition } from "../state/window-app-registry";
 import type { WindowAppDefinition, WindowLaunchRequest } from "../state/window-store";
 import { DesktopDock, type DesktopDockProps } from "./desktop-dock";
+import {
+  DesktopComputeIndicator,
+  DesktopComputeSummary,
+  DesktopSoundIndicator,
+} from "./desktop-indicators";
 import { DesktopRoot } from "./desktop-root";
 import { DesktopSurface } from "./desktop-surface";
 import { DesktopTopBar, type TopBarTranslate } from "./desktop-topbar";
@@ -40,8 +46,12 @@ export interface RecoveredDesktopShellProps {
   receded?: boolean;
   background?: ReactNode;
   overlay?: ReactNode;
+  /** Source values used by the recovered qGe/XGe compute presentation. */
+  computeState?: DesktopComputeState;
+  /** Optional presentation overrides; computeState remains the default source path. */
   computeIndicator?: ReactNode;
   computeSummary?: ReactNode;
+  /** `undefined` uses the recovered audio-store indicator; `null` hides it. */
   soundIndicator?: ReactNode;
   onOpenComputeVolume?: () => void;
   onSignOut?: () => void;
@@ -89,11 +99,13 @@ function mergeLaunches(
   return result;
 }
 
+const passthroughTranslate: TopBarTranslate = (key) => key;
+
 /**
  * Production-oriented source shell assembled from the recovered NormalApp
  * boundaries: bootstrap lifecycle, topbar, Dock, desktop surface, window stack
- * and migration fallbacks. Feature overlays and unrecovered menu providers stay
- * injectable until their bundle boundaries are reconstructed.
+ * and migration fallbacks. Feature overlays and unrecovered app presentation
+ * boundaries stay injectable until their corresponding chunks are rebuilt.
  */
 export function RecoveredDesktopShell({
   bundle,
@@ -113,6 +125,7 @@ export function RecoveredDesktopShell({
   receded = false,
   background = <DesktopSurface />,
   overlay,
+  computeState,
   computeIndicator,
   computeSummary,
   soundIndicator,
@@ -161,6 +174,19 @@ export function RecoveredDesktopShell({
   const showDesktopSurface = !cinematic && !chromeTopbarOnly;
   const effectivePlayCue = playCue ?? runtimeOptions?.playCue;
   const effectiveResolveAppMenu = resolveAppMenu ?? bundle?.resolveAppMenu;
+  const effectiveTranslate = translate ?? passthroughTranslate;
+  const effectiveComputeIndicator =
+    computeIndicator ??
+    (computeState ? <DesktopComputeIndicator state={computeState} /> : undefined);
+  const effectiveComputeSummary =
+    computeSummary ??
+    (computeState ? <DesktopComputeSummary state={computeState} /> : undefined);
+  const effectiveSoundIndicator =
+    soundIndicator === undefined ? (
+      <DesktopSoundIndicator runtime={runtime} translate={effectiveTranslate} />
+    ) : (
+      soundIndicator
+    );
 
   const topbar = (
     <DesktopTopBar
@@ -171,9 +197,9 @@ export function RecoveredDesktopShell({
       isAdmin={isAdmin}
       phase={phase}
       exclusive={exclusiveAppId !== null}
-      computeIndicator={computeIndicator}
-      computeSummary={computeSummary}
-      soundIndicator={soundIndicator}
+      computeIndicator={effectiveComputeIndicator}
+      computeSummary={effectiveComputeSummary}
+      soundIndicator={effectiveSoundIndicator}
       onOpenComputeVolume={onOpenComputeVolume}
       onSignOut={onSignOut}
       resolveAppMenu={effectiveResolveAppMenu}
