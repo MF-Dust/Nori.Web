@@ -48,6 +48,9 @@ jobs:
       - name: Verify Durable Object active-window pacing
         run: uv run python tests/test_do_active_window_pacing.py
 
+      - name: Verify Python memory and CPU hot paths
+        run: uv run python tests/test_python_memory_cpu.py
+
       - name: Verify static asset cache policy
         run: uv run python tests/test_static_asset_cache.py
 
