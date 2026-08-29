@@ -83,6 +83,7 @@ jobs:
           node --check scripts/recover_frontend.mjs
           node --check scripts/inventory_frontend_symbols.mjs
           node --check scripts/inspect_frontend_chunk.mjs
+          node --check scripts/inspect_frontend_identifier.mjs
           node --check scripts/run_frontend_recovery.mjs
           node --check scripts/verify_frontend_recovery.mjs
 
@@ -154,17 +155,23 @@ jobs:
         run: npm ci
 
       - name: Inspect NormalApp window ABI
+        shell: bash
         env:
           FRONTEND_INSPECT_SNIPPET: "12000"
           FRONTEND_INSPECT_DEPTH: "2"
           FRONTEND_INSPECT_EXPORTS: "O,aD,aE,bA,bD,bg,bi,g,h,v,w,x,y,z"
-        run: npm run frontend:inspect:normalapp > normalapp-abi.json
+          FRONTEND_IDENTIFIER_CONTEXT: "2400"
+          FRONTEND_IDENTIFIER_STATEMENT: "16000"
+        run: |
+          mkdir -p normalapp-inspection
+          npm run frontend:inspect:normalapp > normalapp-inspection/abi.json
+          npm run frontend:inspect:identifier -- NormalApp- st > normalapp-inspection/store-identifier.json
 
-      - name: Upload NormalApp ABI report
+      - name: Upload NormalApp inspection report
         uses: actions/upload-artifact@v4
         with:
-          name: normalapp-abi-${{ github.sha }}
-          path: normalapp-abi.json
+          name: normalapp-inspection-${{ github.sha }}
+          path: normalapp-inspection/
           if-no-files-found: error
           retention-days: 1
 
