@@ -35,11 +35,11 @@ export class MessengerAppModel {
 
   async conversations(): Promise<SignalConversation[]> {
     const [threads, messages] = await Promise.all([
-      this.artifacts.signalThreads(),
-      this.artifacts.signalMessages(),
+      this.artifacts.signalThreads<SignalThreadData>(),
+      this.artifacts.signalMessages<SignalMessageData>(),
     ]);
-    const typedThreads = threads.filter((item): item is SignalThreadArtifact => item.type === "signal_thread");
-    const typedMessages = messages.filter((item): item is SignalMessageArtifact => item.type === "signal_message");
+    const typedThreads = threads.filter((item) => item.type === "signal_thread");
+    const typedMessages = messages.filter((item) => item.type === "signal_message");
     return typedThreads.map((thread) => ({
       thread,
       messages: typedMessages
