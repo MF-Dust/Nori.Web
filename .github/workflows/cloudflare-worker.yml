@@ -168,6 +168,7 @@ jobs:
           npm run frontend:inspect:normalapp > normalapp-inspection/abi.json
           npm run frontend:inspect:identifier -- NormalApp- st XOe GOe launchApp quitApp createWindow focusWindow closeWindow minimizeWindow snapWindow toggleMaximize updateWindowPosition updateWindowRect setWindowTitle navigateScreen goBackScreen getAppContext > normalapp-inspection/window-store-identifiers.json
           npm run frontend:inspect:identifier -- NormalApp- Ti Wt sr dl qh S1 WOe _F xv qn ph B4 '$9e' Y9e VK GK H9e j9e JK ZK > normalapp-inspection/window-ui-identifiers.json
+          npm run frontend:inspect:identifier -- index- Ti Wt sr '$ee' > normalapp-inspection/window-layout-constants.json
 
       - name: Upload NormalApp inspection report
         uses: actions/upload-artifact@v4
