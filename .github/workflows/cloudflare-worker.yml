@@ -48,6 +48,9 @@ jobs:
       - name: Verify Durable Object active-window pacing
         run: uv run python tests/test_do_active_window_pacing.py
 
+      - name: Verify static asset cache policy
+        run: uv run python tests/test_static_asset_cache.py
+
       - name: Verify Workers Builds deploy wrapper
         run: uv run python tests/test_cloudflare_builds_deploy.py
 
