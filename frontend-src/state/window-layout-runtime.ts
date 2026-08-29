@@ -5,6 +5,8 @@ import type {
   WindowLayoutRuntime,
 } from "./window-types";
 
+export type { WindowLayoutRuntime } from "./window-types";
+
 /** Exact values recovered from the shared production index chunk. */
 export const NORI_WINDOW_GEOMETRY: Readonly<WindowGeometryConfig> = {
   cascadeOffset: { x: 40, y: 30 },
