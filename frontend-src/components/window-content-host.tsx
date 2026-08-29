@@ -18,12 +18,33 @@ export interface WindowContentHostProps {
   isRuntimeReady?: (app: WindowAppDefinition) => boolean;
   suspenseFallback?: ReactNode;
   runtimeFallback?: ReactNode;
+  unrecoveredFallback?: ReactNode;
 }
 
 export function WindowContentFallback() {
   return (
     <div className="flex h-full w-full items-center justify-center bg-background/50">
       <div className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent text-muted-foreground" />
+    </div>
+  );
+}
+
+export function UnrecoveredWindowFallback({
+  appId,
+  windowType,
+}: {
+  appId: string;
+  windowType: string;
+}) {
+  return (
+    <div
+      className="flex h-full w-full items-center justify-center bg-background/70 p-6 text-center text-sm text-muted-foreground"
+      data-window-recovery-pending={`${appId}/${windowType}`}
+    >
+      <div>
+        <div className="font-medium text-foreground">UI recovery pending</div>
+        <div className="mt-1 font-mono text-xs">{appId}/{windowType}</div>
+      </div>
     </div>
   );
 }
@@ -41,6 +62,7 @@ export function WindowContentHost({
   isRuntimeReady,
   suspenseFallback = <WindowContentFallback />,
   runtimeFallback = null,
+  unrecoveredFallback,
 }: WindowContentHostProps) {
   const managedWindow = store((state) => state.windows[instanceId] ?? null);
   const focused = store((state) => state.focusedWindowId === instanceId);
@@ -54,6 +76,7 @@ export function WindowContentHost({
       appId: managedWindow.appId,
       windowType: managedWindow.windowType,
       focused,
+      focus: () => store.getState().focusWindow(managedWindow.instanceId),
       close: () => store.getState().closeWindow(managedWindow.instanceId),
       setTitle: (title: string) =>
         store.getState().setWindowTitle(managedWindow.instanceId, title),
@@ -81,7 +104,7 @@ export function WindowContentHost({
 
   if (app.runtime && isRuntimeReady && !isRuntimeReady(app)) return <>{runtimeFallback}</>;
 
-  let content: ReactNode = null;
+  let content: ReactNode;
   if (definition.screens) {
     content = (
       <WindowScreenRouter
@@ -91,6 +114,14 @@ export function WindowContentHost({
         windowType={managedWindow.windowType}
         lookupApp={lookupApp}
         fallback={suspenseFallback}
+        missingFallback={
+          unrecoveredFallback ?? (
+            <UnrecoveredWindowFallback
+              appId={managedWindow.appId}
+              windowType={`${managedWindow.windowType}:${managedWindow.screenStack?.current ?? "unknown"}`}
+            />
+          )
+        }
       />
     );
   } else if (definition.component) {
@@ -100,6 +131,14 @@ export function WindowContentHost({
         <Component {...componentProps} />
       </Suspense>
     );
+  } else {
+    content =
+      unrecoveredFallback ?? (
+        <UnrecoveredWindowFallback
+          appId={managedWindow.appId}
+          windowType={managedWindow.windowType}
+        />
+      );
   }
 
   return (
