@@ -10,9 +10,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ASSET_DIR = path.join(ROOT, "public", "assets");
 const OUTPUT = path.resolve(ROOT, process.argv[2] || ".frontend-recovery");
 
-function uniq(values) {
-  return [...new Set(values)].sort();
-}
+function uniq(values) { return [...new Set(values)].sort(); }
 
 function classify(file) {
   const rules = [
@@ -33,13 +31,9 @@ function classify(file) {
   return rules.find(([, pattern]) => pattern.test(file))?.[0] ?? "vendor-or-shared";
 }
 
-function textOf(node, sourceFile) {
-  return node.getText(sourceFile);
-}
-
 function bindingName(name) {
   if (ts.isIdentifier(name)) return name.text;
-  return textOf(name, name.getSourceFile());
+  return name.getText(name.getSourceFile());
 }
 
 function topLevelDeclarations(sourceFile) {
@@ -47,13 +41,9 @@ function topLevelDeclarations(sourceFile) {
   for (const statement of sourceFile.statements) {
     if (ts.isFunctionDeclaration(statement) && statement.name) {
       result.push({ kind: "function", name: statement.name.text, params: statement.parameters.length });
-      continue;
-    }
-    if (ts.isClassDeclaration(statement) && statement.name) {
+    } else if (ts.isClassDeclaration(statement) && statement.name) {
       result.push({ kind: "class", name: statement.name.text, members: statement.members.length });
-      continue;
-    }
-    if (ts.isVariableStatement(statement)) {
+    } else if (ts.isVariableStatement(statement)) {
       for (const declaration of statement.declarationList.declarations) {
         result.push({ kind: "variable", name: bindingName(declaration.name) });
       }
@@ -77,11 +67,7 @@ function importBindings(sourceFile) {
       imports.push({ from, imported: "*", local: clause.namedBindings.name.text });
     } else if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
       for (const element of clause.namedBindings.elements) {
-        imports.push({
-          from,
-          imported: element.propertyName?.text ?? element.name.text,
-          local: element.name.text,
-        });
+        imports.push({ from, imported: element.propertyName?.text ?? element.name.text, local: element.name.text });
       }
     }
   }
@@ -101,6 +87,15 @@ function exportBindings(sourceFile) {
   return exports;
 }
 
+function walkIterative(sourceFile, inspect) {
+  const stack = [sourceFile];
+  while (stack.length) {
+    const node = stack.pop();
+    inspect(node);
+    ts.forEachChild(node, (child) => { stack.push(child); });
+  }
+}
+
 function runtimeSignals(sourceFile) {
   const signals = {
     fetchCalls: 0,
@@ -113,7 +108,7 @@ function runtimeSignals(sourceFile) {
     reactHookCalls: [],
   };
   const hooks = [];
-  const visit = (node) => {
+  walkIterative(sourceFile, (node) => {
     if (ts.isCallExpression(node)) {
       const expression = node.expression;
       const name = ts.isIdentifier(expression)
@@ -132,9 +127,7 @@ function runtimeSignals(sourceFile) {
       if (node.expression.text === "WebSocket") signals.websocketConstructors += 1;
       if (node.expression.text === "Worker") signals.workerConstructors += 1;
     }
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
+  });
   signals.reactHookCalls = uniq(hooks);
   return signals;
 }
@@ -158,11 +151,9 @@ async function main() {
     records.push(record);
     await fs.writeFile(path.join(symbolDir, `${file}.json`), `${JSON.stringify(record, null, 2)}\n`, "utf8");
   }
-
   const byFeature = {};
   for (const record of records) (byFeature[record.feature] ??= []).push(record.file);
   await fs.writeFile(path.join(OUTPUT, "SYMBOL_INDEX.json"), `${JSON.stringify({ chunks: records, byFeature }, null, 2)}\n`, "utf8");
-
   const lines = [
     "# Recovered frontend feature map",
     "",
