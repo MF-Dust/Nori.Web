@@ -16,6 +16,7 @@ import type { RegisteredWindowAppDefinition } from "../state/window-app-registry
 import type { WindowAppDefinition, WindowLaunchRequest } from "../state/window-store";
 import { DesktopDock, type DesktopDockProps } from "./desktop-dock";
 import { DesktopRoot } from "./desktop-root";
+import { DesktopSurface } from "./desktop-surface";
 import { DesktopTopBar, type TopBarTranslate } from "./desktop-topbar";
 
 export interface RecoveredDesktopShellProps {
@@ -90,8 +91,8 @@ function mergeLaunches(
 
 /**
  * Production-oriented source shell assembled from the recovered NormalApp
- * boundaries: bootstrap lifecycle, topbar, Dock, window stack and migration
- * fallbacks. Wallpaper/feature overlays and unrecovered menu providers stay
+ * boundaries: bootstrap lifecycle, topbar, Dock, desktop surface, window stack
+ * and migration fallbacks. Feature overlays and unrecovered menu providers stay
  * injectable until their bundle boundaries are reconstructed.
  */
 export function RecoveredDesktopShell({
@@ -110,7 +111,7 @@ export function RecoveredDesktopShell({
   cinematic = false,
   chromeTopbarOnly = false,
   receded = false,
-  background,
+  background = <DesktopSurface />,
   overlay,
   computeIndicator,
   computeSummary,
