@@ -53,6 +53,7 @@ export interface WindowRuntimeProps {
   windowType: string;
   /** Mirrors the shipped per-instance focused-window selector. */
   focused?: boolean;
+  snap?: WindowSnap;
   focus(): void;
   close(): void;
   setTitle(title: string): void;
