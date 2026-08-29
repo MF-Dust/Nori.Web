@@ -1,0 +1,11 @@
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/nori-ai-settings.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/nori-runtime-shims.js
+  Cache-Control: public, max-age=0, must-revalidate
