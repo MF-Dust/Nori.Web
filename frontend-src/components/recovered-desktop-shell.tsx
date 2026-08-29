@@ -5,19 +5,17 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { renderProductionDockIcon } from "../apps/production-icons";
 import {
   createDesktopRuntime,
   type CreateDesktopRuntimeOptions,
   type DesktopRuntime,
 } from "../state/desktop-runtime";
+import type { RegisteredWindowAppDefinition } from "../state/window-app-registry";
 import type { WindowAppDefinition, WindowLaunchRequest } from "../state/window-store";
 import { DesktopDock, type DesktopDockProps } from "./desktop-dock";
 import { DesktopRoot } from "./desktop-root";
-import {
-  DesktopTopBar,
-  type DesktopTopBarMenuGroup,
-  type TopBarTranslate,
-} from "./desktop-topbar";
+import { DesktopTopBar, type TopBarTranslate } from "./desktop-topbar";
 
 export interface RecoveredDesktopShellProps {
   runtime?: DesktopRuntime;
@@ -43,7 +41,7 @@ export interface RecoveredDesktopShellProps {
   onOpenComputeVolume?: () => void;
   onSignOut?: () => void;
   resolveAppMenu?: DesktopTopBarMenuResolver;
-  resolveAppTitle?: (app: ReturnType<DesktopRuntime["registry"]["lookupApp"]>) => ReactNode;
+  resolveAppTitle?: (app: RegisteredWindowAppDefinition) => ReactNode;
   renderDockIcon?: DesktopDockProps["renderIcon"];
   resolveDockTitle?: DesktopDockProps["resolveTitle"];
   getDockBadgeCount?: DesktopDockProps["getBadgeCount"];
@@ -89,8 +87,8 @@ function mergeLaunches(
 /**
  * Production-oriented source shell assembled from the recovered NormalApp
  * boundaries: bootstrap lifecycle, topbar, Dock, window stack and migration
- * fallbacks. Wallpaper/feature overlays and unrecovered icon/menu providers
- * stay injectable until their bundle boundaries are reconstructed.
+ * fallbacks. Wallpaper/feature overlays and unrecovered menu providers stay
+ * injectable until their bundle boundaries are reconstructed.
  */
 export function RecoveredDesktopShell({
   runtime: providedRuntime,
@@ -116,7 +114,7 @@ export function RecoveredDesktopShell({
   onSignOut,
   resolveAppMenu,
   resolveAppTitle,
-  renderDockIcon,
+  renderDockIcon = renderProductionDockIcon,
   resolveDockTitle,
   getDockBadgeCount,
   getDockBadgeDot,
@@ -171,7 +169,7 @@ export function RecoveredDesktopShell({
       onOpenComputeVolume={onOpenComputeVolume}
       onSignOut={onSignOut}
       resolveAppMenu={resolveAppMenu}
-      resolveAppTitle={resolveAppTitle as Parameters<typeof DesktopTopBar>[0]["resolveAppTitle"]}
+      resolveAppTitle={resolveAppTitle}
       playCue={effectivePlayCue}
     />
   );
