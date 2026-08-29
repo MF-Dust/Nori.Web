@@ -83,6 +83,7 @@ function requestWindowProps(request: WindowLaunchRequest): unknown {
 
 function createWindowDefinition(
   descriptor: ProductionWindowDescriptor,
+  appTitle: string,
   binding?: ProductionWindowBinding,
 ): RegisteredWindowAppDefinition["windows"][string] {
   const screenDefinitions =
@@ -106,7 +107,11 @@ function createWindowDefinition(
       : null;
 
   return {
-    title: descriptor.title ?? "",
+    // B4 resolves instance title -> window title -> app title. The maintenance
+    // catalog stores static recovered titles, so folding the final fallback
+    // here preserves the same visible result without requiring a translation
+    // service inside the generic window manager.
+    title: descriptor.title ?? appTitle,
     defaultSize: descriptor.defaultSize,
     component: binding?.component,
     resizable: descriptor.resizable,
@@ -133,7 +138,11 @@ export function createProductionWindowAppDefinition(
   const definitions = Object.fromEntries(
     descriptor.windows.map((window) => [
       window.type,
-      createWindowDefinition(window, windows[descriptor.id]?.[window.type]),
+      createWindowDefinition(
+        window,
+        descriptor.title,
+        windows[descriptor.id]?.[window.type],
+      ),
     ]),
   );
 
@@ -162,11 +171,9 @@ export function createProductionWindowAppDefinition(
       const windowType = requestWindowType(descriptor, request);
       if (!windowType) return;
 
-      const existing = context
-        .getWindows()
-        .find((window) => window.windowType === windowType);
-      if (existing) return;
-
+      // The shipped store handles `activate` for an already-running process
+      // before invoking onLaunch. When onLaunch does run, `launch` is allowed
+      // to create another window of the same type.
       context.createWindow(windowType, requestWindowProps(request));
     },
     onQuit: lifecycle?.onQuit,
