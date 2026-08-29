@@ -8,12 +8,14 @@ export interface SignalLoginScreenProps {
   service: SignalService;
   accountName: string;
   authenticated: boolean;
+  authSignalPresent?: boolean;
   setAuthenticated: (value: boolean) => void;
   navigate: (destination: SignalDestination) => void;
   translate: (key: string) => string;
   notice?: string;
   icon?: ReactNode;
   playSound?: (cue: "comms-signal-login-success" | "comms-signal-auth-error") => void;
+  onScreenActive?: (screen: "signal:login") => void;
 }
 
 const inputClassName =
@@ -40,19 +42,32 @@ export function SignalLoginScreen({
   service,
   accountName,
   authenticated,
+  authSignalPresent = false,
   setAuthenticated,
   navigate,
   translate,
   notice,
   icon,
   playSound,
+  onScreenActive,
 }: SignalLoginScreenProps) {
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<SignalLoginStatus>("idle");
 
   useEffect(() => {
-    if (authenticated) navigate("messenger");
-  }, [authenticated, navigate]);
+    onScreenActive?.("signal:login");
+  }, [onScreenActive]);
+
+  useEffect(() => {
+    if (authenticated) {
+      navigate("messenger");
+      return;
+    }
+    if (authSignalPresent) {
+      setAuthenticated(true);
+      navigate("messenger");
+    }
+  }, [authenticated, authSignalPresent, navigate, setAuthenticated]);
 
   const submitting = status === "submitting";
   const failed = status === "wrong" || status === "error";
