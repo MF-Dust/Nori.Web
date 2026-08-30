@@ -32,6 +32,10 @@ export interface SignalMessage {
   fileName?: string;
   sizeBytes?: number;
   downloadFact?: string;
+  /** Shipped Messenger uses this for cross-source message ordering. */
+  sortMs?: number;
+  /** Older/static records may expose the same ordering clock under this key. */
+  createdAtMs?: number;
   raw: Readonly<Record<string, JsonValue>>;
 }
 
@@ -117,8 +121,14 @@ function normalizeMessage(
       numberValue(raw.size_bytes) ??
       numberValue(raw.size),
     downloadFact: downloadFact || undefined,
+    sortMs: numberValue(raw.sortMs) ?? numberValue(raw.sort_ms),
+    createdAtMs: numberValue(raw.createdAtMs) ?? numberValue(raw.created_at_ms),
     raw,
   };
+}
+
+function messageSortTime(message: SignalMessage): number {
+  return message.sortMs ?? message.createdAtMs ?? Date.parse(message.timestamp) || 0;
 }
 
 export class MessengerAppModel {
@@ -144,7 +154,7 @@ export class MessengerAppModel {
         thread,
         messages: normalizedMessages
           .filter((message) => message.threadId === thread.threadId)
-          .sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
+          .sort((a, b) => messageSortTime(a) - messageSortTime(b)),
       }));
   }
 
