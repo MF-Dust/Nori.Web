@@ -28,11 +28,6 @@ export interface SignalRecoveryResult {
   [key: string]: unknown;
 }
 
-export interface SignalDanielVerifyResult {
-  reply?: unknown;
-  [key: string]: unknown;
-}
-
 async function resultOrNull<T>(
   transport: CommandTransport,
   command: string,
@@ -51,16 +46,5 @@ export class SignalService {
 
   recover(recoveryCode: string): Promise<SignalRecoveryResult | null> {
     return resultOrNull<SignalRecoveryResult>(this.transport, "signal.recover", { recoveryCode });
-  }
-
-  async verifyDaniel(answer?: string): Promise<string[]> {
-    const result = await resultOrNull<SignalDanielVerifyResult>(
-      this.transport,
-      "signal.daniel.verify",
-      answer === undefined ? {} : { answer },
-    );
-    return Array.isArray(result?.reply)
-      ? result.reply.filter((item): item is string => typeof item === "string")
-      : [];
   }
 }
