@@ -52,7 +52,13 @@ export * from "./components/window-overlays";
 export * from "./components/window-resize-handles";
 export * from "./components/window-runtime-context";
 export * from "./components/window-screen-router";
-export * from "./screens/browser-page-view";
+export {
+  BrowserPageView,
+  type BrowserPageContextMenuPayload,
+  type BrowserPageHostRuntime,
+  type BrowserPageStatus,
+  type BrowserPageViewProps as SourceBrowserPageViewProps,
+} from "./screens/browser-page-view";
 export * from "./screens/browser-popup-screen";
 export * from "./screens/browser-screen";
 export * from "./screens/files-screen";
