@@ -24,6 +24,7 @@ export * from "./apps/production-icons";
 export * from "./apps/recovered-presentation";
 export * from "./apps/signal-daniel";
 export * from "./apps/signal-presentation";
+export * from "./apps/signal-story-clock";
 export * from "./apps/terminal";
 export * from "./apps/terminal-presentation";
 export * from "./intents/browser-intent";
