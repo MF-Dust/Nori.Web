@@ -207,6 +207,7 @@ jobs:
           node scripts/inspect_frontend_chunk.mjs QfrDock-D2m-2E_A.js > frontend-cutover-inspection/qfr-dock.json
           node scripts/inspect_frontend_identifier.mjs index-CyHAbkO5.js preloadLive2DModel NoriSceneStage Live2D Cubism > frontend-cutover-inspection/entry-live2d-identifiers.json
           node scripts/inspect_frontend_identifier.mjs NormalApp- preloadLive2DModel NoriSceneStage Live2D Cubism > frontend-cutover-inspection/normalapp-live2d-identifiers.json
+          FRONTEND_IDENTIFIER_CONTEXT=8000 FRONTEND_IDENTIFIER_STATEMENT=30000 FRONTEND_IDENTIFIER_MATCHES=160 node scripts/inspect_frontend_identifier.mjs NormalApp- KL gV Ktt Xtt cY MY wHe pHe yHe xHe > frontend-cutover-inspection/signal-messenger-runtime.json
 
       - name: Upload frontend cutover inspection report
         uses: actions/upload-artifact@v4
