@@ -54,6 +54,15 @@ export interface SignalServiceConversationRuntime {
   isInteractive?: (thread: SignalThread) => boolean;
   isTyping?: (thread: SignalThread) => boolean;
   send?: (thread: SignalThread, body: string) => void | Promise<void>;
+  subscribe?: (listener: () => void) => () => void;
+  resolveMessages?: (
+    thread: SignalThread,
+    staticMessages: readonly SignalMessage[],
+  ) => SignalMessage[];
+  onOpen?: (thread: SignalThread) => void;
+  getComposerPlaceholder?: (thread: SignalThread) => string | undefined;
+  /** null hides the badge, undefined falls back to the generic service badge. */
+  getServiceBadge?: (thread: SignalThread) => string | null | undefined;
 }
 
 export interface MessengerScreenRuntime {
@@ -737,12 +746,11 @@ function ServiceComposer({
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const send = async () => {
-    const trimmed = body.trim();
-    if (!trimmed || sending || !runtime.serviceConversation?.send) return;
+    if (!body.trim() || sending || !runtime.serviceConversation?.send) return;
     runtime.playCue?.("comms-signal-verify-send");
     setSending(true);
     try {
-      await runtime.serviceConversation.send(thread, trimmed);
+      await runtime.serviceConversation.send(thread, body);
       setBody("");
     } finally {
       setSending(false);
@@ -764,8 +772,8 @@ function ServiceComposer({
               }
             }}
             autoComplete="off"
-            placeholder={t("signal.composer.servicePlaceholder")}
-            aria-label={t("signal.composer.servicePlaceholder")}
+            placeholder={runtime.serviceConversation?.getComposerPlaceholder?.(thread) ?? t("signal.composer.servicePlaceholder")}
+            aria-label={runtime.serviceConversation?.getComposerPlaceholder?.(thread) ?? t("signal.composer.servicePlaceholder")}
             className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
         </div>
@@ -806,15 +814,29 @@ function ConversationView({
   t: MessengerTranslate;
 }) {
   const { thread, messages } = conversation;
-  const grouped = useMemo(() => groupMessages(messages), [messages]);
+  const [, setServiceRevision] = useState(0);
+  const serviceConversation = runtime.serviceConversation;
+
+  useEffect(() => serviceConversation?.subscribe?.(() => {
+    setServiceRevision((revision) => revision + 1);
+  }), [serviceConversation]);
+
+  useEffect(() => {
+    serviceConversation?.onOpen?.(thread);
+  }, [serviceConversation, thread]);
+
+  const interactive = serviceConversation?.isInteractive?.(thread) === true;
+  const typing = serviceConversation?.isTyping?.(thread) === true;
+  const resolvedMessages = serviceConversation?.resolveMessages?.(thread, messages) ?? messages;
+  const grouped = useMemo(() => groupMessages(resolvedMessages), [resolvedMessages]);
+  const serviceBadge = serviceConversation?.getServiceBadge?.(thread);
+  const showServiceBadge = serviceBadge === undefined ? thread.service : serviceBadge !== null;
   const scrollRef = useRef<HTMLDivElement>(null);
-  const interactive = runtime.serviceConversation?.isInteractive?.(thread) === true;
-  const typing = runtime.serviceConversation?.isTyping?.(thread) === true;
 
   useEffect(() => {
     const element = scrollRef.current;
     if (element) element.scrollTop = element.scrollHeight;
-  }, [messages, typing]);
+  }, [resolvedMessages, typing]);
 
   const actions = [
     { Icon: Phone, label: "signal.conversation.call" },
@@ -841,9 +863,9 @@ function ConversationView({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-sm font-medium">{thread.title}</span>
-            {thread.service ? (
+            {showServiceBadge ? (
               <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                <Bot className="size-2.5" />{t("signal.conversation.serviceBadge")}
+                <Bot className="size-2.5" />{serviceBadge ?? t("signal.conversation.serviceBadge")}
               </span>
             ) : null}
           </div>
