@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { SignalDanielConversationRuntime } from "./signal-daniel";
 import type { SignalService } from "../services/signal";
 import {
   SignalLoginScreen,
@@ -22,6 +23,8 @@ export interface SignalPresentationRuntime {
   ) => void;
   onAuthenticatedChange?: (authenticated: boolean) => void;
   messenger?: MessengerScreenRuntime;
+  /** Optional source-owned Daniel story runtime; facts/cursor remain host inputs. */
+  daniel?: SignalDanielConversationRuntime;
 }
 
 function valueOf<T>(value: T | (() => T)): T {
@@ -36,9 +39,9 @@ function objectParams(params: unknown): Record<string, unknown> {
 
 /**
  * Binds the recovered Signal authentication flow and source-owned Messenger to
- * the generic desktop screen router. Messenger's story-specific service
- * conversation remains an explicit runtime hook until its owning state machine
- * is migrated from NormalApp.
+ * the generic desktop screen router. The Daniel service conversation is also
+ * source-owned when supplied; its world-fact and story-cursor inputs stay at
+ * the host boundary until the production facts provider is migrated.
  */
 export function createSignalProductionWindowBinding(
   runtime: SignalPresentationRuntime,
@@ -114,7 +117,13 @@ export function createSignalProductionWindowBinding(
     }, [navigate]);
 
     if (!authenticated || !runtime.messenger) return null;
-    return <MessengerScreen runtime={runtime.messenger} />;
+    return (
+      <MessengerScreen
+        runtime={runtime.daniel
+          ? { ...runtime.messenger, serviceConversation: runtime.daniel }
+          : runtime.messenger}
+      />
+    );
   }
 
   return {
