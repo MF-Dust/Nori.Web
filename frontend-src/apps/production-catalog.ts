@@ -181,7 +181,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         alwaysOnTop: true,
       },
     ],
-    recoveryStatus: "ui-partial",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "fX",

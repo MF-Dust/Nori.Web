@@ -183,15 +183,21 @@ export function createRecoveredDesktopRuntime(
           await state.launchApp({ appId: "browser", mode: "launch", args: { url } });
           return;
         }
-        browserIntent.open(url);
+
         const process = state.processes.browser;
         const mainId = process.windowIds.find(
           (instanceId) => state.windows[instanceId]?.windowType === "main",
         );
         if (mainId) {
+          browserIntent.open(url);
           state.focusWindow(mainId);
           return;
         }
+
+        // A Browser process may contain only popup windows. In that case the
+        // requested URL becomes the new main window's initial tab directly;
+        // do not also publish it to the intent store or the same URL would be
+        // consumed a second time after BrowserScreen mounts.
         state = runtime.store.getState();
         state.getAppContext("browser").createWindow("main", { url });
       }
