@@ -1,9 +1,13 @@
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { NORI_WINDOW_ANIMATION, type WindowLayoutRuntime } from "../state/window-layout-runtime";
 import type { WindowAppDefinition, WindowStore } from "../state/window-store";
 import { WindowChrome } from "./window-chrome";
 import { WindowContentHost } from "./window-content-host";
 import { WindowLayer, type WindowLayerRenderItem } from "./window-layer";
+import {
+  WindowPresentationRuntimeProvider,
+  type WindowTitleBarContentValue,
+} from "./window-runtime-context";
 
 export interface ManagedWindowHostProps {
   store: WindowStore;
@@ -16,11 +20,6 @@ export interface ManagedWindowHostProps {
   runtimeFallback?: ReactNode;
 }
 
-/**
- * Functional clean-room counterpart of the shipped regular/exclusive window
- * hosts. Motion is represented as data attributes for now; the state and
- * interaction wiring already follows the recovered desktop contracts.
- */
 export function ManagedWindowHost({
   store,
   layout,
@@ -33,6 +32,11 @@ export function ManagedWindowHost({
 }: ManagedWindowHostProps) {
   const managedWindow = store((state) => state.windows[item.instanceId] ?? null);
   const focusedWindowId = store((state) => state.focusedWindowId);
+  const [titleBarContent, setTitleBarContent] = useState<WindowTitleBarContentValue | null>(null);
+  const presentationRuntime = useMemo(
+    () => ({ setTitleBarContent }),
+    [],
+  );
   if (!managedWindow || managedWindow.minimized) return null;
 
   const exclusive = item.kind === "exclusive";
@@ -48,6 +52,7 @@ export function ManagedWindowHost({
       <WindowChrome
         instanceId={managedWindow.instanceId}
         title={managedWindow.title}
+        titleBarContent={titleBarContent}
         rect={managedWindow}
         preSnapRect={managedWindow.preSnapRect}
         snap={managedWindow.snap}
@@ -78,14 +83,16 @@ export function ManagedWindowHost({
           store.getState().updateWindowRect(instanceId, x, y, width, height)
         }
       >
-        <WindowContentHost
-          store={store}
-          instanceId={managedWindow.instanceId}
-          lookupApp={lookupApp}
-          isRuntimeReady={isRuntimeReady}
-          suspenseFallback={suspenseFallback}
-          runtimeFallback={runtimeFallback}
-        />
+        <WindowPresentationRuntimeProvider value={presentationRuntime}>
+          <WindowContentHost
+            store={store}
+            instanceId={managedWindow.instanceId}
+            lookupApp={lookupApp}
+            isRuntimeReady={isRuntimeReady}
+            suspenseFallback={suspenseFallback}
+            runtimeFallback={runtimeFallback}
+          />
+        </WindowPresentationRuntimeProvider>
       </WindowChrome>
     </div>
   );
@@ -102,7 +109,6 @@ export interface DesktopWindowManagerProps {
   receded?: boolean;
 }
 
-/** Complete functional window stack: ordering -> chrome -> app content. */
 export function DesktopWindowManager({
   store,
   layout,

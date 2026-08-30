@@ -16,10 +16,11 @@ export interface ArtifactListResponse {
   artifacts: Artifact[];
 }
 
-export interface ArtifactFetchResponse {
+export interface ArtifactFetchResponse<T = Record<string, JsonValue>> {
   ok: boolean;
   status?: number;
-  artifact?: Artifact;
+  body?: string;
+  artifact?: Artifact<T>;
 }
 
 export class ArtifactService {
@@ -38,13 +39,17 @@ export class ArtifactService {
       : [];
   }
 
-  async fetchBrowserPage<T = Record<string, JsonValue>>(lookupKey: string): Promise<Artifact<T> | null> {
-    const result = await this.rpc.call<ArtifactFetchResponse>(
+  fetchBrowserPageResponse<T = Record<string, JsonValue>>(lookupKey: string): Promise<ArtifactFetchResponse<T>> {
+    return this.rpc.call<ArtifactFetchResponse<T>>(
       "manifold.artifacts.fetch",
       { artifactType: "browser_page", lookup_key: lookupKey },
       "manifold.artifacts.fetch.response",
     );
-    return result.ok && result.artifact ? result.artifact as Artifact<T> : null;
+  }
+
+  async fetchBrowserPage<T = Record<string, JsonValue>>(lookupKey: string): Promise<Artifact<T> | null> {
+    const result = await this.fetchBrowserPageResponse<T>(lookupKey);
+    return result.ok && result.artifact ? result.artifact : null;
   }
 
   apps<T = Record<string, JsonValue>>(): Promise<Artifact<T>[]> { return this.list<T>("app"); }

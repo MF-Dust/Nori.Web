@@ -13,22 +13,22 @@ function sourceTranslate(key: string): string {
   return key;
 }
 
-function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
+function worldFacts(frontend: NoriFrontendRuntime): Set<string> {
+  const result = new Set<string>();
   for (const runtime of frontend.world.snapshot().cartridges.values()) {
     const facts = runtime.state.facts;
     if (!facts || typeof facts !== "object" || Array.isArray(facts)) continue;
-    if (Object.prototype.hasOwnProperty.call(facts, factId)) return true;
+    for (const [factId, value] of Object.entries(facts)) {
+      if (value === true || value === 1 || (value && typeof value === "object")) result.add(factId);
+    }
   }
-  return false;
+  return result;
 }
 
-/**
- * Source-driven application root used by the migration build.
- *
- * Feature-specific runtime providers are added here as their cutover boundaries
- * become source-owned. Unrecovered windows continue through the explicit
- * presentation fallback rather than importing historical JavaScript.
- */
+function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
+  return worldFacts(frontend).has(factId);
+}
+
 export function SourceApp() {
   const source = useMemo(() => {
     const frontend = new NoriFrontendRuntime();
@@ -38,6 +38,10 @@ export function SourceApp() {
       bundle?.runtime.store.getState().launchApp(request);
 
     const openUrl = (url: string) => {
+      if (bundle?.openBrowserIntent) {
+        void bundle.openBrowserIntent(url);
+        return;
+      }
       void launchApp({
         appId: "browser",
         mode: "launch",
@@ -57,6 +61,20 @@ export function SourceApp() {
         subscribe: (listener) => frontend.world.subscribe(() => listener()),
         launchApp,
         reduceMotion: () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      },
+      browser: {
+        page: {
+          model: frontend.browser,
+          locale: () => navigator.language,
+          getFacts: () => worldFacts(frontend),
+          subscribeFacts: (listener) => frontend.world.subscribe(() => listener()),
+          subscribeEnvelopeChanges: (listener) => frontend.arcade.onMessage((message) => {
+            const raw = message as unknown as { type?: string; channel?: string };
+            if (raw.type === "event" && raw.channel === "sites.envelopes.changed") listener();
+          }),
+          invokeCommand: (command, payload) => frontend.manifold.command(command, payload),
+        },
+        translate: sourceTranslate,
       },
       signal: {
         service: frontend.signal,

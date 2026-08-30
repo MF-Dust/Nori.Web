@@ -1,6 +1,8 @@
 import {
   createBrowserPopupProductionWindowBinding,
+  createBrowserProductionWindowBindings,
   type BrowserPopupPresentationRuntime,
+  type BrowserPresentationRuntime,
 } from "./browser-presentation";
 import {
   createFilesProductionWindowBinding,
@@ -34,10 +36,15 @@ import {
   createFilesIntentStore,
   type FilesIntentStore,
 } from "../screens/files-screen";
+import {
+  createBrowserIntentStore,
+  type BrowserIntentStore,
+} from "../intents/browser-intent";
 
 export interface RecoveredProductionPresentationOptions {
   signal?: SignalPresentationRuntime;
   terminal?: TerminalPresentationRuntime;
+  browser?: BrowserPresentationRuntime;
   browserPopup?: BrowserPopupPresentationRuntime;
   mail?: MailPresentationRuntime;
   files?: FilesPresentationRuntime;
@@ -60,7 +67,9 @@ export function createRecoveredProductionWindowBindings(
     };
   }
 
-  if (options.browserPopup) {
+  if (options.browser) {
+    bindings.browser = createBrowserProductionWindowBindings(options.browser);
+  } else if (options.browserPopup) {
     bindings.browser = {
       popup: createBrowserPopupProductionWindowBinding(options.browserPopup),
     };
@@ -110,6 +119,8 @@ export interface RecoveredDesktopRuntimeBundle {
   resolveAppMenu?: TerminalTopBarMenuResolver;
   filesIntent?: FilesIntentStore;
   openFilesIntent?: OpenFilesIntent;
+  browserIntent?: BrowserIntentStore;
+  openBrowserIntent?: (url: string) => Promise<void>;
 }
 
 export function createRecoveredDesktopRuntime(
@@ -119,8 +130,10 @@ export function createRecoveredDesktopRuntime(
     ? createTerminalEditBridgeRegistry()
     : undefined;
   const filesIntent = options.files?.intent ?? (options.files ? createFilesIntentStore() : undefined);
+  const browserIntent = options.browser?.intent ?? (options.browser ? createBrowserIntentStore() : undefined);
   const presentation: RecoveredProductionPresentationOptions = {
     signal: options.signal,
+    browser: options.browser ? { ...options.browser, intent: browserIntent } : undefined,
     browserPopup: options.browserPopup,
     mail: options.mail,
     files: options.files
@@ -163,6 +176,27 @@ export function createRecoveredDesktopRuntime(
       }
     : undefined;
 
+  const openBrowserIntent = browserIntent
+    ? async (url: string) => {
+        let state = runtime.store.getState();
+        if (!state.processes.browser) {
+          await state.launchApp({ appId: "browser", mode: "launch", args: { url } });
+          return;
+        }
+        browserIntent.open(url);
+        const process = state.processes.browser;
+        const mainId = process.windowIds.find(
+          (instanceId) => state.windows[instanceId]?.windowType === "main",
+        );
+        if (mainId) {
+          state.focusWindow(mainId);
+          return;
+        }
+        state = runtime.store.getState();
+        state.getAppContext("browser").createWindow("main", { url });
+      }
+    : undefined;
+
   return {
     runtime,
     windows,
@@ -173,5 +207,7 @@ export function createRecoveredDesktopRuntime(
         : undefined,
     filesIntent,
     openFilesIntent,
+    browserIntent,
+    openBrowserIntent,
   };
 }
