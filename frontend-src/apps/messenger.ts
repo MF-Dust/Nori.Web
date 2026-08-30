@@ -128,7 +128,10 @@ function normalizeMessage(
 }
 
 function messageSortTime(message: SignalMessage): number {
-  return message.sortMs ?? message.createdAtMs ?? Date.parse(message.timestamp) || 0;
+  if (message.sortMs !== undefined) return message.sortMs;
+  if (message.createdAtMs !== undefined) return message.createdAtMs;
+  const parsed = Date.parse(message.timestamp);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 export class MessengerAppModel {
