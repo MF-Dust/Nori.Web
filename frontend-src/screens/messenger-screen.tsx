@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   Download,
   EllipsisVertical,
-  LoaderCircle,
   Lock,
   Phone,
   Plus,
@@ -32,6 +31,7 @@ import type {
   SignalMessage,
   SignalThread,
 } from "../apps/messenger";
+import { SIGNAL_DANIEL_EVIDENCE_FACT } from "../apps/signal-daniel";
 import { MarkdownBody } from "../components/markdown-body";
 
 const DESKTOP_BREAKPOINT = 640;
@@ -60,7 +60,6 @@ export interface SignalServiceConversationRuntime {
     staticMessages: readonly SignalMessage[],
   ) => SignalMessage[];
   onOpen?: (thread: SignalThread) => void;
-  getComposerPlaceholder?: (thread: SignalThread) => string | undefined;
   /** null hides the badge, undefined falls back to the generic service badge. */
   getServiceBadge?: (thread: SignalThread) => string | null | undefined;
 }
@@ -744,17 +743,13 @@ function ServiceComposer({
   t: MessengerTranslate;
 }) {
   const [body, setBody] = useState("");
-  const [sending, setSending] = useState(false);
-  const send = async () => {
-    if (!body.trim() || sending || !runtime.serviceConversation?.send) return;
+  const typing = runtime.serviceConversation?.isTyping?.(thread) === true;
+  const send = () => {
+    const trimmed = body.trim();
+    if (!trimmed || typing || !runtime.serviceConversation?.send) return;
     runtime.playCue?.("comms-signal-verify-send");
-    setSending(true);
-    try {
-      await runtime.serviceConversation.send(thread, body);
-      setBody("");
-    } finally {
-      setSending(false);
-    }
+    void runtime.serviceConversation.send(thread, trimmed);
+    setBody("");
   };
 
   return (
@@ -768,17 +763,17 @@ function ServiceComposer({
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.nativeEvent.isComposing) {
                 event.preventDefault();
-                void send();
+                send();
               }
             }}
             autoComplete="off"
-            placeholder={runtime.serviceConversation?.getComposerPlaceholder?.(thread) ?? t("signal.composer.servicePlaceholder")}
-            aria-label={runtime.serviceConversation?.getComposerPlaceholder?.(thread) ?? t("signal.composer.servicePlaceholder")}
+            placeholder={t("signal.composer.servicePlaceholder")}
+            aria-label={t("signal.composer.servicePlaceholder")}
             className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
         </div>
-        <button type="button" onClick={() => void send()} disabled={!body.trim() || sending} aria-label={t("signal.composer.send")} className="mb-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40">
-          {sending ? <LoaderCircle className="size-[18px] animate-spin" /> : <SendHorizontal className="size-[18px]" />}
+        <button type="button" onClick={send} disabled={!body.trim() || typing} aria-label={t("signal.composer.send")} className="mb-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40">
+          <SendHorizontal className="size-[18px]" />
         </button>
       </div>
     </div>
@@ -827,6 +822,21 @@ function ConversationView({
 
   const interactive = serviceConversation?.isInteractive?.(thread) === true;
   const typing = serviceConversation?.isTyping?.(thread) === true;
+  const typingWasActive = useRef(typing);
+  const evidenceUnlocked = runtime.hasFact?.(SIGNAL_DANIEL_EVIDENCE_FACT) === true;
+  const evidenceWasUnlocked = useRef(evidenceUnlocked);
+
+  useEffect(() => {
+    if (typing && !typingWasActive.current) runtime.playCue?.("comms-signal-typing");
+    typingWasActive.current = typing;
+  }, [runtime, typing]);
+
+  useEffect(() => {
+    if (evidenceUnlocked && !evidenceWasUnlocked.current) {
+      runtime.playCue?.("comms-signal-evidence-unlock");
+    }
+    evidenceWasUnlocked.current = evidenceUnlocked;
+  }, [evidenceUnlocked, runtime]);
   const resolvedMessages = serviceConversation?.resolveMessages?.(thread, messages) ?? messages;
   const grouped = useMemo(() => groupMessages(resolvedMessages), [resolvedMessages]);
   const serviceBadge = serviceConversation?.getServiceBadge?.(thread);
