@@ -1,4 +1,4 @@
-name: Apply Signal Daniel Patch
+name: Finalize Signal Messenger Recovery
 
 on:
   push:
@@ -6,13 +6,12 @@ on:
       - dev/frontend-source-cutover
     paths:
       - ".github/workflows/apply-signal-daniel.yml"
-      - "scripts/apply_signal_daniel_screen_patch.mjs"
 
 permissions:
   contents: write
 
 jobs:
-  apply:
+  finalize:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,21 +29,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Apply evidence-backed Messenger patch
+      - name: Finalize Signal Messenger boundary
         run: node scripts/apply_signal_daniel_screen_patch.mjs
 
-      - name: Typecheck patched source
-        run: npm run frontend:typecheck
+      - name: Verify finalized source
+        run: |
+          npm run frontend:typecheck
+          npm run frontend:build
+          npm run frontend:app:build
+          npm run frontend:cutover:check
+          npm run frontend:recover:check
 
-      - name: Commit patched Messenger screen
+      - name: Commit finalized boundary
         shell: bash
         run: |
-          if git diff --quiet -- frontend-src/screens/messenger-screen.tsx; then
-            echo "No Messenger patch required"
+          if git diff --quiet; then
+            echo "No cleanup required"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend-src/screens/messenger-screen.tsx
-          git commit -m "feat(frontend): wire Daniel runtime into Messenger screen"
+          git add -A
+          git commit -m "chore(frontend): close Signal Messenger recovery boundary"
           git push origin HEAD:dev/frontend-source-cutover
