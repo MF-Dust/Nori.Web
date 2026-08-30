@@ -52,3 +52,5 @@ jobs:
           git add -A
           git commit -m "chore(frontend): close Signal Messenger recovery boundary"
           git push origin HEAD:dev/frontend-source-cutover
+
+# Retry after resolving the public barrel type-name collision.
