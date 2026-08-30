@@ -1,6 +1,9 @@
 import type { JsonValue } from "../runtime/protocol";
 import type { ArtifactService } from "../services/artifacts";
 import type { ManifoldService } from "../services/manifold";
+import { signalStoryTimestampFromEpoch } from "./signal-story-clock";
+
+const SIGNAL_SELF_SENDER = "我";
 
 export interface SignalThread {
   threadId: string;
@@ -32,10 +35,8 @@ export interface SignalMessage {
   fileName?: string;
   sizeBytes?: number;
   downloadFact?: string;
-  /** Shipped Messenger uses this for cross-source message ordering. */
+  /** Shipped Messenger uses this clock to order surfaced/local messages. */
   sortMs?: number;
-  /** Older/static records may expose the same ordering clock under this key. */
-  createdAtMs?: number;
   raw: Readonly<Record<string, JsonValue>>;
 }
 
@@ -47,10 +48,6 @@ export interface SignalConversation {
 function objectValue(value: JsonValue | undefined): Record<string, JsonValue> | undefined {
   if (!value || Array.isArray(value) || typeof value !== "object") return undefined;
   return value;
-}
-
-function stringValue(value: JsonValue | undefined, fallback = ""): string {
-  return typeof value === "string" ? value : fallback;
 }
 
 function numberValue(value: JsonValue | undefined): number | undefined {
@@ -92,21 +89,26 @@ function normalizeThread(
 function normalizeMessage(
   fallbackId: string,
   raw: Record<string, JsonValue>,
+  surfacedAt?: number,
 ): SignalMessage {
   const dimensions = objectValue(raw.dimensions);
   const readFact = firstString(raw, "readFact", "read_fact");
   const assetPath = firstString(raw, "assetPath", "asset_path", "src");
   const downloadFact = firstString(raw, "downloadFact", "download_fact");
   const fileName = firstString(raw, "fileName", "file_name", "filename");
+  const sender = firstString(raw, "sender", "from");
+  const explicitTimestamp = firstString(raw, "timestamp", "date");
+  const hasSurfacedAt = typeof surfacedAt === "number" && Number.isFinite(surfacedAt) && surfacedAt > 0;
+
   return {
     threadId: firstString(raw, "threadId", "thread_id"),
     messageId: firstString(raw, "messageId", "message_id") || fallbackId,
-    sender: firstString(raw, "sender", "from"),
+    sender,
     kind: firstString(raw, "kind", "type") || "text",
     body: firstString(raw, "body", "body_md", "text"),
-    timestamp: firstString(raw, "timestamp", "date"),
+    timestamp: explicitTimestamp || (hasSurfacedAt ? signalStoryTimestampFromEpoch(surfacedAt) : ""),
     readFact: readFact || undefined,
-    self: raw.self === true,
+    self: raw.self === true || sender === SIGNAL_SELF_SENDER,
     assetPath: assetPath || undefined,
     alt: firstString(raw, "alt") || undefined,
     dimensions: dimensions
@@ -121,17 +123,27 @@ function normalizeMessage(
       numberValue(raw.size_bytes) ??
       numberValue(raw.size),
     downloadFact: downloadFact || undefined,
-    sortMs: numberValue(raw.sortMs) ?? numberValue(raw.sort_ms),
-    createdAtMs: numberValue(raw.createdAtMs) ?? numberValue(raw.created_at_ms),
+    sortMs: !explicitTimestamp && hasSurfacedAt ? surfacedAt : undefined,
     raw,
   };
 }
 
-function messageSortTime(message: SignalMessage): number {
-  if (message.sortMs !== undefined) return message.sortMs;
-  if (message.createdAtMs !== undefined) return message.createdAtMs;
-  const parsed = Date.parse(message.timestamp);
+function parsedTimestamp(timestamp: string): number {
+  const parsed = Date.parse(timestamp);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/** Exact shipped comparator used when static and local Signal messages are merged. */
+export function compareSignalMessages(left: SignalMessage, right: SignalMessage): number {
+  const leftSurfaced = left.sortMs !== undefined;
+  const rightSurfaced = right.sortMs !== undefined;
+  if (leftSurfaced !== rightSurfaced) return leftSurfaced ? 1 : -1;
+
+  const leftTime = left.sortMs ?? parsedTimestamp(left.timestamp);
+  const rightTime = right.sortMs ?? parsedTimestamp(right.timestamp);
+  if (leftTime !== rightTime) return leftTime - rightTime;
+
+  return left.messageId.localeCompare(right.messageId, undefined, { numeric: true });
 }
 
 export class MessengerAppModel {
@@ -148,7 +160,7 @@ export class MessengerAppModel {
 
     const normalizedMessages = messages
       .filter((item) => item.type === "signal_message")
-      .map((item) => normalizeMessage(item.id, item.data));
+      .map((item) => normalizeMessage(item.id, item.data, item.surfacedAt));
 
     return threads
       .filter((item) => item.type === "signal_thread")
@@ -157,7 +169,7 @@ export class MessengerAppModel {
         thread,
         messages: normalizedMessages
           .filter((message) => message.threadId === thread.threadId)
-          .sort((a, b) => messageSortTime(a) - messageSortTime(b)),
+          .sort(compareSignalMessages),
       }));
   }
 
