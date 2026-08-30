@@ -15,7 +15,7 @@ export interface SignalDanielStoryCursor {
   threadId: string | null;
 }
 
-export interface SignalDanielVerifyResult {
+export interface SignalDanielRuntimeVerifyResponse {
   ok: boolean;
   result?: {
     reply?: string[];
@@ -53,7 +53,7 @@ function isRecord(value: JsonValue | undefined): value is Record<string, JsonVal
   return value !== null && value !== undefined && typeof value === "object" && !Array.isArray(value);
 }
 
-function parseVerifyResponse(value: JsonValue): SignalDanielVerifyResult {
+function parseVerifyResponse(value: JsonValue): SignalDanielRuntimeVerifyResponse {
   if (!isRecord(value) || typeof value.ok !== "boolean") {
     return {
       ok: false,
@@ -64,7 +64,7 @@ function parseVerifyResponse(value: JsonValue): SignalDanielVerifyResult {
     };
   }
 
-  const response: SignalDanielVerifyResult = { ok: value.ok };
+  const response: SignalDanielRuntimeVerifyResponse = { ok: value.ok };
   if (isRecord(value.result)) {
     response.result = {
       reply: Array.isArray(value.result.reply)
@@ -246,7 +246,7 @@ export class SignalDanielConversationRuntime {
     }
   }
 
-  async verify(answer?: string): Promise<SignalDanielVerifyResult> {
+  async verify(answer?: string): Promise<SignalDanielRuntimeVerifyResponse> {
     const payload: Record<string, JsonValue> = {};
     if (answer !== undefined) payload.answer = answer;
     try {
