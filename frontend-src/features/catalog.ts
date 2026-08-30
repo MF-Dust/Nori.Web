@@ -147,13 +147,14 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
     shippedChunkPatterns: [/MessengerScreen/i],
     maintenanceModules: [
       "apps/messenger.ts",
+      "apps/signal-daniel.ts",
       "apps/signal-presentation.tsx",
       "components/markdown-body.tsx",
       "screens/messenger-screen.tsx",
       "services/artifacts.ts",
       "services/manifold.ts",
     ],
-    status: "ui-partial",
+    status: "ui-recovered",
   },
   {
     feature: "signal",
@@ -165,6 +166,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       /commands/i,
     ],
     maintenanceModules: [
+      "apps/signal-daniel.ts",
       "apps/signal-presentation.tsx",
       "services/signal.ts",
       "screens/messenger-screen.tsx",
@@ -172,7 +174,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "screens/signal-reset-screen.tsx",
       "screens/signal-temp-password-screen.tsx",
     ],
-    status: "ui-partial",
+    status: "ui-recovered",
   },
   {
     feature: "terminal",
