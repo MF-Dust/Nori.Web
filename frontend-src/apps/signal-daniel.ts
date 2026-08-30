@@ -1,49 +1,45 @@
-import type { SignalMessage, SignalThread } from "./messenger";
 import type { JsonValue } from "../runtime/protocol";
 import type { ManifoldService } from "../services/manifold";
+import {
+  compareSignalMessages,
+  type SignalMessage,
+  type SignalThread,
+} from "./messenger";
+import { signalStoryTimestamp } from "./signal-story-clock";
 
 export const SIGNAL_DANIEL_THREAD_ID = "daniel";
+export const SIGNAL_DANIEL_UNLOCK_FACT = "signal_daniel.unlocked";
 export const SIGNAL_DANIEL_DEADMAN_FACT = "daniel.deadman.delivered";
 export const SIGNAL_DANIEL_EVIDENCE_FACT = "daniel.evidence_unlocked";
 export const SIGNAL_DANIEL_VERIFY_COMMAND = "signal.daniel.verify";
 export const SIGNAL_DANIEL_REPLY_CUE = "comms-signal-bot-reply";
-export const SIGNAL_DANIEL_COMPOSER_PLACEHOLDER = "Ask Daniel...";
-export const SIGNAL_DANIEL_SERVICE_BADGE = "System";
-
-export interface SignalDanielStoryCursor {
-  seq: string | number | null;
-  threadId: string | null;
-}
+export const SIGNAL_DANIEL_SELF_SENDER = "我";
+export const SIGNAL_DANIEL_ASSISTANT_SENDER = "OpenFlaw 助理";
 
 export interface SignalDanielRuntimeVerifyResponse {
   ok: boolean;
   result?: {
     reply?: string[];
   };
-  error?: {
-    code: string;
-    message: string;
-  };
 }
 
 export interface SignalDanielRuntimeOptions {
   manifold: Pick<ManifoldService, "command">;
   hasFact: (factId: string) => boolean;
-  initialStoryCursor?: Partial<SignalDanielStoryCursor>;
-  /** Production uses its story-adjusted clock for the displayed timestamp. */
-  timestampNow?: () => number;
-  /** Production uses Date.now() for local merge ordering. */
+  /** Shipped local messages use the Signal story-adjusted calendar clock. */
+  timestampNow?: () => Date;
+  /** Shipped local merge ordering uses Date.now(). */
   sortNow?: () => number;
   sleep?: (milliseconds: number) => Promise<void>;
   playCue?: (cue: string) => void;
+  initialJumpEpoch?: unknown;
 }
 
 export interface SignalDanielSnapshot {
   messages: readonly SignalMessage[];
   typing: boolean;
   resumed: boolean;
-  lastSeq: string | number | null;
-  threadId: string | null;
+  seq: number;
   revision: number;
 }
 
@@ -53,78 +49,53 @@ function isRecord(value: JsonValue | undefined): value is Record<string, JsonVal
   return value !== null && value !== undefined && typeof value === "object" && !Array.isArray(value);
 }
 
-function parseVerifyResponse(value: JsonValue): SignalDanielRuntimeVerifyResponse {
-  if (!isRecord(value) || typeof value.ok !== "boolean") {
-    return {
-      ok: false,
-      error: {
-        code: "signal_daniel_bad_response",
-        message: "Invalid response.",
-      },
-    };
-  }
-
-  const response: SignalDanielRuntimeVerifyResponse = { ok: value.ok };
-  if (isRecord(value.result)) {
-    response.result = {
-      reply: Array.isArray(value.result.reply)
-        ? value.result.reply.filter((item): item is string => typeof item === "string")
-        : undefined,
-    };
-  }
-  if (isRecord(value.error)) {
-    response.error = {
-      code: typeof value.error.code === "string" ? value.error.code : "signal_daniel_error",
-      message: typeof value.error.message === "string" ? value.error.message : "Request failed.",
-    };
-  }
-  return response;
-}
-
-function formatTimestamp(milliseconds: number): string {
-  const date = new Date(milliseconds);
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+function parseReplies(value: JsonValue): string[] {
+  if (!isRecord(value) || value.ok !== true || !isRecord(value.result)) return [];
+  return Array.isArray(value.result.reply)
+    ? value.result.reply.filter((item): item is string => typeof item === "string")
+    : [];
 }
 
 export function signalDanielReplyDelay(body: string): number {
-  return Math.min(1600, 480 + body.trim().length * 22);
+  return Math.min(1600, 480 + body.length * 22);
 }
 
 function defaultSleep(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function sortTime(message: SignalMessage): number {
-  if (typeof message.sortMs === "number" && Number.isFinite(message.sortMs)) return message.sortMs;
-  if (typeof message.createdAtMs === "number" && Number.isFinite(message.createdAtMs)) return message.createdAtMs;
+function messageSortTime(message: SignalMessage): number {
+  if (message.sortMs !== undefined) return message.sortMs;
   const parsed = Date.parse(message.timestamp);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
 /**
  * Source-owned clean-room recovery of the shipped Daniel Signal service thread.
- * The story fact provider and story cursor remain explicit host boundaries.
+ * Story facts and the jump epoch remain explicit host inputs until their owning
+ * NormalApp state boundary is migrated.
  */
 export class SignalDanielConversationRuntime {
   private readonly listeners = new Set<Listener>();
   private readonly localMessages: SignalMessage[] = [];
-  private readonly timestampNow: () => number;
+  private readonly timestampNow: () => Date;
   private readonly sortNow: () => number;
   private readonly sleep: (milliseconds: number) => Promise<void>;
   private typing = false;
   private resumed = false;
-  private lastSeq: string | number | null;
-  private storyThreadId: string | null;
+  private seq = 0;
   private revision = 0;
-  private messageSequence = 0;
+  private jumpEpoch: unknown;
+  private jumpEpochInitialized = false;
 
   constructor(private readonly options: SignalDanielRuntimeOptions) {
-    this.timestampNow = options.timestampNow ?? Date.now;
+    this.timestampNow = options.timestampNow ?? (() => new Date());
     this.sortNow = options.sortNow ?? Date.now;
     this.sleep = options.sleep ?? defaultSleep;
-    this.lastSeq = options.initialStoryCursor?.seq ?? null;
-    this.storyThreadId = options.initialStoryCursor?.threadId ?? null;
+    if ("initialJumpEpoch" in options) {
+      this.jumpEpoch = options.initialJumpEpoch;
+      this.jumpEpochInitialized = true;
+    }
   }
 
   subscribe = (listener: Listener): (() => void) => {
@@ -139,8 +110,7 @@ export class SignalDanielConversationRuntime {
       messages: [...this.localMessages],
       typing: this.typing,
       resumed: this.resumed,
-      lastSeq: this.lastSeq,
-      threadId: this.storyThreadId,
+      seq: this.seq,
       revision: this.revision,
     };
   }
@@ -156,14 +126,10 @@ export class SignalDanielConversationRuntime {
 
   isTyping = (thread: SignalThread): boolean => this.isDanielThread(thread) && this.typing;
 
-  getComposerPlaceholder = (thread: SignalThread): string | undefined =>
-    this.isDanielThread(thread) ? SIGNAL_DANIEL_COMPOSER_PLACEHOLDER : undefined;
-
+  /** Daniel hides the generic service badge until the deadman fact has surfaced. */
   getServiceBadge = (thread: SignalThread): string | null | undefined => {
     if (!this.isDanielThread(thread)) return undefined;
-    return this.options.hasFact(SIGNAL_DANIEL_DEADMAN_FACT)
-      ? SIGNAL_DANIEL_SERVICE_BADGE
-      : null;
+    return this.options.hasFact(SIGNAL_DANIEL_DEADMAN_FACT) ? undefined : null;
   };
 
   onOpen = (thread: SignalThread): void => {
@@ -177,107 +143,101 @@ export class SignalDanielConversationRuntime {
     if (!this.isDanielThread(thread)) return [...staticMessages];
 
     const local = [...this.localMessages];
-    const latestLocal = local.reduce((maximum, message) => Math.max(maximum, sortTime(message)), 0);
-    const fileThreshold = latestLocal + 0.5;
+    const latestLocal = local.reduce(
+      (maximum, message) => Math.max(maximum, messageSortTime(message)),
+      0,
+    );
+
     const base = this.typing
       ? staticMessages.filter((message) => message.kind !== "file")
-      : staticMessages.map((message) => {
-          if (message.kind !== "file" || typeof message.sortMs !== "number") return message;
-          return { ...message, sortMs: Math.max(message.sortMs, fileThreshold) };
-        });
+      : latestLocal > 0
+        ? staticMessages.map((message) => {
+            if (message.kind !== "file" || message.sortMs === undefined) return message;
+            return { ...message, sortMs: Math.max(message.sortMs, latestLocal + 0.5) };
+          })
+        : [...staticMessages];
 
-    return [...base, ...local].sort((left, right) => sortTime(left) - sortTime(right));
+    return [...base, ...local].sort(compareSignalMessages);
   };
 
-  syncStoryCursor(cursor: Partial<SignalDanielStoryCursor>): void {
-    const seq = cursor.seq ?? null;
-    const threadId = cursor.threadId ?? null;
-
-    if (this.lastSeq === null) {
-      this.lastSeq = seq;
-      this.storyThreadId = threadId;
-      this.notify();
+  /** Shipped runtime skips the first epoch observation and resets on later jumps. */
+  syncJumpEpoch(epoch: unknown): void {
+    if (!this.jumpEpochInitialized) {
+      this.jumpEpoch = epoch;
+      this.jumpEpochInitialized = true;
       return;
     }
-
-    if ((seq !== null && seq !== this.lastSeq) || (threadId !== null && threadId !== this.storyThreadId)) {
-      this.localMessages.length = 0;
-      this.typing = false;
-      this.resumed = false;
-      this.lastSeq = seq;
-      this.storyThreadId = threadId;
-      this.notify();
-    }
+    if (Object.is(epoch, this.jumpEpoch)) return;
+    this.jumpEpoch = epoch;
+    this.reset();
   }
 
-  send = async (thread: SignalThread, body: string): Promise<void> => {
-    if (!this.isDanielThread(thread) || !body.trim()) return;
+  send = async (thread: SignalThread, input: string): Promise<void> => {
+    if (!this.isDanielThread(thread) || this.typing) return;
+    const body = input.trim();
+    if (!body) return;
 
-    this.localMessages.push(this.createMessage("user", body));
-    this.notify();
-    this.typing = true;
-    this.notify();
-
-    const response = await this.verify(body);
-    if (response.ok && response.result) {
-      for (const reply of response.result.reply ?? []) {
+    this.append(SIGNAL_DANIEL_SELF_SENDER, body);
+    this.setTyping(true);
+    try {
+      for (const reply of await this.verify(body)) {
         await this.sleep(signalDanielReplyDelay(reply));
-        this.localMessages.push(this.createMessage("assistant", reply));
-        this.notify();
+        this.append(SIGNAL_DANIEL_ASSISTANT_SENDER, reply);
         this.options.playCue?.(SIGNAL_DANIEL_REPLY_CUE);
       }
+    } finally {
+      this.setTyping(false);
     }
-
-    this.typing = false;
-    this.notify();
   };
 
   async resumeOnce(): Promise<void> {
     if (this.resumed) return;
     this.resumed = true;
     this.notify();
-    if (this.localMessages.length > 0) return;
-
-    const response = await this.verify();
-    if (!response.ok || !response.result) return;
-    for (const reply of response.result.reply ?? []) {
-      this.localMessages.push(this.createMessage("assistant", reply));
-      this.notify();
+    for (const reply of await this.verify()) {
+      this.append(SIGNAL_DANIEL_ASSISTANT_SENDER, reply);
     }
   }
 
-  async verify(answer?: string): Promise<SignalDanielRuntimeVerifyResponse> {
+  reset(): void {
+    this.localMessages.length = 0;
+    this.typing = false;
+    this.resumed = false;
+    this.seq = 0;
+    this.notify();
+  }
+
+  private async verify(answer?: string): Promise<string[]> {
     const payload: Record<string, JsonValue> = {};
     if (answer !== undefined) payload.answer = answer;
     try {
-      return parseVerifyResponse(
+      return parseReplies(
         await this.options.manifold.command(SIGNAL_DANIEL_VERIFY_COMMAND, payload),
       );
-    } catch (error) {
-      return {
-        ok: false,
-        error: {
-          code: "signal_daniel_event_failed",
-          message: error instanceof Error ? error.message : "Request failed.",
-        },
-      };
+    } catch {
+      return [];
     }
   }
 
-  private createMessage(sender: "user" | "assistant", body: string): SignalMessage {
-    const sortMs = this.sortNow();
-    return {
+  private append(sender: string, body: string): void {
+    this.seq += 1;
+    this.localMessages.push({
       threadId: SIGNAL_DANIEL_THREAD_ID,
-      messageId: `bot-${++this.messageSequence}`,
-      sender: sender === "user" ? "我" : "OpenFlaw 助理",
+      messageId: `bot-${this.seq}`,
+      sender,
       kind: "text",
       body,
-      timestamp: formatTimestamp(this.timestampNow()),
-      self: sender === "user",
-      createdAtMs: sortMs,
-      sortMs,
+      timestamp: signalStoryTimestamp(this.timestampNow()),
+      sortMs: this.sortNow(),
+      self: sender === SIGNAL_DANIEL_SELF_SENDER,
       raw: {},
-    };
+    });
+    this.notify();
+  }
+
+  private setTyping(value: boolean): void {
+    this.typing = value;
+    this.notify();
   }
 
   private notify(): void {
