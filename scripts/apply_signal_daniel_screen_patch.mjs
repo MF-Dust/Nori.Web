@@ -7,6 +7,14 @@ function replaceExact(path, label, before, after) {
   fs.writeFileSync(path, source.replace(before, after));
 }
 
+{
+  const path = "frontend-src/apps/signal-daniel.ts";
+  const source = fs.readFileSync(path, "utf8");
+  const renamed = source.replaceAll("SignalDanielVerifyResult", "SignalDanielRuntimeVerifyResponse");
+  if (renamed === source) throw new Error("Daniel response type rename: expected at least one match");
+  fs.writeFileSync(path, renamed);
+}
+
 replaceExact(
   "frontend-src/features/catalog.ts",
   "messenger catalog boundary",
