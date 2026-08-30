@@ -8,6 +8,7 @@ export interface Artifact<T = Record<string, JsonValue>> {
   type: ArtifactType | string;
   data: T;
   availableAt?: number;
+  surfacedAt?: number;
 }
 
 export interface ArtifactListResponse {
