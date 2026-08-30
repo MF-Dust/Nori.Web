@@ -1,7 +1,18 @@
 import {
   createBrowserPopupProductionWindowBinding,
+  createBrowserProductionWindowBindings,
   type BrowserPopupPresentationRuntime,
+  type BrowserPresentationRuntime,
 } from "./browser-presentation";
+import {
+  createFilesProductionWindowBinding,
+  type FilesPresentationRuntime,
+  type OpenFilesIntent,
+} from "./files-presentation";
+import {
+  createMailProductionWindowBinding,
+  type MailPresentationRuntime,
+} from "./mail-presentation";
 import {
   createSignalProductionWindowBinding,
   type SignalPresentationRuntime,
@@ -21,18 +32,24 @@ import {
   type DesktopRuntime,
 } from "../state/desktop-runtime";
 import type { ProductionWindowBindings } from "../state/production-window-apps";
+import {
+  createFilesIntentStore,
+  type FilesIntentStore,
+} from "../screens/files-screen";
+import {
+  createBrowserIntentStore,
+  type BrowserIntentStore,
+} from "../intents/browser-intent";
 
 export interface RecoveredProductionPresentationOptions {
   signal?: SignalPresentationRuntime;
   terminal?: TerminalPresentationRuntime;
+  browser?: BrowserPresentationRuntime;
   browserPopup?: BrowserPopupPresentationRuntime;
+  mail?: MailPresentationRuntime;
+  files?: FilesPresentationRuntime;
 }
 
-/**
- * Produces the source-owned subset of the production presentation registry.
- * Missing features remain absent on purpose and are rendered by the desktop's
- * explicit recovery fallback until their corresponding chunks are rebuilt.
- */
 export function createRecoveredProductionWindowBindings(
   options: RecoveredProductionPresentationOptions,
 ): ProductionWindowBindings {
@@ -50,9 +67,23 @@ export function createRecoveredProductionWindowBindings(
     };
   }
 
-  if (options.browserPopup) {
+  if (options.browser) {
+    bindings.browser = createBrowserProductionWindowBindings(options.browser);
+  } else if (options.browserPopup) {
     bindings.browser = {
       popup: createBrowserPopupProductionWindowBinding(options.browserPopup),
+    };
+  }
+
+  if (options.mail) {
+    bindings.mail = {
+      main: createMailProductionWindowBinding(options.mail),
+    };
+  }
+
+  if (options.files) {
+    bindings.files = {
+      main: createFilesProductionWindowBinding(options.files, options.files.intent),
     };
   }
 
@@ -86,23 +117,28 @@ export interface RecoveredDesktopRuntimeBundle {
   windows: ProductionWindowBindings;
   terminalEditBridges?: TerminalEditBridgeRegistry;
   resolveAppMenu?: TerminalTopBarMenuResolver;
+  filesIntent?: FilesIntentStore;
+  openFilesIntent?: OpenFilesIntent;
+  browserIntent?: BrowserIntentStore;
+  openBrowserIntent?: (url: string) => Promise<void>;
 }
 
-/**
- * Turnkey migration runtime: recovered presentation bindings, the production
- * registry/window store and Terminal's menu/edit bridge are assembled around a
- * single DesktopRuntime. This is the intended source-side handoff boundary for
- * the later main.tsx cutover.
- */
 export function createRecoveredDesktopRuntime(
   options: CreateRecoveredDesktopRuntimeOptions = {},
 ): RecoveredDesktopRuntimeBundle {
   const terminalEditBridges = options.terminal
     ? createTerminalEditBridgeRegistry()
     : undefined;
+  const filesIntent = options.files?.intent ?? (options.files ? createFilesIntentStore() : undefined);
+  const browserIntent = options.browser?.intent ?? (options.browser ? createBrowserIntentStore() : undefined);
   const presentation: RecoveredProductionPresentationOptions = {
     signal: options.signal,
+    browser: options.browser ? { ...options.browser, intent: browserIntent } : undefined,
     browserPopup: options.browserPopup,
+    mail: options.mail,
+    files: options.files
+      ? { ...options.files, intent: filesIntent }
+      : undefined,
     terminal:
       options.terminal && terminalEditBridges
         ? withTerminalEditBridgeRegistry(options.terminal, terminalEditBridges)
@@ -118,6 +154,55 @@ export function createRecoveredDesktopRuntime(
     windows,
   });
 
+  const openFilesIntent: OpenFilesIntent | undefined = filesIntent
+    ? async (payload) => {
+        filesIntent.open(payload);
+        let state = runtime.store.getState();
+        if (!state.processes.files) {
+          await state.launchApp({ appId: "files", mode: "launch", args: payload });
+          return;
+        }
+
+        const process = state.processes.files;
+        const mainId = process.windowIds.find(
+          (instanceId) => state.windows[instanceId]?.windowType === "main",
+        );
+        if (mainId) {
+          state.focusWindow(mainId);
+          return;
+        }
+        state = runtime.store.getState();
+        state.getAppContext("files").createWindow("main", payload);
+      }
+    : undefined;
+
+  const openBrowserIntent = browserIntent
+    ? async (url: string) => {
+        let state = runtime.store.getState();
+        if (!state.processes.browser) {
+          await state.launchApp({ appId: "browser", mode: "launch", args: { url } });
+          return;
+        }
+
+        const process = state.processes.browser;
+        const mainId = process.windowIds.find(
+          (instanceId) => state.windows[instanceId]?.windowType === "main",
+        );
+        if (mainId) {
+          browserIntent.open(url);
+          state.focusWindow(mainId);
+          return;
+        }
+
+        // A Browser process may contain only popup windows. In that case the
+        // requested URL becomes the new main window's initial tab directly;
+        // do not also publish it to the intent store or the same URL would be
+        // consumed a second time after BrowserScreen mounts.
+        state = runtime.store.getState();
+        state.getAppContext("browser").createWindow("main", { url });
+      }
+    : undefined;
+
   return {
     runtime,
     windows,
@@ -126,5 +211,9 @@ export function createRecoveredDesktopRuntime(
       terminalEditBridges
         ? createTerminalTopBarMenuResolver(runtime, terminalEditBridges)
         : undefined,
+    filesIntent,
+    openFilesIntent,
+    browserIntent,
+    openBrowserIntent,
   };
 }

@@ -16,12 +16,17 @@ export * from "./services/signal";
 export * from "./apps/browser";
 export * from "./apps/browser-presentation";
 export * from "./apps/files";
+export * from "./apps/files-tree";
+export * from "./apps/files-presentation";
 export * from "./apps/mail";
+export * from "./apps/mail-presentation";
 export * from "./apps/messenger";
 export * from "./apps/production-catalog";
 export * from "./apps/production-icons";
 export * from "./apps/recovered-presentation";
+export * from "./apps/signal-daniel";
 export * from "./apps/signal-presentation";
+export * from "./apps/signal-story-clock";
 export * from "./apps/terminal";
 export * from "./apps/terminal-presentation";
 export * from "./intents/browser-intent";
@@ -34,6 +39,7 @@ export * from "./components/desktop-indicators";
 export * from "./components/desktop-root";
 export * from "./components/desktop-surface";
 export * from "./components/desktop-topbar";
+export * from "./components/markdown-body";
 export * from "./components/recovered-desktop-shell";
 export * from "./components/managed-window-host";
 export * from "./components/sidebar-nav-button";
@@ -46,8 +52,19 @@ export * from "./components/window-overlays";
 export * from "./components/window-resize-handles";
 export * from "./components/window-runtime-context";
 export * from "./components/window-screen-router";
+export {
+  BrowserPageView,
+  type BrowserPageContextMenuPayload,
+  type BrowserPageHostRuntime,
+  type BrowserPageStatus,
+  type BrowserPageViewProps as SourceBrowserPageViewProps,
+} from "./screens/browser-page-view";
 export * from "./screens/browser-popup-screen";
+export * from "./screens/browser-screen";
+export * from "./screens/files-screen";
 export * from "./screens/intro-page";
+export * from "./screens/mail-screen";
+export * from "./screens/messenger-screen";
 export * from "./screens/signal-login-screen";
 export * from "./screens/signal-reset-screen";
 export * from "./screens/signal-temp-password-screen";

@@ -24,23 +24,26 @@ The source tree now includes:
 - recovered Dock magnification, download/damaged/open/active states and window context actions;
 - recovered system menu, Terminal Shell/Edit/View menus and production app-menu fallback semantics;
 - recovered `audio-store` plus the TopBar volume menu and slider;
-- recovered QFR compute drain/formatting presentation (`qGe` / `XGe`);
+- recovered QFR compute drain/formatting presentation;
 - a `RecoveredDesktopShell` that composes bootstrap lifecycle, desktop surface, window stack, TopBar and Dock;
-- `createRecoveredDesktopRuntime()` turnkey assembly for recovered production presentation bindings and Terminal edit-menu bridging;
-- Signal login/recovery/temporary-password presentation;
+- `createRecoveredDesktopRuntime()` turnkey assembly for recovered production presentation bindings and intent routing;
+- Signal login/recovery/temporary-password presentation and the Daniel service-thread state machine;
+- Mail three-pane presentation, attachment handling and compose failure flow;
+- Files artifact/vault normalization, filesystem tree, responsive sidebar, history/breadcrumb navigation, grid/list views, keyboard navigation, sealed cold-volume flow, password vaults, locked-file compute recovery UI, QFR handoff, Preview `{fileId}` launch and external Files intent routing;
+- Browser main and popup presentation, persistent tabs/bookmarks, history/scroll restoration, omnibox/search routing, popup/new-tab semantics and Browser intent routing;
+- BrowserPageView artifact loading with source-owned `srcdoc` sandboxing, per-page command allowlists, `window.arcade` facts/window/podcast bridge, same-document hash navigation, asset/font inlining, page title/scroll/context-menu relays and error retry behavior;
 - Terminal xterm presentation and shell;
-- Browser popup presentation around the still-separate `BrowserPageView` boundary;
 - Intro, SidebarNavButton, ChatPanel and shared responsive/window hooks.
 
-The normal maintenance entry can therefore be assembled as:
+The normal maintenance entry can therefore be assembled with source-owned presentation runtimes directly:
 
 ```tsx
 const bundle = createRecoveredDesktopRuntime({
-  presentation: {
-    terminal: terminalRuntime,
-    signal: signalRuntime,
-    browserPopup: browserPopupRuntime,
-  },
+  terminal: terminalRuntime,
+  signal: signalRuntime,
+  browser: browserRuntime,
+  mail: mailRuntime,
+  files: filesRuntime,
 });
 
 <RecoveredDesktopShell
@@ -50,19 +53,27 @@ const bundle = createRecoveredDesktopRuntime({
 />
 ```
 
+`bundle.openFilesIntent` reproduces the shipped Files intent boundary: it launches Files when absent, or focuses/creates its main window when already running, while forwarding the requested folder/selection payload.
+
+`bundle.openBrowserIntent` reproduces the shipped Browser intent boundary: it launches Browser with the requested URL when absent, adds a tab and focuses the existing main window when running, and creates a main window directly when the process currently contains popup windows only.
+
+The Browser sandbox keeps command execution page-scoped through each artifact's `allowed_commands` list. The one sanctioned escape to a real OS browser remains an anchor explicitly marked `data-arcade-external="true"`. `bounty.installExtension` is an explicit optional host callback rather than invented behavior, and podcast transport is source-owned while final routing through the OS SFX mixer remains a host-audio integration edge.
+
+The Files cold-volume QFR Dock remains an explicit injected presentation edge because that component belongs to the still-unrecovered Idle/QFR boundary. Files itself no longer imports or delegates to historical JavaScript.
+
 Missing presentation modules are intentionally rendered through explicit migration fallbacks instead of silently delegating their behavior back to minified identifiers.
 
 ## Remaining boundaries
 
-The large `NormalApp-*` desktop shell is no longer a general migration boundary. The remaining work is feature presentation that cannot be reconstructed by inventing data or UI behavior:
+The large `NormalApp-*` desktop shell is no longer a general migration boundary. Mail, Signal Messenger, Files and Browser main/popup are source-owned. Remaining work includes:
 
-- `BrowserPageView-*` / Browser main renderer and sandbox presentation;
-- Signal Messenger and broader chat/media presentation;
-- Mail, Files and Messenger window presentation;
-- game presentation layers;
+- broader Messenger/chat-media presentation outside the recovered Signal Messenger boundary;
+- Cake Duel, Codenames, Chess and Pictionary presentation;
+- Idle/QFR presentation and integration, including the QFR Dock supplied to Files;
 - Live2D/Nori scene presentation;
 - remaining source-owned CSS/visual-system migration;
-- final production `main.tsx` cutover and behavior-comparison tests.
+- Cloudflare deploy-stage frontend staging and the final production entry switch;
+- browser behavior/smoke comparison and historical JavaScript retirement after rollback validation.
 
 Generated beautified bundles under `.frontend-recovery/pretty/` remain evidence, not project source.
 
@@ -75,12 +86,14 @@ npm ci
 npm run frontend:recover
 ```
 
-Validate and build the maintenance source:
+Validate and build the maintenance source and source application:
 
 ```bash
 npm run frontend:typecheck
 npm run frontend:build
+npm run frontend:app:build
+npm run frontend:cutover:check
 npm run frontend:recover:check
 ```
 
-`frontend:build` writes an ignored `.frontend-build/` ES-module library with source maps. Pull-request CI runs all three checks and also keeps the existing Worker/Cloudflare validation intact.
+`frontend:build` writes an ignored `.frontend-build/` ES-module library with source maps. `frontend:app:build` proves the source-owned browser application composes independently of the historical JavaScript entry. Pull-request CI runs these checks alongside the Worker/Cloudflare validation.

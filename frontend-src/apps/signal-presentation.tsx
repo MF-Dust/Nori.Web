@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { SignalDanielConversationRuntime } from "./signal-daniel";
 import type { SignalService } from "../services/signal";
 import {
   SignalLoginScreen,
   type SignalDestination,
 } from "../screens/signal-login-screen";
+import { MessengerScreen, type MessengerScreenRuntime } from "../screens/messenger-screen";
 import { SignalResetScreen } from "../screens/signal-reset-screen";
 import { SignalTempPasswordScreen } from "../screens/signal-temp-password-screen";
 import type { ProductionWindowBinding } from "../state/production-window-apps";
@@ -16,8 +18,13 @@ export interface SignalPresentationRuntime {
   authSignalPresent?: boolean | (() => boolean);
   translate: (key: string, variables?: Record<string, string>) => string;
   playSound?: (cue: string) => void;
-  onScreenActive?: (screen: "signal:login" | "signal:reset" | "signal:tempPassword") => void;
+  onScreenActive?: (
+    screen: "signal:login" | "signal:reset" | "signal:tempPassword" | "signal:messenger",
+  ) => void;
   onAuthenticatedChange?: (authenticated: boolean) => void;
+  messenger?: MessengerScreenRuntime;
+  /** Optional source-owned Daniel story runtime; facts/cursor remain host inputs. */
+  daniel?: SignalDanielConversationRuntime;
 }
 
 function valueOf<T>(value: T | (() => T)): T {
@@ -31,10 +38,10 @@ function objectParams(params: unknown): Record<string, unknown> {
 }
 
 /**
- * Binds the three recovered Signal screens to the generic desktop screen
- * router. Messenger intentionally remains absent until its presentation chunk
- * is reconstructed; navigating there therefore crosses an explicit migration
- * boundary instead of using a guessed implementation.
+ * Binds the recovered Signal authentication flow and source-owned Messenger to
+ * the generic desktop screen router. The Daniel service conversation is also
+ * source-owned when supplied; its world-fact and story-cursor inputs stay at
+ * the host boundary until the production facts provider is migrated.
  */
 export function createSignalProductionWindowBinding(
   runtime: SignalPresentationRuntime,
@@ -103,11 +110,30 @@ export function createSignalProductionWindowBinding(
     );
   }
 
+  function MessengerRoute({ navigate }: WindowScreenComponentProps) {
+    useEffect(() => {
+      runtime.onScreenActive?.("signal:messenger");
+      if (!authenticated) navigate("login");
+    }, [navigate]);
+
+    if (!authenticated || !runtime.messenger) return null;
+    return (
+      <MessengerScreen
+        runtime={runtime.daniel
+          ? { ...runtime.messenger, serviceConversation: runtime.daniel }
+          : runtime.messenger}
+      />
+    );
+  }
+
   return {
     screens: {
       login: { component: LoginScreen, transition: "fade" },
       reset: { component: ResetScreen, transition: "slide-left" },
       tempPassword: { component: TempPasswordScreen, transition: "slide-left" },
+      ...(runtime.messenger
+        ? { messenger: { component: MessengerRoute, transition: "fade" as const } }
+        : {}),
     },
   };
 }
