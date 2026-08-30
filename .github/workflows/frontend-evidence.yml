@@ -1,0 +1,28 @@
+name: Frontend Evidence
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/frontend-evidence.yml"
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Capture shipped chunks
+        shell: bash
+        run: |
+          mkdir -p frontend-evidence
+          cp public/assets/MessengerScreen-BaCtXRiF.js frontend-evidence/messenger-screen.bundle.js
+          cp public/assets/FilesScreen-BmorLrPA.js frontend-evidence/files-screen.bundle.js
+
+      - name: Upload shipped chunk evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-raw-evidence-${{ github.sha }}
+          path: frontend-evidence/
+          if-no-files-found: error
+          retention-days: 1
