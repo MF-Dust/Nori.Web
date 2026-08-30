@@ -24,23 +24,25 @@ The source tree now includes:
 - recovered Dock magnification, download/damaged/open/active states and window context actions;
 - recovered system menu, Terminal Shell/Edit/View menus and production app-menu fallback semantics;
 - recovered `audio-store` plus the TopBar volume menu and slider;
-- recovered QFR compute drain/formatting presentation (`qGe` / `XGe`);
+- recovered QFR compute drain/formatting presentation;
 - a `RecoveredDesktopShell` that composes bootstrap lifecycle, desktop surface, window stack, TopBar and Dock;
 - `createRecoveredDesktopRuntime()` turnkey assembly for recovered production presentation bindings and Terminal edit-menu bridging;
-- Signal login/recovery/temporary-password presentation;
+- Signal login/recovery/temporary-password presentation and the Daniel service-thread state machine;
+- Mail three-pane presentation, attachment handling and compose failure flow;
+- Files artifact/vault normalization, filesystem tree, responsive sidebar, history/breadcrumb navigation, grid/list views, keyboard navigation, sealed cold-volume flow, password vaults, locked-file compute recovery UI, QFR handoff, Preview `{fileId}` launch and external Files intent routing;
 - Terminal xterm presentation and shell;
 - Browser popup presentation around the still-separate `BrowserPageView` boundary;
 - Intro, SidebarNavButton, ChatPanel and shared responsive/window hooks.
 
-The normal maintenance entry can therefore be assembled as:
+The normal maintenance entry can therefore be assembled with source-owned presentation runtimes directly:
 
 ```tsx
 const bundle = createRecoveredDesktopRuntime({
-  presentation: {
-    terminal: terminalRuntime,
-    signal: signalRuntime,
-    browserPopup: browserPopupRuntime,
-  },
+  terminal: terminalRuntime,
+  signal: signalRuntime,
+  browserPopup: browserPopupRuntime,
+  mail: mailRuntime,
+  files: filesRuntime,
 });
 
 <RecoveredDesktopShell
@@ -50,19 +52,24 @@ const bundle = createRecoveredDesktopRuntime({
 />
 ```
 
+`bundle.openFilesIntent` reproduces the shipped Files intent boundary: it launches Files when absent, or focuses/creates its main window when already running, while forwarding the requested folder/selection payload.
+
+The Files cold-volume QFR Dock remains an explicit injected presentation edge because that component belongs to the still-unrecovered Idle/QFR boundary. Files itself no longer imports or delegates to historical JavaScript.
+
 Missing presentation modules are intentionally rendered through explicit migration fallbacks instead of silently delegating their behavior back to minified identifiers.
 
 ## Remaining boundaries
 
-The large `NormalApp-*` desktop shell is no longer a general migration boundary. The remaining work is feature presentation that cannot be reconstructed by inventing data or UI behavior:
+The large `NormalApp-*` desktop shell is no longer a general migration boundary. Mail, Signal Messenger and Files are source-owned. Remaining work includes:
 
 - `BrowserPageView-*` / Browser main renderer and sandbox presentation;
-- Signal Messenger and broader chat/media presentation;
-- Mail, Files and Messenger window presentation;
-- game presentation layers;
+- broader Messenger/chat-media presentation outside the recovered Signal Messenger boundary;
+- Cake Duel, Codenames, Chess and Pictionary presentation;
+- Idle/QFR presentation and integration, including the QFR Dock supplied to Files;
 - Live2D/Nori scene presentation;
 - remaining source-owned CSS/visual-system migration;
-- final production `main.tsx` cutover and behavior-comparison tests.
+- Cloudflare deploy-stage frontend staging and the final production entry switch;
+- browser behavior/smoke comparison and historical JavaScript retirement after rollback validation.
 
 Generated beautified bundles under `.frontend-recovery/pretty/` remain evidence, not project source.
 
@@ -75,12 +82,14 @@ npm ci
 npm run frontend:recover
 ```
 
-Validate and build the maintenance source:
+Validate and build the maintenance source and source application:
 
 ```bash
 npm run frontend:typecheck
 npm run frontend:build
+npm run frontend:app:build
+npm run frontend:cutover:check
 npm run frontend:recover:check
 ```
 
-`frontend:build` writes an ignored `.frontend-build/` ES-module library with source maps. Pull-request CI runs all three checks and also keeps the existing Worker/Cloudflare validation intact.
+`frontend:build` writes an ignored `.frontend-build/` ES-module library with source maps. `frontend:app:build` proves the source-owned browser application composes independently of the historical JavaScript entry. Pull-request CI runs these checks alongside the Worker/Cloudflare validation.

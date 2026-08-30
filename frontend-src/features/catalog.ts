@@ -139,8 +139,18 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
   {
     feature: "files",
     shippedChunkPatterns: [/FilesScreen/i, /SealedVolumeAlert/i],
-    maintenanceModules: ["apps/files.ts", "services/artifacts.ts", "services/manifold.ts"],
-    status: "protocol-recovered",
+    maintenanceModules: [
+      "apps/files.ts",
+      "apps/files-tree.ts",
+      "apps/files-presentation.tsx",
+      "apps/recovered-presentation.ts",
+      "components/markdown-body.tsx",
+      "components/sidebar-nav-button.tsx",
+      "screens/files-screen.tsx",
+      "services/artifacts.ts",
+      "services/manifold.ts",
+    ],
+    status: "ui-recovered",
   },
   {
     feature: "messenger",

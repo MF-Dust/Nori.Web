@@ -146,7 +146,7 @@ export function createRecoveredDesktopRuntime(
         filesIntent.open(payload);
         let state = runtime.store.getState();
         if (!state.processes.files) {
-          await state.launchApp({ appId: "files", mode: "launch", args: {} });
+          await state.launchApp({ appId: "files", mode: "launch", args: payload });
           return;
         }
 
@@ -159,7 +159,7 @@ export function createRecoveredDesktopRuntime(
           return;
         }
         state = runtime.store.getState();
-        state.getAppContext("files").createWindow("main");
+        state.getAppContext("files").createWindow("main", payload);
       }
     : undefined;
 

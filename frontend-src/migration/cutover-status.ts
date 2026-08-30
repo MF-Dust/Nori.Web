@@ -35,7 +35,7 @@ export const FRONTEND_CUTOVER_BOUNDARIES: readonly FrontendCutoverBoundary[] = [
   { id: "browser-main", complete: false, note: "BrowserPageView main renderer and sandbox behavior still need migration." },
   { id: "signal-messenger", complete: true, note: "Signal Messenger presentation and the Daniel service-thread state machine are source-owned; story facts and the jump epoch remain explicit host inputs." },
   { id: "mail", complete: true, note: "Mail data normalization, read/download commands, three-pane presentation, compose failure flow, attachment handling and production binding are source-owned." },
-  { id: "files", complete: false, note: "Files application presentation still needs migration." },
+  { id: "files", complete: true, note: "Files artifact/vault normalization, tree/navigation, grid/list presentation, locked-file recovery UI, cold-volume routing, Preview launch and Files intent handling are source-owned; QFR Dock rendering remains part of the separate Idle/QFR boundary." },
   { id: "messenger", complete: false, note: "Messenger application presentation still needs migration." },
   { id: "games", complete: false, note: "Cake Duel, Codenames, Chess and Pictionary presentation still need migration." },
   { id: "live2d", complete: false, note: "Live2D/Nori scene presentation and lifecycle still need migration." },

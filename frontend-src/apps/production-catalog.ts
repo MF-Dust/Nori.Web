@@ -4,6 +4,7 @@ export type ProductionAppRecoveryStatus =
   | "runtime-recovered"
   | "protocol-recovered"
   | "ui-partial"
+  | "ui-recovered"
   | "metadata-recovered";
 
 export interface ProductionRuntimeDescriptor {
@@ -138,7 +139,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         resizable: true,
       },
     ],
-    recoveryStatus: "protocol-recovered",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "cOe",
@@ -153,7 +154,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         resizable: true,
       },
     ],
-    recoveryStatus: "protocol-recovered",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "fOe",
@@ -203,7 +204,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         ],
       },
     ],
-    recoveryStatus: "ui-partial",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "xAe",
