@@ -50,7 +50,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "chore(frontend): close Signal Messenger recovery boundary"
+          git commit -m "fix(frontend): match shipped Signal Messenger timing"
           git push origin HEAD:dev/frontend-source-cutover
 
-# Retry after resolving the public barrel type-name collision.
+# Final source-only pass; workflow cleanup is performed through the repository API.
