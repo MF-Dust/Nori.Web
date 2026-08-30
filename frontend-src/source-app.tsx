@@ -13,6 +13,15 @@ function sourceTranslate(key: string): string {
   return key;
 }
 
+function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
+  for (const runtime of frontend.world.snapshot().cartridges.values()) {
+    const facts = runtime.state.facts;
+    if (!facts || typeof facts !== "object" || Array.isArray(facts)) continue;
+    if (Object.prototype.hasOwnProperty.call(facts, factId)) return true;
+  }
+  return false;
+}
+
 /**
  * Source-driven application root used by the migration build.
  *
@@ -25,8 +34,11 @@ export function SourceApp() {
     const frontend = new NoriFrontendRuntime();
     let bundle: RecoveredDesktopRuntimeBundle | undefined;
 
+    const launchApp = (request: { appId: string; mode: string; args?: unknown }) =>
+      bundle?.runtime.store.getState().launchApp(request);
+
     const openUrl = (url: string) => {
-      bundle?.runtime.store.getState().launchApp({
+      void launchApp({
         appId: "browser",
         mode: "launch",
         args: { url },
@@ -37,6 +49,14 @@ export function SourceApp() {
       mail: {
         model: frontend.mail,
         attachmentDownloadDurationMs: MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS,
+      },
+      files: {
+        model: frontend.files,
+        translate: sourceTranslate,
+        hasFact: (factId) => hasWorldFact(frontend, factId),
+        subscribe: (listener) => frontend.world.subscribe(() => listener()),
+        launchApp,
+        reduceMotion: () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       },
       signal: {
         service: frontend.signal,

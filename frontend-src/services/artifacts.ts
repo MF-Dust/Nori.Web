@@ -1,7 +1,7 @@
 import type { EventRpcClient } from "../runtime/event-rpc";
 import type { JsonValue } from "../runtime/protocol";
 
-export type ArtifactType = "mail" | "file" | "signal_thread" | "signal_message" | "browser_page";
+export type ArtifactType = "app" | "mail" | "file" | "signal_thread" | "signal_message" | "browser_page";
 
 export interface Artifact<T = Record<string, JsonValue>> {
   id: string;
@@ -47,6 +47,7 @@ export class ArtifactService {
     return result.ok && result.artifact ? result.artifact as Artifact<T> : null;
   }
 
+  apps<T = Record<string, JsonValue>>(): Promise<Artifact<T>[]> { return this.list<T>("app"); }
   mail<T = Record<string, JsonValue>>(): Promise<Artifact<T>[]> { return this.list<T>("mail"); }
   files<T = Record<string, JsonValue>>(): Promise<Artifact<T>[]> { return this.list<T>("file"); }
   signalThreads<T = Record<string, JsonValue>>(): Promise<Artifact<T>[]> { return this.list<T>("signal_thread"); }
