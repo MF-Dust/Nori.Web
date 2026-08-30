@@ -33,7 +33,7 @@ export const FRONTEND_CUTOVER_BOUNDARIES: readonly FrontendCutoverBoundary[] = [
   { id: "signal-auth", complete: true, note: "Signal login, recovery and temporary-password flow are source-owned." },
   { id: "browser-popup", complete: true, note: "Browser popup shell and production window binding are source-owned." },
   { id: "browser-main", complete: false, note: "BrowserPageView main renderer and sandbox behavior still need migration." },
-  { id: "signal-messenger", complete: false, note: "Signal Messenger and broader chat/media presentation still need migration." },
+  { id: "signal-messenger", complete: true, note: "Signal Messenger presentation and the Daniel service-thread state machine are source-owned; story facts and jump cursor remain explicit host inputs." },
   { id: "mail", complete: true, note: "Mail data normalization, read/download commands, three-pane presentation, compose failure flow, attachment handling and production binding are source-owned." },
   { id: "files", complete: false, note: "Files application presentation still needs migration." },
   { id: "messenger", complete: false, note: "Messenger application presentation still needs migration." },
