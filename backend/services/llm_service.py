@@ -166,6 +166,74 @@ class LLMService:
                 if isinstance(block, dict) and block.get("type") == "text"
             ).strip()
 
+    @staticmethod
+    def public_provider_error(exc: Exception) -> str:
+        """Return a useful browser-facing diagnostic without request secrets."""
+        if isinstance(exc, httpx.HTTPStatusError):
+            status = exc.response.status_code
+            reason = str(exc.response.reason_phrase or "").strip()
+            return f"HTTP {status}{f' {reason}' if reason else ''}"
+        if isinstance(exc, httpx.TimeoutException):
+            return "Request timed out"
+        if isinstance(exc, httpx.RequestError):
+            return "Network request failed"
+        if isinstance(exc, (KeyError, IndexError, TypeError, ValueError)):
+            return "Provider returned an unsupported response format"
+        return f"Provider request failed ({type(exc).__name__})"
+
+    @classmethod
+    async def probe_runtime_config(cls, runtime: Dict[str, Any]) -> Dict[str, Any]:
+        """Call the selected browser provider once without local fallback.
+
+        This is used by Settings' connection test. It deliberately bypasses the
+        normal fallback reply so a bad endpoint/key/model cannot look like a
+        successful Nori response.
+        """
+        provider = str(runtime.get("provider") or "openai-compatible")
+        temperature = float(runtime.get("temperature", 0.75))
+        max_tokens = min(96, int(runtime.get("maxTokens", 350)))
+        system_prompt = cls._prompt(runtime)
+        api_key = str(runtime.get("apiKey") or "")
+        if provider == "anthropic":
+            base_url = str(runtime.get("baseUrl") or "https://api.anthropic.com/v1")
+            model = str(runtime.get("model") or config.ANTHROPIC_MODEL)
+        else:
+            base_url = str(runtime.get("baseUrl") or "https://api.openai.com/v1")
+            model = str(runtime.get("model") or config.OPENAI_MODEL)
+
+        if provider == "anthropic":
+            content = await cls._anthropic_reply(
+                user_text="Reply with only: OK",
+                history=[],
+                base_url=base_url,
+                model=model,
+                api_key=api_key,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        else:
+            content = await cls._openai_compatible_reply(
+                user_text="Reply with only: OK",
+                history=[],
+                base_url=base_url,
+                model=model,
+                api_key=api_key,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+
+        _, cleaned = cls.extract_emotion(content)
+        if not cleaned:
+            raise ValueError("provider returned an empty response")
+        return {
+            "ok": True,
+            "provider": provider,
+            "model": model,
+            "responsePreview": cleaned[:120],
+        }
+
     # 语料锚点来自档案里 Nori 的官方信件与消息，保持口吻一致。
     REUNION_LINES = (
         "欢迎回来，操作员。世界可能有点不一样了……但我还是我。",
