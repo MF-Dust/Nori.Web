@@ -11,7 +11,7 @@ on:
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
       - "public/index.html"
-      - "tests/test_ai_runtime_settings.py"
+      - "tests/test_ai_*.py"
       - "tests/test_tts_runtime_settings.py"
       - ".github/workflows/settings-runtime.yml"
   push:
@@ -26,7 +26,7 @@ on:
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
       - "public/index.html"
-      - "tests/test_ai_runtime_settings.py"
+      - "tests/test_ai_*.py"
       - "tests/test_tts_runtime_settings.py"
       - ".github/workflows/settings-runtime.yml"
 
@@ -52,7 +52,9 @@ jobs:
         run: uv sync --group dev --python 3.13
 
       - name: Verify browser AI settings
-        run: uv run python tests/test_ai_runtime_settings.py
+        run: |
+          uv run python tests/test_ai_runtime_settings.py
+          uv run python tests/test_ai_openai_compat.py
 
       - name: Verify browser TTS settings
         run: uv run python tests/test_tts_runtime_settings.py
