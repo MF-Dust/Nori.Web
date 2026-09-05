@@ -6,6 +6,7 @@ on:
       - "backend/services/ai_event_bridge.py"
       - "backend/services/ai_runtime_config.py"
       - "backend/services/tts_*.py"
+      - "cloudflare/entry.py"
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
       - "public/index.html"
@@ -19,6 +20,7 @@ on:
       - "backend/services/ai_event_bridge.py"
       - "backend/services/ai_runtime_config.py"
       - "backend/services/tts_*.py"
+      - "cloudflare/entry.py"
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
       - "public/index.html"
@@ -56,8 +58,7 @@ jobs:
       - name: Verify compatibility JavaScript syntax
         run: |
           node --check public/nori-ai-settings.js
-          node --check public/nori-ai-runtime-fix.js
           node --check public/nori-tts-settings.js
 
-      - name: Compile settings services
-        run: uv run python -m compileall -q backend/services
+      - name: Compile settings services and Worker entry
+        run: uv run python -m compileall -q backend/services cloudflare
