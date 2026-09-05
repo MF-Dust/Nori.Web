@@ -23,6 +23,9 @@
     <script src="/nori-ai-settings.js"></script>
     <script src="/nori-ai-provider-switch.js"></script>
     <script src="/nori-tts-settings.js"></script>
+    <!-- Keep the compatibility panels visually consistent with the native
+         Settings pages by letting the Nori window glass show through. -->
+    <link rel="stylesheet" href="/nori-settings-glass.css" />
     <!-- No model warmup here: dev-bypass preloads via preloadLive2DModel in
          main.tsx (fetch + decode + stage, strictly stronger than an HTTP
          warmer and not duplicated — fetch() does not coalesce identical
