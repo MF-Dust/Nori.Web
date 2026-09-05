@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -15,6 +16,22 @@ spec.loader.exec_module(module)
 
 
 def main() -> None:
+    # Domains and routes are intentionally managed in the Cloudflare dashboard.
+    # Wrangler must not re-declare them during deploy, or every merge will
+    # overwrite dashboard changes. Cloudflare also requires workers_dev=false
+    # for dashboard-only route management.
+    wrangler_config = (ROOT / "wrangler.jsonc").read_text(encoding="utf-8")
+    assert re.search(
+        r'^\s*"workers_dev"\s*:\s*false\s*,?\s*$',
+        wrangler_config,
+        re.MULTILINE,
+    )
+    assert re.search(
+        r'^\s*"routes?"\s*:',
+        wrangler_config,
+        re.MULTILINE,
+    ) is None
+
     # Workers Builds already supplies Python. A repository .python-version makes
     # Cloudflare's environment manager install another interpreter before every
     # production deploy, which was the largest observed build-time cost.
@@ -109,7 +126,7 @@ def main() -> None:
         module.deploy_worker = original_deploy
 
     print(
-        "[ok] Workers Builds deploy fingerprint, bundled Python, CI mode, and single-stage runtime path behave correctly"
+        "[ok] Workers Builds deploy fingerprint, dashboard routing, bundled Python, CI mode, and single-stage runtime path behave correctly"
     )
 
 

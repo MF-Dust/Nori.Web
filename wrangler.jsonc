@@ -4,7 +4,7 @@
   "main": "cloudflare/entry.py",
   "compatibility_date": "2026-08-28",
   "compatibility_flags": ["python_workers"],
-  "workers_dev": true,
+  "workers_dev": false,
   "preview_urls": true,
   "base_dir": "./cloudflare",
   "find_additional_modules": true,
@@ -43,12 +43,8 @@
   "placement": {
     "mode": "smart"
   },
-  "routes": [
-    {
-      "pattern": "nori-expermintal.088092111.xyz",
-      "custom_domain": true
-    }
-  ],
+  // Domains and routing are intentionally managed in the Cloudflare dashboard.
+  // Keep route configuration absent here so Wrangler deploys do not overwrite it.
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
