@@ -13,6 +13,7 @@ from .ai_runtime_config import install_runtime_ai_config, public_runtime_ai_summ
 from .event_dispatcher import EventDispatcher
 from .tts_runtime_config import install_runtime_tts_config, public_runtime_tts_summary
 from .tts_service import TTS_SERVICE, TTSServiceError
+from .tts_world_bridge import install_tts_world_bridge
 
 _INSTALLED = False
 _ORIGINAL_HANDLE_EVENT = EventDispatcher.handle_event
@@ -66,9 +67,10 @@ async def _handle_event_with_ai_settings(
 
 
 def install_ai_event_bridge() -> None:
-    """Patch EventDispatcher exactly once during application bootstrap."""
+    """Patch browser configuration/runtime hooks exactly once at bootstrap."""
     global _INSTALLED
     if _INSTALLED:
         return
     EventDispatcher.handle_event = _handle_event_with_ai_settings
+    install_tts_world_bridge()
     _INSTALLED = True
