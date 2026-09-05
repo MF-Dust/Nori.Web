@@ -21,10 +21,12 @@
     "test:cartridges": "python tests/test_cartridges.py",
     "test:backend": "python tests/test_backend_integration.py",
     "test:virtual_apps": "python tests/test_virtual_apps.py",
+    "test:ai": "python tests/test_ai_runtime_settings.py",
+    "test:tts": "python tests/test_tts_runtime_settings.py",
     "test:schema": "node tests/test_client_schema.mjs",
     "test:browser": "node tests/test_browser_bootstrap.mjs",
     "test:perf": "python tests/test_performance_optimizations.py",
-    "test": "npm run test:cartridges && npm run test:virtual_apps && npm run test:schema && npm run test:backend && npm run test:perf && npm run test:browser"
+    "test": "npm run test:cartridges && npm run test:virtual_apps && npm run test:schema && npm run test:backend && npm run test:ai && npm run test:tts && npm run test:perf && npm run test:browser"
   },
   "engines": {
     "node": ">=18"
@@ -46,7 +48,7 @@
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^0.475.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
+    "react-dom": "^19.2.5",
     "zod": "^3.25.76",
     "zustand": "^5.0.15"
   }
