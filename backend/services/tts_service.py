@@ -48,6 +48,20 @@ def provider_endpoint(base_url: str, suffix: str) -> str:
     return base + normalized_suffix
 
 
+def redact_provider_detail(detail: str, *secrets: str) -> str:
+    """Keep provider diagnostics useful without reflecting credentials."""
+    safe = str(detail or "")
+    for secret in secrets:
+        value = str(secret or "")
+        if value:
+            safe = safe.replace(value, "***")
+    # Some gateways reflect an Authorization header with whitespace or casing
+    # changes even when the exact secret replacement above already handled the
+    # common case. Remove any residual bearer token-shaped value defensively.
+    safe = re.sub(r"(?i)bearer\s+[A-Za-z0-9._~+/=-]{6,}", "Bearer ***", safe)
+    return safe[:300].replace("\n", " ").strip()
+
+
 def _response_mime(response: httpx.Response, fallback: str) -> str:
     value = str(response.headers.get("content-type") or "").split(";", 1)[0].strip().lower()
     if value.startswith("audio/") or value == "application/octet-stream":
@@ -126,7 +140,7 @@ class TTSService:
             response = await client.post(url, headers=headers, json=payload)
         if response.is_success:
             return response
-        detail = response.text[:300].replace("\n", " ").strip()
+        detail = redact_provider_detail(response.text, api_key)
         raise TTSServiceError(
             provider,
             f"语音服务请求失败: HTTP {response.status_code}" + (f" {detail}" if detail else ""),
