@@ -18,6 +18,24 @@ export * from "./apps/browser-presentation";
 export * from "./apps/files";
 export * from "./apps/files-tree";
 export * from "./apps/files-presentation";
+export {
+  IDLE_BUY_COUNTS,
+  IDLE_BUY_COUNT_LABELS,
+  IDLE_SAVE_INTERVAL_MS,
+  IDLE_TICK_INTERVAL_MS,
+  IDLE_COMPUTE_SYNC_INTERVAL_MS,
+  type IdleBuyCount,
+  type IdleGeneratorDefinition,
+  type IdleAlignmentDefinition,
+  type IdleSkillDefinition,
+  type IdleActiveSkillBuff,
+  type IdleRunPresentationState,
+  type IdleClickResult,
+  type IdlePresentationSnapshot,
+  type IdleActionRuntime,
+  type IdlePresentationModel,
+} from "./apps/idle";
+export * from "./apps/idle-presentation";
 export * from "./apps/mail";
 export * from "./apps/mail-presentation";
 export * from "./apps/messenger";
@@ -62,9 +80,11 @@ export {
 export * from "./screens/browser-popup-screen";
 export * from "./screens/browser-screen";
 export * from "./screens/files-screen";
+export * from "./screens/idle-screen";
 export * from "./screens/intro-page";
 export * from "./screens/mail-screen";
 export * from "./screens/messenger-screen";
+export * from "./screens/qfr-dock";
 export * from "./screens/signal-login-screen";
 export * from "./screens/signal-reset-screen";
 export * from "./screens/signal-temp-password-screen";

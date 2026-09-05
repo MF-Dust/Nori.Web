@@ -32,6 +32,8 @@ The source tree now includes:
 - Files artifact/vault normalization, filesystem tree, responsive sidebar, history/breadcrumb navigation, grid/list views, keyboard navigation, sealed cold-volume flow, password vaults, locked-file compute recovery UI, QFR handoff, Preview `{fileId}` launch and external Files intent routing;
 - Browser main and popup presentation, persistent tabs/bookmarks, history/scroll restoration, omnibox/search routing, popup/new-tab semantics and Browser intent routing;
 - BrowserPageView artifact loading with source-owned `srcdoc` sandboxing, per-page command allowlists, `window.arcade` facts/window/podcast bridge, same-document hash navigation, asset/font inlining, page title/scroll/context-menu relays and error retry behavior;
+- the source-owned Idle/QFR presentation foundation: recovered alignment palettes, compute-field pan/zoom/recenter behavior, compute/cap/drain display, `QfrDock`/`QfrDockView`, Files dock injection, and typed Idle store/action contracts;
+- recovered shipped Idle timing contracts for its 100 ms simulation tick, 500 ms desktop compute synchronization and 5 second run-save flush cadence;
 - Terminal xterm presentation and shell;
 - Intro, SidebarNavButton, ChatPanel and shared responsive/window hooks.
 
@@ -44,6 +46,8 @@ const bundle = createRecoveredDesktopRuntime({
   browser: browserRuntime,
   mail: mailRuntime,
   files: filesRuntime,
+  idle: idleRuntime,
+  qfr: qfrRuntime,
 });
 
 <RecoveredDesktopShell
@@ -59,7 +63,7 @@ const bundle = createRecoveredDesktopRuntime({
 
 The Browser sandbox keeps command execution page-scoped through each artifact's `allowed_commands` list. The one sanctioned escape to a real OS browser remains an anchor explicitly marked `data-arcade-external="true"`. `bounty.installExtension` is an explicit optional host callback rather than invented behavior, and podcast transport is source-owned while final routing through the OS SFX mixer remains a host-audio integration edge.
 
-The Files cold-volume QFR Dock remains an explicit injected presentation edge because that component belongs to the still-unrecovered Idle/QFR boundary. Files itself no longer imports or delegates to historical JavaScript.
+The Files cold-volume QFR Dock is now source-owned and is injected automatically when `createRecoveredDesktopRuntime()` receives a QFR runtime. Files itself no longer imports or delegates to historical JavaScript. The production source app still lacks the complete source-owned Idle economy/tick/persistence runtime required to drive that presentation, so the combined Idle/QFR cutover boundary remains incomplete.
 
 Missing presentation modules are intentionally rendered through explicit migration fallbacks instead of silently delegating their behavior back to minified identifiers.
 
@@ -69,7 +73,7 @@ The large `NormalApp-*` desktop shell is no longer a general migration boundary.
 
 - broader Messenger/chat-media presentation outside the recovered Signal Messenger boundary;
 - Cake Duel, Codenames, Chess and Pictionary presentation;
-- Idle/QFR presentation and integration, including the QFR Dock supplied to Files;
+- Idle/QFR completion: the source-owned economy/formula/tick/persistence runtime, full generator shop, active-skill/workflow and progression/modal surfaces, complete initialization sequence and final source-app wiring;
 - Live2D/Nori scene presentation;
 - remaining source-owned CSS/visual-system migration;
 - Cloudflare deploy-stage frontend staging and the final production entry switch;

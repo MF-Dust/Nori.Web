@@ -7,6 +7,7 @@ export type FrontendCutoverBoundaryId =
   | "signal-messenger"
   | "mail"
   | "files"
+  | "idle-qfr"
   | "messenger"
   | "games"
   | "live2d"
@@ -35,7 +36,8 @@ export const FRONTEND_CUTOVER_BOUNDARIES: readonly FrontendCutoverBoundary[] = [
   { id: "browser-main", complete: true, note: "Browser main tabs/history/bookmarks/navigation, BrowserPageView artifact loading, srcdoc sandbox bridge, page facts/window/podcast messaging, link interception, asset/font inlining and popup handoff are source-owned; bounty extension installation remains an explicit optional host callback and podcast mixer routing remains a host-audio integration edge." },
   { id: "signal-messenger", complete: true, note: "Signal Messenger presentation and the Daniel service-thread state machine are source-owned; story facts and the jump epoch remain explicit host inputs." },
   { id: "mail", complete: true, note: "Mail data normalization, read/download commands, three-pane presentation, compose failure flow, attachment handling and production binding are source-owned." },
-  { id: "files", complete: true, note: "Files artifact/vault normalization, tree/navigation, grid/list presentation, locked-file recovery UI, cold-volume routing, Preview launch and Files intent handling are source-owned; QFR Dock rendering remains part of the separate Idle/QFR boundary." },
+  { id: "files", complete: true, note: "Files artifact/vault normalization, tree/navigation, grid/list presentation, locked-file recovery UI, cold-volume routing, Preview launch and Files intent handling are source-owned; QFR Dock rendering is tracked by the separate Idle/QFR boundary." },
+  { id: "idle-qfr", complete: false, note: "Source-owned Idle compute field and QFR Dock presentation are being recovered; shop/workflow/progression parity and final production runtime binding remain pending." },
   { id: "messenger", complete: false, note: "Broader Messenger/chat-media presentation outside the recovered Signal Messenger boundary still needs migration." },
   { id: "games", complete: false, note: "Cake Duel, Codenames, Chess and Pictionary presentation still need migration." },
   { id: "live2d", complete: false, note: "Live2D/Nori scene presentation and lifecycle still need migration." },
