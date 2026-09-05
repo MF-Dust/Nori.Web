@@ -1,0 +1,63 @@
+name: Settings Runtime
+
+on:
+  pull_request:
+    paths:
+      - "backend/services/ai_event_bridge.py"
+      - "backend/services/ai_runtime_config.py"
+      - "backend/services/tts_*.py"
+      - "public/nori-ai-*.js"
+      - "public/nori-tts-*.js"
+      - "public/index.html"
+      - "tests/test_ai_runtime_settings.py"
+      - "tests/test_tts_runtime_settings.py"
+      - ".github/workflows/settings-runtime.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "backend/services/ai_event_bridge.py"
+      - "backend/services/ai_runtime_config.py"
+      - "backend/services/tts_*.py"
+      - "public/nori-ai-*.js"
+      - "public/nori-tts-*.js"
+      - "public/index.html"
+      - "tests/test_ai_runtime_settings.py"
+      - "tests/test_tts_runtime_settings.py"
+      - ".github/workflows/settings-runtime.yml"
+
+jobs:
+  validate-settings-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Sync Python dependencies
+        run: uv sync --group dev --python 3.13
+
+      - name: Verify browser AI settings
+        run: uv run python tests/test_ai_runtime_settings.py
+
+      - name: Verify browser TTS settings
+        run: uv run python tests/test_tts_runtime_settings.py
+
+      - name: Verify compatibility JavaScript syntax
+        run: |
+          node --check public/nori-ai-settings.js
+          node --check public/nori-ai-runtime-fix.js
+          node --check public/nori-tts-settings.js
+
+      - name: Compile settings services
+        run: uv run python -m compileall -q backend/services
