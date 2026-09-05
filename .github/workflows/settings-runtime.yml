@@ -5,6 +5,7 @@ on:
     paths:
       - "backend/services/ai_event_bridge.py"
       - "backend/services/ai_runtime_config.py"
+      - "backend/services/llm_service.py"
       - "backend/services/tts_*.py"
       - "cloudflare/entry.py"
       - "public/nori-ai-*.js"
@@ -19,6 +20,7 @@ on:
     paths:
       - "backend/services/ai_event_bridge.py"
       - "backend/services/ai_runtime_config.py"
+      - "backend/services/llm_service.py"
       - "backend/services/tts_*.py"
       - "cloudflare/entry.py"
       - "public/nori-ai-*.js"
