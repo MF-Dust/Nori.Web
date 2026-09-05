@@ -11,6 +11,7 @@ from backend.services.ai_event_bridge import install_ai_event_bridge
 from backend.services.ai_runtime_config import (
     clear_runtime_ai_config,
     get_runtime_ai_config,
+    normalize_provider_base_url,
     public_runtime_ai_summary,
     sanitize_runtime_ai_config,
 )
@@ -42,6 +43,24 @@ async def main() -> None:
     assert sanitized["baseUrl"] == "https://example.test/v1"
     assert sanitized["temperature"] == 2.0
     assert sanitized["maxTokens"] == 4096
+
+    # Many clients label this field Base URL while users paste the complete
+    # request endpoint. Accept both forms without duplicating provider routes.
+    assert normalize_provider_base_url(
+        "https://example.test/v1/chat/completions", "openai-compatible"
+    ) == "https://example.test/v1"
+    assert normalize_provider_base_url(
+        "https://example.test/v1/chat/completions/", "openai-compatible"
+    ) == "https://example.test/v1"
+    assert normalize_provider_base_url(
+        "https://api.anthropic.com/v1/messages", "anthropic"
+    ) == "https://api.anthropic.com/v1"
+
+    complete_endpoint = sanitize_runtime_ai_config({
+        **raw,
+        "baseUrl": "https://example.test/v1/chat/completions",
+    })
+    assert complete_endpoint["baseUrl"] == "https://example.test/v1"
 
     # URLs containing inline credentials are rejected. Credentials belong only
     # in the dedicated secret field, which keeps them out of request URLs/logs.
@@ -100,25 +119,31 @@ async def main() -> None:
     assert "Keep Nori curious and concise." in captured["system_prompt"]
     assert "NoriOS rendering contract" in captured["system_prompt"]
 
-    # Static integration checks: the compatibility extension executes before
-    # the main module script. The Vite modulepreload link may appear earlier
-    # and is intentionally ignored because it does not execute application JS.
+    # Static integration checks: compatibility extensions execute before the
+    # main module script. The fresh-config bridge intentionally sends the tiny
+    # redacted/runtime config event before every chat turn so Worker task
+    # boundaries cannot leave a stale ContextVar behind.
     index_html = (ROOT / "public" / "index.html").read_text(encoding="utf-8")
     client_js = (ROOT / "public" / "nori-ai-settings.js").read_text(encoding="utf-8")
+    fresh_js = (ROOT / "public" / "nori-ai-runtime-fix.js").read_text(encoding="utf-8")
     ai_script = '<script src="/nori-ai-settings.js"></script>'
+    fresh_script = '<script src="/nori-ai-runtime-fix.js"></script>'
     app_script = '<script type="module" crossorigin src="/assets/index-CyHAbkO5.js"></script>'
     assert ai_script in index_html
+    assert fresh_script in index_html
     assert app_script in index_html
-    assert index_html.index(ai_script) < index_html.index(app_script)
+    assert index_html.index(ai_script) < index_html.index(fresh_script) < index_html.index(app_script)
     assert "localStorage" in client_js
     assert "sessionStorage" in client_js
     assert 'channel: "nori.ai.config"' in client_js
     assert "rememberApiKey" in client_js
     assert "apiKey" in client_js
+    assert 'channel: "nori.ai.config"' in fresh_js
+    assert "noriAiFreshConfigSend" in fresh_js
 
     clear_runtime_ai_config()
     assert get_runtime_ai_config() == {}
-    print("[ok] browser AI settings are persistent, effective, and keep API keys out of public state")
+    print("[ok] browser AI settings are persistent, endpoint-safe, and refreshed per chat turn")
 
 
 if __name__ == "__main__":
