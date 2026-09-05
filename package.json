@@ -21,7 +21,7 @@
     "test:cartridges": "python tests/test_cartridges.py",
     "test:backend": "python tests/test_backend_integration.py",
     "test:virtual_apps": "python tests/test_virtual_apps.py",
-    "test:ai": "python tests/test_ai_runtime_settings.py",
+    "test:ai": "python tests/test_ai_runtime_settings.py && python tests/test_ai_openai_compat.py",
     "test:tts": "python tests/test_tts_runtime_settings.py",
     "test:schema": "node tests/test_client_schema.mjs",
     "test:browser": "node tests/test_browser_bootstrap.mjs",
