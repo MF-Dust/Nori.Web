@@ -17,10 +17,12 @@
     <!-- Keep optional debug telemetry local so privacy/ad-blocking extensions
          do not create ERR_BLOCKED_BY_CLIENT noise for the shipped bundle. -->
     <script src="/nori-runtime-shims.js"></script>
-    <!-- Load the compatibility extension before the Vite application so its
-         WebSocket hook can attach per-browser AI configuration without
-         changing the shipped cartridge protocol. -->
+    <!-- Compatibility Settings extensions load before the historical Vite app
+         so their WebSocket hooks can attach browser-owned AI/TTS configuration
+         without putting credentials into cartridge state. -->
     <script src="/nori-ai-settings.js"></script>
+    <script src="/nori-ai-runtime-fix.js"></script>
+    <script src="/nori-tts-settings.js"></script>
     <!-- No model warmup here: dev-bypass preloads via preloadLive2DModel in
          main.tsx (fetch + decode + stage, strictly stronger than an HTTP
          warmer and not duplicated — fetch() does not coalesce identical
