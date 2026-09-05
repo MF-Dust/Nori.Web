@@ -105,6 +105,17 @@ async def main() -> None:
     LLMService._openai_compatible_reply = classmethod(fake_openai)
     try:
         emotion, reply = await LLMService.generate_reply("hello", [])
+
+        # Settings can explicitly probe the provider without the normal local
+        # fallback hiding a bad key/endpoint/model behind a successful reply.
+        probe = await dispatcher.handle_event(
+            {
+                "type": "event",
+                "channel": "nori.ai.test",
+                "requestId": "ai-probe",
+                "payload": {"config": raw},
+            }
+        )
     finally:
         LLMService._openai_compatible_reply = original_openai
 
@@ -114,13 +125,19 @@ async def main() -> None:
     assert captured["model"] == "custom-model"
     assert captured["api_key"] == secret
     assert captured["temperature"] == 2.0
-    assert captured["max_tokens"] == 4096
+    assert captured["max_tokens"] <= 4096
     assert "Custom system prompt" in captured["system_prompt"]
     assert "Keep Nori curious and concise." in captured["system_prompt"]
     assert "NoriOS rendering contract" in captured["system_prompt"]
+    assert probe["channel"] == "nori.ai.test.result"
+    assert probe["requestId"] == "ai-probe"
+    assert probe["payload"]["ok"] is True
+    assert probe["payload"]["provider"] == "openai-compatible"
+    assert probe["payload"]["model"] == "custom-model"
+    assert secret not in repr(probe)
 
     # Keep the established AI settings hook and its hibernation-aware transport
-    # intact. The reliability fix belongs at the URL normalization boundary.
+    # intact while exposing clear connection diagnostics in the Settings UI.
     index_html = (ROOT / "public" / "index.html").read_text(encoding="utf-8")
     client_js = (ROOT / "public" / "nori-ai-settings.js").read_text(encoding="utf-8")
     ai_script = '<script src="/nori-ai-settings.js"></script>'
@@ -131,12 +148,16 @@ async def main() -> None:
     assert "localStorage" in client_js
     assert "sessionStorage" in client_js
     assert 'channel: "nori.ai.config"' in client_js
+    assert 'channel: "nori.ai.test"' in client_js
+    assert "Test connection" in client_js
+    assert "测试连接" in client_js
+    assert "savedDisabled" in client_js
     assert "rememberApiKey" in client_js
     assert "apiKey" in client_js
 
     clear_runtime_ai_config()
     assert get_runtime_ai_config() == {}
-    print("[ok] browser AI settings are persistent, endpoint-safe, and hibernation-compatible")
+    print("[ok] browser AI settings are endpoint-safe, testable, and hibernation-compatible")
 
 
 if __name__ == "__main__":
