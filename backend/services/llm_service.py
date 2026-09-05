@@ -88,6 +88,48 @@ class LLMService:
                 clean.append({"role": role, "content": content})
         return clean
 
+    @staticmethod
+    def _needs_max_completion_tokens(response: httpx.Response) -> bool:
+        """Detect gateways/models that reject the legacy ``max_tokens`` key."""
+        if response.status_code not in {400, 422}:
+            return False
+        detail = response.text.lower()
+        if "max_tokens" not in detail:
+            return False
+        return any(
+            marker in detail
+            for marker in (
+                "max_completion_tokens",
+                "unsupported",
+                "not supported",
+                "unknown parameter",
+                "unrecognized",
+                "not permitted",
+            )
+        )
+
+    @staticmethod
+    def _openai_message_text(data: Any) -> str:
+        """Read both classic string content and text-part compatible responses."""
+        message = data["choices"][0]["message"]
+        content = message.get("content") if isinstance(message, dict) else None
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts: List[str] = []
+            for item in content:
+                if not isinstance(item, dict):
+                    continue
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+                    continue
+                nested = item.get("content")
+                if isinstance(nested, str):
+                    parts.append(nested)
+            return "".join(parts)
+        raise ValueError("OpenAI-compatible response did not contain message text")
+
     @classmethod
     async def _openai_compatible_reply(
         cls,
@@ -107,20 +149,22 @@ class LLMService:
         headers = {"Content-Type": "application/json"}
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
+        url = f"{base_url.rstrip('/')}/chat/completions"
+        payload: Dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
-            response = await client.post(
-                f"{base_url.rstrip('/')}/chat/completions",
-                headers=headers,
-                json={
-                    "model": model,
-                    "messages": messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                },
-            )
+            response = await client.post(url, headers=headers, json=payload)
+            if cls._needs_max_completion_tokens(response):
+                payload = dict(payload)
+                payload.pop("max_tokens", None)
+                payload["max_completion_tokens"] = max_tokens
+                response = await client.post(url, headers=headers, json=payload)
             response.raise_for_status()
-            data = response.json()
-            return str(data["choices"][0]["message"]["content"])
+            return cls._openai_message_text(response.json())
 
     @classmethod
     async def _anthropic_reply(
