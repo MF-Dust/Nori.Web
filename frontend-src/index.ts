@@ -18,6 +18,23 @@ export * from "./apps/browser-presentation";
 export * from "./apps/files";
 export * from "./apps/files-tree";
 export * from "./apps/files-presentation";
+export {
+  IDLE_BUY_COUNTS,
+  IDLE_BUY_COUNT_LABELS,
+  IDLE_SAVE_INTERVAL_MS,
+  IDLE_TICK_INTERVAL_MS,
+  IDLE_COMPUTE_SYNC_INTERVAL_MS,
+  type IdleBuyCount,
+  type IdleGeneratorDefinition,
+  type IdleAlignmentDefinition,
+  type IdleSkillDefinition,
+  type IdleActiveSkillBuff,
+  type IdleRunPresentationState,
+  type IdleClickResult,
+  type IdlePresentationSnapshot,
+  type IdleActionRuntime,
+  type IdlePresentationModel,
+} from "./apps/idle";
 export * from "./apps/idle-presentation";
 export * from "./apps/mail";
 export * from "./apps/mail-presentation";
