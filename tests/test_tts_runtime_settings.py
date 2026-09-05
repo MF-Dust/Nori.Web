@@ -23,6 +23,7 @@ from backend.services.tts_service import (
     TTSService,
     pcm16_to_wav,
     provider_endpoint,
+    redact_provider_detail,
 )
 
 
@@ -62,6 +63,13 @@ async def main() -> None:
     assert provider_endpoint("https://api.openai.com/v1", "/audio/speech") == "https://api.openai.com/v1/audio/speech"
     assert provider_endpoint("https://api.openai.com/v1/audio/speech/", "/audio/speech") == "https://api.openai.com/v1/audio/speech"
     assert provider_endpoint("https://api.minimaxi.com/v1/t2a_v2", "/t2a_v2") == "https://api.minimaxi.com/v1/t2a_v2"
+
+    reflected = redact_provider_detail(
+        f'{{"error":"Authorization: Bearer {secret}","key":"{secret}"}}',
+        secret,
+    )
+    assert secret not in reflected
+    assert "Bearer ***" in reflected
 
     wav = pcm16_to_wav(b"\x00\x00\x01\x00", sample_rate=24000)
     assert wav[:4] == b"RIFF"
