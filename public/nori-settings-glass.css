@@ -1,0 +1,9 @@
+/*
+ * Compatibility settings panels are injected beside the historical Settings
+ * content. Keep them transparent so the parent Nori window glass remains
+ * visible instead of covering it with the opaque --background token.
+ */
+html.theme-nori .nori-ai-settings-panel,
+html.theme-nori .nori-tts-panel {
+  background: transparent;
+}
