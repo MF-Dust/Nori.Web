@@ -88,6 +88,48 @@ class LLMService:
                 clean.append({"role": role, "content": content})
         return clean
 
+    @staticmethod
+    def _needs_max_completion_tokens(response: httpx.Response) -> bool:
+        """Detect gateways/models that reject the legacy ``max_tokens`` key."""
+        if response.status_code not in {400, 422}:
+            return False
+        detail = response.text.lower()
+        if "max_tokens" not in detail:
+            return False
+        return any(
+            marker in detail
+            for marker in (
+                "max_completion_tokens",
+                "unsupported",
+                "not supported",
+                "unknown parameter",
+                "unrecognized",
+                "not permitted",
+            )
+        )
+
+    @staticmethod
+    def _openai_message_text(data: Any) -> str:
+        """Read both classic string content and text-part compatible responses."""
+        message = data["choices"][0]["message"]
+        content = message.get("content") if isinstance(message, dict) else None
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts: List[str] = []
+            for item in content:
+                if not isinstance(item, dict):
+                    continue
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+                    continue
+                nested = item.get("content")
+                if isinstance(nested, str):
+                    parts.append(nested)
+            return "".join(parts)
+        raise ValueError("OpenAI-compatible response did not contain message text")
+
     @classmethod
     async def _openai_compatible_reply(
         cls,
@@ -107,20 +149,22 @@ class LLMService:
         headers = {"Content-Type": "application/json"}
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
+        url = f"{base_url.rstrip('/')}/chat/completions"
+        payload: Dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
-            response = await client.post(
-                f"{base_url.rstrip('/')}/chat/completions",
-                headers=headers,
-                json={
-                    "model": model,
-                    "messages": messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                },
-            )
+            response = await client.post(url, headers=headers, json=payload)
+            if cls._needs_max_completion_tokens(response):
+                payload = dict(payload)
+                payload.pop("max_tokens", None)
+                payload["max_completion_tokens"] = max_tokens
+                response = await client.post(url, headers=headers, json=payload)
             response.raise_for_status()
-            data = response.json()
-            return str(data["choices"][0]["message"]["content"])
+            return cls._openai_message_text(response.json())
 
     @classmethod
     async def _anthropic_reply(
@@ -165,6 +209,74 @@ class LLMService:
                 for block in blocks
                 if isinstance(block, dict) and block.get("type") == "text"
             ).strip()
+
+    @staticmethod
+    def public_provider_error(exc: Exception) -> str:
+        """Return a useful browser-facing diagnostic without request secrets."""
+        if isinstance(exc, httpx.HTTPStatusError):
+            status = exc.response.status_code
+            reason = str(exc.response.reason_phrase or "").strip()
+            return f"HTTP {status}{f' {reason}' if reason else ''}"
+        if isinstance(exc, httpx.TimeoutException):
+            return "Request timed out"
+        if isinstance(exc, httpx.RequestError):
+            return "Network request failed"
+        if isinstance(exc, (KeyError, IndexError, TypeError, ValueError)):
+            return "Provider returned an unsupported response format"
+        return f"Provider request failed ({type(exc).__name__})"
+
+    @classmethod
+    async def probe_runtime_config(cls, runtime: Dict[str, Any]) -> Dict[str, Any]:
+        """Call the selected browser provider once without local fallback.
+
+        This is used by Settings' connection test. It deliberately bypasses the
+        normal fallback reply so a bad endpoint/key/model cannot look like a
+        successful Nori response.
+        """
+        provider = str(runtime.get("provider") or "openai-compatible")
+        temperature = float(runtime.get("temperature", 0.75))
+        max_tokens = min(96, int(runtime.get("maxTokens", 350)))
+        system_prompt = cls._prompt(runtime)
+        api_key = str(runtime.get("apiKey") or "")
+        if provider == "anthropic":
+            base_url = str(runtime.get("baseUrl") or "https://api.anthropic.com/v1")
+            model = str(runtime.get("model") or config.ANTHROPIC_MODEL)
+        else:
+            base_url = str(runtime.get("baseUrl") or "https://api.openai.com/v1")
+            model = str(runtime.get("model") or config.OPENAI_MODEL)
+
+        if provider == "anthropic":
+            content = await cls._anthropic_reply(
+                user_text="Reply with only: OK",
+                history=[],
+                base_url=base_url,
+                model=model,
+                api_key=api_key,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        else:
+            content = await cls._openai_compatible_reply(
+                user_text="Reply with only: OK",
+                history=[],
+                base_url=base_url,
+                model=model,
+                api_key=api_key,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+
+        _, cleaned = cls.extract_emotion(content)
+        if not cleaned:
+            raise ValueError("provider returned an empty response")
+        return {
+            "ok": True,
+            "provider": provider,
+            "model": model,
+            "responsePreview": cleaned[:120],
+        }
 
     # 语料锚点来自档案里 Nori 的官方信件与消息，保持口吻一致。
     REUNION_LINES = (

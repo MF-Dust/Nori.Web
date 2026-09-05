@@ -1,10 +1,9 @@
 """Ephemeral AI configuration supplied by the browser Settings app.
 
 The browser persists its preferences locally, then sends the active settings
-through the existing Arcade ``event`` channel.  The server keeps the decoded
-configuration in a ContextVar so it follows the WebSocket task (and chat reply
-tasks spawned from it) without ever entering cartridge state, transitions, or
-Durable Object storage.
+through the existing Arcade ``event`` channel. The server keeps the decoded
+configuration in a ContextVar so it follows the WebSocket task and chat reply
+tasks without entering cartridge state, transitions, or Durable Object storage.
 """
 
 from __future__ import annotations
@@ -41,6 +40,22 @@ def _base_url(value: Any) -> str:
     if parsed.username is not None or parsed.password is not None:
         return ""
     return raw
+
+
+def normalize_provider_base_url(value: Any, provider: str) -> str:
+    """Accept either a provider base URL or the commonly pasted full endpoint.
+
+    LLMService appends the provider route itself. Normalizing here prevents
+    inputs such as ``.../v1/chat/completions`` from becoming a duplicated
+    ``.../chat/completions/chat/completions`` request.
+    """
+    base = _base_url(value)
+    if not base:
+        return ""
+    suffix = "/messages" if provider == "anthropic" else "/chat/completions"
+    if base.lower().endswith(suffix):
+        return base[: -len(suffix)].rstrip("/")
+    return base
 
 
 def _number(value: Any, default: float, low: float, high: float) -> float:
@@ -80,7 +95,7 @@ def sanitize_runtime_ai_config(raw: Any) -> Dict[str, Any]:
     return {
         "enabled": raw.get("enabled") is True,
         "provider": provider,
-        "baseUrl": _base_url(raw.get("baseUrl")),
+        "baseUrl": normalize_provider_base_url(raw.get("baseUrl"), provider),
         "model": _text(raw.get("model"), limit=200),
         "apiKey": _text(raw.get("apiKey"), limit=2048),
         "systemPrompt": _text(raw.get("systemPrompt"), limit=16000),
@@ -98,7 +113,7 @@ def install_runtime_ai_config(raw: Any) -> Dict[str, Any]:
 
 
 def clear_runtime_ai_config() -> None:
-    """Drop the current task's browser override (mainly useful in tests)."""
+    """Drop the current task's browser override, mainly useful in tests."""
     _RUNTIME_AI_CONFIG.set(None)
 
 

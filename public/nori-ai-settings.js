@@ -5,6 +5,9 @@
   const SESSION_KEY = "nori.ai.api-key.v1";
   const INSTALLED = Symbol("noriAiSettingsInstalled");
   const wsFingerprints = new WeakMap();
+  const attachedSockets = new WeakSet();
+  let activeSocket = null;
+  let activeWorldId = "";
 
   const DEFAULTS = Object.freeze({
     enabled: false,
@@ -105,8 +108,7 @@
     };
   }
 
-  function runtimePayload() {
-    const settings = loadSettings();
+  function runtimePayload(settings = loadSettings()) {
     return {
       enabled: settings.enabled,
       provider: settings.provider,
@@ -137,16 +139,66 @@
     );
   }
 
+  function emitStatus(kind, text) {
+    window.dispatchEvent(new CustomEvent("nori:ai-status", { detail: { kind, text } }));
+  }
+
+  function attachSocket(socket) {
+    if (attachedSockets.has(socket)) return;
+    attachedSockets.add(socket);
+    socket.addEventListener("message", (event) => {
+      if (typeof event.data !== "string") return;
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === "world_joined" || message.type === "world_created") {
+          activeSocket = socket;
+          activeWorldId = String(message.world?.worldId || message.worldId || "");
+          return;
+        }
+        if (message.type !== "event" || message.channel !== "nori.ai.test.result") return;
+        const result = message.payload && typeof message.payload === "object" ? message.payload : {};
+        if (result.ok === true) {
+          const provider = String(result.provider || "AI");
+          const model = String(result.model || "");
+          emitStatus(
+            "ok",
+            isChinese()
+              ? `连接成功：${provider}${model ? ` / ${model}` : ""}`
+              : `Connection succeeded: ${provider}${model ? ` / ${model}` : ""}`,
+          );
+        } else {
+          emitStatus(
+            "error",
+            isChinese()
+              ? `连接失败：${String(result.error || "未知错误")}`
+              : `Connection failed: ${String(result.error || "Unknown error")}`,
+          );
+        }
+      } catch {
+        // Ignore unrelated text frames.
+      }
+    });
+    socket.addEventListener("close", () => {
+      if (activeSocket === socket) {
+        activeSocket = null;
+        activeWorldId = "";
+      }
+    }, { once: true });
+  }
+
   // The extension loads before the main Vite bundle. Intercept only outbound
   // chat player dispatches and prepend a standard Arcade event carrying the
   // ephemeral AI configuration. The config event itself is not a cartridge
   // command and therefore never appears in runtime_transition payloads.
   const nativeSend = WebSocket.prototype.send;
   WebSocket.prototype.send = function patchedNoriSend(data) {
+    attachSocket(this);
     if (typeof data === "string") {
       try {
         const message = JSON.parse(data);
         if (isChatPlayerDispatch(message)) {
+          activeSocket = this;
+          if (message.worldId) activeWorldId = String(message.worldId);
           const payload = runtimePayload();
           const fingerprint = runtimeFingerprint(payload);
           if (wsFingerprints.get(this) !== fingerprint) {
@@ -170,6 +222,26 @@
     }
     return nativeSend.call(this, data);
   };
+
+  function sendTest(settings) {
+    if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN || !activeWorldId) {
+      emitStatus("error", isChinese() ? "当前尚未建立 Nori 会话连接" : "Nori session is not connected yet");
+      return false;
+    }
+    nativeSend.call(
+      activeSocket,
+      JSON.stringify({
+        type: "event",
+        worldId: activeWorldId,
+        cartridgeId: "chat",
+        requestId: `ai-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        channel: "nori.ai.test",
+        payload: { config: runtimePayload(normalize(settings)) },
+      }),
+    );
+    emitStatus("pending", isChinese() ? "正在测试 AI 连接…" : "Testing AI connection…");
+    return true;
+  }
 
   function isChinese() {
     const lang = String(document.documentElement.lang || navigator.language || "").toLowerCase();
@@ -196,6 +268,8 @@
       maxTokens: "Max Tokens",
       save: "Save",
       saved: "Saved locally",
+      savedDisabled: "Saved locally; browser AI override is still disabled",
+      test: "Test connection",
       reset: "Restore defaults",
       serverNote: "When browser override is disabled, the Worker keeps using its OPENAI_* configuration.",
     },
@@ -218,6 +292,8 @@
       maxTokens: "最大输出 Tokens",
       save: "保存",
       saved: "已保存到浏览器",
+      savedDisabled: "已保存，但“使用浏览器 AI 配置”仍处于关闭状态",
+      test: "测试连接",
       reset: "恢复默认",
       serverNote: "浏览器覆盖关闭时，Worker 会继续使用服务器的 OPENAI_* 配置。",
     },
@@ -253,9 +329,9 @@
       .nori-ai-button.primary{background:color-mix(in srgb,#65d9e8 22%,transparent);border-color:color-mix(in srgb,#65d9e8 48%,transparent)}
       .nori-ai-button:hover,.nori-ai-small-button:hover{background:color-mix(in srgb,currentColor 11%,transparent)}
       .nori-ai-warning{font-size:11px;line-height:1.55;color:#e7b65d;margin-top:7px}
-      .nori-ai-actions{display:flex;align-items:center;gap:10px;margin-top:18px}
+      .nori-ai-actions{display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}
       .nori-ai-status{font-size:12px;opacity:0;transition:opacity .2s}
-      .nori-ai-status.visible{opacity:.7}
+      .nori-ai-status.visible{opacity:.7}.nori-ai-status.error{color:#ef7777;opacity:1}
       .nori-ai-tab{width:100%;border:0;background:transparent;color:inherit;cursor:pointer}
       .nori-ai-tab.nori-ai-tab-active{background:color-mix(in srgb,#65d9e8 12%,transparent)!important;color:#65d9e8!important;font-weight:600}
       @media(max-width:720px){.nori-ai-settings-panel{padding:18px}.nori-ai-row{grid-template-columns:1fr;gap:6px}.nori-ai-label{padding-top:0}}
@@ -393,6 +469,10 @@
     save.type = "button";
     save.className = "nori-ai-button primary";
     save.textContent = t.save;
+    const test = document.createElement("button");
+    test.type = "button";
+    test.className = "nori-ai-button";
+    test.textContent = t.test;
     const reset = document.createElement("button");
     reset.type = "button";
     reset.className = "nori-ai-button";
@@ -400,7 +480,7 @@
     const status = document.createElement("span");
     status.className = "nori-ai-status";
     status.textContent = t.saved;
-    actions.append(save, reset, status);
+    actions.append(save, test, reset, status);
 
     wrap.append(head, card, serverNote, actions);
     panel.append(wrap);
@@ -423,6 +503,12 @@
       return normalize(current);
     }
 
+    function showStatus(kind, text) {
+      status.textContent = text;
+      status.classList.add("visible");
+      status.classList.toggle("error", kind === "error");
+    }
+
     provider.addEventListener("change", () => {
       const current = String(baseUrl.value || "").trim();
       if (
@@ -438,15 +524,24 @@
     });
 
     save.addEventListener("click", () => {
-      fill(saveSettings(read()));
-      status.classList.add("visible");
-      window.setTimeout(() => status.classList.remove("visible"), 1600);
+      const saved = saveSettings(read());
+      fill(saved);
+      showStatus("ok", saved.enabled ? t.saved : t.savedDisabled);
+      window.setTimeout(() => status.classList.remove("visible"), 2600);
+    });
+
+    test.addEventListener("click", () => {
+      sendTest(read());
     });
 
     reset.addEventListener("click", () => {
       fill(resetSettings());
-      status.classList.add("visible");
+      showStatus("ok", t.saved);
       window.setTimeout(() => status.classList.remove("visible"), 1600);
+    });
+
+    window.addEventListener("nori:ai-status", (event) => {
+      showStatus(String(event.detail?.kind || "ok"), String(event.detail?.text || ""));
     });
 
     fill(loadSettings());
@@ -519,7 +614,10 @@
       event.preventDefault();
       showAI();
     });
-    for (const button of originalButtons) button.addEventListener("click", restore, { capture: true });
+    nav.addEventListener("click", (event) => {
+      const clicked = event.target instanceof Element ? event.target.closest("button") : null;
+      if (clicked && clicked !== aiButton) restore();
+    }, { capture: true });
   }
 
   function scanSettings() {
@@ -541,5 +639,6 @@
     get: () => publicSettings(loadSettings()),
     save: (settings) => publicSettings(saveSettings({ ...loadSettings(), ...settings })),
     reset: () => publicSettings(resetSettings()),
+    test: () => sendTest(loadSettings()),
   });
 })();

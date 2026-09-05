@@ -21,16 +21,18 @@ def main() -> None:
     assert "_WorldSession._start_next_pictionary_round = _cloudflare_start_next_pictionary_round" in ENTRY
     assert "_WorldSession._settle_chat_after_audio = _cloudflare_settle_chat_after_audio" in ENTRY
 
-    # Production live-pack worlds use text presentation. Text replies must settle
-    # immediately and must not start synthetic PCM/audio-timeout tasks.
-    assert 'if chat.state.get("presentationMode") == "text":' in ENTRY
-    text_fast_path = ENTRY.split('if chat.state.get("presentationMode") == "text":', 1)[1]
-    text_fast_path, audio_path = text_fast_path.split("# Audio mode still keeps", 1)
-    assert '"type": "operationSettled"' in text_fast_path
-    assert "_stream_chat_fallback" not in text_fast_path
-    assert "_ensure_chat_progress" not in text_fast_path
-    assert "self._spawn(self._stream_chat_fallback" in audio_path
-    assert "self._spawn(self._ensure_chat_progress" in audio_path
+    # Production live-pack worlds use text presentation. Text replies settle
+    # immediately. Configured TTS may synthesize once, but the audio timeout
+    # machinery must remain exclusive to audio presentation mode.
+    marker = "async def _cloudflare_run_chat_reply(self, user_text: str) -> None:"
+    end_marker = "async def _cloudflare_settle_chat_after_audio"
+    assert marker in ENTRY and end_marker in ENTRY
+    chat_reply = ENTRY.split(marker, 1)[1].split(end_marker, 1)[0]
+    assert 'if chat.state.get("presentationMode") == "text":' in chat_reply
+    assert 'if _get_runtime_tts_config().get("enabled") is True:' in chat_reply
+    assert '"type": "operationSettled"' in chat_reply
+    assert chat_reply.count("self._spawn(self._stream_chat_fallback") == 2
+    assert chat_reply.count("self._spawn(self._ensure_chat_progress") == 1
 
     # Cloudflare-specific game follow-ups may cooperatively yield, but they must
     # not reintroduce real presentation timers that extend DO duration.

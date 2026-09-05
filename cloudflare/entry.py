@@ -13,17 +13,25 @@ bridge here so the hibernation runtime does not depend on one spelling.
 The local compatibility server intentionally keeps small presentation delays so
 its demo/game pacing feels natural. Durable Objects are billed by active wall
 clock time, so the Cloudflare entrypoint specializes those follow-up methods:
-text-mode chat settles immediately without generating fallback audio, while
-game follow-ups keep their ordering but omit artificial sleeps.
+text-mode chat settles immediately while configured TTS may synthesize in the
+background, and game follow-ups keep ordering without artificial sleeps.
 """
 
 import json
 
 import worker_runtime as _runtime
 from backend.cartridges.chat import ChatCartridge as _ChatCartridge
+from backend.services.ai_event_bridge import install_ai_event_bridge as _install_settings_bridge
+from backend.services.tts_runtime_config import (
+    clear_runtime_tts_config as _clear_runtime_tts_config,
+    get_runtime_tts_config as _get_runtime_tts_config,
+    install_runtime_tts_config as _install_runtime_tts_config,
+    sanitize_runtime_tts_config as _sanitize_runtime_tts_config,
+)
 from backend.session.world import WorldSession as _WorldSession
 
 
+_DO_TTS_CONFIG_KEY = "nori:tts-public:v1"
 _EDGE_CONVEX_PATHS = {
     "/api/query",
     "/api/mutation",
@@ -31,6 +39,11 @@ _EDGE_CONVEX_PATHS = {
     "/api/function",
     "/api/query_at_ts",
 }
+
+# The local server installs this from server.py. Durable Object WebSocket
+# traffic bypasses FastAPI, so production must install the same event/TTS hooks
+# at the Worker entrypoint as well.
+_install_settings_bridge()
 
 
 async def _serve_edge_convex_api(path: str, request):
@@ -169,6 +182,10 @@ def _prune_transition_history(world) -> None:
         cartridge.transitions.clear()
 
 
+def _public_tts_config(config_value: dict) -> dict:
+    return {key: value for key, value in config_value.items() if key != "apiKey"}
+
+
 async def _cloudflare_run_chat_reply(self, user_text: str) -> None:
     """Generate a reply without billing presentation-only wall-clock delays."""
     chat = self.cartridges.get("chat")
@@ -182,11 +199,13 @@ async def _cloudflare_run_chat_reply(self, user_text: str) -> None:
     for command in commands:
         await self._dispatch_internal("chat", "agent", command)
 
-    # Production live-pack worlds default to text presentation. In text mode
-    # the reducer has already revealed/presented the block during ingestBlock,
-    # so generating synthetic PCM and waiting 1.1 + 0.45 + 0.1 seconds before
-    # settling cannot improve the UI; it only keeps the DO active.
+    # Production live-pack worlds default to text presentation. Text is already
+    # visible after ingestBlock, but an explicitly enabled browser TTS provider
+    # still gets a synthesis task. Disabled TTS keeps the old zero-audio fast
+    # path and avoids generating the compatibility tone.
     if chat.state.get("presentationMode") == "text":
+        if _get_runtime_tts_config().get("enabled") is True:
+            self._spawn(self._stream_chat_fallback(operation_id, message_id, reply))
         await self._dispatch_internal(
             "chat",
             "agent",
@@ -198,7 +217,8 @@ async def _cloudflare_run_chat_reply(self, user_text: str) -> None:
         )
         return
 
-    # Audio mode still keeps the existing fallback/audio-ack timeout behavior.
+    # Audio mode keeps the existing fallback/audio-ack timeout behavior. The
+    # stream hook is replaced by the configured TTS bridge when enabled.
     self._spawn(self._stream_chat_fallback(operation_id, message_id, reply))
     self._spawn(self._ensure_chat_progress(operation_id))
 
@@ -265,6 +285,7 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
     def __init__(self, ctx, env):
         super().__init__(ctx, env)
         self._persisted_world_snapshot: str | None = None
+        self._public_tts_config_cache: dict | None = None
 
     async def _load_world(self, user_id: str):
         world = self.manager.worlds_by_user.get(user_id)
@@ -306,6 +327,65 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
             await self.ctx.storage.put(_runtime._DO_WORLD_STATE_KEY, snapshot)
             self._persisted_world_snapshot = snapshot
         return snapshot
+
+    async def _load_public_tts_config(self) -> dict:
+        if self._public_tts_config_cache is not None:
+            return dict(self._public_tts_config_cache)
+        try:
+            raw = await self.ctx.storage.get(_DO_TTS_CONFIG_KEY)
+        except Exception:
+            raw = None
+        if isinstance(raw, str) and raw:
+            try:
+                parsed = json.loads(raw)
+            except json.JSONDecodeError:
+                parsed = {}
+        else:
+            parsed = {}
+        self._public_tts_config_cache = parsed if isinstance(parsed, dict) else {}
+        return dict(self._public_tts_config_cache)
+
+    async def _persist_public_tts_config(self, config_value: dict) -> None:
+        public = _public_tts_config(config_value)
+        if self._public_tts_config_cache == public:
+            return
+        raw = json.dumps(public, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+        await self.ctx.storage.put(_DO_TTS_CONFIG_KEY, raw)
+        self._public_tts_config_cache = public
+
+    async def _capture_tts_settings(self, websocket, attachment: dict, message: dict) -> dict:
+        if message.get("type") != "event":
+            return attachment
+        channel = message.get("channel")
+        payload = message.get("payload")
+        payload = payload if isinstance(payload, dict) else {}
+        if channel == "nori.tts.config":
+            raw_config = payload
+        elif channel == "nori.tts.test" and isinstance(payload.get("config"), dict):
+            raw_config = payload["config"]
+        else:
+            return attachment
+
+        sanitized = _sanitize_runtime_tts_config(raw_config)
+        await self._persist_public_tts_config(sanitized)
+        updated = dict(attachment)
+        api_key = sanitized.get("apiKey")
+        old_key = updated.get("ttsApiKey")
+        if isinstance(api_key, str) and api_key:
+            updated["ttsApiKey"] = api_key
+        else:
+            updated.pop("ttsApiKey", None)
+        if old_key != updated.get("ttsApiKey"):
+            _runtime._save_socket_attachment(websocket, updated)
+        return updated
+
+    async def _install_tts_for_socket(self, attachment: dict) -> None:
+        public = await self._load_public_tts_config()
+        config_value = dict(public)
+        api_key = attachment.get("ttsApiKey")
+        if isinstance(api_key, str) and api_key:
+            config_value["apiKey"] = api_key
+        _install_runtime_tts_config(config_value)
 
     def _refresh_world_clients(self, world) -> None:
         main_clients = set()
@@ -359,6 +439,8 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
 
         await _prefetch_parsed_arcade_message(self.env, message)
         attachment = await self._capture_ai_settings(websocket, attachment, message)
+        attachment = await self._capture_tts_settings(websocket, attachment, message)
+        await self._install_tts_for_socket(attachment)
 
         if message.get("type") == "reset_my_web_world":
             locale = message.get("locale") if isinstance(message.get("locale"), str) else None
@@ -383,6 +465,12 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
         await world.handle_client_message(adapter, message)
         await _runtime._drain_world_tasks(world)
         await self._persist_world(world)
+
+    async def webSocketMessage(self, websocket, message):
+        try:
+            return await super().webSocketMessage(websocket, message)
+        finally:
+            _clear_runtime_tts_config()
 
 
 __all__ = ["Default", "NoriArcadeSession"]
