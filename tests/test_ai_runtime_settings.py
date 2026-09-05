@@ -140,11 +140,14 @@ async def main() -> None:
     # intact while exposing clear connection diagnostics in the Settings UI.
     index_html = (ROOT / "public" / "index.html").read_text(encoding="utf-8")
     client_js = (ROOT / "public" / "nori-ai-settings.js").read_text(encoding="utf-8")
+    provider_switch_js = (ROOT / "public" / "nori-ai-provider-switch.js").read_text(encoding="utf-8")
     ai_script = '<script src="/nori-ai-settings.js"></script>'
+    provider_switch_script = '<script src="/nori-ai-provider-switch.js"></script>'
     app_script = '<script type="module" crossorigin src="/assets/index-CyHAbkO5.js"></script>'
     assert ai_script in index_html
+    assert provider_switch_script in index_html
     assert app_script in index_html
-    assert index_html.index(ai_script) < index_html.index(app_script)
+    assert index_html.index(ai_script) < index_html.index(provider_switch_script) < index_html.index(app_script)
     assert "localStorage" in client_js
     assert "sessionStorage" in client_js
     assert 'channel: "nori.ai.config"' in client_js
@@ -154,6 +157,10 @@ async def main() -> None:
     assert "savedDisabled" in client_js
     assert "rememberApiKey" in client_js
     assert "apiKey" in client_js
+    assert 'OPENAI_DEFAULT_MODEL = "gpt-4o-mini"' in provider_switch_js
+    assert 'ANTHROPIC_DEFAULT_MODEL = "claude-3-5-sonnet-20241022"' in provider_switch_js
+    assert 'target.value === "openai-compatible"' in provider_switch_js
+    assert 'target.value === "anthropic"' in provider_switch_js
 
     clear_runtime_ai_config()
     assert get_runtime_ai_config() == {}
