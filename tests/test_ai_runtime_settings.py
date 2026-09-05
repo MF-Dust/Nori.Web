@@ -119,31 +119,24 @@ async def main() -> None:
     assert "Keep Nori curious and concise." in captured["system_prompt"]
     assert "NoriOS rendering contract" in captured["system_prompt"]
 
-    # Static integration checks: compatibility extensions execute before the
-    # main module script. The fresh-config bridge intentionally sends the tiny
-    # redacted/runtime config event before every chat turn so Worker task
-    # boundaries cannot leave a stale ContextVar behind.
+    # Keep the established AI settings hook and its hibernation-aware transport
+    # intact. The reliability fix belongs at the URL normalization boundary.
     index_html = (ROOT / "public" / "index.html").read_text(encoding="utf-8")
     client_js = (ROOT / "public" / "nori-ai-settings.js").read_text(encoding="utf-8")
-    fresh_js = (ROOT / "public" / "nori-ai-runtime-fix.js").read_text(encoding="utf-8")
     ai_script = '<script src="/nori-ai-settings.js"></script>'
-    fresh_script = '<script src="/nori-ai-runtime-fix.js"></script>'
     app_script = '<script type="module" crossorigin src="/assets/index-CyHAbkO5.js"></script>'
     assert ai_script in index_html
-    assert fresh_script in index_html
     assert app_script in index_html
-    assert index_html.index(ai_script) < index_html.index(fresh_script) < index_html.index(app_script)
+    assert index_html.index(ai_script) < index_html.index(app_script)
     assert "localStorage" in client_js
     assert "sessionStorage" in client_js
     assert 'channel: "nori.ai.config"' in client_js
     assert "rememberApiKey" in client_js
     assert "apiKey" in client_js
-    assert 'channel: "nori.ai.config"' in fresh_js
-    assert "noriAiFreshConfigSend" in fresh_js
 
     clear_runtime_ai_config()
     assert get_runtime_ai_config() == {}
-    print("[ok] browser AI settings are persistent, endpoint-safe, and refreshed per chat turn")
+    print("[ok] browser AI settings are persistent, endpoint-safe, and hibernation-compatible")
 
 
 if __name__ == "__main__":
