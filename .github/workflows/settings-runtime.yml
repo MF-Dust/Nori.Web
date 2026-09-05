@@ -60,6 +60,7 @@ jobs:
       - name: Verify compatibility JavaScript syntax
         run: |
           node --check public/nori-ai-settings.js
+          node --check public/nori-ai-provider-switch.js
           node --check public/nori-tts-settings.js
 
       - name: Compile settings services and Worker entry
