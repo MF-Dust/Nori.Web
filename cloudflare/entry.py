@@ -245,10 +245,10 @@ async def _cloudflare_run_agent_turns(self, cartridge_id: str) -> None:
         cartridge = self.cartridges.get(cartridge_id)
         if cartridge is None:
             return
-        command = getattr(cartridge, "agent_next_command", lambda: None)()
+        command = self._next_agent_command(cartridge_id, cartridge)
         if not command:
             return
-        commit = await self._dispatch_internal(cartridge_id, "agent", command)
+        commit = await self._dispatch_agent_command(cartridge_id, cartridge, command)
         if commit is None:
             return
 
