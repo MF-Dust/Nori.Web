@@ -21,11 +21,15 @@ export * from "./apps/files-presentation";
 export {
   IDLE_BUY_COUNTS,
   IDLE_BUY_COUNT_LABELS,
+  IDLE_ROYAL_EXCHANGE_BUY_COUNTS,
+  IDLE_ROYAL_EXCHANGE_BUY_COUNT_LABELS,
   IDLE_MANIFOLD_UNLOCKED_FACT,
+  IDLE_FIRST_ABDICATION_SHARDS,
   IDLE_SAVE_INTERVAL_MS,
   IDLE_TICK_INTERVAL_MS,
   IDLE_COMPUTE_SYNC_INTERVAL_MS,
   type IdleBuyCount,
+  type IdleRoyalExchangeBuyCount,
   type IdleAlignment,
   type IdleGeneratorAlignment,
   type IdleGeneratorDefinition,
@@ -36,6 +40,8 @@ export {
   type IdleRunPresentationState,
   type IdleClickResult,
   type IdleGeneratorQuote,
+  type IdleAbdicationQuote,
+  type IdleRoyalExchangeQuote,
   type IdlePresentationSnapshot,
   type IdleActionRuntime,
   type IdlePresentationModel,
@@ -86,7 +92,10 @@ export {
 export * from "./screens/browser-popup-screen";
 export * from "./screens/browser-screen";
 export * from "./screens/files-screen";
+export * from "./screens/idle-abdication-panel";
 export * from "./screens/idle-alignment-panel";
+export * from "./screens/idle-progression-rail";
+export * from "./screens/idle-royal-exchange-panel";
 export * from "./screens/idle-screen";
 export * from "./screens/idle-shop";
 export * from "./screens/idle-skill-bar";
