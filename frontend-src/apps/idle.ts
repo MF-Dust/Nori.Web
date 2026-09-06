@@ -2,6 +2,7 @@ import type { DesktopComputeState } from "../state/compute-runtime";
 
 /** Batch choices exposed by the shipped Idle generator shop. */
 export type IdleBuyCount = 1 | 10 | 100 | "smart" | "max";
+export type IdleRoyalExchangeBuyCount = 1 | "max";
 
 export type IdleAlignment = "none" | "accelerate" | "decelerate" | "equilibrium";
 export type IdleGeneratorAlignment = IdleAlignment | "universal";
@@ -105,6 +106,31 @@ export interface IdleGeneratorQuote {
   totalRate: number;
 }
 
+/**
+ * The shard curve is pack-owned, so the presentation consumes a quote instead
+ * of inventing `shard_threshold_k` or `shard_curve_exp` values. The shipped
+ * first reset recommends/needs 1000 newly earned shards before it is enabled.
+ */
+export interface IdleAbdicationQuote {
+  gainedShards: number;
+  totalShardsAfter: number;
+  canAbdicate: boolean;
+  firstAbdication: boolean;
+  recommendedFirstShards: number;
+  nextShardCompute?: number;
+}
+
+/** Runtime-owned GPU exchange values used by the shipped ×1 / 最大 panel. */
+export interface IdleRoyalExchangeQuote {
+  factionId: string;
+  tradesOwned: number;
+  coinBalance: number;
+  willBuy: number;
+  totalCost: number;
+  perTradePercent: number;
+  totalMultiplier: number;
+}
+
 export interface IdlePresentationSnapshot {
   state: IdleRunPresentationState;
   computeState: DesktopComputeState;
@@ -126,7 +152,7 @@ export interface IdleActionRuntime {
   buyUpgrade(upgradeId: string): void;
   buyFactionUpgrade(upgradeId: string): void;
   buyHeritage(heritageId: string): void;
-  buyRoyalExchange(factionId: string, count?: 1 | "max"): void;
+  buyRoyalExchange(factionId: string, count?: IdleRoyalExchangeBuyCount): void;
   buyProof(alignmentId: IdleAlignment): void;
   fireSkill(skillId: string): number;
   setFacts(facts: ReadonlySet<string>): void;
@@ -141,6 +167,11 @@ export interface IdlePresentationModel extends IdleActionRuntime {
   snapshot(): IdlePresentationSnapshot;
   subscribe(listener: () => void): () => void;
   quoteGenerator(generatorId: string, mode: IdleBuyCount): IdleGeneratorQuote | null;
+  quoteAbdication(): IdleAbdicationQuote;
+  quoteRoyalExchange(
+    factionId: string,
+    mode: IdleRoyalExchangeBuyCount,
+  ): IdleRoyalExchangeQuote | null;
 }
 
 export const IDLE_BUY_COUNTS: readonly IdleBuyCount[] = [1, 10, 100, "smart", "max"];
@@ -153,8 +184,19 @@ export const IDLE_BUY_COUNT_LABELS: Readonly<Record<IdleBuyCount, string>> = {
   max: "最大",
 };
 
+export const IDLE_ROYAL_EXCHANGE_BUY_COUNTS: readonly IdleRoyalExchangeBuyCount[] = [1, "max"];
+export const IDLE_ROYAL_EXCHANGE_BUY_COUNT_LABELS: Readonly<
+  Record<IdleRoyalExchangeBuyCount, string>
+> = {
+  1: "×1",
+  max: "最大",
+};
+
 /** Fact that closes the original no-unlockFact alignment choices in shipped Idle. */
 export const IDLE_MANIFOLD_UNLOCKED_FACT = "arg.manifold_unlocked";
+
+/** Shipped first-abdication shard gate. */
+export const IDLE_FIRST_ABDICATION_SHARDS = 1_000;
 
 /** Shipped run persistence cadence. */
 export const IDLE_SAVE_INTERVAL_MS = 5_000;
