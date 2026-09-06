@@ -23,6 +23,25 @@ export interface IdleGeneratorDefinition {
   dynamicRate: boolean;
 }
 
+/** Recovered shared shape for milestone/generic/faction upgrade presentation. */
+export interface IdleUpgradeDefinition {
+  id: string;
+  name?: string;
+  description?: string;
+  targetGen?: string;
+  ownedThreshold?: number;
+  multiplier?: number;
+  cost: number;
+  grantsThread?: boolean;
+  factionId?: string;
+  factionTier?: number;
+  factionSlot?: number;
+  icon?: string;
+  unlockTrophyId?: string;
+  unlockFact?: string;
+  readonly [key: string]: unknown;
+}
+
 export interface IdleAlignmentDefinition {
   id: IdleAlignment;
   proofName: string;
@@ -135,6 +154,8 @@ export interface IdlePresentationSnapshot {
   state: IdleRunPresentationState;
   computeState: DesktopComputeState;
   generators: readonly IdleGeneratorDefinition[];
+  /** Milestone + generic upgrade definitions visible to the progression column. */
+  upgrades?: readonly IdleUpgradeDefinition[];
   alignments: readonly IdleAlignmentDefinition[];
   factions: readonly IdleFactionDefinition[];
   skills: readonly IdleSkillDefinition[];
