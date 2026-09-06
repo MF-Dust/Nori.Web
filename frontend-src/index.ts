@@ -105,6 +105,7 @@ export * from "./screens/browser-screen";
 export * from "./screens/files-screen";
 export * from "./screens/idle-abdication-panel";
 export * from "./screens/idle-alignment-panel";
+export * from "./screens/idle-initialization-sequence";
 export * from "./screens/idle-progression-rail";
 export * from "./screens/idle-royal-exchange-panel";
 export * from "./screens/idle-screen";
