@@ -54,6 +54,7 @@ export * from "./apps/idle-faction-effects";
 export * from "./apps/idle-faction-progression";
 export * from "./apps/idle-generic-upgrades";
 export * from "./apps/idle-manifold";
+export * from "./apps/idle-memento-effects";
 export * from "./apps/idle-presentation";
 export * from "./apps/idle-upgrades";
 export * from "./apps/mail";
