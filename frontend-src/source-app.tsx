@@ -43,6 +43,18 @@ export function SourceApp() {
     });
     idle.start();
 
+    const idlePresentation = {
+      ...idle,
+      claimMemento(onCompleted?: () => void) {
+        idle.claimMemento(() => {
+          void frontend.manifold.command("idle.complete", {}).catch((error) => {
+            console.error("[SourceApp] idle.complete failed", error);
+          });
+          onCompleted?.();
+        });
+      },
+    };
+
     let bundle: RecoveredDesktopRuntimeBundle | undefined;
 
     const launchApp = (request: { appId: string; mode: string; args?: unknown }) =>
@@ -101,7 +113,7 @@ export function SourceApp() {
           openUrl,
         },
       },
-      idle,
+      idle: idlePresentation,
       desktop: {
         // The source-app smoke build does not yet own the complete production
         // facts provider. Keep install gating out of bootstrap until that
