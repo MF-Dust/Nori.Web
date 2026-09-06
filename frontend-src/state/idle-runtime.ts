@@ -1,8 +1,8 @@
 import {
+  IDLE_COMPUTE_SYNC_INTERVAL_MS,
   IDLE_FIRST_ABDICATION_SHARDS,
   IDLE_SAVE_INTERVAL_MS,
   IDLE_TICK_INTERVAL_MS,
-  IDLE_COMPUTE_SYNC_INTERVAL_MS,
   type IdleAbdicationQuote,
   type IdleActiveSkillBuff,
   type IdleAlignment,
@@ -18,6 +18,7 @@ import {
   type IdleRoyalExchangeQuote,
   type IdleRunPresentationState,
   type IdleSkillDefinition,
+  type IdleUpgradeDefinition,
 } from "../apps/idle";
 import {
   DEFAULT_IDLE_ALIGNMENTS,
@@ -32,6 +33,11 @@ import {
   isIdleGeneratorVisible,
   resolveIdleGeneratorBuyCount,
 } from "../apps/idle-economy";
+import {
+  DEFAULT_IDLE_GENERATOR_UPGRADES,
+  getIdleGeneratorUpgradeMultiplier,
+  isIdleGeneratorUpgradeAvailable,
+} from "../apps/idle-upgrades";
 import type { DesktopComputeState } from "./compute-runtime";
 
 const IDLE_RUN_STORAGE_VERSION = 1;
@@ -63,6 +69,7 @@ interface IdlePersistedRun {
 
 export interface CreateSourceIdleRuntimeOptions {
   generators?: readonly IdleGeneratorDefinition[];
+  upgrades?: readonly IdleUpgradeDefinition[];
   alignments?: readonly IdleAlignmentDefinition[];
   factions?: readonly IdleFactionDefinition[];
   skills?: readonly IdleSkillDefinition[];
@@ -84,6 +91,10 @@ export interface SourceIdleRuntime extends IdlePresentationModel {
   emitFact(factId: string): Promise<void>;
 }
 
+function factsRecord(facts: ReadonlySet<string>): Record<string, boolean> {
+  return Object.fromEntries([...facts].map((factId) => [factId, true]));
+}
+
 function createInitialState(facts: ReadonlySet<string> = new Set()): IdleRuntimeState {
   return {
     compute: 0,
@@ -92,7 +103,7 @@ function createInitialState(facts: ReadonlySet<string> = new Set()): IdleRuntime
     affiliatedFaction: null,
     shards: 0,
     abdications: 0,
-    facts: Object.fromEntries([...facts].map((factId) => [factId, true])),
+    facts: factsRecord(facts),
     owned: {},
     upgrades: {},
     factionCoins: {},
@@ -124,6 +135,14 @@ function clonePresentationState(state: IdleRuntimeState): IdleRunPresentationSta
   };
 }
 
+function sameFacts(
+  current: Readonly<Record<string, boolean>>,
+  next: ReadonlySet<string>,
+): boolean {
+  const ids = Object.keys(current).filter((factId) => current[factId]);
+  return ids.length === next.size && ids.every((factId) => next.has(factId));
+}
+
 function computeCap(facts: Readonly<Record<string, boolean>>): number {
   if (!facts["compute.initialized"]) return Number.POSITIVE_INFINITY;
   if (facts["arg.manifold_unlocked"]) return Number.POSITIVE_INFINITY;
@@ -149,8 +168,7 @@ function addCompute(state: IdleRuntimeState, amount: number): IdleRuntimeState {
     ...state,
     compute: nextCompute,
     maxComputeThisRun: Math.max(state.maxComputeThisRun, nextCompute),
-    currentRunComputeProduced:
-      state.currentRunComputeProduced + Math.max(0, amount),
+    currentRunComputeProduced: state.currentRunComputeProduced + Math.max(0, amount),
   };
 }
 
@@ -174,13 +192,24 @@ function activeGeneratorMultiplier(state: IdleRuntimeState, generatorId: string)
   return multiplier;
 }
 
+function activeClickMultiplier(state: IdleRuntimeState): number {
+  let multiplier = 1;
+  for (const buff of state.activeSkillBuffs) {
+    if (buff.targetGenId != null) continue;
+    if (typeof buff.magnitude === "number") multiplier *= buff.magnitude;
+  }
+  return multiplier;
+}
+
 function generatorRate(
   state: IdleRuntimeState,
   generator: IdleGeneratorDefinition,
+  upgrades: readonly IdleUpgradeDefinition[],
   constants: IdleDefaultEconomyConstants,
 ): number {
   return (
     generator.baseRate *
+    getIdleGeneratorUpgradeMultiplier(generator.id, state.upgrades, upgrades) *
     activeGeneratorMultiplier(state, generator.id) *
     exchangeMultiplier(state, constants)
   );
@@ -189,13 +218,14 @@ function generatorRate(
 function totalProductionRate(
   state: IdleRuntimeState,
   generators: readonly IdleGeneratorDefinition[],
+  upgrades: readonly IdleUpgradeDefinition[],
   constants: IdleDefaultEconomyConstants,
 ): number {
   let total = 0;
   for (const generator of generators) {
     const owned = state.owned[generator.id] ?? 0;
     if (owned <= 0) continue;
-    total += owned * generatorRate(state, generator, constants);
+    total += owned * generatorRate(state, generator, upgrades, constants);
   }
   return finiteCompute(total);
 }
@@ -275,6 +305,7 @@ export function createSourceIdleRuntime(
   options: CreateSourceIdleRuntimeOptions = {},
 ): SourceIdleRuntime {
   const generators = options.generators ?? DEFAULT_IDLE_GENERATORS;
+  const upgrades = options.upgrades ?? DEFAULT_IDLE_GENERATOR_UPGRADES;
   const alignments = options.alignments ?? DEFAULT_IDLE_ALIGNMENTS;
   const factions = options.factions ?? DEFAULT_IDLE_FACTIONS;
   const skills = options.skills ?? DEFAULT_IDLE_SKILLS;
@@ -302,10 +333,7 @@ export function createSourceIdleRuntime(
   };
 
   const syncCompute = () => {
-    options.onComputeSync?.({
-      compute: state.compute,
-      cap: computeCap(state.facts),
-    });
+    options.onComputeSync?.({ compute: state.compute, cap: computeCap(state.facts) });
   };
 
   const currentStorageKey = (): string | null => {
@@ -313,34 +341,24 @@ export function createSourceIdleRuntime(
     return worldId ? `${IDLE_RUN_STORAGE_PREFIX}${worldId}` : null;
   };
 
-  const loadStorage = (key: string) => {
-    if (!storage) return;
+  const loadStorage = (key: string, facts: ReadonlySet<string>): boolean => {
+    if (!storage) return false;
     try {
       const raw = storage.getItem(key);
-      if (!raw) return;
+      if (!raw) return false;
       const parsed = JSON.parse(raw) as Partial<IdlePersistedRun>;
-      if (parsed.version !== IDLE_RUN_STORAGE_VERSION || !parsed.state) return;
-      const facts = state.facts;
-      state = {
-        ...createInitialState(new Set(Object.keys(facts).filter((factId) => facts[factId]))),
-        ...parsed.state,
-        facts,
-      };
+      if (parsed.version !== IDLE_RUN_STORAGE_VERSION || !parsed.state) return false;
+      state = { ...createInitialState(facts), ...parsed.state, facts: factsRecord(facts) };
       manifoldRevealApplied = !!parsed.manifoldRevealApplied;
       persistedMaxCompute = Math.max(
         Number(parsed.persistedMaxCompute) || 0,
         state.maxComputeThisRun,
       );
+      return true;
     } catch (error) {
       warn("[IdleRuntime] failed to hydrate run persistence", error);
+      return false;
     }
-  };
-
-  const refreshStorageContext = () => {
-    const nextKey = currentStorageKey();
-    if (nextKey === storageKey) return;
-    storageKey = nextKey;
-    if (storageKey) loadStorage(storageKey);
   };
 
   const save = () => {
@@ -360,20 +378,26 @@ export function createSourceIdleRuntime(
   };
 
   const syncFacts = () => {
-    refreshStorageContext();
-    const facts = options.getFacts?.();
-    if (!facts) return;
-    const nextFacts = Object.fromEntries([...facts].map((factId) => [factId, true]));
-    const currentIds = Object.keys(state.facts);
-    if (
-      currentIds.length === facts.size &&
-      currentIds.every((factId) => state.facts[factId] && facts.has(factId))
-    ) {
-      return;
+    const facts = options.getFacts?.() ?? new Set<string>();
+    const nextKey = currentStorageKey();
+    let changed = false;
+
+    if (nextKey !== storageKey) {
+      save();
+      storageKey = nextKey;
+      state = createInitialState(facts);
+      manifoldRevealApplied = false;
+      changed = true;
+      if (storageKey) loadStorage(storageKey, facts);
+    } else if (!sameFacts(state.facts, facts)) {
+      state = { ...state, facts: factsRecord(facts) };
+      changed = true;
     }
-    state = { ...state, facts: nextFacts };
-    publish();
-    syncCompute();
+
+    if (changed) {
+      publish();
+      syncCompute();
+    }
   };
 
   const runtime: SourceIdleRuntime = {
@@ -382,6 +406,7 @@ export function createSourceIdleRuntime(
         state: clonePresentationState(state),
         computeState: { compute: state.compute, cap: computeCap(state.facts) },
         generators,
+        upgrades,
         alignments,
         factions,
         skills,
@@ -407,7 +432,7 @@ export function createSourceIdleRuntime(
         state,
       );
       const totalCost = getIdleGeneratorTotalCost(generator, owned, willBuy, state);
-      const perUnitRate = generatorRate(state, generator, constants);
+      const perUnitRate = generatorRate(state, generator, upgrades, constants);
       return {
         generatorId,
         owned,
@@ -433,10 +458,7 @@ export function createSourceIdleRuntime(
         canAbdicate,
         firstAbdication,
         recommendedFirstShards: IDLE_FIRST_ABDICATION_SHARDS,
-        nextShardCompute: computeForShardTotal(
-          state.shards + gainedShards + 1,
-          constants,
-        ),
+        nextShardCompute: computeForShardTotal(state.shards + gainedShards + 1, constants),
       };
     },
 
@@ -457,11 +479,9 @@ export function createSourceIdleRuntime(
     },
 
     click(): IdleClickResult {
-      const gained = Math.max(1, totalProductionRate(state, generators, constants) * 0.05);
-      state = addCompute(
-        { ...state, productiveClicks: state.productiveClicks + 1 },
-        gained,
-      );
+      const base = Math.max(1, totalProductionRate(state, generators, upgrades, constants) * 0.05);
+      const gained = base * activeClickMultiplier(state);
+      state = addCompute({ ...state, productiveClicks: state.productiveClicks + 1 }, gained);
       publish();
       return {
         gained,
@@ -495,12 +515,20 @@ export function createSourceIdleRuntime(
       publish();
     },
 
-    buyUpgrade(_upgradeId) {
-      // The generic/milestone upgrade reducer is the next economy slice.
+    buyUpgrade(upgradeId) {
+      const upgrade = upgrades.find((candidate) => candidate.id === upgradeId);
+      if (!upgrade || !isIdleGeneratorUpgradeAvailable(upgrade, state)) return;
+      if (state.compute < upgrade.cost) return;
+      state = {
+        ...state,
+        compute: finiteCompute(state.compute - upgrade.cost),
+        upgrades: { ...state.upgrades, [upgrade.id]: true },
+      };
+      publish();
     },
 
     buyFactionUpgrade(_upgradeId) {
-      // Faction treaty/pact/alliance eligibility remains a separate recovery slice.
+      // Treaty/pact/alliance eligibility and faction effect curves are the next progression slice.
     },
 
     buyHeritage(_heritageId) {
@@ -551,7 +579,7 @@ export function createSourceIdleRuntime(
       const effect = skill.effect ?? {};
       const kind = typeof effect.kind === "string" ? effect.kind : "";
       const cooldownSec = Math.max(0, skill.cooldownSec ?? 0);
-      let next = {
+      let next: IdleRuntimeState = {
         ...state,
         skillCastsThisEra: state.skillCastsThisEra + 1,
         skillCooldownSec: { ...state.skillCooldownSec, [skillId]: cooldownSec },
@@ -584,9 +612,11 @@ export function createSourceIdleRuntime(
         next = { ...next, activeSkillBuffs: [...next.activeSkillBuffs, ...buffs] };
       } else if (kind === "lump") {
         const seconds = typeof effect.seconds === "number" ? effect.seconds : 0;
-        next = addCompute(next, totalProductionRate(next, generators, constants) * seconds);
-        const grant =
-          typeof effect.grantsFactionCoins === "number" ? effect.grantsFactionCoins : 0;
+        next = addCompute(
+          next,
+          totalProductionRate(next, generators, upgrades, constants) * seconds,
+        );
+        const grant = typeof effect.grantsFactionCoins === "number" ? effect.grantsFactionCoins : 0;
         if (grant > 0 && next.affiliatedFaction && EXCHANGEABLE_FACTIONS.has(next.affiliatedFaction)) {
           next = {
             ...next,
@@ -599,11 +629,11 @@ export function createSourceIdleRuntime(
       } else if (kind === "strike") {
         const pool = typeof effect.pool === "string" ? effect.pool : "decelerate";
         const candidates = generators.filter(
-          (generator) =>
-            generator.alignment === pool && (next.owned[generator.id] ?? 0) > 0,
+          (generator) => generator.alignment === pool && (next.owned[generator.id] ?? 0) > 0,
         );
         if (candidates.length > 0) {
-          const target = candidates[Math.min(candidates.length - 1, Math.floor(random() * candidates.length))];
+          const index = Math.min(candidates.length - 1, Math.floor(random() * candidates.length));
+          const target = candidates[index];
           const baseMagnitude = typeof effect.magnitude === "number" ? effect.magnitude : 1;
           const critChance = typeof effect.critChance === "number" ? effect.critChance : 0;
           const critMult = typeof effect.critMult === "number" ? effect.critMult : 1;
@@ -645,8 +675,8 @@ export function createSourceIdleRuntime(
     },
 
     setFacts(facts) {
-      const nextFacts = Object.fromEntries([...facts].map((factId) => [factId, true]));
-      state = { ...state, facts: nextFacts };
+      if (sameFacts(state.facts, facts)) return;
+      state = { ...state, facts: factsRecord(facts) };
       publish();
       syncCompute();
     },
@@ -694,7 +724,7 @@ export function createSourceIdleRuntime(
       if (elapsed <= 0) return;
       let next = addCompute(
         { ...state, currentEraSeconds: state.currentEraSeconds + elapsed },
-        totalProductionRate(state, generators, constants) * elapsed,
+        totalProductionRate(state, generators, upgrades, constants) * elapsed,
       );
 
       const cooldowns: Record<string, number> = {};
@@ -729,7 +759,6 @@ export function createSourceIdleRuntime(
     start() {
       if (started || disposed) return;
       started = true;
-      refreshStorageContext();
       syncFacts();
       lastTickAt = now();
       unsubscribeFacts = options.subscribeFacts?.(() => syncFacts());
