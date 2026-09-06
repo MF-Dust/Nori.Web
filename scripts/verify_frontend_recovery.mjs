@@ -53,6 +53,39 @@ async function main() {
       assert(Array.isArray(symbols.byFeature[feature]) && symbols.byFeature[feature].length > 0, `missing recovered feature group: ${feature}`);
     }
 
+    // Keep the shared source-owned ChatPanel pinned to three subtle contracts in
+    // the shipped chunk. These are easy to lose while replacing Radix/motion
+    // presentation helpers with maintainable source components.
+    const chatPanelChunk = manifest.chunks.find((chunk) => chunk.file.startsWith("ChatPanel-"));
+    assert(chatPanelChunk, "missing shipped ChatPanel chunk for parity checks");
+    const shippedChatPanel = await fs.readFile(path.join(ROOT, "public", "assets", chatPanelChunk.file), "utf8");
+    const sourceChatPanel = await fs.readFile(path.join(ROOT, "frontend-src", "components", "chat-panel.tsx"), "utf8");
+
+    assert(
+      shippedChatPanel.includes("gradientDeps: [e]"),
+      "shipped ChatPanel must recalculate fade gradients when messages change",
+    );
+    assert(
+      sourceChatPanel.includes("gradientDeps={[messages]}"),
+      "source ChatPanel must preserve message-dependent fade recalculation",
+    );
+    assert(
+      shippedChatPanel.includes('className: "px-3 pt-3 pb-3"'),
+      "shipped ChatPanel content viewport marker changed; re-check viewportRef recovery",
+    );
+    assert(
+      sourceChatPanel.includes('ref={viewportRef} className="px-3 pt-3 pb-3"'),
+      "source ChatPanel viewportRef must target the shipped message-content container",
+    );
+    assert(
+      shippedChatPanel.includes("return String(r);"),
+      "shipped ChatPanel unknown-content fallback changed; re-check normalization recovery",
+    );
+    assert(
+      sourceChatPanel.includes("return String(content);"),
+      "source ChatPanel must stringify unsupported message content like the shipped chunk",
+    );
+
     console.log(`[ok] frontend recovery covers ${manifest.bundleCount} JavaScript and ${styles.count} CSS chunks`);
   } finally {
     await fs.rm(OUTPUT, { recursive: true, force: true });
