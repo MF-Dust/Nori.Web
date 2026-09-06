@@ -13,6 +13,7 @@ import {
   type IdleAbdicationQuote,
   type IdleAlignment,
   type IdleBuyCount,
+  type IdleClickResult,
   type IdleGeneratorQuote,
   type IdlePresentationSnapshot,
   type IdleRoyalExchangeBuyCount,
@@ -35,6 +36,7 @@ export interface IdleScreenRuntime {
     factionId: string,
     mode: IdleRoyalExchangeBuyCount,
   ): IdleRoyalExchangeQuote | null;
+  click(): IdleClickResult;
   buy(generatorId: string, count?: IdleBuyCount): void;
   buyProof(alignmentId: IdleAlignment): void;
   buyRoyalExchange(factionId: string, count?: IdleRoyalExchangeBuyCount): void;
@@ -117,29 +119,48 @@ function ComputeField({
   compute,
   theme,
   reserveShopSpace,
+  onTap,
 }: {
   compute: number;
   theme: IdleTheme;
   reserveShopSpace: boolean;
+  onTap?: () => void;
 }) {
   const count = Math.max(9, Math.min(180, Math.floor(Math.log10(Math.max(10, compute)) * 18)));
   const nodes = useMemo(() => seededNodes(count), [count]);
   const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
-  const drag = useRef<{ id: number; x: number; y: number } | null>(null);
+  const drag = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
 
   const pointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);
-    drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    drag.current = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      moved: false,
+    };
   }, []);
   const pointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     const current = drag.current;
     if (!current || current.id !== event.pointerId) return;
     const dx = event.clientX - current.x;
     const dy = event.clientY - current.y;
-    drag.current = { id: current.id, x: event.clientX, y: event.clientY };
+    if (!current.moved && Math.abs(dx) + Math.abs(dy) < 3) return;
+    drag.current = {
+      id: current.id,
+      x: event.clientX,
+      y: event.clientY,
+      moved: true,
+    };
     setView((value) => ({ ...value, x: value.x + dx, y: value.y + dy }));
   }, []);
   const pointerUp = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const current = drag.current;
+    if (!current || current.id !== event.pointerId) return;
+    if (!current.moved) onTap?.();
+    drag.current = null;
+  }, [onTap]);
+  const pointerCancel = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     if (drag.current?.id === event.pointerId) drag.current = null;
   }, []);
   const wheel = useCallback((event: ReactWheelEvent<HTMLDivElement>) => {
@@ -154,7 +175,7 @@ function ComputeField({
       onPointerDown={pointerDown}
       onPointerMove={pointerMove}
       onPointerUp={pointerUp}
-      onPointerCancel={pointerUp}
+      onPointerCancel={pointerCancel}
       onWheel={wheel}
     >
       <div
@@ -194,6 +215,7 @@ function ComputeField({
           borderColor: `${theme.dim}aa`,
           color: theme.bright,
         }}
+        onPointerDown={(event) => event.stopPropagation()}
         onClick={() => setView({ x: 0, y: 0, scale: 1 })}
         aria-label="Recenter compute field"
       >
@@ -222,6 +244,11 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
     }
   }, [initialized, initializing, runtime]);
 
+  const clickCore = useCallback(() => {
+    if (!initialized) return;
+    runtime.click();
+  }, [initialized, runtime]);
+
   return (
     <div
       className="pixel-idle relative h-full w-full select-none overflow-hidden font-mono"
@@ -235,7 +262,12 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
         "--px-ui-glow": theme.glow ?? "none",
       } as CSSProperties}
     >
-      <ComputeField compute={effective.compute} theme={theme} reserveShopSpace={hasShop} />
+      <ComputeField
+        compute={effective.compute}
+        theme={theme}
+        reserveShopSpace={hasShop}
+        onTap={clickCore}
+      />
 
       {initialized ? <IdleProgressionRail runtime={runtime} snapshot={snapshot} /> : null}
       {initialized ? <IdleGeneratorShop runtime={runtime} snapshot={snapshot} /> : null}
