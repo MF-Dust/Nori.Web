@@ -21,20 +21,25 @@ export * from "./apps/files-presentation";
 export {
   IDLE_BUY_COUNTS,
   IDLE_BUY_COUNT_LABELS,
+  IDLE_MANIFOLD_UNLOCKED_FACT,
   IDLE_SAVE_INTERVAL_MS,
   IDLE_TICK_INTERVAL_MS,
   IDLE_COMPUTE_SYNC_INTERVAL_MS,
   type IdleBuyCount,
+  type IdleAlignment,
+  type IdleGeneratorAlignment,
   type IdleGeneratorDefinition,
   type IdleAlignmentDefinition,
   type IdleSkillDefinition,
   type IdleActiveSkillBuff,
   type IdleRunPresentationState,
   type IdleClickResult,
+  type IdleGeneratorQuote,
   type IdlePresentationSnapshot,
   type IdleActionRuntime,
   type IdlePresentationModel,
 } from "./apps/idle";
+export * from "./apps/idle-economy";
 export * from "./apps/idle-presentation";
 export * from "./apps/mail";
 export * from "./apps/mail-presentation";
@@ -80,7 +85,9 @@ export {
 export * from "./screens/browser-popup-screen";
 export * from "./screens/browser-screen";
 export * from "./screens/files-screen";
+export * from "./screens/idle-alignment-panel";
 export * from "./screens/idle-screen";
+export * from "./screens/idle-shop";
 export * from "./screens/intro-page";
 export * from "./screens/mail-screen";
 export * from "./screens/messenger-screen";
