@@ -203,6 +203,15 @@ function clonePresentationState(state: IdleRuntimeState): IdleRunPresentationSta
     heritagesPurchased: state.heritagesPurchased,
     claimedMementoCount: state.claimedMementoCount,
     lastMementoClaimAtMs: state.lastMementoClaimAtMs,
+    currentEraSeconds: state.currentEraSeconds,
+    currentRunComputeProduced: state.currentRunComputeProduced,
+    productiveClicks: state.productiveClicks,
+    computeGainedByClicking: state.computeGainedByClicking,
+    factionCoinsFoundThisEra: state.factionCoinsFoundThisEra,
+    shortRunAbdications: state.shortRunAbdications,
+    hasBuiltThisEra: state.hasBuiltThisEra,
+    anyActionThisEra: state.anyActionThisEra,
+    lifetimeAlignmentSeconds: state.lifetimeAlignmentSeconds,
   };
 }
 
