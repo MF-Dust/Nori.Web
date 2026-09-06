@@ -81,6 +81,11 @@ import {
 import { syncIdleManifoldReveal } from "../apps/idle-manifold";
 import { idleMementoProductionMultiplier } from "../apps/idle-memento-effects";
 import {
+  advanceIdlePeriodicLumpCooldown,
+  IDLE_GREEN_FINGERS_UPGRADE_ID,
+  idleGreenFingersGrant,
+} from "../apps/idle-periodic-effects";
+import {
   advanceIdleRuntimeSession,
   createIdleRuntimeLedgerState,
   idleThreadCountFromUpgrades,
@@ -130,6 +135,7 @@ type IdleRuntimeState = IdleRunPresentationState &
     shortRunAbdications: number;
     hasBuiltThisEra: boolean;
     anyActionThisEra: boolean;
+    periodicLumpCooldownSec: Readonly<Record<string, number>>;
   };
 
 interface IdlePersistedRun {
@@ -194,6 +200,7 @@ function createInitialState(facts: ReadonlySet<string> = new Set()): IdleRuntime
     shortRunAbdications: 0,
     hasBuiltThisEra: false,
     anyActionThisEra: false,
+    periodicLumpCooldownSec: {},
   };
 }
 
@@ -469,6 +476,54 @@ function clickReward(
   }
   reward *= idleTreasureClickMultiplier(state);
   return Math.max(0, reward * activeClickMultiplier(state));
+}
+
+function assistantProductionRate(
+  state: IdleRuntimeState,
+  generators: readonly IdleGeneratorDefinition[],
+  upgrades: readonly IdleUpgradeDefinition[],
+  constants: IdleDefaultEconomyConstants,
+): number {
+  const assistants = idleEffectiveAssistantCount(state);
+  if (assistants <= 0) return 0;
+  return idleAssistantComputeGain(
+    assistants,
+    1,
+    clickReward(state, generators, upgrades, constants),
+  );
+}
+
+function applyPeriodicLumps(
+  state: IdleRuntimeState,
+  elapsedSeconds: number,
+  generators: readonly IdleGeneratorDefinition[],
+  upgrades: readonly IdleUpgradeDefinition[],
+  constants: IdleDefaultEconomyConstants,
+  random: () => number,
+): IdleRuntimeState {
+  if (elapsedSeconds <= 0 || !state.upgrades[IDLE_GREEN_FINGERS_UPGRADE_ID]) return state;
+  const advance = advanceIdlePeriodicLumpCooldown(
+    state.periodicLumpCooldownSec[IDLE_GREEN_FINGERS_UPGRADE_ID] ?? 0,
+    elapsedSeconds,
+  );
+  let next: IdleRuntimeState = {
+    ...state,
+    periodicLumpCooldownSec: {
+      ...state.periodicLumpCooldownSec,
+      [IDLE_GREEN_FINGERS_UPGRADE_ID]: advance.remainderSeconds,
+    },
+  };
+  if (advance.triggerCount <= 0) return next;
+  const generatorRateSnapshot = totalProductionRate(next, generators, upgrades, constants);
+  const assistantRateSnapshot = assistantProductionRate(next, generators, upgrades, constants);
+  const grant = idleGreenFingersGrant(
+    advance.triggerCount,
+    generatorRateSnapshot,
+    assistantRateSnapshot,
+    random,
+  );
+  next = addCompute(next, grant);
+  return next;
 }
 
 function shardTotalForCompute(maxCompute: number, constants: IdleDefaultEconomyConstants): number {
@@ -1118,6 +1173,7 @@ export function createSourceIdleRuntimeEngine(
       );
       let next: IdleRuntimeState = { ...state, ...session };
       next = addCompute(next, totalProductionRate(next, generators, upgrades, constants) * elapsed);
+      next = applyPeriodicLumps(next, elapsed, generators, upgrades, constants, random);
 
       const autoclick = advanceIdleAutoclickRemainder(
         next.automaticClickRemainder,
