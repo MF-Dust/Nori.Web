@@ -38,6 +38,7 @@ export interface IdleScreenRuntime {
   ): IdleRoyalExchangeQuote | null;
   click(): IdleClickResult;
   buy(generatorId: string, count?: IdleBuyCount): void;
+  buyUpgrade(upgradeId: string): void;
   buyProof(alignmentId: IdleAlignment): void;
   buyRoyalExchange(factionId: string, count?: IdleRoyalExchangeBuyCount): void;
   abdicate(): void;
