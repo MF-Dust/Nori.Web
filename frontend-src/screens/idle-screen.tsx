@@ -24,6 +24,7 @@ import {
   getEffectiveDesktopCompute,
 } from "../state/compute-runtime";
 import { IdleGeneratorShop } from "./idle-shop";
+import { IdleInitializationSequence } from "./idle-initialization-sequence";
 import { IdleProgressionRail } from "./idle-progression-rail";
 import { IdleSkillBar } from "./idle-skill-bar";
 
@@ -236,23 +237,31 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
   const theme = IDLE_THEMES[alignment] ?? IDLE_THEMES.none;
   const effective = getEffectiveDesktopCompute(snapshot.computeState);
   const initialized = !!snapshot.state.facts["compute.initialized"];
-  const [initializing, setInitializing] = useState(false);
+  const [introCompleted, setIntroCompleted] = useState(false);
+  const initializationFactInFlight = useRef(false);
+  const interactive = initialized || introCompleted;
   const hasShop = snapshot.generators.length > 0;
 
-  const initialize = useCallback(async () => {
-    if (!runtime.emitFact || initializing || initialized) return;
-    setInitializing(true);
+  const finishInitialization = useCallback(() => {
+    setIntroCompleted(true);
+    if (!runtime.emitFact || initialized || initializationFactInFlight.current) return;
+    initializationFactInFlight.current = true;
     try {
-      await runtime.emitFact("compute.initialized");
-    } finally {
-      setInitializing(false);
+      const result = runtime.emitFact("compute.initialized");
+      void Promise.resolve(result).catch((error: unknown) => {
+        console.error("[IdleScreen] failed to emit compute.initialized", error);
+        initializationFactInFlight.current = false;
+      });
+    } catch (error) {
+      console.error("[IdleScreen] failed to emit compute.initialized", error);
+      initializationFactInFlight.current = false;
     }
-  }, [initialized, initializing, runtime]);
+  }, [initialized, runtime]);
 
   const clickCore = useCallback(() => {
-    if (!initialized) return;
+    if (!interactive) return;
     runtime.click();
-  }, [initialized, runtime]);
+  }, [interactive, runtime]);
 
   return (
     <div
@@ -274,9 +283,9 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
         onTap={clickCore}
       />
 
-      {initialized ? <IdleProgressionRail runtime={runtime} snapshot={snapshot} /> : null}
-      {initialized ? <IdleGeneratorShop runtime={runtime} snapshot={snapshot} /> : null}
-      {initialized ? (
+      {interactive ? <IdleProgressionRail runtime={runtime} snapshot={snapshot} /> : null}
+      {interactive ? <IdleGeneratorShop runtime={runtime} snapshot={snapshot} /> : null}
+      {interactive ? (
         <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2">
           <IdleSkillBar runtime={runtime} snapshot={snapshot} />
         </div>
@@ -302,28 +311,8 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
         </div>
       </div>
 
-      {!initialized ? (
-        <div className="absolute inset-0 z-40 grid place-items-center bg-black/80 p-6">
-          <div
-            className="w-[min(28rem,100%)] border bg-black/85 p-5"
-            style={{ borderColor: theme.mid, boxShadow: `0 0 40px ${theme.deep}` }}
-          >
-            <div className="text-xs uppercase tracking-[0.3em] opacity-60">NORI COMPUTE CORE</div>
-            <div className="mt-3 text-lg">Compute field initialization</div>
-            <div className="mt-2 text-xs leading-5 opacity-70">
-              Topology online. Local field renderer ready. Initialization is recorded as a world fact.
-            </div>
-            <button
-              type="button"
-              disabled={!runtime.emitFact || initializing}
-              onClick={() => void initialize()}
-              className="mt-5 border px-3 py-2 text-xs uppercase tracking-[0.2em] disabled:opacity-40"
-              style={{ borderColor: theme.mid, color: theme.bright }}
-            >
-              {initializing ? "INITIALIZING" : "INITIALIZE"}
-            </button>
-          </div>
-        </div>
+      {!initialized && !introCompleted ? (
+        <IdleInitializationSequence onComplete={finishInitialization} />
       ) : null}
     </div>
   );
