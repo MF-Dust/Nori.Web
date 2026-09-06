@@ -93,6 +93,7 @@ export interface IdleRunPresentationState {
   affiliatedFaction: string | null;
   shards: number;
   abdications: number;
+  gemPowerUnlocked: boolean;
   facts: Readonly<Record<string, boolean>>;
   owned: Readonly<Record<string, number>>;
   upgrades: Readonly<Record<string, boolean>>;
@@ -100,6 +101,11 @@ export interface IdleRunPresentationState {
   royalExchanges: Readonly<Record<string, number>>;
   skillCooldownSec: Readonly<Record<string, number>>;
   activeSkillBuffs: readonly IdleActiveSkillBuff[];
+  everAlliedFactions: Readonly<Record<string, boolean>>;
+  heritagesUnlocked: Readonly<Record<string, boolean>>;
+  heritagesPurchased: Readonly<Record<string, boolean>>;
+  claimedMementoCount: number;
+  lastMementoClaimAtMs: number;
 }
 
 export interface IdleClickResult {
@@ -154,7 +160,7 @@ export interface IdlePresentationSnapshot {
   state: IdleRunPresentationState;
   computeState: DesktopComputeState;
   generators: readonly IdleGeneratorDefinition[];
-  /** Milestone + generic upgrade definitions visible to the progression column. */
+  /** Milestone + faction + memento definitions visible to the progression column. */
   upgrades?: readonly IdleUpgradeDefinition[];
   alignments: readonly IdleAlignmentDefinition[];
   factions: readonly IdleFactionDefinition[];
@@ -163,10 +169,7 @@ export interface IdlePresentationSnapshot {
   persistedMaxCompute: number;
 }
 
-/**
- * Recovered public action surface of the shipped Idle Zustand store. Formula
- * implementation and persistence remain a separate runtime migration step.
- */
+/** Recovered public action surface of the shipped Idle Zustand store. */
 export interface IdleActionRuntime {
   click(): IdleClickResult;
   buy(generatorId: string, count?: IdleBuyCount): void;
