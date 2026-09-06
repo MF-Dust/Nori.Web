@@ -8,27 +8,37 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { Compass, RotateCcw, Zap } from "lucide-react";
+import { RotateCcw, Zap } from "lucide-react";
 import {
+  type IdleAbdicationQuote,
   type IdleAlignment,
   type IdleBuyCount,
   type IdleGeneratorQuote,
   type IdlePresentationSnapshot,
+  type IdleRoyalExchangeBuyCount,
+  type IdleRoyalExchangeQuote,
 } from "../apps/idle";
 import {
   formatDesktopCompute,
   getEffectiveDesktopCompute,
 } from "../state/compute-runtime";
-import { IdleAlignmentPanel } from "./idle-alignment-panel";
 import { IdleGeneratorShop } from "./idle-shop";
+import { IdleProgressionRail } from "./idle-progression-rail";
 import { IdleSkillBar } from "./idle-skill-bar";
 
 export interface IdleScreenRuntime {
   snapshot(): IdlePresentationSnapshot;
   subscribe?: (listener: () => void) => () => void;
   quoteGenerator(generatorId: string, mode: IdleBuyCount): IdleGeneratorQuote | null;
+  quoteAbdication(): IdleAbdicationQuote;
+  quoteRoyalExchange(
+    factionId: string,
+    mode: IdleRoyalExchangeBuyCount,
+  ): IdleRoyalExchangeQuote | null;
   buy(generatorId: string, count?: IdleBuyCount): void;
   buyProof(alignmentId: IdleAlignment): void;
+  buyRoyalExchange(factionId: string, count?: IdleRoyalExchangeBuyCount): void;
+  abdicate(): void;
   fireSkill(skillId: string): number;
   emitFact?: (factId: string) => Promise<void> | void;
 }
@@ -200,7 +210,6 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
   const effective = getEffectiveDesktopCompute(snapshot.computeState);
   const initialized = !!snapshot.state.facts["compute.initialized"];
   const [initializing, setInitializing] = useState(false);
-  const [showAlignment, setShowAlignment] = useState(false);
   const hasShop = snapshot.generators.length > 0;
 
   const initialize = useCallback(async () => {
@@ -228,6 +237,7 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
     >
       <ComputeField compute={effective.compute} theme={theme} reserveShopSpace={hasShop} />
 
+      {initialized ? <IdleProgressionRail runtime={runtime} snapshot={snapshot} /> : null}
       {initialized ? <IdleGeneratorShop runtime={runtime} snapshot={snapshot} /> : null}
       {initialized ? (
         <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2">
@@ -235,46 +245,24 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
         </div>
       ) : null}
 
-      <div className="pointer-events-none absolute inset-0">
-        <div
-          className="pointer-events-auto absolute left-3 top-3 min-w-56 border bg-black/55 p-3 backdrop-blur-sm"
-          style={{ borderColor: `${theme.dim}99` }}
-        >
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] opacity-70">
-            <Zap className="size-3.5" />
-            COMPUTE
-          </div>
-          <div className="mt-1 text-2xl tabular-nums" style={{ filter: theme.glow }}>
-            {formatDesktopCompute(effective.compute)}
-          </div>
-          <div className="mt-1 flex justify-between text-[10px] opacity-65">
-            <span>CAP {formatDesktopCompute(effective.cap)}</span>
-            <span>{effective.draining ? "DRAIN" : "STABLE"}</span>
-          </div>
+      <div
+        className="pointer-events-auto absolute top-3 min-w-52 border bg-black/55 p-3 backdrop-blur-sm"
+        style={{
+          right: hasShop ? 240 : 12,
+          borderColor: `${theme.dim}99`,
+        }}
+      >
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] opacity-70">
+          <Zap className="size-3.5" />
+          COMPUTE
         </div>
-
-        {initialized ? (
-          <div className="pointer-events-auto absolute bottom-3 left-3 z-20">
-            <button
-              type="button"
-              onClick={() => setShowAlignment((value) => !value)}
-              className="flex items-center gap-2 border bg-black/55 px-3 py-2 text-[10px] uppercase tracking-[0.14em] backdrop-blur-sm"
-              style={{ borderColor: `${theme.dim}99`, color: theme.bright }}
-              aria-expanded={showAlignment}
-            >
-              <Compass className="size-3.5" />
-              <span>{alignment}</span>
-              <span className="opacity-60">
-                PEAK {formatDesktopCompute(snapshot.state.maxComputeThisRun)}
-              </span>
-            </button>
-            {showAlignment && snapshot.alignments.length > 0 ? (
-              <div className="absolute bottom-0 left-full ml-2 w-[300px]">
-                <IdleAlignmentPanel runtime={runtime} snapshot={snapshot} />
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+        <div className="mt-1 text-2xl tabular-nums" style={{ filter: theme.glow }}>
+          {formatDesktopCompute(effective.compute)}
+        </div>
+        <div className="mt-1 flex justify-between text-[10px] opacity-65">
+          <span>CAP {formatDesktopCompute(effective.cap)}</span>
+          <span>{effective.draining ? "DRAIN" : "STABLE"}</span>
+        </div>
       </div>
 
       {!initialized ? (
