@@ -1,6 +1,7 @@
 import {
   IDLE_COMPUTE_SYNC_INTERVAL_MS,
   IDLE_FIRST_ABDICATION_SHARDS,
+  IDLE_MANIFOLD_UNLOCKED_FACT,
   IDLE_SAVE_INTERVAL_MS,
   IDLE_TICK_INTERVAL_MS,
   type IdleAbdicationQuote,
@@ -43,6 +44,11 @@ import type { DesktopComputeState } from "./compute-runtime";
 const IDLE_RUN_STORAGE_VERSION = 1;
 const IDLE_RUN_STORAGE_PREFIX = "idle.run:";
 const EXCHANGEABLE_FACTIONS = new Set(["elf", "angel", "goblin", "demon"]);
+const EXCHANGEABLE_FACTION_IDS = [...EXCHANGEABLE_FACTIONS];
+
+const GEM_POWER_COMPUTE_COST = 1;
+const GEM_POWER_REQUIRED_SHARDS = 1;
+const GEM_POWER_PRODUCTION_BONUS_PCT_PER_SHARD = 2;
 
 const CAP_BASE = 1e10;
 const CAP_BUMPS: Readonly<Record<string, number>> = {
@@ -53,6 +59,7 @@ const CAP_BUMPS: Readonly<Record<string, number>> = {
 };
 
 interface IdleRuntimeState extends IdleRunPresentationState {
+  gemPowerUnlocked: boolean;
   currentEraSeconds: number;
   currentRunComputeProduced: number;
   skillCastsThisEra: number;
@@ -110,6 +117,7 @@ function createInitialState(facts: ReadonlySet<string> = new Set()): IdleRuntime
     royalExchanges: {},
     skillCooldownSec: {},
     activeSkillBuffs: [],
+    gemPowerUnlocked: false,
     currentEraSeconds: 0,
     currentRunComputeProduced: 0,
     skillCastsThisEra: 0,
@@ -183,6 +191,66 @@ function exchangeMultiplier(
   return 1 + (constants.royalExchangeUnitaryBonusPct * totalTrades(state)) / 100;
 }
 
+function gemPowerMultiplier(state: IdleRuntimeState): number {
+  if (
+    !state.gemPowerUnlocked ||
+    state.shards <= 0 ||
+    state.facts[IDLE_MANIFOLD_UNLOCKED_FACT]
+  ) {
+    return 1;
+  }
+  return 1 + (state.shards * GEM_POWER_PRODUCTION_BONUS_PCT_PER_SHARD) / 100;
+}
+
+function factionCoinFindChancePct(
+  state: IdleRuntimeState,
+  constants: IdleDefaultEconomyConstants,
+): number {
+  let chance = constants.baseFactionCoinFindChancePct;
+  if (
+    state.gemPowerUnlocked &&
+    state.shards > 0 &&
+    !state.facts[IDLE_MANIFOLD_UNLOCKED_FACT]
+  ) {
+    chance += Math.floor(0.625 * Math.log(1 + state.shards) ** 0.9);
+  }
+  return Math.max(0, chance);
+}
+
+function rollFactionCoins(
+  state: IdleRuntimeState,
+  attempts: number,
+  constants: IdleDefaultEconomyConstants,
+  random: () => number,
+): Record<string, number> {
+  const rolledChance = factionCoinFindChancePct(state, constants) * Math.max(0, attempts);
+  const guaranteed = Math.floor(rolledChance / 100);
+  const remainder = rolledChance - guaranteed * 100;
+  const count = guaranteed + (random() * 100 < remainder ? 1 : 0);
+  const found: Record<string, number> = {};
+  for (let index = 0; index < count; index += 1) {
+    const factionIndex = Math.min(
+      EXCHANGEABLE_FACTION_IDS.length - 1,
+      Math.floor(random() * EXCHANGEABLE_FACTION_IDS.length),
+    );
+    const factionId = EXCHANGEABLE_FACTION_IDS[factionIndex];
+    found[factionId] = (found[factionId] ?? 0) + 1;
+  }
+  return found;
+}
+
+function mergeFactionCoins(
+  current: Readonly<Record<string, number>>,
+  found: Readonly<Record<string, number>>,
+): Readonly<Record<string, number>> {
+  if (Object.keys(found).length === 0) return current;
+  const next = { ...current };
+  for (const [factionId, amount] of Object.entries(found)) {
+    next[factionId] = (next[factionId] ?? 0) + amount;
+  }
+  return next;
+}
+
 function activeGeneratorMultiplier(state: IdleRuntimeState, generatorId: string): number {
   let multiplier = 1;
   for (const buff of state.activeSkillBuffs) {
@@ -211,7 +279,8 @@ function generatorRate(
     generator.baseRate *
     getIdleGeneratorUpgradeMultiplier(generator.id, state.upgrades, upgrades) *
     activeGeneratorMultiplier(state, generator.id) *
-    exchangeMultiplier(state, constants)
+    exchangeMultiplier(state, constants) *
+    gemPowerMultiplier(state)
   );
 }
 
@@ -479,9 +548,16 @@ export function createSourceIdleRuntime(
     },
 
     click(): IdleClickResult {
-      const base = Math.max(1, totalProductionRate(state, generators, upgrades, constants) * 0.05);
-      const gained = base * activeClickMultiplier(state);
-      state = addCompute({ ...state, productiveClicks: state.productiveClicks + 1 }, gained);
+      const gained = activeClickMultiplier(state);
+      const factionCoinsFound = rollFactionCoins(state, 1, constants, random);
+      state = addCompute(
+        {
+          ...state,
+          productiveClicks: state.productiveClicks + 1,
+          factionCoins: mergeFactionCoins(state.factionCoins, factionCoinsFound),
+        },
+        gained,
+      );
       publish();
       return {
         gained,
@@ -489,7 +565,7 @@ export function createSourceIdleRuntime(
         isCrit: false,
         isLucky: false,
         luckGain: 0,
-        factionCoinsFound: {},
+        factionCoinsFound,
       };
     },
 
@@ -682,7 +758,21 @@ export function createSourceIdleRuntime(
     },
 
     buyGemPower() {
-      // Gem-power progression is intentionally deferred until its formula slice is source-owned.
+      if (
+        state.facts[IDLE_MANIFOLD_UNLOCKED_FACT] ||
+        state.gemPowerUnlocked ||
+        state.shards < GEM_POWER_REQUIRED_SHARDS ||
+        state.compute < GEM_POWER_COMPUTE_COST
+      ) {
+        return;
+      }
+      state = {
+        ...state,
+        compute: finiteCompute(state.compute - GEM_POWER_COMPUTE_COST),
+        gemPowerUnlocked: true,
+      };
+      publish();
+      syncCompute();
     },
 
     abdicate() {
@@ -690,10 +780,12 @@ export function createSourceIdleRuntime(
       if (!quote.canAbdicate) return;
       persistedMaxCompute = Math.max(persistedMaxCompute, state.maxComputeThisRun);
       const facts = new Set(Object.keys(state.facts).filter((factId) => state.facts[factId]));
+      const gemPowerUnlocked = state.gemPowerUnlocked;
       state = {
         ...createInitialState(facts),
         shards: quote.totalShardsAfter,
         abdications: state.abdications + 1,
+        gemPowerUnlocked,
       };
       publish();
       syncCompute();
