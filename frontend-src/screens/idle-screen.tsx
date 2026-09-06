@@ -21,6 +21,7 @@ import {
 } from "../state/compute-runtime";
 import { IdleAlignmentPanel } from "./idle-alignment-panel";
 import { IdleGeneratorShop } from "./idle-shop";
+import { IdleSkillBar } from "./idle-skill-bar";
 
 export interface IdleScreenRuntime {
   snapshot(): IdlePresentationSnapshot;
@@ -28,6 +29,7 @@ export interface IdleScreenRuntime {
   quoteGenerator(generatorId: string, mode: IdleBuyCount): IdleGeneratorQuote | null;
   buy(generatorId: string, count?: IdleBuyCount): void;
   buyProof(alignmentId: IdleAlignment): void;
+  fireSkill(skillId: string): number;
   emitFact?: (factId: string) => Promise<void> | void;
 }
 
@@ -227,6 +229,11 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
       <ComputeField compute={effective.compute} theme={theme} reserveShopSpace={hasShop} />
 
       {initialized ? <IdleGeneratorShop runtime={runtime} snapshot={snapshot} /> : null}
+      {initialized ? (
+        <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2">
+          <IdleSkillBar runtime={runtime} snapshot={snapshot} />
+        </div>
+      ) : null}
 
       <div className="pointer-events-none absolute inset-0">
         <div
