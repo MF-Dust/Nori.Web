@@ -1,4 +1,5 @@
 import type { IdleGeneratorDefinition } from "./idle";
+import { IDLE_HELL_PORTAL_GENERATOR_ID } from "./idle-assistants";
 
 export type IdleFactionEffectCurveKind = "const" | "poly" | "log";
 
@@ -54,7 +55,6 @@ export interface IdleFactionProductionContext {
 }
 
 export const IDLE_EVIL_FORTRESS_GENERATOR_ID = "full_feature_atlas";
-export const IDLE_HELL_PORTAL_GENERATOR_ID = "terminal_lockdown";
 export const IDLE_NECROPOLIS_GENERATOR_ID = "interpretability_core";
 export const IDLE_SINGULARITY_GATE_GENERATOR_ID = "singularity_gate";
 
