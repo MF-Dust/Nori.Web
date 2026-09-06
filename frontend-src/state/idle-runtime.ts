@@ -50,6 +50,7 @@ import {
   isIdleMementoId,
   spendIdleGpuCosts,
 } from "../apps/idle-faction-progression";
+import { syncIdleManifoldReveal } from "../apps/idle-manifold";
 import {
   DEFAULT_IDLE_GENERATOR_UPGRADES,
   getIdleGeneratorUpgradeMultiplier,
@@ -633,6 +634,41 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
     }
   };
 
+  const resetRunState = (current: IdleRuntimeState, nextShards: number): IdleRuntimeState => {
+    persistedMaxCompute = Math.max(persistedMaxCompute, current.maxComputeThisRun);
+    const facts = new Set(Object.keys(current.facts).filter((factId) => current.facts[factId]));
+    const permanent = {
+      gemPowerUnlocked: current.gemPowerUnlocked,
+      lifetimeProductiveClicks: current.lifetimeProductiveClicks,
+      lifetimeMaxTotalBuildings: current.lifetimeMaxTotalBuildings,
+      everAlliedFactions: current.everAlliedFactions,
+      heritagesUnlocked: current.heritagesUnlocked,
+      heritagesPurchased: current.heritagesPurchased,
+    };
+    return {
+      ...createInitialState(facts),
+      ...permanent,
+      shards: nextShards,
+      abdications: current.abdications + 1,
+    };
+  };
+
+  const applyManifoldReveal = (): { changed: boolean; triggered: boolean } => {
+    const beforeState = state;
+    const beforeApplied = manifoldRevealApplied;
+    const result = syncIdleManifoldReveal(state, manifoldRevealApplied, (current) => {
+      const potential = shardTotalForCompute(current.maxComputeThisRun, constants);
+      const pendingShards = Math.max(0, potential - current.shards);
+      return resetRunState(current, current.shards + pendingShards);
+    });
+    state = result.state;
+    manifoldRevealApplied = result.manifoldRevealApplied;
+    return {
+      changed: state !== beforeState || manifoldRevealApplied !== beforeApplied,
+      triggered: result.revealTriggered,
+    };
+  };
+
   const syncFacts = () => {
     const facts = options.getFacts?.() ?? new Set<string>();
     const nextKey = currentStorageKey();
@@ -650,9 +686,13 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
       changed = true;
     }
 
+    const reveal = applyManifoldReveal();
+    changed = changed || reveal.changed;
+
     if (changed) {
       publish();
       syncCompute();
+      if (reveal.triggered) save();
     }
   };
 
@@ -1010,8 +1050,10 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
     setFacts(facts) {
       if (sameFacts(state.facts, facts)) return;
       state = { ...state, facts: factsRecord(facts) };
+      const reveal = applyManifoldReveal();
       publish();
       syncCompute();
+      if (reveal.triggered) save();
     },
 
     buyGemPower() {
@@ -1035,39 +1077,20 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
     abdicate() {
       const quote = runtime.quoteAbdication();
       if (!quote.canAbdicate) return;
-      persistedMaxCompute = Math.max(persistedMaxCompute, state.maxComputeThisRun);
-      const facts = new Set(Object.keys(state.facts).filter((factId) => state.facts[factId]));
-      const permanent = {
-        gemPowerUnlocked: state.gemPowerUnlocked,
-        lifetimeProductiveClicks: state.lifetimeProductiveClicks,
-        lifetimeMaxTotalBuildings: state.lifetimeMaxTotalBuildings,
-        everAlliedFactions: state.everAlliedFactions,
-        heritagesUnlocked: state.heritagesUnlocked,
-        heritagesPurchased: state.heritagesPurchased,
-      };
-      state = {
-        ...createInitialState(facts),
-        ...permanent,
-        shards: quote.totalShardsAfter,
-        abdications: state.abdications + 1,
-      };
+      state = resetRunState(state, quote.totalShardsAfter);
       publish();
       syncCompute();
       save();
     },
 
     syncManifoldReveal() {
-      if (!state.facts["arg.memory.shown"]) {
-        if (manifoldRevealApplied) {
-          manifoldRevealApplied = false;
-          publish();
-        }
-        return false;
+      const reveal = applyManifoldReveal();
+      if (reveal.changed) {
+        publish();
+        syncCompute();
+        if (reveal.triggered) save();
       }
-      if (manifoldRevealApplied) return false;
-      manifoldRevealApplied = true;
-      publish();
-      return true;
+      return reveal.triggered;
     },
 
     claimMemento(onCompleted) {
@@ -1118,8 +1141,10 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
       await options.emitFact?.(factId);
       if (!state.facts[factId]) {
         state = { ...state, facts: { ...state.facts, [factId]: true } };
+        const reveal = applyManifoldReveal();
         publish();
         syncCompute();
+        if (reveal.triggered) save();
       }
     },
 
