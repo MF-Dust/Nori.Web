@@ -5,6 +5,7 @@ import {
 } from "./apps/recovered-presentation";
 import { RecoveredDesktopShell } from "./components/recovered-desktop-shell";
 import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
+import { createSourceIdleRuntime } from "./state/idle-runtime";
 
 /** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
 const MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS = 1800;
@@ -32,6 +33,16 @@ function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
 export function SourceApp() {
   const source = useMemo(() => {
     const frontend = new NoriFrontendRuntime();
+    const idle = createSourceIdleRuntime({
+      getFacts: () => worldFacts(frontend),
+      subscribeFacts: (listener) => frontend.world.subscribe(() => listener()),
+      emitFact: async (factId) => {
+        await frontend.manifold.command("client.emitFact", { factId });
+      },
+      getWorldId: () => frontend.world.snapshot().worldId,
+    });
+    idle.start();
+
     let bundle: RecoveredDesktopRuntimeBundle | undefined;
 
     const launchApp = (request: { appId: string; mode: string; args?: unknown }) =>
@@ -90,6 +101,7 @@ export function SourceApp() {
           openUrl,
         },
       },
+      idle,
       desktop: {
         // The source-app smoke build does not yet own the complete production
         // facts provider. Keep install gating out of bootstrap until that
@@ -98,7 +110,7 @@ export function SourceApp() {
         persistName: "os-store-source-preview",
       },
     });
-    return { frontend, bundle };
+    return { frontend, idle, bundle };
   }, []);
 
   useEffect(() => {
@@ -109,6 +121,7 @@ export function SourceApp() {
 
     return () => {
       disposed = true;
+      source.idle.dispose();
       source.bundle.runtime.dispose();
       source.frontend.dispose();
     };
