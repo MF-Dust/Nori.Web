@@ -109,13 +109,36 @@ export interface IdleRunPresentationState {
   /** Optional in presentation mocks; source runtime fills these shipped progression counters. */
   currentEraSeconds?: number;
   currentRunComputeProduced?: number;
+  skillCastsThisEra?: number;
   productiveClicks?: number;
+  lifetimeProductiveClicks?: number;
+  automaticClicks?: number;
+  lifetimeAutomaticClicks?: number;
   computeGainedByClicking?: number;
+  lifetimeComputeGainedByClicking?: number;
+  automaticClickRemainder?: number;
+  threads?: number;
+  assistantTickRemainderSec?: number;
+  factionCoinsFound?: Readonly<Record<string, number>>;
+  lifetimeFactionCoinsFound?: Readonly<Record<string, number>>;
+  totalFactionCoinsFound?: number;
+  lifetimeTotalFactionCoinsFound?: number;
   factionCoinsFoundThisEra?: number;
+  factionCoinsFoundByClicking?: number;
+  lifetimeFactionCoinsFoundByClicking?: number;
+  alignmentSeconds?: Readonly<Record<string, number>>;
+  lifetimeAlignmentSeconds?: Readonly<Record<string, number>>;
+  factionSeconds?: Readonly<Record<string, number>>;
+  lifetimeFactionSeconds?: Readonly<Record<string, number>>;
+  maxOwnedThisRun?: Readonly<Record<string, number>>;
+  lifetimeMaxOwned?: Readonly<Record<string, number>>;
+  maxBuildingsThisEra?: number;
+  maxTotalBuildingsThisRun?: number;
+  lifetimeMaxTotalBuildings?: number;
+  longestSessionSeconds?: number;
   shortRunAbdications?: number;
   hasBuiltThisEra?: boolean;
   anyActionThisEra?: boolean;
-  lifetimeAlignmentSeconds?: Readonly<Record<string, number>>;
 }
 
 export interface IdleClickResult {
