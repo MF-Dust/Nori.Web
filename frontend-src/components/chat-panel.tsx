@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  isValidElement,
   memo,
   useCallback,
   useEffect,
@@ -76,16 +77,19 @@ function ChatWordBadge({ word, cardColor }: ChatWordBadgeContent) {
   );
 }
 
+/**
+ * Shipped ChatPanel content normalization.
+ *
+ * The historical chunk keeps strings and React elements intact, renders the two
+ * Codenames badge payloads specially, and stringifies every other value. Keeping
+ * that fallback matters for cartridge data that is not already a React node: an
+ * unexpected object must render as text instead of being handed to React as an
+ * invalid child.
+ */
 function renderChatContent(content: ChatMessageContent): ReactNode {
-  if (content == null || typeof content === "boolean") return content;
-  if (
-    typeof content === "string" ||
-    typeof content === "number" ||
-    typeof content === "bigint" ||
-    Array.isArray(content)
-  ) {
-    return content;
-  }
+  if (content == null) return null;
+  if (typeof content === "string" || isValidElement(content)) return content;
+
   if (typeof content === "object" && "type" in content) {
     const typed = content as ChatWordBadgeContent | ChatTextWithBadgeContent;
     if (typed.type === "wordBadge") return <ChatWordBadge {...typed} />;
@@ -97,7 +101,8 @@ function renderChatContent(content: ChatMessageContent): ReactNode {
       );
     }
   }
-  return content as ReactNode;
+
+  return String(content);
 }
 
 const ChatMessage = memo(function ChatMessage({ message }: { message: ChatPanelMessage }) {
@@ -162,6 +167,7 @@ const ChatMessage = memo(function ChatMessage({ message }: { message: ChatPanelM
 
 interface FadingScrollAreaProps {
   children: ReactNode;
+  gradientDeps?: readonly unknown[];
   gradientHeight?: number;
   gradientColor?: string;
   gradientFullWidth?: boolean;
@@ -171,6 +177,7 @@ interface FadingScrollAreaProps {
 const FadingScrollArea = forwardRef<HTMLDivElement, FadingScrollAreaProps>(function FadingScrollArea(
   {
     children,
+    gradientDeps = [],
     gradientHeight = 64,
     gradientColor = "var(--sidebar)",
     gradientFullWidth = false,
@@ -203,7 +210,7 @@ const FadingScrollArea = forwardRef<HTMLDivElement, FadingScrollAreaProps>(funct
       element.removeEventListener("scroll", update);
       observer.disconnect();
     };
-  }, [gradientHeight]);
+  }, [gradientHeight, ...gradientDeps]);
 
   return (
     <div className={classes("relative", className)}>
@@ -243,10 +250,7 @@ interface ChatMessageListProps {
 }
 
 function ChatMessageList({ messages, emptyMessage, viewportRef }: ChatMessageListProps) {
-  const scrollArea = useRef<HTMLDivElement | null>(null);
   const end = useRef<HTMLDivElement | null>(null);
-
-  useImperativeHandle(viewportRef, () => scrollArea.current as HTMLDivElement, []);
 
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" });
@@ -254,12 +258,12 @@ function ChatMessageList({ messages, emptyMessage, viewportRef }: ChatMessageLis
 
   return (
     <FadingScrollArea
-      ref={scrollArea}
       className="flex-1 min-h-0"
+      gradientDeps={[messages]}
       gradientColor="var(--card)"
       gradientFullWidth
     >
-      <div className="px-3 pt-3 pb-3">
+      <div ref={viewportRef} className="px-3 pt-3 pb-3">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="p-3 rounded-full bg-muted/50 mb-3">
