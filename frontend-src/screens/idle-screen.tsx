@@ -10,23 +10,24 @@ import {
 } from "react";
 import { Compass, RotateCcw, Zap } from "lucide-react";
 import {
+  type IdleAlignment,
+  type IdleBuyCount,
+  type IdleGeneratorQuote,
+  type IdlePresentationSnapshot,
+} from "../apps/idle";
+import {
   formatDesktopCompute,
   getEffectiveDesktopCompute,
-  type DesktopComputeState,
 } from "../state/compute-runtime";
-
-export type IdleAlignment = "none" | "accelerate" | "decelerate" | "equilibrium";
-
-export interface IdleScreenSnapshot {
-  computeState: DesktopComputeState;
-  maxComputeThisRun?: number;
-  currentAlignment?: IdleAlignment | null;
-  facts: ReadonlySet<string>;
-}
+import { IdleAlignmentPanel } from "./idle-alignment-panel";
+import { IdleGeneratorShop } from "./idle-shop";
 
 export interface IdleScreenRuntime {
-  snapshot(): IdleScreenSnapshot;
+  snapshot(): IdlePresentationSnapshot;
   subscribe?: (listener: () => void) => () => void;
+  quoteGenerator(generatorId: string, mode: IdleBuyCount): IdleGeneratorQuote | null;
+  buy(generatorId: string, count?: IdleBuyCount): void;
+  buyProof(alignmentId: IdleAlignment): void;
   emitFact?: (factId: string) => Promise<void> | void;
 }
 
@@ -71,7 +72,7 @@ const IDLE_THEMES: Record<IdleAlignment, IdleTheme> = {
   },
 };
 
-function useIdleSnapshot(runtime: IdleScreenRuntime): IdleScreenSnapshot {
+function useIdleSnapshot(runtime: IdleScreenRuntime): IdlePresentationSnapshot {
   const [, setVersion] = useState(0);
   useEffect(() => {
     if (!runtime.subscribe) return;
@@ -100,7 +101,15 @@ function seededNodes(count: number) {
   });
 }
 
-function ComputeField({ compute, theme }: { compute: number; theme: IdleTheme }) {
+function ComputeField({
+  compute,
+  theme,
+  reserveShopSpace,
+}: {
+  compute: number;
+  theme: IdleTheme;
+  reserveShopSpace: boolean;
+}) {
   const count = Math.max(9, Math.min(180, Math.floor(Math.log10(Math.max(10, compute)) * 18)));
   const nodes = useMemo(() => seededNodes(count), [count]);
   const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
@@ -167,8 +176,12 @@ function ComputeField({ compute, theme }: { compute: number; theme: IdleTheme })
       </div>
       <button
         type="button"
-        className="absolute bottom-3 right-3 flex size-8 items-center justify-center border bg-black/45"
-        style={{ borderColor: `${theme.dim}aa`, color: theme.bright }}
+        className="absolute bottom-3 flex size-8 items-center justify-center border bg-black/45"
+        style={{
+          right: reserveShopSpace ? 240 : 12,
+          borderColor: `${theme.dim}aa`,
+          color: theme.bright,
+        }}
         onClick={() => setView({ x: 0, y: 0, scale: 1 })}
         aria-label="Recenter compute field"
       >
@@ -180,11 +193,13 @@ function ComputeField({ compute, theme }: { compute: number; theme: IdleTheme })
 
 export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
   const snapshot = useIdleSnapshot(runtime);
-  const alignment = snapshot.currentAlignment ?? "none";
+  const alignment = snapshot.state.currentAlignment ?? "none";
   const theme = IDLE_THEMES[alignment] ?? IDLE_THEMES.none;
   const effective = getEffectiveDesktopCompute(snapshot.computeState);
-  const initialized = snapshot.facts.has("compute.initialized");
+  const initialized = !!snapshot.state.facts["compute.initialized"];
   const [initializing, setInitializing] = useState(false);
+  const [showAlignment, setShowAlignment] = useState(false);
+  const hasShop = snapshot.generators.length > 0;
 
   const initialize = useCallback(async () => {
     if (!runtime.emitFact || initializing || initialized) return;
@@ -206,9 +221,12 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
         "--px-cyan-mid": theme.mid,
         "--px-cyan-dim": theme.dim,
         "--px-cyan-deep": theme.deep,
+        "--px-ui-glow": theme.glow ?? "none",
       } as CSSProperties}
     >
-      <ComputeField compute={effective.compute} theme={theme} />
+      <ComputeField compute={effective.compute} theme={theme} reserveShopSpace={hasShop} />
+
+      {initialized ? <IdleGeneratorShop runtime={runtime} snapshot={snapshot} /> : null}
 
       <div className="pointer-events-none absolute inset-0">
         <div
@@ -228,18 +246,28 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
           </div>
         </div>
 
-        <div
-          className="absolute bottom-3 left-3 flex items-center gap-2 border bg-black/55 px-3 py-2 text-[10px] uppercase tracking-[0.14em] backdrop-blur-sm"
-          style={{ borderColor: `${theme.dim}99` }}
-        >
-          <Compass className="size-3.5" />
-          <span>{alignment}</span>
-          {snapshot.maxComputeThisRun != null ? (
-            <span className="opacity-60">
-              PEAK {formatDesktopCompute(snapshot.maxComputeThisRun)}
-            </span>
-          ) : null}
-        </div>
+        {initialized ? (
+          <div className="pointer-events-auto absolute bottom-3 left-3 z-20">
+            <button
+              type="button"
+              onClick={() => setShowAlignment((value) => !value)}
+              className="flex items-center gap-2 border bg-black/55 px-3 py-2 text-[10px] uppercase tracking-[0.14em] backdrop-blur-sm"
+              style={{ borderColor: `${theme.dim}99`, color: theme.bright }}
+              aria-expanded={showAlignment}
+            >
+              <Compass className="size-3.5" />
+              <span>{alignment}</span>
+              <span className="opacity-60">
+                PEAK {formatDesktopCompute(snapshot.state.maxComputeThisRun)}
+              </span>
+            </button>
+            {showAlignment && snapshot.alignments.length > 0 ? (
+              <div className="absolute bottom-0 left-full ml-2 w-[300px]">
+                <IdleAlignmentPanel runtime={runtime} snapshot={snapshot} />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {!initialized ? (
