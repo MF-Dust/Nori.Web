@@ -323,7 +323,11 @@ export function isIdleSecretTrophyUnlocked(
         (factionId) => !!state.everAlliedFactions[factionId],
       );
     case "faction_run_trophy":
-      return state.currentEraSeconds <= 300 && state.factionCoinsFoundThisEra >= 1_500_000 && !state.gemPowerUnlocked;
+      return (
+        state.currentEraSeconds <= 300 &&
+        state.factionCoinsFoundThisEra >= 1_500_000 &&
+        !state.gemPowerUnlocked
+      );
     case "building_hater_trophy":
       return state.compute >= 100_000 && !state.hasBuiltThisEra;
     case "need_a_head_start_trophy":
@@ -399,6 +403,97 @@ export function isIdleGenericUpgradePurchasable(
 ): boolean {
   if (state.upgrades[upgrade.id] || upgrade.factionId) return false;
   return isIdleGenericUpgradeUnlocked(state, upgrade, generators) && state.compute >= upgrade.cost;
+}
+
+function purchasedNumericEffect(
+  state: Pick<IdleGenericProgressState, "upgrades">,
+  upgrades: readonly IdleUpgradeDefinition[],
+  field: string,
+): number {
+  let total = 0;
+  for (const upgrade of upgrades) {
+    if (!state.upgrades[upgrade.id]) continue;
+    const value = upgrade[field];
+    if (typeof value === "number") total += value;
+  }
+  return total;
+}
+
+/** Shipped scalar `prod_all` effects are additive percentage terms before becoming one multiplier. */
+export function idleGenericGlobalProductionMultiplier(
+  state: Pick<IdleGenericProgressState, "upgrades">,
+  upgrades: readonly IdleUpgradeDefinition[] = DEFAULT_IDLE_GENERIC_UPGRADES,
+): number {
+  return 1 + purchasedNumericEffect(state, upgrades, "productionPct") / 100;
+}
+
+/** Shipped alignment-gated effects multiply independently after the common production terms. */
+export function idleGenericAlignmentProductionMultiplier(
+  state: Pick<IdleGenericProgressState, "upgrades">,
+  generator: IdleGeneratorDefinition,
+  upgrades: readonly IdleUpgradeDefinition[] = DEFAULT_IDLE_GENERIC_UPGRADES,
+): number {
+  let multiplier = 1;
+  for (const upgrade of upgrades) {
+    if (!state.upgrades[upgrade.id]) continue;
+    if (upgrade.alignmentProductionGate !== generator.alignment) continue;
+    const percent = upgrade.alignmentProductionPct;
+    if (typeof percent === "number" && percent !== 0) multiplier *= 1 + percent / 100;
+  }
+  return multiplier;
+}
+
+export function idleGenericClickFlatAdd(
+  state: Pick<IdleGenericProgressState, "upgrades">,
+  upgrades: readonly IdleUpgradeDefinition[] = DEFAULT_IDLE_GENERIC_UPGRADES,
+): number {
+  return purchasedNumericEffect(state, upgrades, "clickFlatAdd");
+}
+
+export function idleGenericClickMultiplier(
+  state: Pick<IdleGenericProgressState, "upgrades">,
+  upgrades: readonly IdleUpgradeDefinition[] = DEFAULT_IDLE_GENERIC_UPGRADES,
+): number {
+  let multiplier = 1;
+  for (const upgrade of upgrades) {
+    if (!state.upgrades[upgrade.id]) continue;
+    const percent = upgrade.clickMultiplierPct;
+    if (typeof percent === "number" && percent !== 0) multiplier *= 1 + percent / 100;
+  }
+  return multiplier;
+}
+
+/** Shipped treasure lane is exactly 1.25^N for the five purchased cache-vein upgrades. */
+export function idleTreasureClickMultiplier(
+  state: Pick<IdleGenericProgressState, "upgrades">,
+): number {
+  let count = 0;
+  for (const upgradeId of IDLE_TREASURE_CLICKING_IDS) {
+    if (state.upgrades[upgradeId]) count += 1;
+  }
+  return count === 0 ? 1 : 1.25 ** count;
+}
+
+export function idleGenericFactionCoinChanceAddPct(
+  state: Pick<IdleGenericProgressState, "upgrades">,
+  upgrades: readonly IdleUpgradeDefinition[] = DEFAULT_IDLE_GENERIC_UPGRADES,
+): number {
+  return purchasedNumericEffect(state, upgrades, "fcChanceAddPct");
+}
+
+export function idleGenericRoyalExchangeBonusAddPct(
+  state: Pick<IdleGenericProgressState, "upgrades">,
+  upgrades: readonly IdleUpgradeDefinition[] = DEFAULT_IDLE_GENERIC_UPGRADES,
+): number {
+  return purchasedNumericEffect(state, upgrades, "royalExchangeBonusAddPct");
+}
+
+/** Compute granted immediately by the shipped generic-upgrade purchase path. */
+export function idleGenericPurchaseGrantCompute(upgrade: IdleUpgradeDefinition): number {
+  const grant = upgrade.onPurchaseGrant;
+  if (!grant || typeof grant !== "object") return 0;
+  const record = grant as Readonly<Record<string, unknown>>;
+  return record.kind === "gold" && typeof record.amount === "number" ? record.amount : 0;
 }
 
 /** Adapter for callers that only hold the current public presentation state. */
