@@ -49,6 +49,7 @@ export {
 } from "./apps/idle";
 export * from "./apps/idle-default-data";
 export * from "./apps/idle-economy";
+export * from "./apps/idle-faction-progression";
 export * from "./apps/idle-presentation";
 export * from "./apps/idle-upgrades";
 export * from "./apps/mail";
