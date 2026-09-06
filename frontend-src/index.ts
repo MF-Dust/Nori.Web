@@ -46,6 +46,7 @@ export {
   type IdleActionRuntime,
   type IdlePresentationModel,
 } from "./apps/idle";
+export * from "./apps/idle-default-data";
 export * from "./apps/idle-economy";
 export * from "./apps/idle-presentation";
 export * from "./apps/mail";
@@ -112,6 +113,7 @@ export * from "./state/audio-store";
 export * from "./state/compute-runtime";
 export * from "./state/desktop-runtime";
 export * from "./state/dock-runtime";
+export * from "./state/idle-runtime";
 export * from "./state/marginal-growth-store";
 export * from "./state/production-window-apps";
 export * from "./state/window-app-registry";
