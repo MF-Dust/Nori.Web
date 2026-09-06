@@ -501,5 +501,17 @@ export function asIdleGenericPresentationState(
   state: IdleRunPresentationState,
   extra: Omit<IdleGenericProgressState, keyof IdleRunPresentationState>,
 ): IdleGenericProgressState {
-  return { ...state, ...extra };
+  return {
+    ...state,
+    currentRunComputeProduced: state.currentRunComputeProduced ?? 0,
+    currentEraSeconds: state.currentEraSeconds ?? 0,
+    productiveClicks: state.productiveClicks ?? 0,
+    computeGainedByClicking: state.computeGainedByClicking ?? 0,
+    factionCoinsFoundThisEra: state.factionCoinsFoundThisEra ?? 0,
+    shortRunAbdications: state.shortRunAbdications ?? 0,
+    hasBuiltThisEra: state.hasBuiltThisEra ?? false,
+    anyActionThisEra: state.anyActionThisEra ?? false,
+    lifetimeAlignmentSeconds: state.lifetimeAlignmentSeconds ?? {},
+    ...extra,
+  };
 }
