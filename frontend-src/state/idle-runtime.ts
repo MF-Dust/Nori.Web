@@ -50,6 +50,18 @@ import {
   isIdleMementoId,
   spendIdleGpuCosts,
 } from "../apps/idle-faction-progression";
+import {
+  DEFAULT_IDLE_GENERIC_UPGRADES,
+  idleGenericAlignmentProductionMultiplier,
+  idleGenericClickFlatAdd,
+  idleGenericClickMultiplier,
+  idleGenericFactionCoinChanceAddPct,
+  idleGenericGlobalProductionMultiplier,
+  idleGenericPurchaseGrantCompute,
+  idleGenericRoyalExchangeBonusAddPct,
+  idleTreasureClickMultiplier,
+  isIdleGenericUpgradePurchasable,
+} from "../apps/idle-generic-upgrades";
 import { syncIdleManifoldReveal } from "../apps/idle-manifold";
 import {
   DEFAULT_IDLE_GENERATOR_UPGRADES,
@@ -62,6 +74,7 @@ const IDLE_RUN_STORAGE_VERSION = 1;
 const IDLE_RUN_STORAGE_PREFIX = "idle.run:";
 const EXCHANGEABLE_FACTION_IDS = ["elf", "angel", "goblin", "demon"] as const;
 const EXCHANGEABLE_FACTIONS = new Set<string>(EXCHANGEABLE_FACTION_IDS);
+const GENERIC_UPGRADE_IDS = new Set(DEFAULT_IDLE_GENERIC_UPGRADES.map((upgrade) => upgrade.id));
 const FACTION_ALIGNMENT: Readonly<Record<string, IdleAlignment>> = {
   elf: "accelerate",
   angel: "accelerate",
@@ -88,7 +101,12 @@ interface IdleRuntimeState extends IdleRunPresentationState {
   skillCastsThisEra: number;
   productiveClicks: number;
   lifetimeProductiveClicks: number;
+  computeGainedByClicking: number;
   factionCoinsFoundThisEra: number;
+  shortRunAbdications: number;
+  hasBuiltThisEra: boolean;
+  anyActionThisEra: boolean;
+  lifetimeAlignmentSeconds: Readonly<Record<string, number>>;
   lifetimeMaxTotalBuildings: number;
 }
 
@@ -154,7 +172,12 @@ function createInitialState(facts: ReadonlySet<string> = new Set()): IdleRuntime
     skillCastsThisEra: 0,
     productiveClicks: 0,
     lifetimeProductiveClicks: 0,
+    computeGainedByClicking: 0,
     factionCoinsFoundThisEra: 0,
+    shortRunAbdications: 0,
+    hasBuiltThisEra: false,
+    anyActionThisEra: false,
+    lifetimeAlignmentSeconds: {},
     lifetimeMaxTotalBuildings: 0,
   };
 }
@@ -233,7 +256,8 @@ function royalExchangePercent(
   state: IdleRuntimeState,
   constants: IdleDefaultEconomyConstants,
 ): number {
-  let percent = constants.royalExchangeUnitaryBonusPct;
+  let percent =
+    constants.royalExchangeUnitaryBonusPct + idleGenericRoyalExchangeBonusAddPct(state);
   if (state.upgrades.fu_elf_elven_efficiency) {
     percent += 1.75 * Math.log(1 + state.factionCoinsFoundThisEra) ** 1.75;
   }
@@ -339,6 +363,8 @@ function generatorRate(
   return (
     generator.baseRate *
     getIdleGeneratorUpgradeMultiplier(generator.id, state.upgrades, upgrades) *
+    idleGenericGlobalProductionMultiplier(state) *
+    idleGenericAlignmentProductionMultiplier(state, generator) *
     activeGeneratorMultiplier(state, generator.id) *
     simpleFactionProductionMultiplier(state, generator) *
     exchangeMultiplier(state, constants) *
@@ -366,7 +392,7 @@ function factionCoinFindChancePct(
   state: IdleRuntimeState,
   constants: IdleDefaultEconomyConstants,
 ): number {
-  let chance = constants.baseFactionCoinFindChancePct;
+  let chance = constants.baseFactionCoinFindChancePct + idleGenericFactionCoinChanceAddPct(state);
   if (state.gemPowerUnlocked && state.shards > 0 && !state.facts[IDLE_MANIFOLD_UNLOCKED_FACT]) {
     chance += Math.floor(0.625 * Math.log(1 + state.shards) ** 0.9);
   }
@@ -444,17 +470,19 @@ function clickReward(
   upgrades: readonly IdleUpgradeDefinition[],
   constants: IdleDefaultEconomyConstants,
 ): number {
-  let reward = 1;
+  let reward = 1 + idleGenericClickFlatAdd(state);
   const rate = totalProductionRate(state, generators, upgrades, constants);
   for (const upgrade of upgrades) {
     if (!state.upgrades[upgrade.id]) continue;
     const share = typeof upgrade.clickProductionSharePct === "number" ? upgrade.clickProductionSharePct : 0;
     if (share !== 0) reward += (share / 100) * rate;
   }
+  reward *= idleGenericClickMultiplier(state);
   if (state.heritagesPurchased.elven) {
     const chance = factionCoinFindChancePct(state, constants);
     reward *= 1 + (2 * Math.log(1 + chance) ** 2) / 100;
   }
+  reward *= idleTreasureClickMultiplier(state);
   return Math.max(0, reward * activeClickMultiplier(state));
 }
 
@@ -565,7 +593,12 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
   const generators = options.generators ?? DEFAULT_IDLE_GENERATORS;
   const upgrades =
     options.upgrades ??
-    [...DEFAULT_IDLE_GENERATOR_UPGRADES, ...DEFAULT_IDLE_FACTION_UPGRADES, ...DEFAULT_IDLE_MEMENTO_UPGRADES];
+    [
+      ...DEFAULT_IDLE_GENERATOR_UPGRADES,
+      ...DEFAULT_IDLE_FACTION_UPGRADES,
+      ...DEFAULT_IDLE_GENERIC_UPGRADES,
+      ...DEFAULT_IDLE_MEMENTO_UPGRADES,
+    ];
   const alignments = options.alignments ?? DEFAULT_IDLE_ALIGNMENTS;
   const factions = options.factions ?? DEFAULT_IDLE_FACTIONS;
   const skills = options.skills ?? DEFAULT_IDLE_SKILLS;
@@ -640,6 +673,7 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
     const permanent = {
       gemPowerUnlocked: current.gemPowerUnlocked,
       lifetimeProductiveClicks: current.lifetimeProductiveClicks,
+      lifetimeAlignmentSeconds: current.lifetimeAlignmentSeconds,
       lifetimeMaxTotalBuildings: current.lifetimeMaxTotalBuildings,
       everAlliedFactions: current.everAlliedFactions,
       heritagesUnlocked: current.heritagesUnlocked,
@@ -650,6 +684,8 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
       ...permanent,
       shards: nextShards,
       abdications: current.abdications + 1,
+      shortRunAbdications:
+        current.shortRunAbdications + (current.currentEraSeconds <= 180 ? 1 : 0),
     };
   };
 
@@ -774,6 +810,8 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
           ...state,
           productiveClicks: state.productiveClicks + 1,
           lifetimeProductiveClicks: state.lifetimeProductiveClicks + 1,
+          computeGainedByClicking: state.computeGainedByClicking + gained,
+          anyActionThisEra: true,
         },
         gained,
       );
@@ -819,6 +857,8 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
         ...state,
         compute: finiteCompute(state.compute - cost),
         owned: nextOwned,
+        hasBuiltThisEra: true,
+        anyActionThisEra: true,
         lifetimeMaxTotalBuildings: Math.max(state.lifetimeMaxTotalBuildings, nextTotalBuildings),
       };
       publish();
@@ -826,13 +866,23 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
 
     buyUpgrade(upgradeId) {
       const upgrade = upgrades.find((candidate) => candidate.id === upgradeId);
-      if (!upgrade || upgrade.factionId || !isIdleGeneratorUpgradeAvailable(upgrade, state)) return;
-      if (state.compute < upgrade.cost) return;
-      state = {
+      if (!upgrade || upgrade.factionId || isIdleMementoId(upgrade.id)) return;
+
+      const isGeneric = GENERIC_UPGRADE_IDS.has(upgrade.id);
+      const available = isGeneric
+        ? isIdleGenericUpgradePurchasable(state, upgrade, generators)
+        : isIdleGeneratorUpgradeAvailable(upgrade, state);
+      if (!available || state.compute < upgrade.cost) return;
+
+      let next: IdleRuntimeState = {
         ...state,
         compute: finiteCompute(state.compute - upgrade.cost),
         upgrades: { ...state.upgrades, [upgrade.id]: true },
+        anyActionThisEra: true,
       };
+      const grantCompute = isGeneric ? idleGenericPurchaseGrantCompute(upgrade) : 0;
+      if (grantCompute > 0) next = addCompute(next, grantCompute);
+      state = next;
       publish();
     },
 
@@ -855,6 +905,7 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
           everAlliedFactions: firstTreaty
             ? { ...state.everAlliedFactions, [factionId]: true }
             : state.everAlliedFactions,
+          anyActionThisEra: true,
         };
       } else {
         if (state.compute < upgrade.cost) return;
@@ -892,6 +943,7 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
       if (!quote || quote.willBuy <= 0 || quote.coinBalance < quote.totalCost) return;
       state = {
         ...state,
+        anyActionThisEra: true,
         factionCoins: {
           ...state.factionCoins,
           [factionId]: quote.coinBalance - quote.totalCost,
@@ -918,6 +970,7 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
         ...state,
         compute: finiteCompute(state.compute - (alignment.unlockFact ? 0 : alignment.cost)),
         currentAlignment: alignment.id,
+        anyActionThisEra: true,
       };
       const matchingFactions = factions.filter(
         (faction) => FACTION_ALIGNMENT[faction.id] === alignment.id,
@@ -954,6 +1007,7 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
       let next: IdleRuntimeState = {
         ...state,
         skillCastsThisEra: state.skillCastsThisEra + 1,
+        anyActionThisEra: true,
         skillCooldownSec: { ...state.skillCooldownSec, [skillId]: cooldownSec },
       };
 
@@ -1104,6 +1158,7 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
         upgrades: { ...state.upgrades, [memento.id]: true },
         claimedMementoCount,
         lastMementoClaimAtMs: now(),
+        anyActionThisEra: true,
       };
       publish();
       if (claimedMementoCount >= IDLE_MEMENTO_COUNT) onCompleted?.();
@@ -1112,8 +1167,19 @@ export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions 
     tick(seconds) {
       const elapsed = Math.max(0, seconds);
       if (elapsed <= 0) return;
+      const alignment = state.currentAlignment;
+      const lifetimeAlignmentSeconds = alignment
+        ? {
+            ...state.lifetimeAlignmentSeconds,
+            [alignment]: (state.lifetimeAlignmentSeconds[alignment] ?? 0) + elapsed,
+          }
+        : state.lifetimeAlignmentSeconds;
       let next = addCompute(
-        { ...state, currentEraSeconds: state.currentEraSeconds + elapsed },
+        {
+          ...state,
+          currentEraSeconds: state.currentEraSeconds + elapsed,
+          lifetimeAlignmentSeconds,
+        },
         totalProductionRate(state, generators, upgrades, constants) * elapsed,
       );
 
