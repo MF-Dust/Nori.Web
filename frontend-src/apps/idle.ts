@@ -106,6 +106,16 @@ export interface IdleRunPresentationState {
   heritagesPurchased: Readonly<Record<string, boolean>>;
   claimedMementoCount: number;
   lastMementoClaimAtMs: number;
+  /** Optional in presentation mocks; source runtime fills these shipped progression counters. */
+  currentEraSeconds?: number;
+  currentRunComputeProduced?: number;
+  productiveClicks?: number;
+  computeGainedByClicking?: number;
+  factionCoinsFoundThisEra?: number;
+  shortRunAbdications?: number;
+  hasBuiltThisEra?: boolean;
+  anyActionThisEra?: boolean;
+  lifetimeAlignmentSeconds?: Readonly<Record<string, number>>;
 }
 
 export interface IdleClickResult {
@@ -160,7 +170,7 @@ export interface IdlePresentationSnapshot {
   state: IdleRunPresentationState;
   computeState: DesktopComputeState;
   generators: readonly IdleGeneratorDefinition[];
-  /** Milestone + faction + memento definitions visible to the progression column. */
+  /** Milestone + generic + faction + memento definitions visible to the progression column. */
   upgrades?: readonly IdleUpgradeDefinition[];
   alignments: readonly IdleAlignmentDefinition[];
   factions: readonly IdleFactionDefinition[];
