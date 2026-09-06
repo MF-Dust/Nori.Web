@@ -47,6 +47,7 @@ class WorldSession:
         self.event_dispatcher = EventDispatcher(self)
         self._media_sequence = 0
         self._tasks: Set[asyncio.Task[Any]] = set()
+        self._agent_tasks: Dict[str, asyncio.Task[Any]] = {}
 
     def issue_media_grant(self) -> str:
         grant = secrets.token_urlsafe(32)
@@ -142,10 +143,87 @@ class WorldSession:
         await self.broadcast(messages)
         return commit
 
-    def _spawn(self, coroutine: Any) -> None:
+    def _spawn(self, coroutine: Any) -> asyncio.Task[Any]:
         task = asyncio.create_task(coroutine)
         self._tasks.add(task)
-        task.add_done_callback(self._tasks.discard)
+
+        def finish(completed: asyncio.Task[Any]) -> None:
+            self._tasks.discard(completed)
+            if completed.cancelled():
+                return
+            error = completed.exception()
+            if error is not None:
+                print(f"[world:{self.world_id}] background task failed: {error}")
+
+        task.add_done_callback(finish)
+        return task
+
+    @staticmethod
+    def _cakeduel_recovery_command(cartridge: BaseCartridge) -> Optional[Dict[str, Json]]:
+        """Return a legal fail-safe when Cake Duel is stranded on Nori's turn."""
+        game = cartridge.state.get("game")
+        if not isinstance(game, dict) or game.get("gameEnded"):
+            return None
+        phase = game.get("phase")
+        attacker = game.get("attackerIndex")
+        if phase == "attack":
+            agent_turn = attacker == 1
+        elif phase == "block":
+            agent_turn = attacker == 0
+        elif phase == "review":
+            agent_turn = attacker == 1
+        else:
+            agent_turn = False
+        if not agent_turn:
+            return None
+        return {"type": "play", "action": {"type": "pass"}}
+
+    def _agent_recovery_command(self, cartridge_id: str, cartridge: BaseCartridge) -> Optional[Dict[str, Json]]:
+        if cartridge_id == "cakeduel":
+            return self._cakeduel_recovery_command(cartridge)
+        return None
+
+    def _next_agent_command(self, cartridge_id: str, cartridge: BaseCartridge) -> Optional[Dict[str, Json]]:
+        generator = getattr(cartridge, "agent_next_command", None)
+        try:
+            command = generator() if callable(generator) else None
+        except Exception as exc:
+            print(f"[world:{self.world_id}] {cartridge_id} agent decision failed: {exc}")
+            command = None
+        if command:
+            return command
+        recovery = self._agent_recovery_command(cartridge_id, cartridge)
+        if recovery is not None:
+            print(f"[world:{self.world_id}] recovering stranded {cartridge_id} agent turn with pass")
+        return recovery
+
+    async def _dispatch_agent_command(
+        self,
+        cartridge_id: str,
+        cartridge: BaseCartridge,
+        command: Dict[str, Json],
+    ) -> Optional[Any]:
+        commit = await self._dispatch_internal(cartridge_id, "agent", command)
+        if commit is not None:
+            return commit
+        recovery = self._agent_recovery_command(cartridge_id, cartridge)
+        if recovery is None or recovery == command:
+            return None
+        print(f"[world:{self.world_id}] retrying rejected {cartridge_id} agent action with pass")
+        return await self._dispatch_internal(cartridge_id, "agent", recovery)
+
+    def _schedule_agent_turns(self, cartridge_id: str) -> None:
+        existing = self._agent_tasks.get(cartridge_id)
+        if existing is not None and not existing.done():
+            return
+        task = self._spawn(self._run_agent_turns(cartridge_id))
+        self._agent_tasks[cartridge_id] = task
+
+        def clear(completed: asyncio.Task[Any]) -> None:
+            if self._agent_tasks.get(cartridge_id) is completed:
+                self._agent_tasks.pop(cartridge_id, None)
+
+        task.add_done_callback(clear)
 
     async def _run_chat_reply(self, user_text: str) -> None:
         chat = self.cartridges.get("chat")
@@ -199,10 +277,10 @@ class WorldSession:
             cartridge = self.cartridges.get(cartridge_id)
             if cartridge is None:
                 return
-            command = getattr(cartridge, "agent_next_command", lambda: None)()
+            command = self._next_agent_command(cartridge_id, cartridge)
             if not command:
                 return
-            commit = await self._dispatch_internal(cartridge_id, "agent", command)
+            commit = await self._dispatch_agent_command(cartridge_id, cartridge, command)
             if commit is None:
                 return
 
@@ -224,7 +302,7 @@ class WorldSession:
                 self._spawn(self._settle_chat_after_audio(cmd["operationId"]))
             return
         if cartridge_id in {"cakeduel", "codenames", "chess"}:
-            self._spawn(self._run_agent_turns(cartridge_id))
+            self._schedule_agent_turns(cartridge_id)
         elif cartridge_id == "pictionary" and command_type in {"submitGuess", "skipRound"}:
             self._spawn(self._start_next_pictionary_round())
 
