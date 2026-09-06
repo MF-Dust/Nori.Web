@@ -56,6 +56,7 @@ export * from "./apps/idle-generic-upgrades";
 export * from "./apps/idle-manifold";
 export * from "./apps/idle-memento-effects";
 export * from "./apps/idle-presentation";
+export * from "./apps/idle-runtime-ledger";
 export * from "./apps/idle-upgrades";
 export * from "./apps/mail";
 export * from "./apps/mail-presentation";
