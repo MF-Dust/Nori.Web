@@ -33,7 +33,23 @@ import {
   getIdleGeneratorTotalCost,
   isIdleGeneratorVisible,
   resolveIdleGeneratorBuyCount,
+  type IdleCostMultiplierResolver,
 } from "../apps/idle-economy";
+import {
+  DEFAULT_IDLE_FACTION_UPGRADES,
+  DEFAULT_IDLE_HERITAGES,
+  DEFAULT_IDLE_MEMENTO_UPGRADES,
+  IDLE_MEMENTO_COUNT,
+  availableIdleMementoIndex,
+  factionProgressionComplete,
+  hasIdleGpuCosts,
+  idleFactionGpuCosts,
+  isIdleFactionRelationUpgrade,
+  isIdleFactionUpgradeAvailable,
+  isIdleHeritageAvailable,
+  isIdleMementoId,
+  spendIdleGpuCosts,
+} from "../apps/idle-faction-progression";
 import {
   DEFAULT_IDLE_GENERATOR_UPGRADES,
   getIdleGeneratorUpgradeMultiplier,
@@ -43,8 +59,15 @@ import type { DesktopComputeState } from "./compute-runtime";
 
 const IDLE_RUN_STORAGE_VERSION = 1;
 const IDLE_RUN_STORAGE_PREFIX = "idle.run:";
-const EXCHANGEABLE_FACTIONS = new Set(["elf", "angel", "goblin", "demon"]);
-const EXCHANGEABLE_FACTION_IDS = [...EXCHANGEABLE_FACTIONS];
+const EXCHANGEABLE_FACTION_IDS = ["elf", "angel", "goblin", "demon"] as const;
+const EXCHANGEABLE_FACTIONS = new Set<string>(EXCHANGEABLE_FACTION_IDS);
+const FACTION_ALIGNMENT: Readonly<Record<string, IdleAlignment>> = {
+  elf: "accelerate",
+  angel: "accelerate",
+  goblin: "decelerate",
+  demon: "decelerate",
+  liuxing: "equilibrium",
+};
 
 const GEM_POWER_COMPUTE_COST = 1;
 const GEM_POWER_REQUIRED_SHARDS = 1;
@@ -59,11 +82,13 @@ const CAP_BUMPS: Readonly<Record<string, number>> = {
 };
 
 interface IdleRuntimeState extends IdleRunPresentationState {
-  gemPowerUnlocked: boolean;
   currentEraSeconds: number;
   currentRunComputeProduced: number;
   skillCastsThisEra: number;
   productiveClicks: number;
+  lifetimeProductiveClicks: number;
+  factionCoinsFoundThisEra: number;
+  lifetimeMaxTotalBuildings: number;
 }
 
 interface IdlePersistedRun {
@@ -110,6 +135,7 @@ function createInitialState(facts: ReadonlySet<string> = new Set()): IdleRuntime
     affiliatedFaction: null,
     shards: 0,
     abdications: 0,
+    gemPowerUnlocked: false,
     facts: factsRecord(facts),
     owned: {},
     upgrades: {},
@@ -117,11 +143,18 @@ function createInitialState(facts: ReadonlySet<string> = new Set()): IdleRuntime
     royalExchanges: {},
     skillCooldownSec: {},
     activeSkillBuffs: [],
-    gemPowerUnlocked: false,
+    everAlliedFactions: {},
+    heritagesUnlocked: {},
+    heritagesPurchased: {},
+    claimedMementoCount: 0,
+    lastMementoClaimAtMs: 0,
     currentEraSeconds: 0,
     currentRunComputeProduced: 0,
     skillCastsThisEra: 0,
     productiveClicks: 0,
+    lifetimeProductiveClicks: 0,
+    factionCoinsFoundThisEra: 0,
+    lifetimeMaxTotalBuildings: 0,
   };
 }
 
@@ -133,6 +166,7 @@ function clonePresentationState(state: IdleRuntimeState): IdleRunPresentationSta
     affiliatedFaction: state.affiliatedFaction,
     shards: state.shards,
     abdications: state.abdications,
+    gemPowerUnlocked: state.gemPowerUnlocked,
     facts: state.facts,
     owned: state.owned,
     upgrades: state.upgrades,
@@ -140,20 +174,22 @@ function clonePresentationState(state: IdleRuntimeState): IdleRunPresentationSta
     royalExchanges: state.royalExchanges,
     skillCooldownSec: state.skillCooldownSec,
     activeSkillBuffs: state.activeSkillBuffs,
+    everAlliedFactions: state.everAlliedFactions,
+    heritagesUnlocked: state.heritagesUnlocked,
+    heritagesPurchased: state.heritagesPurchased,
+    claimedMementoCount: state.claimedMementoCount,
+    lastMementoClaimAtMs: state.lastMementoClaimAtMs,
   };
 }
 
-function sameFacts(
-  current: Readonly<Record<string, boolean>>,
-  next: ReadonlySet<string>,
-): boolean {
+function sameFacts(current: Readonly<Record<string, boolean>>, next: ReadonlySet<string>): boolean {
   const ids = Object.keys(current).filter((factId) => current[factId]);
   return ids.length === next.size && ids.every((factId) => next.has(factId));
 }
 
 function computeCap(facts: Readonly<Record<string, boolean>>): number {
   if (!facts["compute.initialized"]) return Number.POSITIVE_INFINITY;
-  if (facts["arg.manifold_unlocked"]) return Number.POSITIVE_INFINITY;
+  if (facts[IDLE_MANIFOLD_UNLOCKED_FACT]) return Number.POSITIVE_INFINITY;
   if (facts["arg.memory.shown"]) return 0;
 
   let orders = 0;
@@ -180,75 +216,99 @@ function addCompute(state: IdleRuntimeState, amount: number): IdleRuntimeState {
   };
 }
 
+function totalBuildings(state: IdleRuntimeState): number {
+  return Object.values(state.owned).reduce((sum, count) => sum + (count ?? 0), 0);
+}
+
+function distinctBuildingTypes(state: IdleRuntimeState): number {
+  return Object.values(state.owned).filter((count) => (count ?? 0) > 0).length;
+}
+
 function totalTrades(state: IdleRuntimeState): number {
   return Object.values(state.royalExchanges).reduce((sum, count) => sum + (count ?? 0), 0);
+}
+
+function royalExchangePercent(
+  state: IdleRuntimeState,
+  constants: IdleDefaultEconomyConstants,
+): number {
+  let percent = constants.royalExchangeUnitaryBonusPct;
+  if (state.upgrades.fu_elf_elven_efficiency) {
+    percent += 1.75 * Math.log(1 + state.factionCoinsFoundThisEra) ** 1.75;
+  }
+  if (state.upgrades.fu_goblin_central_bank) {
+    percent += 0.6 * Math.log(1 + state.factionCoinsFoundThisEra);
+  }
+  if (state.heritagesPurchased.liuxing) percent += 15;
+  return percent;
 }
 
 function exchangeMultiplier(
   state: IdleRuntimeState,
   constants: IdleDefaultEconomyConstants,
 ): number {
-  return 1 + (constants.royalExchangeUnitaryBonusPct * totalTrades(state)) / 100;
+  return 1 + (royalExchangePercent(state, constants) * totalTrades(state)) / 100;
 }
 
-function gemPowerMultiplier(state: IdleRuntimeState): number {
-  if (
-    !state.gemPowerUnlocked ||
-    state.shards <= 0 ||
-    state.facts[IDLE_MANIFOLD_UNLOCKED_FACT]
-  ) {
-    return 1;
-  }
-  return 1 + (state.shards * GEM_POWER_PRODUCTION_BONUS_PCT_PER_SHARD) / 100;
-}
-
-function factionCoinFindChancePct(
+function exchangeCostMultiplier(
   state: IdleRuntimeState,
   constants: IdleDefaultEconomyConstants,
 ): number {
-  let chance = constants.baseFactionCoinFindChancePct;
-  if (
-    state.gemPowerUnlocked &&
-    state.shards > 0 &&
-    !state.facts[IDLE_MANIFOLD_UNLOCKED_FACT]
-  ) {
-    chance += Math.floor(0.625 * Math.log(1 + state.shards) ** 0.9);
-  }
-  return Math.max(0, chance);
+  return state.upgrades.fu_goblin_black_market
+    ? Math.max(1.07, constants.royalExchangeCostMult - 0.03)
+    : constants.royalExchangeCostMult;
 }
 
-function rollFactionCoins(
+function heritageProductionMultiplier(state: IdleRuntimeState): number {
+  let multiplier = 1;
+  const buildings = totalBuildings(state);
+  if (state.heritagesPurchased.demonic) {
+    multiplier *= 1 + (2.5 * buildings ** 0.7) / 100;
+  }
+  if (state.heritagesPurchased.liuxing) {
+    multiplier *= 1 + (0.25 * state.lifetimeMaxTotalBuildings ** 0.75) / 100;
+  }
+  if (state.heritagesPurchased.goblin) {
+    multiplier *= 1 + (12 * Math.log(1 + state.shards) ** 1.3) / 100;
+  }
+  if (state.heritagesPurchased.angelic) {
+    multiplier *= 1 + (2.5 * state.lifetimeMaxTotalBuildings ** 0.7) / 100;
+  }
+  if (state.heritagesPurchased.elven) {
+    multiplier *= 1 + (6 * state.lifetimeProductiveClicks ** 0.5) / 100;
+  }
+  return multiplier;
+}
+
+function gemPowerMultiplier(state: IdleRuntimeState): number {
+  if (!state.gemPowerUnlocked || state.shards <= 0 || state.facts[IDLE_MANIFOLD_UNLOCKED_FACT]) {
+    return 1;
+  }
+  let bonusPct = state.shards * GEM_POWER_PRODUCTION_BONUS_PCT_PER_SHARD;
+  if (state.upgrades.fu_goblin_black_market) {
+    bonusPct *= 1 + (50 + 2 * Math.log(1 + state.shards)) / 100;
+  }
+  return 1 + bonusPct / 100;
+}
+
+function simpleFactionProductionMultiplier(
   state: IdleRuntimeState,
-  attempts: number,
-  constants: IdleDefaultEconomyConstants,
-  random: () => number,
-): Record<string, number> {
-  const rolledChance = factionCoinFindChancePct(state, constants) * Math.max(0, attempts);
-  const guaranteed = Math.floor(rolledChance / 100);
-  const remainder = rolledChance - guaranteed * 100;
-  const count = guaranteed + (random() * 100 < remainder ? 1 : 0);
-  const found: Record<string, number> = {};
-  for (let index = 0; index < count; index += 1) {
-    const factionIndex = Math.min(
-      EXCHANGEABLE_FACTION_IDS.length - 1,
-      Math.floor(random() * EXCHANGEABLE_FACTION_IDS.length),
-    );
-    const factionId = EXCHANGEABLE_FACTION_IDS[factionIndex];
-    found[factionId] = (found[factionId] ?? 0) + 1;
+  generator: IdleGeneratorDefinition,
+): number {
+  let multiplier = 1;
+  if (state.upgrades.fu_angel_archangel_feathers) multiplier *= 1.4;
+  if (state.upgrades.fu_angel_magical_gates) multiplier *= 1.15;
+  if (state.upgrades.fu_demon_demonic_presence) multiplier *= 2;
+  if (
+    state.upgrades.fu_demon_devil_tyrant &&
+    (generator.id === "full_feature_atlas" || generator.id === "terminal_lockdown")
+  ) {
+    multiplier *= 2;
   }
-  return found;
-}
-
-function mergeFactionCoins(
-  current: Readonly<Record<string, number>>,
-  found: Readonly<Record<string, number>>,
-): Readonly<Record<string, number>> {
-  if (Object.keys(found).length === 0) return current;
-  const next = { ...current };
-  for (const [factionId, amount] of Object.entries(found)) {
-    next[factionId] = (next[factionId] ?? 0) + amount;
+  if (state.upgrades.fu_goblin_underdog && generator.alignment === "decelerate") {
+    multiplier *= 1 + 4 / (1 + Math.log10(Math.max(10, state.compute)));
   }
-  return next;
+  return multiplier;
 }
 
 function activeGeneratorMultiplier(state: IdleRuntimeState, generatorId: string): number {
@@ -279,7 +339,9 @@ function generatorRate(
     generator.baseRate *
     getIdleGeneratorUpgradeMultiplier(generator.id, state.upgrades, upgrades) *
     activeGeneratorMultiplier(state, generator.id) *
+    simpleFactionProductionMultiplier(state, generator) *
     exchangeMultiplier(state, constants) *
+    heritageProductionMultiplier(state) *
     gemPowerMultiplier(state)
   );
 }
@@ -299,25 +361,113 @@ function totalProductionRate(
   return finiteCompute(total);
 }
 
+function factionCoinFindChancePct(
+  state: IdleRuntimeState,
+  constants: IdleDefaultEconomyConstants,
+): number {
+  let chance = constants.baseFactionCoinFindChancePct;
+  if (state.gemPowerUnlocked && state.shards > 0 && !state.facts[IDLE_MANIFOLD_UNLOCKED_FACT]) {
+    chance += Math.floor(0.625 * Math.log(1 + state.shards) ** 0.9);
+  }
+  if (state.heritagesPurchased.elven) chance += 5;
+  if (state.upgrades.fu_elf_elven_treasure_casing) {
+    chance += 10 + 2.5 * distinctBuildingTypes(state) ** 0.95;
+  }
+  if (state.upgrades.fu_goblin_central_bank) {
+    chance += 20 + 8 * Math.log(1 + state.factionCoinsFoundThisEra);
+  }
+  if (state.upgrades.fu_elf_elven_mint) chance *= 2;
+  return Math.max(0, chance);
+}
+
+function randomFactionCoins(count: number, random: () => number): Record<string, number> {
+  const found: Record<string, number> = {};
+  for (let index = 0; index < Math.max(0, Math.floor(count)); index += 1) {
+    const factionIndex = Math.min(
+      EXCHANGEABLE_FACTION_IDS.length - 1,
+      Math.floor(random() * EXCHANGEABLE_FACTION_IDS.length),
+    );
+    const factionId = EXCHANGEABLE_FACTION_IDS[factionIndex];
+    found[factionId] = (found[factionId] ?? 0) + 1;
+  }
+  return found;
+}
+
+function rollFactionCoins(
+  state: IdleRuntimeState,
+  attempts: number,
+  constants: IdleDefaultEconomyConstants,
+  random: () => number,
+): Record<string, number> {
+  if (state.facts[IDLE_MANIFOLD_UNLOCKED_FACT]) return {};
+  const rolledChance = factionCoinFindChancePct(state, constants) * Math.max(0, attempts);
+  const guaranteed = Math.floor(rolledChance / 100);
+  const remainder = rolledChance - guaranteed * 100;
+  const count = guaranteed + (random() * 100 < remainder ? 1 : 0);
+  return randomFactionCoins(count, random);
+}
+
+function foundCoinCount(found: Readonly<Record<string, number>>): number {
+  return Object.values(found).reduce((sum, count) => sum + (count ?? 0), 0);
+}
+
+function mergeCoinRecords(
+  left: Readonly<Record<string, number>>,
+  right: Readonly<Record<string, number>>,
+): Readonly<Record<string, number>> {
+  if (Object.keys(right).length === 0) return left;
+  const next = { ...left };
+  for (const [factionId, amount] of Object.entries(right)) {
+    next[factionId] = (next[factionId] ?? 0) + amount;
+  }
+  return next;
+}
+
+function grantFactionCoins(
+  state: IdleRuntimeState,
+  found: Readonly<Record<string, number>>,
+): IdleRuntimeState {
+  if (state.facts[IDLE_MANIFOLD_UNLOCKED_FACT]) return state;
+  const count = foundCoinCount(found);
+  if (count <= 0) return state;
+  return {
+    ...state,
+    factionCoins: mergeCoinRecords(state.factionCoins, found),
+    factionCoinsFoundThisEra: state.factionCoinsFoundThisEra + count,
+  };
+}
+
+function clickReward(
+  state: IdleRuntimeState,
+  generators: readonly IdleGeneratorDefinition[],
+  upgrades: readonly IdleUpgradeDefinition[],
+  constants: IdleDefaultEconomyConstants,
+): number {
+  let reward = 1;
+  const rate = totalProductionRate(state, generators, upgrades, constants);
+  for (const upgrade of upgrades) {
+    if (!state.upgrades[upgrade.id]) continue;
+    const share = typeof upgrade.clickProductionSharePct === "number" ? upgrade.clickProductionSharePct : 0;
+    if (share !== 0) reward += (share / 100) * rate;
+  }
+  if (state.heritagesPurchased.elven) {
+    const chance = factionCoinFindChancePct(state, constants);
+    reward *= 1 + (2 * Math.log(1 + chance) ** 2) / 100;
+  }
+  return Math.max(0, reward * activeClickMultiplier(state));
+}
+
 function shardTotalForCompute(maxCompute: number, constants: IdleDefaultEconomyConstants): number {
   if (maxCompute < constants.shardThresholdK) return 0;
-  return Math.floor(
-    (maxCompute / constants.shardThresholdK) ** (1 / constants.shardCurveExp) + 1e-9,
-  );
+  return Math.floor((maxCompute / constants.shardThresholdK) ** (1 / constants.shardCurveExp) + 1e-9);
 }
 
 function computeForShardTotal(shards: number, constants: IdleDefaultEconomyConstants): number {
   return shards ** constants.shardCurveExp * constants.shardThresholdK;
 }
 
-function exchangeCumulativeCost(
-  trades: number,
-  constants: IdleDefaultEconomyConstants,
-): number {
-  const multiplier = constants.royalExchangeCostMult;
-  return Math.floor(
-    (constants.royalExchangeBaseCost / (multiplier - 1)) * (multiplier ** trades - 1),
-  );
+function exchangeCumulativeCost(trades: number, multiplier: number, baseCost: number): number {
+  return Math.floor((baseCost / (multiplier - 1)) * (multiplier ** trades - 1));
 }
 
 function exchangeCost(
@@ -328,9 +478,10 @@ function exchangeCost(
 ): number {
   if (count <= 0) return 0;
   const owned = state.royalExchanges[factionId] ?? 0;
+  const multiplier = exchangeCostMultiplier(state, constants);
   return (
-    exchangeCumulativeCost(owned + count, constants) -
-    exchangeCumulativeCost(owned, constants)
+    exchangeCumulativeCost(owned + count, multiplier, constants.royalExchangeBaseCost) -
+    exchangeCumulativeCost(owned, multiplier, constants.royalExchangeBaseCost)
   );
 }
 
@@ -342,15 +493,54 @@ function maxAffordableExchangeCount(
   if (!EXCHANGEABLE_FACTIONS.has(factionId)) return 0;
   const balance = state.factionCoins[factionId] ?? 0;
   const owned = state.royalExchanges[factionId] ?? 0;
-  const multiplier = constants.royalExchangeCostMult;
-  const spentBefore = exchangeCumulativeCost(owned, constants);
-  const scaled =
-    1 + ((balance + spentBefore) * (multiplier - 1)) / constants.royalExchangeBaseCost;
+  const multiplier = exchangeCostMultiplier(state, constants);
+  const spentBefore = exchangeCumulativeCost(owned, multiplier, constants.royalExchangeBaseCost);
+  const scaled = 1 + ((balance + spentBefore) * (multiplier - 1)) / constants.royalExchangeBaseCost;
   let target = scaled > 1 ? Math.floor(Math.log(scaled) / Math.log(multiplier)) : owned;
   if (target < owned) target = owned;
-  while (exchangeCumulativeCost(target + 1, constants) - spentBefore <= balance) target += 1;
-  while (target > owned && exchangeCumulativeCost(target, constants) - spentBefore > balance) target -= 1;
+  while (
+    exchangeCumulativeCost(target + 1, multiplier, constants.royalExchangeBaseCost) - spentBefore <=
+    balance
+  ) {
+    target += 1;
+  }
+  while (
+    target > owned &&
+    exchangeCumulativeCost(target, multiplier, constants.royalExchangeBaseCost) - spentBefore > balance
+  ) {
+    target -= 1;
+  }
   return target - owned;
+}
+
+function generatorCostResolver(state: IdleRuntimeState): IdleCostMultiplierResolver {
+  return (generator) => {
+    if (state.upgrades.fu_elf_price_performance && generator.alignment === "accelerate") {
+      return Math.max(1.1, generator.costMult - 0.02);
+    }
+    if (state.upgrades.fu_demon_vertical_integration && generator.alignment === "decelerate") {
+      return Math.max(1.09, generator.costMult - 0.06);
+    }
+    return generator.costMult;
+  };
+}
+
+function skillMagnitudeMultiplier(state: IdleRuntimeState, upgrades: readonly IdleUpgradeDefinition[]): number {
+  let bonus = 0;
+  for (const upgrade of upgrades) {
+    if (!state.upgrades[upgrade.id]) continue;
+    if (typeof upgrade.skillMagnitudeBonus === "number") bonus += upgrade.skillMagnitudeBonus;
+  }
+  return 1 + bonus;
+}
+
+function skillDurationMultiplier(state: IdleRuntimeState, upgrades: readonly IdleUpgradeDefinition[]): number {
+  let bonus = 0;
+  for (const upgrade of upgrades) {
+    if (!state.upgrades[upgrade.id]) continue;
+    if (typeof upgrade.skillDurationBonus === "number") bonus += upgrade.skillDurationBonus;
+  }
+  return 1 + bonus;
 }
 
 function storageForRuntime(
@@ -370,11 +560,11 @@ function persistedState(state: IdleRuntimeState): Omit<IdleRuntimeState, "facts"
   return rest;
 }
 
-export function createSourceIdleRuntime(
-  options: CreateSourceIdleRuntimeOptions = {},
-): SourceIdleRuntime {
+export function createSourceIdleRuntime(options: CreateSourceIdleRuntimeOptions = {}): SourceIdleRuntime {
   const generators = options.generators ?? DEFAULT_IDLE_GENERATORS;
-  const upgrades = options.upgrades ?? DEFAULT_IDLE_GENERATOR_UPGRADES;
+  const upgrades =
+    options.upgrades ??
+    [...DEFAULT_IDLE_GENERATOR_UPGRADES, ...DEFAULT_IDLE_FACTION_UPGRADES, ...DEFAULT_IDLE_MEMENTO_UPGRADES];
   const alignments = options.alignments ?? DEFAULT_IDLE_ALIGNMENTS;
   const factions = options.factions ?? DEFAULT_IDLE_FACTIONS;
   const skills = options.skills ?? DEFAULT_IDLE_SKILLS;
@@ -419,10 +609,7 @@ export function createSourceIdleRuntime(
       if (parsed.version !== IDLE_RUN_STORAGE_VERSION || !parsed.state) return false;
       state = { ...createInitialState(facts), ...parsed.state, facts: factsRecord(facts) };
       manifoldRevealApplied = !!parsed.manifoldRevealApplied;
-      persistedMaxCompute = Math.max(
-        Number(parsed.persistedMaxCompute) || 0,
-        state.maxComputeThisRun,
-      );
+      persistedMaxCompute = Math.max(Number(parsed.persistedMaxCompute) || 0, state.maxComputeThisRun);
       return true;
     } catch (error) {
       warn("[IdleRuntime] failed to hydrate run persistence", error);
@@ -493,14 +680,9 @@ export function createSourceIdleRuntime(
       const generator = generators.find((candidate) => candidate.id === generatorId);
       if (!generator || !isIdleGeneratorVisible(generator, state)) return null;
       const owned = state.owned[generator.id] ?? 0;
-      const willBuy = resolveIdleGeneratorBuyCount(
-        generator,
-        owned,
-        state.compute,
-        mode,
-        state,
-      );
-      const totalCost = getIdleGeneratorTotalCost(generator, owned, willBuy, state);
+      const resolver = generatorCostResolver(state);
+      const willBuy = resolveIdleGeneratorBuyCount(generator, owned, state.compute, mode, state, resolver);
+      const totalCost = getIdleGeneratorTotalCost(generator, owned, willBuy, state, resolver);
       const perUnitRate = generatorRate(state, generator, upgrades, constants);
       return {
         generatorId,
@@ -518,9 +700,7 @@ export function createSourceIdleRuntime(
       const firstAbdication = state.abdications === 0;
       const canAbdicate =
         state.currentAlignment !== "equilibrium" &&
-        (firstAbdication
-          ? gainedShards >= IDLE_FIRST_ABDICATION_SHARDS
-          : gainedShards > 0);
+        (firstAbdication ? gainedShards >= IDLE_FIRST_ABDICATION_SHARDS : gainedShards > 0);
       return {
         gainedShards,
         totalShardsAfter: state.shards + gainedShards,
@@ -542,29 +722,44 @@ export function createSourceIdleRuntime(
         coinBalance: state.factionCoins[factionId] ?? 0,
         willBuy,
         totalCost: exchangeCost(state, factionId, willBuy, constants),
-        perTradePercent: constants.royalExchangeUnitaryBonusPct,
+        perTradePercent: royalExchangePercent(state, constants),
         totalMultiplier: exchangeMultiplier(state, constants),
       };
     },
 
     click(): IdleClickResult {
-      const gained = activeClickMultiplier(state);
-      const factionCoinsFound = rollFactionCoins(state, 1, constants, random);
-      state = addCompute(
+      const gained = clickReward(state, generators, upgrades, constants);
+      let next = addCompute(
         {
           ...state,
           productiveClicks: state.productiveClicks + 1,
-          factionCoins: mergeFactionCoins(state.factionCoins, factionCoinsFound),
+          lifetimeProductiveClicks: state.lifetimeProductiveClicks + 1,
         },
         gained,
       );
+
+      let factionCoinsFound = rollFactionCoins(next, 1, constants, random);
+      next = grantFactionCoins(next, factionCoinsFound);
+
+      let isLucky = false;
+      let luckGain = 0;
+      if (next.upgrades.fu_elf_elven_luck && random() < 0.01) {
+        isLucky = true;
+        luckGain = totalProductionRate(next, generators, upgrades, constants) * 10_000;
+        next = addCompute(next, luckGain);
+        const luckCoins = randomFactionCoins(Math.floor(factionCoinFindChancePct(next, constants)), random);
+        next = grantFactionCoins(next, luckCoins);
+        factionCoinsFound = mergeCoinRecords(factionCoinsFound, luckCoins);
+      }
+
+      state = next;
       publish();
       return {
         gained,
         isCombo: false,
         isCrit: false,
-        isLucky: false,
-        luckGain: 0,
+        isLucky,
+        luckGain,
         factionCoinsFound,
       };
     },
@@ -573,27 +768,25 @@ export function createSourceIdleRuntime(
       const generator = generators.find((candidate) => candidate.id === generatorId);
       if (!generator || !isIdleGeneratorVisible(generator, state)) return;
       const owned = state.owned[generatorId] ?? 0;
-      const count = resolveIdleGeneratorBuyCount(
-        generator,
-        owned,
-        state.compute,
-        mode,
-        state,
-      );
+      const resolver = generatorCostResolver(state);
+      const count = resolveIdleGeneratorBuyCount(generator, owned, state.compute, mode, state, resolver);
       if (count <= 0) return;
-      const cost = getIdleGeneratorTotalCost(generator, owned, count, state);
+      const cost = getIdleGeneratorTotalCost(generator, owned, count, state, resolver);
       if (state.compute < cost) return;
+      const nextOwned = { ...state.owned, [generatorId]: owned + count };
+      const nextTotalBuildings = Object.values(nextOwned).reduce((sum, value) => sum + (value ?? 0), 0);
       state = {
         ...state,
         compute: finiteCompute(state.compute - cost),
-        owned: { ...state.owned, [generatorId]: owned + count },
+        owned: nextOwned,
+        lifetimeMaxTotalBuildings: Math.max(state.lifetimeMaxTotalBuildings, nextTotalBuildings),
       };
       publish();
     },
 
     buyUpgrade(upgradeId) {
       const upgrade = upgrades.find((candidate) => candidate.id === upgradeId);
-      if (!upgrade || !isIdleGeneratorUpgradeAvailable(upgrade, state)) return;
+      if (!upgrade || upgrade.factionId || !isIdleGeneratorUpgradeAvailable(upgrade, state)) return;
       if (state.compute < upgrade.cost) return;
       state = {
         ...state,
@@ -603,12 +796,55 @@ export function createSourceIdleRuntime(
       publish();
     },
 
-    buyFactionUpgrade(_upgradeId) {
-      // Treaty/pact/alliance eligibility and faction effect curves are the next progression slice.
+    buyFactionUpgrade(upgradeId) {
+      const upgrade = upgrades.find((candidate) => candidate.id === upgradeId);
+      if (!upgrade || !upgrade.factionId || isIdleMementoId(upgrade.id)) return;
+      const factionId = upgrade.factionId;
+      if (!isIdleFactionUpgradeAvailable(state, upgrade, FACTION_ALIGNMENT[factionId])) return;
+
+      let next = state;
+      if (isIdleFactionRelationUpgrade(upgrade)) {
+        const costs = idleFactionGpuCosts(factionId, upgrade.factionTier ?? 1);
+        if (!hasIdleGpuCosts(state.factionCoins, costs)) return;
+        const firstTreaty = (upgrade.factionTier ?? 0) === 1 && state.affiliatedFaction === null;
+        next = {
+          ...state,
+          factionCoins: spendIdleGpuCosts(state.factionCoins, costs),
+          upgrades: { ...state.upgrades, [upgrade.id]: true },
+          affiliatedFaction: firstTreaty ? factionId : state.affiliatedFaction,
+          everAlliedFactions: firstTreaty
+            ? { ...state.everAlliedFactions, [factionId]: true }
+            : state.everAlliedFactions,
+        };
+      } else {
+        if (state.compute < upgrade.cost) return;
+        next = {
+          ...state,
+          compute: finiteCompute(state.compute - upgrade.cost),
+          upgrades: { ...state.upgrades, [upgrade.id]: true },
+        };
+      }
+
+      if (factionProgressionComplete(factionId, next.upgrades, upgrades)) {
+        next = {
+          ...next,
+          heritagesUnlocked: { ...next.heritagesUnlocked, [factionId]: true },
+        };
+      }
+      state = next;
+      publish();
     },
 
-    buyHeritage(_heritageId) {
-      // Heritage persistence remains a separate progression slice.
+    buyHeritage(heritageId) {
+      const heritage = DEFAULT_IDLE_HERITAGES.find((candidate) => candidate.id === heritageId);
+      if (!heritage || !isIdleHeritageAvailable(state, heritage)) return;
+      if (!hasIdleGpuCosts(state.factionCoins, heritage.costs)) return;
+      state = {
+        ...state,
+        factionCoins: spendIdleGpuCosts(state.factionCoins, heritage.costs),
+        heritagesPurchased: { ...state.heritagesPurchased, [heritage.id]: true },
+      };
+      publish();
     },
 
     buyRoyalExchange(factionId, mode: IdleRoyalExchangeBuyCount = 1) {
@@ -637,11 +873,29 @@ export function createSourceIdleRuntime(
       } else if (state.compute < alignment.cost) {
         return;
       }
-      state = {
+
+      let next: IdleRuntimeState = {
         ...state,
         compute: finiteCompute(state.compute - (alignment.unlockFact ? 0 : alignment.cost)),
         currentAlignment: alignment.id,
       };
+      const matchingFactions = factions.filter(
+        (faction) => FACTION_ALIGNMENT[faction.id] === alignment.id,
+      );
+      if (matchingFactions.length === 1) {
+        const factionId = matchingFactions[0]?.id;
+        const hasTreaty = factionId ? upgrades.some(
+          (upgrade) => upgrade.id === `fu_${factionId}_treaty`,
+        ) : false;
+        if (factionId && !hasTreaty) {
+          next = {
+            ...next,
+            affiliatedFaction: factionId,
+            everAlliedFactions: { ...next.everAlliedFactions, [factionId]: true },
+          };
+        }
+      }
+      state = next;
       publish();
     },
 
@@ -655,15 +909,21 @@ export function createSourceIdleRuntime(
       const effect = skill.effect ?? {};
       const kind = typeof effect.kind === "string" ? effect.kind : "";
       const cooldownSec = Math.max(0, skill.cooldownSec ?? 0);
+      const magnitudeMultiplier = skillMagnitudeMultiplier(state, upgrades);
+      const durationMultiplier = skillDurationMultiplier(state, upgrades);
       let next: IdleRuntimeState = {
         ...state,
         skillCastsThisEra: state.skillCastsThisEra + 1,
         skillCooldownSec: { ...state.skillCooldownSec, [skillId]: cooldownSec },
       };
 
+      const grant = typeof effect.grantsFactionCoins === "number" ? effect.grantsFactionCoins : 0;
+      if (grant > 0) next = grantFactionCoins(next, randomFactionCoins(grant, random));
+
       if (kind === "prodBuff") {
-        const magnitude = typeof effect.magnitude === "number" ? effect.magnitude : 1;
-        const durationSec = Math.max(0, skill.durationSec ?? 0);
+        const magnitude =
+          (typeof effect.magnitude === "number" ? effect.magnitude : 1) * magnitudeMultiplier;
+        const durationSec = Math.max(0, skill.durationSec ?? 0) * durationMultiplier;
         const target = typeof effect.target === "string" ? effect.target : "all";
         const targetIds = generators
           .filter((generator) =>
@@ -674,7 +934,7 @@ export function createSourceIdleRuntime(
                 : target === "decel"
                   ? generator.alignment === "decelerate"
                   : target === "flagship"
-                    ? generator.id === "singularity_gate" || generator.id === "terminal_lockdown"
+                    ? generator.id === "singularity_gate"
                     : false,
           )
           .map((generator) => generator.id);
@@ -685,27 +945,22 @@ export function createSourceIdleRuntime(
           remainingSec: durationSec,
           durationSec,
         }));
-        next = { ...next, activeSkillBuffs: [...next.activeSkillBuffs, ...buffs] };
+        next = {
+          ...next,
+          activeSkillBuffs: [
+            ...next.activeSkillBuffs.filter((buff) => buff.id !== skillId),
+            ...buffs,
+          ],
+        };
       } else if (kind === "lump") {
         const seconds = typeof effect.seconds === "number" ? effect.seconds : 0;
-        next = addCompute(
-          next,
-          totalProductionRate(next, generators, upgrades, constants) * seconds,
-        );
-        const grant = typeof effect.grantsFactionCoins === "number" ? effect.grantsFactionCoins : 0;
-        if (grant > 0 && next.affiliatedFaction && EXCHANGEABLE_FACTIONS.has(next.affiliatedFaction)) {
-          next = {
-            ...next,
-            factionCoins: {
-              ...next.factionCoins,
-              [next.affiliatedFaction]: (next.factionCoins[next.affiliatedFaction] ?? 0) + grant,
-            },
-          };
-        }
+        next = addCompute(next, totalProductionRate(next, generators, upgrades, constants) * seconds);
       } else if (kind === "strike") {
         const pool = typeof effect.pool === "string" ? effect.pool : "decelerate";
         const candidates = generators.filter(
-          (generator) => generator.alignment === pool && (next.owned[generator.id] ?? 0) > 0,
+          (generator) =>
+            (next.owned[generator.id] ?? 0) > 0 &&
+            (pool === "all" || generator.alignment === pool),
         );
         if (candidates.length > 0) {
           const index = Math.min(candidates.length - 1, Math.floor(random() * candidates.length));
@@ -713,8 +968,9 @@ export function createSourceIdleRuntime(
           const baseMagnitude = typeof effect.magnitude === "number" ? effect.magnitude : 1;
           const critChance = typeof effect.critChance === "number" ? effect.critChance : 0;
           const critMult = typeof effect.critMult === "number" ? effect.critMult : 1;
-          const magnitude = baseMagnitude * (random() < critChance ? critMult : 1);
-          const durationSec = Math.max(0, skill.durationSec ?? 0);
+          const magnitude =
+            baseMagnitude * (random() < critChance ? critMult : 1) * magnitudeMultiplier;
+          const durationSec = Math.max(0, skill.durationSec ?? 0) * durationMultiplier;
           next = {
             ...next,
             activeSkillBuffs: [
@@ -730,14 +986,15 @@ export function createSourceIdleRuntime(
           };
         }
       } else if (kind === "clickBuff") {
-        const durationSec = Math.max(0, skill.durationSec ?? 0);
+        const durationSec = Math.max(0, skill.durationSec ?? 0) * durationMultiplier;
         next = {
           ...next,
           activeSkillBuffs: [
-            ...next.activeSkillBuffs,
+            ...next.activeSkillBuffs.filter((buff) => buff.id !== skillId),
             {
               id: skillId,
-              magnitude: typeof effect.magnitude === "number" ? effect.magnitude : 1,
+              magnitude:
+                (typeof effect.magnitude === "number" ? effect.magnitude : 1) * magnitudeMultiplier,
               remainingSec: durationSec,
               durationSec,
             },
@@ -780,12 +1037,19 @@ export function createSourceIdleRuntime(
       if (!quote.canAbdicate) return;
       persistedMaxCompute = Math.max(persistedMaxCompute, state.maxComputeThisRun);
       const facts = new Set(Object.keys(state.facts).filter((factId) => state.facts[factId]));
-      const gemPowerUnlocked = state.gemPowerUnlocked;
+      const permanent = {
+        gemPowerUnlocked: state.gemPowerUnlocked,
+        lifetimeProductiveClicks: state.lifetimeProductiveClicks,
+        lifetimeMaxTotalBuildings: state.lifetimeMaxTotalBuildings,
+        everAlliedFactions: state.everAlliedFactions,
+        heritagesUnlocked: state.heritagesUnlocked,
+        heritagesPurchased: state.heritagesPurchased,
+      };
       state = {
         ...createInitialState(facts),
+        ...permanent,
         shards: quote.totalShardsAfter,
         abdications: state.abdications + 1,
-        gemPowerUnlocked,
       };
       publish();
       syncCompute();
@@ -807,8 +1071,19 @@ export function createSourceIdleRuntime(
     },
 
     claimMemento(onCompleted) {
-      // Memento claim sequencing is recovered separately from the base economy runtime.
-      onCompleted?.();
+      const index = availableIdleMementoIndex(state, now());
+      if (index === null) return;
+      const memento = DEFAULT_IDLE_MEMENTO_UPGRADES[index];
+      if (!memento) return;
+      const claimedMementoCount = state.claimedMementoCount + 1;
+      state = {
+        ...state,
+        upgrades: { ...state.upgrades, [memento.id]: true },
+        claimedMementoCount,
+        lastMementoClaimAtMs: now(),
+      };
+      publish();
+      if (claimedMementoCount >= IDLE_MEMENTO_COUNT) onCompleted?.();
     },
 
     tick(seconds) {
