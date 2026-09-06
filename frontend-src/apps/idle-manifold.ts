@@ -1,7 +1,7 @@
 import type { IdleAlignment, IdleRunPresentationState } from "./idle";
+import { IDLE_MANIFOLD_COMPLETE_FACT } from "./idle-faction-progression";
 
 export const IDLE_MEMORY_SHOWN_FACT = "arg.memory.shown";
-export const IDLE_MANIFOLD_COMPLETE_FACT = "idle.manifold_complete";
 
 export interface IdleManifoldRevealState {
   compute: number;
