@@ -4,6 +4,7 @@ import type { DesktopComputeState } from "../state/compute-runtime";
 export type IdleBuyCount = 1 | 10 | 100 | "smart" | "max";
 
 export type IdleAlignment = "none" | "accelerate" | "decelerate" | "equilibrium";
+export type IdleGeneratorAlignment = IdleAlignment | "universal";
 
 export interface IdleGeneratorDefinition {
   id: string;
@@ -11,7 +12,7 @@ export interface IdleGeneratorDefinition {
   description?: string;
   plural?: string;
   measure?: string;
-  alignment: string;
+  alignment: IdleGeneratorAlignment;
   baseCost: number;
   baseRate: number;
   costMult: number;
@@ -46,6 +47,8 @@ export interface IdleSkillDefinition {
 
 export interface IdleActiveSkillBuff {
   id: string;
+  targetGenId?: string;
+  magnitude?: number;
   readonly [key: string]: unknown;
 }
 
@@ -73,6 +76,20 @@ export interface IdleClickResult {
   isLucky: boolean;
   luckGain: number;
   factionCoinsFound: Readonly<Record<string, number>>;
+}
+
+/**
+ * Generator row values are calculated by the economy runtime rather than the
+ * React presentation. This preserves story formula overrides, base-rate bands,
+ * upgrades and active-skill modifiers while keeping the source UI deterministic.
+ */
+export interface IdleGeneratorQuote {
+  generatorId: string;
+  owned: number;
+  willBuy: number;
+  totalCost: number;
+  perUnitRate: number;
+  totalRate: number;
 }
 
 export interface IdlePresentationSnapshot {
@@ -109,6 +126,7 @@ export interface IdleActionRuntime {
 export interface IdlePresentationModel extends IdleActionRuntime {
   snapshot(): IdlePresentationSnapshot;
   subscribe(listener: () => void): () => void;
+  quoteGenerator(generatorId: string, mode: IdleBuyCount): IdleGeneratorQuote | null;
 }
 
 export const IDLE_BUY_COUNTS: readonly IdleBuyCount[] = [1, 10, 100, "smart", "max"];
@@ -120,6 +138,9 @@ export const IDLE_BUY_COUNT_LABELS: Readonly<Record<IdleBuyCount, string>> = {
   smart: "智能",
   max: "最大",
 };
+
+/** Fact that closes the original no-unlockFact alignment choices in shipped Idle. */
+export const IDLE_MANIFOLD_UNLOCKED_FACT = "arg.manifold_unlocked";
 
 /** Shipped run persistence cadence. */
 export const IDLE_SAVE_INTERVAL_MS = 5_000;
