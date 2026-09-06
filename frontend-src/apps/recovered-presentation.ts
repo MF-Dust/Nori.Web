@@ -10,6 +10,10 @@ import {
   type OpenFilesIntent,
 } from "./files-presentation";
 import {
+  createIdleProductionWindowBinding,
+  type IdlePresentationRuntime,
+} from "./idle-presentation";
+import {
   createMailProductionWindowBinding,
   type MailPresentationRuntime,
 } from "./mail-presentation";
@@ -37,6 +41,10 @@ import {
   type FilesIntentStore,
 } from "../screens/files-screen";
 import {
+  createQfrColdVolumeDockRenderer,
+  type QfrDockRuntime,
+} from "../screens/qfr-dock";
+import {
   createBrowserIntentStore,
   type BrowserIntentStore,
 } from "../intents/browser-intent";
@@ -48,6 +56,8 @@ export interface RecoveredProductionPresentationOptions {
   browserPopup?: BrowserPopupPresentationRuntime;
   mail?: MailPresentationRuntime;
   files?: FilesPresentationRuntime;
+  idle?: IdlePresentationRuntime;
+  qfr?: QfrDockRuntime;
 }
 
 export function createRecoveredProductionWindowBindings(
@@ -82,8 +92,21 @@ export function createRecoveredProductionWindowBindings(
   }
 
   if (options.files) {
+    const filesRuntime =
+      options.qfr && !options.files.renderColdVolumeDock
+        ? {
+            ...options.files,
+            renderColdVolumeDock: createQfrColdVolumeDockRenderer(options.qfr),
+          }
+        : options.files;
     bindings.files = {
-      main: createFilesProductionWindowBinding(options.files, options.files.intent),
+      main: createFilesProductionWindowBinding(filesRuntime, filesRuntime.intent),
+    };
+  }
+
+  if (options.idle) {
+    bindings.idle = {
+      main: createIdleProductionWindowBinding(options.idle),
     };
   }
 
@@ -139,6 +162,8 @@ export function createRecoveredDesktopRuntime(
     files: options.files
       ? { ...options.files, intent: filesIntent }
       : undefined,
+    idle: options.idle,
+    qfr: options.qfr,
     terminal:
       options.terminal && terminalEditBridges
         ? withTerminalEditBridgeRegistry(options.terminal, terminalEditBridges)

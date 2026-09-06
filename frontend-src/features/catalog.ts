@@ -6,6 +6,7 @@ export type FrontendFeature =
   | "browser"
   | "mail"
   | "files"
+  | "idle"
   | "messenger"
   | "signal"
   | "terminal"
@@ -157,6 +158,20 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "services/manifold.ts",
     ],
     status: "ui-recovered",
+  },
+  {
+    feature: "idle",
+    shippedChunkPatterns: [/IdleScreen/i, /QfrDock/i, /marginalGrowthStore/i, /NormalApp/i],
+    maintenanceModules: [
+      "apps/idle.ts",
+      "apps/idle-presentation.tsx",
+      "apps/recovered-presentation.ts",
+      "screens/idle-screen.tsx",
+      "screens/qfr-dock.tsx",
+      "state/compute-runtime.ts",
+      "state/marginal-growth-store.ts",
+    ],
+    status: "ui-partial",
   },
   {
     feature: "messenger",

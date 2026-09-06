@@ -18,6 +18,47 @@ export * from "./apps/browser-presentation";
 export * from "./apps/files";
 export * from "./apps/files-tree";
 export * from "./apps/files-presentation";
+export {
+  IDLE_BUY_COUNTS,
+  IDLE_BUY_COUNT_LABELS,
+  IDLE_ROYAL_EXCHANGE_BUY_COUNTS,
+  IDLE_ROYAL_EXCHANGE_BUY_COUNT_LABELS,
+  IDLE_MANIFOLD_UNLOCKED_FACT,
+  IDLE_FIRST_ABDICATION_SHARDS,
+  IDLE_SAVE_INTERVAL_MS,
+  IDLE_TICK_INTERVAL_MS,
+  IDLE_COMPUTE_SYNC_INTERVAL_MS,
+  type IdleBuyCount,
+  type IdleRoyalExchangeBuyCount,
+  type IdleAlignment,
+  type IdleGeneratorAlignment,
+  type IdleGeneratorDefinition,
+  type IdleUpgradeDefinition,
+  type IdleAlignmentDefinition,
+  type IdleFactionDefinition,
+  type IdleSkillDefinition,
+  type IdleActiveSkillBuff,
+  type IdleRunPresentationState,
+  type IdleClickResult,
+  type IdleGeneratorQuote,
+  type IdleAbdicationQuote,
+  type IdleRoyalExchangeQuote,
+  type IdlePresentationSnapshot,
+  type IdleActionRuntime,
+  type IdlePresentationModel,
+} from "./apps/idle";
+export * from "./apps/idle-assistants";
+export * from "./apps/idle-default-data";
+export * from "./apps/idle-economy";
+export * from "./apps/idle-faction-effects";
+export * from "./apps/idle-faction-progression";
+export * from "./apps/idle-generic-upgrades";
+export * from "./apps/idle-manifold";
+export * from "./apps/idle-memento-effects";
+export * from "./apps/idle-periodic-effects";
+export * from "./apps/idle-presentation";
+export * from "./apps/idle-runtime-ledger";
+export * from "./apps/idle-upgrades";
 export * from "./apps/mail";
 export * from "./apps/mail-presentation";
 export * from "./apps/messenger";
@@ -62,9 +103,19 @@ export {
 export * from "./screens/browser-popup-screen";
 export * from "./screens/browser-screen";
 export * from "./screens/files-screen";
+export * from "./screens/idle-abdication-panel";
+export * from "./screens/idle-alignment-panel";
+export * from "./screens/idle-initialization-sequence";
+export * from "./screens/idle-progression-rail";
+export * from "./screens/idle-royal-exchange-panel";
+export * from "./screens/idle-screen";
+export * from "./screens/idle-shop";
+export * from "./screens/idle-skill-bar";
+export * from "./screens/idle-upgrade-list";
 export * from "./screens/intro-page";
 export * from "./screens/mail-screen";
 export * from "./screens/messenger-screen";
+export * from "./screens/qfr-dock";
 export * from "./screens/signal-login-screen";
 export * from "./screens/signal-reset-screen";
 export * from "./screens/signal-temp-password-screen";
@@ -74,6 +125,7 @@ export * from "./state/audio-store";
 export * from "./state/compute-runtime";
 export * from "./state/desktop-runtime";
 export * from "./state/dock-runtime";
+export * from "./state/idle-runtime";
 export * from "./state/marginal-growth-store";
 export * from "./state/production-window-apps";
 export * from "./state/window-app-registry";
