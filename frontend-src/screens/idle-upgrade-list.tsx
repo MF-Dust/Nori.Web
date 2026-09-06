@@ -4,6 +4,7 @@ import {
   IDLE_MANIFOLD_UNLOCKED_FACT,
   type IdlePresentationModel,
   type IdlePresentationSnapshot,
+  type IdleRunPresentationState,
   type IdleUpgradeDefinition,
 } from "../apps/idle";
 import {
@@ -19,6 +20,12 @@ import {
   isIdleMementoId,
   type IdleFactionGpuCost,
 } from "../apps/idle-faction-progression";
+import {
+  DEFAULT_IDLE_GENERIC_UPGRADES,
+  idleGenericUpgradeKind,
+  isIdleGenericUpgradeUnlocked,
+  type IdleGenericProgressState,
+} from "../apps/idle-generic-upgrades";
 import { isIdleGeneratorUpgradeAvailable } from "../apps/idle-upgrades";
 import { formatDesktopCompute } from "../state/compute-runtime";
 import { IdleIcon } from "./idle-icon";
@@ -30,6 +37,45 @@ const FACTION_ALIGNMENT: Readonly<Record<string, string>> = {
   demon: "decelerate",
   liuxing: "equilibrium",
 };
+const GENERIC_UPGRADE_IDS = new Set(DEFAULT_IDLE_GENERIC_UPGRADES.map((upgrade) => upgrade.id));
+
+function genericProgressState(state: IdleRunPresentationState): IdleGenericProgressState {
+  return {
+    compute: state.compute,
+    maxComputeThisRun: state.maxComputeThisRun,
+    currentRunComputeProduced: state.currentRunComputeProduced ?? 0,
+    currentEraSeconds: state.currentEraSeconds ?? 0,
+    productiveClicks: state.productiveClicks ?? 0,
+    computeGainedByClicking: state.computeGainedByClicking ?? 0,
+    factionCoinsFoundThisEra: state.factionCoinsFoundThisEra ?? 0,
+    shortRunAbdications: state.shortRunAbdications ?? 0,
+    gemPowerUnlocked: state.gemPowerUnlocked,
+    hasBuiltThisEra: state.hasBuiltThisEra ?? false,
+    anyActionThisEra: state.anyActionThisEra ?? false,
+    lifetimeAlignmentSeconds: state.lifetimeAlignmentSeconds ?? {},
+    royalExchanges: state.royalExchanges,
+    heritagesPurchased: state.heritagesPurchased,
+    everAlliedFactions: state.everAlliedFactions,
+    facts: state.facts,
+    owned: state.owned,
+    upgrades: state.upgrades,
+  };
+}
+
+function genericKindLabel(upgrade: IdleUpgradeDefinition): string {
+  switch (idleGenericUpgradeKind(upgrade)) {
+    case "secret":
+      return "隐藏升级";
+    case "certificate":
+      return "立场证书";
+    case "treasure":
+      return "缓存矿脉";
+    case "memory":
+      return "记忆升级";
+    default:
+      return "通用升级";
+  }
+}
 
 function gpuCostLabel(
   costs: readonly IdleFactionGpuCost[],
@@ -142,6 +188,7 @@ export function IdleUpgradeList({
 }) {
   const definitions = snapshot.upgrades ?? [];
   const manifold = !!snapshot.state.facts[IDLE_MANIFOLD_UNLOCKED_FACT];
+  const genericState = useMemo(() => genericProgressState(snapshot.state), [snapshot.state]);
 
   const generatorRows = useMemo(() => {
     const available: IdleUpgradeDefinition[] = [];
@@ -154,6 +201,20 @@ export function IdleUpgradeList({
     available.sort((left, right) => left.cost - right.cost);
     return { available, owned };
   }, [definitions, manifold, snapshot.state]);
+
+  const genericRows = useMemo(() => {
+    const available: IdleUpgradeDefinition[] = [];
+    const owned: IdleUpgradeDefinition[] = [];
+    for (const upgrade of definitions) {
+      if (!GENERIC_UPGRADE_IDS.has(upgrade.id)) continue;
+      if (snapshot.state.upgrades[upgrade.id]) owned.push(upgrade);
+      else if (!manifold && isIdleGenericUpgradeUnlocked(genericState, upgrade, snapshot.generators)) {
+        available.push(upgrade);
+      }
+    }
+    available.sort((left, right) => left.cost - right.cost);
+    return { available, owned };
+  }, [definitions, genericState, manifold, snapshot.generators, snapshot.state.upgrades]);
 
   const factionRows = useMemo(() => {
     const available: IdleUpgradeDefinition[] = [];
@@ -183,7 +244,12 @@ export function IdleUpgradeList({
   }, [definitions, manifold, snapshot.state]);
 
   const heritageRows = useMemo(() => {
-    if (manifold) return { available: [], owned: DEFAULT_IDLE_HERITAGES.filter((heritage) => snapshot.state.heritagesPurchased[heritage.id]) };
+    if (manifold) {
+      return {
+        available: [],
+        owned: DEFAULT_IDLE_HERITAGES.filter((heritage) => snapshot.state.heritagesPurchased[heritage.id]),
+      };
+    }
     return {
       available: DEFAULT_IDLE_HERITAGES.filter((heritage) =>
         isIdleHeritageAvailable(snapshot.state, heritage),
@@ -205,12 +271,14 @@ export function IdleUpgradeList({
   const hasGemPowerRow = !manifold && (snapshot.state.gemPowerUnlocked || snapshot.state.shards >= 1);
   const hasAvailableRows =
     generatorRows.available.length > 0 ||
+    genericRows.available.length > 0 ||
     factionRows.available.length > 0 ||
     heritageRows.available.length > 0 ||
     hasGemPowerRow ||
     nextMemento !== null;
   const hasOwnedRows =
     generatorRows.owned.length > 0 ||
+    genericRows.owned.length > 0 ||
     factionRows.owned.length > 0 ||
     heritageRows.owned.length > 0 ||
     claimedMementos.length > 0;
@@ -265,6 +333,20 @@ export function IdleUpgradeList({
               />
             );
           })}
+
+          {genericRows.available.map((upgrade) => (
+            <ProgressionCard
+              key={upgrade.id}
+              name={upgrade.name ?? upgrade.id}
+              detail={upgrade.description ?? genericKindLabel(upgrade)}
+              cost={`成本 ${formatDesktopCompute(upgrade.cost)}`}
+              tone="#fbbf24"
+              icon={upgrade.icon}
+              enabled={snapshot.state.compute >= upgrade.cost}
+              testId={`generic-upgrade-${upgrade.id}`}
+              onClick={() => runtime.buyUpgrade(upgrade.id)}
+            />
+          ))}
 
           {factionRows.available.map((upgrade) => {
             const faction = snapshot.factions.find((candidate) => candidate.id === upgrade.factionId);
@@ -329,6 +411,16 @@ export function IdleUpgradeList({
                 detail="流形记忆"
                 tone="#67e8f9"
                 icon={memento.icon}
+                purchased
+              />
+            ))}
+            {genericRows.owned.map((upgrade) => (
+              <ProgressionCard
+                key={upgrade.id}
+                name={upgrade.name ?? upgrade.id}
+                detail={genericKindLabel(upgrade)}
+                tone="#fbbf24"
+                icon={upgrade.icon}
                 purchased
               />
             ))}
