@@ -5,7 +5,7 @@ import {
 } from "./apps/recovered-presentation";
 import { RecoveredDesktopShell } from "./components/recovered-desktop-shell";
 import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
-import { createSourceIdleRuntime } from "./state/idle-runtime";
+import { createSourceIdleRuntimeEngine } from "./state/idle-runtime-engine";
 
 /** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
 const MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS = 1800;
@@ -33,7 +33,7 @@ function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
 export function SourceApp() {
   const source = useMemo(() => {
     const frontend = new NoriFrontendRuntime();
-    const idle = createSourceIdleRuntime({
+    const idle = createSourceIdleRuntimeEngine({
       getFacts: () => worldFacts(frontend),
       subscribeFacts: (listener) => frontend.world.subscribe(() => listener()),
       emitFact: async (factId) => {
