@@ -68,6 +68,10 @@ export function IdleProgressionRail({
     | "buyProof"
     | "buyRoyalExchange"
     | "buyUpgrade"
+    | "buyFactionUpgrade"
+    | "buyHeritage"
+    | "buyGemPower"
+    | "claimMemento"
     | "quoteAbdication"
     | "quoteRoyalExchange"
   >;
