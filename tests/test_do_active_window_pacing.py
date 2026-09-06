@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 from backend.cartridges.cakeduel import CakeDuelCartridge
 from backend.session.world import WorldSession
 
-ROOT = Path(__file__).resolve().parent.parent
 ENTRY = (ROOT / "cloudflare" / "entry.py").read_text(encoding="utf-8")
 WORLD = (ROOT / "backend" / "session" / "world.py").read_text(encoding="utf-8")
 
