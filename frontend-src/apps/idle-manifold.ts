@@ -49,7 +49,7 @@ export function applyIdleManifoldRevealReset<T extends IdleManifoldRevealState>(
     ...reset,
     shards: state.shards,
     currentAlignment: null,
-  };
+  } as T;
 }
 
 /**
