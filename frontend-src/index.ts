@@ -33,6 +33,7 @@ export {
   type IdleAlignment,
   type IdleGeneratorAlignment,
   type IdleGeneratorDefinition,
+  type IdleUpgradeDefinition,
   type IdleAlignmentDefinition,
   type IdleFactionDefinition,
   type IdleSkillDefinition,
@@ -49,6 +50,7 @@ export {
 export * from "./apps/idle-default-data";
 export * from "./apps/idle-economy";
 export * from "./apps/idle-presentation";
+export * from "./apps/idle-upgrades";
 export * from "./apps/mail";
 export * from "./apps/mail-presentation";
 export * from "./apps/messenger";
@@ -100,6 +102,7 @@ export * from "./screens/idle-royal-exchange-panel";
 export * from "./screens/idle-screen";
 export * from "./screens/idle-shop";
 export * from "./screens/idle-skill-bar";
+export * from "./screens/idle-upgrade-list";
 export * from "./screens/intro-page";
 export * from "./screens/mail-screen";
 export * from "./screens/messenger-screen";
