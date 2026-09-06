@@ -47,6 +47,7 @@ export {
   type IdleActionRuntime,
   type IdlePresentationModel,
 } from "./apps/idle";
+export * from "./apps/idle-assistants";
 export * from "./apps/idle-default-data";
 export * from "./apps/idle-economy";
 export * from "./apps/idle-faction-progression";
