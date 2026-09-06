@@ -50,6 +50,7 @@ export {
 export * from "./apps/idle-assistants";
 export * from "./apps/idle-default-data";
 export * from "./apps/idle-economy";
+export * from "./apps/idle-faction-effects";
 export * from "./apps/idle-faction-progression";
 export * from "./apps/idle-generic-upgrades";
 export * from "./apps/idle-manifold";
