@@ -7,6 +7,7 @@ import type {
 import { IdleAbdicationPanel } from "./idle-abdication-panel";
 import { IdleAlignmentPanel } from "./idle-alignment-panel";
 import { IdleRoyalExchangePanel } from "./idle-royal-exchange-panel";
+import { IdleUpgradeList } from "./idle-upgrade-list";
 
 type ProgressionPopup = "abdicate" | "alignment" | "royalExchange";
 
@@ -66,6 +67,7 @@ export function IdleProgressionRail({
     | "abdicate"
     | "buyProof"
     | "buyRoyalExchange"
+    | "buyUpgrade"
     | "quoteAbdication"
     | "quoteRoyalExchange"
   >;
@@ -120,6 +122,8 @@ export function IdleProgressionRail({
           />
         ) : null}
       </div>
+
+      <IdleUpgradeList runtime={runtime} snapshot={snapshot} />
 
       {popup === "abdicate" ? (
         <div className="pointer-events-auto absolute left-full top-0 z-30 ml-2 w-[300px]">
