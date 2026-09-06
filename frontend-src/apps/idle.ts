@@ -32,16 +32,27 @@ export interface IdleAlignmentDefinition {
   unlockFact?: string;
 }
 
+export interface IdleFactionDefinition {
+  id: string;
+  name: string;
+  accent: string;
+  icon?: string;
+  readonly [key: string]: unknown;
+}
+
 /**
- * Skills keep their pack-specific mechanics in the source-owned runtime. The
- * presentation contract only names the fields the shipped Idle UI consumes
- * directly; individual skill kinds may carry additional runtime-owned data.
+ * Skills keep pack-specific effect payloads source-owned while the shared
+ * fields below mirror what the shipped Idle presentation reads directly.
  */
 export interface IdleSkillDefinition {
   id: string;
   name?: string;
   description?: string;
   icon?: string;
+  scope?: string;
+  cooldownSec?: number;
+  durationSec?: number;
+  effect?: Readonly<Record<string, unknown>>;
   readonly [key: string]: unknown;
 }
 
@@ -49,6 +60,8 @@ export interface IdleActiveSkillBuff {
   id: string;
   targetGenId?: string;
   magnitude?: number;
+  remainingSec?: number;
+  durationSec?: number;
   readonly [key: string]: unknown;
 }
 
@@ -97,6 +110,7 @@ export interface IdlePresentationSnapshot {
   computeState: DesktopComputeState;
   generators: readonly IdleGeneratorDefinition[];
   alignments: readonly IdleAlignmentDefinition[];
+  factions: readonly IdleFactionDefinition[];
   skills: readonly IdleSkillDefinition[];
   manifoldRevealApplied: boolean;
   persistedMaxCompute: number;
