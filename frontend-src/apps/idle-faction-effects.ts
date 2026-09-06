@@ -57,6 +57,7 @@ export interface IdleFactionProductionContext {
 export const IDLE_EVIL_FORTRESS_GENERATOR_ID = "full_feature_atlas";
 export const IDLE_NECROPOLIS_GENERATOR_ID = "interpretability_core";
 export const IDLE_SINGULARITY_GATE_GENERATOR_ID = "singularity_gate";
+export const IDLE_GUARDIAN_DAEMON_GENERATOR_ID = "guardian_daemon";
 
 /** Exact shipped `ly` curve evaluator. */
 export function evaluateIdleFactionEffectCurve(
@@ -234,6 +235,10 @@ function totalBuildings(state: IdleFactionProductionState): number {
   return Object.values(state.owned).reduce((sum, count) => sum + Math.max(0, count ?? 0), 0);
 }
 
+function distinctBuildingTypes(state: IdleFactionProductionState): number {
+  return Object.values(state.owned).filter((count) => (count ?? 0) > 0).length;
+}
+
 function alignedBuildings(
   state: IdleFactionProductionState,
   generators: readonly IdleGeneratorDefinition[],
@@ -339,4 +344,63 @@ export function idleWingsOfLibertyMultiplier(
 ): number {
   if (!state.upgrades.fu_angel_wings_of_liberty) return 1;
   return 1 + (4 * Math.max(0, state.skillCastsThisEra) ** 0.5) / 100;
+}
+
+/** Shipped upgrade-only faction GPU-find additions (`W2e`). */
+export function idleFactionCoinFindChanceAddPct(
+  state: IdleFactionProductionState,
+  generators: readonly IdleGeneratorDefinition[],
+): number {
+  let add = 0;
+  if (state.upgrades.fu_elf_elven_treasure_casing) {
+    add += 10 + 2.5 * distinctBuildingTypes(state) ** 0.95;
+  }
+  if (state.upgrades.fu_angel_angel_feathers) {
+    add += 4 + 4 * alignedBuildings(state, generators, "accelerate");
+  }
+  if (state.upgrades.fu_goblin_fools_gold) {
+    const peak = Math.max(0, state.lifetimeMaxOwned[IDLE_GUARDIAN_DAEMON_GENERATOR_ID] ?? 0);
+    add += 2 * peak ** 0.6;
+  }
+  if (state.upgrades.fu_goblin_central_bank) {
+    add += 20 + 8 * Math.log(1 + Math.max(0, state.factionCoinsFoundThisEra));
+  }
+  return add;
+}
+
+/** Shipped faction GPU-find multiplier table (`q2e`). */
+export function idleFactionCoinFindChanceMultiplier(
+  state: Pick<IdleFactionProductionState, "upgrades">,
+): number {
+  return state.upgrades.fu_elf_elven_mint ? 2 : 1;
+}
+
+/** Shipped Elven click-lane multipliers; both rows multiply independently. */
+export function idleFactionClickMultiplier(
+  state: IdleFactionProductionState,
+  generators: readonly IdleGeneratorDefinition[],
+): number {
+  let multiplier = 1;
+  if (state.upgrades.fu_elf_elven_emissary) {
+    multiplier *= 1 + (1.4 * alignedBuildings(state, generators, "accelerate") ** 0.6) / 100;
+  }
+  if (state.upgrades.fu_elf_elven_diplomacy) {
+    multiplier *=
+      1 +
+      (1.5 * Math.log(1 + Math.max(0, state.factionCoinsFoundThisEra)) ** 1.15) / 100;
+  }
+  return multiplier;
+}
+
+/** Shipped faction/Heritage additions to Royal Exchange unitary bonus (`J2e`). */
+export function idleFactionRoyalExchangeBonusAddPct(
+  state: Pick<IdleFactionProductionState, "upgrades" | "factionCoinsFoundThisEra">,
+  heritagesPurchased: Readonly<Record<string, boolean>>,
+): number {
+  const found = Math.max(0, state.factionCoinsFoundThisEra);
+  let add = 0;
+  if (state.upgrades.fu_elf_elven_efficiency) add += 1.75 * Math.log(1 + found) ** 1.75;
+  if (state.upgrades.fu_goblin_central_bank) add += 0.6 * Math.log(1 + found);
+  if (heritagesPurchased.liuxing) add += 15;
+  return add;
 }
