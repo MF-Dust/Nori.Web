@@ -1,9 +1,8 @@
 import { ChevronRight, Compass, RefreshCcw, ShoppingCart } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type {
   IdlePresentationModel,
   IdlePresentationSnapshot,
-  IdleRoyalExchangeBuyCount,
 } from "../apps/idle";
 import { IdleAbdicationPanel } from "./idle-abdication-panel";
 import { IdleAlignmentPanel } from "./idle-alignment-panel";
@@ -25,8 +24,8 @@ function TriggerButton({
   label: string;
   accent: string;
   pulse?: boolean;
-  icon: React.ReactNode;
-  suffix?: React.ReactNode;
+  icon: ReactNode;
+  suffix?: ReactNode;
   onClick: () => void;
   testId?: string;
 }) {
@@ -77,7 +76,7 @@ export function IdleProgressionRail({
   const abdication = runtime.quoteAbdication();
   const royalPreview = useMemo(() => {
     for (const faction of snapshot.factions) {
-      const quote = runtime.quoteRoyalExchange(faction.id, 1 as IdleRoyalExchangeBuyCount);
+      const quote = runtime.quoteRoyalExchange(faction.id, 1);
       if (quote) return quote;
     }
     return null;
@@ -101,7 +100,7 @@ export function IdleProgressionRail({
         <TriggerButton
           open={popup === "alignment"}
           label="选择立场"
-          accent="var(--px-cyan)"
+          accent="#67e8f9"
           icon={<Compass className="size-3.5 shrink-0" strokeWidth={2.5} />}
           onClick={() => toggle("alignment")}
         />
