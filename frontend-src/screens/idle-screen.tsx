@@ -39,6 +39,10 @@ export interface IdleScreenRuntime {
   click(): IdleClickResult;
   buy(generatorId: string, count?: IdleBuyCount): void;
   buyUpgrade(upgradeId: string): void;
+  buyFactionUpgrade(upgradeId: string): void;
+  buyHeritage(heritageId: string): void;
+  buyGemPower(): void;
+  claimMemento(onCompleted?: () => void): void;
   buyProof(alignmentId: IdleAlignment): void;
   buyRoyalExchange(factionId: string, count?: IdleRoyalExchangeBuyCount): void;
   abdicate(): void;
