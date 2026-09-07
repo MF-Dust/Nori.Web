@@ -214,7 +214,10 @@ const FadingScrollArea = forwardRef<HTMLDivElement, FadingScrollAreaProps>(funct
 
   return (
     <div className={classes("relative", className)}>
-      <div ref={viewport} className="h-full w-full overflow-y-auto">
+      <div
+        ref={viewport}
+        className="h-full w-full overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
         {children}
       </div>
       <div
