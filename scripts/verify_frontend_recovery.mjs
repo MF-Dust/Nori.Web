@@ -53,8 +53,8 @@ async function main() {
       assert(Array.isArray(symbols.byFeature[feature]) && symbols.byFeature[feature].length > 0, `missing recovered feature group: ${feature}`);
     }
 
-    // Keep the shared source-owned ChatPanel pinned to three subtle contracts in
-    // the shipped chunk. These are easy to lose while replacing Radix/motion
+    // Keep the shared source-owned ChatPanel pinned to subtle contracts in the
+    // shipped chunks. These are easy to lose while replacing Radix/motion
     // presentation helpers with maintainable source components.
     const chatPanelChunk = manifest.chunks.find((chunk) => chunk.file.startsWith("ChatPanel-"));
     assert(chatPanelChunk, "missing shipped ChatPanel chunk for parity checks");
@@ -84,6 +84,20 @@ async function main() {
     assert(
       sourceChatPanel.includes("return String(content);"),
       "source ChatPanel must stringify unsupported message content like the shipped chunk",
+    );
+
+    const scrollAreaChunk = manifest.chunks.find((chunk) => chunk.file.startsWith("scroll-area-"));
+    assert(scrollAreaChunk, "missing shipped scroll-area chunk for ChatPanel parity checks");
+    const shippedScrollArea = await fs.readFile(path.join(ROOT, "public", "assets", scrollAreaChunk.file), "utf8");
+    assert(
+      shippedScrollArea.includes("scrollbar-width:none") &&
+        shippedScrollArea.includes("::-webkit-scrollbar{display:none}"),
+      "shipped ScrollArea viewport must hide native scrollbars",
+    );
+    assert(
+      sourceChatPanel.includes("[scrollbar-width:none]") &&
+        sourceChatPanel.includes("[&::-webkit-scrollbar]:hidden"),
+      "source ChatPanel viewport must preserve the shipped hidden-native-scrollbar presentation",
     );
 
     console.log(`[ok] frontend recovery covers ${manifest.bundleCount} JavaScript and ${styles.count} CSS chunks`);
