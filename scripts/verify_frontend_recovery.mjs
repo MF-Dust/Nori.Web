@@ -43,6 +43,7 @@ async function main() {
       "FilesScreen-",
       "MessengerScreen-",
       "ChatPanel-",
+      "GameScreen-",
       "ChessScreen-",
     ];
     for (const prefix of requiredPrefixes) {
@@ -98,6 +99,48 @@ async function main() {
       sourceChatPanel.includes("[scrollbar-width:none]") &&
         sourceChatPanel.includes("[&::-webkit-scrollbar]:hidden"),
       "source ChatPanel viewport must preserve the shipped hidden-native-scrollbar presentation",
+    );
+
+    // Recover the Codenames chat presentation as a source-owned consumer of
+    // ChatPanel. The shipped GameScreen formatter has several story-visible
+    // branches, including a colored word badge for guesses and special
+    // normalization for infinity clues and turn-ending reasons.
+    const gameScreenChunk = manifest.chunks.find((chunk) => chunk.file.startsWith("GameScreen-"));
+    assert(gameScreenChunk, "missing shipped Codenames GameScreen chunk for parity checks");
+    const shippedGameScreen = await fs.readFile(path.join(ROOT, "public", "assets", gameScreenChunk.file), "utf8");
+    const sourceCodenamesChat = await fs.readFile(path.join(ROOT, "frontend-src", "apps", "codenames-chat.ts"), "utf8");
+
+    for (const marker of [
+      "codenames.messages.invalidMessage",
+      "codenames.messages.gaveClue",
+      "codenames.messages.tapped",
+      "codenames.messages.hitBystanderTurnEnded",
+      "codenames.messages.foundAllTurnEnded",
+      "codenames.messages.endedGuessing",
+      "codenames.messages.hitAssassin",
+      "codenames.messages.suddenDeath",
+    ]) {
+      assert(shippedGameScreen.includes(marker), `shipped Codenames chat marker changed: ${marker}`);
+      assert(sourceCodenamesChat.includes(marker), `source Codenames chat presentation missing: ${marker}`);
+    }
+    assert(
+      shippedGameScreen.includes('s.count === "infinity" ? "∞" : String(s.count)') ||
+        shippedGameScreen.includes('s.count === "infinity" ? "∞" : s.count.toString()'),
+      "shipped Codenames infinity clue normalization changed",
+    );
+    assert(
+      sourceCodenamesChat.includes('message.count === "infinity" ? "∞" : String(message.count)'),
+      "source Codenames chat must preserve infinity clue normalization",
+    );
+    assert(
+      sourceCodenamesChat.includes('type: "textWithBadge"') &&
+        sourceCodenamesChat.includes('type: "wordBadge"') &&
+        sourceCodenamesChat.includes("cardColor: result"),
+      "source Codenames guesses must preserve the shipped colored word-badge presentation",
+    );
+    assert(
+      sourceCodenamesChat.includes('item.message?.type === "system" && item.message.tone !== "info"'),
+      "source Codenames chat must preserve shipped system-tone normalization",
     );
 
     console.log(`[ok] frontend recovery covers ${manifest.bundleCount} JavaScript and ${styles.count} CSS chunks`);
