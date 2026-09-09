@@ -15,6 +15,7 @@ export * from "./services/manifold";
 export * from "./services/signal";
 export * from "./apps/browser";
 export * from "./apps/browser-presentation";
+export * from "./apps/codenames-board-presentation";
 export * from "./apps/codenames-chat";
 export * from "./apps/files";
 export * from "./apps/files-tree";
