@@ -109,6 +109,10 @@ async function main() {
     assert(gameScreenChunk, "missing shipped Codenames GameScreen chunk for parity checks");
     const shippedGameScreen = await fs.readFile(path.join(ROOT, "public", "assets", gameScreenChunk.file), "utf8");
     const sourceCodenamesChat = await fs.readFile(path.join(ROOT, "frontend-src", "apps", "codenames-chat.ts"), "utf8");
+    const sourceCodenamesBoard = await fs.readFile(
+      path.join(ROOT, "frontend-src", "apps", "codenames-board-presentation.ts"),
+      "utf8",
+    );
 
     for (const marker of [
       "codenames.messages.invalidMessage",
@@ -142,6 +146,61 @@ async function main() {
       sourceCodenamesChat.includes('item.message?.type === "system" && item.message.tone !== "info"'),
       "source Codenames chat must preserve shipped system-tone normalization",
     );
+
+    // Pin the next GameScreen slice: board/header presentation helpers. These
+    // decisions are visible in every Codenames turn and are independent enough
+    // to source-own before the complete screen composition is recovered.
+    assert(
+      shippedGameScreen.includes("for (let l = 0; l < 25; l++)") &&
+        shippedGameScreen.includes("s.key.A[l] === B.AGENT") &&
+        shippedGameScreen.includes("s.key.B[l] === B.AGENT") &&
+        shippedGameScreen.includes("s.cells[l].solvedBy === null"),
+      "shipped Codenames remaining-target counting changed",
+    );
+    assert(
+      sourceCodenamesBoard.includes("const CARD_COUNT = 25") &&
+        sourceCodenamesBoard.includes('state.key.A[index] === "AGENT"') &&
+        sourceCodenamesBoard.includes('state.key.B[index] === "AGENT"') &&
+        sourceCodenamesBoard.includes("cell.solvedBy !== null"),
+      "source Codenames board must preserve the shipped 25-cell remaining-target contract",
+    );
+
+    for (const marker of [
+      "A: 0.774",
+      "I: 0.372",
+      "M: 0.995",
+      "W: 1.103",
+      '" ": 0.348',
+      '"-": 0.415',
+    ]) {
+      assert(shippedGameScreen.includes(marker), `shipped Codenames word-width marker changed: ${marker}`);
+      assert(sourceCodenamesBoard.includes(marker), `source Codenames word sizing missing marker: ${marker}`);
+    }
+    assert(
+      shippedGameScreen.includes("pt = 134") && shippedGameScreen.includes("mt = 24") && shippedGameScreen.includes("yt = 13"),
+      "shipped Codenames card-word sizing bounds changed",
+    );
+    assert(
+      sourceCodenamesBoard.includes("const CARD_WORD_TARGET_WIDTH = 134") &&
+        sourceCodenamesBoard.includes("const CARD_WORD_MAX_SIZE = 24") &&
+        sourceCodenamesBoard.includes("const CARD_WORD_MIN_SIZE = 13"),
+      "source Codenames word sizing must preserve shipped width and font-size bounds",
+    );
+
+    for (const marker of [
+      "game-card-btn",
+      "cursor-pointer",
+      "cursor-not-allowed",
+      "cursor-default",
+      "opacity-50",
+      "game-card-hover",
+      "game-card-active",
+      "game-card-selected",
+      "z-[100]",
+    ]) {
+      assert(shippedGameScreen.includes(marker), `shipped Codenames card-state marker changed: ${marker}`);
+      assert(sourceCodenamesBoard.includes(marker), `source Codenames card interaction missing marker: ${marker}`);
+    }
 
     console.log(`[ok] frontend recovery covers ${manifest.bundleCount} JavaScript and ${styles.count} CSS chunks`);
   } finally {
