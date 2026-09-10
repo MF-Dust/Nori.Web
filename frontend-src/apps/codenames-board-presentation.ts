@@ -1,9 +1,22 @@
 export type CodenamesSide = "A" | "B";
 export type CodenamesCardRole = "AGENT" | "BYSTANDER" | "ASSASSIN" | string;
+export type CodenamesUiStateType =
+  | "HUMAN_GIVING_CLUE"
+  | "AI_GIVING_CLUE"
+  | "HUMAN_GUESSING"
+  | "AI_GUESSING"
+  | "SUDDEN_DEATH_HUMAN_TURN"
+  | "SUDDEN_DEATH_AI_TURN"
+  | "SUDDEN_DEATH_BOTH"
+  | string;
 
 export interface CodenamesPresentationCell {
   solvedBy: CodenamesSide | null;
   assassinatedBy?: CodenamesSide | null;
+}
+
+export interface CodenamesBoardPresentationCell extends CodenamesPresentationCell {
+  bystanderMarks: readonly [CodenamesSide | null, CodenamesSide | null];
 }
 
 export interface CodenamesPresentationState {
@@ -35,7 +48,31 @@ export interface CodenamesCardInteractionPresentation {
   buttonClassName: string;
 }
 
+export interface CodenamesBoardCellEligibilityInput {
+  index: number;
+  uiStateType: CodenamesUiStateType;
+  counterpartSide: CodenamesSide;
+  counterpartRole: CodenamesCardRole | null;
+  tutorialGuessCell: number | null;
+  cell: CodenamesBoardPresentationCell;
+}
+
+export type CodenamesBoardClickAction = "select" | "guess" | "none";
+
+export interface CodenamesBoardCellEligibility {
+  isDisabled: boolean;
+  isClickable: boolean;
+  canSelect: boolean;
+  showUnrevealedOutline: boolean;
+  showMonsterOutline: boolean;
+  clickAction: CodenamesBoardClickAction;
+}
+
 const CARD_COUNT = 25;
+const CARD_BASE_WIDTH = 160;
+const BOARD_COLUMNS = 5;
+const BOARD_GAP_TOTAL = 16;
+const BOARD_PADDING_TOTAL = 32;
 const CARD_WORD_TARGET_WIDTH = 134;
 const CARD_WORD_MIN_SIZE = 13;
 const CARD_WORD_MAX_SIZE = 24;
@@ -101,6 +138,15 @@ export function countRemainingCodenamesTargets(
 }
 
 /**
+ * Recreates the shipped ResizeObserver scale calculation for the fixed 5x5
+ * board. The constants account for the board's four 8px gaps and 16px padding
+ * on each side before normalizing against the 160px card canvas.
+ */
+export function getCodenamesCardScale(boardWidth: number): number {
+  return (boardWidth - BOARD_GAP_TOTAL - BOARD_PADDING_TOTAL) / BOARD_COLUMNS / CARD_BASE_WIDTH;
+}
+
+/**
  * Recreates the shipped card-word sizing heuristic instead of relying on DOM
  * measurement, keeping Latin, CJK and unknown-character behavior stable.
  */
@@ -119,6 +165,49 @@ export function getCodenamesCardWordFontSize(word: string): number {
   );
   wordSizeCache.set(word, fontSize);
   return fontSize;
+}
+
+/**
+ * Source-owns the per-cell eligibility calculation performed by the shipped
+ * Codenames board before it renders GameCardCell. This keeps clue-giver
+ * selection, human guessing, sudden death and tutorial restrictions aligned.
+ */
+export function deriveCodenamesBoardCellEligibility(
+  input: CodenamesBoardCellEligibilityInput,
+): CodenamesBoardCellEligibility {
+  const isGivingClue = input.uiStateType === "HUMAN_GIVING_CLUE";
+  const canGuess =
+    input.uiStateType === "HUMAN_GUESSING" ||
+    input.uiStateType === "SUDDEN_DEATH_HUMAN_TURN" ||
+    input.uiStateType === "SUDDEN_DEATH_BOTH";
+  const solved = input.cell.solvedBy !== null;
+  const markedByCounterpart =
+    input.cell.bystanderMarks[0] === input.counterpartSide ||
+    input.cell.bystanderMarks[1] === input.counterpartSide;
+  const tutorialAllowsCell = input.tutorialGuessCell === null || input.index === input.tutorialGuessCell;
+  const isAgent = input.counterpartRole === "AGENT";
+  const isAssassin = input.counterpartRole === "ASSASSIN";
+
+  const canSelect = isGivingClue && isAgent && !solved;
+  const isClickable = !isGivingClue && canGuess && tutorialAllowsCell && !solved && !markedByCounterpart;
+  const isDisabled = solved || (canGuess && markedByCounterpart) || !tutorialAllowsCell;
+  const showUnrevealedOutline = canSelect || (input.tutorialGuessCell === input.index && !solved);
+  const showMonsterOutline = isGivingClue && isAssassin && input.cell.assassinatedBy === null;
+
+  const clickAction: CodenamesBoardClickAction = canSelect
+    ? "select"
+    : isClickable
+      ? "guess"
+      : "none";
+
+  return {
+    isDisabled,
+    isClickable,
+    canSelect,
+    showUnrevealedOutline,
+    showMonsterOutline,
+    clickAction,
+  };
 }
 
 /**
