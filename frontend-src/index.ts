@@ -104,6 +104,7 @@ export {
 } from "./screens/browser-page-view";
 export * from "./screens/browser-popup-screen";
 export * from "./screens/browser-screen";
+export * from "./screens/codenames-board";
 export * from "./screens/files-screen";
 export * from "./screens/idle-abdication-panel";
 export * from "./screens/idle-alignment-panel";
