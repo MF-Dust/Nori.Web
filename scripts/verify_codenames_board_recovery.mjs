@@ -21,6 +21,10 @@ async function main() {
     path.join(ROOT, "frontend-src", "apps", "codenames-board-presentation.ts"),
     "utf8",
   );
+  const composition = await fs.readFile(
+    path.join(ROOT, "frontend-src", "screens", "codenames-board.tsx"),
+    "utf8",
+  );
 
   for (const marker of [
     'a.type === "HUMAN_GIVING_CLUE"',
@@ -70,11 +74,39 @@ async function main() {
 
   assert(
     shipped.includes('className: "h-full grid grid-cols-5 grid-rows-5 gap-2 p-2"') &&
-      shipped.includes('"data-codenames-board": !0'),
+      shipped.includes('"data-codenames-board": !0') &&
+      shipped.includes("new ResizeObserver(([E]) =>") &&
+      shipped.includes("children: x.map((v, g) =>") &&
+      shipped.includes('isPending: i === g') &&
+      shipped.includes('o?.cell === g && o?.phase === "shake"') &&
+      shipped.includes("onCardSelect: m") &&
+      shipped.includes("onCardHover: y"),
     "shipped Codenames 5x5 board composition changed",
   );
 
-  console.log("[ok] Codenames board eligibility and scale recovery match shipped GameScreen contracts");
+  for (const marker of [
+    'className="h-full grid grid-cols-5 grid-rows-5 gap-2 p-2"',
+    "data-codenames-board",
+    "new ResizeObserver(([entry]) =>",
+    'board.style.setProperty("--card-scale", String(getCodenamesCardScale(entry.contentRect.width)))',
+    "gameState.board.map((word, index) =>",
+    'uiState.type === "HUMAN_GIVING_CLUE" ? gameState.key[counterpartSide][index] ?? null : null',
+    'cardAnimation?.cell === index && cardAnimation.phase === "shake"',
+    'eligibility.clickAction === "select"',
+    'eligibility.clickAction === "guess"',
+    "onCardSelect?.(index)",
+    "onCardClick(index)",
+    "pendingGuess === index",
+    "selectedCards?.has(index) ?? false",
+    "hoveredCellIndex === index",
+    "deriveCodenamesBoardCellEligibility({",
+    "deriveCodenamesCardInteraction({",
+    'transform: "scale(var(--card-scale,1))"',
+  ]) {
+    assert(composition.includes(marker), `source Codenames board composition missing marker: ${marker}`);
+  }
+
+  console.log("[ok] Codenames board eligibility, scale and 5x5 composition match shipped GameScreen contracts");
 }
 
 main().catch((error) => {
