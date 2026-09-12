@@ -50,8 +50,7 @@ async function main() {
     assert(shipped.includes(marker), `shipped Cake Duel transient marker changed: ${marker}`);
   }
 
-  console.log(`[cakeduel-timing] ${contextAround(shipped, "CHALLENGE_PRE_REVEAL_PAUSE")}`);
-  console.log(`[cakeduel-timing] ${contextAround(shipped, "CHALLENGE_REVEAL_HOLD")}`);
+  console.log(`[cakeduel-challenge-flow] ${contextAround(shipped, 'case "challenge_made"', 1_800)}`);
 
   for (const marker of [
     "CakeDuelTransientBanner",
