@@ -163,7 +163,13 @@ export function createCakeDuelProductionWindowBinding(
           actionError={snapshot.error}
           gameBoard={{
             view: board.view,
-            zones: board.zones,
+            zones: {
+              ...board.zones,
+              playerHand: board.zones.playerHand.map((card) => ({
+                ...card,
+                name: card.name ?? "",
+              })),
+            },
             isMyTurn: board.isMyTurn,
             legalActions: board.legalActions,
             selectedHandEntityIds: selectedIds,
