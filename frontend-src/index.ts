@@ -17,6 +17,7 @@ export * from "./apps/browser";
 export * from "./apps/browser-presentation";
 export * from "./apps/codenames-board-presentation";
 export * from "./apps/codenames-chat";
+export * from "./apps/codenames-footer-presentation";
 export * from "./apps/files";
 export * from "./apps/files-tree";
 export * from "./apps/files-presentation";
@@ -105,6 +106,7 @@ export {
 export * from "./screens/browser-popup-screen";
 export * from "./screens/browser-screen";
 export * from "./screens/codenames-board";
+export * from "./screens/codenames-footer";
 export * from "./screens/files-screen";
 export * from "./screens/idle-abdication-panel";
 export * from "./screens/idle-alignment-panel";
