@@ -18,7 +18,7 @@ Reset is initiated only by the confirmation action. It waits for `web_world_rese
 
 ## Verification
 
-- `frontend:runtime:test` covers reset deduplication, unrelated replies, acknowledgement, timeout, cancellation and disconnect (10 total runtime tests).
+- `frontend:runtime:test` covers reset deduplication, unrelated replies, acknowledgement, timeout, cancellation and disconnect (see the current runtime test report).
 - `frontend:app:smoke` boots the real model/backend, opens About and Settings through the desktop menus, persists master volume, checks master mute disables sliders, applies 30 fps immediately, measures real ping/pong latency, verifies reset cancellation sends nothing, and reloads to check window/settings restoration.
 - The same browser test emits the Credits Dock condition in its disposable local world and opens Credits through the Dock. It waits for reveal completion before taking a screenshot.
 - The destructive-flow browser check runs only against the local backend spawned by the smoke script. It checks reset acknowledgement precedes reboot and the old Idle save is removed.
@@ -26,6 +26,6 @@ Reset is initiated only by the confirmation action. It waits for `web_world_rese
 
 ## Remaining parity
 
-Settings retains music/SFX track state, but the shared audio mixer and cue routing still need restoration. GPU hardware classification/adaptive sampling is not implemented; the source stage applies the explicit user's mode and shipped resolution tiers. About's pointer-driven logo tilt/sheen has not been reconstructed. Credits uses source Lucide symbols for destination icons rather than the original brand paths. Debug and the full PDF/training-log/recovery Preview remain pending.
+Settings now drives the shared master/music/SFX/voice mixer, desktop BGM and Browser podcasts. GPU hardware classification and four-second texture downsize hysteresis are implemented while retaining user overrides. About now includes pointer-driven logo tilt, halo and sheen. See [audio/graphics recovery](FRONTEND_AUDIO_GRAPHICS_RECOVERY.md) for evidence and verification. Remaining scene-specific audio cues, story mixer overrides and spatial camera/listener transforms are still open. Credits uses source Lucide symbols for destination icons rather than the original brand paths. Debug and the full PDF/training-log/recovery Preview remain pending.
 
 These supporting-app gaps now have an explicit incomplete cutover boundary. The increase from four to five pending boundaries is better accounting of existing work, not a production regression. `public/index.html` remains on the historical entry until these and the chat/game/scene boundaries pass parity review.

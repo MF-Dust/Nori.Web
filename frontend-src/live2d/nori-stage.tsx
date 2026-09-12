@@ -12,8 +12,10 @@ import type { SpeechPlayer } from "../runtime/speech-player";
 import {
   live2DRenderBudget,
   useGraphicsSettings,
+  ResolutionHysteresis,
 } from "../state/graphics-store";
 import "./stage.css";
+import { detectGpu } from "../runtime/graphics-detection";
 
 /** NormalApp model and plugin configuration. Story choreography remains a separate boundary. */
 export function NoriStage({ speech }: { speech: SpeechPlayer }) {
@@ -28,17 +30,30 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
     let disposed = false,
       engine: Live2DEngine | undefined,
       session: Live2DSession | undefined;
+    const resolution = new ResolutionHysteresis();
+    let budgetTimer: ReturnType<typeof setTimeout> | undefined;
+    let graphicsMode = useGraphicsSettings.getState().mode;
     const updateBudget = () => {
       if (!session || !host.current) return;
+      clearTimeout(budgetTimer);
+      const nextMode = useGraphicsSettings.getState().mode;
+      if (nextMode !== graphicsMode) {
+        resolution.reset();
+        graphicsMode = nextMode;
+      }
       const budget = live2DRenderBudget(
         useGraphicsSettings.getState().mode,
-        host.current.clientHeight,
+        Math.max(host.current.clientHeight, host.current.clientWidth),
         window.devicePixelRatio,
+        detectGpu().tier === "low",
       );
+      const stable = resolution.update(budget.resolution, performance.now());
       session.setMaxFps(budget.fps);
-      session.setResolution(budget.resolution);
+      session.setResolution(stable.resolution);
       host.current.dataset.live2dFps = String(budget.fps);
-      host.current.dataset.live2dResolution = String(budget.resolution);
+      host.current.dataset.live2dResolution = String(stable.resolution);
+      if (stable.delay !== null)
+        budgetTimer = setTimeout(updateBudget, stable.delay);
     };
     const unsubscribeGraphics = useGraphicsSettings.subscribe(updateBudget);
     const resize = new ResizeObserver(updateBudget);
@@ -90,6 +105,7 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
     return () => {
       disposed = true;
       unsubscribeGraphics();
+      clearTimeout(budgetTimer);
       resize.disconnect();
       engine?.dispose();
       canvas.remove();

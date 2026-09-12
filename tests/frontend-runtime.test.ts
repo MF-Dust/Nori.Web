@@ -1,4 +1,5 @@
 import test from "node:test";
+import "./frontend-audio.test";
 import { ConversationTimeline } from "../frontend-src/apps/conversation-presentation";
 import assert from "node:assert/strict";
 import { ArcadeClient } from "../frontend-src/runtime/arcade-client";
@@ -289,12 +290,13 @@ class AudioFixture {
     this.state = "closed";
   }
   createGain() {
-    return { gain: { value: 1 }, connect() {} };
+    return { gain: { value: 1 }, connect() {}, disconnect() {} };
   }
   createAnalyser() {
     return {
       fftSize: 256,
       connect() {},
+      disconnect() {},
       getFloatTimeDomainData(data: Float32Array) {
         data.fill(0);
       },

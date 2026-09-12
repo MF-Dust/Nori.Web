@@ -3,6 +3,7 @@ import { TriangleAlert } from "lucide-react";
 import type { WindowComponentProps } from "../state/window-types";
 import type { createSourceTranslate } from "../i18n/translate";
 import { ABOUT_CONTRIBUTORS } from "../apps/system-presentation-data";
+import { AboutLogo } from "../components/about-logo";
 
 export function SystemAlert({
   close,
@@ -103,12 +104,7 @@ export function AboutScreen() {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
       <div className="flex shrink-0 flex-col items-center pb-2 pt-8">
-        <img
-          src="/icon.png"
-          alt="NoriOS"
-          className="mb-3 h-20 w-20 invert dark:invert-0"
-          draggable={false}
-        />
+        <AboutLogo reduced={reduced} />
         <h1 className="text-2xl font-semibold tracking-tight">NoriOS</h1>
       </div>
       <div

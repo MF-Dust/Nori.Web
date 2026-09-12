@@ -1,4 +1,7 @@
 import { PreviewScreen } from "./screens/preview-screen";
+import { BrowserPodcastRuntime } from "./apps/browser-page-runtime";
+import { desktopMusicTarget } from "./runtime/audio-mixer";
+import { initializeGraphics } from "./runtime/graphics-detection";
 import { AboutScreen, SystemAlert } from "./screens/system-screen";
 import { CreditsScreen } from "./screens/credits-screen";
 import {
@@ -23,6 +26,7 @@ import { SourceLogin } from "./components/source-login";
 import { NoriStage } from "./live2d/nori-stage";
 import { DesktopSurface } from "./components/desktop-surface";
 import { useAudioSettings } from "./state/audio-store";
+import { useGraphicsSettings } from "./state/graphics-store";
 import type { AuthState } from "./runtime/auth";
 import { createCakeDuelPresentationAssets } from "./apps/cakeduel-assets";
 import { CakeDuelRuntimeController } from "./apps/cakeduel-runtime";
@@ -65,7 +69,12 @@ function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
 }
 
 function createSourceSession() {
+  initializeGraphics();
   const frontend = new NoriFrontendRuntime();
+  const podcast = new BrowserPodcastRuntime((audio) =>
+    frontend.audio.connectMediaElement(audio),
+  );
+  frontend.audio.installUnlock();
   const codenames = new GameCartridgeController(
     "codenames",
     frontend.games,
@@ -196,7 +205,9 @@ function createSourceSession() {
         window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     },
     browser: {
+      playCue: frontend.audio.playCue,
       page: {
+        podcast,
         model: frontend.browser,
         locale: () => locale,
         getFacts: () => worldFacts(frontend),
@@ -220,6 +231,7 @@ function createSourceSession() {
       translate: sourceTranslate,
     },
     signal: {
+      playSound: frontend.audio.playCue,
       service: frontend.signal,
       accountName: () => {
         const auth = frontend.auth.snapshot();
@@ -234,15 +246,25 @@ function createSourceSession() {
       },
     },
     idle: idlePresentation,
-    codenames: { controller: codenames, translate: sourceTranslate, locale },
+    codenames: {
+      controller: codenames,
+      translate: sourceTranslate,
+      locale,
+      playSound: frontend.audio.playCue,
+    },
     pictionary: { controller: pictionary, drawing, locale },
-    chess: { controller: chess, translate: sourceTranslate },
+    chess: {
+      controller: chess,
+      translate: sourceTranslate,
+      onSound: (sound) => frontend.audio.playCue(`chess.${sound}`),
+    },
     cakeduel: {
       controller: cakeduel,
       translate: sourceTranslate,
       assets: createCakeDuelPresentationAssets(locale),
     },
     desktop: {
+      playCue: frontend.audio.playCue,
       windows: {
         system: {
           about: { component: AboutScreen },
@@ -289,6 +311,7 @@ function createSourceSession() {
     chess,
     pictionary,
     drawing,
+    podcast,
     bundle,
   };
 }
@@ -308,6 +331,7 @@ export function SourceApp() {
       session.drawing.dispose();
       session.pictionary.dispose();
       session.idle.dispose();
+      session.podcast.dispose();
       session.bundle.runtime.dispose();
       session.frontend.dispose();
     };
@@ -316,10 +340,18 @@ export function SourceApp() {
 }
 
 function SourceSessionView({ source }: { source: SourceSession }) {
+  const graphicsMode = useGraphicsSettings((state) => state.mode);
   const [auth, setAuth] = useState<AuthState>(source.frontend.auth.snapshot());
   const [facts, setFacts] = useState(() => worldFacts(source.frontend));
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "gfx-performance",
+      graphicsMode !== "quality",
+    );
+    return () => document.documentElement.classList.remove("gfx-performance");
+  }, [graphicsMode]);
   useEffect(() => {
     let disposed = false;
     const globalWindow = window as Window & {
@@ -343,12 +375,8 @@ function SourceSessionView({ source }: { source: SourceSession }) {
     });
     const syncAudio = () => {
       const audio = useAudioSettings.getState();
-      source.frontend.speech.setVolume(
-        audio.isMuted || audio.voiceMuted
-          ? 0
-          : (audio.masterVolume * audio.voiceVolume) / 10000,
-        audio.voiceRate,
-      );
+      source.frontend.audio.sync(audio);
+      source.frontend.speech.setVolume(1, audio.voiceRate);
     };
     syncAudio();
     const unsubscribeAudio = useAudioSettings.subscribe(syncAudio);
@@ -364,6 +392,13 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       unsubscribeAudio();
     };
   }, [source]);
+  useEffect(() => {
+    const target = desktopMusicTarget(facts);
+    source.frontend.audio.setDesktopMusic(
+      auth.status === "authenticated" && ready ? target.track : null,
+      target.fade,
+    );
+  }, [source, auth.status, ready, facts]);
   if (auth.status !== "authenticated")
     return (
       <SourceLogin
@@ -376,6 +411,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
     );
   return (
     <RecoveredDesktopShell
+      playCue={source.frontend.audio.playCue}
       bundle={source.bundle}
       facts={facts}
       factsReady={ready}

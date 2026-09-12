@@ -1,4 +1,5 @@
 import type { ChatAudioFrame } from "./chat-media";
+import type { AudioRoute } from "./audio-mixer";
 
 interface SpeechBlock {
   operationId: string;
@@ -29,18 +30,23 @@ export class SpeechPlayer {
   private volume = 1;
   private rate = 1;
   private unlocked = false;
-  constructor(private callbacks: SpeechCallbacks) {}
+  constructor(
+    private callbacks: SpeechCallbacks,
+    private route?: () => Promise<AudioRoute>,
+  ) {}
   async unlock() {
     if (this.disposed) throw new Error("Speech player is disposed");
     const epoch = this.epoch;
-    this.context ??= new AudioContext();
+    const route = await this.route?.();
+    if (this.disposed || epoch !== this.epoch) return;
+    this.context ??= route?.context ?? new AudioContext();
     if (!this.gain) {
       this.gain = this.context.createGain();
       this.gain.gain.value = this.volume;
       this.analyser = this.context.createAnalyser();
       this.analyser.fftSize = 256;
       this.gain.connect(this.analyser);
-      this.analyser.connect(this.context.destination);
+      this.analyser.connect(route?.input ?? this.context.destination);
     }
     await this.context.resume();
     if (this.disposed || epoch !== this.epoch) return;
@@ -104,7 +110,11 @@ export class SpeechPlayer {
     try {
       if (base64.length > 32 * 1024 * 1024)
         throw new Error("Speech payload is too large");
-      this.context ??= new AudioContext();
+      if (!this.context) {
+        if (this.route) await this.unlock();
+        else this.context = new AudioContext();
+      }
+      if (!this.context || this.disposed || epoch !== this.epoch) return;
       const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
       const audio = await this.context.decodeAudioData(bytes.buffer);
       if (epoch !== this.epoch) return;
@@ -203,7 +213,9 @@ export class SpeechPlayer {
     if (this.disposed) return;
     this.disposed = true;
     this.reset();
-    void this.context?.close();
+    this.gain?.disconnect();
+    this.analyser?.disconnect();
+    if (!this.route) void this.context?.close();
     this.context = null;
     this.gain = null;
     this.analyser = null;

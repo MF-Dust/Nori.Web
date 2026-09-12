@@ -4,6 +4,10 @@ import { createServer } from "vite";
 import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
+import {
+  installAudioProbe,
+  verifyPodcastMixer,
+} from "./frontend_audio_probe.mjs";
 
 const output = resolve("frontend-app-smoke");
 await mkdir(output, { recursive: true });
@@ -116,18 +120,35 @@ try {
       }
     };
   });
+  await page.addInitScript(installAudioProbe);
   await page.goto("http://127.0.0.1:47174", { waitUntil: "domcontentloaded" });
   console.log("Page loaded");
   await page
     .locator('[data-live2d-status="ready"]')
     .waitFor({ timeout: 60000 });
   console.log("Model ready");
+  assert.equal(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem("graphics-store")).state.source,
+    ),
+    "auto",
+  );
+  await page.locator('[data-live2d-fps="30"]').waitFor();
   const input = page.getByRole("textbox", { name: "Message", exact: true });
   await input.fill("Source recovery smoke");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await page.locator('.conversation-lines [data-sender="player"]').waitFor();
   await page.locator('.conversation-lines [data-sender="agent"]').waitFor();
   console.log("Text response received");
+  await page.waitForFunction(() =>
+    window.audioProbe.starts.some((item) => item.loop),
+  );
+  // Warm the focus cue, then verify a real decoded effect reaches the shared output.
+  await input.focus();
+  await page.waitForFunction(() =>
+    window.audioProbe.starts.some((item) => !item.loop && item.gain > 0),
+  );
+  await input.press("Escape");
   await page.evaluate(() => document.fonts.ready);
   await page.waitForFunction(() =>
     [...document.querySelectorAll(".conversation-bubble")].every(
@@ -272,6 +293,29 @@ try {
   await page.locator(".topbar-app-name").click();
   await page.getByRole("menuitem", { name: "About...", exact: true }).click();
   await page.getByRole("heading", { name: "NoriOS", exact: true }).waitFor();
+  const logo = page.locator(".about-logo");
+  await logo.hover({ position: { x: 70, y: 10 } });
+  await page.waitForFunction(
+    () =>
+      Math.abs(
+        parseFloat(
+          document
+            .querySelector(".about-logo")
+            .style.getPropertyValue("--tilt-y"),
+        ),
+      ) > 1,
+  );
+  await page.mouse.move(20, 80);
+  await page.waitForFunction(
+    () =>
+      Math.abs(
+        parseFloat(
+          document
+            .querySelector(".about-logo")
+            .style.getPropertyValue("--tilt-y"),
+        ),
+      ) < 0.1,
+  );
   await page.screenshot({ path: resolve(output, "about.png") });
   await page.getByRole("button", { name: "Close", exact: true }).click();
 
@@ -284,6 +328,20 @@ try {
     exact: true,
   });
   await master.fill("37");
+  const musicGain = () =>
+    page.evaluate(() => {
+      const probe = window.audioProbe;
+      return probe.gain(probe.starts.find((item) => item.loop).node);
+    });
+  assert.ok(
+    Math.abs((await musicGain()) - 0.037) < 0.001,
+    "music must use master and music gain once",
+  );
+  assert.equal(
+    await page.evaluate(() => window.audioProbe.contexts.length),
+    1,
+    "BGM, cues and PCM speech share one context",
+  );
   assert.equal(
     await page.evaluate(
       () => JSON.parse(localStorage.getItem("audio-store")).state.masterVolume,
@@ -292,7 +350,24 @@ try {
   );
   await page.getByRole("switch", { name: "Sound", exact: true }).click();
   assert.equal(await master.isDisabled(), true);
+  assert.equal(await musicGain(), 0);
   await page.getByRole("switch", { name: "Sound", exact: true }).click();
+  await page.getByRole("slider", { name: "Music", exact: true }).fill("25");
+  assert.ok(Math.abs((await musicGain()) - 0.0925) < 0.001);
+  await page.getByRole("switch", { name: "Mute Music", exact: true }).click();
+  assert.equal(await musicGain(), 0);
+  await page.getByRole("switch", { name: "Unmute Music", exact: true }).click();
+  const podcastAudio = await verifyPodcastMixer(page);
+  assert.equal(podcastAudio.played.ok, true);
+  assert.ok(
+    Math.abs(podcastAudio.gain - 0.2) < 0.001,
+    "podcasts use SFX and master, independently of music volume",
+  );
+  assert.equal(podcastAudio.muted, 0);
+  assert.equal(podcastAudio.rate, 1.5);
+  assert.equal(podcastAudio.paused, true);
+  assert.equal(podcastAudio.disconnected, true);
+  assert.equal(podcastAudio.closed, true);
   await page.getByRole("button", { name: "Graphics", exact: true }).click();
   await page
     .getByRole("combobox", { name: "Graphics", exact: true })

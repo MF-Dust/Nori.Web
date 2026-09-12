@@ -12,8 +12,9 @@ export interface CodenamesAppProps {
   controller: GameCartridgeController<CodenamesState>;
   translate: CodenamesTranslate;
   locale?: string;
+  playSound?: (cue: string) => void;
 }
-export function CodenamesApp({ controller, translate: t, locale = "en" }: CodenamesAppProps) {
+export function CodenamesApp({ controller, translate: t, locale = "en", playSound }: CodenamesAppProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
   useEffect(() => controller.retain(), [controller]);
   const [tokens, setTokens] = useState(9), [help, setHelp] = useState(false);
@@ -60,6 +61,7 @@ export function CodenamesApp({ controller, translate: t, locale = "en" }: Codena
       <button type="button" onClick={() => setHelp(true)}>{t("codenames.help.button")}</button>
     </div> : <>
       <CodenamesScreen gameState={game} uiState={ui} counterpartSide={player} messages={messages} translate={t}
+        playSound={playSound}
         pendingGuess={pendingGuess} selectedCards={selected} hoveredCellIndex={hovered} clueCount={count}
         activeOverlay={overlay} onDismissOverlay={() => setOverlay(null)} onClueCountChange={setCount}
         onCardHover={setHovered} onClearPendingGuess={() => setPendingGuess(null)} canEndTurn={canEndTurn}

@@ -1,6 +1,7 @@
 import { ChatRuntimeController } from "../apps/chat-runtime";
 import { decodeChatAudioFrame } from "./chat-media";
 import { SpeechPlayer } from "./speech-player";
+import { AudioMixer } from "./audio-mixer";
 import { ArcadeClient, type ArcadeClientOptions } from "./arcade-client";
 import { LocalAuthController } from "./auth";
 import { EventRpcClient } from "./event-rpc";
@@ -39,6 +40,7 @@ export class NoriFrontendRuntime {
 
   readonly conversation: ChatRuntimeController;
   readonly speech: SpeechPlayer;
+  readonly audio = new AudioMixer();
   private cleanup: Array<() => void> = [];
   private disposed = false;
   private started = false;
@@ -123,15 +125,18 @@ export class NoriFrontendRuntime {
     this.messenger = new MessengerAppModel(this.artifacts, this.manifold);
     this.terminal = new TerminalAppModel(this.manifold);
     this.conversation = new ChatRuntimeController(this.world, this.arcade);
-    this.speech = new SpeechPlayer({
-      started: (operationId, blockId) => {
-        void this.conversation.audioStarted(operationId, blockId);
+    this.speech = new SpeechPlayer(
+      {
+        started: (operationId, blockId) => {
+          void this.conversation.audioStarted(operationId, blockId);
+        },
+        done: (operationId, blockId) => {
+          void this.conversation.audioDone(operationId, blockId);
+        },
+        error: (message) => this.failSpeech(message),
       },
-      done: (operationId, blockId) => {
-        void this.conversation.audioDone(operationId, blockId);
-      },
-      error: (message) => this.failSpeech(message),
-    });
+      () => this.audio.speechRoute(),
+    );
     this.cleanup.push(
       this.arcade.onMessage((message) => this.world.consume(message)),
     );
@@ -233,6 +238,7 @@ export class NoriFrontendRuntime {
     this.cleanup.forEach((fn) => fn());
     this.conversation.dispose();
     this.speech.dispose();
+    this.audio.dispose();
     this.rpc.dispose();
     this.media.close();
     this.arcade.close();

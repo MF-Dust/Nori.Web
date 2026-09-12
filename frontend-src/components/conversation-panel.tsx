@@ -215,7 +215,10 @@ export function ConversationPanel({
             onChange={(event) =>
               setText(Array.from(event.target.value).slice(0, 100).join(""))
             }
-            onFocus={() => setFocused(true)}
+            onFocus={() => {
+              setFocused(true);
+              frontend.audio.playCue("comms-norichat-focus");
+            }}
             onBlur={() => setFocused(false)}
             onCompositionStart={() => {
               composing.current = true;
