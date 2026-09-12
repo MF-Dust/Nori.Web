@@ -10,6 +10,9 @@ on:
       - "cloudflare/entry.py"
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
+      - "public/nori-ui-settings.js"
+      - "public/nori-wallpaper-mode.js"
+      - "public/wallpaper.html"
       - "public/index.html"
       - "tests/test_ai_*.py"
       - "tests/test_tts_runtime_settings.py"
@@ -25,6 +28,9 @@ on:
       - "cloudflare/entry.py"
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
+      - "public/nori-ui-settings.js"
+      - "public/nori-wallpaper-mode.js"
+      - "public/wallpaper.html"
       - "public/index.html"
       - "tests/test_ai_*.py"
       - "tests/test_tts_runtime_settings.py"
@@ -64,6 +70,14 @@ jobs:
           node --check public/nori-ai-settings.js
           node --check public/nori-ai-provider-switch.js
           node --check public/nori-tts-settings.js
+          node --check public/nori-ui-settings.js
+          node --check public/nori-wallpaper-mode.js
+
+      - name: Verify wallpaper entry wiring
+        run: |
+          grep -q 'nori-wallpaper-mode.js' public/index.html
+          grep -q 'wallpaper' public/wallpaper.html
+          grep -q 'interactive' public/nori-wallpaper-mode.js
 
       - name: Compile settings services and Worker entry
         run: uv run python -m compileall -q backend/services cloudflare
