@@ -4,6 +4,19 @@ import type { CodenamesClueCount } from "./codenames-chat";
 export const CODENAMES_CLUE_REVEAL_DELAY_MS = 300;
 export const CODENAMES_CLUE_REVEAL_STEP_MS = 120;
 export const CODENAMES_CLUE_COUNT_REVEAL_DELAY_MS = 300;
+export const CODENAMES_CLUE_COUNT_OPTIONS: readonly CodenamesClueCount[] = [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  "infinity",
+];
 
 export interface CodenamesClue {
   word: string;
@@ -25,12 +38,34 @@ export interface CodenamesClueHighlight {
   label: string;
 }
 
+export interface ParsedCodenamesClueSubmission {
+  word: string;
+  count?: CodenamesClueCount;
+}
+
 export function normalizeCodenamesClueWord(word: string): string {
   return word.toUpperCase();
 }
 
 export function formatCodenamesClueCount(count: CodenamesClueCount): string {
   return count === "infinity" ? "∞" : String(count);
+}
+
+/** Mirrors the shipped inline clue syntax accepted by the ChatPanel composer. */
+export function parseCodenamesClueSubmission(value: string): ParsedCodenamesClueSubmission {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(.+?)[,\s]+(\d+|∞|infinity)$/i);
+  if (!match) return { word: normalizeCodenamesClueWord(trimmed) };
+
+  const rawCount = match[2].toLowerCase();
+  const count: CodenamesClueCount =
+    rawCount === "∞" || rawCount === "infinity" || rawCount === "inf"
+      ? "infinity"
+      : Number.parseInt(rawCount, 10);
+  return {
+    word: normalizeCodenamesClueWord(match[1].trim()),
+    count,
+  };
 }
 
 /**
