@@ -16,7 +16,7 @@
     "frontend:inspect:normalapp": "node scripts/inspect_frontend_chunk.mjs NormalApp-",
     "frontend:inspect:identifier": "node scripts/inspect_frontend_identifier.mjs",
     "frontend:recover": "node scripts/run_frontend_recovery.mjs",
-    "frontend:recover:check": "node scripts/verify_frontend_recovery.mjs && node scripts/verify_codenames_board_recovery.mjs && node scripts/verify_codenames_footer_recovery.mjs && node scripts/verify_codenames_screen_recovery.mjs && node scripts/verify_codenames_css_ownership.mjs && node scripts/verify_cakeduel_card_recovery.mjs && node scripts/verify_cakeduel_game_recovery.mjs && node scripts/verify_cakeduel_runtime_recovery.mjs",
+    "frontend:recover:check": "node scripts/verify_frontend_recovery.mjs && node scripts/verify_codenames_board_recovery.mjs && node scripts/verify_codenames_footer_recovery.mjs && node scripts/verify_codenames_screen_recovery.mjs && node scripts/verify_codenames_css_ownership.mjs && node scripts/verify_cakeduel_card_recovery.mjs && node scripts/verify_cakeduel_game_recovery.mjs && node scripts/verify_cakeduel_runtime_recovery.mjs && node scripts/verify_cakeduel_transient_recovery.mjs",
     "frontend:typecheck": "tsc -p frontend-src/tsconfig.json --noEmit",
     "test:cartridges": "python tests/test_cartridges.py",
     "test:backend": "python tests/test_backend_integration.py",
