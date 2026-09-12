@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import type { CodenamesSide } from "../apps/codenames-board-presentation";
 import {
   CODENAMES_CLUE_COUNT_OPTIONS,
@@ -56,6 +56,7 @@ export interface CodenamesScreenProps {
   onCardClick(index: number): void;
   onCardSelect?(index: number): void;
   onCardHover?(index: number | null): void;
+  onClearPendingGuess?: () => void;
   onEndTurn?: () => void;
   onDismissOverlay?: () => void;
   onFlyingCardLanded?: () => void;
@@ -132,6 +133,7 @@ export const CodenamesScreen = memo(function CodenamesScreen({
   onCardClick,
   onCardSelect,
   onCardHover,
+  onClearPendingGuess,
   onEndTurn,
   onDismissOverlay,
   onFlyingCardLanded,
@@ -161,6 +163,26 @@ export const CodenamesScreen = memo(function CodenamesScreen({
     onHelp?.();
   }, [onHelp]);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
+
+  useEffect(() => {
+    if (pendingGuess === null || !onClearPendingGuess) return;
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (
+        target.closest("[data-codenames-board]") ||
+        target.closest("[data-debug-menu]") ||
+        target.closest("button")
+      ) {
+        return;
+      }
+      onClearPendingGuess();
+    };
+
+    document.addEventListener("click", handleDocumentClick);
+    return () => document.removeEventListener("click", handleDocumentClick);
+  }, [onClearPendingGuess, pendingGuess]);
 
   if (connectionState !== "ready" || !gameState) {
     return (
