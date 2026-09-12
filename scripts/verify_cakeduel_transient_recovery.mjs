@@ -31,7 +31,9 @@ async function main() {
     'case "wolfy_taunt"',
     'case "bout_started"',
     'case "bout_ended"',
+    "CHALLENGE_PRE_REVEAL_PAUSE",
     "CHALLENGE_REVEAL_HOLD",
+    "revealPileCards",
     "navigateToResults",
     "cakeduel.banner.reason.caughtBluffing",
     "cakeduel.banner.reason.wonChallenge",
@@ -68,7 +70,14 @@ async function main() {
   for (const marker of [
     "presentCakeDuelBanner(",
     "cakeDuelPlayerLabel(",
-    "banner={presentCakeDuelBanner(snapshot.banner, runtime.translate)}",
+    "buildCakeDuelChallengeRevealBoards(",
+    "CAKEDUEL_CHALLENGE_SETTLE_MS",
+    "previousSnapshot",
+    "challengeRevealBoards",
+    "revealedName: game.cardList[card.entityId]",
+    "challengeBoards.revealed",
+    "suppressBoutEndBanner",
+    "banner={displayBanner}",
     "snapshot.wolfyTauntActive && runtime.assets.wolfyFrames",
     "frameImages: runtime.assets.wolfyFrames",
   ]) {
@@ -78,7 +87,7 @@ async function main() {
   assert(cutover.includes('{ id: "games", complete: false'), "Games cutover boundary must remain incomplete");
   assert(cutover.includes("transition-driven banner/Wolfy wiring"), "Cake Duel cutover note must record transient event ownership");
 
-  console.log("[ok] Cake Duel transition events drive source-owned transient banners, results pacing and Wolfy presentation");
+  console.log("[ok] Cake Duel transition events drive source-owned transient banners, challenge reveal pacing and Wolfy presentation");
 }
 
 main().catch((error) => {
