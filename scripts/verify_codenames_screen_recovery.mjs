@@ -241,6 +241,7 @@ async function main() {
 
   assert(
     cutover.includes('Codenames presentation is source-owned') &&
+      cutover.includes('flying-card transition behavior') &&
       cutover.includes('Cake Duel, Chess and Pictionary still need migration'),
     "cutover status must record Codenames complete while keeping Games incomplete",
   );
