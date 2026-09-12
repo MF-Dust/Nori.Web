@@ -100,7 +100,8 @@ async function main() {
   }
 
   assert(cutover.includes('{ id: "games", complete: false'), "Games cutover boundary must remain incomplete");
-  assert(cutover.includes("transition-driven banner/Wolfy wiring"), "Cake Duel cutover note must record transient event ownership");
+  assert(cutover.includes("Cake Duel is source-owned end to end"), "Cake Duel cutover note must record complete source ownership");
+  assert(cutover.includes("exact shipped challenge banner/pause/reveal timing"), "Cake Duel cutover note must record exact challenge timing ownership");
 
   console.log("[ok] Cake Duel transition events and exact shipped challenge timing drive source-owned transient presentation");
 }
