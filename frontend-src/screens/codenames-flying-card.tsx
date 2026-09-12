@@ -23,6 +23,12 @@ export interface CodenamesFlyingCardProps {
   onLanded?: () => void;
 }
 
+const FLYING_CARD_BASE_SIZE: Readonly<Record<CodenamesFlyingCardType, { width: number; height: number }>> = {
+  agent: { width: 160, height: 100 },
+  assassin: { width: 160, height: 100 },
+  bystander: { width: 50, height: 50 },
+};
+
 function FlyingCardFace({ type }: { type: CodenamesFlyingCardType }) {
   if (type === "agent") {
     return <div className="size-full rounded-xl border border-[var(--codenames-agent-border)] bg-[var(--codenames-agent-bg)]" />;
@@ -43,22 +49,26 @@ export const CodenamesFlyingCard = memo(function CodenamesFlyingCard({
   useEffect(() => {
     const element = ref.current;
     if (!card || !element) return;
+    const base = FLYING_CARD_BASE_SIZE[card.type];
+    const sourceScale = card.sourceRect.width / base.width;
+    const targetScale = card.targetRect.width / base.width;
+    const sourceLeft = card.sourceRect.left + (card.sourceRect.width - base.width) / 2;
+    const sourceTop = card.sourceRect.top + (card.sourceRect.height - base.height) / 2;
+    const targetLeft = card.targetRect.left + (card.targetRect.width - base.width) / 2;
+    const targetTop = card.targetRect.top + (card.targetRect.height - base.height) / 2;
+
     const animation = element.animate(
       [
         {
-          left: `${card.sourceRect.left}px`,
-          top: `${card.sourceRect.top}px`,
-          width: `${card.sourceRect.width}px`,
-          height: `${card.sourceRect.height}px`,
-          transform: "rotate(0deg)",
+          left: `${sourceLeft}px`,
+          top: `${sourceTop}px`,
+          transform: `scale(${sourceScale}) rotate(0deg)`,
           opacity: 1,
         },
         {
-          left: `${card.targetRect.left}px`,
-          top: `${card.targetRect.top}px`,
-          width: `${card.targetRect.width}px`,
-          height: `${card.targetRect.height}px`,
-          transform: card.rotate180 ? "rotate(180deg)" : "rotate(0deg)",
+          left: `${targetLeft}px`,
+          top: `${targetTop}px`,
+          transform: `scale(${targetScale}) rotate(${card.rotate180 ? 180 : 0}deg)`,
           opacity: 1,
         },
       ],
@@ -73,15 +83,14 @@ export const CodenamesFlyingCard = memo(function CodenamesFlyingCard({
   }, [card, onLanded]);
 
   if (!card || typeof document === "undefined") return null;
+  const base = FLYING_CARD_BASE_SIZE[card.type];
   return createPortal(
     <div
       ref={ref}
       className="fixed pointer-events-none z-50"
       style={{
-        left: card.sourceRect.left,
-        top: card.sourceRect.top,
-        width: card.sourceRect.width,
-        height: card.sourceRect.height,
+        width: base.width,
+        height: base.height,
         transformOrigin: "center center",
       }}
       data-codenames-flying-card={card.type}
