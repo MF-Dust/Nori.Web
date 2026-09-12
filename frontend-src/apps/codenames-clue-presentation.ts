@@ -105,7 +105,7 @@ export function formatCodenamesClueCount(count: CodenamesClueCount): string {
 /** Mirrors the shipped inline clue syntax accepted by the ChatPanel composer. */
 export function parseCodenamesClueSubmission(value: string): ParsedCodenamesClueSubmission {
   const trimmed = value.trim();
-  const match = trimmed.match(/^(.+?)[,\s]+(\d+|∞|infinity)$/i);
+  const match = trimmed.match(/^(.+?)[,\s]+(\d+|∞|infinity|inf)$/i);
   if (!match) return { word: normalizeCodenamesClueWord(trimmed) };
 
   const rawCount = match[2].toLowerCase();
