@@ -32,6 +32,7 @@ async function main() {
   const help = await read("frontend-src/screens/codenames-help-overlay.tsx");
   const flyingCard = await read("frontend-src/screens/codenames-flying-card.tsx");
   const screen = await read("frontend-src/screens/codenames-screen.tsx");
+  const cutover = await read("frontend-src/migration/cutover-status.ts");
 
   for (const marker of [
     "const Pe = 300",
@@ -237,6 +238,12 @@ async function main() {
   ]) {
     assert(screen.includes(marker), `source Codenames GameScreen missing marker: ${marker}`);
   }
+
+  assert(
+    cutover.includes('Codenames presentation is source-owned') &&
+      cutover.includes('Cake Duel, Chess and Pictionary still need migration'),
+    "cutover status must record Codenames complete while keeping Games incomplete",
+  );
 
   console.log("[ok] Codenames GameScreen presentation is source-owned against shipped contracts");
 }
