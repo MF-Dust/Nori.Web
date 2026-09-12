@@ -153,6 +153,7 @@ export const CakeDuelResultsScreen = memo(function CakeDuelResultsScreen({
               disabled={pending}
               fontSize={compact ? 15 : 18}
               shimmerDelaySec={1.5}
+              entryDelaySec={0.7}
               icon={<RotateCcw className="h-5 w-5" />}
               onClick={onPlayAgain}
             >
