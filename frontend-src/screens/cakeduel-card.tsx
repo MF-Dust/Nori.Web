@@ -1,8 +1,9 @@
-import { memo, useMemo, type CSSProperties } from "react";
+import { memo, useEffect, useMemo, useRef, type CSSProperties } from "react";
 import {
   getCakeDuelCardShadow,
   replaceCakeDuelRgbaAlpha,
 } from "../apps/cakeduel-card-presentation";
+import { useCakeDuelCardPreview } from "./cakeduel-card-preview";
 
 export interface CakeDuelCardData {
   id: string;
@@ -55,7 +56,10 @@ export const CakeDuelCard = memo(function CakeDuelCard({
   onClick,
   onHoverChange,
 }: CakeDuelCardProps) {
-  const activeHover = hovered && !disabled;
+  const preview = useCakeDuelCardPreview();
+  const cardRef = useRef<HTMLButtonElement>(null);
+  const previewActive = preview?.activeCardId === data.id;
+  const activeHover = (hovered || previewActive) && !disabled;
   const frontImage = activeHover && data.hdFrontImage ? data.hdFrontImage : data.frontImage;
   const shadow = getCakeDuelCardShadow(activeHover, selected, dragging);
   const transform = `translateY(${liftY}px) rotate(${rotation}deg) scale(${scale}) rotateY(${faceUp ? 0 : 180}deg)`;
@@ -64,6 +68,13 @@ export const CakeDuelCard = memo(function CakeDuelCard({
     : highlighted
       ? "inset 0 0 0 2.5px rgba(255,226,110,1), 0 0 24px rgba(232,199,58,0.68)"
       : undefined;
+
+  useEffect(() => {
+    const element = cardRef.current;
+    if (!preview || !hovered || !faceUp || !element) return;
+    preview.reportHover(data.id, data.hdFrontImage ?? data.frontImage, element);
+    return () => preview.reportUnhover(data.id);
+  }, [data.frontImage, data.hdFrontImage, data.id, faceUp, hovered, preview]);
 
   const commonFaceStyle = useMemo<CSSProperties>(
     () => ({
@@ -90,6 +101,7 @@ export const CakeDuelCard = memo(function CakeDuelCard({
       data-cakeduel-card-shell
     >
       <button
+        ref={cardRef}
         type="button"
         data-card-id={data.id}
         data-cakeduel-card
