@@ -14,14 +14,16 @@ import { CakeDuelResultsScreen } from "../screens/cakeduel-results-screen";
 import { CakeDuelScreen } from "../screens/cakeduel-screen";
 import { CakeDuelStartScreen } from "../screens/cakeduel-start-screen";
 import type { CakeDuelTranslate } from "../screens/cakeduel-hud";
-import { CAKEDUEL_CHALLENGE_SETTLE_MS } from "./cakeduel-game-presentation";
 import type {
   CakeDuelControllerSnapshot,
   CakeDuelDifficulty,
   CakeDuelRuntimeBoard,
   CakeDuelTransientBanner,
 } from "./cakeduel-runtime";
-import { CakeDuelRuntimeController } from "./cakeduel-runtime";
+import {
+  CAKE_DUEL_CHALLENGE_FLIP_STAGGER_MS,
+  CakeDuelRuntimeController,
+} from "./cakeduel-runtime";
 
 export interface CakeDuelPresentationAssets {
   backgroundImage: string;
@@ -99,9 +101,10 @@ function buildCakeDuelChallengeRevealBoards(
       : null;
   if (!pileKey) return null;
 
-  const revealedPile = board.zones[pileKey].map((card) => ({
+  const revealedPile = board.zones[pileKey].map((card, index) => ({
     ...card,
     revealedName: game.cardList[card.entityId] ?? card.name ?? null,
+    flipDelayMs: index * CAKE_DUEL_CHALLENGE_FLIP_STAGGER_MS,
   }));
   const revealed: CakeDuelRuntimeBoard = {
     ...board,
@@ -180,9 +183,7 @@ export function createCakeDuelProductionWindowBinding(
     const [selectedPickIndex, setSelectedPickIndex] = useState<number | null>(null);
     const [helpOpen, setHelpOpen] = useState(false);
     const [challengeRevealBoards, setChallengeRevealBoards] = useState<CakeDuelChallengeRevealBoards | null>(null);
-    const [challengeBoutEndDelay, setChallengeBoutEndDelay] = useState(false);
     const previousSnapshot = useRef(snapshot);
-    const challengeSettleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const tutorialResetIssued = useRef(false);
 
     useEffect(() => {
@@ -208,34 +209,18 @@ export function createCakeDuelProductionWindowBinding(
 
       if (currentBanner === "challenge" && previousBanner !== "challenge") {
         setChallengeRevealBoards(buildCakeDuelChallengeRevealBoards(previous));
-        setChallengeBoutEndDelay(false);
       }
 
-      if (currentBanner === "bout_end" && previousBanner === "challenge") {
-        if (challengeSettleTimer.current) clearTimeout(challengeSettleTimer.current);
-        setChallengeBoutEndDelay(true);
-        challengeSettleTimer.current = setTimeout(() => {
-          challengeSettleTimer.current = null;
-          setChallengeBoutEndDelay(false);
-        }, CAKEDUEL_CHALLENGE_SETTLE_MS);
-      }
-
-      if (currentBanner !== "challenge" && currentBanner !== "bout_end") {
-        if (challengeSettleTimer.current) clearTimeout(challengeSettleTimer.current);
-        challengeSettleTimer.current = null;
-        setChallengeBoutEndDelay(false);
+      if (
+        snapshot.challengeRevealStage === "idle" &&
+        currentBanner !== "challenge" &&
+        currentBanner !== "bout_end"
+      ) {
         setChallengeRevealBoards(null);
       }
 
       previousSnapshot.current = snapshot;
     }, [snapshot]);
-
-    useEffect(
-      () => () => {
-        if (challengeSettleTimer.current) clearTimeout(challengeSettleTimer.current);
-      },
-      [],
-    );
 
     const board = snapshot.board;
     useEffect(() => {
@@ -279,18 +264,15 @@ export function createCakeDuelProductionWindowBinding(
       : null;
     const challengeBoards = challengeRevealBoards ?? incomingChallenge;
     const challengeBannerActive = snapshot.banner?.type === "challenge";
+    const challengePauseActive = snapshot.challengeRevealStage === "pause";
+    const challengeRevealActive = snapshot.challengeRevealStage === "revealed";
     const challengeBoutEndActive = snapshot.banner?.type === "bout_end" && challengeBoards !== null;
-    const displayBoard = challengeBannerActive && challengeBoards
+    const displayBoard = (challengeBannerActive || challengePauseActive) && challengeBoards
       ? challengeBoards.hidden
-      : challengeBoutEndActive && challengeBoards
+      : (challengeRevealActive || challengeBoutEndActive) && challengeBoards
         ? challengeBoards.revealed
         : board;
-    const suppressBoutEndBanner = challengeBoutEndActive && (
-      challengeBoutEndDelay || previousSnapshot.current.banner?.type === "challenge"
-    );
-    const displayBanner = suppressBoutEndBanner
-      ? null
-      : presentCakeDuelBanner(snapshot.banner, runtime.translate);
+    const displayBanner = presentCakeDuelBanner(snapshot.banner, runtime.translate);
 
     return (
       <CakeDuelCardPreviewProvider>
@@ -318,7 +300,11 @@ export function createCakeDuelProductionWindowBinding(
             handOrderEntityIds: handOrder,
             selectedClaim,
             selectedPickIndex,
-            actionPending: snapshot.actionPending || challengeBannerActive || challengeBoutEndActive,
+            actionPending: snapshot.actionPending
+              || challengeBannerActive
+              || challengePauseActive
+              || challengeRevealActive
+              || challengeBoutEndActive,
             lastAttackPassed: displayBoard.lastAttackPassed,
             translate: runtime.translate,
             cardBackImage: runtime.assets.cardBackImage,
