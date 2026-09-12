@@ -7,13 +7,14 @@ import {
 } from "react";
 import type { ProductionWindowBinding } from "../state/production-window-apps";
 import type { WindowScreenComponentProps } from "../state/window-types";
+import type { CakeDuelBannerMessage } from "../screens/cakeduel-banner";
 import { CakeDuelCardPreviewProvider } from "../screens/cakeduel-card-preview";
 import { CakeDuelHelpOverlay } from "../screens/cakeduel-help-overlay";
 import { CakeDuelResultsScreen } from "../screens/cakeduel-results-screen";
 import { CakeDuelScreen } from "../screens/cakeduel-screen";
 import { CakeDuelStartScreen } from "../screens/cakeduel-start-screen";
 import type { CakeDuelTranslate } from "../screens/cakeduel-hud";
-import type { CakeDuelDifficulty } from "./cakeduel-runtime";
+import type { CakeDuelDifficulty, CakeDuelTransientBanner } from "./cakeduel-runtime";
 import { CakeDuelRuntimeController } from "./cakeduel-runtime";
 
 export interface CakeDuelPresentationAssets {
@@ -44,6 +45,26 @@ function useMountedCakeDuel(runtime: CakeDuelPresentationRuntime) {
   const snapshot = useCakeDuelController(runtime);
   useEffect(() => runtime.controller.ensureMounted(), [runtime.controller]);
   return snapshot;
+}
+
+function cakeDuelPlayerLabel(player: 0 | 1, translate: CakeDuelTranslate): string {
+  return translate(player === 0 ? "cakeduel.game.you" : "cakeduel.game.nori");
+}
+
+function presentCakeDuelBanner(
+  banner: CakeDuelTransientBanner | null,
+  translate: CakeDuelTranslate,
+): CakeDuelBannerMessage | null {
+  if (!banner || banner.type !== "bout_end") return banner;
+  const values: Record<string, string | number> = {};
+  for (const [key, player] of Object.entries(banner.reasonPlayers ?? {})) {
+    values[key] = cakeDuelPlayerLabel(player, translate);
+  }
+  return {
+    type: "bout_end",
+    victory: banner.victory,
+    reason: translate(banner.reasonKey, values),
+  };
 }
 
 /** Binds source-owned start/game/results routes to the recovered cartridge controller. */
@@ -160,6 +181,10 @@ export function createCakeDuelProductionWindowBinding(
           stage="game"
           backgroundImage={runtime.assets.backgroundImage}
           translate={runtime.translate}
+          banner={presentCakeDuelBanner(snapshot.banner, runtime.translate)}
+          wolfyTaunt={snapshot.wolfyTauntActive && runtime.assets.wolfyFrames
+            ? { frameImages: runtime.assets.wolfyFrames }
+            : null}
           actionError={snapshot.error}
           gameBoard={{
             view: board.view,
