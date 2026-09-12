@@ -128,6 +128,7 @@ export interface CakeDuelHeroFanProps {
   cardBackImage: string;
   resolveCardFront(name: string, highResolution?: boolean): string;
   overlayImage?: string;
+  overlaySizePx?: number;
 }
 
 export const CakeDuelHeroFan = memo(function CakeDuelHeroFan({
@@ -135,7 +136,9 @@ export const CakeDuelHeroFan = memo(function CakeDuelHeroFan({
   cardBackImage,
   resolveCardFront,
   overlayImage,
+  overlaySizePx,
 }: CakeDuelHeroFanProps) {
+  const overlaySize = overlaySizePx ?? 80 * scale;
   return (
     <div
       className="relative flex items-center justify-center"
@@ -183,10 +186,10 @@ export const CakeDuelHeroFan = memo(function CakeDuelHeroFan({
           draggable={false}
           className="absolute left-1/2 top-1/2 z-20 drop-shadow-xl"
           style={{
-            width: 80 * scale,
-            height: 80 * scale,
-            marginLeft: -40 * scale,
-            marginTop: -40 * scale,
+            width: overlaySize,
+            height: overlaySize,
+            marginLeft: -overlaySize / 2,
+            marginTop: -overlaySize / 2,
             objectFit: "contain",
             animation: "cakeduel-route-outcome 620ms 400ms cubic-bezier(.23,1,.32,1) both",
           }}
