@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -24,10 +25,69 @@ async function findRouteChunk(prefix, markers) {
   throw new Error(`missing shipped Cake Duel ${prefix} chunk`);
 }
 
+async function findNormalAppChunk() {
+  const assets = await fs.readdir(path.join(ROOT, "public", "assets"));
+  const file = assets.find((name) => name.startsWith("NormalApp-") && name.endsWith(".js"));
+  if (!file) throw new Error("missing shipped NormalApp chunk");
+  return { file, content: await read(path.join("public", "assets", file)) };
+}
+
+function exportedDeclaration(sourceText, fileName, exportedName) {
+  const sourceFile = ts.createSourceFile(
+    fileName,
+    sourceText,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS,
+  );
+  let localName = null;
+  for (const statement of sourceFile.statements) {
+    if (!ts.isExportDeclaration(statement) || !statement.exportClause || !ts.isNamedExports(statement.exportClause)) continue;
+    for (const element of statement.exportClause.elements) {
+      if (element.name.text === exportedName) {
+        localName = element.propertyName?.text ?? element.name.text;
+        break;
+      }
+    }
+    if (localName) break;
+  }
+  if (!localName) return { localName: null, snippet: "<export alias not found>" };
+
+  let snippet = null;
+  const visit = (node) => {
+    if (snippet) return;
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === localName
+    ) {
+      snippet = node.getText(sourceFile).slice(0, 600);
+      return;
+    }
+    if (
+      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+      node.name?.text === localName
+    ) {
+      snippet = node.getText(sourceFile).slice(0, 600);
+      return;
+    }
+    if (ts.isImportSpecifier(node) && node.name.text === localName) {
+      let parent = node.parent;
+      while (parent && !ts.isImportDeclaration(parent)) parent = parent.parent;
+      snippet = parent ? parent.getText(sourceFile).slice(0, 600) : node.getText(sourceFile);
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return { localName, snippet: snippet ?? "<local declaration not found>" };
+}
+
 async function main() {
-  const [shippedStart, shippedResults, decor, start, results, presentation, assets] = await Promise.all([
+  const [shippedStart, shippedResults, normalApp, decor, start, results, presentation, assets] = await Promise.all([
     findRouteChunk("StartScreen-", ["cakeduel.start.difficulty", "cakeduel.start.startGame", "cakeduel.title"]),
     findRouteChunk("ResultsScreen-", ["cakeduel.results.youWin", "cakeduel.results.playAgain", "cakeduel.results.playerLabel"]),
+    findNormalAppChunk(),
     read("frontend-src/screens/cakeduel-route-decor.tsx"),
     read("frontend-src/screens/cakeduel-start-screen.tsx"),
     read("frontend-src/screens/cakeduel-results-screen.tsx"),
@@ -58,6 +118,11 @@ async function main() {
   ]) {
     assert(shippedResults.includes(marker), `shipped Cake Duel Results decoration marker changed: ${marker}`);
   }
+
+  const victoryAsset = exportedDeclaration(normalApp.content, normalApp.file, "T");
+  const defeatAsset = exportedDeclaration(normalApp.content, normalApp.file, "s");
+  console.log(`[cakeduel-route-assets] NormalApp export T -> ${victoryAsset.localName}: ${victoryAsset.snippet}`);
+  console.log(`[cakeduel-route-assets] NormalApp export s -> ${defeatAsset.localName}: ${defeatAsset.snippet}`);
 
   for (const marker of [
     "const HERO_CARDS",
