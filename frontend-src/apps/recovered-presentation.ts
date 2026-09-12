@@ -1,3 +1,4 @@
+import { createChessProductionWindowBinding, type ChessPresentationRuntime } from "./chess-presentation";
 import {
   createBrowserPopupProductionWindowBinding,
   createBrowserProductionWindowBindings,
@@ -63,6 +64,7 @@ export interface RecoveredProductionPresentationOptions {
   idle?: IdlePresentationRuntime;
   qfr?: QfrDockRuntime;
   cakeduel?: CakeDuelPresentationRuntime;
+  chess?: ChessPresentationRuntime;
 }
 
 export function createRecoveredProductionWindowBindings(
@@ -121,6 +123,8 @@ export function createRecoveredProductionWindowBindings(
     };
   }
 
+  if (options.chess) bindings.chess = { game: createChessProductionWindowBinding(options.chess) };
+
   return bindings;
 }
 
@@ -176,6 +180,7 @@ export function createRecoveredDesktopRuntime(
     idle: options.idle,
     qfr: options.qfr,
     cakeduel: options.cakeduel,
+    chess: options.chess,
     terminal:
       options.terminal && terminalEditBridges
         ? withTerminalEditBridgeRegistry(options.terminal, terminalEditBridges)

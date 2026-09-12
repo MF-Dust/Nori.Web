@@ -1,3 +1,5 @@
+import { GameCartridgeController } from "./apps/game-cartridge-controller";
+import { chessStateSchema } from "./apps/chess-model";
 import { useEffect, useMemo } from "react";
 import { createCakeDuelPresentationAssets } from "./apps/cakeduel-assets";
 import { CakeDuelRuntimeController } from "./apps/cakeduel-runtime";
@@ -35,6 +37,7 @@ function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
 export function SourceApp() {
   const source = useMemo(() => {
     const frontend = new NoriFrontendRuntime();
+    const chess = new GameCartridgeController("chess", frontend.games, frontend.world, frontend.arcade, raw => chessStateSchema.parse(raw));
     const cakeduel = new CakeDuelRuntimeController(
       frontend.games,
       frontend.world,
@@ -121,6 +124,7 @@ export function SourceApp() {
         },
       },
       idle: idlePresentation,
+      chess: { controller: chess, translate: sourceTranslate },
       cakeduel: {
         controller: cakeduel,
         translate: sourceTranslate,
@@ -134,7 +138,7 @@ export function SourceApp() {
         persistName: "os-store-source-preview",
       },
     });
-    return { frontend, idle, cakeduel, bundle };
+    return { frontend, idle, cakeduel, chess, bundle };
   }, []);
 
   useEffect(() => {
@@ -146,6 +150,7 @@ export function SourceApp() {
     return () => {
       disposed = true;
       source.cakeduel.dispose();
+      source.chess.dispose();
       source.idle.dispose();
       source.bundle.runtime.dispose();
       source.frontend.dispose();
