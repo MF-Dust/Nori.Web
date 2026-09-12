@@ -58,3 +58,7 @@ Before changing `public/index.html`:
 - a rollback path to the previous public entry is documented for the first production deployment.
 
 The goal is a boring final switch: by the time `public/index.html` changes, all risky migration work should already have happened behind the source-app build contract.
+
+## Games integration progress
+
+Chess and Pictionary now have source-driven game screens, and Codenames is bound to the source cartridge lifecycle alongside Cake Duel. Base English/Chinese translations are also source-owned. [The game recovery ledger](FRONTEND_GAMES_RECOVERY.md) records implemented behavior, automated verification and the visual/runtime gaps that keep Games incomplete. Source application integration and full-production parity remain distinct acceptance steps.

@@ -60,7 +60,7 @@ try {
   await page.screenshot({ path: join(output, "chess-compact.png") });
 
   await page.setViewportSize({ width: 1100, height: 720 });
-  await page.goto(origin + "/#pictionary");
+  await page.goto(origin + "/pictionary#pictionary");
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.getByRole("button", { name: "5 min", exact: true }).click();
   await page.getByRole("button", { name: "Start session", exact: true }).click();
@@ -100,7 +100,7 @@ try {
   await page.getByRole("button", { name: "Skip round", exact: true }).click();
   assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).type), "skipRound");
   await page.screenshot({ path: join(output, "pictionary-guessing.png") });
-  await page.goto(origin + "/#codenames");
+  await page.goto(origin + "/codenames#codenames");
   await page.getByRole("button", { name: "Start Adventure", exact: true }).click();
   assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).settings.tokens), 9);
   await page.evaluate(() => window.fixture.codenames(true));
