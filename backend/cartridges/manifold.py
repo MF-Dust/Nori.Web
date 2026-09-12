@@ -99,14 +99,29 @@ def _fact_record(fact_id: str, actor: str, source: str, now_ms: int) -> Dict[str
     }
 
 
-def _affected_artifact_type(fact_id: str) -> Optional[str]:
+def _affected_artifact_types(fact_id: str) -> List[str]:
+    """Artifact list(s) whose contents a fact may change.
+
+    Sent on ``manifold.facts.changed`` as ``changedArtifactTypes``. An empty list
+    means "unknown", and the client then refreshes every list, so a missing entry
+    costs bandwidth but never correctness.
+
+    Signal facts touch both lists: a thread is only useful once its messages are
+    refreshed too, and the pack ships the two as separate artifact types
+    (``signal_thread_artifacts`` / ``signal_message_artifacts``).
+
+    Both ``signal.`` and ``signal_`` are matched. The unlock fact for the Messages
+    app is ``signal_daniel.unlocked`` (underscore); the per-thread read facts are
+    ``signal.daniel.read`` (dot). Matching only the dotted form left the unlock
+    itself mapped to nothing.
+    """
     if fact_id.startswith("mail."):
-        return "mail"
+        return ["mail"]
     if fact_id.startswith("file.") or fact_id.startswith("recover."):
-        return "file"
-    if fact_id.startswith("signal."):
-        return "signal_thread"
-    return None
+        return ["file"]
+    if fact_id.startswith("signal.") or fact_id.startswith("signal_"):
+        return ["signal_thread", "signal_message"]
+    return []
 
 
 def chip_config_of(variables: Dict[str, Any]) -> Dict[str, Any]:
@@ -204,19 +219,21 @@ class ManifoldWebCartridge(BaseCartridge):
                         int(cmd.get("emittedAt") or time.time() * 1000),
                     )
                     events.append({"type": "factEmitted", "factId": fact_id, "source": source})
-                    events.append({
+                    # The shipped client reads changedArtifactTypes off
+                    # manifold.facts.changed; the payload schema for
+                    # manifold.artifacts.invalidated is {reason} alone. Carrying the
+                    # value on the latter meant it never reached the client, which
+                    # then took its untargeted refresh path on every fact.
+                    facts_changed: Dict[str, Any] = {
                         "type": "manifold.facts.changed",
                         "emitted": [fact_id],
                         "retracted": [],
                         "snapshot": {fact_id: True},
-                    })
-                    art_type = _affected_artifact_type(fact_id)
-                    if art_type:
-                        events.append({
-                            "type": "manifold.artifacts.invalidated",
-                            "reason": f"fact:{fact_id}",
-                            "changedArtifactTypes": [art_type],
-                        })
+                    }
+                    changed = _affected_artifact_types(fact_id)
+                    if changed:
+                        facts_changed["changedArtifactTypes"] = changed
+                    events.append(facts_changed)
             return ReducerResult(state, {"ok": True}, events)
 
         APP_PREFIX = {"browser": "page", "files": "file", "mail": "mail",
@@ -335,19 +352,21 @@ class ManifoldWebCartridge(BaseCartridge):
                         int(cmd.get("emittedAt") or time.time() * 1000),
                     )
                     events.append({"type": "factEmitted", "factId": fact_id, "source": source})
-                    events.append({
+                    # The shipped client reads changedArtifactTypes off
+                    # manifold.facts.changed; the payload schema for
+                    # manifold.artifacts.invalidated is {reason} alone. Carrying the
+                    # value on the latter meant it never reached the client, which
+                    # then took its untargeted refresh path on every fact.
+                    facts_changed: Dict[str, Any] = {
                         "type": "manifold.facts.changed",
                         "emitted": [fact_id],
                         "retracted": [],
                         "snapshot": {fact_id: True},
-                    })
-                    art_type = _affected_artifact_type(fact_id)
-                    if art_type:
-                        events.append({
-                            "type": "manifold.artifacts.invalidated",
-                            "reason": f"fact:{fact_id}",
-                            "changedArtifactTypes": [art_type],
-                        })
+                    }
+                    changed = _affected_artifact_types(fact_id)
+                    if changed:
+                        facts_changed["changedArtifactTypes"] = changed
+                    events.append(facts_changed)
             return ReducerResult(state, {"ok": True}, events)
 
         if command_type == "chip.scan":
