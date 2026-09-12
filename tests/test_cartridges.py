@@ -161,6 +161,39 @@ def test_manifold() -> None:
     assert isinstance(sync_res.result, dict) and "prestige" in sync_res.result
 
 
+def test_manifold_changed_artifact_types() -> None:
+    """changedArtifactTypes must ride on manifold.facts.changed.
+
+    The shipped client declares the field on that channel; the payload schema for
+    manifold.artifacts.invalidated is {reason} alone, so a value carried there is
+    never seen and the client falls back to refreshing every artifact list.
+    """
+
+    def emit(fact_id: str) -> dict:
+        cartridge = ManifoldWebCartridge()
+        res = cartridge.dispatch("player", {"type": "client.emitFact", "factId": fact_id})
+        assert res.committed is True
+        events = (res.transition or {}).get("events") or []
+        changed = [e for e in events if e.get("type") == "manifold.facts.changed"]
+        assert len(changed) == 1, f"{fact_id}: expected one facts.changed, got {len(changed)}"
+        return changed[0]
+
+    # Synthetic ids so the assertions do not depend on which facts the shipped
+    # pack happens to pre-unlock (client.emitFact is a no-op for a known fact).
+    assert emit("mail.pr_probe.unlocked")["changedArtifactTypes"] == ["mail"]
+    assert emit("file.pr_probe.read")["changedArtifactTypes"] == ["file"]
+    assert emit("recover.pr_probe")["changedArtifactTypes"] == ["file"]
+
+    # Threads are useless without their messages; both lists are refreshed. The
+    # dotted and underscored spellings both occur in the pack.
+    for fact_id in ("signal.pr_probe.read", "signal_pr_probe.unlocked"):
+        assert emit(fact_id)["changedArtifactTypes"] == ["signal_thread", "signal_message"], fact_id
+
+    # Unknown prefix: omit the hint rather than guess. The client then refreshes
+    # every list, which is correct but untargeted.
+    assert "changedArtifactTypes" not in emit("arg.pr_probe")
+
+
 if __name__ == "__main__":
     test_registry()
     test_chat()
@@ -169,4 +202,5 @@ if __name__ == "__main__":
     test_chess()
     test_pictionary()
     test_manifold()
+    test_manifold_changed_artifact_types()
     print("[ok] chat, codenames, cakeduel, chess, pictionary, manifold.web, and registry verified")
