@@ -37,4 +37,51 @@ for (const message of samples) {
   const result = parseServerMessage(message);
   if (!result.success) throw new Error(`${message.type}: ${JSON.stringify(result.error.issues)}`);
 }
-console.log(`[ok] ${samples.length} local message envelopes accepted by shipped parser`);
+
+// The samples above only prove that valid envelopes pass. The parser is strict,
+// and that strictness is what makes a malformed envelope fail *silently*: the
+// message is dropped and nothing reaches the UI, with no error surfaced to the
+// player. These cases pin the two ways that happens, so a regression shows up
+// here rather than as an unexplained frozen screen.
+const rejections = [
+  [
+    "extra key",
+    { type: "pong", serverId: "nori-local-arcade", now: 1, timestamp: 1 },
+  ],
+  [
+    "missing required key",
+    { type: "pong", now: 1 },
+  ],
+  [
+    "extra key on a discriminated variant",
+    { type: "dispatch_ack", worldId: "world", cartridgeId: "chat", requestId: "r", success: true, committed: true, committedVersion: 1, headVersion: 1, result: {}, serverId: "x" },
+  ],
+  [
+    "unknown message type",
+    { type: "definitely_not_a_message", worldId: "world" },
+  ],
+];
+
+for (const [label, message] of rejections) {
+  if (parseServerMessage(message).success) {
+    throw new Error(`expected rejection (${label}): ${JSON.stringify(message)}`);
+  }
+}
+
+// Optional fields must stay optional, so omitting one is not mistaken for a bug.
+const optional = [
+  ["pong without now", { type: "pong", serverId: "nori-local-arcade" }],
+  ["event without payload", { type: "event", worldId: "world", channel: "manifold.chip.status.result", cartridgeId: "chat", requestId: "r" }],
+];
+
+for (const [label, message] of optional) {
+  const result = parseServerMessage(message);
+  if (!result.success) {
+    throw new Error(`expected acceptance (${label}): ${JSON.stringify(result.error.issues)}`);
+  }
+}
+
+console.log(
+  `[ok] ${samples.length} local message envelopes accepted, ` +
+    `${rejections.length} malformed rejected, ${optional.length} optional-field shapes accepted`,
+);
