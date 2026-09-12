@@ -44,6 +44,7 @@ export interface CodenamesBoardProps {
   tutorialGuessCell: number | null;
   hoveredCellIndex?: number | null;
   selectedCards?: ReadonlySet<number>;
+  translate?: (key: string) => string;
   onCardClick(index: number): void;
   onCardSelect?(index: number): void;
   onCardHover?(index: number | null): void;
@@ -67,8 +68,49 @@ interface CodenamesBoardCellProps {
   isHovered: boolean;
   showUnrevealedOutline: boolean;
   showMonsterOutline: boolean;
+  tapToConfirm: string;
   onClick(): void;
   onHover(index: number | null): void;
+}
+
+function RevealedAgent({ side }: { side: CodenamesSide }) {
+  return (
+    <div
+      className="absolute inset-0 z-20 rounded-xl overflow-hidden border border-[var(--codenames-agent-border)] bg-[var(--codenames-agent-bg)] shadow-md"
+      style={{ transform: side === "B" ? "rotate(180deg)" : "none" }}
+      data-codenames-revealed-agent={side}
+    >
+      <div className="absolute inset-[14%] rounded-lg border-2 border-amber-900/30" />
+      <div className="absolute left-1/2 top-1/2 h-10 w-14 -translate-x-1/2 -translate-y-1/2 rounded-md bg-amber-200/60 border border-amber-900/30" />
+    </div>
+  );
+}
+
+function RevealedAssassin({ side }: { side: CodenamesSide }) {
+  return (
+    <div
+      className="absolute inset-0 z-20 rounded-xl overflow-hidden border border-[var(--codenames-assassin-border)] bg-[var(--codenames-assassin-bg)] shadow-md"
+      style={{ transform: side === "B" ? "rotate(180deg)" : "none" }}
+      data-codenames-revealed-assassin={side}
+    >
+      <div className="absolute left-1/2 top-1/2 size-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-slate-400/30 bg-slate-950/70" />
+      <div className="absolute left-[35%] top-[42%] size-2 rounded-full bg-amber-100" />
+      <div className="absolute right-[35%] top-[42%] size-2 rounded-full bg-amber-100" />
+    </div>
+  );
+}
+
+function BystanderMark({ side, slot }: { side: CodenamesSide; slot: 0 | 1 }) {
+  return (
+    <div
+      className={`absolute z-20 pointer-events-none w-[46px] h-[46px] top-1 ${
+        slot === 0 ? "right-1" : "right-[54px]"
+      } ${side === "B" ? "rotate-180" : ""}`}
+      data-codenames-bystander-mark={side}
+    >
+      <div className="size-full rounded-full border border-[var(--codenames-bystander-border)] bg-[var(--codenames-bystander-bg)] shadow-sm" />
+    </div>
+  );
 }
 
 const CodenamesBoardCell = memo(function CodenamesBoardCell({
@@ -84,6 +126,7 @@ const CodenamesBoardCell = memo(function CodenamesBoardCell({
   isHovered,
   showUnrevealedOutline,
   showMonsterOutline,
+  tapToConfirm,
   onClick,
   onHover,
 }: CodenamesBoardCellProps) {
@@ -153,20 +196,30 @@ const CodenamesBoardCell = memo(function CodenamesBoardCell({
                   {word}
                 </span>
               </button>
+
+              {cell.solvedBy ? <RevealedAgent side={cell.solvedBy} /> : null}
+              {cell.assassinatedBy ? <RevealedAssassin side={cell.assassinatedBy} /> : null}
+              {cell.bystanderMarks[0] ? <BystanderMark side={cell.bystanderMarks[0]} slot={0} /> : null}
+              {cell.bystanderMarks[1] ? <BystanderMark side={cell.bystanderMarks[1]} slot={1} /> : null}
+              {isShaking ? (
+                <div className="absolute inset-0 rounded-xl bg-amber-400/40 pointer-events-none z-20" data-codenames-card-shake />
+              ) : null}
             </div>
           </div>
         </div>
+        {isPending ? (
+          <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded-lg text-white text-xs font-semibold whitespace-nowrap game-card-tooltip">
+            {tapToConfirm}
+          </div>
+        ) : null}
       </div>
     </div>
   );
 });
 
 /**
- * Source-owned composition for the shipped Codenames 5x5 board.
- *
- * The parent continues to own the game/runtime state. This component owns the
- * fixed grid geometry, ResizeObserver scale, per-cell presentation derivation,
- * hover forwarding and select/guess click routing used by GameScreen.
+ * Source-owned composition for the shipped Codenames 5x5 board, including
+ * solved/assassin/bystander reveals and pending-guess confirmation presentation.
  */
 export const CodenamesBoard = memo(function CodenamesBoard({
   gameState,
@@ -177,6 +230,7 @@ export const CodenamesBoard = memo(function CodenamesBoard({
   tutorialGuessCell,
   hoveredCellIndex = null,
   selectedCards,
+  translate,
   onCardClick,
   onCardSelect,
   onCardHover,
@@ -242,8 +296,9 @@ export const CodenamesBoard = memo(function CodenamesBoard({
             isClickable={eligibility.isClickable}
             canSelect={eligibility.canSelect}
             isHovered={hoveredCellIndex === index}
-            showUnrevealedOutline={eligibility.showUnrevealedOutline}
+            showUnrevealedOutline={eligibility.showUnrevealedOutline && !(selectedCards?.has(index) ?? false)}
             showMonsterOutline={eligibility.showMonsterOutline}
+            tapToConfirm={translate?.("codenames.game.tapToConfirm") ?? "Tap to confirm"}
             onClick={click}
             onHover={hover}
           />
