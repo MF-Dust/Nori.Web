@@ -76,6 +76,7 @@ export function createCakeDuelPresentationAssets(
     backgroundImage: CAKEDUEL_BACKGROUND_IMAGE,
     cardBackImage: CAKEDUEL_CARD_BACK_IMAGE,
     cakeImage: CAKEDUEL_CAKE_IMAGE,
+    trophyImage: CAKEDUEL_TROPHY_IMAGE,
     resolveCardFront: (name, highResolution = false) =>
       resolveCakeDuelCardFront(name, locale, highResolution),
     resolveCardIcon: resolveCakeDuelCardIcon,
