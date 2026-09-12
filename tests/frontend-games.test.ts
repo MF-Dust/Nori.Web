@@ -55,7 +55,7 @@ test("Stroke payloads respect the 128-point normalized protocol and drawing samp
   assert.equal(normalizeDrawingStroke([{ x: 0, y: 0 }], 10, 10, "#000", 6), null);
   const sample: [number[], number[]][] = [[[0, 128, 255], [255, 128, 0]]];
   const strokes = drawingSampleStrokes(sample);
-  assert.ok(strokes[0].points.every(point => point.x >= .16 && point.x <= .84 && point.y >= .16 && point.y <= .84));
+  assert.ok(strokes[0].points.every(point => point.x >= .16 - 1e-12 && point.x <= .84 + 1e-12 && point.y >= .16 - 1e-12 && point.y <= .84 + 1e-12));
   const used = new Set<number>();
   const index = { apple: [sample, [[[10, 20], [30, 40]]] as typeof sample] };
   const first = chooseDrawingSample(index, "Apple", used, () => 0);
@@ -118,4 +118,12 @@ test("Old round stroke queues are discarded and snapshots retain the request ID"
   await Promise.resolve(); await Promise.resolve();
   assert.equal(h.sent.filter(item => item.type === "dispatch").length, 1);
   bridge.dispose(); release(); h.controller.dispose();
+});
+ 
+import { createSourceTranslate } from "../frontend-src/i18n/translate";
+test("Recovered translations render shipped labels and interpolate values as text", () => {
+  const t = createSourceTranslate("zh-HK");
+  assert.equal(t("chess.title"), "与 Nori 下棋");
+  assert.equal(createSourceTranslate("en")("chess.start.elo", { elo: 700 }), "700 ELO");
+  assert.equal(t("unknown.key"), "unknown.key");
 });

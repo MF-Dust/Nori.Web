@@ -231,3 +231,18 @@ jobs:
 
       - name: Verify complete bundle recovery coverage
         run: npm run frontend:recover:check
+
+      - name: Install browser for recovered game checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify recovered games in Chromium
+        run: npm run frontend:games:smoke
+
+      - name: Upload recovered game screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-games-smoke-${{ github.sha }}
+          path: frontend-games-smoke/
+          if-no-files-found: warn
+          retention-days: 7

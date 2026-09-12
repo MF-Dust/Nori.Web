@@ -24,6 +24,7 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
   const draft = useRef<{ pointer: number; points: DrawingPoint[]; color: string; width: number } | null>(null);
   const base = useRef({ width: 0, height: 0 });
   const revision = useRef(0);
+  const lastPreview = useRef(0);
   const latest = useRef(props);
   latest.current = props;
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +55,7 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     strokes.current.forEach(stroke => paint(stroke.points, stroke.color, stroke.width, true));
     if (draft.current) paint(draft.current.points, draft.current.color, draft.current.width, false);
   };
-  const changed = () => { revision.current++; latest.current.onChange(); render(); };
+  const changed = () => { revision.current++; render(); latest.current.onChange(); };
   useImperativeHandle(handle, () => ({
     clear() {
       if (!latest.current.active || latest.current.drawer !== "player") return;
@@ -85,7 +86,7 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    strokes.current = []; draft.current = null; revision.current = 0; setError(null); render();
+    strokes.current = []; draft.current = null; revision.current = 0; lastPreview.current = 0; setError(null); render();
   }, [props.roundId]);
   useEffect(() => {
     if (!props.active) { draft.current = null; render(); }
@@ -157,7 +158,8 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
         event.currentTarget.setPointerCapture(event.pointerId);
         draft.current = { pointer: event.pointerId, points: [point(event)], color: props.eraser ? "#ffffff" : props.color || PICTIONARY_COLORS[0], width: props.eraser ? PICTIONARY_ERASER_WIDTH : PICTIONARY_PEN_WIDTH };
       }}
-      onPointerMove={event => { if (draft.current?.pointer === event.pointerId) { draft.current.points.push(point(event)); render(); } }}
+      onPointerMove={event => { if (draft.current?.pointer === event.pointerId) { draft.current.points.push(point(event)); render();
+        if (Date.now() - lastPreview.current >= 1000) { lastPreview.current = Date.now(); revision.current++; latest.current.onChange(); } } }}
       onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} />
     {error && <p role="alert">{error}</p>}
   </div>;

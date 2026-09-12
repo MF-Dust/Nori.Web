@@ -13,7 +13,8 @@ export interface PictionaryScreenProps {
 export function PictionaryScreen({ controller, drawing, locale = "en" }: PictionaryScreenProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
   const [now, setNow] = useState(Date.now);
-  const [mode, setMode] = useState<"fast" | "harder">("fast");
+  const [bookOpen, setBookOpen] = useState(false);
+  const [durationSec, setDurationSec] = useState(180);
   const [color, setColor] = useState<string>(PICTIONARY_COLORS[0]);
   const [eraser, setEraser] = useState(false);
   const [guess, setGuess] = useState("");
@@ -62,8 +63,14 @@ export function PictionaryScreen({ controller, drawing, locale = "en" }: Piction
       if (!ok) { autoRequest.current = null; setRetryAt(Date.now() + 2000); }
     });
   }, [active, remaining, nextRoundAt, now, playing, round, snapshot.pending, controller, retryAt, state?.settings.roundTimeLimitMs]);
+  useEffect(() => {
+    if (!help) return;
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setHelp(false); };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [help]);
   const start = () => {
-    void controller.dispatch({ type: "startSession", atMs: Date.now(), settings: { sessionDurationMs: 180000, inferenceMode: mode, locale } }).then(ok => {
+    void controller.dispatch({ type: "startSession", atMs: Date.now(), settings: { sessionDurationMs: durationSec * 1000, locale: zh ? "zh-CN" : "en" } }).then(ok => {
       if (ok) { autoRequest.current = null; setMessages([]); setNow(Date.now()); }
     });
   };
@@ -71,9 +78,13 @@ export function PictionaryScreen({ controller, drawing, locale = "en" }: Piction
   return <section className="source-pictionary">
     {!game ? <div className="source-pictionary-cover">
       <div className="source-pictionary-cover-rule" /><p>NORI · SKETCHBOOK</p>
-      <h1>{text("Draw & Guess", "你画我猜")}</h1><p>{text("Take turns drawing with Nori. Three minutes, one shared score.", "与 Nori 轮流画图，在三分钟内一起猜出更多词语。")}</p>
-      <fieldset disabled={snapshot.pending}>{(["fast", "harder"] as const).map(value => <button type="button" key={value} aria-pressed={mode === value} onClick={() => setMode(value)}>{value === "fast" ? text("Fast", "快速") : text("Harder", "挑战")}</button>)}</fieldset>
-      <button type="button" disabled={!snapshot.mounted || snapshot.pending} onClick={start}>{text("Start session", "开始游戏")}</button>
+      <h1>{text("Draw & Guess", "你画我猜")}</h1><p>{text("Take turns drawing with Nori.", "与 Nori 轮流画图，一起猜出更多词语。")}</p>
+      {bookOpen && <fieldset disabled={snapshot.pending} aria-label={text("Session duration", "游戏时长")}>
+        {[120, 180, 300].map(value => <button type="button" key={value} aria-pressed={durationSec === value} onClick={() => setDurationSec(value)}>{value / 60} {text("min", "分钟")}</button>)}
+      </fieldset>}
+      <button type="button" disabled={bookOpen && (!snapshot.mounted || snapshot.pending)} onClick={() => bookOpen ? start() : setBookOpen(true)}>{bookOpen ? text("Start session", "开始游戏") : text("Play", "开始")}</button>
+      {bookOpen && <button type="button" onClick={() => setBookOpen(false)}>{text("Back", "返回")}</button>}
+      <button type="button" aria-label={text("Help", "帮助")} onClick={() => setHelp(true)}>?</button>
     </div> : summary ? <div className="source-pictionary-results">
       <h1>{text("Session results", "本局结果")}</h1><strong>{summary.solved}</strong><p>{text("Solved", "答对")} · {summary.accuracy}%</p>
       <p>{text("Skipped", "跳过")}: {summary.skipped} · {text("Best time", "最快用时")}: {summary.bestTime === null ? "—" : (summary.bestTime / 1000).toFixed(1) + "s"}</p>
@@ -90,7 +101,7 @@ export function PictionaryScreen({ controller, drawing, locale = "en" }: Piction
         <button type="button" disabled={!active || !isDrawer} onClick={() => canvas.current?.clear()}>{text("Clear", "清空")}</button>
       </div>
       <div className="source-pictionary-paper">
-        <header><span className={remaining < 30000 ? "low" : ""}>{Math.floor(remaining / 60000)}:{String(Math.ceil(remaining / 1000) % 60).padStart(2, "0")}</span>
+        <header><span className={remaining < 30000 ? "low" : ""}>{Math.floor(Math.ceil(remaining / 1000) / 60)}:{String(Math.ceil(remaining / 1000) % 60).padStart(2, "0")}</span>
           <div><small>{isDrawer ? text("Your turn to draw", "轮到你画图") : text("Your turn to guess", "轮到你猜词")}</small>
             <strong>{isDrawer || !active ? round.word : [...round.word].map(char => /\s/.test(char) ? "  " : "_ ").join("")}</strong></div>
           <span>{game.score.solved} ✓</span><button type="button" aria-label="Help" onClick={() => setHelp(true)}>?</button>

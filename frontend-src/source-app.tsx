@@ -1,3 +1,4 @@
+import { createSourceTranslate } from "./i18n/translate";
 import { pictionaryStateSchema } from "./apps/pictionary-model";
 import { PictionaryDrawingBridge } from "./apps/pictionary-runtime";
 import { GameCartridgeController } from "./apps/game-cartridge-controller";
@@ -16,9 +17,12 @@ import { createSourceIdleRuntimeEngine } from "./state/idle-runtime-engine";
 /** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
 const MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS = 1800;
 
-function sourceTranslate(key: string): string {
-  return key;
+function preferredLocale(): string {
+  try { return localStorage.getItem("arcade-language") ?? navigator.language; }
+  catch { return navigator.language; }
 }
+const locale = preferredLocale();
+const sourceTranslate = createSourceTranslate(locale);
 
 function worldFacts(frontend: NoriFrontendRuntime): Set<string> {
   const result = new Set<string>();
@@ -102,7 +106,7 @@ export function SourceApp() {
       browser: {
         page: {
           model: frontend.browser,
-          locale: () => navigator.language,
+          locale: () => locale,
           getFacts: () => worldFacts(frontend),
           subscribeFacts: (listener) => frontend.world.subscribe(() => listener()),
           subscribeEnvelopeChanges: (listener) => frontend.arcade.onMessage((message) => {
@@ -128,12 +132,12 @@ export function SourceApp() {
         },
       },
       idle: idlePresentation,
-      pictionary: { controller: pictionary, drawing, locale: navigator.language },
+      pictionary: { controller: pictionary, drawing, locale },
       chess: { controller: chess, translate: sourceTranslate },
       cakeduel: {
         controller: cakeduel,
         translate: sourceTranslate,
-        assets: createCakeDuelPresentationAssets(navigator.language),
+        assets: createCakeDuelPresentationAssets(locale),
       },
       desktop: {
         // The source-app smoke build does not yet own the complete production
@@ -148,7 +152,7 @@ export function SourceApp() {
 
   useEffect(() => {
     let disposed = false;
-    void source.frontend.start(navigator.language).catch((error) => {
+    void source.frontend.start(locale).catch((error) => {
       if (!disposed) console.warn("[SourceApp] Frontend runtime startup failed", error);
     });
 

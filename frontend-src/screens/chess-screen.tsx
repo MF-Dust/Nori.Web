@@ -100,7 +100,7 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
             void controller.dispatch({ type: "startGame", mode: "tutorial" }).then(ok => { if (ok) { setRestart(false); setPly(null); } });
           }}>{t("start.tutorial", "Tutorial")}</button>
         </> : <>
-          <p role="status">{game?.isCheck ? t("game.check", "Check") + " · " : ""}{playing ? myTurn ? t("game.yourTurn", "Your turn") : t("game.noriTurn", "Nori's turn") : t("results." + game?.status, game?.status ?? "")}</p>
+          <p role="status">{game?.isCheck ? t("game.check", "Check") + " · " : ""}{playing ? myTurn ? t("game.yourTurn", "Your turn") : t("game.norisTurn", "Nori's turn") : t("results." + game?.status, game?.status ?? "")}</p>
           <div className="source-chess-history" aria-label="Move history">
             {timeline?.san.map((san, index) => <button type="button" key={index} aria-pressed={activePly === index + 1}
               onClick={() => setPly(index + 1 === history.length ? null : index + 1)}>{index % 2 === 0 && <small>{Math.floor(index / 2) + 1}. </small>}{san}</button>)}
@@ -118,7 +118,7 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
             <button type="button" onClick={() => {
               if (state?.drawOffer && state.drawOffer !== playerSide) void controller.dispatch({ type: "respondDraw", accept: true });
               else dispatch(state?.drawOffer === playerSide ? "cancelDrawOffer" : "offerDraw");
-            }}>{state?.drawOffer === playerSide ? t("game.cancelDraw", "Cancel draw offer") : t("game.offerDraw", "Offer draw")}</button>
+            }}>{state?.drawOffer === playerSide ? t("game.cancelDrawOffer", "Cancel draw offer") : t("game.offerDraw", "Offer draw")}</button>
             <button type="button" onClick={() => dispatch("resign")}>{t("game.resign", "Resign")}</button>
           </fieldset>}
         </>}
@@ -142,7 +142,7 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
       <div className="source-chess-glass source-chess-help" role="dialog" aria-modal="true" aria-label={t("help.title", "Chess help")} onClick={event => event.stopPropagation()}>
         <div className="source-chess-heading"><h2>{t("help.title", "Chess help")}</h2><button type="button" aria-label="Close help" onClick={() => setHelp(false)}>×</button></div>
         <p>{t("help.goal", "Checkmate the opposing king.")}</p>
-        {(["king", "queen", "rook", "bishop", "knight", "pawn"] as const).map((key, index) => <p key={key}><ChessPiece piece={["k", "q", "r", "b", "n", "p"][index]} color="white" size={24} /> {t("help.pieces." + key, ["King: one square in any direction.", "Queen: ranks, files and diagonals.", "Rook: ranks and files.", "Bishop: diagonals.", "Knight: an L-shaped leap.", "Pawn: moves forward, captures diagonally."][index])}</p>)}
+        {(["king", "queen", "rook", "bishop", "knight", "pawn"] as const).map((key, index) => <p key={key}><ChessPiece piece={["k", "q", "r", "b", "n", "p"][index]} color="white" size={24} /> {t("help.pieces." + key + "Move", ["King: one square in any direction.", "Queen: ranks, files and diagonals.", "Rook: ranks and files.", "Bishop: diagonals.", "Knight: an L-shaped leap.", "Pawn: moves forward, captures diagonally."][index])}</p>)}
         <p>{t("help.table.history", "Select a move to review the position. Select the board or the live-position button to resume.")}</p>
       </div>
     </div>}
