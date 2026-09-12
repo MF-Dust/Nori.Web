@@ -75,7 +75,6 @@ export interface CakeDuelCakeTokenLayout {
 export const CAKEDUEL_MAX_VISIBLE_CAKE_TOKENS = 7;
 export const CAKEDUEL_ATTACK_PASS_CONFIRM_MS = 3_500;
 export const CAKEDUEL_REVEALED_PILE_GAP_PX = 14;
-export const CAKEDUEL_CHALLENGE_SETTLE_MS = 220;
 
 export function findCakeDuelClaimAction(
   actions: readonly CakeDuelLegalAction[],
