@@ -15,6 +15,12 @@ async function read(relativePath) {
   return fs.readFile(path.join(ROOT, relativePath), "utf8");
 }
 
+function contextAround(source, marker, radius = 280) {
+  const index = source.indexOf(marker);
+  if (index < 0) return `<missing ${marker}>`;
+  return source.slice(Math.max(0, index - radius), Math.min(source.length, index + marker.length + radius));
+}
+
 async function main() {
   const assets = await fs.readdir(path.join(ROOT, "public", "assets"));
   const normalAppFile = assets.find((file) => file.startsWith("NormalApp-") && file.endsWith(".js"));
@@ -43,6 +49,9 @@ async function main() {
   ]) {
     assert(shipped.includes(marker), `shipped Cake Duel transient marker changed: ${marker}`);
   }
+
+  console.log(`[cakeduel-timing] ${contextAround(shipped, "CHALLENGE_PRE_REVEAL_PAUSE")}`);
+  console.log(`[cakeduel-timing] ${contextAround(shipped, "CHALLENGE_REVEAL_HOLD")}`);
 
   for (const marker of [
     "CakeDuelTransientBanner",
