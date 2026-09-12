@@ -33,16 +33,15 @@ async function main() {
   const sourceMessenger = await read("frontend-src/screens/messenger-screen.tsx");
 
   const shippedContracts = [
-    ["text-base wrapper", /className:\s*"text-base"/],
-    ["paragraph spacing", /className:\s*"leading-relaxed \[&:not\(:last-child\)\]:mb-2"/],
-    ["interactive external-link style", /className:\s*"underline cursor-pointer hover:opacity-80"/],
-    ["inert non-HTTP link style", /className:\s*"underline"/],
-    ["blockquote style", /className:\s*"border-l-2 border-white\/30 pl-3 my-2 italic opacity-90"/],
+    ["paragraph spacing", /className:\s*"mb-2 last:mb-0"/],
+    ["interactive external-link style", /className:\s*"cursor-pointer underline underline-offset-2 hover:opacity-80"/],
+    ["inert non-HTTP link style", /className:\s*"underline underline-offset-2"/],
+    ["blockquote style", /className:\s*"my-2 border-l-2 border-current pl-3 not-italic opacity-80 last:mb-0"/],
     ["link role", /role:\s*"link"/],
     ["keyboard focus", /tabIndex:\s*0/],
     ["Enter/Space activation", /\w+\.key\s*===\s*"Enter"\s*\|\|\s*\w+\.key\s*===\s*" "/],
     ["keyboard default prevention", /\.preventDefault\(\)/],
-    ["Nori browser bridge", /NoriAPI\?\.openUrlInBrowser\(\w+\)/],
+    ["Nori browser bridge import", /from "\.\/openUrlInBrowser-[^"]+\.js"/],
   ];
   for (const [label, pattern] of shippedContracts) {
     assertPattern(
@@ -53,11 +52,10 @@ async function main() {
   }
 
   for (const marker of [
-    'className="text-base"',
-    'className="leading-relaxed [&:not(:last-child)]:mb-2"',
-    'className="underline cursor-pointer hover:opacity-80"',
-    'className="underline"',
-    'className="border-l-2 border-white/30 pl-3 my-2 italic opacity-90"',
+    'className="mb-2 last:mb-0"',
+    'className="cursor-pointer underline underline-offset-2 hover:opacity-80"',
+    'className="underline underline-offset-2"',
+    'className="my-2 border-l-2 border-current pl-3 not-italic opacity-80 last:mb-0"',
     'role="link"',
     "tabIndex={0}",
     'event.key === "Enter" || event.key === " "',
@@ -85,7 +83,7 @@ async function main() {
 
   assert(
     sourceMarkdown.includes("const token = /(\\[([^\\]]+)\\]\\(([^)\\s]+)\\)") &&
-      sourceMarkdown.includes('<span key={key++} className="underline">'),
+      sourceMarkdown.includes('className="underline underline-offset-2" title={href || undefined}'),
     "source Messenger markdown must parse non-HTTP markdown links and keep them inert",
   );
 

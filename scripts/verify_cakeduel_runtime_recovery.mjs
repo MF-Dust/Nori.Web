@@ -134,7 +134,7 @@ async function main() {
     "new CakeDuelRuntimeController(",
     "createCakeDuelPresentationAssets(locale)",
     "controller: cakeduel",
-    "source.cakeduel.dispose()",
+    "session.cakeduel.dispose()",
   ]) {
     assert(sourceApp.includes(marker), `SourceApp Cake Duel integration missing marker: ${marker}`);
   }

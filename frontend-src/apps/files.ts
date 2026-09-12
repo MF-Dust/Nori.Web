@@ -329,7 +329,7 @@ export class FilesAppModel {
   }
 
   async verifyVault(vault: Pick<FilesVault, "command" | "puzzleId">, token: string): Promise<boolean> {
-    const result = await this.manifold.command(vault.command, {
+    const result = await this.manifold.commandResult<JsonValue>(vault.command, {
       puzzleId: vault.puzzleId,
       tokens: [token],
     });

@@ -1,0 +1,41 @@
+/* Recovered source styles. Provenance and ownership: docs/FRONTEND_CSS_RECOVERY.md. */
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 100vh;
+}
+body {
+  margin: 0;
+}
+body {
+  user-select: none;
+  -webkit-user-select: none;
+}
+img:not([draggable="true"]),
+a:not([draggable="true"]) {
+  -webkit-user-drag: none;
+}
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+html[data-screen-glitch-active] iframe[data-browser-page-frame] {
+  visibility: hidden !important;
+}
+.browser-glitch-shield {
+  visibility: hidden;
+  transition: visibility 0s linear 0.1s;
+}
+html[data-screen-glitch-active] .browser-glitch-shield {
+  visibility: visible;
+  transition-delay: 0s;
+}

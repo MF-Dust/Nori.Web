@@ -1,10 +1,21 @@
+import { PreviewScreen } from "./screens/preview-screen";
+import {
+  createTerminalLocalFileSystem,
+  connectTerminalRemote,
+} from "./apps/terminal-filesystem";
 import { codenamesStateSchema } from "./apps/codenames-model";
-import { createSourceTranslate } from "./i18n/translate";
+import { sourceLocale, createSourceTranslate } from "./i18n/translate";
 import { pictionaryStateSchema } from "./apps/pictionary-model";
 import { PictionaryDrawingBridge } from "./apps/pictionary-runtime";
 import { GameCartridgeController } from "./apps/game-cartridge-controller";
 import { chessStateSchema } from "./apps/chess-model";
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
+import { ConversationPanel } from "./components/conversation-panel";
+import { SourceLogin } from "./components/source-login";
+import { NoriStage } from "./live2d/nori-stage";
+import { DesktopSurface } from "./components/desktop-surface";
+import { useAudioSettings } from "./state/audio-store";
+import type { AuthState } from "./runtime/auth";
 import { createCakeDuelPresentationAssets } from "./apps/cakeduel-assets";
 import { CakeDuelRuntimeController } from "./apps/cakeduel-runtime";
 import {
@@ -19,10 +30,13 @@ import { createSourceIdleRuntimeEngine } from "./state/idle-runtime-engine";
 const MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS = 1800;
 
 function preferredLocale(): string {
-  try { return localStorage.getItem("arcade-language") ?? navigator.language; }
-  catch { return navigator.language; }
+  try {
+    return localStorage.getItem("arcade-language") ?? navigator.language;
+  } catch {
+    return navigator.language;
+  }
 }
-const locale = preferredLocale();
+const locale = sourceLocale(preferredLocale());
 const sourceTranslate = createSourceTranslate(locale);
 
 function worldFacts(frontend: NoriFrontendRuntime): Set<string> {
@@ -31,7 +45,8 @@ function worldFacts(frontend: NoriFrontendRuntime): Set<string> {
     const facts = runtime.state.facts;
     if (!facts || typeof facts !== "object" || Array.isArray(facts)) continue;
     for (const [factId, value] of Object.entries(facts)) {
-      if (value === true || value === 1 || (value && typeof value === "object")) result.add(factId);
+      if (value === true || value === 1 || (value && typeof value === "object"))
+        result.add(factId);
     }
   }
   return result;
@@ -41,143 +56,297 @@ function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
   return worldFacts(frontend).has(factId);
 }
 
-export function SourceApp() {
-  const source = useMemo(() => {
-    const frontend = new NoriFrontendRuntime();
-    const codenames = new GameCartridgeController("codenames", frontend.games, frontend.world, frontend.arcade, raw => codenamesStateSchema.parse(raw));
-    const pictionary = new GameCartridgeController("pictionary", frontend.games, frontend.world, frontend.arcade, raw => pictionaryStateSchema.parse(raw));
-    const drawing = new PictionaryDrawingBridge(pictionary, frontend.arcade);
-    const chess = new GameCartridgeController("chess", frontend.games, frontend.world, frontend.arcade, raw => chessStateSchema.parse(raw));
-    const cakeduel = new CakeDuelRuntimeController(
-      frontend.games,
-      frontend.world,
-      frontend.arcade,
-    );
-    const idle = createSourceIdleRuntimeEngine({
-      getFacts: () => worldFacts(frontend),
-      subscribeFacts: (listener) => frontend.world.subscribe(() => listener()),
-      emitFact: async (factId) => {
-        await frontend.manifold.command("client.emitFact", { factId });
-      },
-      getWorldId: () => frontend.world.snapshot().worldId,
-    });
-    idle.start();
+function createSourceSession() {
+  const frontend = new NoriFrontendRuntime();
+  const codenames = new GameCartridgeController(
+    "codenames",
+    frontend.games,
+    frontend.world,
+    frontend.arcade,
+    (raw) => codenamesStateSchema.parse(raw),
+  );
+  const pictionary = new GameCartridgeController(
+    "pictionary",
+    frontend.games,
+    frontend.world,
+    frontend.arcade,
+    (raw) => pictionaryStateSchema.parse(raw),
+  );
+  const drawing = new PictionaryDrawingBridge(pictionary, frontend.arcade);
+  const chess = new GameCartridgeController(
+    "chess",
+    frontend.games,
+    frontend.world,
+    frontend.arcade,
+    (raw) => chessStateSchema.parse(raw),
+  );
+  const cakeduel = new CakeDuelRuntimeController(
+    frontend.games,
+    frontend.world,
+    frontend.arcade,
+  );
+  const idle = createSourceIdleRuntimeEngine({
+    getFacts: () => worldFacts(frontend),
+    subscribeFacts: (listener) => frontend.world.subscribe(() => listener()),
+    emitFact: async (factId) => {
+      await frontend.manifold.command("client.emitFact", { factId });
+    },
+    getWorldId: () => frontend.world.snapshot().worldId,
+  });
+  idle.start();
 
-    const idlePresentation = {
-      ...idle,
-      claimMemento(onCompleted?: () => void) {
-        idle.claimMemento(() => {
-          void frontend.manifold.command("idle.complete", {}).catch((error) => {
-            console.error("[SourceApp] idle.complete failed", error);
-          });
-          onCompleted?.();
+  const idlePresentation = {
+    ...idle,
+    claimMemento(onCompleted?: () => void) {
+      idle.claimMemento(() => {
+        void frontend.manifold.command("idle.complete", {}).catch((error) => {
+          console.error("[SourceApp] idle.complete failed", error);
+        });
+        onCompleted?.();
+      });
+    },
+  };
+
+  let bundle: RecoveredDesktopRuntimeBundle | undefined;
+
+  const launchApp = (request: {
+    appId: string;
+    mode: string;
+    args?: unknown;
+  }) => bundle?.runtime.store.getState().launchApp(request);
+
+  const openUrl = (url: string) => {
+    if (bundle?.openBrowserIntent) {
+      void bundle.openBrowserIntent(url);
+      return;
+    }
+    void launchApp({
+      appId: "browser",
+      mode: "launch",
+      args: { url },
+    });
+  };
+
+  const terminalFiles = createTerminalLocalFileSystem(frontend.files);
+  bundle = createRecoveredDesktopRuntime({
+    terminal: {
+      translate: sourceTranslate,
+      getLocalFileSystem: () =>
+        frontend.world.snapshot().worldId ? terminalFiles : null,
+      connectRemote: (host) => connectTerminalRemote(frontend.manifold, host),
+      launchPreview: (file) => {
+        void launchApp({
+          appId: "preview",
+          mode: "launch",
+          args: { fileId: file.id },
         });
       },
-    };
-
-    let bundle: RecoveredDesktopRuntimeBundle | undefined;
-
-    const launchApp = (request: { appId: string; mode: string; args?: unknown }) =>
-      bundle?.runtime.store.getState().launchApp(request);
-
-    const openUrl = (url: string) => {
-      if (bundle?.openBrowserIntent) {
-        void bundle.openBrowserIntent(url);
-        return;
-      }
-      void launchApp({
-        appId: "browser",
-        mode: "launch",
-        args: { url },
-      });
-    };
-
-    bundle = createRecoveredDesktopRuntime({
-      mail: {
-        model: frontend.mail,
-        attachmentDownloadDurationMs: MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS,
-      },
-      files: {
-        model: frontend.files,
-        translate: sourceTranslate,
-        hasFact: (factId) => hasWorldFact(frontend, factId),
-        subscribe: (listener) => frontend.world.subscribe(() => listener()),
-        launchApp,
-        reduceMotion: () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-      },
-      browser: {
-        page: {
-          model: frontend.browser,
-          locale: () => locale,
-          getFacts: () => worldFacts(frontend),
-          subscribeFacts: (listener) => frontend.world.subscribe(() => listener()),
-          subscribeEnvelopeChanges: (listener) => frontend.arcade.onMessage((message) => {
-            const raw = message as unknown as { type?: string; channel?: string };
-            if (raw.type === "event" && raw.channel === "sites.envelopes.changed") listener();
+    },
+    mail: {
+      model: frontend.mail,
+      attachmentDownloadDurationMs: MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS,
+    },
+    files: {
+      model: frontend.files,
+      translate: sourceTranslate,
+      hasFact: (factId) => hasWorldFact(frontend, factId),
+      subscribe: (listener) => frontend.world.subscribe(() => listener()),
+      launchApp,
+      reduceMotion: () =>
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    },
+    browser: {
+      page: {
+        model: frontend.browser,
+        locale: () => locale,
+        getFacts: () => worldFacts(frontend),
+        subscribeFacts: (listener) =>
+          frontend.world.subscribe(() => listener()),
+        subscribeEnvelopeChanges: (listener) =>
+          frontend.arcade.onMessage((message) => {
+            const raw = message as unknown as {
+              type?: string;
+              channel?: string;
+            };
+            if (
+              raw.type === "event" &&
+              raw.channel === "sites.envelopes.changed"
+            )
+              listener();
           }),
-          invokeCommand: (command, payload) => frontend.manifold.command(command, payload),
-        },
+        invokeCommand: (command, payload) =>
+          frontend.manifold.command(command, payload),
+      },
+      translate: sourceTranslate,
+    },
+    signal: {
+      service: frontend.signal,
+      accountName: () => {
+        const auth = frontend.auth.snapshot();
+        return auth.status === "authenticated" ? auth.session.user.email : "";
+      },
+      authenticated: false,
+      translate: sourceTranslate,
+      messenger: {
+        model: frontend.messenger,
         translate: sourceTranslate,
+        openUrl,
       },
-      signal: {
-        service: frontend.signal,
-        accountName: () => {
-          const auth = frontend.auth.snapshot();
-          return auth.status === "authenticated" ? auth.session.user.email : "";
+    },
+    idle: idlePresentation,
+    codenames: { controller: codenames, translate: sourceTranslate, locale },
+    pictionary: { controller: pictionary, drawing, locale },
+    chess: { controller: chess, translate: sourceTranslate },
+    cakeduel: {
+      controller: cakeduel,
+      translate: sourceTranslate,
+      assets: createCakeDuelPresentationAssets(locale),
+    },
+    desktop: {
+      windows: {
+        preview: {
+          main: {
+            component: (props) => (
+              <PreviewScreen
+                {...props}
+                model={frontend.files}
+                locale={locale}
+              />
+            ),
+          },
         },
-        authenticated: false,
-        translate: sourceTranslate,
-        messenger: {
-          model: frontend.messenger,
-          translate: sourceTranslate,
-          openUrl,
-        },
       },
-      idle: idlePresentation,
-      codenames: { controller: codenames, translate: sourceTranslate, locale },
-      pictionary: { controller: pictionary, drawing, locale },
-      chess: { controller: chess, translate: sourceTranslate },
-      cakeduel: {
-        controller: cakeduel,
-        translate: sourceTranslate,
-        assets: createCakeDuelPresentationAssets(locale),
-      },
-      desktop: {
-        // The source-app smoke build does not yet own the complete production
-        // facts provider. Keep install gating out of bootstrap until that
-        // boundary is migrated instead of inventing facts.
-        enableInstallGuard: false,
-        persistName: "os-store-source-preview",
-      },
-    });
-    return { frontend, idle, codenames, cakeduel, chess, pictionary, drawing, bundle };
-  }, []);
+      enableInstallGuard: true,
+      persistName: "os-store-source-preview",
+    },
+  });
+  return {
+    frontend,
+    idle,
+    codenames,
+    cakeduel,
+    chess,
+    pictionary,
+    drawing,
+    bundle,
+  };
+}
 
+type SourceSession = ReturnType<typeof createSourceSession>;
+
+/** Own external subscriptions inside the effect lifetime, including StrictMode remounts. */
+export function SourceApp() {
+  const [source, setSource] = useState<SourceSession | null>(null);
+  useEffect(() => {
+    const session = createSourceSession();
+    setSource(session);
+    return () => {
+      session.cakeduel.dispose();
+      session.chess.dispose();
+      session.codenames.dispose();
+      session.drawing.dispose();
+      session.pictionary.dispose();
+      session.idle.dispose();
+      session.bundle.runtime.dispose();
+      session.frontend.dispose();
+    };
+  }, []);
+  return source ? <SourceSessionView source={source} /> : null;
+}
+
+function SourceSessionView({ source }: { source: SourceSession }) {
+  const [auth, setAuth] = useState<AuthState>(source.frontend.auth.snapshot());
+  const [facts, setFacts] = useState(() => worldFacts(source.frontend));
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let disposed = false;
-    void source.frontend.start(locale).catch((error) => {
-      if (!disposed) console.warn("[SourceApp] Frontend runtime startup failed", error);
+    const globalWindow = window as Window & {
+      NoriAPI?: { openUrlInBrowser?: (url: string) => void };
+    };
+    const previousApi = globalWindow.NoriAPI;
+    const api = {
+      ...previousApi,
+      openUrlInBrowser: (url: string) => {
+        void source.bundle.openBrowserIntent?.(url);
+      },
+    };
+    globalWindow.NoriAPI = api;
+    const unsubscribeAuth = source.frontend.auth.subscribe(setAuth);
+    const unsubscribeWorld = source.frontend.world.subscribe((state) => {
+      setFacts(worldFacts(source.frontend));
+      setReady(!!state.worldId);
     });
-
+    const unsubscribeConnection = source.frontend.arcade.onState((state) => {
+      if (state === "open") setError(null);
+    });
+    const syncAudio = () => {
+      const audio = useAudioSettings.getState();
+      source.frontend.speech.setVolume(
+        audio.isMuted || audio.voiceMuted
+          ? 0
+          : (audio.masterVolume * audio.voiceVolume) / 10000,
+        audio.voiceRate,
+      );
+    };
+    syncAudio();
+    const unsubscribeAudio = useAudioSettings.subscribe(syncAudio);
+    void source.frontend.start(locale).catch((error) => {
+      if (!disposed) setError(String(error));
+    });
     return () => {
       disposed = true;
-      source.cakeduel.dispose();
-      source.chess.dispose();
-      source.codenames.dispose();
-      source.drawing.dispose();
-      source.pictionary.dispose();
-      source.idle.dispose();
-      source.bundle.runtime.dispose();
-      source.frontend.dispose();
+      if (globalWindow.NoriAPI === api) globalWindow.NoriAPI = previousApi;
+      unsubscribeAuth();
+      unsubscribeWorld();
+      unsubscribeConnection();
+      unsubscribeAudio();
     };
   }, [source]);
-
+  if (auth.status !== "authenticated")
+    return (
+      <SourceLogin
+        auth={source.frontend.auth}
+        status={auth.status}
+        error={error}
+        locale={locale}
+        onAuthenticated={() => source.frontend.connectWorld(locale)}
+      />
+    );
   return (
     <RecoveredDesktopShell
       bundle={source.bundle}
-      factsReady={false}
+      facts={facts}
+      factsReady={ready}
       bootstrapStartupApps
+      translate={sourceTranslate}
+      locale={locale}
       className="source-frontend-root"
+      onSignOut={() => {
+        void source.frontend.auth
+          .signOut()
+          .then(() => {
+            source.frontend.arcade.close();
+            source.frontend.media.close();
+          })
+          .catch((error) => setError(String(error)));
+      }}
+      background={
+        <>
+          <DesktopSurface />
+          <NoriStage speech={source.frontend.speech} />
+        </>
+      }
+      overlay={
+        <>
+          <ConversationPanel frontend={source.frontend} locale={locale} />
+          {error && (
+            <div className="source-connection-error" role="alert">
+              {error}
+            </div>
+          )}
+        </>
+      }
     />
   );
 }

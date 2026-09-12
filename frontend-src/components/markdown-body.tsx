@@ -33,6 +33,7 @@ function renderInline(text: string): ReactNode[] {
             key={key++}
             role="link"
             tabIndex={0}
+            title={href}
             onClick={() => openUrlInBrowser(href)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
@@ -40,12 +41,12 @@ function renderInline(text: string): ReactNode[] {
                 openUrlInBrowser(href);
               }
             }}
-            className="underline cursor-pointer hover:opacity-80"
+            className="cursor-pointer underline underline-offset-2 hover:opacity-80"
           >
             {label}
           </span>
         ) : (
-          <span key={key++} className="underline">
+          <span key={key++} className="underline underline-offset-2" title={href || undefined}>
             {label}
           </span>
         ),
@@ -76,14 +77,14 @@ export function MarkdownBody({ markdown, className }: MarkdownBodyProps) {
   const flushParagraph = () => {
     if (!paragraph.length) return;
     blocks.push(
-      <div key={key++} className="leading-relaxed [&:not(:last-child)]:mb-2">
+      <p key={key++} className="mb-2 last:mb-0">
         {paragraph.map((line, index) => (
           <Fragment key={index}>
             {index ? <br /> : null}
             {renderInline(line)}
           </Fragment>
         ))}
-      </div>,
+      </p>,
     );
     paragraph = [];
   };
@@ -172,7 +173,7 @@ export function MarkdownBody({ markdown, className }: MarkdownBodyProps) {
       blocks.push(
         <blockquote
           key={key++}
-          className="border-l-2 border-white/30 pl-3 my-2 italic opacity-90"
+          className="my-2 border-l-2 border-current pl-3 not-italic opacity-80 last:mb-0"
         >
           {renderInline(quote[1])}
         </blockquote>,
@@ -193,6 +194,6 @@ export function MarkdownBody({ markdown, className }: MarkdownBodyProps) {
     );
   }
 
-  const content = <div className="text-base">{blocks}</div>;
+  const content = <>{blocks}</>;
   return className ? <div className={className}>{content}</div> : content;
 }

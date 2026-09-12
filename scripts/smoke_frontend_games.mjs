@@ -6,6 +6,10 @@ import { mkdir, readFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 
 const output = resolve("frontend-games-smoke");
+const appHtml = await readFile(".frontend-app-build/index.html", "utf8");
+const appStyles = [...appHtml.matchAll(/href="(\/assets\/[^" ]+\.css)"/g)].map(match => match[1]);
+if (!appStyles.length) throw new Error("Run npm run frontend:app:build before the games smoke test");
+const sourceCss = (await Promise.all(appStyles.map(path => readFile(".frontend-app-build" + path, "utf8")))).join("\n");
 await mkdir(output, { recursive: true });
 const compiled = await build({
   entryPoints: ["tests/frontend-games-browser.tsx"], bundle: true, write: false,
@@ -18,22 +22,22 @@ const server = createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.end(await readFile("public/pictionary/drawings.json")); return;
   }
-  if (path === "/legacy.css") {
+  if (path === "/source.css") {
     res.setHeader("Content-Type", "text/css");
-    res.end(await readFile("public/assets/index-FU-0vwSE.css")); return;
+    res.end(sourceCss); return;
   }
   if (files.has(path)) {
     res.setHeader("Content-Type", path.endsWith(".css") ? "text/css" : "text/javascript");
     res.end(files.get(path)); return;
   }
   res.setHeader("Content-Type", "text/html");
-  res.end('<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/legacy.css"><link rel="stylesheet" href="/fixture.css"><style>html,body,#root{margin:0;width:100%;height:100%;overflow:hidden}*{box-sizing:border-box}</style><div id="root"></div><script type="module" src="/fixture.js"></script>');
+  res.end('<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/source.css"><link rel="stylesheet" href="/fixture.css"><style>html,body,#root{margin:0;width:100%;height:100%;overflow:hidden}*{box-sizing:border-box}</style><div id="root"></div><script type="module" src="/fixture.js"></script>');
 });
 await new Promise(done => server.listen(0, "127.0.0.1", done));
 const origin = "http://127.0.0.1:" + server.address().port;
 let browser;
 try {
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, executablePath: process.env.NORI_TEST_CHROMIUM || undefined });
   const page = await browser.newPage({ viewport: { width: 1100, height: 720 } });
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));

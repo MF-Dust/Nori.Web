@@ -24,7 +24,7 @@ The app build writes to ignored `.frontend-app-build/` until the production entr
 3. Mail, Files and Messenger presentation.
 4. Cake Duel, Codenames, Chess and Pictionary presentation/controllers.
 5. Live2D/Nori scene lifecycle and visual integration.
-6. Move the shipped stylesheet into source-owned CSS/modules and remove the temporary `index-FU-0vwSE.css` link.
+6. CSS ownership is complete: source modules and generated utilities replace the historical stylesheet link. See `FRONTEND_CSS_RECOVERY.md`.
 7. Add the deploy-stage frontend build to the Cloudflare build command.
 8. Switch `public/index.html` to the source build and mark `production-entry` complete.
 9. Remove historical JavaScript chunks only after production behavior comparison and rollback validation.

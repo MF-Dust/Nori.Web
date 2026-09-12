@@ -32,7 +32,7 @@ npm run frontend:games:smoke
 
 The behavioral suite executes the actual schemas/models/controller against a simulated Arcade transport. It checks legal chess edge cases, history, clocks, stroke payload limits, request correlation, unmount cleanup, stale round work and locale/clue logic.
 
-The Chromium suite mounts the actual React game screens with a test transport and checks interactions and canvas output. CI publishes desktop/compact screenshots in the frontend-games-smoke artifact. It uses the same temporary shipped stylesheet as the source preview. These are interaction tests and review images, not a golden-image comparison with the original app or a live backend end-to-end test.
+The Chromium suite mounts the actual React game screens with a test transport and checks interactions and canvas output. CI publishes desktop/compact screenshots in the frontend-games-smoke artifact. It now uses the generated source application stylesheet, after the CSS ownership recovery documented in FRONTEND_CSS_RECOVERY.md. These are interaction tests and review images, not a golden-image comparison with the original app or a live backend end-to-end test.
 
 ## Remaining work before the Games gate can be completed
 
