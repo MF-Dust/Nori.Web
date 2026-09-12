@@ -54,7 +54,7 @@ export const CodenamesKeyCard = memo(function CodenamesKeyCard({
                   <button
                     key={index}
                     type="button"
-                    disabled={!selectable}
+                    disabled={!active}
                     className={`aspect-[16/10] rounded-md transition-all duration-150 ${roleClassName(role)} ${
                       hovered ? "ring-2 ring-amber-400 ring-offset-1 ring-offset-background brightness-110" : ""
                     } ${selected ? "border-[3px] border-amber-400" : ""} ${selectable ? "cursor-pointer" : "cursor-default"}`}
