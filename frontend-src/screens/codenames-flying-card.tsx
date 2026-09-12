@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 
 export type CodenamesFlyingCardType = "agent" | "assassin" | "bystander";
@@ -29,14 +29,29 @@ const FLYING_CARD_BASE_SIZE: Readonly<Record<CodenamesFlyingCardType, { width: n
   bystander: { width: 50, height: 50 },
 };
 
-function FlyingCardFace({ type }: { type: CodenamesFlyingCardType }) {
+function flyingCardStyle(type: CodenamesFlyingCardType): CSSProperties {
   if (type === "agent") {
-    return <div className="size-full rounded-xl border border-[var(--codenames-agent-border)] bg-[var(--codenames-agent-bg)]" />;
+    return {
+      background:
+        "radial-gradient(ellipse 80% 65% at 45% 35%, hsl(48 50% 92%) 0%, hsl(42 55% 85%) 45%, hsl(35 55% 68%) 100%)",
+      border: "3px solid hsl(38 50% 48% / .7)",
+    };
   }
   if (type === "assassin") {
-    return <div className="size-full rounded-xl border border-[var(--codenames-assassin-border)] bg-[var(--codenames-assassin-bg)]" />;
+    return {
+      background:
+        "radial-gradient(ellipse 80% 60% at 50% 50%, hsla(180,30%,30%,.4) 0%, transparent 70%), linear-gradient(170deg, hsl(195 35% 28%) 0%, hsl(200 40% 20%) 50%, hsl(205 45% 14%) 100%)",
+      border: "3px solid hsl(190 35% 35%)",
+    };
   }
-  return <div className="size-full rounded-xl border border-[var(--codenames-bystander-border)] bg-[var(--codenames-bystander-bg)]" />;
+  return {
+    background: "linear-gradient(145deg, hsl(12 65% 65%) 0%, hsl(5 55% 55%) 55%, hsl(2 50% 45%) 100%)",
+    border: "2px solid hsl(15 40% 55% / .6)",
+  };
+}
+
+function FlyingCardFace({ type }: { type: CodenamesFlyingCardType }) {
+  return <div className="w-full h-full rounded-xl" style={flyingCardStyle(type)} />;
 }
 
 /** Source-owned fixed-layer card flight used when revealed cards move to their target cell. */
@@ -88,11 +103,7 @@ export const CodenamesFlyingCard = memo(function CodenamesFlyingCard({
     <div
       ref={ref}
       className="fixed pointer-events-none z-50"
-      style={{
-        width: base.width,
-        height: base.height,
-        transformOrigin: "center center",
-      }}
+      style={{ width: base.width, height: base.height, transformOrigin: "center center" }}
       data-codenames-flying-card={card.type}
       data-codenames-flying-cell={card.cell}
     >
