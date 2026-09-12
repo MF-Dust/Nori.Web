@@ -84,6 +84,18 @@ export interface CakeDuelRuntimeBoard {
   lastAttackPassed: boolean;
 }
 
+export type CakeDuelTransientBanner =
+  | { type: "claim"; actualCards: readonly string[]; claim: string; isPlayer: boolean }
+  | { type: "accepted" }
+  | { type: "challenge" }
+  | { type: "bout_start"; boutNumber: number }
+  | {
+      type: "bout_end";
+      victory: boolean;
+      reasonKey: string;
+      reasonPlayers?: Readonly<Record<string, 0 | 1>>;
+    };
+
 export interface CakeDuelControllerSnapshot {
   mounted: boolean;
   mountPending: boolean;
@@ -91,6 +103,8 @@ export interface CakeDuelControllerSnapshot {
   route: CakeDuelRoute;
   state: CakeDuelRuntimeState;
   board: CakeDuelRuntimeBoard | null;
+  banner: CakeDuelTransientBanner | null;
+  wolfyTauntActive: boolean;
   winner: number | null;
   playerWins: number;
   noriWins: number;
@@ -103,6 +117,12 @@ const DEFAULT_STATE: CakeDuelRuntimeState = {
   tutorial: null,
   lastError: null,
 };
+
+// The shipped controller paces these transient layers before routing onward.
+// Exact spring/reveal timing remains tracked separately; these durations keep
+// the source-owned event sequence visible without coupling routing to React.
+const CAKE_DUEL_BANNER_HOLD_MS = 1_800;
+const CAKE_DUEL_WOLFY_TAUNT_MS = 1_100;
 
 const CARD_TYPE: Readonly<Record<string, "physical" | "magical" | "blocker" | "unclaimable">> = {
   soldier: "physical",
@@ -281,12 +301,66 @@ export function deriveCakeDuelRuntimeBoard(state: CakeDuelRuntimeState): CakeDue
   };
 }
 
+function engineEvents(message: ArcadeServerMessage): Record<string, unknown>[] {
+  const raw = message as unknown as Record<string, unknown>;
+  if (raw.type !== "runtime_transition" || raw.cartridgeId !== "cakeduel") return [];
+  const transition = record(raw.transition);
+  if (!transition || !Array.isArray(transition.events)) return [];
+  const events: Record<string, unknown>[] = [];
+  for (const value of transition.events) {
+    const envelope = record(value);
+    if (!envelope) continue;
+    const event = envelope.type === "engine" ? record(envelope.event) : envelope;
+    if (event && typeof event.type === "string") events.push(event);
+  }
+  return events;
+}
+
+function boutEndReason(
+  events: readonly Record<string, unknown>[],
+  winner: 0 | 1,
+): Pick<Extract<CakeDuelTransientBanner, { type: "bout_end" }>, "reasonKey" | "reasonPlayers"> {
+  const challenge = events.find((event) => event.type === "challenge_made");
+  if (challenge) {
+    const challenger = challenge.challenger === 1 ? 1 : 0;
+    if (challenge.success === true) {
+      return {
+        reasonKey: "cakeduel.banner.reason.caughtBluffing",
+        reasonPlayers: { catcher: challenger, bluffer: challenger === 0 ? 1 : 0 },
+      };
+    }
+    return {
+      reasonKey: "cakeduel.banner.reason.wonChallenge",
+      reasonPlayers: { winner: challenger === 0 ? 1 : 0 },
+    };
+  }
+  const depletedByTransfer = events.some((event) => {
+    if (event.type !== "cakes_transferred" || !Array.isArray(event.cakesAfter)) return false;
+    return event.cakesAfter[0] === 0 || event.cakesAfter[1] === 0;
+  });
+  if (depletedByTransfer) {
+    return {
+      reasonKey: "cakeduel.banner.reason.stoleCakes",
+      reasonPlayers: { who: winner },
+    };
+  }
+  if (events.some((event) => event.type === "pass_made")) {
+    return { reasonKey: "cakeduel.banner.reason.bothPassed" };
+  }
+  return { reasonKey: "cakeduel.banner.reason.mostCakes" };
+}
+
 export class CakeDuelRuntimeController {
   private readonly listeners = new Set<() => void>();
   private readonly unsubs: Array<() => void> = [];
   private pendingRequestId: string | null = null;
   private mountPending = false;
   private error: string | null = null;
+  private banner: CakeDuelTransientBanner | null = null;
+  private readonly bannerQueue: CakeDuelTransientBanner[] = [];
+  private bannerTimer: ReturnType<typeof setTimeout> | null = null;
+  private wolfyTauntActive = false;
+  private wolfyTimer: ReturnType<typeof setTimeout> | null = null;
   private current: CakeDuelControllerSnapshot;
 
   constructor(
@@ -295,8 +369,14 @@ export class CakeDuelRuntimeController {
     arcade: ArcadeClient,
   ) {
     this.current = this.computeSnapshot();
-    this.unsubs.push(world.subscribe(() => {
+    this.unsubs.push(world.subscribe((_state, message) => {
       if (world.runtime("cakeduel")) this.mountPending = false;
+      const events = engineEvents(message);
+      if (events.length > 0) {
+        const previousState = this.current.state;
+        const nextState = parseCakeDuelRuntimeState(world.runtime("cakeduel")?.state);
+        this.consumeTransientEvents(events, previousState, nextState);
+      }
       this.publish();
     }));
     this.unsubs.push(arcade.onMessage((message) => this.onArcadeMessage(message)));
@@ -332,6 +412,7 @@ export class CakeDuelRuntimeController {
   }
 
   reset(): void {
+    this.clearTransientPresentation();
     this.dispatch({ type: "reset" });
   }
 
@@ -347,6 +428,10 @@ export class CakeDuelRuntimeController {
 
   dispose(): void {
     for (const unsubscribe of this.unsubs.splice(0)) unsubscribe();
+    if (this.bannerTimer) clearTimeout(this.bannerTimer);
+    if (this.wolfyTimer) clearTimeout(this.wolfyTimer);
+    this.bannerTimer = null;
+    this.wolfyTimer = null;
     this.listeners.clear();
   }
 
@@ -373,6 +458,95 @@ export class CakeDuelRuntimeController {
     this.publish();
   }
 
+  private consumeTransientEvents(
+    events: readonly Record<string, unknown>[],
+    previousState: CakeDuelRuntimeState,
+    nextState: CakeDuelRuntimeState,
+  ): void {
+    if (events.some((event) => event.type === "game_started")) this.clearTransientPresentation();
+    const challengePresent = events.some((event) => event.type === "challenge_made");
+
+    for (const event of events) {
+      if (event.type === "challenge_made") {
+        this.enqueueBanner({ type: "challenge" });
+        continue;
+      }
+      if (event.type === "claim_made" && !challengePresent && typeof event.claim === "string") {
+        const cardIds = numberArray(event.cardIds);
+        const isPlayer = event.player === 0;
+        const cardList = previousState.game?.cardList ?? [];
+        this.enqueueBanner({
+          type: "claim",
+          claim: event.claim,
+          actualCards: isPlayer
+            ? cardIds.map((entityId) => cardList[entityId] ?? event.claim as string)
+            : cardIds.map(() => event.claim as string),
+          isPlayer,
+        });
+        continue;
+      }
+      if (event.type === "pass_made" && !challengePresent) {
+        this.enqueueBanner({ type: "accepted" });
+        continue;
+      }
+      if (event.type === "wolfy_taunt") {
+        this.showWolfyTaunt();
+        continue;
+      }
+      if (event.type === "bout_started") {
+        const completedBouts = nextState.game?.boutWinners.length ?? 0;
+        this.enqueueBanner({ type: "bout_start", boutNumber: completedBouts > 0 ? completedBouts + 1 : 1 });
+        continue;
+      }
+      if (event.type === "bout_ended") {
+        const winner = event.winner === 1 ? 1 : 0;
+        this.enqueueBanner({
+          type: "bout_end",
+          victory: winner === 0,
+          ...boutEndReason(events, winner),
+        });
+      }
+    }
+  }
+
+  private enqueueBanner(message: CakeDuelTransientBanner): void {
+    this.bannerQueue.push(message);
+    this.advanceBannerQueue();
+  }
+
+  private advanceBannerQueue(): void {
+    if (this.banner || this.bannerTimer) return;
+    const next = this.bannerQueue.shift();
+    if (!next) return;
+    this.banner = next;
+    this.bannerTimer = setTimeout(() => {
+      this.banner = null;
+      this.bannerTimer = null;
+      this.advanceBannerQueue();
+      this.publish();
+    }, CAKE_DUEL_BANNER_HOLD_MS);
+  }
+
+  private showWolfyTaunt(): void {
+    this.wolfyTauntActive = true;
+    if (this.wolfyTimer) clearTimeout(this.wolfyTimer);
+    this.wolfyTimer = setTimeout(() => {
+      this.wolfyTauntActive = false;
+      this.wolfyTimer = null;
+      this.publish();
+    }, CAKE_DUEL_WOLFY_TAUNT_MS);
+  }
+
+  private clearTransientPresentation(): void {
+    if (this.bannerTimer) clearTimeout(this.bannerTimer);
+    if (this.wolfyTimer) clearTimeout(this.wolfyTimer);
+    this.bannerTimer = null;
+    this.wolfyTimer = null;
+    this.banner = null;
+    this.bannerQueue.length = 0;
+    this.wolfyTauntActive = false;
+  }
+
   private publish(): void {
     this.current = this.computeSnapshot();
     for (const listener of this.listeners) listener();
@@ -382,13 +556,19 @@ export class CakeDuelRuntimeController {
     const runtime = this.world.runtime("cakeduel");
     const state = parseCakeDuelRuntimeState(runtime?.state);
     const game = state.game;
+    const derivedRoute = deriveCakeDuelRoute(state);
+    const route = derivedRoute === "results" && (this.banner !== null || this.bannerQueue.length > 0)
+      ? "game"
+      : derivedRoute;
     return {
       mounted: runtime !== undefined,
       mountPending: this.mountPending,
       actionPending: this.pendingRequestId !== null,
-      route: deriveCakeDuelRoute(state),
+      route,
       state,
       board: deriveCakeDuelRuntimeBoard(state),
+      banner: this.banner,
+      wolfyTauntActive: this.wolfyTauntActive,
       winner: game?.gameEnded?.winner ?? null,
       playerWins: game?.boutWinners.filter((winner) => winner === 0).length ?? 0,
       noriWins: game?.boutWinners.filter((winner) => winner === 1).length ?? 0,
