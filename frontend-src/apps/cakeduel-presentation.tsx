@@ -27,6 +27,7 @@ export interface CakeDuelPresentationAssets {
   backgroundImage: string;
   cardBackImage: string;
   cakeImage: string;
+  trophyImage: string;
   resolveCardFront(name: string, highResolution?: boolean): string;
   resolveCardIcon?(name: string): string;
   resolveClaimColor?(claim: string): string;
@@ -151,7 +152,10 @@ export function createCakeDuelProductionWindowBinding(
           mounted={snapshot.mounted}
           pending={snapshot.actionPending || snapshot.mountPending}
           backgroundImage={runtime.assets.backgroundImage}
+          cardBackImage={runtime.assets.cardBackImage}
+          cakeImage={runtime.assets.cakeImage}
           translate={runtime.translate}
+          resolveCardFront={runtime.assets.resolveCardFront}
           resolveCardIcon={icon}
           onDifficultyChange={setDifficulty}
           onStart={() => runtime.controller.startNormal(difficulty)}
@@ -356,7 +360,11 @@ export function createCakeDuelProductionWindowBinding(
         roundsToWin={snapshot.state.settings.roundsToWin}
         pending={snapshot.actionPending}
         backgroundImage={runtime.assets.backgroundImage}
+        cardBackImage={runtime.assets.cardBackImage}
+        cakeImage={runtime.assets.cakeImage}
+        trophyImage={runtime.assets.trophyImage}
         translate={runtime.translate}
+        resolveCardFront={runtime.assets.resolveCardFront}
         onPlayAgain={() => {
           if (resetIssued.current) return;
           resetIssued.current = true;
