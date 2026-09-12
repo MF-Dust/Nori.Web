@@ -84,9 +84,10 @@ function exportedDeclaration(sourceText, fileName, exportedName) {
 }
 
 async function main() {
-  const [shippedStart, shippedResults, normalApp, decor, start, results, presentation, assets] = await Promise.all([
+  const [shippedStart, shippedResults, shippedPrimary, normalApp, decor, start, results, presentation, assets] = await Promise.all([
     findRouteChunk("StartScreen-", ["cakeduel.start.difficulty", "cakeduel.start.startGame", "cakeduel.title"]),
     findRouteChunk("ResultsScreen-", ["cakeduel.results.youWin", "cakeduel.results.playAgain", "cakeduel.results.playerLabel"]),
+    findRouteChunk("CakeDuelPrimaryButton-", ["repeatDelay: 2", "stiffness: 130", "stiffness: 140"]),
     findNormalAppChunk(),
     read("frontend-src/screens/cakeduel-route-decor.tsx"),
     read("frontend-src/screens/cakeduel-start-screen.tsx"),
@@ -115,11 +116,22 @@ async function main() {
     "cakeduel.results.noriLabel",
     "cakeduel.results.playAgain",
     'shimmerDelay: 1.5',
+    'entryDelay: 0.7',
     "src: f ? E : z",
     "width: 48 + 32 * r",
     "height: 48 + 32 * r",
   ]) {
     assert(shippedResults.includes(marker), `shipped Cake Duel Results decoration marker changed: ${marker}`);
+  }
+
+  for (const marker of [
+    "transition: { delay: 0.5, duration: 0.4 }",
+    "transition: { duration: 3, repeat: 1 / 0, repeatDelay: 2, delay: d }",
+    "transition: { delay: n, duration: 0.4 }",
+    'transition: { delay: 0.1, type: "spring", stiffness: 140, damping: 16 }',
+    'transition: { delay: n, type: "spring", stiffness: 130, damping: 14 }',
+  ]) {
+    assert(shippedPrimary.includes(marker), `shipped Cake Duel shared route effect marker changed: ${marker}`);
   }
 
   const victoryAsset = exportedDeclaration(normalApp.content, normalApp.file, "T");
@@ -146,9 +158,11 @@ async function main() {
     "height: 121 * scale",
     "overlaySizePx?: number",
     "const overlaySize = overlaySizePx ?? 80 * scale",
-    "CakeDuelRouteDivider",
-    "CakeDuelRoutePrimaryButton",
-    "cakeduel-route-shimmer",
+    "cakeduel-route-divider 400ms 500ms",
+    "entryDelaySec?: number",
+    "cakeduel-route-entry 400ms",
+    "60% { transform: translateX(200%); }",
+    "animation: `cakeduel-route-shimmer 5s ${shimmerDelaySec}s linear infinite`",
   ]) {
     assert(decor.includes(marker), `source Cake Duel shared route decoration missing marker: ${marker}`);
   }
@@ -178,6 +192,7 @@ async function main() {
     "slots={scoreSlots}",
     "<CakeDuelRouteDivider compact={compact} image={cakeImage} />",
     "shimmerDelaySec={1.5}",
+    "entryDelaySec={0.7}",
     "fontSize={compact ? 15 : 18}",
   ]) {
     assert(results.includes(marker), `source Cake Duel Results decoration missing marker: ${marker}`);
@@ -196,7 +211,7 @@ async function main() {
   assert(assets.includes("trophyImage: CAKEDUEL_TROPHY_IMAGE"), "Cake Duel trophy must come from shipped production asset mapping");
   assert(assets.includes('CAKEDUEL_CAKE_IMAGE = "/cakeduel/cake.png"'), "Cake Duel defeat overlay must reuse the shipped cake asset");
 
-  console.log("[ok] Cake Duel Start and Results decorative presentation, including outcome overlays, is source-owned against shipped contracts");
+  console.log("[ok] Cake Duel Start and Results decorative presentation and shipped effect pacing are source-owned");
 }
 
 main().catch((error) => {
