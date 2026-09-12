@@ -1,3 +1,4 @@
+import { createPictionaryProductionWindowBinding, type PictionaryPresentationRuntime } from "./pictionary-presentation";
 import { createChessProductionWindowBinding, type ChessPresentationRuntime } from "./chess-presentation";
 import {
   createBrowserPopupProductionWindowBinding,
@@ -65,6 +66,7 @@ export interface RecoveredProductionPresentationOptions {
   qfr?: QfrDockRuntime;
   cakeduel?: CakeDuelPresentationRuntime;
   chess?: ChessPresentationRuntime;
+  pictionary?: PictionaryPresentationRuntime;
 }
 
 export function createRecoveredProductionWindowBindings(
@@ -125,6 +127,8 @@ export function createRecoveredProductionWindowBindings(
 
   if (options.chess) bindings.chess = { game: createChessProductionWindowBinding(options.chess) };
 
+  if (options.pictionary) bindings.pictionary = { game: createPictionaryProductionWindowBinding(options.pictionary) };
+
   return bindings;
 }
 
@@ -181,6 +185,7 @@ export function createRecoveredDesktopRuntime(
     qfr: options.qfr,
     cakeduel: options.cakeduel,
     chess: options.chess,
+    pictionary: options.pictionary,
     terminal:
       options.terminal && terminalEditBridges
         ? withTerminalEditBridgeRegistry(options.terminal, terminalEditBridges)

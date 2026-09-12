@@ -1,3 +1,5 @@
+import { pictionaryStateSchema } from "./apps/pictionary-model";
+import { PictionaryDrawingBridge } from "./apps/pictionary-runtime";
 import { GameCartridgeController } from "./apps/game-cartridge-controller";
 import { chessStateSchema } from "./apps/chess-model";
 import { useEffect, useMemo } from "react";
@@ -37,6 +39,8 @@ function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
 export function SourceApp() {
   const source = useMemo(() => {
     const frontend = new NoriFrontendRuntime();
+    const pictionary = new GameCartridgeController("pictionary", frontend.games, frontend.world, frontend.arcade, raw => pictionaryStateSchema.parse(raw));
+    const drawing = new PictionaryDrawingBridge(pictionary, frontend.arcade);
     const chess = new GameCartridgeController("chess", frontend.games, frontend.world, frontend.arcade, raw => chessStateSchema.parse(raw));
     const cakeduel = new CakeDuelRuntimeController(
       frontend.games,
@@ -124,6 +128,7 @@ export function SourceApp() {
         },
       },
       idle: idlePresentation,
+      pictionary: { controller: pictionary, drawing, locale: navigator.language },
       chess: { controller: chess, translate: sourceTranslate },
       cakeduel: {
         controller: cakeduel,
@@ -138,7 +143,7 @@ export function SourceApp() {
         persistName: "os-store-source-preview",
       },
     });
-    return { frontend, idle, cakeduel, chess, bundle };
+    return { frontend, idle, cakeduel, chess, pictionary, drawing, bundle };
   }, []);
 
   useEffect(() => {
@@ -151,6 +156,8 @@ export function SourceApp() {
       disposed = true;
       source.cakeduel.dispose();
       source.chess.dispose();
+      source.drawing.dispose();
+      source.pictionary.dispose();
       source.idle.dispose();
       source.bundle.runtime.dispose();
       source.frontend.dispose();
