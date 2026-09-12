@@ -15,12 +15,6 @@ async function read(relativePath) {
   return fs.readFile(path.join(ROOT, relativePath), "utf8");
 }
 
-function contextAround(source, marker, radius = 280) {
-  const index = source.indexOf(marker);
-  if (index < 0) return `<missing ${marker}>`;
-  return source.slice(Math.max(0, index - radius), Math.min(source.length, index + marker.length + radius));
-}
-
 async function main() {
   const assets = await fs.readdir(path.join(ROOT, "public", "assets"));
   const normalAppFile = assets.find((file) => file.startsWith("NormalApp-") && file.endsWith(".js"));
@@ -37,8 +31,10 @@ async function main() {
     'case "wolfy_taunt"',
     'case "bout_started"',
     'case "bout_ended"',
-    "CHALLENGE_PRE_REVEAL_PAUSE",
-    "CHALLENGE_REVEAL_HOLD",
+    "CHALLENGE_FLIP_STAGGER: 400",
+    "CHALLENGE_PRE_REVEAL_PAUSE: 1e3",
+    "CHALLENGE_REVEAL_HOLD: 3e3",
+    "BANNER_DURATION: 2e3",
     "revealPileCards",
     "navigateToResults",
     "cakeduel.banner.reason.caughtBluffing",
@@ -50,12 +46,13 @@ async function main() {
     assert(shipped.includes(marker), `shipped Cake Duel transient marker changed: ${marker}`);
   }
 
-  console.log(`[cakeduel-challenge-flow] ${contextAround(shipped, 'case "challenge_made"', 1_800)}`);
-
   for (const marker of [
     "CakeDuelTransientBanner",
-    "CAKE_DUEL_BANNER_HOLD_MS",
-    "CAKE_DUEL_WOLFY_TAUNT_MS",
+    'export type CakeDuelChallengeRevealStage = "idle" | "pause" | "revealed"',
+    "export const CAKE_DUEL_CHALLENGE_FLIP_STAGGER_MS = 400",
+    "export const CAKE_DUEL_CHALLENGE_PRE_REVEAL_PAUSE_MS = 1_000",
+    "export const CAKE_DUEL_CHALLENGE_REVEAL_HOLD_MS = 3_000",
+    "export const CAKE_DUEL_BANNER_HOLD_MS = 2_000",
     "engineEvents(message",
     'raw.type !== "runtime_transition"',
     "transition.events",
@@ -67,9 +64,16 @@ async function main() {
     'event.type === "bout_ended"',
     "boutEndReason(events, winner)",
     "this.enqueueBanner({ type: \"challenge\" })",
+    "this.pendingChallengeBanners.push(banner)",
+    "this.beginChallengeRevealTimeline()",
+    'this.challengeRevealStage = "pause"',
+    'this.challengeRevealStage = "revealed"',
+    "CAKE_DUEL_CHALLENGE_PRE_REVEAL_PAUSE_MS",
+    "CAKE_DUEL_CHALLENGE_REVEAL_HOLD_MS",
+    "this.bannerQueue.unshift(...this.pendingChallengeBanners.splice(0))",
     "this.showWolfyTaunt()",
-    'derivedRoute === "results" && (this.banner !== null || this.bannerQueue.length > 0)',
-    "banner: this.banner",
+    'this.challengeRevealStage !== "idle"',
+    "challengeRevealStage: this.challengeRevealStage",
     "wolfyTauntActive: this.wolfyTauntActive",
   ]) {
     assert(runtime.includes(marker), `source Cake Duel transient runtime missing marker: ${marker}`);
@@ -79,12 +83,15 @@ async function main() {
     "presentCakeDuelBanner(",
     "cakeDuelPlayerLabel(",
     "buildCakeDuelChallengeRevealBoards(",
-    "CAKEDUEL_CHALLENGE_SETTLE_MS",
+    "CAKE_DUEL_CHALLENGE_FLIP_STAGGER_MS",
+    "flipDelayMs: index * CAKE_DUEL_CHALLENGE_FLIP_STAGGER_MS",
     "previousSnapshot",
     "challengeRevealBoards",
     "revealedName: game.cardList[card.entityId]",
+    'snapshot.challengeRevealStage === "pause"',
+    'snapshot.challengeRevealStage === "revealed"',
+    "challengeBoards.hidden",
     "challengeBoards.revealed",
-    "suppressBoutEndBanner",
     "banner={displayBanner}",
     "snapshot.wolfyTauntActive && runtime.assets.wolfyFrames",
     "frameImages: runtime.assets.wolfyFrames",
@@ -95,7 +102,7 @@ async function main() {
   assert(cutover.includes('{ id: "games", complete: false'), "Games cutover boundary must remain incomplete");
   assert(cutover.includes("transition-driven banner/Wolfy wiring"), "Cake Duel cutover note must record transient event ownership");
 
-  console.log("[ok] Cake Duel transition events drive source-owned transient banners, challenge reveal pacing and Wolfy presentation");
+  console.log("[ok] Cake Duel transition events and exact shipped challenge timing drive source-owned transient presentation");
 }
 
 main().catch((error) => {
