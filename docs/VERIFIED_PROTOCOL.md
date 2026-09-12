@@ -94,7 +94,15 @@ Other validated types:
 - `dispatch_ack`
 - `event`
 - `error`
-- `pong` (uses `now`, not `timestamp`)
+- `pong` — `serverId` is **required**; `now` is an optional integer. The field is
+  `now`, never `timestamp`. Shipped schema:
+
+  ```js
+  pu = _({ type: I("pong"), serverId: Z(), now: H().int().optional() }).strict()
+  ```
+
+  A `pong` without `serverId` fails the strict parser and is dropped, so the
+  client never observes a reply to its ping.
 
 A successful committed dispatch acknowledgement requires:
 
