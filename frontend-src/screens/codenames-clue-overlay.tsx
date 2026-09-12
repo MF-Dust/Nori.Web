@@ -61,6 +61,40 @@ function useCodenamesClueReveal(clue: CodenamesClue | null, active: boolean) {
   return { word, revealedCount, showCount };
 }
 
+function ClueCountSeal({ count, compact = false }: { count: CodenamesClue["count"]; compact?: boolean }) {
+  return (
+    <div
+      className={`relative rounded-full flex items-center justify-center shrink-0 ${compact ? "w-10 h-10" : "w-16 h-16"}`}
+      style={{
+        background:
+          "radial-gradient(ellipse 80% 70% at 30% 25%, hsl(8 65% 50%) 0%, hsl(5 60% 42%) 40%, hsl(2 55% 35%) 100%)",
+        border: compact ? "1.5px solid hsl(0 40% 28%)" : "2px solid hsl(0 50% 30%)",
+        boxShadow: compact
+          ? "inset 1px 2px 4px hsla(10,60%,55%,.35), inset -1px -2px 5px hsla(0,40%,18%,.4), 0 2px 6px -1px hsla(0,35%,20%,.4)"
+          : "inset 2px 3px 6px hsla(10,70%,65%,.4), inset -2px -3px 8px hsla(0,50%,20%,.5), 0 3px 12px -2px hsla(0,40%,20%,.5)",
+      }}
+      data-codenames-clue-count
+    >
+      <div
+        className={compact ? "absolute inset-1.5 rounded-full" : "absolute inset-2 rounded-full"}
+        style={{ border: compact ? "1px solid hsla(0,35%,25%,.35)" : "1.5px solid hsla(0,40%,25%,.4)" }}
+      />
+      <span
+        className="relative z-10"
+        style={{
+          fontFamily: '"Fredoka", system-ui',
+          fontSize: compact ? "1.1rem" : "1.75rem",
+          fontWeight: 700,
+          color: compact ? "hsl(45 85% 90%)" : "hsl(45 90% 92%)",
+          textShadow: "0 1px 0 hsla(0,50%,25%,.5)",
+        }}
+      >
+        {formatCodenamesClueCount(count)}
+      </span>
+    </div>
+  );
+}
+
 function CodenamesCompactClue({ clue, label }: { clue: CodenamesClue; label: string }) {
   return (
     <div className="relative flex items-center gap-4" data-codenames-compact-clue>
@@ -84,15 +118,20 @@ function CodenamesCompactClue({ clue, label }: { clue: CodenamesClue; label: str
             fontWeight: 700,
             letterSpacing: "0.1em",
             color: "hsl(35 50% 28%)",
+            textShadow: "0 1px 0 hsla(45,50%,90%,.8)",
           }}
         >
           {normalizeCodenamesClueWord(clue.word)}
         </span>
       </div>
-      <div className="w-1 h-4 rounded-full bg-emerald-700/60" />
-      <div className="relative w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-red-950/60 bg-red-800">
-        <span className="font-bold text-amber-50">{formatCodenamesClueCount(clue.count)}</span>
-      </div>
+      <div
+        className="w-1 h-4 rounded-full"
+        style={{
+          background: "linear-gradient(to bottom, hsl(145 40% 50%), hsl(145 35% 40%))",
+          opacity: 0.6,
+        }}
+      />
+      <ClueCountSeal count={clue.count} compact />
     </div>
   );
 }
@@ -107,12 +146,7 @@ export const CodenamesClueDisplay = memo(function CodenamesClueDisplay({
     return <span className="text-sm text-muted-foreground">{translate(presentation.translationKey)}</span>;
   }
   if (presentation.type === "display") {
-    return (
-      <CodenamesCompactClue
-        clue={presentation.clue}
-        label={translate(presentation.translationKey)}
-      />
-    );
+    return <CodenamesCompactClue clue={presentation.clue} label={translate(presentation.translationKey)} />;
   }
   return null;
 });
@@ -130,39 +164,51 @@ const CodenamesClueReveal = memo(function CodenamesClueReveal({
       <span className="text-xs uppercase tracking-[0.35em] font-semibold px-4 py-1 text-muted-foreground/70">
         {label}
       </span>
-      <div
-        className="relative px-10 py-6 rounded-xl overflow-hidden"
-        style={{
-          background:
-            "linear-gradient(135deg, hsla(48,60%,92%,.98) 0%, hsla(45,50%,88%,.95) 30%, hsla(42,45%,85%,.97) 70%, hsla(40,40%,82%,.95) 100%)",
-          border: "3px solid hsl(35 45% 55%)",
-        }}
-      >
-        <div className="relative flex min-w-[180px] min-h-[48px] items-center justify-center">
-          <div className="flex items-baseline gap-0.5" aria-label={word}>
-            {word.split("").map((character, index) => (
-              <span
-                key={`${character}-${index}`}
-                className="inline-block"
-                style={{
-                  fontFamily: '"Fredoka", system-ui',
-                  fontSize: "2.25rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  color: "hsl(35 55% 25%)",
-                  opacity: index < revealedCount ? 1 : 0,
-                }}
-              >
-                {character}
-              </span>
-            ))}
+      <div className="relative flex items-center gap-4">
+        <div
+          className="relative px-10 py-6 rounded-xl overflow-hidden"
+          style={{
+            background:
+              "linear-gradient(135deg, hsla(48,60%,92%,.98) 0%, hsla(45,50%,88%,.95) 30%, hsla(42,45%,85%,.97) 70%, hsla(40,40%,82%,.95) 100%)",
+            border: "3px solid hsl(35 45% 55%)",
+            boxShadow:
+              "inset 0 2px 4px hsla(50,60%,95%,.9), inset 0 -2px 6px hsla(35,40%,60%,.2), 0 4px 20px -4px hsla(35,50%,30%,.4)",
+          }}
+        >
+          <div className="relative flex min-w-[180px] min-h-[48px] items-center justify-center">
+            <div className="flex items-baseline gap-0.5" aria-label={word}>
+              {word.split("").map((character, index) => (
+                <span
+                  key={`${character}-${index}`}
+                  className="inline-block"
+                  style={{
+                    fontFamily: '"Fredoka", system-ui',
+                    fontSize: "2.25rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    color: "hsl(35 55% 25%)",
+                    textShadow: "0 2px 0 hsla(45,50%,85%,.8), 0 -1px 0 hsla(35,40%,40%,.1)",
+                    opacity: index < revealedCount ? 1 : 0,
+                  }}
+                >
+                  {character}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-        {showCount ? (
-          <div className="mt-2 text-center text-lg font-bold text-red-900" data-codenames-clue-count>
-            {formatCodenamesClueCount(clue.count)}
-          </div>
-        ) : null}
+        {showCount ? <ClueCountSeal count={clue.count} /> : null}
+      </div>
+      <div className="flex items-center gap-2 mt-1" style={{ opacity: 0.5 }} aria-hidden="true">
+        <div
+          className="w-12 h-[2px] rounded-full"
+          style={{ background: "linear-gradient(to right, transparent, hsl(145 40% 45%), hsl(145 35% 35%))" }}
+        />
+        <div className="w-2 h-2 rounded-full" style={{ background: "hsl(145 45% 40%)" }} />
+        <div
+          className="w-12 h-[2px] rounded-full"
+          style={{ background: "linear-gradient(to left, transparent, hsl(145 40% 45%), hsl(145 35% 35%))" }}
+        />
       </div>
     </div>
   );
@@ -177,10 +223,7 @@ export const CodenamesClueOverlay = memo(function CodenamesClueOverlay({
 }: CodenamesClueOverlayProps) {
   useEffect(() => {
     if (!activeOverlay || !onDismissOverlay) return;
-    const timeout = window.setTimeout(
-      onDismissOverlay,
-      CODENAMES_BOARD_OVERLAY_DURATION_MS[activeOverlay],
-    );
+    const timeout = window.setTimeout(onDismissOverlay, CODENAMES_BOARD_OVERLAY_DURATION_MS[activeOverlay]);
     return () => window.clearTimeout(timeout);
   }, [activeOverlay, onDismissOverlay]);
 
@@ -188,10 +231,7 @@ export const CodenamesClueOverlay = memo(function CodenamesClueOverlay({
   const overlay = activeOverlay ? CODENAMES_BOARD_OVERLAY_PRESENTATION[activeOverlay] : null;
 
   return (
-    <div
-      className="absolute inset-0 z-30 pointer-events-none overflow-hidden rounded-lg"
-      data-codenames-board-overlay
-    >
+    <div className="absolute inset-0 z-30 pointer-events-none overflow-hidden rounded-lg" data-codenames-board-overlay>
       <div className="absolute inset-0 bg-background/90 backdrop-blur-[3px]" />
       {overlay ? (
         <div
