@@ -5,6 +5,10 @@ import {
   type BrowserPresentationRuntime,
 } from "./browser-presentation";
 import {
+  createCakeDuelProductionWindowBinding,
+  type CakeDuelPresentationRuntime,
+} from "./cakeduel-presentation";
+import {
   createFilesProductionWindowBinding,
   type FilesPresentationRuntime,
   type OpenFilesIntent,
@@ -58,6 +62,7 @@ export interface RecoveredProductionPresentationOptions {
   files?: FilesPresentationRuntime;
   idle?: IdlePresentationRuntime;
   qfr?: QfrDockRuntime;
+  cakeduel?: CakeDuelPresentationRuntime;
 }
 
 export function createRecoveredProductionWindowBindings(
@@ -107,6 +112,12 @@ export function createRecoveredProductionWindowBindings(
   if (options.idle) {
     bindings.idle = {
       main: createIdleProductionWindowBinding(options.idle),
+    };
+  }
+
+  if (options.cakeduel) {
+    bindings.cakeduel = {
+      game: createCakeDuelProductionWindowBinding(options.cakeduel),
     };
   }
 
@@ -164,6 +175,7 @@ export function createRecoveredDesktopRuntime(
       : undefined,
     idle: options.idle,
     qfr: options.qfr,
+    cakeduel: options.cakeduel,
     terminal:
       options.terminal && terminalEditBridges
         ? withTerminalEditBridgeRegistry(options.terminal, terminalEditBridges)
