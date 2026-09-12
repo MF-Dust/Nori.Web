@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import type { CodenamesSide } from "../apps/codenames-board-presentation";
 import {
   CODENAMES_CLUE_COUNT_OPTIONS,
@@ -21,8 +21,10 @@ import {
   type CodenamesBoardGameState,
 } from "./codenames-board";
 import { CodenamesClueOverlay } from "./codenames-clue-overlay";
+import { CodenamesFlyingCard, type CodenamesFlyingCardState } from "./codenames-flying-card";
 import { CodenamesFooter } from "./codenames-footer";
 import { CodenamesHeader } from "./codenames-header";
+import { CodenamesHelpOverlay } from "./codenames-help-overlay";
 import { CodenamesKeyCard } from "./codenames-key-card";
 
 export interface CodenamesScreenGameState extends CodenamesBoardGameState {
@@ -48,6 +50,7 @@ export interface CodenamesScreenProps {
   clueCount?: CodenamesClueCountSelection;
   hoveredCellIndex?: number | null;
   selectedCards?: ReadonlySet<number>;
+  flyingCard?: CodenamesFlyingCardState | null;
   canEndTurn?: boolean;
   shouldPulseEndTurn?: boolean;
   onCardClick(index: number): void;
@@ -55,6 +58,7 @@ export interface CodenamesScreenProps {
   onCardHover?(index: number | null): void;
   onEndTurn?: () => void;
   onDismissOverlay?: () => void;
+  onFlyingCardLanded?: () => void;
   onHelp?: () => void;
   onClueCountChange?: (count: CodenamesClueCount) => void;
   onSubmitClue?: (word: string, inlineCount?: CodenamesClueCount) => boolean | void;
@@ -105,7 +109,7 @@ function CodenamesClueCountSelector({
  *
  * Game/controller state remains supplied by the host runtime; this component
  * owns the shipped header, board/overlay, turn footer, key card, chat/clue
- * composer and loading layout so the presentation no longer needs GameScreen-*.
+ * composer, help sheet, flying-card layer and loading layout.
  */
 export const CodenamesScreen = memo(function CodenamesScreen({
   gameState,
@@ -122,6 +126,7 @@ export const CodenamesScreen = memo(function CodenamesScreen({
   clueCount = -1,
   hoveredCellIndex = null,
   selectedCards,
+  flyingCard = null,
   canEndTurn = false,
   shouldPulseEndTurn = false,
   onCardClick,
@@ -129,11 +134,13 @@ export const CodenamesScreen = memo(function CodenamesScreen({
   onCardHover,
   onEndTurn,
   onDismissOverlay,
+  onFlyingCardLanded,
   onHelp,
   onClueCountChange,
   onSubmitClue,
   playSound,
 }: CodenamesScreenProps) {
+  const [helpOpen, setHelpOpen] = useState(false);
   const chatMessages = useMemo(
     () => recoverCodenamesChatMessages(messages, translate),
     [messages, translate],
@@ -148,6 +155,12 @@ export const CodenamesScreen = memo(function CodenamesScreen({
     },
     [onClueCountChange, onSubmitClue, uiState.type],
   );
+
+  const openHelp = useCallback(() => {
+    setHelpOpen(true);
+    onHelp?.();
+  }, [onHelp]);
+  const closeHelp = useCallback(() => setHelpOpen(false), []);
 
   if (connectionState !== "ready" || !gameState) {
     return (
@@ -171,7 +184,7 @@ export const CodenamesScreen = memo(function CodenamesScreen({
         counterpartSide={counterpartSide}
         gameState={gameState}
         translate={translate}
-        onHelp={onHelp}
+        onHelp={openHelp}
       />
       <div className="flex-1 min-h-0 p-2 gap-2 @[820px]/game:p-3 @[820px]/game:gap-3 flex bg-muted/50">
         <div className="flex-1 min-w-0 flex flex-col gap-2 @[820px]/game:gap-3">
@@ -242,6 +255,9 @@ export const CodenamesScreen = memo(function CodenamesScreen({
           </div>
         </div>
       </div>
+
+      <CodenamesFlyingCard card={flyingCard} onLanded={onFlyingCardLanded} />
+      <CodenamesHelpOverlay open={helpOpen} translate={translate} onClose={closeHelp} />
     </div>
   );
 });
