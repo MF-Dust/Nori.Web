@@ -90,6 +90,10 @@ async function main() {
     "onAnimationComplete: () =>",
     "rotate: c ? 180 : 0",
     "e.jsx(Lt, {})",
+    '!S.closest("[data-codenames-board]")',
+    '!S.closest("[data-debug-menu]")',
+    '!S.closest("button")',
+    'document.addEventListener("click", n)',
   ]) {
     assert(shipped.includes(marker), `shipped Codenames screen composition changed: ${marker}`);
   }
@@ -165,6 +169,7 @@ async function main() {
     'className="grid grid-cols-5 gap-1"',
     'const selectable = active && role === "AGENT"',
     "selectedCards?.has(index)",
+    "disabled={!active}",
     "onMouseEnter",
     "onSelect?.(index)",
   ]) {
@@ -233,6 +238,11 @@ async function main() {
     "<CodenamesHelpOverlay",
     "useState(false)",
     "onHelp={openHelp}",
+    "onClearPendingGuess",
+    'target.closest("[data-codenames-board]")',
+    'target.closest("[data-debug-menu]")',
+    'target.closest("button")',
+    'document.addEventListener("click", handleDocumentClick)',
     "recoverCodenamesChatMessages(messages, translate)",
     "parseCodenamesClueSubmission(value)",
     "CODENAMES_CLUE_COUNT_OPTIONS.map",
