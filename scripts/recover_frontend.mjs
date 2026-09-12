@@ -6,14 +6,15 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-import beautifyPackage from "js-beautify";
 import ts from "typescript";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ASSET_DIR = path.join(ROOT, "public", "assets");
 const DEFAULT_OUTPUT = path.join(ROOT, ".frontend-recovery");
-const beautifyJs =
-  beautifyPackage.js ?? beautifyPackage.js_beautify ?? beautifyPackage.default ?? beautifyPackage;
+const sourcePrinter = ts.createPrinter({
+  newLine: ts.NewLineKind.LineFeed,
+  removeComments: false,
+});
 
 function parseArgs(argv) {
   const args = { output: DEFAULT_OUTPUT, metadataOnly: false };
@@ -124,6 +125,17 @@ function analyzeSource(fileName, sourceText) {
   };
 }
 
+function prettyPrintSource(fileName, sourceText) {
+  const sourceFile = ts.createSourceFile(
+    fileName,
+    sourceText,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS,
+  );
+  return `${sourcePrinter.printFile(sourceFile).trimEnd()}\n`;
+}
+
 function chunkLabel(fileName) {
   return fileName.replace(/-[A-Za-z0-9_]+\.js$/, "").replace(/\.js$/, "");
 }
@@ -159,14 +171,7 @@ async function main() {
     };
     chunks.push(record);
     if (!args.metadataOnly) {
-      const pretty = beautifyJs(sourceText, {
-        indent_size: 2,
-        indent_char: " ",
-        preserve_newlines: true,
-        max_preserve_newlines: 2,
-        brace_style: "collapse",
-        end_with_newline: true,
-      });
+      const pretty = prettyPrintSource(file, sourceText);
       await fs.writeFile(path.join(args.output, "pretty", "assets", file), pretty, "utf8");
     }
   }
