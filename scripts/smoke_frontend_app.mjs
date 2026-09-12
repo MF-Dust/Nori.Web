@@ -79,7 +79,11 @@ try {
   });
   const historicalRequests = [];
   page.on("request", (request) => {
-    if (/\/(?:NormalApp-.*\.(?:js|css)|index-CyHAbkO5\.js|index-FU-0vwSE\.css)/.test(request.url()))
+    if (
+      /\/(?:NormalApp-.*\.(?:js|css)|index-CyHAbkO5\.js|index-FU-0vwSE\.css)/.test(
+        request.url(),
+      )
+    )
       historicalRequests.push(request.url());
   });
   await page.addInitScript(() => {
@@ -89,6 +93,14 @@ try {
       constructor(...args) {
         super(...args);
         window.sourceSmoke.sockets.push(this);
+        this.addEventListener("message", (event) => {
+          if (typeof event.data !== "string") return;
+          try {
+            const message = JSON.parse(event.data);
+            if (message.type === "web_world_reset_ack")
+              sessionStorage.setItem("source-smoke-reset-ack", message.worldId);
+          } catch {}
+        });
       }
       send(data) {
         if (typeof data === "string") {
@@ -178,10 +190,141 @@ try {
   await page.locator(".xterm-helper-textarea").press("Enter");
   await page.locator(".xterm").waitFor();
   await page.screenshot({ path: resolve(output, "terminal-desktop.png") });
-  assert.deepEqual(historicalRequests, [], "source app loaded historical JS or CSS");
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.locator(".topbar-app-name").click();
+  await page.getByRole("menuitem", { name: "About...", exact: true }).click();
+  await page.getByRole("heading", { name: "NoriOS", exact: true }).waitFor();
+  await page.screenshot({ path: resolve(output, "about.png") });
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+
+  await page.locator(".topbar-system-trigger").click();
+  await page
+    .getByRole("menuitem", { name: "System Settings...", exact: true })
+    .click();
+  const master = page.getByRole("slider", {
+    name: "Master Volume",
+    exact: true,
+  });
+  await master.fill("37");
+  assert.equal(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem("audio-store")).state.masterVolume,
+    ),
+    37,
+  );
+  await page.getByRole("switch", { name: "Sound", exact: true }).click();
+  assert.equal(await master.isDisabled(), true);
+  await page.getByRole("switch", { name: "Sound", exact: true }).click();
+  await page.getByRole("button", { name: "Graphics", exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Graphics", exact: true })
+    .selectOption("ultra-performance");
+  await page.locator('[data-live2d-fps="30"]').waitFor();
+  assert.equal(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem("graphics-store")).state.source,
+    ),
+    "user",
+  );
+  await page.getByRole("button", { name: "Network", exact: true }).click();
+  await page.getByRole("button", { name: "Check line", exact: true }).click();
+  await page
+    .getByRole("status")
+    .filter({ hasText: /^Average \d+ ms$/ })
+    .waitFor();
+  await page.screenshot({ path: resolve(output, "settings-network.png") });
+  await page.getByRole("button", { name: "System", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Reset system...", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  assert.equal(
+    await page.evaluate(() =>
+      window.sourceSmoke.sent.some(
+        (item) => item.type === "reset_my_web_world",
+      ),
+    ),
+    false,
+  );
+  // Restore a Settings window and its persistent audio/graphics choices.
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page
+    .locator('[data-live2d-status="ready"][data-live2d-fps="30"]')
+    .waitFor({ timeout: 60000 });
+  assert.equal(
+    await page
+      .getByRole("slider", { name: "Master Volume", exact: true })
+      .inputValue(),
+    "37",
+  );
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+
+  // Make the shipped Credits Dock condition true in the disposable local world.
+  await page.evaluate(() => {
+    const socket = window.sourceSmoke.sockets.find(
+      (item) =>
+        item.url.endsWith("/api/arcade/web/v1") && item.readyState === 1,
+    );
+    socket.send(
+      JSON.stringify({
+        type: "event",
+        channel: "manifold.command.request",
+        requestId: "smoke-credits-fact",
+        payload: {
+          command: "client.emitFact",
+          payload: { factId: "arg.farewell.shown" },
+        },
+      }),
+    );
+  });
+  await page.locator('[data-nori-dock] [data-app-id="credits"]').click();
+  await page
+    .getByRole("heading", { name: "Thanks for playing", exact: true })
+    .waitFor();
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll(".credits-reveal")].every(
+      (element) => Number(getComputedStyle(element).opacity) >= 0.99,
+    ),
+  );
+  await page.screenshot({ path: resolve(output, "credits.png") });
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+
+  // Exercise the confirmed destructive flow only against the backend spawned above.
+  await page.evaluate(() =>
+    localStorage.setItem("idle.run:source-smoke-old", "fixture"),
+  );
+  await page.locator(".topbar-system-trigger").click();
+  await page
+    .getByRole("menuitem", { name: "System Settings...", exact: true })
+    .click();
+  await page.getByRole("button", { name: "System", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Reset system...", exact: true })
+    .click();
+  await Promise.all([
+    page.waitForEvent("framenavigated", (frame) => frame === page.mainFrame()),
+    page
+      .getByRole("button", { name: "Erase and restart", exact: true })
+      .click(),
+  ]);
+  assert.ok(
+    await page.evaluate(() => sessionStorage.getItem("source-smoke-reset-ack")),
+    "reset must be acknowledged before reboot",
+  );
+  assert.equal(
+    await page.evaluate(() =>
+      localStorage.getItem("idle.run:source-smoke-old"),
+    ),
+    null,
+  );
+  assert.deepEqual(
+    historicalRequests,
+    [],
+    "source app loaded historical JS or CSS",
+  );
   assert.deepEqual(errors, [], "source app raised browser errors");
   console.log(
-    "Source app smoke passed: desktop, Live2D, text chat, PCM playback acknowledgement, reconnect and Terminal.",
+    "Source app smoke passed: desktop, Live2D, text chat, PCM playback acknowledgement, reconnect, Terminal, About, Settings persistence/graphics/network/reset and Credits.",
   );
 } finally {
   await browser?.close();

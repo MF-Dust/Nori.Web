@@ -13,6 +13,10 @@ import { ChatRuntimeController } from "../frontend-src/apps/chat-runtime";
 import { ManifoldService } from "../frontend-src/services/manifold";
 import { createTerminalLocalFileSystem } from "../frontend-src/apps/terminal-filesystem";
 import { NoriFrontendRuntime } from "../frontend-src/runtime/frontend-runtime";
+import {
+  requestSystemReply,
+  SystemService,
+} from "../frontend-src/services/system";
 
 class Socket extends EventTarget {
   static OPEN = 1;
@@ -392,4 +396,59 @@ test("terminal resolves nested files and rejects reading binary files", async ()
   assert.equal((await fs.resolveFile("/图片/image.png"))?.id, "b");
   assert.equal((await fs.readText("/图片/image.png")).ok, false);
   assert.equal((await fs.list("/missing")).ok, false);
+});
+
+test("system requests wait for the matching ack and reject on timeout, abort and disconnect", async (t) => {
+  environment(t);
+  const arcade = new ArcadeClient({ reconnect: false });
+  const opening = arcade.connect();
+  await tick();
+  const socket = Socket.sockets[0];
+  socket.open();
+  await opening;
+  const system = new SystemService(arcade);
+  const reset = system.resetWorld("en");
+  assert.equal(
+    system.resetWorld("en"),
+    reset,
+    "deduplicate reset from concurrent windows",
+  );
+  assert.equal(
+    socket.sent.filter((item) => item.type === "reset_my_web_world").length,
+    1,
+  );
+  socket.message(JSON.stringify({ type: "pong" }));
+  let finished = false;
+  void reset.then(() => {
+    finished = true;
+  });
+  await tick();
+  assert.equal(finished, false);
+  socket.message(
+    JSON.stringify({ type: "web_world_reset_ack", worldId: "new-world" }),
+  );
+  assert.equal((await reset).worldId, "new-world");
+  const controller = new AbortController();
+  const cancelled = requestSystemReply(
+    arcade,
+    { type: "ping" },
+    "pong",
+    100,
+    controller.signal,
+  );
+  controller.abort();
+  await assert.rejects(cancelled, /cancelled/);
+  await assert.rejects(
+    requestSystemReply(arcade, { type: "ping" }, "pong", 5),
+    /timed out/,
+  );
+  const disconnected = requestSystemReply(
+    arcade,
+    { type: "ping" },
+    "pong",
+    100,
+  );
+  arcade.close();
+  await assert.rejects(disconnected, /closed/);
+  await assert.rejects(system.resetWorld("en"), /unavailable/);
 });

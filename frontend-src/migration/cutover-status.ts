@@ -11,6 +11,7 @@ export type FrontendCutoverBoundaryId =
   | "messenger"
   | "games"
   | "live2d"
+  | "supporting-apps"
   | "css-ownership"
   | "production-entry";
 
@@ -42,6 +43,7 @@ export const FRONTEND_CUTOVER_BOUNDARIES: readonly FrontendCutoverBoundary[] = [
   { id: "games", complete: false, note: "Codenames presentation is source-owned, including header/clue flow, 5x5 board and reveals, turn footer, interactive key card, chat/clue composer, timed board overlays, help sheet and flying-card transition behavior. Cake Duel is source-owned end to end: production cartridge controller, start/game/results lifecycle, locale-aware shipped assets, card/hand/HUD/table/action presentation, preview/help overlays, transition-driven banner and Wolfy events, exact shipped challenge banner/pause/reveal timing with per-card flip staggering, results pacing, Start/Results decorative structure, outcome overlays and shared route effect pacing. Chess and Pictionary now have source-owned playable screens, schemas, lifecycle controllers, legal chess moves/history/promotion and drawing/snapshot/round timing. Codenames is connected to cartridge state, clue validation, tap-to-confirm and turn commands. Games remains incomplete: Codenames controller reveal pacing/tutorial choreography, Chess visual/audio parity, Pictionary progressive hints and original rendering parity, and live backend/media verification remain open. See docs/FRONTEND_GAMES_RECOVERY.md." },
   { id: "live2d", complete: false, note: "Cubism framework, standalone engine, typed session boundary, real ARGNori model, idle motion, physics/lip-sync and StrictMode-safe WebGL lifecycle are source-owned and browser-tested. Three.js scene/camera/shadow, custom gesture/expression plugins and story cinematics remain open." },
   { id: "css-ownership", complete: true, note: "Source app CSS is decomposed into tokens, globals, pixel, base, components, Nori theme and desktop shell. Tailwind utilities are generated from source; no historical stylesheet is loaded. Browser app/game checks use the rebuilt CSS. See docs/FRONTEND_CSS_RECOVERY.md." },
+  { id: "supporting-apps", complete: false, note: "Settings sound/graphics/network/reset, About credit roll, system alerts, Credits content/fact/clipboard and basic Preview have source components and production bindings. Settings persistence, live rendering controls, latency, reset and Credits launch are browser-tested. Debug, full Preview, About logo effects, GPU auto-detection and shared audio remain open; see docs/FRONTEND_SYSTEM_RECOVERY.md. This explicit boundary records gaps previously carried inside production-entry." },
   { id: "production-entry", complete: false, note: "public/index.html still boots the historical production JavaScript entry." },
 ];
 

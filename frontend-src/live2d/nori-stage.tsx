@@ -9,6 +9,10 @@ import {
   type Live2DSession,
 } from "./engine.js";
 import type { SpeechPlayer } from "../runtime/speech-player";
+import {
+  live2DRenderBudget,
+  useGraphicsSettings,
+} from "../state/graphics-store";
 import "./stage.css";
 
 /** NormalApp model and plugin configuration. Story choreography remains a separate boundary. */
@@ -24,6 +28,21 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
     let disposed = false,
       engine: Live2DEngine | undefined,
       session: Live2DSession | undefined;
+    const updateBudget = () => {
+      if (!session || !host.current) return;
+      const budget = live2DRenderBudget(
+        useGraphicsSettings.getState().mode,
+        host.current.clientHeight,
+        window.devicePixelRatio,
+      );
+      session.setMaxFps(budget.fps);
+      session.setResolution(budget.resolution);
+      host.current.dataset.live2dFps = String(budget.fps);
+      host.current.dataset.live2dResolution = String(budget.resolution);
+    };
+    const unsubscribeGraphics = useGraphicsSettings.subscribe(updateBudget);
+    const resize = new ResizeObserver(updateBudget);
+    resize.observe(host.current);
     setStatus("loading");
     try {
       engine = Live2DEngine.create({ baseUrl: "/", logging: "error" });
@@ -43,7 +62,7 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
           }),
         ],
       });
-      session.setMaxFps(60);
+      updateBudget();
       void session
         .loadModel({
           dir: "/ARGNori_web/",
@@ -70,6 +89,8 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
     }
     return () => {
       disposed = true;
+      unsubscribeGraphics();
+      resize.disconnect();
       engine?.dispose();
       canvas.remove();
     };

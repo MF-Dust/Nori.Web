@@ -62,3 +62,7 @@ The goal is a boring final switch: by the time `public/index.html` changes, all 
 ## Games integration progress
 
 Chess and Pictionary now have source-driven game screens, and Codenames is bound to the source cartridge lifecycle alongside Cake Duel. Base English/Chinese translations are also source-owned. [The game recovery ledger](FRONTEND_GAMES_RECOVERY.md) records implemented behavior, automated verification and the visual/runtime gaps that keep Games incomplete. Source application integration and full-production parity remain distinct acceptance steps.
+
+## Supporting applications
+
+Settings, About, system alerts and Credits now have source components and desktop bindings. [The supporting-app ledger](FRONTEND_SYSTEM_RECOVERY.md) records restored flows, browser verification and the remaining Debug/Preview/audio/visual gaps. These previously implicit production-entry gaps now have their own incomplete `supporting-apps` boundary.

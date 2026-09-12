@@ -1,4 +1,11 @@
 import { PreviewScreen } from "./screens/preview-screen";
+import { AboutScreen, SystemAlert } from "./screens/system-screen";
+import { CreditsScreen } from "./screens/credits-screen";
+import {
+  SettingsScreen,
+  type SettingsRuntime,
+} from "./screens/settings-screen";
+import { SystemService } from "./services/system";
 import {
   createTerminalLocalFileSystem,
   connectTerminalRemote,
@@ -128,6 +135,37 @@ function createSourceSession() {
   };
 
   const terminalFiles = createTerminalLocalFileSystem(frontend.files);
+  const system = new SystemService(frontend.arcade);
+  const settings: SettingsRuntime = {
+    arcade: frontend.arcade,
+    system,
+    translate: sourceTranslate,
+    onReset: async () => {
+      await system.resetWorld(locale);
+      // Stop autosave before deleting progress so the old run cannot reappear.
+      idle.dispose();
+      try {
+        await frontend.auth.signOut();
+      } catch (error) {
+        console.warn("[Settings] post-reset sign-out failed", error);
+      }
+      try {
+        for (const key of Object.keys(localStorage)) {
+          if (key.startsWith("idle.run:") || key === "os-store-source-preview")
+            localStorage.removeItem(key);
+        }
+      } finally {
+        window.location.reload();
+      }
+    },
+  };
+  const creditsOpened = () => {
+    void frontend.manifold
+      .commandResult("client.emitFact", { factId: "credits.opened" })
+      .catch((error) => {
+        console.warn("[Credits] could not record open", error);
+      });
+  };
   bundle = createRecoveredDesktopRuntime({
     terminal: {
       translate: sourceTranslate,
@@ -204,6 +242,27 @@ function createSourceSession() {
     },
     desktop: {
       windows: {
+        system: {
+          about: { component: AboutScreen },
+          alert: {
+            component: (props) => (
+              <SystemAlert {...props} translate={sourceTranslate} />
+            ),
+          },
+        },
+        settings: {
+          main: { component: () => <SettingsScreen runtime={settings} /> },
+        },
+        credits: {
+          main: {
+            component: () => (
+              <CreditsScreen
+                translate={sourceTranslate}
+                onOpened={creditsOpened}
+              />
+            ),
+          },
+        },
         preview: {
           main: {
             component: (props) => (
