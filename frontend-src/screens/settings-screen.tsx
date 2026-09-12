@@ -28,6 +28,7 @@ export interface SettingsRuntime {
   system: SystemService;
   translate: Translate;
   onReset(): Promise<void>;
+  speechControl?: ReactNode;
 }
 const sections = ["sound", "graphics", "network", "system"] as const;
 type Section = (typeof sections)[number];
@@ -118,7 +119,13 @@ function VolumeRow({
     </div>
   );
 }
-function SoundSettings({ t }: { t: Translate }) {
+function SoundSettings({
+  t,
+  speechControl,
+}: {
+  t: Translate;
+  speechControl?: ReactNode;
+}) {
   const audio = useAudioSettings();
   return (
     <div className="space-y-6">
@@ -135,6 +142,7 @@ function SoundSettings({ t }: { t: Translate }) {
           onChange={audio.toggleMute}
         />
       </div>
+      {speechControl}
       <hr />
       <div className="space-y-1">
         <VolumeRow
@@ -451,7 +459,7 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
                 className={section === "system" ? "pb-8" : ""}
               >
                 {section === "sound" ? (
-                  <SoundSettings t={t} />
+                  <SoundSettings t={t} speechControl={runtime.speechControl} />
                 ) : section === "graphics" ? (
                   <GraphicsSettings t={t} />
                 ) : section === "network" ? (

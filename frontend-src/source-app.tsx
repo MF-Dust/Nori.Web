@@ -17,6 +17,7 @@ import { PictionaryDrawingBridge } from "./apps/pictionary-runtime";
 import { GameCartridgeController } from "./apps/game-cartridge-controller";
 import { chessStateSchema } from "./apps/chess-model";
 import { useEffect, useState } from "react";
+import { SpeechModeControl } from "./components/speech-mode-control";
 import { ConversationPanel } from "./components/conversation-panel";
 import { SourceLogin } from "./components/source-login";
 import { NoriStage } from "./live2d/nori-stage";
@@ -139,6 +140,7 @@ function createSourceSession() {
   const settings: SettingsRuntime = {
     arcade: frontend.arcade,
     system,
+    speechControl: <SpeechModeControl frontend={frontend} locale={locale} />,
     translate: sourceTranslate,
     onReset: async () => {
       await system.resetWorld(locale);

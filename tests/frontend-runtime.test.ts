@@ -1,4 +1,5 @@
 import test from "node:test";
+import { ConversationTimeline } from "../frontend-src/apps/conversation-presentation";
 import assert from "node:assert/strict";
 import { ArcadeClient } from "../frontend-src/runtime/arcade-client";
 import { ArcadeMediaClient } from "../frontend-src/runtime/media-client";
@@ -451,4 +452,51 @@ test("system requests wait for the matching ack and reject on timeout, abort and
   arcade.close();
   await assert.rejects(disconnected, /closed/);
   await assert.rejects(system.resetWorld("en"), /unavailable/);
+});
+
+test("conversation bubbles ignore mount history, retain block identities and expire on receipt time", () => {
+  const timeline = new ConversationTimeline();
+  const line = (messageId: string, extra = {}) => ({
+    messageId,
+    sender: "agent" as const,
+    content: messageId,
+    ...extra,
+  });
+  assert.deepEqual(timeline.update(1, [line("history")], 1000), []);
+  const lines = [
+    line("history"),
+    line("new", { blockId: 0 }),
+    line("new", { blockId: 1 }),
+    line("other"),
+    line("fourth"),
+    line("hidden", { isSpeech: false }),
+  ];
+  assert.deepEqual(
+    timeline.update(1, lines, 2000).map((bubble) => bubble.id),
+    ["new:1", "other", "fourth"],
+  );
+  assert.equal(
+    timeline.update(
+      1,
+      lines.map((item) => ({ ...item, content: "stream updated" })),
+      25000,
+    )[0].receivedAt,
+    2000,
+  );
+  assert.equal(
+    timeline.visible(32001).length,
+    0,
+    "stream updates must not extend the 30 second expiry",
+  );
+  assert.deepEqual(
+    timeline.update(2, lines, 33000),
+    [],
+    "reconnect must not replay history",
+  );
+  assert.deepEqual(
+    timeline
+      .update(2, [...lines, line("fresh")], 34000)
+      .map((bubble) => bubble.id),
+    ["fresh"],
+  );
 });

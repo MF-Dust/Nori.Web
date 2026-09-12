@@ -128,6 +128,79 @@ try {
   await page.locator('.conversation-lines [data-sender="player"]').waitFor();
   await page.locator('.conversation-lines [data-sender="agent"]').waitFor();
   console.log("Text response received");
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll(".conversation-bubble")].every(
+      (element) => Number(getComputedStyle(element).opacity) > 0.99,
+    ),
+  );
+  const panel = await page
+    .locator(".conversation-panel")
+    .evaluate((element) => {
+      const style = getComputedStyle(element),
+        box = element.getBoundingClientRect();
+      return {
+        width: box.width,
+        background: style.backgroundColor,
+        border: style.borderTopWidth,
+        font: style.fontFamily,
+      };
+    });
+  assert.equal(panel.width, 280);
+  assert.equal(panel.background, "rgba(0, 0, 0, 0)");
+  assert.equal(panel.border, "0px");
+  assert.ok(panel.font.includes("Nunito"));
+  const devtools = await page.context().newCDPSession(page);
+  await devtools.send("DOM.enable");
+  await devtools.send("CSS.enable");
+  const { root } = await devtools.send("DOM.getDocument");
+  const { nodeId } = await devtools.send("DOM.querySelector", {
+    nodeId: root.nodeId,
+    selector: '.conversation-bubble[data-sender="player"] span',
+  });
+  const { fonts } = await devtools.send("CSS.getPlatformFontsForNode", {
+    nodeId,
+  });
+  assert.ok(
+    fonts.some(
+      (font) => font.postScriptName.startsWith("Nunito") && font.isCustomFont,
+    ),
+    "chat Latin text must render the actual Nunito font",
+  );
+  const agentNode = await devtools.send("DOM.querySelector", {
+    nodeId: root.nodeId,
+    selector: '.conversation-bubble[data-sender="agent"] span',
+  });
+  const agentFonts = await devtools.send("CSS.getPlatformFontsForNode", {
+    nodeId: agentNode.nodeId,
+  });
+  assert.ok(
+    agentFonts.fonts.some(
+      (font) => font.postScriptName.includes("Sarasa") && font.isCustomFont,
+    ),
+    "Chinese chat text must use the bundled CJK fallback",
+  );
+  await devtools.detach();
+  await page.keyboard.press("Control+k");
+  assert.equal(
+    await input.evaluate((element) => document.activeElement === element),
+    true,
+  );
+  await page.screenshot({ path: resolve(output, "conversation-focused.png") });
+  await input.press("Escape");
+  assert.equal(
+    await input.evaluate((element) => document.activeElement === element),
+    false,
+  );
+  for (const width of [390, 1024, 1366]) {
+    await page.setViewportSize({ width, height: 900 });
+    const rect = await page.locator(".conversation-composer").boundingBox();
+    assert.ok(
+      rect.x >= 0 && rect.x + rect.width <= width,
+      "composer must remain inside the viewport",
+    );
+  }
+  await page.setViewportSize({ width: 1366, height: 900 });
   await page.screenshot({ path: resolve(output, "desktop-chat-live2d.png") });
   const icon = page.locator(".topbar-icon");
   assert.ok((await icon.boundingBox()).width <= 20, "TopBar CSS is missing");
@@ -139,10 +212,15 @@ try {
     "absolute",
   );
 
+  await page.locator(".topbar-system-trigger").click();
+  await page
+    .getByRole("menuitem", { name: "System Settings...", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Enable speech", exact: true })
     .click();
   await page.getByRole("button", { name: "Speech on", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Close", exact: true }).click();
   await input.fill("Voice recovery smoke");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await page

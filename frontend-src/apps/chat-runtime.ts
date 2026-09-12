@@ -11,9 +11,11 @@ const lineSchema = z.object({
   createdAt: z.number().optional(),
   emotion: z.string().optional(),
   blockId: z.number().optional(),
+  isSpeech: z.boolean().optional(),
 });
 export type ChatLine = z.infer<typeof lineSchema>;
 export interface ChatSnapshot {
+  presentationEpoch: number;
   lines: ChatLine[];
   phase: string;
   mode: "text" | "audio";
@@ -27,6 +29,7 @@ type Queued = { command: Command; resolve(ok: boolean): void };
 /** Chat requests share one head-version queue, including speech lifecycle acknowledgements. */
 export class ChatRuntimeController {
   private value: ChatSnapshot = {
+    presentationEpoch: 0,
     lines: [],
     phase: "idle",
     mode: "text",
@@ -65,6 +68,7 @@ export class ChatRuntimeController {
           this.cancel();
           this.fence = -1;
           this.joined = raw.type !== "world_left";
+          this.publish({ presentationEpoch: this.value.presentationEpoch + 1 });
         }
         this.refresh();
         if (

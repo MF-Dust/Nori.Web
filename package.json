@@ -51,6 +51,7 @@
     "vite": "^6.4.3"
   },
   "dependencies": {
+    "@fontsource/nunito": "^5.2.7",
     "@xterm/xterm": "^5.5.0",
     "canvas-confetti": "^1.9.4",
     "chess.js": "1.4.0",
