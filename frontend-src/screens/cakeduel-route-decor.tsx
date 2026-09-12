@@ -35,9 +35,18 @@ const DECORATIVE_STYLES = `
   from { opacity: 0; transform: translateY(-40px) scale(.3) rotate(-15deg); }
   to { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
 }
+@keyframes cakeduel-route-divider {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+@keyframes cakeduel-route-entry {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @keyframes cakeduel-route-shimmer {
-  from { transform: translateX(-120%); }
-  to { transform: translateX(220%); }
+  0% { transform: translateX(-100%); }
+  60% { transform: translateX(200%); }
+  100% { transform: translateX(200%); }
 }
 `;
 
@@ -207,7 +216,11 @@ export const CakeDuelRouteDivider = memo(function CakeDuelRouteDivider({
   image: string;
 }) {
   return (
-    <div className={compact ? "flex items-center gap-2 w-full" : "flex items-center gap-2 w-full my-1"} data-cakeduel-route-divider>
+    <div
+      className={compact ? "flex items-center gap-2 w-full" : "flex items-center gap-2 w-full my-1"}
+      style={{ animation: "cakeduel-route-divider 400ms 500ms ease-out both" }}
+      data-cakeduel-route-divider
+    >
       <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${CAKEDUEL_PALETTE.peach}80)` }} />
       <img src={image} alt="" draggable={false} className={compact ? "w-7 h-7 drop-shadow-md" : "w-9 h-9 drop-shadow-md"} />
       <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${CAKEDUEL_PALETTE.peach}80, transparent)` }} />
@@ -220,6 +233,7 @@ export interface CakeDuelRoutePrimaryButtonProps {
   disabled?: boolean;
   fontSize?: number;
   shimmerDelaySec?: number;
+  entryDelaySec?: number;
   children: ReactNode;
   icon?: ReactNode;
   onClick(): void;
@@ -230,11 +244,12 @@ export const CakeDuelRoutePrimaryButton = memo(function CakeDuelRoutePrimaryButt
   disabled = false,
   fontSize = 20,
   shimmerDelaySec = 0,
+  entryDelaySec,
   children,
   icon,
   onClick,
 }: CakeDuelRoutePrimaryButtonProps) {
-  return (
+  const button = (
     <button
       type="button"
       disabled={disabled}
@@ -255,10 +270,21 @@ export const CakeDuelRoutePrimaryButton = memo(function CakeDuelRoutePrimaryButt
         className="absolute inset-0"
         style={{
           background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%)",
-          animation: `cakeduel-route-shimmer 3s ${shimmerDelaySec}s linear infinite`,
+          animation: `cakeduel-route-shimmer 5s ${shimmerDelaySec}s linear infinite`,
         }}
       />
       <span className="relative flex items-center justify-center gap-2">{icon}{children}</span>
     </button>
+  );
+
+  if (entryDelaySec === undefined) return button;
+  return (
+    <div
+      className="w-full"
+      style={{ animation: `cakeduel-route-entry 400ms ${entryDelaySec}s ease-out both` }}
+      data-cakeduel-route-entry
+    >
+      {button}
+    </div>
   );
 });
