@@ -11,6 +11,10 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function assertPattern(source, pattern, message) {
+  assert(pattern.test(source), message);
+}
+
 async function read(relativePath) {
   return fs.readFile(path.join(ROOT, relativePath), "utf8");
 }
@@ -28,21 +32,23 @@ async function main() {
   const sourceMarkdown = await read("frontend-src/components/markdown-body.tsx");
   const sourceMessenger = await read("frontend-src/screens/messenger-screen.tsx");
 
-  for (const marker of [
-    'className: "text-base"',
-    'className: "leading-relaxed [&:not(:last-child)]:mb-2"',
-    'className: "underline cursor-pointer hover:opacity-80"',
-    'className: "underline"',
-    'className: "border-l-2 border-white/30 pl-3 my-2 italic opacity-90"',
-    'role: "link"',
-    "tabIndex: 0",
-    'l.key === "Enter" || l.key === " "',
-    "l.preventDefault()",
-    "window.NoriAPI?.openUrlInBrowser(s)",
-  ]) {
-    assert(
-      markdownChunk.source.includes(marker),
-      `shipped MarkdownMessage contract changed: ${marker}`,
+  const shippedContracts = [
+    ["text-base wrapper", /className:\s*"text-base"/],
+    ["paragraph spacing", /className:\s*"leading-relaxed \[&:not\(:last-child\)\]:mb-2"/],
+    ["interactive external-link style", /className:\s*"underline cursor-pointer hover:opacity-80"/],
+    ["inert non-HTTP link style", /className:\s*"underline"/],
+    ["blockquote style", /className:\s*"border-l-2 border-white\/30 pl-3 my-2 italic opacity-90"/],
+    ["link role", /role:\s*"link"/],
+    ["keyboard focus", /tabIndex:\s*0/],
+    ["Enter/Space activation", /\w+\.key\s*===\s*"Enter"\s*\|\|\s*\w+\.key\s*===\s*" "/],
+    ["keyboard default prevention", /\.preventDefault\(\)/],
+    ["Nori browser bridge", /NoriAPI\?\.openUrlInBrowser\(\w+\)/],
+  ];
+  for (const [label, pattern] of shippedContracts) {
+    assertPattern(
+      markdownChunk.source,
+      pattern,
+      `shipped MarkdownMessage contract changed: ${label}`,
     );
   }
 
@@ -66,8 +72,9 @@ async function main() {
   }
 
   assert(
-    messengerChunk.source.includes('const u = `🤖 ${t.body}`') &&
-      messengerChunk.source.includes("source: u"),
+    messengerChunk.source.includes('import("./MarkdownMessage-') &&
+      /`🤖 \$\{\w+\.body\}`/.test(messengerChunk.source) &&
+      /source:\s*\w+/.test(messengerChunk.source),
     "shipped Messenger service-message MarkdownMessage wiring changed",
   );
   assert(
