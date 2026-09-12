@@ -76,12 +76,27 @@ interface CodenamesBoardCellProps {
 function RevealedAgent({ side }: { side: CodenamesSide }) {
   return (
     <div
-      className="absolute inset-0 z-20 rounded-xl overflow-hidden border border-[var(--codenames-agent-border)] bg-[var(--codenames-agent-bg)] shadow-md"
-      style={{ transform: side === "B" ? "rotate(180deg)" : "none" }}
+      className="absolute inset-0 z-20 rounded-xl overflow-hidden"
+      style={{
+        transform: side === "B" ? "rotate(180deg)" : "none",
+        background:
+          "radial-gradient(ellipse 80% 65% at 45% 35%, hsl(48 50% 92%) 0%, hsl(42 55% 85%) 45%, hsl(35 55% 68%) 100%)",
+        border: "3px solid hsl(38 50% 48% / .7)",
+        boxShadow: "0 2px 8px rgba(0,0,0,.15)",
+      }}
       data-codenames-revealed-agent={side}
     >
-      <div className="absolute inset-[14%] rounded-lg border-2 border-amber-900/30" />
-      <div className="absolute left-1/2 top-1/2 h-10 w-14 -translate-x-1/2 -translate-y-1/2 rounded-md bg-amber-200/60 border border-amber-900/30" />
+      <div
+        className="absolute inset-[14%] rounded-lg"
+        style={{ border: "2px solid hsl(35 45% 42% / .3)" }}
+      />
+      <div
+        className="absolute left-1/2 top-1/2 h-10 w-14 -translate-x-1/2 -translate-y-1/2 rounded-md"
+        style={{
+          background: "linear-gradient(145deg, hsl(48 65% 72%), hsl(40 45% 50%))",
+          border: "1px solid hsl(35 45% 42% / .35)",
+        }}
+      />
     </div>
   );
 }
@@ -89,13 +104,22 @@ function RevealedAgent({ side }: { side: CodenamesSide }) {
 function RevealedAssassin({ side }: { side: CodenamesSide }) {
   return (
     <div
-      className="absolute inset-0 z-20 rounded-xl overflow-hidden border border-[var(--codenames-assassin-border)] bg-[var(--codenames-assassin-bg)] shadow-md"
-      style={{ transform: side === "B" ? "rotate(180deg)" : "none" }}
+      className="absolute inset-0 z-20 rounded-xl overflow-hidden"
+      style={{
+        transform: side === "B" ? "rotate(180deg)" : "none",
+        background:
+          "radial-gradient(ellipse 80% 60% at 50% 50%, hsla(180,30%,30%,.4) 0%, transparent 70%), linear-gradient(170deg, hsl(195 35% 28%) 0%, hsl(200 40% 20%) 50%, hsl(205 45% 14%) 100%)",
+        border: "3px solid hsl(190 35% 35%)",
+        boxShadow: "0 2px 8px rgba(0,0,0,.15)",
+      }}
       data-codenames-revealed-assassin={side}
     >
-      <div className="absolute left-1/2 top-1/2 size-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-slate-400/30 bg-slate-950/70" />
-      <div className="absolute left-[35%] top-[42%] size-2 rounded-full bg-amber-100" />
-      <div className="absolute right-[35%] top-[42%] size-2 rounded-full bg-amber-100" />
+      <div
+        className="absolute left-1/2 top-1/2 size-14 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{ border: "2px solid hsla(195,25%,65%,.3)", background: "hsla(205,45%,8%,.72)" }}
+      />
+      <div className="absolute left-[35%] top-[42%] size-2 rounded-full" style={{ background: "hsl(45 90% 70%)" }} />
+      <div className="absolute right-[35%] top-[42%] size-2 rounded-full" style={{ background: "hsl(45 90% 70%)" }} />
     </div>
   );
 }
@@ -108,7 +132,14 @@ function BystanderMark({ side, slot }: { side: CodenamesSide; slot: 0 | 1 }) {
       } ${side === "B" ? "rotate-180" : ""}`}
       data-codenames-bystander-mark={side}
     >
-      <div className="size-full rounded-full border border-[var(--codenames-bystander-border)] bg-[var(--codenames-bystander-bg)] shadow-sm" />
+      <div
+        className="size-full rounded-full"
+        style={{
+          background: "radial-gradient(circle at 35% 30%, hsl(12 80% 75%), hsl(5 55% 55%) 55%, hsl(2 50% 45%))",
+          border: "2px solid hsl(15 40% 55% / .6)",
+          boxShadow: "0 1px 3px rgba(0,0,0,.18)",
+        }}
+      />
     </div>
   );
 }
@@ -148,21 +179,12 @@ const CodenamesBoardCell = memo(function CodenamesBoardCell({
   const leave = useCallback(() => onHover(null), [onHover]);
 
   return (
-    <div
-      className="overflow-visible"
-      data-card-cell={index}
-      onMouseEnter={enter}
-      onMouseLeave={leave}
-    >
+    <div className="overflow-visible" data-card-cell={index} onMouseEnter={enter} onMouseLeave={leave}>
       <div className={interaction.wrapperClassName}>
         <div className="w-full aspect-[16/10] overflow-visible">
           <div
             className="origin-top-left overflow-visible"
-            style={{
-              width: CARD_BASE_WIDTH,
-              height: CARD_BASE_HEIGHT,
-              transform: "scale(var(--card-scale,1))",
-            }}
+            style={{ width: CARD_BASE_WIDTH, height: CARD_BASE_HEIGHT, transform: "scale(var(--card-scale,1))" }}
           >
             <div className="relative w-full h-full overflow-visible">
               {showUnrevealedOutline ? (
@@ -189,10 +211,7 @@ const CodenamesBoardCell = memo(function CodenamesBoardCell({
                 onClick={onClick}
                 disabled={!interaction.interactive}
               >
-                <span
-                  className="game-card-word"
-                  style={{ fontSize: getCodenamesCardWordFontSize(word) }}
-                >
+                <span className="game-card-word" style={{ fontSize: getCodenamesCardWordFontSize(word) }}>
                   {word}
                 </span>
               </button>
@@ -202,7 +221,11 @@ const CodenamesBoardCell = memo(function CodenamesBoardCell({
               {cell.bystanderMarks[0] ? <BystanderMark side={cell.bystanderMarks[0]} slot={0} /> : null}
               {cell.bystanderMarks[1] ? <BystanderMark side={cell.bystanderMarks[1]} slot={1} /> : null}
               {isShaking ? (
-                <div className="absolute inset-0 rounded-xl bg-amber-400/40 pointer-events-none z-20" data-codenames-card-shake />
+                <div
+                  className="absolute inset-0 rounded-xl pointer-events-none z-20"
+                  style={{ background: "radial-gradient(circle, hsla(45,90%,55%,.4) 0%, transparent 75%)" }}
+                  data-codenames-card-shake
+                />
               ) : null}
             </div>
           </div>
@@ -276,11 +299,8 @@ export const CodenamesBoard = memo(function CodenamesBoard({
         });
         const isShaking = cardAnimation?.cell === index && cardAnimation.phase === "shake";
         const click = () => {
-          if (eligibility.clickAction === "select") {
-            onCardSelect?.(index);
-          } else if (eligibility.clickAction === "guess") {
-            onCardClick(index);
-          }
+          if (eligibility.clickAction === "select") onCardSelect?.(index);
+          else if (eligibility.clickAction === "guess") onCardClick(index);
         };
 
         return (
