@@ -14,7 +14,13 @@ import { CakeDuelResultsScreen } from "../screens/cakeduel-results-screen";
 import { CakeDuelScreen } from "../screens/cakeduel-screen";
 import { CakeDuelStartScreen } from "../screens/cakeduel-start-screen";
 import type { CakeDuelTranslate } from "../screens/cakeduel-hud";
-import type { CakeDuelDifficulty, CakeDuelTransientBanner } from "./cakeduel-runtime";
+import { CAKEDUEL_CHALLENGE_SETTLE_MS } from "./cakeduel-game-presentation";
+import type {
+  CakeDuelControllerSnapshot,
+  CakeDuelDifficulty,
+  CakeDuelRuntimeBoard,
+  CakeDuelTransientBanner,
+} from "./cakeduel-runtime";
 import { CakeDuelRuntimeController } from "./cakeduel-runtime";
 
 export interface CakeDuelPresentationAssets {
@@ -31,6 +37,11 @@ export interface CakeDuelPresentationRuntime {
   controller: CakeDuelRuntimeController;
   translate: CakeDuelTranslate;
   assets: CakeDuelPresentationAssets;
+}
+
+interface CakeDuelChallengeRevealBoards {
+  hidden: CakeDuelRuntimeBoard;
+  revealed: CakeDuelRuntimeBoard;
 }
 
 function useCakeDuelController(runtime: CakeDuelPresentationRuntime) {
@@ -64,6 +75,50 @@ function presentCakeDuelBanner(
     type: "bout_end",
     victory: banner.victory,
     reason: translate(banner.reasonKey, values),
+  };
+}
+
+/**
+ * The shipped controller reveals the challenged pile before applying the
+ * post-transition bout state. Keep both the hidden and revealed forms of the
+ * previous board so production presentation does not lose that transient
+ * information when the runtime patch has already started the next bout.
+ */
+function buildCakeDuelChallengeRevealBoards(
+  snapshot: CakeDuelControllerSnapshot,
+): CakeDuelChallengeRevealBoards | null {
+  const game = snapshot.state.game;
+  const board = snapshot.board;
+  if (!game || !board) return null;
+
+  const pileKey = game.blockingClaim
+    ? "blockPile"
+    : game.attackingClaim
+      ? "attackPile"
+      : null;
+  if (!pileKey) return null;
+
+  const revealedPile = board.zones[pileKey].map((card) => ({
+    ...card,
+    revealedName: game.cardList[card.entityId] ?? card.name ?? null,
+  }));
+  const revealed: CakeDuelRuntimeBoard = {
+    ...board,
+    isMyTurn: false,
+    legalActions: [],
+    zones: {
+      ...board.zones,
+      [pileKey]: revealedPile,
+    },
+  };
+
+  return {
+    hidden: {
+      ...board,
+      isMyTurn: false,
+      legalActions: [],
+    },
+    revealed,
   };
 }
 
@@ -120,6 +175,10 @@ export function createCakeDuelProductionWindowBinding(
     const [selectedClaim, setSelectedClaim] = useState("");
     const [selectedPickIndex, setSelectedPickIndex] = useState<number | null>(null);
     const [helpOpen, setHelpOpen] = useState(false);
+    const [challengeRevealBoards, setChallengeRevealBoards] = useState<CakeDuelChallengeRevealBoards | null>(null);
+    const [challengeBoutEndDelay, setChallengeBoutEndDelay] = useState(false);
+    const previousSnapshot = useRef(snapshot);
+    const challengeSettleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const tutorialResetIssued = useRef(false);
 
     useEffect(() => {
@@ -137,6 +196,42 @@ export function createCakeDuelProductionWindowBinding(
       }
       navigate("results");
     }, [navigate, snapshot.actionPending, snapshot.route, snapshot.state.tutorial]);
+
+    useEffect(() => {
+      const previous = previousSnapshot.current;
+      const currentBanner = snapshot.banner?.type ?? null;
+      const previousBanner = previous.banner?.type ?? null;
+
+      if (currentBanner === "challenge" && previousBanner !== "challenge") {
+        setChallengeRevealBoards(buildCakeDuelChallengeRevealBoards(previous));
+        setChallengeBoutEndDelay(false);
+      }
+
+      if (currentBanner === "bout_end" && previousBanner === "challenge") {
+        if (challengeSettleTimer.current) clearTimeout(challengeSettleTimer.current);
+        setChallengeBoutEndDelay(true);
+        challengeSettleTimer.current = setTimeout(() => {
+          challengeSettleTimer.current = null;
+          setChallengeBoutEndDelay(false);
+        }, CAKEDUEL_CHALLENGE_SETTLE_MS);
+      }
+
+      if (currentBanner !== "challenge" && currentBanner !== "bout_end") {
+        if (challengeSettleTimer.current) clearTimeout(challengeSettleTimer.current);
+        challengeSettleTimer.current = null;
+        setChallengeBoutEndDelay(false);
+        setChallengeRevealBoards(null);
+      }
+
+      previousSnapshot.current = snapshot;
+    }, [snapshot]);
+
+    useEffect(
+      () => () => {
+        if (challengeSettleTimer.current) clearTimeout(challengeSettleTimer.current);
+      },
+      [],
+    );
 
     const board = snapshot.board;
     useEffect(() => {
@@ -175,34 +270,52 @@ export function createCakeDuelProductionWindowBinding(
       );
     }
 
+    const incomingChallenge = snapshot.banner?.type === "challenge" && previousSnapshot.current.banner?.type !== "challenge"
+      ? buildCakeDuelChallengeRevealBoards(previousSnapshot.current)
+      : null;
+    const challengeBoards = challengeRevealBoards ?? incomingChallenge;
+    const challengeBannerActive = snapshot.banner?.type === "challenge";
+    const challengeBoutEndActive = snapshot.banner?.type === "bout_end" && challengeBoards !== null;
+    const displayBoard = challengeBannerActive && challengeBoards
+      ? challengeBoards.hidden
+      : challengeBoutEndActive && challengeBoards
+        ? challengeBoards.revealed
+        : board;
+    const suppressBoutEndBanner = challengeBoutEndActive && (
+      challengeBoutEndDelay || previousSnapshot.current.banner?.type === "challenge"
+    );
+    const displayBanner = suppressBoutEndBanner
+      ? null
+      : presentCakeDuelBanner(snapshot.banner, runtime.translate);
+
     return (
       <CakeDuelCardPreviewProvider>
         <CakeDuelScreen
           stage="game"
           backgroundImage={runtime.assets.backgroundImage}
           translate={runtime.translate}
-          banner={presentCakeDuelBanner(snapshot.banner, runtime.translate)}
+          banner={displayBanner}
           wolfyTaunt={snapshot.wolfyTauntActive && runtime.assets.wolfyFrames
             ? { frameImages: runtime.assets.wolfyFrames }
             : null}
           actionError={snapshot.error}
           gameBoard={{
-            view: board.view,
+            view: displayBoard.view,
             zones: {
-              ...board.zones,
-              playerHand: board.zones.playerHand.map((card) => ({
+              ...displayBoard.zones,
+              playerHand: displayBoard.zones.playerHand.map((card) => ({
                 ...card,
                 name: card.name ?? "",
               })),
             },
-            isMyTurn: board.isMyTurn,
-            legalActions: board.legalActions,
+            isMyTurn: displayBoard.isMyTurn,
+            legalActions: displayBoard.legalActions,
             selectedHandEntityIds: selectedIds,
             handOrderEntityIds: handOrder,
             selectedClaim,
             selectedPickIndex,
-            actionPending: snapshot.actionPending,
-            lastAttackPassed: board.lastAttackPassed,
+            actionPending: snapshot.actionPending || challengeBannerActive || challengeBoutEndActive,
+            lastAttackPassed: displayBoard.lastAttackPassed,
             translate: runtime.translate,
             cardBackImage: runtime.assets.cardBackImage,
             cakeImage: runtime.assets.cakeImage,
