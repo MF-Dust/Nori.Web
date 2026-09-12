@@ -5,12 +5,12 @@ import {
   formatCodenamesClueCount,
   parseCodenamesClueSubmission,
   type CodenamesBoardOverlayType,
-  type CodenamesClueCount,
   type CodenamesClueHighlight,
   type CodenamesClueUiState,
 } from "../apps/codenames-clue-presentation";
 import {
   recoverCodenamesChatMessages,
+  type CodenamesClueCount,
   type CodenamesRawChatMessage,
   type CodenamesTranslate,
 } from "../apps/codenames-chat";
@@ -185,6 +185,7 @@ export const CodenamesScreen = memo(function CodenamesScreen({
               tutorialGuessCell={tutorialGuessCell}
               hoveredCellIndex={hoveredCellIndex}
               selectedCards={selectedCards}
+              translate={translate}
               onCardClick={onCardClick}
               onCardSelect={onCardSelect}
               onCardHover={onCardHover}
