@@ -204,6 +204,9 @@
   color: #d2e8e980;
   transition: transform 0.2s;
 }
+.conversation-composer[data-focused] .conversation-send:not([data-filled]) {
+  color: #56565f60;
+}
 .conversation-send[data-filled] {
   color: var(--chat-dark);
   background: linear-gradient(135deg, #d2e8e9, #caf5f1);

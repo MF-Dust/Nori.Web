@@ -6,7 +6,7 @@ import {
   useSyncExternalStore,
   type FormEvent,
 } from "react";
-import { SendHorizontal } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import { sanitizeChatText } from "../runtime/chat-media";
 import {
@@ -254,7 +254,7 @@ export function ConversationPanel({
             }
             data-filled={!!sanitizeChatText(text) || undefined}
           >
-            <SendHorizontal size={16} strokeWidth={2.5} />
+            <ArrowUp size={16} strokeWidth={2.5} />
           </button>
         </div>
       </form>
