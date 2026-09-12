@@ -110,8 +110,11 @@ async function main() {
     "codenames.help.search.monster",
     "codenames.help.rounds.title",
     "codenames.help.rounds.body",
+    "b = 160",
+    "W = 100",
+    "d = 50",
   ]) {
-    assert(shippedHelp.includes(marker), `shipped Codenames help marker changed: ${marker}`);
+    assert(shippedHelp.includes(marker), `shipped Codenames help/card geometry marker changed: ${marker}`);
   }
 
   for (const marker of [
@@ -201,8 +204,12 @@ async function main() {
   for (const marker of [
     "createPortal",
     "element.animate(",
-    "card.sourceRect",
-    "card.targetRect",
+    "FLYING_CARD_BASE_SIZE",
+    "agent: { width: 160, height: 100 }",
+    "assassin: { width: 160, height: 100 }",
+    "bystander: { width: 50, height: 50 }",
+    "card.sourceRect.width / base.width",
+    "card.targetRect.width / base.width",
     "card.rotate180",
     "animation.onfinish",
     "onLanded?.()",
