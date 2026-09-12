@@ -23,6 +23,7 @@ async function main() {
   const shipped = await read(path.join("public", "assets", normalAppFile));
   const runtime = await read("frontend-src/apps/cakeduel-runtime.ts");
   const presentation = await read("frontend-src/apps/cakeduel-presentation.tsx");
+  const cutover = await read("frontend-src/migration/cutover-status.ts");
 
   for (const marker of [
     'case "claim_made"',
@@ -73,6 +74,9 @@ async function main() {
   ]) {
     assert(presentation.includes(marker), `source Cake Duel transient presentation missing marker: ${marker}`);
   }
+
+  assert(cutover.includes('{ id: "games", complete: false'), "Games cutover boundary must remain incomplete");
+  assert(cutover.includes("transition-driven banner/Wolfy wiring"), "Cake Duel cutover note must record transient event ownership");
 
   console.log("[ok] Cake Duel transition events drive source-owned transient banners, results pacing and Wolfy presentation");
 }
