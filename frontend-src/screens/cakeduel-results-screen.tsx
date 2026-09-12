@@ -65,6 +65,7 @@ export const CakeDuelResultsScreen = memo(function CakeDuelResultsScreen({
   const compact = size.height > 0 && size.height < 520;
   const interpolation = Math.min(1, Math.max(0, (size.height - 400) / 240));
   const heroScale = 0.55 + 0.45 * interpolation;
+  const outcomeOverlaySize = 48 + 32 * interpolation;
   const victory = winner === 0;
   const scoreSlots = Math.max(roundsToWin, playerWins, noriWins);
   const title = translate(
@@ -98,7 +99,8 @@ export const CakeDuelResultsScreen = memo(function CakeDuelResultsScreen({
             scale={heroScale}
             cardBackImage={cardBackImage}
             resolveCardFront={resolveCardFront}
-            overlayImage={victory ? trophyImage : undefined}
+            overlayImage={victory ? trophyImage : cakeImage}
+            overlaySizePx={outcomeOverlaySize}
           />
           <h1
             className="text-center leading-none"
