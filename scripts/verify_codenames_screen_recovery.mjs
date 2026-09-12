@@ -18,14 +18,19 @@ async function read(relativePath) {
 async function main() {
   const assets = await fs.readdir(path.join(ROOT, "public", "assets"));
   const gameScreenFile = assets.find((file) => file.startsWith("GameScreen-") && file.endsWith(".js"));
+  const helpOverlayFile = assets.find((file) => file.startsWith("HelpOverlay-") && file.endsWith(".js"));
   assert(gameScreenFile, "missing shipped Codenames GameScreen chunk");
+  assert(helpOverlayFile, "missing shipped Codenames HelpOverlay chunk");
 
   const shipped = await read(path.join("public", "assets", gameScreenFile));
+  const shippedHelp = await read(path.join("public", "assets", helpOverlayFile));
   const clue = await read("frontend-src/apps/codenames-clue-presentation.ts");
   const clueOverlay = await read("frontend-src/screens/codenames-clue-overlay.tsx");
   const header = await read("frontend-src/screens/codenames-header.tsx");
   const keyCard = await read("frontend-src/screens/codenames-key-card.tsx");
   const board = await read("frontend-src/screens/codenames-board.tsx");
+  const help = await read("frontend-src/screens/codenames-help-overlay.tsx");
+  const flyingCard = await read("frontend-src/screens/codenames-flying-card.tsx");
   const screen = await read("frontend-src/screens/codenames-screen.tsx");
 
   for (const marker of [
@@ -80,8 +85,32 @@ async function main() {
     "e.jsx(Ct, {",
     "e.jsx(At, { keySide: d.key[N] })",
     "children: e.jsx(Ke, {",
+    'className: "fixed pointer-events-none z-50"',
+    "onAnimationComplete: () =>",
+    "rotate: c ? 180 : 0",
+    "e.jsx(Lt, {})",
   ]) {
     assert(shipped.includes(marker), `shipped Codenames screen composition changed: ${marker}`);
+  }
+
+  for (const marker of [
+    'a.key === "Escape"',
+    'role: "dialog"',
+    "codenames.help.title",
+    "codenames.help.goal.title",
+    "codenames.help.goal.body",
+    "codenames.help.maps.title",
+    "codenames.help.maps.body",
+    "codenames.help.hints.title",
+    "codenames.help.hints.body",
+    "codenames.help.search.title",
+    "codenames.help.search.treasure",
+    "codenames.help.search.berry",
+    "codenames.help.search.monster",
+    "codenames.help.rounds.title",
+    "codenames.help.rounds.body",
+  ]) {
+    assert(shippedHelp.includes(marker), `shipped Codenames help marker changed: ${marker}`);
   }
 
   for (const marker of [
@@ -150,6 +179,38 @@ async function main() {
   }
 
   for (const marker of [
+    "data-codenames-help-overlay",
+    "KeyboardEvent",
+    'event.key !== "Escape"',
+    'role="dialog"',
+    "codenames.help.title",
+    "codenames.help.goal.title",
+    "codenames.help.maps.title",
+    "codenames.help.hints.title",
+    "codenames.help.search.title",
+    "codenames.help.search.treasure",
+    "codenames.help.search.berry",
+    "codenames.help.search.monster",
+    "codenames.help.rounds.title",
+    "onClick={onClose}",
+  ]) {
+    assert(help.includes(marker), `source Codenames help overlay missing marker: ${marker}`);
+  }
+
+  for (const marker of [
+    "createPortal",
+    "element.animate(",
+    "card.sourceRect",
+    "card.targetRect",
+    "card.rotate180",
+    "animation.onfinish",
+    "onLanded?.()",
+    "data-codenames-flying-card",
+  ]) {
+    assert(flyingCard.includes(marker), `source Codenames flying-card transition missing marker: ${marker}`);
+  }
+
+  for (const marker of [
     'className="h-full flex flex-col bg-background/50 relative @container/game"',
     'className="flex-1 min-h-0 p-2 gap-2 @[820px]/game:p-3 @[820px]/game:gap-3 flex bg-muted/50"',
     'className="flex-1 min-w-0 flex flex-col gap-2 @[820px]/game:gap-3"',
@@ -160,6 +221,10 @@ async function main() {
     "<CodenamesFooter",
     "<CodenamesKeyCard",
     "<ChatPanel",
+    "<CodenamesFlyingCard",
+    "<CodenamesHelpOverlay",
+    "useState(false)",
+    "onHelp={openHelp}",
     "recoverCodenamesChatMessages(messages, translate)",
     "parseCodenamesClueSubmission(value)",
     "CODENAMES_CLUE_COUNT_OPTIONS.map",
