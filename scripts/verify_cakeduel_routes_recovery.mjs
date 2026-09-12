@@ -115,14 +115,23 @@ async function main() {
     "cakeduel.results.noriLabel",
     "cakeduel.results.playAgain",
     'shimmerDelay: 1.5',
+    "src: f ? E : z",
+    "width: 48 + 32 * r",
+    "height: 48 + 32 * r",
   ]) {
     assert(shippedResults.includes(marker), `shipped Cake Duel Results decoration marker changed: ${marker}`);
   }
 
   const victoryAsset = exportedDeclaration(normalApp.content, normalApp.file, "T");
   const defeatAsset = exportedDeclaration(normalApp.content, normalApp.file, "s");
-  console.log(`[cakeduel-route-assets] NormalApp export T -> ${victoryAsset.localName}: ${victoryAsset.snippet}`);
-  console.log(`[cakeduel-route-assets] NormalApp export s -> ${defeatAsset.localName}: ${defeatAsset.snippet}`);
+  assert(
+    victoryAsset.snippet.includes('"/cakeduel/trophy.png"'),
+    `shipped Cake Duel victory overlay export T changed: ${victoryAsset.localName} ${victoryAsset.snippet}`,
+  );
+  assert(
+    defeatAsset.snippet.includes('"/cakeduel/cake.png"'),
+    `shipped Cake Duel defeat overlay export s changed: ${defeatAsset.localName} ${defeatAsset.snippet}`,
+  );
 
   for (const marker of [
     "const HERO_CARDS",
@@ -135,6 +144,8 @@ async function main() {
     "height: 99 * scale",
     "width: 88 * scale",
     "height: 121 * scale",
+    "overlaySizePx?: number",
+    "const overlaySize = overlaySizePx ?? 80 * scale",
     "CakeDuelRouteDivider",
     "CakeDuelRoutePrimaryButton",
     "cakeduel-route-shimmer",
@@ -160,7 +171,9 @@ async function main() {
   for (const marker of [
     '<CakeDuelAmbientParticles mode={victory ? "victory" : "defeat"} />',
     "<CakeDuelHeroFan",
-    "overlayImage={victory ? trophyImage : undefined}",
+    "const outcomeOverlaySize = 48 + 32 * interpolation",
+    "overlayImage={victory ? trophyImage : cakeImage}",
+    "overlaySizePx={outcomeOverlaySize}",
     "const scoreSlots = Math.max(roundsToWin, playerWins, noriWins)",
     "slots={scoreSlots}",
     "<CakeDuelRouteDivider compact={compact} image={cakeImage} />",
@@ -181,8 +194,9 @@ async function main() {
   }
 
   assert(assets.includes("trophyImage: CAKEDUEL_TROPHY_IMAGE"), "Cake Duel trophy must come from shipped production asset mapping");
+  assert(assets.includes('CAKEDUEL_CAKE_IMAGE = "/cakeduel/cake.png"'), "Cake Duel defeat overlay must reuse the shipped cake asset");
 
-  console.log("[ok] Cake Duel Start and Results decorative presentation is source-owned against shipped contracts");
+  console.log("[ok] Cake Duel Start and Results decorative presentation, including outcome overlays, is source-owned against shipped contracts");
 }
 
 main().catch((error) => {
