@@ -18,6 +18,57 @@ export const CODENAMES_CLUE_COUNT_OPTIONS: readonly CodenamesClueCount[] = [
   "infinity",
 ];
 
+export type CodenamesBoardOverlayType =
+  | "your-turn"
+  | "agent-turn"
+  | "sudden-death"
+  | "win"
+  | "lose";
+
+export const CODENAMES_BOARD_OVERLAY_DURATION_MS: Readonly<Record<CodenamesBoardOverlayType, number>> = {
+  "your-turn": 2_000,
+  "agent-turn": 2_000,
+  "sudden-death": 3_000,
+  win: 4_000,
+  lose: 4_000,
+};
+
+export interface CodenamesBoardOverlayPresentation {
+  translationKeyBase: string;
+  accentColor: string;
+  background: string;
+}
+
+export const CODENAMES_BOARD_OVERLAY_PRESENTATION: Readonly<
+  Record<CodenamesBoardOverlayType, CodenamesBoardOverlayPresentation>
+> = {
+  "your-turn": {
+    translationKeyBase: "codenames.overlay.yourTurn",
+    accentColor: "hsl(45 70% 55%)",
+    background: "radial-gradient(ellipse 120% 80% at 50% 120%, hsla(45,60%,50%,.2) 0%, transparent 60%)",
+  },
+  "agent-turn": {
+    translationKeyBase: "codenames.overlay.noriTurn",
+    accentColor: "hsl(35 45% 55%)",
+    background: "radial-gradient(ellipse 120% 80% at 50% 120%, hsla(35,40%,45%,.15) 0%, transparent 60%)",
+  },
+  "sudden-death": {
+    translationKeyBase: "codenames.overlay.suddenDeath",
+    accentColor: "hsl(25 65% 55%)",
+    background: "radial-gradient(ellipse 120% 80% at 50% 120%, hsla(25,55%,45%,.25) 0%, transparent 60%)",
+  },
+  win: {
+    translationKeyBase: "codenames.overlay.win",
+    accentColor: "hsl(85 50% 48%)",
+    background: "radial-gradient(ellipse 120% 80% at 50% 120%, hsla(85,45%,45%,.25) 0%, transparent 60%)",
+  },
+  lose: {
+    translationKeyBase: "codenames.overlay.lose",
+    accentColor: "hsl(195 40% 45%)",
+    background: "radial-gradient(ellipse 120% 80% at 50% 120%, hsla(195,35%,35%,.3) 0%, transparent 60%)",
+  },
+};
+
 export interface CodenamesClue {
   word: string;
   count: CodenamesClueCount;
@@ -68,9 +119,7 @@ export function parseCodenamesClueSubmission(value: string): ParsedCodenamesClue
   };
 }
 
-/**
- * Source-owned equivalent of the shipped GameScreen clue/waiting-state switch.
- */
+/** Source-owned equivalent of the clue/waiting state shown in the shipped header. */
 export function deriveCodenamesClueOverlayState(
   uiState: CodenamesClueUiState,
 ): CodenamesClueOverlayState {
