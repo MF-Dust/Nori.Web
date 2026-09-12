@@ -61,7 +61,7 @@ async function main() {
     "ke = 2",
     "Xn = 2",
     "Yn = 1.25",
-    "const qn = (q + it + F.selectLiftPx) / q",
+    "qn = (q + it + F.selectLiftPx) / q",
     "function ct(e, n, r)",
     "function Zn(e, n)",
   ]) {
