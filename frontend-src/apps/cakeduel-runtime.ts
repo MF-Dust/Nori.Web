@@ -9,6 +9,7 @@ import type {
 
 export type CakeDuelRoute = "start" | "game" | "results";
 export type CakeDuelDifficulty = "soldier" | "wizard" | "assassin";
+export type CakeDuelChallengeRevealStage = "idle" | "pause" | "revealed";
 
 export type CakeDuelPlayerCommandAction =
   | { type: "claim"; handIndices: number[]; claim: string }
@@ -104,6 +105,7 @@ export interface CakeDuelControllerSnapshot {
   state: CakeDuelRuntimeState;
   board: CakeDuelRuntimeBoard | null;
   banner: CakeDuelTransientBanner | null;
+  challengeRevealStage: CakeDuelChallengeRevealStage;
   wolfyTauntActive: boolean;
   winner: number | null;
   playerWins: number;
@@ -118,10 +120,11 @@ const DEFAULT_STATE: CakeDuelRuntimeState = {
   lastError: null,
 };
 
-// The shipped controller paces these transient layers before routing onward.
-// Exact spring/reveal timing remains tracked separately; these durations keep
-// the source-owned event sequence visible without coupling routing to React.
-const CAKE_DUEL_BANNER_HOLD_MS = 1_800;
+// Shipped NormalApp controller timing contract.
+export const CAKE_DUEL_CHALLENGE_FLIP_STAGGER_MS = 400;
+export const CAKE_DUEL_CHALLENGE_PRE_REVEAL_PAUSE_MS = 1_000;
+export const CAKE_DUEL_CHALLENGE_REVEAL_HOLD_MS = 3_000;
+export const CAKE_DUEL_BANNER_HOLD_MS = 2_000;
 const CAKE_DUEL_WOLFY_TAUNT_MS = 1_100;
 
 const CARD_TYPE: Readonly<Record<string, "physical" | "magical" | "blocker" | "unclaimable">> = {
@@ -359,6 +362,9 @@ export class CakeDuelRuntimeController {
   private banner: CakeDuelTransientBanner | null = null;
   private readonly bannerQueue: CakeDuelTransientBanner[] = [];
   private bannerTimer: ReturnType<typeof setTimeout> | null = null;
+  private challengeRevealStage: CakeDuelChallengeRevealStage = "idle";
+  private readonly pendingChallengeBanners: CakeDuelTransientBanner[] = [];
+  private challengeTimer: ReturnType<typeof setTimeout> | null = null;
   private wolfyTauntActive = false;
   private wolfyTimer: ReturnType<typeof setTimeout> | null = null;
   private current: CakeDuelControllerSnapshot;
@@ -429,8 +435,10 @@ export class CakeDuelRuntimeController {
   dispose(): void {
     for (const unsubscribe of this.unsubs.splice(0)) unsubscribe();
     if (this.bannerTimer) clearTimeout(this.bannerTimer);
+    if (this.challengeTimer) clearTimeout(this.challengeTimer);
     if (this.wolfyTimer) clearTimeout(this.wolfyTimer);
     this.bannerTimer = null;
+    this.challengeTimer = null;
     this.wolfyTimer = null;
     this.listeners.clear();
   }
@@ -495,16 +503,23 @@ export class CakeDuelRuntimeController {
       }
       if (event.type === "bout_started") {
         const completedBouts = nextState.game?.boutWinners.length ?? 0;
-        this.enqueueBanner({ type: "bout_start", boutNumber: completedBouts > 0 ? completedBouts + 1 : 1 });
+        const banner: CakeDuelTransientBanner = {
+          type: "bout_start",
+          boutNumber: completedBouts > 0 ? completedBouts + 1 : 1,
+        };
+        if (challengePresent) this.pendingChallengeBanners.push(banner);
+        else this.enqueueBanner(banner);
         continue;
       }
       if (event.type === "bout_ended") {
         const winner = event.winner === 1 ? 1 : 0;
-        this.enqueueBanner({
+        const banner: CakeDuelTransientBanner = {
           type: "bout_end",
           victory: winner === 0,
           ...boutEndReason(events, winner),
-        });
+        };
+        if (challengePresent) this.pendingChallengeBanners.push(banner);
+        else this.enqueueBanner(banner);
       }
     }
   }
@@ -515,16 +530,36 @@ export class CakeDuelRuntimeController {
   }
 
   private advanceBannerQueue(): void {
-    if (this.banner || this.bannerTimer) return;
+    if (this.banner || this.bannerTimer || this.challengeRevealStage !== "idle") return;
     const next = this.bannerQueue.shift();
     if (!next) return;
     this.banner = next;
     this.bannerTimer = setTimeout(() => {
       this.banner = null;
       this.bannerTimer = null;
-      this.advanceBannerQueue();
+      if (next.type === "challenge") this.beginChallengeRevealTimeline();
+      else this.advanceBannerQueue();
       this.publish();
     }, CAKE_DUEL_BANNER_HOLD_MS);
+  }
+
+  private beginChallengeRevealTimeline(): void {
+    if (this.challengeTimer) clearTimeout(this.challengeTimer);
+    this.challengeRevealStage = "pause";
+    this.challengeTimer = setTimeout(() => {
+      this.challengeTimer = null;
+      this.challengeRevealStage = "revealed";
+      this.publish();
+      this.challengeTimer = setTimeout(() => {
+        this.challengeTimer = null;
+        this.challengeRevealStage = "idle";
+        if (this.pendingChallengeBanners.length > 0) {
+          this.bannerQueue.unshift(...this.pendingChallengeBanners.splice(0));
+        }
+        this.advanceBannerQueue();
+        this.publish();
+      }, CAKE_DUEL_CHALLENGE_REVEAL_HOLD_MS);
+    }, CAKE_DUEL_CHALLENGE_PRE_REVEAL_PAUSE_MS);
   }
 
   private showWolfyTaunt(): void {
@@ -539,11 +574,15 @@ export class CakeDuelRuntimeController {
 
   private clearTransientPresentation(): void {
     if (this.bannerTimer) clearTimeout(this.bannerTimer);
+    if (this.challengeTimer) clearTimeout(this.challengeTimer);
     if (this.wolfyTimer) clearTimeout(this.wolfyTimer);
     this.bannerTimer = null;
+    this.challengeTimer = null;
     this.wolfyTimer = null;
     this.banner = null;
     this.bannerQueue.length = 0;
+    this.challengeRevealStage = "idle";
+    this.pendingChallengeBanners.length = 0;
     this.wolfyTauntActive = false;
   }
 
@@ -557,9 +596,11 @@ export class CakeDuelRuntimeController {
     const state = parseCakeDuelRuntimeState(runtime?.state);
     const game = state.game;
     const derivedRoute = deriveCakeDuelRoute(state);
-    const route = derivedRoute === "results" && (this.banner !== null || this.bannerQueue.length > 0)
-      ? "game"
-      : derivedRoute;
+    const transientRouteHold = this.banner !== null
+      || this.bannerQueue.length > 0
+      || this.challengeRevealStage !== "idle"
+      || this.pendingChallengeBanners.length > 0;
+    const route = derivedRoute === "results" && transientRouteHold ? "game" : derivedRoute;
     return {
       mounted: runtime !== undefined,
       mountPending: this.mountPending,
@@ -568,6 +609,7 @@ export class CakeDuelRuntimeController {
       state,
       board: deriveCakeDuelRuntimeBoard(state),
       banner: this.banner,
+      challengeRevealStage: this.challengeRevealStage,
       wolfyTauntActive: this.wolfyTauntActive,
       winner: game?.gameEnded?.winner ?? null,
       playerWins: game?.boutWinners.filter((winner) => winner === 0).length ?? 0,
