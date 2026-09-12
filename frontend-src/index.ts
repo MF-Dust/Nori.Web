@@ -15,6 +15,7 @@ export * from "./services/manifold";
 export * from "./services/signal";
 export * from "./apps/browser";
 export * from "./apps/browser-presentation";
+export * from "./apps/cakeduel-card-presentation";
 export * from "./apps/codenames-board-presentation";
 export * from "./apps/codenames-chat";
 export * from "./apps/codenames-clue-presentation";
@@ -106,6 +107,7 @@ export {
 } from "./screens/browser-page-view";
 export * from "./screens/browser-popup-screen";
 export * from "./screens/browser-screen";
+export * from "./screens/cakeduel-layout-context";
 export * from "./screens/codenames-board";
 export * from "./screens/codenames-clue-overlay";
 export * from "./screens/codenames-flying-card";
