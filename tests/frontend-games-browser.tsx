@@ -1,3 +1,4 @@
+import { CodenamesApp } from "../frontend-src/screens/codenames-app";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { ChessScreen } from "../frontend-src/screens/chess-screen";
@@ -24,6 +25,17 @@ function controller(initial: any) {
   };
 }
 const chess = controller(chessInitial), pictionary = controller(pictInitial);
+const codenamesInitial = { counterpartSide: "A", agentSide: "B", settings: { tokens: 9, wordLocale: "en" }, tutorial: null, gameState: null };
+const codenames = controller(codenamesInitial);
+function codenamesGame(guessing = false) {
+  return { ...codenamesInitial, gameState: {
+    board: Array.from({ length: 25 }, (_, index) => ({ text: index === 0 ? "MOON" : "WORD" + index })),
+    key: { A: Array(25).fill("AGENT"), B: Array(25).fill("AGENT") },
+    cells: Array.from({ length: 25 }, () => ({ solvedBy: null, assassinatedBy: null, bystanderMarks: [null, null] })),
+    tokensRemaining: 9, whoseTurnToGive: guessing ? "B" : "A", phase: "NORMAL", winner: null,
+    history: guessing ? [{ clueGiver: "B", clue: { word: "NIGHT", count: 2 }, guesses: [], endedBy: null }] : [],
+  } };
+}
 function round(id = "one", drawer = "player") {
   return { ...pictInitial, gameState: { phase: "PLAYING", score: { solved: 0, skipped: 0 }, history: [],
     round: { roundId: id, startedAtMs: Date.now(), word: "apple", drawingId: "apple", roles: { drawer, guesser: drawer === "player" ? "agent" : "player" }, status: "active", noriRedrawEpoch: 0 } } };
@@ -31,12 +43,13 @@ function round(id = "one", drawer = "player") {
 const drawing = { setCapture(value: typeof capture) { capture = value; }, submit(stroke: any) { strokes.push(stroke); }, changed() { revisions++; } };
 Object.assign(window, { fixture: {
   commands, strokes,
+  codenames(guessing = false) { codenames.set(codenamesGame(guessing)); },
   snapshot: () => capture?.(),
   revisions: () => revisions,
   chess(fen = CHESS_START_FEN) { chess.set({ ...chessInitial, gameState: { fen, startFen: fen, turn: "white", status: "playing", winner: null, moveHistory: [] } }); },
   round(id?: string, drawer?: string) { pictionary.set(round(id, drawer)); },
 } });
 const pict = location.hash === "#pictionary";
-createRoot(document.getElementById("root")!).render(pict
+createRoot(document.getElementById("root")!).render(location.hash === "#codenames" ? <CodenamesApp controller={codenames as any} translate={createSourceTranslate("en")} /> : pict
   ? <PictionaryScreen controller={pictionary as any} drawing={drawing as any} locale="en" />
   : <ChessScreen controller={chess as any} translate={createSourceTranslate("en")} />);

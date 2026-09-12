@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { build } from "esbuild";
 import { chromium } from "playwright";
 import { createServer } from "node:http";
-import { mkdir, readFile, rm } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 
 const output = resolve("frontend-games-smoke");
@@ -18,12 +18,16 @@ const server = createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.end(await readFile("public/pictionary/drawings.json")); return;
   }
+  if (path === "/legacy.css") {
+    res.setHeader("Content-Type", "text/css");
+    res.end(await readFile("public/assets/index-FU-0vwSE.css")); return;
+  }
   if (files.has(path)) {
     res.setHeader("Content-Type", path.endsWith(".css") ? "text/css" : "text/javascript");
     res.end(files.get(path)); return;
   }
   res.setHeader("Content-Type", "text/html");
-  res.end('<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/fixture.css"><style>html,body,#root{margin:0;width:100%;height:100%;overflow:hidden}*{box-sizing:border-box}</style><div id="root"></div><script type="module" src="/fixture.js"></script>');
+  res.end('<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/legacy.css"><link rel="stylesheet" href="/fixture.css"><style>html,body,#root{margin:0;width:100%;height:100%;overflow:hidden}*{box-sizing:border-box}</style><div id="root"></div><script type="module" src="/fixture.js"></script>');
 });
 await new Promise(done => server.listen(0, "127.0.0.1", done));
 const origin = "http://127.0.0.1:" + server.address().port;
@@ -49,8 +53,8 @@ try {
   await page.locator('[data-chess-square="a8"]').click();
   const promotion = page.getByRole("dialog");
   await promotion.waitFor();
-  assert.equal(await promotion.getByRole("button").count(), 4);
-  await promotion.getByRole("button").first().click();
+  assert.equal(await promotion.getByRole("button", { name: /^Promote to/ }).count(), 4);
+  await promotion.getByRole("button", { name: "Promote to q", exact: true }).click();
   assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).promotion), "q");
   await page.setViewportSize({ width: 640, height: 480 });
   await page.screenshot({ path: join(output, "chess-compact.png") });
@@ -96,6 +100,16 @@ try {
   await page.getByRole("button", { name: "Skip round", exact: true }).click();
   assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).type), "skipRound");
   await page.screenshot({ path: join(output, "pictionary-guessing.png") });
+  await page.goto(origin + "/#codenames");
+  await page.getByRole("button", { name: "Start Adventure", exact: true }).click();
+  assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).settings.tokens), 9);
+  await page.evaluate(() => window.fixture.codenames(true));
+  const firstCard = page.locator('[data-card-cell="0"] button');
+  await firstCard.click();
+  assert.equal(await page.evaluate(() => window.fixture.commands.length), 1, "first card tap is confirmation only");
+  await firstCard.click();
+  assert.deepEqual(await page.evaluate(() => window.fixture.commands.at(-1)), { type: "submitGuess", cell: 0 });
+  await page.screenshot({ path: join(output, "codenames-game.png") });
   assert.deepEqual(errors, [], "source screens must not throw browser errors");
   console.log("PASS: Chess legal/illegal moves and promotion; Pictionary duration, drawing, undo, eraser, round cancellation, snapshot and guesses.");
 } finally {

@@ -127,3 +127,40 @@ test("Recovered translations render shipped labels and interpolate values as tex
   assert.equal(createSourceTranslate("en")("chess.start.elo", { elo: 700 }), "700 ELO");
   assert.equal(t("unknown.key"), "unknown.key");
 });
+
+import { codenamesStateSchema, codenamesUiState, codenamesClueError, codenamesHistoryMessages } from "../frontend-src/apps/codenames-model";
+function codenamesFixture() {
+  return codenamesStateSchema.parse({
+    counterpartSide: "A", agentSide: "B", settings: { tokens: 9, wordLocale: "en" }, tutorial: null,
+    gameState: { board: Array.from({ length: 25 }, (_, index) => ({ text: index === 0 ? "MOON" : "WORD" + index })),
+      key: { A: Array(25).fill("AGENT"), B: Array(25).fill("AGENT") },
+      cells: Array.from({ length: 25 }, () => ({ solvedBy: null, assassinatedBy: null, bystanderMarks: [null, null] })),
+      tokensRemaining: 9, whoseTurnToGive: "A", phase: "NORMAL", winner: null, history: [] },
+  }).gameState!;
+}
+test("Codenames derives both clue turns and sudden-death eligibility from the opposite key", () => {
+  const game = codenamesFixture();
+  assert.equal(codenamesUiState(game, "A").type, "HUMAN_GIVING_CLUE");
+  game.history.push({ clueGiver: "A", clue: { word: "NIGHT", count: 2 }, guesses: [], endedBy: null });
+  assert.equal(codenamesUiState(game, "A").type, "AI_GUESSING");
+  assert.equal(codenamesUiState(game, "B").type, "HUMAN_GUESSING");
+  game.phase = "SUDDEN_DEATH"; game.key.A.fill("BYSTANDER");
+  assert.equal(codenamesUiState(game, "A").type, "SUDDEN_DEATH_HUMAN_TURN");
+  assert.equal(codenamesUiState(game, "B").type, "SUDDEN_DEATH_AI_TURN");
+  game.phase = "GAME_OVER";
+  assert.equal(codenamesUiState(game, "A").type, "GAME_OVER");
+});
+test("Codenames rejects position, overlapping, numeric and multi-word clues and reconstructs stable history", () => {
+  const game = codenamesFixture();
+  assert.equal(codenamesClueError(game, "MOON", 2), "wordOnBoard");
+  assert.equal(codenamesClueError(game, "MOONLIGHT", 2), "substring");
+  assert.equal(codenamesClueError(game, "TOP", 2), "positionHint");
+  assert.equal(codenamesClueError(game, "NIGHT 2", 2), "phrase");
+  assert.equal(codenamesClueError(game, "N1GHT", 2), "containsNumbers");
+  assert.equal(codenamesClueError(game, "NIGHT", -1), "countInvalid");
+  assert.equal(codenamesClueError(game, "NIGHT", "infinity"), null);
+  game.history.push({ clueGiver: "B", clue: { word: "NIGHT", count: 2 }, guesses: [{ cell: 0, result: "AGENT", at: 123 }], endedBy: "VOLUNTARY_END" });
+  const messages = codenamesHistoryMessages(game, "A", key => key);
+  assert.deepEqual(messages.map(item => item.sender), ["Nori", "You", "You"]);
+  assert.deepEqual(messages.map(item => item.id), ["0:clue", "0:guess:0", "0:end"]);
+});

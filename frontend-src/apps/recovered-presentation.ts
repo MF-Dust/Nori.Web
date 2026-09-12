@@ -1,3 +1,4 @@
+import { createCodenamesProductionWindowBinding, type CodenamesPresentationRuntime } from "./codenames-presentation";
 import { createPictionaryProductionWindowBinding, type PictionaryPresentationRuntime } from "./pictionary-presentation";
 import { createChessProductionWindowBinding, type ChessPresentationRuntime } from "./chess-presentation";
 import {
@@ -67,6 +68,7 @@ export interface RecoveredProductionPresentationOptions {
   cakeduel?: CakeDuelPresentationRuntime;
   chess?: ChessPresentationRuntime;
   pictionary?: PictionaryPresentationRuntime;
+  codenames?: CodenamesPresentationRuntime;
 }
 
 export function createRecoveredProductionWindowBindings(
@@ -129,6 +131,8 @@ export function createRecoveredProductionWindowBindings(
 
   if (options.pictionary) bindings.pictionary = { game: createPictionaryProductionWindowBinding(options.pictionary) };
 
+  if (options.codenames) bindings.codenames = { game: createCodenamesProductionWindowBinding(options.codenames) };
+
   return bindings;
 }
 
@@ -186,6 +190,7 @@ export function createRecoveredDesktopRuntime(
     cakeduel: options.cakeduel,
     chess: options.chess,
     pictionary: options.pictionary,
+    codenames: options.codenames,
     terminal:
       options.terminal && terminalEditBridges
         ? withTerminalEditBridgeRegistry(options.terminal, terminalEditBridges)
