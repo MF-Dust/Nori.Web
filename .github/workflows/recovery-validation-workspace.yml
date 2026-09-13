@@ -22,12 +22,15 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Resolve cinematic animation dependencies
+        run: npm install --no-audit --no-fund --save-exact motion@12.23.24 gsap@3.15.0
       - name: Package tracked source and locked frontend dependencies
         shell: bash
         run: |
           mkdir -p /tmp/recovery-validation
           git archive --format=tar HEAD | gzip > /tmp/recovery-validation/source.tar.gz
           tar -czf /tmp/recovery-validation/node_modules.tar.gz node_modules
+          tar -czf /tmp/recovery-validation/manifests.tar.gz package.json package-lock.json
           git rev-parse HEAD > /tmp/recovery-validation/source-revision.txt
       - uses: actions/upload-artifact@v4
         with:
