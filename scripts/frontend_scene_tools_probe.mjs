@@ -62,17 +62,20 @@ export async function verifySceneTools(browser, output) {
     await page.evaluate(() => window.sceneTools.closeDebug());
     await page.waitForFunction(() => !window.sceneTools.state().corruptVoice);
     await page.evaluate(() => window.sceneTools.start());
-    await page.waitForFunction(
-      () =>
-        Number(document.querySelector("[data-story-scene]")?.dataset.progress) >
-        0.2,
-    );
+    await page.waitForFunction(() => {
+      const progress = Number(
+        document.querySelector("[data-story-scene]")?.dataset.progress,
+      );
+      if (progress <= 0.2 || !Number.isFinite(progress)) return false;
+      // Freeze in the browser before returning to the slower screenshot driver.
+      window.sceneTools.visibility(true);
+      return true;
+    });
     assert.equal(
       await page.evaluate(() => window.sceneTools.state().active),
       true,
     );
     await page.screenshot({ path: resolve(output, "cult-flash.png") });
-    await page.evaluate(() => window.sceneTools.visibility(true));
     await page.waitForTimeout(100);
     const paused = await page
       .locator("[data-story-scene]")
