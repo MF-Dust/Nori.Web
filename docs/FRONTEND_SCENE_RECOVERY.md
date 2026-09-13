@@ -80,3 +80,13 @@ This supplies the time and audio infrastructure required by the six remaining ci
 The Debug scene editor validates typed JSON projects and previews camera/model/light targets with smooth interpolation, explicit input gates and local audio intervals. Pause/resume, hidden tabs, stop, world replacement and unmount share the clock/audio ownership rules. Preview does not emit story facts and yields to a production story. The sample is an authored camera/light study; it is not a replacement for any of the six unfinished cinematics.
 
 See [the expanded remaining-work ledger](FRONTEND_REMAINING_WORK.md) for individual cinematic acceptance criteria. Browser coverage exercises the real model gesture and scene preview's input gate, restoration and rejected project path.
+
+## Corruption interaction study
+
+The Debug Corruption tab now runs the eleven inspected phases through StoryClock. The voice gate can be acknowledged in the preview and has a 12-second foreground fallback; the QTE gate advances only after all six checks and the 560 ms all-clear delay. Heal and wake consume scoped camera/light/model state and three local timeline audio tracks. Closing, world replacement and production-story takeover release the preview without submitting facts.
+
+The source-owned microgames cover four hostile processes with protected system rows, four abnormal nodes among ten nodes, four separate 84 BPM rhythm hits, three-channel tuning with a continuous 600 ms alignment hold, five retryable binary checks, and two steering holds. Foreground pause, hidden-tab suspension and pointer/keyboard cleanup preserve progress. The layout adapts from three columns to one and uses the existing Sarasa font for Chinese glyph coverage.
+
+This is an interaction study, not a production registration. Node/terminal animation, tuning drift/lock presentation, steering impulse/trail effects, original preference dialogue and the warning/heal renderer still need original-parity work. The five binary prompts here are newly authored technical checks. The voice gate does not impersonate the original agent handoff. Boot, corruption climax, memory, datasea, farewell and ending remain unregistered; all five production boundaries stay false.
+
+Verification includes protected targets, duplicate input, timing and completion fences in unit tests, plus a browser walkthrough of all six microgames and the recovery/wake transition. Screenshots cover the six panels, all-clear state and a 390 px viewport.

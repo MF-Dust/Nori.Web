@@ -41,3 +41,7 @@ This restores useful production bindings, not the entire shipped Debug applicati
 ## Scoped scene-project editor
 
 Debug now includes a scene editor for validated JSON phase projects. It projects camera/model/light state and plays local audio intervals through the existing shared runtime, supports explicit gates and pause/resume, and releases overrides/audio on stop, completion, tab exit or world change. It never completes a production story or invents story facts. Invalid configuration produces an error before playback. The original advanced scene tuners and other labs remain listed in [FRONTEND_REMAINING_WORK.md](FRONTEND_REMAINING_WORK.md).
+
+## Corruption Debug study
+
+The Corruption tab launches a scoped eleven-phase preview with six antivirus microgames. Its full-screen surface has pause/resume and close controls, foreground-only timing, keyboard/pointer input and small-window scrolling. It cannot emit a story fact. Advanced cinematic rendering and the original live-agent voice handoff remain separate acceptance work.

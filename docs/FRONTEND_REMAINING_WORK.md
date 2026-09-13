@@ -5,7 +5,7 @@ This ledger expands the five incomplete cutover boundaries into concrete tasks. 
 | Area | Current source coverage | Remaining acceptance work |
 | --- | --- | --- |
 | Boot | Director, gated clock, scene/audio consumers | Shatter, ocean descent, glyph-to-model transition, wake interaction and full audio sequence |
-| Corruption climax | Corruption DSP, texture, expression and camera consumers | Voice wait, warning/antivirus interaction, recovery transitions and wake gate |
+| Corruption climax | Eleven-phase Debug study, six antivirus microgames, camera/light/model projection, local audio, QTE and wake gates | Original entry/heal overlays, exact microgame animation and tuning/steering disturbance parity, original reply text and voice handoff, production registration |
 | Memory | Training-log preview, scene effects and gated clock | Five interactive windows, flood/sweep, compute drain, interrupt dialogue and void handoff |
 | Datasea | Shared scene host and Three environment | Dedicated scene passes, camera choreography, audio and white-screen handoff |
 | Farewell | Director priority and completion fencing | Dedicated model/voice presentation, line timing and acknowledged reload |

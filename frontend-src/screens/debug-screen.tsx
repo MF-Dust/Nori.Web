@@ -4,6 +4,7 @@ import type { NoriSceneState, NoriSceneStore } from "../state/nori-scene";
 import { UI_SOUND_CATALOG } from "../runtime/ui-sound-catalog";
 import "./debug-screen.css";
 import { SceneEditor } from "./scene-editor";
+import { CorruptionPreview } from "../story/corruption-preview";
 
 const tabs = [
   { id: "connection", label: "Connection" },
@@ -11,6 +12,7 @@ const tabs = [
   { id: "audio", label: "Audio" },
   { id: "facts", label: "Facts" },
   { id: "editor", label: "Scene editor" },
+  { id: "corruption", label: "Corruption" },
 ] as const;
 /** Session-scoped developer tools. Never persists scene overrides or fabricates story facts. */
 export function DebugScreen({ frontend }: { frontend: NoriFrontendRuntime }) {
@@ -92,6 +94,7 @@ export function DebugScreen({ frontend }: { frontend: NoriFrontendRuntime }) {
       </nav>
       <div className="source-debug-panels">
         {tab === "editor" && <SceneEditor frontend={frontend} />}
+        {tab === "corruption" && <CorruptionPreview frontend={frontend} />}
         {visited.has("connection") && (
           <div hidden={tab !== "connection"}>
             <h2>Connection</h2>

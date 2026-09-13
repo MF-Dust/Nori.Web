@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
+import { verifyAntivirus } from "./frontend_antivirus_probe.mjs";
 export async function verifySceneTools(browser, output) {
   const page = await browser.newPage({ viewport: { width: 900, height: 650 } });
   const errors = [],
@@ -75,6 +76,7 @@ export async function verifySceneTools(browser, output) {
     await page.getByRole("button", { name: "Play preview", exact: true }).click();
     await page.getByRole("alert").waitFor();
     assert.equal(await page.evaluate(() => window.sceneTools.state().active), false);
+    await verifyAntivirus(page, output);
     await page.evaluate(() => window.sceneTools.closeDebug());
     await page.waitForFunction(() => !window.sceneTools.state().corruptVoice);
     await page.evaluate(() => window.sceneTools.start());
@@ -137,7 +139,7 @@ export async function verifySceneTools(browser, output) {
       "Scene tools probe passed: Debug controls, scoped overrides, cult shader/audio, completion and cancellation",
     );
   } catch (error) {
-    console.log("Scene tools errors", errors);
+    console.log("Scene tools errors", errors, error);
     await page.screenshot({ path: resolve(output, "scene-tools-failure.png") });
     throw error;
   } finally {

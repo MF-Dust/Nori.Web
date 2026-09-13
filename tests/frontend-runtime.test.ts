@@ -565,3 +565,4 @@ test("story chat stays local between memory and ending, blocks scene input and r
   world.consume({ type: "dispatch_ack", requestId: "sent", success: true } as any);
   assert.equal(await remote, true);
 });
+import "./frontend-antivirus.test";
