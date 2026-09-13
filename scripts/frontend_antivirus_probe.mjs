@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { resolve } from "node:path";
 
 export async function verifyAntivirus(page, output) {
+  const completionsBefore = await page.evaluate(
+    () => window.sceneTools.completions.length,
+  );
   await page.setViewportSize({ width: 1280, height: 1050 });
   await page.bringToFront();
   await page.getByRole("button", { name: "Corruption", exact: true }).click();
@@ -202,7 +205,7 @@ export async function verifyAntivirus(page, output) {
   );
   assert.equal(
     await page.evaluate(() => window.sceneTools.completions.length),
-    0,
+    completionsBefore,
   );
   await page
     .getByRole("button", { name: "Open corruption study", exact: true })

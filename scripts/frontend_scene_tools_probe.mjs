@@ -76,7 +76,6 @@ export async function verifySceneTools(browser, output) {
     await page.getByRole("button", { name: "Play preview", exact: true }).click();
     await page.getByRole("alert").waitFor();
     assert.equal(await page.evaluate(() => window.sceneTools.state().active), false);
-    await verifyAntivirus(page, output);
     await page.evaluate(() => window.sceneTools.closeDebug());
     await page.waitForFunction(() => !window.sceneTools.state().corruptVoice);
     await page.evaluate(() => window.sceneTools.start());
@@ -128,6 +127,8 @@ export async function verifySceneTools(browser, output) {
       await page.evaluate(() => window.sceneTools.completions.length),
       1,
     );
+    await page.evaluate(() => window.sceneTools.openDebug());
+    await verifyAntivirus(page, output);
     await page.evaluate(() => window.sceneTools.dispose());
     assert.deepEqual(errors, []);
     assert.deepEqual(

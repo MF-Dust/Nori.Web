@@ -30,7 +30,6 @@ function Preview({
   const dialog = useRef<HTMLDivElement>(null);
   closeRef.current = close;
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
     dialog.current?.querySelector<HTMLButtonElement>("button")?.focus();
     const keyboard = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -64,7 +63,6 @@ function Preview({
     document.addEventListener("keydown", keyboard);
     return () => {
       document.removeEventListener("keydown", keyboard);
-      if (previous?.isConnected) previous.focus();
     };
   }, []);
   useEffect(() => {
@@ -229,6 +227,12 @@ export function CorruptionPreview({
 }) {
   const [active, setActive] = useState(false),
     [error, setError] = useState("");
+  const launcher = useRef<HTMLButtonElement>(null);
+  const wasActive = useRef(false);
+  useEffect(() => {
+    if (!active && wasActive.current) launcher.current?.focus();
+    wasActive.current = active;
+  }, [active]);
   return (
     <div>
       <h2>Corruption interaction study</h2>
@@ -237,6 +241,7 @@ export function CorruptionPreview({
         preview does not complete the production story or submit facts.
       </p>
       <button
+        ref={launcher}
         type="button"
         disabled={active}
         onClick={() => {

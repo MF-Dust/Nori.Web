@@ -44,6 +44,9 @@ Object.assign(window, {
     closeDebug() {
       render(false);
     },
+    openDebug() {
+      render(true);
+    },
     dispose() {
       delete (document as unknown as Record<string, unknown>).hidden;
       root.unmount();
