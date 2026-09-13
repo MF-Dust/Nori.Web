@@ -63,7 +63,7 @@ try {
   assert.ok(ready, "local backend did not start");
   vite = await createServer({
     configFile: "frontend-src/app.vite.config.ts",
-    server: { host: "127.0.0.1", port: 47174, strictPort: true },
+    server: { host: "127.0.0.1", port: 47174, strictPort: true, hmr: false },
   });
   await vite.listen();
   browser = await chromium.launch({

@@ -3,7 +3,24 @@ import { resolve } from "node:path";
 export async function verifySceneTools(browser, output) {
   const page = await browser.newPage({ viewport: { width: 900, height: 650 } });
   const errors = [],
-    audio = [];
+    audio = [],
+    sockets = [];
+  page.on("websocket", (socket) => sockets.push(socket.url()));
+  // Vite's CSS helper still imports its client when server.hmr is false.
+  // Keep style/module helpers, but omit the dev-only socket in this static fixture.
+  await page.route("**/@vite/client", async (route) => {
+    const response = await route.fetch();
+    const source = await response.text();
+    const connect = "transport.connect(createHMRHandler(handleMessage));";
+    assert.ok(source.includes(connect), "Vite client bootstrap changed");
+    await route.fulfill({
+      response,
+      body: source.replace(
+        connect,
+        "/* Static smoke fixture: no HMR transport. */",
+      ),
+    });
+  });
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
@@ -76,6 +93,11 @@ export async function verifySceneTools(browser, output) {
     );
     await page.evaluate(() => window.sceneTools.dispose());
     assert.deepEqual(errors, []);
+    assert.deepEqual(
+      sockets,
+      [],
+      "static scene fixture must not open a development socket",
+    );
     console.log(
       "Scene tools probe passed: Debug controls, scoped overrides, cult shader/audio, completion and cancellation",
     );
