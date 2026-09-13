@@ -1,3 +1,4 @@
+import { VoiceCorruption } from "./voice-corruption";
 import type { AudioSettingsState } from "../state/audio-store";
 import { UI_SOUND_CATALOG } from "./ui-sound-catalog";
 
@@ -84,6 +85,9 @@ export class AudioMixer {
   private master: GainNode | null = null;
   private tracks: Record<Track, GainNode> | null = null;
   private voiceInput: GainNode | null = null;
+  private voiceOutput: AudioNode | null = null;
+  private corruption: VoiceCorruption | null = null;
+  private corruptVoice = false;
   private panner: PannerNode | null = null;
   private musicDuck: GainNode | null = null;
   private duckReleaseAt = 0;
@@ -131,7 +135,9 @@ export class AudioMixer {
     this.musicDuck = context.createGain();
     this.musicDuck.connect(this.tracks.music);
     this.voiceInput = context.createGain();
+    this.voiceOutput = this.voiceInput;
     this.sync(this.settings);
+    if (this.corruptVoice) this.setCorruptVoice(true);
     return context;
   }
 
@@ -174,20 +180,51 @@ export class AudioMixer {
       this.tracks[track].gain.value = settings[`${track}Muted`]
         ? 0
         : unit(settings[`${track}Volume`] / 100);
-    if (settings.spatialVoice && !this.panner) {
-      const panner = this.context.createPanner();
-      panner.panningModel = "HRTF";
-      panner.distanceModel = "inverse";
-      panner.positionY.value = 0.7;
+    this.routeVoice();
+  }
+
+  setCorruptVoice(active: boolean) {
+    if (this.disposed) return;
+    if (this.corruption && active === this.corruptVoice) return;
+    this.corruptVoice = active;
+    if (!this.context || !this.voiceInput) return;
+    if (active && !this.corruption) {
+      this.corruption = new VoiceCorruption(this.context);
       this.voiceInput.disconnect();
-      this.voiceInput.connect(panner);
-      panner.connect(this.tracks.voice);
-      this.panner = panner;
-    } else if (!settings.spatialVoice || !this.panner) {
-      this.voiceInput.disconnect();
+      this.voiceInput.connect(this.corruption.input);
+      this.voiceOutput = this.corruption.output;
+      this.routeVoice();
+    }
+    this.corruption?.setActive(active);
+    if (active) void this.corruption?.init();
+  }
+
+  resetSpeechEffects() {
+    if (this.disposed || !this.corruption || !this.voiceInput) return;
+    this.corruption.dispose();
+    this.corruption = null;
+    this.voiceInput.disconnect();
+    this.voiceOutput = this.voiceInput;
+    this.routeVoice();
+    if (this.corruptVoice) this.setCorruptVoice(true);
+  }
+
+  private routeVoice() {
+    if (!this.voiceOutput || !this.tracks || !this.context) return;
+    this.voiceOutput.disconnect();
+    if (this.settings.spatialVoice) {
+      if (!this.panner) {
+        this.panner = this.context.createPanner();
+        this.panner.panningModel = "HRTF";
+        this.panner.distanceModel = "inverse";
+        this.panner.positionY.value = 0.7;
+        this.panner.connect(this.tracks.voice);
+      }
+      this.voiceOutput.connect(this.panner);
+    } else {
       this.panner?.disconnect();
       this.panner = null;
-      this.voiceInput.connect(this.tracks.voice);
+      this.voiceOutput.connect(this.tracks.voice);
     }
   }
 
@@ -266,17 +303,25 @@ export class AudioMixer {
   readonly startCueLoop = (cue: string): (() => void) => {
     let cancelled = false;
     let source: PlayingSource | null = null;
-    const stop = () => { cancelled = true; source?.stop(); source = null; };
+    const stop = () => {
+      cancelled = true;
+      source?.stop();
+      source = null;
+    };
     const entry = UI_SOUND_CATALOG[cue];
-    if (!entry || this.disposed || this.context?.state !== "running") return stop;
-    void this.load(entry.url, true).then(buffer => {
-      if (cancelled || this.disposed || this.context?.state !== "running") return;
-      if (this.effects.size >= 32) this.effects.values().next().value?.stop();
-      source = this.createSource(buffer, this.tracks!.sfx, this.effects);
-      source.gain.gain.value = entry.gain;
-      source.node.loop = true;
-      source.node.start();
-    }).catch(() => {});
+    if (!entry || this.disposed || this.context?.state !== "running")
+      return stop;
+    void this.load(entry.url, true)
+      .then((buffer) => {
+        if (cancelled || this.disposed || this.context?.state !== "running")
+          return;
+        if (this.effects.size >= 32) this.effects.values().next().value?.stop();
+        source = this.createSource(buffer, this.tracks!.sfx, this.effects);
+        source.gain.gain.value = entry.gain;
+        source.node.loop = true;
+        source.node.start();
+      })
+      .catch(() => {});
     return stop;
   };
 
@@ -410,7 +455,10 @@ export class AudioMixer {
     for (const node of this.media.values()) node.disconnect();
     this.media.clear();
     this.buffers.clear();
+    this.corruption?.dispose();
+    this.corruption = null;
     this.voiceInput?.disconnect();
+    this.voiceOutput = null;
     this.panner?.disconnect();
     this.musicDuck?.disconnect();
     if (this.tracks)

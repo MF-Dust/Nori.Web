@@ -1,5 +1,6 @@
 export interface NoriSceneState {
   active: boolean;
+  corruptVoice: boolean;
   chatMode: "normal" | "bubbles" | "hidden";
   bgm: "auto" | "silent" | "bgm1" | "bgm_manifold" | "bgm_void";
   noriSleep: boolean;
@@ -14,6 +15,7 @@ export interface NoriSceneState {
 }
 const defaults = (): NoriSceneState => ({
   active: false,
+  corruptVoice: false,
   chatMode: "normal",
   bgm: "auto",
   noriSleep: false,

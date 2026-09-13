@@ -162,6 +162,16 @@ export class NoriFrontendRuntime {
       () => this.audio.speechRoute(),
     );
     this.cleanup.push(
+      this.speech.subscribe((event) => {
+        if (event.type === "reset") this.audio.resetSpeechEffects();
+      }),
+    );
+    this.cleanup.push(
+      this.scene.subscribe(() =>
+        this.audio.setCorruptVoice(this.scene.snapshot().corruptVoice),
+      ),
+    );
+    this.cleanup.push(
       this.arcade.onMessage((message) => this.world.consume(message)),
     );
     this.cleanup.push(

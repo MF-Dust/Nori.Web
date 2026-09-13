@@ -1,3 +1,4 @@
+import { verifyVoiceCorruption } from "./frontend_voice_corruption_probe.mjs";
 import { verifyNoriScene } from "./frontend_nori_scene_probe.mjs";
 import { verifyPreview, verifyChip } from "./frontend_preview_chip_probe.mjs";
 import assert from "node:assert/strict";
@@ -115,7 +116,9 @@ try {
             window.sourceSmoke.sent.push({
               type: item.type,
               channel: item.channel,
-              ...(item.channel === "manifold.chip.scan" ? { payload: item.payload } : {}),
+              ...(item.channel === "manifold.chip.scan"
+                ? { payload: item.payload }
+                : {}),
               command: item.command?.type ?? item.cmd?.type,
             });
           } catch {}
@@ -416,6 +419,13 @@ try {
   );
   await page.getByRole("button", { name: "Close", exact: true }).click();
 
+  await page.route("**/voice-worklet-unavailable.js", (route) =>
+    route.fulfill({
+      contentType: "text/javascript",
+      body: "/* Fixture intentionally registers no processor. */",
+    }),
+  );
+  await verifyVoiceCorruption(page, output);
   await verifyNoriScene(browser, output);
   await verifyPreview(browser, output);
   await verifyChip(page, output);

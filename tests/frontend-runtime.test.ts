@@ -1,5 +1,6 @@
 import test from "node:test";
 import "./frontend-nori-scene.test";
+import "./frontend-voice-corruption.test";
 import "./frontend-audio.test";
 import "./frontend-chip.test";
 import "./frontend-signal-story.test";

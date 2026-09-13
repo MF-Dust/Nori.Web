@@ -21,7 +21,7 @@ The behavioral reference is the repository's authorized `public/assets/NormalApp
 
 ## Remaining boundary
 
-Three.js camera/environment/shadows, gesture plugins, story reveal and interrupt choreography, full corruption/finale sequences, scene-specific audio, and live-agent synchronization remain open. The scene host now accepts a controlled subset of the original director state; the remaining director producers are not yet restored. The `live2d` and `messenger` cutover flags therefore remain incomplete.
+Three.js camera/environment/shadows, gesture plugins, story reveal and interrupt choreography, full corruption/finale sequences, remaining scene audio cues, and live-agent synchronization remain open. The scene host now accepts a controlled subset of the original director state; the remaining director producers are not yet restored. The `live2d` and `messenger` cutover flags therefore remain incomplete.
 
 ## Conversation and shell handoff
 
@@ -33,4 +33,15 @@ Between `arg.memory.shown` and `arg.ending.shown`, player messages are shown loc
 
 Chip scanning subscribes directly to the scene store. Takeover or non-normal chat mode cancels the scan and prevents reentry, including after a late RPC result. Scene updates that leave the blocked state unchanged do not repeatedly reset the chip.
 
-The runtime suite now has 35 passing tests. The real-model browser fixture also checks hidden input, focus-shortcut blocking, draft restoration, red bubble styles, stable assistive text, reduced motion and suppressed receive cues. `nori-corrupt-chat.png` is included in the application artifact. These are restored scene consumers and fact-driven conversation behavior; full cinematic timeline producers and corruption voice DSP remain open.
+The runtime suite now has 39 passing tests. The real-model browser fixture also checks hidden input, focus-shortcut blocking, draft restoration, red bubble styles, stable assistive text, reduced motion and suppressed receive cues. `nori-corrupt-chat.png` is included in the application artifact. These are restored scene consumers and fact-driven conversation behavior; full cinematic timeline producers remain open. The corruption voice DSP is now restored as described below.
+
+
+## Corruption voice processing
+
+`VoiceCorruption` and its source-owned AudioWorklet restore all six shipped presets: unstable, glitch, robot, ghost, demon and haywire. The processing chain includes sample holding, stutter/dropout/burst events, FFT overlap-add spectral modes, waveshaping, ring modulation, band filtering, delay modulation, compression and the original room impulse. The default scene effect uses unstable at intensity 0.7. Normal speech uses the dry branch; toggles use the original 120 ms equal-power transition.
+
+The scene store's `corruptVoice` consumer connects to the shared mixer before spatial placement, voice gain and master gain. It remembers a scene selected before the audio unlock gesture. Effects are allocated lazily, worklet module loading is shared per audio context, and native stages remain usable if worklet loading or construction fails. A late module resolution cannot reattach a disposed effect. Speech resets rebuild active effects to discard captured samples and reverb tails; scene release restores the dry path. Disposal disconnects nodes, stops oscillators and closes the worklet port. Bypass additionally clears the historical processor's captured sample ring to avoid replay on reactivation.
+
+`tests/frontend-voice-corruption.test.ts` compares all six worklet presets against the authorized shipped processor sample for sample across 102,400 samples per preset. It also covers dry bypass, captured-sample cleanup, concurrent initialization, current scene state, disposal races, retry after synchronous loading failure, room impulse timing and waveshaping. `scripts/frontend_voice_corruption_probe.mjs` renders the full chain in Chromium for each preset, verifies dry output and native fallback, and checks actual scene binding, pre-unlock activation, mixer gain, speech reset and disposal. Numerical results are saved as `voice-corruption.json` in the application smoke artifact.
+
+The behavioral references are `public/assets/NormalApp-Cn6agT0F.js` and `public/assets/corruptionProcessor.worklet-lw-jqXOl.js`. The application build emits its own worklet from `frontend-src/runtime/corruption-processor.worklet.js`; historical JavaScript is only a test oracle. The cinematic producers that drive corruption over time, the other scene cues and the overall scene/audio cutover boundary remain unfinished.
