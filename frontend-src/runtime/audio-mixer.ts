@@ -319,7 +319,9 @@ export class AudioMixer {
   };
 
   /** The caller owns cancellation, including while the asset is still loading. */
-  playSceneAudio(url: string, options: { duration: number; fadeOut?: number; gain?: number; loop?: boolean; elapsed: () => number }) {
+  canPlay() { return !this.disposed && this.context?.state === "running"; }
+
+  playSceneAudio(url: string, options: { duration: number; fadeIn?: number; fadeOut?: number; gain?: number; loop?: boolean; track?: "music" | "sfx" | "voice"; elapsed: () => number }) {
     let stopped = false;
     let source: PlayingSource | null = null;
     const stop = () => { stopped = true; source?.stop(); source = null; };
@@ -327,13 +329,16 @@ export class AudioMixer {
     void this.load(url).then(buffer => {
       const elapsed = Math.max(0, options.elapsed());
       if (stopped || this.disposed || elapsed >= options.duration || this.context?.state !== "running") return;
-      source = this.createSource(buffer, this.tracks!.music, this.effects);
+      source = this.createSource(buffer, this.tracks![options.track ?? "music"], this.effects);
       const gain = options.gain ?? 1, now = this.context.currentTime;
       const fade = Math.min(options.fadeOut ?? 0, options.duration);
       const fadeStart = options.duration - fade;
-      source.gain.gain.value = fade > 0 && elapsed > fadeStart ? gain * (options.duration - elapsed) / fade : gain;
+      const attack = Math.min(Math.max(0, options.fadeIn ?? 0), fadeStart);
+      source.gain.gain.value = attack > elapsed ? gain * elapsed / attack : fade > 0 && elapsed > fadeStart ? gain * (options.duration - elapsed) / fade : gain;
+      source.gain.gain.setValueAtTime(source.gain.gain.value, now);
+      if (attack > elapsed) source.gain.gain.linearRampToValueAtTime(gain, now + attack - elapsed);
       if (fade > 0) {
-        source.gain.gain.setValueAtTime(source.gain.gain.value, now + Math.max(0, fadeStart - elapsed));
+        source.gain.gain.setValueAtTime(elapsed < fadeStart ? gain : source.gain.gain.value, now + Math.max(0, fadeStart - elapsed));
         source.gain.gain.linearRampToValueAtTime(0, now + options.duration - elapsed);
       }
       source.node.loop = options.loop ?? false;

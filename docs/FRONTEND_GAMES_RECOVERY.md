@@ -13,7 +13,7 @@ This change makes Chess, Pictionary and the existing Codenames presentation reac
 | Codenames | Existing board/header/chat/key/help presentation bound to cartridge state; start/reset/rematch, clue validation, selected cards, tap-to-confirm, end-turn eligibility, durable turn transcript, timed turn/outcome overlays | NormalApp gPe, j$, UIController; GameScreen-BU9F4fB5.js; backend/cartridges/codenames.py |
 | Base locale | Shipped English and Simplified Chinese base tables, fallback/interpolation/plural selection; source app respects stored language | i18n-DtIC1LRi.js Gu / Id |
 
-The Codenames start/results wrappers retain simplified decoration. Pictionary currently uses Canvas2D. Neither is a claim of pixel-identical recovery.
+The Codenames start/results wrappers retain simplified decoration. Pictionary now uses Pixi.js 8.17.1 for the drawing surface. Remaining decoration and scene behavior are not claimed to be pixel-identical.
 
 ## Hint, reveal and audio completion pass
 
@@ -47,7 +47,7 @@ The Chromium suite mounts the actual React game screens with a test transport an
 
 - Codenames still needs remaining start/results decoration, narrative/tutorial dialogue and event-based sudden-death chat. The local backend currently starts tutorial mode at `free_play`; the frontend gates also support scripted states from a compatible backend. Validate the full scripted tutorial with its agent.
 - Chess needs the full original tutorial presentation, remaining result/overlay timing and visual comparison.
-- Pictionary still needs original renderer/animation fidelity, original help/results decoration and scene-expression choreography. Progressive hints and SFX are connected. Check snapshot inference against a live agent.
+- Pictionary still needs remaining animation comparison, original help/results decoration and scene-expression choreography. Progressive hints and SFX are connected. Check snapshot inference against a live agent.
 - Verify closing/reopening games and reconnecting through the real world/media lifecycle. Current tests cover the transport contract with controlled events.
 - Verify both locales, original window sizes, input devices and reduced motion in full desktop composition.
 
@@ -63,3 +63,12 @@ The authoritative gate remains frontend-src/migration/cutover-status.ts. Keep Ga
 Codenames board reveals, flying cards and the help sheet now share the recovered original treasure, monster and berry SVG artwork. The start menu includes the original layered forest backdrop. The assets live under `frontend-src/screens/` and do not import historical JavaScript. Remaining Start/Results decorations and tutorial narrative are still tracked above.
 
 Chess now routes transition-only move, check, capture, castle and promotion cues. Checkmate delays the end cue by 200 ms. Draw/takeback responses show the original three-second notices and response cue; cancelling one's own request does not look like an opponent refusal. Presentation epochs and reconnect resets suppress historical feedback and clear delayed effects. Unit coverage includes checkmate timing, acknowledgement transitions, cancelled requests and world/reconnect fences. The browser game suite still covers all three playable screens, including the new Codenames SVGs in the existing reveal/flight path.
+
+
+## Pixi drawing surface
+
+`pictionary-renderer.ts` replaces the Canvas2D stroke renderer with Pixi.js 8.17.1, matching the shipped engine version. Source-owned Graphics paths use round joins/caps, the existing normalized strokes, pen/eraser widths and replay timing. Rendering is explicit, and the renderer is loaded only when a drawing surface mounts. PNG snapshots force a current render and export the displayed pixels through a small Canvas2D copy.
+
+Each effect lifetime owns a fresh canvas and renderer. Input waits for initialization; a cancelled import never creates a renderer, and an initialization that finishes after unmount is disposed. Resizing redraws the stored strokes, and unmount releases the scene and renderer. Existing browser tests now require a ready Pixi canvas before drawing and still verify normalized transport, distinct drawn/undone snapshots, eraser width and round-change cancellation. `pictionary-pixi-strokes.png` shows a stroke before undo.
+
+This closes the Canvas2D substitute in the drawing path. Help/results decoration, expression choreography and live-agent snapshot inference remain pending.

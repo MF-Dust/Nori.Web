@@ -4,6 +4,7 @@ import {
   PICTIONARY_COLORS, PICTIONARY_ERASER_WIDTH, PICTIONARY_PEN_WIDTH,
   type DrawingPoint, type DrawingStroke,
 } from "../apps/pictionary-model";
+import type { PictionaryRenderer } from "./pictionary-renderer";
 import type { DrawingSnapshot } from "../apps/pictionary-runtime";
 
 export interface PictionaryCanvasHandle {
@@ -20,7 +21,9 @@ export interface PictionaryCanvasProps {
   startSoundLoop?: (cue: string) => () => void;
 }
 export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCanvasProps>(function PictionaryCanvas(props, handle) {
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const canvas = useRef<HTMLCanvasElement | null>(null);
+  const surface = useRef<HTMLDivElement>(null);
+  const renderer = useRef<PictionaryRenderer | null>(null);
   const strokes = useRef<DrawingStroke[]>([]);
   const draft = useRef<{ pointer: number; points: DrawingPoint[]; color: string; width: number } | null>(null);
   const base = useRef({ width: 0, height: 0 });
@@ -44,30 +47,11 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
   const [error, setError] = useState<string | null>(null);
   const render = () => {
     const target = canvas.current;
-    const ctx = target?.getContext("2d");
-    if (!target || !ctx) return;
+    if (!target || !renderer.current) return;
     const { width, height } = target.getBoundingClientRect();
     if (!width || !height) return;
     if (!base.current.width) base.current = { width, height };
-    const dpr = window.devicePixelRatio || 1;
-    const pixelWidth = Math.round(width * dpr), pixelHeight = Math.round(height * dpr);
-    if (target.width !== pixelWidth || target.height !== pixelHeight) { target.width = pixelWidth; target.height = pixelHeight; }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, width, height);
-    const paint = (points: readonly DrawingPoint[], color: string, penWidth: number, normalized: boolean) => {
-      if (!points.length) return;
-      ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = color;
-      ctx.lineWidth = penWidth * width / Math.max(1, base.current.width);
-      ctx.beginPath();
-      points.forEach((point, index) => {
-        const x = normalized ? point.x * width : point.x * width / base.current.width;
-        const y = normalized ? point.y * height : point.y * height / base.current.height;
-        if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-    };
-    strokes.current.forEach(stroke => paint(stroke.points, stroke.color, stroke.width, true));
-    if (draft.current) paint(draft.current.points, draft.current.color, draft.current.width, false);
+    renderer.current.render(width, height, base.current, strokes.current, draft.current);
   };
   const changed = () => { revision.current++; render(); latest.current.onChange(); };
   useImperativeHandle(handle, () => ({
@@ -81,7 +65,8 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     },
     snapshot() {
       const source = canvas.current;
-      if (!source || !source.width || !source.height) return null;
+      if (!source || !renderer.current || !source.width || !source.height) return null;
+      render();
       const target = document.createElement("canvas"), scale = 256 / Math.max(source.width, source.height);
       target.width = Math.max(1, Math.round(source.width * scale));
       target.height = Math.max(1, Math.round(source.height * scale));
@@ -93,12 +78,31 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     },
   }));
   useEffect(() => {
-    const target = canvas.current;
-    if (!target) return;
+    const host = surface.current;
+    if (!host) return;
+    const target = document.createElement("canvas");
+    target.setAttribute("aria-label", latest.current.drawer === "player" ? "Drawing canvas" : "Nori drawing");
+    target.dataset.renderer = "loading";
+    host.append(target); canvas.current = target;
+    let disposed = false;
+    let owned: typeof renderer.current = null;
     const observer = new ResizeObserver(render);
-    observer.observe(target); render();
-    return () => observer.disconnect();
+    observer.observe(host);
+    void import("./pictionary-renderer").then(module => disposed ? null : module.createPictionaryRenderer(target)).then(value => {
+      if (!value) return;
+      if (disposed) { value.dispose(); return; }
+      owned = renderer.current = value;
+      target.dataset.renderer = "pixi";
+      render();
+    }).catch(reason => { if (!disposed) { target.dataset.renderer = "error"; setError(String(reason)); } });
+    return () => {
+      disposed = true; observer.disconnect(); owned?.dispose(); target.remove();
+      if (canvas.current === target) { canvas.current = null; renderer.current = null; }
+    };
   }, []);
+  useEffect(() => {
+    canvas.current?.setAttribute("aria-label", props.drawer === "player" ? "Drawing canvas" : "Nori drawing");
+  }, [props.drawer]);
   useEffect(() => {
     strokes.current = []; draft.current = null; stopScratch(); revision.current = 0; lastPreview.current = 0; setError(null); render();
   }, [props.roundId]);
@@ -148,14 +152,14 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     }).catch(reason => { if (!cancelled) setError(String(reason)); });
     return () => { cancelled = true; if (timer !== null) clearTimeout(timer); stopScratch(); };
   }, [props.roundId, props.drawingId, props.redrawEpoch, props.drawer, props.active]);
-  const point = (event: PointerEvent<HTMLCanvasElement>): DrawingPoint => {
+  const point = (event: PointerEvent<HTMLDivElement>): DrawingPoint => {
     const bounds = event.currentTarget.getBoundingClientRect();
     return {
       x: (event.clientX - bounds.left) / bounds.width * base.current.width,
       y: (event.clientY - bounds.top) / bounds.height * base.current.height,
     };
   };
-  function finish(event: PointerEvent<HTMLCanvasElement>, cancelled = false) {
+  function finish(event: PointerEvent<HTMLDivElement>, cancelled = false) {
     const current = draft.current;
     if (!current || current.pointer !== event.pointerId) return;
     draft.current = null;
@@ -168,9 +172,9 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     render();
   }
   return <div className="source-pictionary-canvas">
-    <canvas ref={canvas} aria-label={props.drawer === "player" ? "Drawing canvas" : "Nori drawing"}
+    <div ref={surface} style={{ width: "100%", height: "100%", touchAction: "none" }}
       onPointerDown={event => {
-        if (!props.active || props.drawer !== "player" || event.button !== 0 || draft.current) return;
+        if (!renderer.current || !props.active || props.drawer !== "player" || event.button !== 0 || draft.current) return;
         event.currentTarget.setPointerCapture(event.pointerId);
         draft.current = { pointer: event.pointerId, points: [point(event)], color: props.eraser ? "#ffffff" : props.color || PICTIONARY_COLORS[0], width: props.eraser ? PICTIONARY_ERASER_WIDTH : PICTIONARY_PEN_WIDTH };
         touchScratch();

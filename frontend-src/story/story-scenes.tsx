@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
+import { StoryClock } from "./story-clock";
+import { StoryAudio } from "./story-audio";
 import { createCultRenderer } from "./cult-renderer";
 
 function CultFlash({ frontend }: { frontend: NoriFrontendRuntime }) {
@@ -16,34 +18,47 @@ function CultFlash({ frontend }: { frontend: NoriFrontendRuntime }) {
     let renderer: ReturnType<typeof createCultRenderer> | undefined;
     let frame = 0,
       stopped = false;
-    let stopAudio = () => {};
-    setFailed(false);
-    try {
-      renderer = createCultRenderer(canvas);
-      const started = performance.now();
-      const reduced = window.matchMedia(
-        "(prefers-reduced-motion: reduce)",
-      ).matches;
-      stopAudio = frontend.audio.playSceneAudio("/audio/cult/drone.ogg", {
-        duration: 6.65,
+    const clock = new StoryClock([{ id: "cult", duration: 7 }]);
+    const audio = new StoryAudio(frontend.audio, [
+      {
+        id: "drone",
+        src: "/audio/cult/drone.ogg",
+        at: 0,
+        until: 6.65,
         fadeOut: 1.19,
         gain: 0.6,
         loop: true,
-        elapsed: () => (performance.now() - started) / 1000,
-      });
+      },
+    ]);
+    const visibility = () => {
+      if (document.hidden) clock.suspend(performance.now());
+      else clock.resume(performance.now());
+      audio.sync(clock.snapshot());
+    };
+    document.addEventListener("visibilitychange", visibility);
+    setFailed(false);
+    try {
+      renderer = createCultRenderer(canvas);
+      clock.advance(performance.now());
+      visibility();
+      const reduced = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
       const render = (now: number) => {
         if (stopped) return;
         try {
-          const progress = Math.min(1, (now - started) / 7000);
+          const state = clock.advance(now);
+          audio.sync(state);
+          const progress = state.time / state.duration;
           renderer!.render(reduced ? 0.95 : progress);
           host.current!.dataset.progress = String(progress);
           if (progress >= 1) {
-            stopAudio();
+            audio.dispose();
             frontend.story.complete();
           } else frame = requestAnimationFrame(render);
         } catch (error) {
           console.error("[CultFlash]", error);
-          stopAudio();
+          audio.dispose();
           setFailed(true);
         }
       };
@@ -55,7 +70,9 @@ function CultFlash({ frontend }: { frontend: NoriFrontendRuntime }) {
     return () => {
       stopped = true;
       cancelAnimationFrame(frame);
-      stopAudio();
+      audio.dispose();
+      clock.dispose();
+      document.removeEventListener("visibilitychange", visibility);
       renderer?.dispose();
       lease.release();
       canvas.remove();

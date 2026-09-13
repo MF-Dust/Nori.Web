@@ -33,7 +33,7 @@ Between `arg.memory.shown` and `arg.ending.shown`, player messages are shown loc
 
 Chip scanning subscribes directly to the scene store. Takeover or non-normal chat mode cancels the scan and prevents reentry, including after a late RPC result. Scene updates that leave the blocked state unchanged do not repeatedly reset the chip.
 
-The runtime suite now has 43 passing tests. The real-model browser fixture also checks hidden input, focus-shortcut blocking, draft restoration, red bubble styles, stable assistive text, reduced motion and suppressed receive cues. `nori-corrupt-chat.png` is included in the application artifact. These are restored scene consumers and fact-driven conversation behavior; full cinematic timeline producers remain open. The corruption voice DSP is now restored as described below.
+The runtime suite now has 46 passing tests. The real-model browser fixture also checks hidden input, focus-shortcut blocking, draft restoration, red bubble styles, stable assistive text, reduced motion and suppressed receive cues. `nori-corrupt-chat.png` is included in the application artifact. These are restored scene consumers and fact-driven conversation behavior; full cinematic timeline producers remain open. The corruption voice DSP is now restored as described below.
 
 
 ## Corruption voice processing
@@ -60,3 +60,14 @@ The camera and model position now update the shared spatial listener/panner. Chi
 `frontend-story-feedback.test.ts` covers priority, acknowledgement/retry, duplicate completion and stale-world handling, alongside Chess feedback transitions. `frontend_scene_tools_probe.mjs` exercises the real cult shaders/audio, successful completion, cancellation and released scene state. Its screenshots include `cult-flash.png` and `debug-audio.png`.
 
 Still required: boot, corruption climax, memory, datasea, farewell and ending timelines; their interaction, speech and audio choreography; original bloom/SMAA and advanced scene render passes; gesture plugins; full live-agent story verification. The five cutover boundaries remain false.
+
+
+## Paused timelines and audio ownership
+
+The shared `StoryClock` now supports ordered phases, explicit input gates, zero-duration consecutive gates, suspension, monotonic time and disposal. Resuming starts a fresh wall-clock anchor, so time spent waiting for input or outside the tab cannot skip later content. An input must identify the current gate before it can advance the scene.
+
+`StoryAudio` owns music/SFX/voice track intervals and pending decode handles. It waits for audio unlock, enters a late-loaded track at the current timeline offset, stops tracks on suspension or completion and recreates them at the correct offset when resumed. The mixer supports bounded attack/release envelopes and explicit track routing. The cult scene now uses this shared clock/audio path and pauses when the document becomes hidden.
+
+Three new runtime tests exercise consecutive gates, waiting time, suspension, backwards timestamps, disposal, audio unlock, offset tracking and cancellation. The scene browser probe also verifies that a hidden cult scene holds its position and does not report completion before playback resumes.
+
+This supplies the time and audio infrastructure required by the six remaining cinematics. It does not register those cinematics or emit their completion facts. Inspection also confirmed that the missing bloom and advanced postprocessing belong to cold-open/datasea renderers; they are not a general desktop filter.

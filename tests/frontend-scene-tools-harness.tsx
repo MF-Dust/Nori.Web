@@ -34,10 +34,18 @@ Object.assign(window, {
     state() {
       return frontend.scene.snapshot();
     },
+    visibility(hidden: boolean) {
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        value: hidden,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    },
     closeDebug() {
       render(false);
     },
     dispose() {
+      delete (document as unknown as Record<string, unknown>).hidden;
       root.unmount();
       frontend.dispose();
     },

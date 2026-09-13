@@ -72,6 +72,22 @@ export async function verifySceneTools(browser, output) {
       true,
     );
     await page.screenshot({ path: resolve(output, "cult-flash.png") });
+    await page.evaluate(() => window.sceneTools.visibility(true));
+    await page.waitForTimeout(100);
+    const paused = await page
+      .locator("[data-story-scene]")
+      .getAttribute("data-progress");
+    await page.waitForTimeout(350);
+    assert.equal(
+      await page.locator("[data-story-scene]").getAttribute("data-progress"),
+      paused,
+      "hidden scenes must retain their timeline position",
+    );
+    assert.equal(
+      await page.evaluate(() => window.sceneTools.completions.length),
+      0,
+    );
+    await page.evaluate(() => window.sceneTools.visibility(false));
     await page
       .locator("[data-story-scene]")
       .waitFor({ state: "detached", timeout: 20000 });

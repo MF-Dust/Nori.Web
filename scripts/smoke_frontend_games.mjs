@@ -37,7 +37,7 @@ await new Promise(done => server.listen(0, "127.0.0.1", done));
 const origin = "http://127.0.0.1:" + server.address().port;
 let browser;
 try {
-  browser = await chromium.launch({ headless: true, executablePath: process.env.NORI_TEST_CHROMIUM || undefined });
+  browser = await chromium.launch({ headless: true, executablePath: process.env.NORI_TEST_CHROMIUM || undefined, args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   const page = await browser.newPage({ viewport: { width: 1100, height: 720 } });
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -78,6 +78,7 @@ try {
   await page.evaluate(() => window.fixture.round());
   const canvas = page.getByLabel("Drawing canvas");
   await canvas.waitFor();
+  await page.locator('[aria-label="Drawing canvas"][data-renderer="pixi"]').waitFor();
   const box = await canvas.boundingBox();
   assert.ok(box && box.width > 100 && box.height > 100);
   await page.mouse.move(box.x + 30, box.y + 30); await page.mouse.down();
@@ -87,6 +88,7 @@ try {
   assert.ok(stroke.points.every(point => point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1));
   assert.equal(stroke.width, 6);
   const drawn = await page.evaluate(() => window.fixture.snapshot());
+  await page.screenshot({ path: join(output, "pictionary-pixi-strokes.png") });
   assert.equal(Math.max(drawn.width, drawn.height), 256);
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   assert.notEqual(await page.evaluate(() => window.fixture.snapshot().image), drawn.image);
