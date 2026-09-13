@@ -1,3 +1,4 @@
+import { CodenamesTreasureArt, CodenamesMonsterArt, CodenamesBerryArt } from "./codenames-art.js";
 import { memo, useEffect, type CSSProperties } from "react";
 import type { CodenamesTranslate } from "../apps/codenames-chat";
 
@@ -45,24 +46,8 @@ function helpBodyStyle(): CSSProperties {
 }
 
 function SearchCard({ kind }: { kind: (typeof SEARCH_ROWS)[number][0] }) {
-  const style: CSSProperties =
-    kind === "treasure"
-      ? {
-          background:
-            "linear-gradient(145deg, oklch(0.78 0.12 80) 0%, oklch(0.65 0.14 70) 50%, oklch(0.52 0.12 60) 100%)",
-          border: "2px solid hsl(38 50% 48% / .7)",
-        }
-      : kind === "monster"
-        ? {
-            background:
-              "linear-gradient(170deg, hsl(195 35% 28%) 0%, hsl(200 40% 20%) 50%, hsl(205 45% 14%) 100%)",
-            border: "2px solid hsl(190 35% 35%)",
-          }
-        : {
-            background: "linear-gradient(145deg, hsl(12 65% 65%) 0%, hsl(5 55% 55%) 55%, hsl(2 50% 45%) 100%)",
-            border: "2px solid hsl(15 40% 55% / .6)",
-          };
-  return <div className="h-[45px] w-[72px] shrink-0 rounded-xl" style={style} aria-hidden="true" />;
+  const Art = kind === "treasure" ? CodenamesTreasureArt : kind === "monster" ? CodenamesMonsterArt : CodenamesBerryArt;
+  return <div className="source-codenames-art" style={{ width: kind === "berry" ? 50 : 160, height: kind === "berry" ? 50 : 100 }}><Art /></div>;
 }
 
 /** Source-owned help sheet matching the shipped Codenames help content and dismissal behavior. */

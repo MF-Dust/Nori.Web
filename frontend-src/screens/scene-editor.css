@@ -1,0 +1,114 @@
+.source-scene-editor {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.source-scene-editor textarea {
+  box-sizing: border-box;
+}
+.source-scene-editor button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.source-scene-editor
+  :is(button, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.source-scene-editor details {
+  margin: 12px 0;
+}
+.source-scene-entries {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
+.source-scene-structure label {
+  flex-wrap: wrap;
+}
+.source-scene-structure input {
+  max-width: 100%;
+}
+.source-scene-editor summary {
+  cursor: pointer;
+}
+.source-scene-editor fieldset {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+}
+.source-scene-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 8px;
+}
+.source-scene-channel {
+  min-width: 0;
+  padding: 6px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.source-scene-channel label {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.source-scene-channel button {
+  margin-right: 4px;
+}
+.source-scene-vector {
+  margin-top: 8px;
+}
+.source-scene-vector-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.source-scene-vector-fields label {
+  margin: 4px 0;
+}
+.source-scene-timeline {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin: 10px 0;
+}
+.source-scene-timeline > label {
+  display: block;
+}
+.source-scene-timeline input[type="range"] {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+}
+.source-scene-phase-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.source-scene-phase-buttons button {
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.source-scene-phase-buttons [aria-pressed="true"] {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.source-scene-editor [role="alert"] {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 520px) {
+  .source-scene-editor .source-scene-editor-controls > button {
+    flex: 1 1 100px;
+  }
+  .source-scene-editor .source-scene-channels > fieldset > label {
+    display: block;
+  }
+  .source-scene-editor .source-scene-channels > fieldset > label > select {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+  }
+}

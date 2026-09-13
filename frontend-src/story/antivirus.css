@@ -1,0 +1,351 @@
+.antivirus {
+  color: #d9e7eb;
+  font:
+    12px SarasaFixed,
+    ui-monospace,
+    monospace;
+  padding: 20px;
+  max-width: 1180px;
+  margin: auto;
+  box-sizing: border-box;
+}
+.antivirus * {
+  box-sizing: border-box;
+}
+.antivirus > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.antivirus h2 {
+  font-size: 23px;
+  margin: 5px 0;
+}
+.antivirus > header span {
+  letter-spacing: 0.16em;
+  color: #81a09e;
+}
+.antivirus > header strong {
+  display: block;
+  text-align: right;
+  color: #8cf5d2;
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+.antivirus-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.antivirus article {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0e1720ed;
+  border: 1px solid #5d9d9b70;
+  border-radius: 7px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px #0005;
+}
+.antivirus article > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+  background: linear-gradient(110deg, #193a3d, #152630);
+  border-bottom: 1px solid #79c3ad44;
+}
+.antivirus article[data-solved="true"] {
+  border-color: #70cfaf;
+}
+.antivirus article[data-solved="true"] > header {
+  color: #8cf5d2;
+}
+.antivirus-panel {
+  padding: 13px;
+  flex: 1;
+}
+.antivirus p {
+  color: #a4b7bc;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.antivirus h3 {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 16px 0;
+}
+.antivirus button {
+  font: inherit;
+  color: #c6ebe1;
+  background: #16352f;
+  border: 1px solid #548a7d;
+  padding: 9px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.antivirus button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.antivirus button:focus-visible,
+.antivirus input:focus-visible,
+.antivirus-steer:focus-visible {
+  outline: 2px solid #9ff8da;
+  outline-offset: 3px;
+}
+.antivirus button:hover:enabled {
+  background: #245347;
+}
+.antivirus progress {
+  display: block;
+  width: 100%;
+  height: 5px;
+  accent-color: #83e6c5;
+  border: 0;
+}
+.antivirus > header progress {
+  width: 140px;
+}
+.antivirus-feedback {
+  margin-top: 15px !important;
+  min-height: 20px;
+}
+.antivirus-processes button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  margin: 5px 0;
+  text-align: left;
+}
+.antivirus button[data-hostile="true"] {
+  color: #ffabb2;
+  border-color: #b35a68;
+  background: #391e2a;
+}
+.antivirus-nodes {
+  position: relative;
+  aspect-ratio: 1;
+  max-height: 215px;
+  margin: auto;
+}
+.antivirus-nodes svg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  stroke: #517778;
+  stroke-width: 0.5;
+}
+.antivirus-nodes button {
+  position: absolute;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.antivirus-nodes button[data-cleared="true"] {
+  color: #85e7c4;
+  border-color: #85e7c4;
+  background: #173a32;
+  opacity: 0.8;
+}
+.antivirus-beat {
+  height: 72px;
+  background:
+    repeating-linear-gradient(90deg, #21353d 0 1px, transparent 1px 10%),
+    #0a1019;
+  position: relative;
+  margin: 30px 0 25px;
+  overflow: hidden;
+  border-block: 1px solid #314c56;
+}
+.antivirus-beat-zone {
+  position: absolute;
+  left: 51%;
+  width: 22%;
+  height: 100%;
+  background: #58d7b233;
+  border-inline: 1px solid #7fe6d4;
+}
+.antivirus-beat i {
+  position: absolute;
+  width: 3px;
+  height: 100%;
+  background: #e7fff7;
+  box-shadow: 0 0 12px #c0fff1;
+}
+.antivirus-pulse {
+  width: 100%;
+  margin-bottom: 18px;
+}
+.antivirus-wave {
+  width: 100%;
+  height: 90px;
+  background: #080f18;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  fill: none;
+  stroke-width: 2;
+}
+.antivirus-wave path {
+  stroke: #72bba0;
+  stroke-dasharray: 4 3;
+}
+.antivirus-wave polyline {
+  stroke: #ffbc89;
+}
+.antivirus-tune {
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  gap: 7px;
+  align-items: center;
+  margin: 13px 0;
+}
+.antivirus-tune input {
+  width: 100%;
+  min-width: 0;
+  accent-color: #8cdbbd;
+}
+.antivirus-anchors button {
+  display: block;
+  width: 100%;
+  margin: 9px 0;
+  text-align: left;
+}
+.antivirus-anchors > p:last-child {
+  margin-top: 18px;
+}
+.antivirus-steer {
+  position: relative;
+  width: min(100%, 200px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid #55797e;
+  background: repeating-radial-gradient(
+    circle,
+    #101e2b 0 24px,
+    #233b45 25px 26px
+  );
+  margin: 8px auto 14px;
+  touch-action: none;
+  cursor: crosshair;
+  overflow: hidden;
+}
+.antivirus-target {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: 1px solid #8affbf;
+  border-radius: 50%;
+  background: #5fea9826;
+}
+.antivirus-steer i {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #91f8d7;
+  box-shadow: 0 0 12px #63cbb3;
+}
+.corruption-preview-overlay {
+  position: fixed;
+  inset: 0;
+  overflow: auto;
+  background: #070d14d9;
+  backdrop-filter: blur(4px);
+  color: #e0eef0;
+}
+.corruption-preview-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: #111d29;
+  box-shadow: 0 3px 14px #0008;
+  font:
+    12px SarasaFixed,
+    ui-monospace,
+    monospace;
+}
+.corruption-preview-toolbar button {
+  color: #d7f6eb;
+  background: #203d3c;
+  border: 1px solid #63958b;
+  border-radius: 4px;
+  padding: 7px 12px;
+  font: inherit;
+}
+.corruption-preview-toolbar span {
+  margin-right: auto;
+}
+.corruption-preview-phase {
+  display: grid;
+  place-content: center;
+  min-height: 70vh;
+  text-align: center;
+  gap: 20px;
+  font:
+    14px SarasaFixed,
+    ui-monospace,
+    monospace;
+}
+.corruption-preview-phase progress {
+  width: 260px;
+  accent-color: #8de7cf;
+}
+.corruption-preview-phase button {
+  font: inherit;
+  padding: 14px 30px;
+  color: #caf6e4;
+  background: #214239;
+  border: 1px solid #6ea88c;
+  border-radius: 6px;
+}
+@media (max-width: 850px) {
+  .antivirus-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .antivirus {
+    padding: 12px;
+  }
+  .antivirus-grid {
+    grid-template-columns: 1fr;
+  }
+  .antivirus > header {
+    gap: 8px;
+  }
+  .antivirus > header progress {
+    width: 100px;
+  }
+  .antivirus-panel {
+    min-height: 240px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .corruption-preview-overlay {
+    backdrop-filter: none;
+  }
+  .antivirus-beat i {
+    box-shadow: none;
+  }
+}
+
+.antivirus progress::-webkit-progress-bar {
+  background: #203a41;
+}
+.antivirus progress::-webkit-progress-value {
+  background: #83e6c5;
+}
+.antivirus progress::-moz-progress-bar {
+  background: #83e6c5;
+}

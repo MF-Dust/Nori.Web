@@ -32,7 +32,10 @@ export interface WorldState {
   cartridges: ReadonlyMap<string, CartridgeRuntime>;
 }
 
-export type WorldListener = (state: WorldState, message: ArcadeServerMessage) => void;
+export type WorldListener = (
+  state: WorldState,
+  message: ArcadeServerMessage,
+) => void;
 
 function runtimeKey(cartridgeId: string, visibilityFenceId: string): string {
   return `${cartridgeId}:${visibilityFenceId}`;
@@ -43,6 +46,22 @@ export class WorldStore {
   private mediaGrant: string | null = null;
   private readonly runtimes = new Map<string, CartridgeRuntime>();
   private readonly listeners = new Set<WorldListener>();
+
+  facts(): Set<string> {
+    const result = new Set<string>();
+    for (const runtime of this.runtimes.values()) {
+      const facts = runtime.state.facts;
+      if (!facts || typeof facts !== "object" || Array.isArray(facts)) continue;
+      for (const [id, value] of Object.entries(facts))
+        if (
+          value === true ||
+          value === 1 ||
+          (value && typeof value === "object")
+        )
+          result.add(id);
+    }
+    return result;
+  }
 
   snapshot(): WorldState {
     return {
@@ -68,30 +87,42 @@ export class WorldStore {
     this.runtimes.clear();
     for (const mounted of world.mountedCartridges ?? []) {
       for (const runtime of mounted.runtimes ?? []) {
-        this.runtimes.set(runtimeKey(mounted.cartridgeId, runtime.visibilityFenceId), {
-          cartridgeId: mounted.cartridgeId,
-          visibilityFenceId: runtime.visibilityFenceId,
-          headVersion: runtime.headVersion,
-          visibleVersion: runtime.visibleVersion,
-          state: structuredClone(runtime.state),
-        });
+        this.runtimes.set(
+          runtimeKey(mounted.cartridgeId, runtime.visibilityFenceId),
+          {
+            cartridgeId: mounted.cartridgeId,
+            visibilityFenceId: runtime.visibilityFenceId,
+            headVersion: runtime.headVersion,
+            visibleVersion: runtime.visibleVersion,
+            state: structuredClone(runtime.state),
+          },
+        );
       }
     }
   }
 
-  runtime(cartridgeId: string, visibilityFenceId = cartridgeId === "manifold.web" ? "player" : "ui"): CartridgeRuntime | undefined {
+  runtime(
+    cartridgeId: string,
+    visibilityFenceId = cartridgeId === "manifold.web" ? "player" : "ui",
+  ): CartridgeRuntime | undefined {
     return this.runtimes.get(runtimeKey(cartridgeId, visibilityFenceId));
   }
 
   consume(message: ArcadeServerMessage): void {
     const raw = message as any;
-    if ((message.type === "world_joined" || message.type === "world_created") && raw.world) {
+    if (
+      (message.type === "world_joined" || message.type === "world_created") &&
+      raw.world
+    ) {
       this.installWorld(raw.world as WorldSnapshot, raw.session?.mediaGrant);
       this.publish(message);
       return;
     }
 
-    if (message.type === "cartridge_mounted" || message.type === "cartridge_mounted_ack") {
+    if (
+      message.type === "cartridge_mounted" ||
+      message.type === "cartridge_mounted_ack"
+    ) {
       const cartridgeId = String(raw.cartridgeId ?? "");
       for (const runtime of raw.runtimes ?? []) {
         this.runtimes.set(runtimeKey(cartridgeId, runtime.visibilityFenceId), {
@@ -108,14 +139,17 @@ export class WorldStore {
 
     if (message.type === "cartridge_unmounted") {
       const prefix = `${String(raw.cartridgeId)}:`;
-      for (const key of [...this.runtimes.keys()]) if (key.startsWith(prefix)) this.runtimes.delete(key);
+      for (const key of [...this.runtimes.keys()])
+        if (key.startsWith(prefix)) this.runtimes.delete(key);
       this.publish(message);
       return;
     }
 
     if (message.type === "runtime_transition") {
       const cartridgeId = String(raw.cartridgeId);
-      const matching = [...this.runtimes.values()].filter((runtime) => runtime.cartridgeId === cartridgeId);
+      const matching = [...this.runtimes.values()].filter(
+        (runtime) => runtime.cartridgeId === cartridgeId,
+      );
       for (const runtime of matching) {
         const patches = (raw.transition?.patches ?? []) as JsonPatchOperation[];
         runtime.state = applyJsonPatch(runtime.state, patches);
@@ -125,11 +159,19 @@ export class WorldStore {
       return;
     }
 
-    if (message.type === "visibility_fence_advanced" || message.type === "visibility_fence_advanced_ack") {
-      const key = runtimeKey(String(raw.cartridgeId), String(raw.visibilityFenceId));
+    if (
+      message.type === "visibility_fence_advanced" ||
+      message.type === "visibility_fence_advanced_ack"
+    ) {
+      const key = runtimeKey(
+        String(raw.cartridgeId),
+        String(raw.visibilityFenceId),
+      );
       const runtime = this.runtimes.get(key);
       if (runtime) {
-        runtime.visibleVersion = Number(raw.visibleVersion ?? runtime.visibleVersion);
+        runtime.visibleVersion = Number(
+          raw.visibleVersion ?? runtime.visibleVersion,
+        );
         runtime.headVersion = Number(raw.headVersion ?? runtime.headVersion);
       }
       this.publish(message);

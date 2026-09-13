@@ -1,0 +1,323 @@
+/* Isolated name prevents public/fonts.css's Nunito-to-Sarasa alias from winning. */
+@font-face {
+  font-family: "Nori Conversation Nunito";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/nunito/files/nunito-latin-400-normal.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Nori Conversation Nunito";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("@fontsource/nunito/files/nunito-latin-600-normal.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Nori Conversation Nunito";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("@fontsource/nunito/files/nunito-latin-700-normal.woff2")
+    format("woff2");
+}
+.source-frontend-root {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+/* NormalApp i2e/yt/up: the floating region has no card background or heading. */
+.conversation-panel {
+  --chat-mint: #d2e8e9;
+  --chat-mint-light: #caf5f1;
+  --chat-white: #fefefe;
+  --chat-dark: #56565f;
+  position: fixed;
+  right: 16px;
+  max-width: 280px;
+  min-width: 200px;
+  width: calc((100vw - 50% + 200px) * 0.8);
+  pointer-events: none;
+  font-family: "Nori Conversation Nunito", SarasaFixed, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+}
+.conversation-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.conversation-lines::-webkit-scrollbar {
+  display: none;
+}
+.conversation-bubble {
+  pointer-events: auto;
+  align-self: flex-start;
+  max-width: 85%;
+  padding: 10px 16px;
+  background: linear-gradient(
+    135deg,
+    #d2e8e9e0 0%,
+    #caf5f1e8 50%,
+    #d2e8e9e0 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow:
+    0 4px 24px #caf5f159,
+    0 2px 8px #0000000f,
+    inset 0 1px 0 #fefefe90,
+    inset 0 -1px 0 #00000005;
+  border: 1px solid #fefefe70;
+  border-radius: 16px 16px 16px 4px;
+  color: var(--chat-dark);
+  animation: conversation-enter 0.4s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.conversation-bubble > span {
+  font-size: 14px;
+  line-height: 1.625;
+  font-weight: 500;
+  opacity: 0.85;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.conversation-bubble[data-sender="player"] {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #3d3d47f0 0%, #4a4a55f5 100%);
+  color: #e8e8ec;
+  border: 1px solid #8b8b9930;
+  border-radius: 16px 16px 4px 16px;
+  box-shadow:
+    0 4px 16px #0004,
+    0 2px 6px #0000001f,
+    inset 0 1px 0 #ffffff0f;
+}
+.conversation-bubble[data-sender="player"] > span {
+  opacity: 0.95;
+}
+.conversation-bubble[data-exiting] {
+  pointer-events: none;
+  animation: conversation-exit 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+.conversation-panel form {
+  pointer-events: auto;
+  transform: translateY(50%);
+}
+.conversation-composer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #56565fcc 0%, #56565fd9 100%);
+  border: 1px solid #d2e8e920;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 4px 16px #0004,
+    0 2px 4px #00000026,
+    inset 0 1px 0 #ffffff0f,
+    inset 0 -1px 0 #0000001a;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s,
+    background 0.2s,
+    border-color 0.2s;
+}
+.conversation-composer[data-focused] {
+  background: linear-gradient(135deg, #fefefef0 0%, #caf5f140 100%);
+  border-color: #d2e8e980;
+  box-shadow:
+    0 8px 32px #caf5f140,
+    0 2px 8px #00000014,
+    inset 0 1px 0 #fefefeb0,
+    inset 0 -1px 0 #00000005;
+  transform: scale(1.02);
+}
+.conversation-composer input {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  outline: none;
+  color: var(--chat-white);
+  caret-color: var(--chat-mint-light);
+  font:
+    500 14px/20px "Nori Conversation Nunito",
+    SarasaFixed,
+    sans-serif;
+}
+.conversation-composer[data-focused] input {
+  color: var(--chat-dark);
+  caret-color: var(--chat-dark);
+}
+.conversation-placeholder {
+  position: absolute;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #d2e8e980;
+  pointer-events: none;
+}
+.conversation-composer[data-focused] .conversation-placeholder {
+  color: #0e749099;
+}
+.conversation-shortcut {
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  opacity: 0.7;
+}
+.conversation-shortcut kbd {
+  font-family: inherit;
+  padding: 0 3px;
+  line-height: 16px;
+  border-radius: 3px;
+  color: var(--chat-mint);
+  border: 1px solid #d2e8e940;
+  background: #d2e8e930;
+}
+.conversation-send {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  color: #d2e8e980;
+  transition: transform 0.2s;
+}
+.conversation-composer[data-focused] .conversation-send:not([data-filled]) {
+  color: #56565f60;
+}
+.conversation-send[data-filled] {
+  color: var(--chat-dark);
+  background: linear-gradient(135deg, #d2e8e9, #caf5f1);
+  box-shadow: 0 2px 8px #caf5f180;
+}
+.conversation-send:disabled {
+  opacity: 0.3;
+}
+.conversation-send:not(:disabled):hover {
+  transform: scale(1.05);
+}
+.conversation-send:not(:disabled):active {
+  transform: scale(0.95);
+}
+.conversation-send:focus-visible {
+  outline: 2px solid var(--chat-mint);
+  outline-offset: 2px;
+}
+.conversation-error {
+  pointer-events: auto;
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: #e8e8ec;
+  background: #3d3d47f0;
+}
+.conversation-panel[data-low-effects] .conversation-bubble {
+  background-color: var(--chat-mint);
+}
+.conversation-panel[data-low-effects]
+  .conversation-bubble[data-sender="player"] {
+  background-color: #3d3d47;
+}
+.conversation-panel[data-low-effects] .conversation-composer {
+  background-color: var(--chat-dark);
+}
+.conversation-panel[data-low-effects] .conversation-composer[data-focused] {
+  background-color: var(--chat-white);
+}
+@keyframes conversation-enter {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes conversation-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.85);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .conversation-panel *,
+  .conversation-bubble {
+    animation: none;
+    transition: none;
+  }
+}
+
+.conversation-panel {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.7s,
+    transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.7s;
+}
+.conversation-panel[data-scene-hidden] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition-delay: 0s;
+}
+.conversation-panel[data-scene-hidden] *,
+.conversation-panel[data-bubbles-only] * {
+  pointer-events: none;
+}
+.conversation-bubble[data-corrupt] {
+  background: linear-gradient(
+    135deg,
+    #7a0b12f2 0%,
+    #b01521f7 50%,
+    #7a0b12f2 100%
+  );
+  border: 1px solid #ff4d4daa;
+  box-shadow:
+    0 0 22px #ff283073,
+    0 2px 8px #0006,
+    inset 0 0 0 1px #ff4d4d80;
+  border-radius: 3px 3px 3px 1px;
+}
+.conversation-panel[data-low-effects] .conversation-bubble[data-corrupt] {
+  background:
+    linear-gradient(135deg, #7a0b12f2 0%, #b01521f7 50%, #7a0b12f2 100%),
+    #7a0b12;
+}
+.conversation-bubble[data-corrupt] > span {
+  color: #0a0204;
+  opacity: 1;
+  letter-spacing: 0.02em;
+  text-shadow:
+    1px 0 #ff00288c,
+    -1px 0 #00d2ff73;
+}
+@media (prefers-reduced-motion: reduce) {
+  .conversation-panel {
+    transition: none;
+  }
+}

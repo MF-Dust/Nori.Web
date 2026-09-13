@@ -26,9 +26,8 @@ async function main() {
     ].map(async (relativePath) => [relativePath, await read(relativePath)]),
   );
 
-  // css-ownership is still incomplete and the source app consumes the shipped
-  // stylesheet. Keep presentation-only colors that were not emitted by that
-  // stylesheet out of Codenames until the project owns CSS generation itself.
+  // Preserve the reviewed Codenames palette during CSS migration. Utilities are
+  // now generated from source; these checks still prevent unreviewed visual drift.
   const unownedUtilities = [
     "bg-emerald-950",
     "bg-emerald-950/50",

@@ -1,0 +1,109 @@
+.source-debug {
+  display: flex;
+  height: 100%;
+  color: var(--foreground);
+  background: var(--background);
+  font:
+    12.5px/1.5 ui-monospace,
+    monospace;
+}
+.source-scene-editor textarea{display:block;width:100%;min-height:240px;resize:vertical;background:var(--background);color:var(--foreground);font:12px/1.5 ui-monospace,monospace;border:1px solid var(--border);border-radius:8px;padding:10px}
+.source-scene-editor-controls{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.source-scene-editor p{max-width:70ch}
+.source-debug nav {
+  flex: 0 0 128px;
+  overflow: auto;
+  border-right: 1px solid var(--border);
+  padding: 4px;
+  background: color-mix(in srgb, var(--muted) 30%, transparent);
+}
+.source-debug button,
+.source-debug input,
+.source-debug select {
+  font: inherit;
+}
+.source-debug button {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.source-debug nav button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 2px;
+  border: 0;
+}
+.source-debug nav [aria-pressed="true"] {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+.source-debug-panels {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 10px;
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+}
+.source-debug [hidden] {
+  display: none !important;
+}
+.source-debug h2 {
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+.source-debug h3 {
+  margin: 14px 0 5px;
+}
+.source-debug label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+.source-debug input[type="range"] {
+  flex: 1;
+  min-width: 40px;
+}
+.source-debug output {
+  min-width: 3em;
+}
+.source-debug select {
+  max-width: 100%;
+  min-width: 0;
+  flex: 1;
+}
+.source-debug input[type="number"] {
+  width: 80px;
+}
+.source-debug input,
+.source-debug select {
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  padding: 3px;
+}
+.source-debug dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 5px;
+}
+.source-debug dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.source-debug table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.source-debug td,
+.source-debug th {
+  padding: 4px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.source-debug ul {
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+.source-scene-editor>label{display:block}

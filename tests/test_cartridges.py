@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
+from copy import deepcopy
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -11,7 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from backend.cartridges.cakeduel import CakeDuelCartridge
 from backend.virtual_apps import live_pack
 from backend.cartridges.chat import ChatCartridge
-from backend.cartridges.chess import ChessCartridge
+from backend.cartridges.chess import ChessCartridge, TUTORIAL_STEPS
+from backend.cartridges.base import CommandRejected
 from backend.cartridges.codenames import CodenamesCartridge
 from backend.cartridges.manifold import ManifoldWebCartridge
 from backend.cartridges.pictionary import PictionaryCartridge
@@ -114,6 +117,62 @@ def test_chess() -> None:
     assert cartridge.state["gameState"]["turn"] == "white"
 
 
+def test_chess_tutorial() -> None:
+    cartridge = ChessCartridge()
+    cartridge.dispatch("player", {"type": "startGame", "mode": "tutorial"})
+    assert cartridge.state["settings"]["playerSide"] == "white"
+    assert cartridge.state["settings"]["difficulty"] == "sleepy"
+
+    def reject(actor, command):
+        before = deepcopy(cartridge.state)
+        version = cartridge.head_version
+        try:
+            cartridge.dispatch(actor, command)
+        except CommandRejected:
+            pass
+        else:
+            raise AssertionError("Tutorial accepted an out-of-sequence command")
+        assert cartridge.state == before and cartridge.head_version == version
+
+    assert TUTORIAL_STEPS == json.loads((Path(__file__).resolve().parents[1] / "shared/chess-tutorial.json").read_text())
+    assert len(TUTORIAL_STEPS) == 22
+    for index, step in enumerate(TUTORIAL_STEPS):
+        assert cartridge.state["tutorial"]["step"] == step["id"]
+        for command in ("resign", "offerDraw", "requestTakeback"):
+            reject("player", {"type": command})
+        if index == 0:
+            reject("player", {"type": "move", "from": "d2", "to": "d4"})
+            reject("player", {"type": "move", **step["move"], "promotion": "q"})
+        if index == 1:
+            reject("agent", {"type": "move", "from": "d7", "to": "d5"})
+        command = {"type": "move", **step["move"]}
+        if step["mover"] == "agent":
+            assert cartridge.agent_next_command() == command
+        else:
+            assert cartridge.agent_next_command() is None
+        reject("agent" if step["mover"] == "player" else "player", command)
+        commit = cartridge.dispatch(step["mover"], command)
+        assert any(event["type"] == "tutorial_step" and event["step"] == step["id"] for event in commit.transition["events"])
+        assert len(cartridge.state["gameState"]["moveHistory"]) == index + 1
+        if index in (16, 17):
+            assert cartridge.state["gameState"]["moveHistory"][-1]["isCastling"]
+        if index == 11:
+            assert cartridge.state["gameState"]["isCheck"]
+        if index == 12:
+            assert not cartridge.state["gameState"]["isCheck"]
+
+    assert cartridge.state["tutorial"] == {"step": "free_play"}
+    cartridge.dispatch("player", {"type": "offerDraw"})
+    cartridge.dispatch("player", {"type": "cancelDrawOffer"})
+    cartridge.dispatch("player", {"type": "move", "from": "a2", "to": "a3"})
+    assert cartridge.agent_next_command() is not None
+    cartridge.dispatch("player", {"type": "startGame", "mode": "normal", "side": "black", "difficulty": "casual"})
+    assert cartridge.state["tutorial"] is None
+    cartridge.dispatch("player", {"type": "startGame", "mode": "tutorial"})
+    assert cartridge.state["tutorial"]["step"] == TUTORIAL_STEPS[0]["id"]
+    assert not cartridge.state["gameState"]["moveHistory"]
+
+
 def test_pictionary() -> None:
     # 1. Test Chinese (zh-CN) localization and synonym matching
     cartridge_zh = PictionaryCartridge()
@@ -200,6 +259,7 @@ if __name__ == "__main__":
     test_codenames()
     test_cakeduel()
     test_chess()
+    test_chess_tutorial()
     test_pictionary()
     test_manifold()
     test_manifold_changed_artifact_types()

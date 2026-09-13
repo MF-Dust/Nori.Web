@@ -66,6 +66,7 @@ export interface SignalServiceConversationRuntime {
 
 export interface MessengerScreenRuntime {
   model: MessengerAppModel;
+  subscribe?: (listener: () => void) => () => void;
   translate?: MessengerTranslate;
   playCue?: (cue: string) => void;
   openUrl?: (url: string) => void | Promise<void>;
@@ -975,7 +976,7 @@ function ImageOverlay({
   );
 }
 
-export function MessengerScreen({ runtime }: { runtime: MessengerScreenRuntime }) {
+export function MessengerScreen({ runtime, instanceId, setContentKey }: { runtime: MessengerScreenRuntime; instanceId?: string; setContentKey?: (instanceId: string, contentKey: string | null) => void }) {
   const t = runtime.translate ?? defaultTranslate;
   const [containerRef, width] = useContainerWidth();
   const [conversations, setConversations] = useState<SignalConversation[]>([]);
@@ -985,20 +986,31 @@ export function MessengerScreen({ runtime }: { runtime: MessengerScreenRuntime }
   const [image, setImage] = useState<string | null>(null);
   const [localReadFacts, setLocalReadFacts] = useState<Set<string>>(() => new Set());
 
+  useEffect(() => {
+    if (!instanceId) return;
+    const photo = image ? (image.split("/").pop() ?? image).replace(/\.[^.]+$/, "").replaceAll(".", "-") : null;
+    setContentKey?.(instanceId, selectedThreadId ? `signal:${selectedThreadId}${photo ? `.photo.${photo}` : ""}` : "signal:messenger");
+    return () => setContentKey?.(instanceId, null);
+  }, [instanceId, setContentKey, selectedThreadId, image]);
+
+  const loadRevision = useRef(0);
   const load = useCallback(async () => {
-    setLoading(true);
+    const revision = ++loadRevision.current;
     try {
-      setConversations(await runtime.model.conversations());
+      const next = await runtime.model.conversations();
+      if (revision === loadRevision.current) setConversations(next);
     } catch (error) {
       console.warn("[Signal] Failed to load conversations", error);
     } finally {
-      setLoading(false);
+      if (revision === loadRevision.current) setLoading(false);
     }
   }, [runtime.model]);
 
   useEffect(() => {
     void load();
-  }, [load]);
+    const unsubscribe = runtime.subscribe?.(() => void load());
+    return () => { loadRevision.current++; unsubscribe?.(); };
+  }, [load, runtime.subscribe]);
 
   const views = useMemo(
     () => buildThreadViews(conversations, localReadFacts, runtime.hasFact),

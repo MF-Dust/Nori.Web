@@ -1,0 +1,14 @@
+/* Recovered source styles. Provenance and ownership: docs/FRONTEND_CSS_RECOVERY.md. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "tw-animate-css";
+@import "./tokens.css";
+@import "./globals.css";
+@import "./pixel.css";
+@import "./base.css";
+@import "./components.css";
+@import "./nori-theme.css";
+@source "../";
+@custom-variant dark (&:is(.dark *));

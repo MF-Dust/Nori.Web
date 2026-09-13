@@ -1,0 +1,40 @@
+name: Recovery validation workspace
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/recovery-validation-workspace.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  workspace:
+    if: github.head_ref == 'dev/frontend-remaining-recovery'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Resolve cinematic animation dependencies
+        run: npm install --no-audit --no-fund --save-exact motion@12.23.24 gsap@3.15.0
+      - name: Package tracked source and locked frontend dependencies
+        shell: bash
+        run: |
+          mkdir -p /tmp/recovery-validation
+          git archive --format=tar HEAD | gzip > /tmp/recovery-validation/source.tar.gz
+          tar -czf /tmp/recovery-validation/node_modules.tar.gz node_modules
+          tar -czf /tmp/recovery-validation/manifests.tar.gz package.json package-lock.json
+          git rev-parse HEAD > /tmp/recovery-validation/source-revision.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: recovery-validation-workspace-${{ github.event.pull_request.head.sha }}
+          path: /tmp/recovery-validation/
+          retention-days: 1
+          if-no-files-found: error

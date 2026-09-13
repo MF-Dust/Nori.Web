@@ -1,0 +1,89 @@
+.settings-root {
+  color: var(--foreground);
+  background: var(--background);
+}
+.settings-root hr {
+  border-color: var(--border);
+}
+.settings-root input[type="range"] {
+  width: 100%;
+  height: 6px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.settings-switch {
+  width: 32px;
+  height: 18px;
+  padding: 2px;
+  flex-shrink: 0;
+  border-radius: 20px;
+  background: var(--input);
+  transition: background 0.15s;
+}
+.settings-switch[aria-checked="true"] {
+  background: var(--primary);
+}
+.settings-switch span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--background);
+  box-shadow: 0 1px 2px #0003;
+  transition: transform 0.15s;
+}
+.settings-switch[aria-checked="true"] span {
+  transform: translateX(14px);
+}
+.settings-action,
+.settings-select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.settings-select {
+  width: 100%;
+  font-size: 14px;
+}
+.settings-action:hover {
+  background: var(--muted);
+}
+.settings-destructive,
+.settings-destructive:hover {
+  background: var(--destructive);
+  color: var(--destructive-foreground, white);
+}
+.settings-root button:disabled,
+.settings-reset-dialog button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.settings-root :focus-visible,
+.settings-reset-dialog :focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.settings-reset-dialog {
+  margin: auto;
+  width: min(400px, calc(100vw - 32px));
+  max-width: 100%;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--foreground);
+  background: var(--background);
+  box-shadow: 0 20px 60px #0006;
+}
+.settings-reset-dialog::backdrop {
+  background: #0006;
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-root *,
+  .settings-reset-dialog * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

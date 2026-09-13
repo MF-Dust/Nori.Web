@@ -22,6 +22,34 @@ PIECE_NAMES = {
 PROMOTION_TYPES = {"q": chess.QUEEN, "r": chess.ROOK, "b": chess.BISHOP, "n": chess.KNIGHT}
 
 
+# Protocol data is embedded for the Worker runtime, which has no project filesystem.
+TUTORIAL_STEPS = [
+    {'id': 'player_pawn_opens', 'mover': 'player', 'move': {'from': 'e2', 'to': 'e4'}},
+    {'id': 'agent_pawn_mirrors', 'mover': 'agent', 'move': {'from': 'e7', 'to': 'e5'}},
+    {'id': 'player_knight_develops', 'mover': 'player', 'move': {'from': 'g1', 'to': 'f3'}},
+    {'id': 'agent_knight_defends', 'mover': 'agent', 'move': {'from': 'b8', 'to': 'c6'}},
+    {'id': 'player_bishop_aims', 'mover': 'player', 'move': {'from': 'f1', 'to': 'c4'}},
+    {'id': 'agent_bishop_mirrors', 'mover': 'agent', 'move': {'from': 'f8', 'to': 'c5'}},
+    {'id': 'player_pawn_supports', 'mover': 'player', 'move': {'from': 'c2', 'to': 'c3'}},
+    {'id': 'agent_knight_counters', 'mover': 'agent', 'move': {'from': 'g8', 'to': 'f6'}},
+    {'id': 'player_pawn_strikes', 'mover': 'player', 'move': {'from': 'd2', 'to': 'd4'}},
+    {'id': 'agent_pawn_captures', 'mover': 'agent', 'move': {'from': 'e5', 'to': 'd4'}},
+    {'id': 'player_pawn_recaptures', 'mover': 'player', 'move': {'from': 'c3', 'to': 'd4'}},
+    {'id': 'agent_bishop_checks', 'mover': 'agent', 'move': {'from': 'c5', 'to': 'b4'}},
+    {'id': 'player_blocks_check', 'mover': 'player', 'move': {'from': 'c1', 'to': 'd2'}},
+    {'id': 'agent_trades_bishops', 'mover': 'agent', 'move': {'from': 'b4', 'to': 'd2'}},
+    {'id': 'player_knight_recaptures', 'mover': 'player', 'move': {'from': 'b1', 'to': 'd2'}},
+    {'id': 'agent_frees_bishop', 'mover': 'agent', 'move': {'from': 'd7', 'to': 'd6'}},
+    {'id': 'player_castles', 'mover': 'player', 'move': {'from': 'e1', 'to': 'g1'}},
+    {'id': 'agent_castles', 'mover': 'agent', 'move': {'from': 'e8', 'to': 'g8'}},
+    {'id': 'player_rook_guards', 'mover': 'player', 'move': {'from': 'f1', 'to': 'e1'}},
+    {'id': 'agent_rook_mirrors', 'mover': 'agent', 'move': {'from': 'f8', 'to': 'e8'}},
+    {'id': 'player_queen_develops', 'mover': 'player', 'move': {'from': 'd1', 'to': 'b3'}},
+    {'id': 'agent_queen_connects', 'mover': 'agent', 'move': {'from': 'd8', 'to': 'd7'}},
+]
+TUTORIAL_INDEX = {step["id"]: index for index, step in enumerate(TUTORIAL_STEPS)}
+
+
 class ChessCartridge(BaseCartridge):
     def __init__(self) -> None:
         super().__init__(
@@ -217,7 +245,7 @@ class ChessCartridge(BaseCartridge):
                     "gameState": self._new_game(),
                     "drawOffer": None,
                     "takebackRequest": None,
-                    "tutorial": {"step": "free_play"} if mode == "tutorial" else None,
+                    "tutorial": {"step": TUTORIAL_STEPS[0]["id"]} if mode == "tutorial" else None,
                     "debugScenarioId": None,
                     "debugScenario": None,
                 }
@@ -232,6 +260,14 @@ class ChessCartridge(BaseCartridge):
         if not isinstance(game, dict):
             raise CommandRejected("Game not started")
 
+        tutorial_id = (state.get("tutorial") or {}).get("step")
+        guided = tutorial_id is not None and tutorial_id != "free_play"
+        tutorial_index = TUTORIAL_INDEX.get(tutorial_id)
+        if guided and tutorial_index is None:
+            raise CommandRejected("Unknown tutorial step")
+        if guided and command_type != "move":
+            raise CommandRejected("Complete the guided opening before using game actions")
+
         if command_type == "move":
             side = self._side_for_actor(state, actor)
             if game["status"] != "playing":
@@ -243,6 +279,10 @@ class ChessCartridge(BaseCartridge):
             promotion = cmd.get("promotion")
             if not isinstance(from_square, str) or not isinstance(to_square, str) or (promotion is not None and not isinstance(promotion, str)):
                 raise CommandRejected("Invalid move payload")
+            if guided:
+                expected = TUTORIAL_STEPS[tutorial_index]
+                if actor != expected["mover"] or {"from": from_square, "to": to_square} != expected["move"] or promotion is not None:
+                    raise CommandRejected("Follow the highlighted tutorial move")
             next_game, move_info = self._make_move(game, from_square, to_square, promotion)
             now = int(time.time() * 1000)
             previous = game["moveHistory"][-1].get("madeAtMs") if game["moveHistory"] else None
@@ -262,6 +302,10 @@ class ChessCartridge(BaseCartridge):
                 events.append({"type": "castling", "by": side, "side": "kingside" if to_square.startswith("g") else "queenside"})
             if move_info["isPromotion"]:
                 events.append({"type": "promotion", "by": side, "from": {"piece": "p", "square": from_square}, "promotion": promotion})
+            if guided:
+                next_index = tutorial_index + 1
+                state["tutorial"] = {"step": TUTORIAL_STEPS[next_index]["id"] if next_index < len(TUTORIAL_STEPS) else "free_play"}
+                events.append({"type": "tutorial_step", "step": tutorial_id})
             events.extend(self._event_game_over(next_game, state["settings"]["playerSide"]))
             return ReducerResult(state, {"success": True, "move": deepcopy(move_info)}, events)
 
@@ -345,6 +389,12 @@ class ChessCartridge(BaseCartridge):
         agent_side = self._side_for_actor(self.state, "agent")
         if game.get("turn") != agent_side:
             return None
+        tutorial_id = (self.state.get("tutorial") or {}).get("step")
+        if tutorial_id is not None and tutorial_id != "free_play":
+            index = TUTORIAL_INDEX.get(tutorial_id)
+            if index is None or TUTORIAL_STEPS[index]["mover"] != "agent":
+                return None
+            return {"type": "move", **TUTORIAL_STEPS[index]["move"]}
         board = self._board_from_game(game)
         legal = list(board.legal_moves)
         if not legal:
