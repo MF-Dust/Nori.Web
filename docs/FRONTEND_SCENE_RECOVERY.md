@@ -98,3 +98,9 @@ The source gesture now uses a per-model filtered-noise generator with the inspec
 Completion adds a disposable, reduced-motion-aware spark burst and submits the original cartridge-scoped pat request once per hold. The local backend returns `noop`, so original-agent reply/media parity remains unverified. Original particle shape and pacing comparison is still open.
 
 Director activations now carry unique instance IDs. Rejoining the same world invalidates old completion callbacks and pending acknowledgement/retry work. The Cult renderer checks its captured instance before completion and releases on takeover. Corruption previews and Debug overrides now stop for same-ID replacement snapshots as well as changed world IDs.
+
+## Cold-open graphics
+
+`cold-open-materials.js`, `cold-open-particles.js` and `cold-open-renderer.ts` supply source-owned ocean, reflection, godray/dust/plankton, bloom, FXAA, tilt, glyph-field/live-silhouette morph and wake-burst stages. `NoriSceneRenderer` creates them only while a cold-open layer exists, and disposes them on exit. The editor accepts the dedicated nested channels; numeric endpoints interpolate without mutating either project endpoint.
+
+`frontend_cold_open_probe.mjs` renders the real Cubism model through the stages, saves ocean/glyph/morph/formed/wake screenshots and verifies resize, failed images, cancellation and late loading. `frontend-cold-open.test.ts` covers resource ownership, missing siblings, single-channel half-float SDF data and project validation/interpolation. Full boot/ending timelines and the other remaining cinematics still require their own production registration and acceptance.

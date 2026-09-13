@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
+import { verifyColdOpen } from "./frontend_cold_open_probe.mjs";
 
 export async function verifyNoriScene(browser, output) {
   const page = await browser.newPage({
@@ -230,6 +231,7 @@ export async function verifyNoriScene(browser, output) {
     await page.evaluate(() => window.noriSceneProbe.reset());
     await input.waitFor();
     assert.equal(await input.inputValue(), "preserve draft");
+    await verifyColdOpen(page, output);
     await page.evaluate(() => window.noriSceneProbe.unmount());
     await page.clock.fastForward(30000);
     assert.equal(await page.locator("canvas").count(), 0);

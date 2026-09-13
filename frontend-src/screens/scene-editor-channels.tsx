@@ -17,6 +17,9 @@ const channels: Array<{
   step: number;
   automatic?: boolean;
 }> = [
+  { key: "plankton", label: "Plankton", min: 0, max: 4, step: 0.01 },
+  { key: "burst", label: "Wake burst", min: 0, max: 1, step: 0.01 },
+  { key: "burstAge", label: "Wake burst age", min: 0, max: 600, step: 0.01 },
   {
     key: "fov",
     label: "Field of view",
@@ -339,6 +342,109 @@ export function SceneEditorChannels({
             )}
           </fieldset>
         ))}
+        <fieldset className="source-scene-vector">
+          <legend>Ocean and glyph</legend>
+          <label>
+            Cold open mode
+            <select
+              aria-label="Scene cold open mode"
+              value={
+                target.coldOpen === undefined
+                  ? "inherit"
+                  : target.coldOpen === null
+                    ? "off"
+                    : "explicit"
+              }
+              onChange={(event) =>
+                update(
+                  "coldOpen",
+                  event.target.value === "inherit"
+                    ? undefined
+                    : event.target.value === "off"
+                      ? null
+                      : {
+                          ocean: true,
+                          oceanFade: 1,
+                          oceanDepth: 0,
+                          oceanGodray: 0.8,
+                          oceanEdge: 0,
+                          glyphDraw: 0,
+                          glyphGlow: 0,
+                          morph: 0,
+                          noriForm: 0,
+                          noriWash: 0,
+                        },
+                )
+              }
+            >
+              <option value="inherit">Inherit</option>
+              <option value="off">Off</option>
+              <option value="explicit">Explicit</option>
+            </select>
+          </label>
+          {target.coldOpen && (
+            <>
+              <label>
+                Ocean enabled
+                <input
+                  type="checkbox"
+                  aria-label="Scene ocean enabled"
+                  checked={target.coldOpen.ocean}
+                  onChange={(event) =>
+                    update("coldOpen", {
+                      ...target.coldOpen!,
+                      ocean: event.target.checked,
+                    })
+                  }
+                />
+              </label>
+              <div className="source-scene-channel-grid">
+                {(
+                  [
+                    "oceanFade",
+                    "oceanDepth",
+                    "oceanGodray",
+                    "oceanEdge",
+                    "glyphDraw",
+                    "glyphGlow",
+                    "morph",
+                    "noriForm",
+                    "noriWash",
+                  ] as const
+                ).map((key) => (
+                  <label key={key}>
+                    {key}
+                    <input
+                      type="number"
+                      aria-label={`Scene ${key}`}
+                      min={0}
+                      max={key === "oceanEdge" ? 4 : 1}
+                      step={0.01}
+                      key={`${index}:${key}:${target.coldOpen![key]}`}
+                      defaultValue={target.coldOpen![key]}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          event.currentTarget.blur();
+                        }
+                      }}
+                      onBlur={(event) => {
+                        const cold = target.coldOpen!;
+                        if (
+                          !update("coldOpen", {
+                            ...cold,
+                            [key]: event.currentTarget.valueAsNumber,
+                          })
+                        )
+                          event.currentTarget.value = String(cold[key]);
+                      }}
+                    />
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+        </fieldset>
       </fieldset>
     </details>
   );

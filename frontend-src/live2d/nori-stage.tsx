@@ -174,6 +174,7 @@ export function NoriStage({
             if (!renderer || now - lastFrame < 1000 / (graphicsMode === "ultra-performance" ? 30 : 60)) return;
             lastFrame = now;
             projected = renderer.render(now / 1000, frontend.scene.snapshot(), { exclusive: latest.current.exclusive(), facts: latest.current.facts, pointer, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches }) ?? projected;
+            host.current!.dataset.coldOpen = renderer.coldOpenStatus;
           };
           sceneFrame = requestAnimationFrame(renderScene);
           setStatus("ready");

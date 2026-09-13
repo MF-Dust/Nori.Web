@@ -53,3 +53,7 @@ Review found an additional exact-selection gap for non-gated, zero-duration phas
 ## Follow-up acceptance
 
 The next implementation pass adds same-world director instance fencing, immediate preview/Debug cleanup, complete forms for the currently supported channels, structural phase/audio editing and source-file audio offsets. The editor browser probe now checks reordering, gates, invalid duration/path rollback and 2.8 model dim, and saves `scene-editor-structure.png`. Runtime tests additionally cover source offset wrapping, independent fade time, and same-ID completion/retry cancellation. Current full-app and remote CI results are recorded on PR #43.
+
+## Ocean and glyph channels
+
+The channel editor includes an explicit/off/inherit cold-open mode and all ocean, glyph, morph, model-form and wash values. `oceanEdge` supports 0–4, including the original 3.5 camera-speed limit; other nested values are 0–1. Plankton, wake-burst strength and age are separate numeric channels. Nested numeric endpoints interpolate during preview; `null` releases the graphics owner. File import/export and every form edit use the same validator.

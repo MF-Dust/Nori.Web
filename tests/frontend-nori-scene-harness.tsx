@@ -117,6 +117,9 @@ Object.assign(window, {
     release() {
       leases.pop()?.release();
     },
+    patch(patch: Partial<NoriSceneState>) {
+      leases.at(-1)?.set(patch);
+    },
     reset() {
       scene.reset();
     },

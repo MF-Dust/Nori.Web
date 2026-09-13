@@ -19,6 +19,7 @@ import {
 } from "./scene-materials.js";
 import type { NoriSceneState } from "../state/nori-scene";
 import type { AudioMixer } from "../runtime/audio-mixer";
+import { ColdOpenRenderer } from "./cold-open-renderer";
 
 export const NORI_BILLBOARD = { x: 0, y: -0.6, z: 0, width: 4, height: 8 };
 export const NORI_CAMERAS = {
@@ -45,6 +46,10 @@ export class NoriSceneRenderer {
   private manifold = 0;
   private voidPhase = 0;
   private disposed = false;
+  private coldOpen: ColdOpenRenderer | null = null;
+  get coldOpenStatus() {
+    return this.coldOpen?.status ?? "inactive";
+  }
   private forward = new Vector3();
   private up = new Vector3();
   private projected = new Vector3();
@@ -168,11 +173,25 @@ export class NoriSceneRenderer {
       },
     };
     this.texture.needsUpdate = true;
+    if (state.coldOpen) {
+      this.coldOpen ??= new ColdOpenRenderer(
+        this.scene,
+        this.renderer,
+        this.camera,
+        this.bg,
+        this.effect,
+      );
+    } else if (this.coldOpen) {
+      this.coldOpen.dispose();
+      this.coldOpen = null;
+    }
+    const glyphActive =
+      this.coldOpen?.update(time, state, this.texture, this.height) ?? false;
     this.shadowPrepass.update(this.texture, 0.025);
     updateSceneMaterials(this, frame, {
       t: time,
       live2DTexture: this.texture,
-      glyphActive: false,
+      glyphActive,
     });
     this.audio.setSpatialTransform(
       this.camera.position,
@@ -180,7 +199,8 @@ export class NoriSceneRenderer {
       this.up.set(0, 1, 0).applyEuler(this.camera.rotation),
       billboard,
     );
-    this.renderer.render(this.scene, this.camera);
+    if (!this.coldOpen?.render(state))
+      this.renderer.render(this.scene, this.camera);
     this.projected
       .set(billboard.x, billboard.y, billboard.z)
       .project(this.camera);
@@ -198,6 +218,8 @@ export class NoriSceneRenderer {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    this.coldOpen?.dispose();
+    this.coldOpen = null;
     for (const stage of [
       this.bg,
       this.grid,

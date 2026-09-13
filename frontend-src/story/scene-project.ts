@@ -19,6 +19,25 @@ const vector = z
 const rotation = z.object({ x: angle, y: angle, z: angle }).strict();
 const patch = z
   .object({
+    plankton: z.number().finite().min(0).max(4).optional(),
+    burst: unit.optional(),
+    burstAge: z.number().finite().min(0).max(600).optional(),
+    coldOpen: z
+      .object({
+        ocean: z.boolean(),
+        oceanFade: unit,
+        oceanDepth: unit,
+        oceanGodray: unit,
+        oceanEdge: z.number().finite().min(0).max(4),
+        glyphDraw: unit,
+        glyphGlow: unit,
+        morph: unit,
+        noriForm: unit,
+        noriWash: unit,
+      })
+      .strict()
+      .nullable()
+      .optional(),
     camera: vector.nullable().optional(),
     cameraRot: rotation.nullable().optional(),
     fov: z.number().finite().min(10).max(120).nullable().optional(),
@@ -172,6 +191,17 @@ export function projectScene(
       ) {
         const from = typeof previous === "number" ? previous : 0;
         result[key] = from + (value - from) * smooth;
+      } else if (key === "coldOpen" && value && previous) {
+        const from = previous as Record<string, unknown>;
+        result[key] = Object.fromEntries(
+          Object.entries(value).map(([channel, next]) => [
+            channel,
+            typeof next === "number" && typeof from[channel] === "number"
+              ? (from[channel] as number) +
+                (next - (from[channel] as number)) * smooth
+              : next,
+          ]),
+        );
       } else if (
         (key === "camera" || key === "cameraRot") &&
         value &&

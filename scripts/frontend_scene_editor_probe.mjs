@@ -62,6 +62,18 @@ export async function verifySceneEditor(page, output) {
     assert.equal(JSON.parse(await editor.inputValue()).initial.noriDim, 2.8);
     assert.equal(JSON.parse(await editor.inputValue()).initial.noriSmile, false);
     assert.equal(JSON.parse(await editor.inputValue()).initial.chatMode, "bubbles");
+    await page.getByLabel("Scene cold open mode", { exact: true }).selectOption("explicit");
+    await page.getByLabel("Scene glyphDraw", { exact: true }).fill("0.7");
+    await page.getByLabel("Scene glyphDraw", { exact: true }).press("Tab");
+    await page.getByLabel("Scene oceanEdge", { exact: true }).fill("3.5");
+    await page.getByLabel("Scene oceanEdge", { exact: true }).press("Tab");
+    assert.equal(JSON.parse(await editor.inputValue()).initial.coldOpen.glyphDraw, 0.7);
+    assert.equal(JSON.parse(await editor.inputValue()).initial.coldOpen.oceanEdge, 3.5);
+    await page.getByLabel("Scene glyphDraw", { exact: true }).fill("2");
+    await page.getByLabel("Scene glyphDraw", { exact: true }).press("Tab");
+    assert.equal(await page.getByLabel("Scene glyphDraw", { exact: true }).inputValue(), "0.7");
+    await page.getByLabel("Scene cold open mode", { exact: true }).selectOption("off");
+    assert.equal(JSON.parse(await editor.inputValue()).initial.coldOpen, null);
     await page.getByText("Phases and audio tracks", { exact: true }).click();
     await page.getByRole("button", { name: "Add phase", exact: true }).click();
     await page.getByLabel("Phase 4 ID", { exact: true }).fill("exit");

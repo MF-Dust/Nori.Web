@@ -1,4 +1,20 @@
+export interface ColdOpenState {
+  ocean: boolean;
+  oceanFade: number;
+  oceanDepth: number;
+  oceanGodray: number;
+  oceanEdge: number;
+  glyphDraw: number;
+  glyphGlow: number;
+  morph: number;
+  noriForm: number;
+  noriWash: number;
+}
 export interface NoriSceneState {
+  coldOpen: ColdOpenState | null;
+  plankton: number;
+  burst: number;
+  burstAge: number;
   active: boolean;
   camera: { x: number; y: number; z: number } | null;
   cameraRot: { x: number; y: number; z: number } | null;
@@ -32,12 +48,29 @@ export interface NoriSceneState {
   whiteFlash: number;
 }
 const defaults = (): NoriSceneState => ({
+  coldOpen: null,
+  plankton: 0,
+  burst: 0,
+  burstAge: 0,
   active: false,
-  camera: null, cameraRot: null, fov: null, cameraFar: null,
-  lerp: 0.08, shake: 0, darkness: 0, noriDolly: null,
-  noriTint: 0, noriDim: 0, noriReveal: 1, redLight: 0,
-  alertLoop: 0, alertClock: 0, manifoldEnv: null, voidEnv: null,
-  fogNear: 20, fogFar: 220,
+  camera: null,
+  cameraRot: null,
+  fov: null,
+  cameraFar: null,
+  lerp: 0.08,
+  shake: 0,
+  darkness: 0,
+  noriDolly: null,
+  noriTint: 0,
+  noriDim: 0,
+  noriReveal: 1,
+  redLight: 0,
+  alertLoop: 0,
+  alertClock: 0,
+  manifoldEnv: null,
+  voidEnv: null,
+  fogNear: 20,
+  fogFar: 220,
   corruptVoice: false,
   chatMode: "normal",
   bgm: "auto",
