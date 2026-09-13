@@ -536,3 +536,28 @@ test("conversation bubbles ignore mount history, retain block identities and exp
     ["fresh"],
   );
 });
+
+test("story chat stays local between memory and ending, blocks scene input and resets with the world", async t => {
+  const { NoriSceneStore } = await import("../frontend-src/state/nori-scene");
+  const world = new WorldStore(), scene = new NoriSceneStore(), sent: any[] = [];
+  const arcade = { connectionState: "open", onState() { return () => {}; }, send() {}, dispatch(_cartridge: string, _version: number, command: any) { sent.push(command); return "sent"; } };
+  const chat = new ChatRuntimeController(world, arcade as any, scene.snapshot);
+  t.after(() => chat.dispose());
+  const join = (facts: Record<string, unknown>) => world.consume({ type: "world_joined", world: { worldId: "fixture", mountedCartridges: [{ cartridgeId: "chat", runtimes: [{ visibilityFenceId: "ui", headVersion: 1, visibleVersion: 1, state: { facts, lines: [], presentationMode: "text" } }] }] } } as any);
+  join({ "arg.memory.shown": true });
+  for (let i = 0; i < 25; i++) assert.equal(await chat.send(`local ${i}`), true);
+  assert.equal(sent.length, 0);
+  assert.equal(chat.snapshot().lines.length, 20);
+  assert.equal(chat.snapshot().lines[0].content, "local 5");
+  const lease = scene.acquire(); lease.set({ chatMode: "bubbles" });
+  assert.equal(await chat.send("blocked"), false);
+  lease.set({ chatMode: "normal", active: true });
+  assert.equal(await chat.send("blocked"), false);
+  lease.release();
+  join({ "arg.memory.shown": true, "arg.ending.shown": true });
+  assert.equal(chat.snapshot().lines.length, 0);
+  const remote = chat.send("remote");
+  assert.deepEqual(sent, [{ type: "playerMessage", text: "remote" }]);
+  world.consume({ type: "dispatch_ack", requestId: "sent", success: true } as any);
+  assert.equal(await remote, true);
+});

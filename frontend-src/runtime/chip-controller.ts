@@ -1,3 +1,4 @@
+import type { NoriSceneStore } from "../state/nori-scene";
 import { z } from "zod";
 import type { ArcadeClient } from "./arcade-client";
 import { EventRpcClient } from "./event-rpc";
@@ -85,12 +86,25 @@ export class ChipController {
   private timers = new Map<ReturnType<typeof setTimeout>, () => void>();
   private worldId: string | null = null;
   private enabled = false;
+  private sceneBlocked = false;
   readonly contentKeys = new Map<string, string>();
   constructor(
     private arcade: ArcadeClient,
     private failedText: () => string,
+    scene?: NoriSceneStore,
   ) {
     this.rpc = new EventRpcClient(arcade, 5000);
+    if (scene) {
+      const syncScene = () => {
+        const state = scene.snapshot();
+        const blocked = state.active || state.chatMode !== "normal";
+        if (blocked === this.sceneBlocked) return;
+        this.sceneBlocked = blocked;
+        if (blocked) this.cancel();
+      };
+      this.unsubscribe.push(scene.subscribe(syncScene));
+      syncScene();
+    }
     this.unsubscribe.push(
       arcade.onMessage((message) => {
         if (
@@ -163,6 +177,7 @@ export class ChipController {
     }
     if (
       !this.enabled ||
+      this.sceneBlocked ||
       this.state.phase !== "idle" ||
       chipCharge(this.state.status, this.state.receivedAt, Date.now())
         .charges <= 0
@@ -198,7 +213,8 @@ export class ChipController {
     });
   }
   async scan(target: ChipTarget) {
-    if (!this.enabled || this.state.phase !== "picking") return;
+    if (!this.enabled || this.sceneBlocked || this.state.phase !== "picking")
+      return;
     const epoch = ++this.epoch;
     this.update({ phase: "scanning", target, fried: false });
     const minimum = this.delay(1400);

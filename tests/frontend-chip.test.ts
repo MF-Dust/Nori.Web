@@ -148,3 +148,21 @@ test("chip discards old scan/status replies after world switches and interruptio
   assert.equal(controller.snapshot().readout, null);
   assert.equal(controller.toggle(), false);
 });
+
+test("a scene cancels an in-flight chip scan and prevents reentry until released", async t => {
+  const { NoriSceneStore } = await import("../frontend-src/state/nori-scene");
+  t.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 10000 });
+  const scene = new NoriSceneStore(), transport = new ChipTransport();
+  const controller = new ChipController(transport as unknown as ArcadeClient, () => "Failed", scene);
+  t.after(() => controller.dispose());
+  controller.configure("world", true); transport.reply(transport.sent.at(-1), status); await tick();
+  assert.equal(controller.toggle(), true);
+  const scan = controller.scan(target), request = transport.sent.at(-1);
+  const lease = scene.acquire(); lease.set({ active: true });
+  assert.equal(controller.snapshot().phase, "idle");
+  assert.equal(controller.toggle(), false);
+  transport.reply(request, { kind: "readout", text: "Late scene result" }); await scan;
+  assert.equal(controller.snapshot().readout, null);
+  lease.set({ active: false, chatMode: "bubbles" }); assert.equal(controller.toggle(), false);
+  lease.release(); assert.equal(controller.toggle(), true);
+});

@@ -28,7 +28,7 @@ import { pictionaryStateSchema } from "./apps/pictionary-model";
 import { PictionaryDrawingBridge } from "./apps/pictionary-runtime";
 import { GameCartridgeController } from "./apps/game-cartridge-controller";
 import { chessStateSchema } from "./apps/chess-model";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { SpeechModeControl } from "./components/speech-mode-control";
 import { ConversationPanel } from "./components/conversation-panel";
 import { SourceLogin } from "./components/source-login";
@@ -62,16 +62,7 @@ const locale = sourceLocale(preferredLocale());
 const sourceTranslate = createSourceTranslate(locale);
 
 function worldFacts(frontend: NoriFrontendRuntime): Set<string> {
-  const result = new Set<string>();
-  for (const runtime of frontend.world.snapshot().cartridges.values()) {
-    const facts = runtime.state.facts;
-    if (!facts || typeof facts !== "object" || Array.isArray(facts)) continue;
-    for (const [factId, value] of Object.entries(facts)) {
-      if (value === true || value === 1 || (value && typeof value === "object"))
-        result.add(factId);
-    }
-  }
-  return result;
+  return frontend.world.facts();
 }
 
 function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
@@ -86,8 +77,10 @@ function createSourceSession() {
     hasFact: (factId) => hasWorldFact(frontend, factId),
     playCue: frontend.audio.playCue,
   });
-  const chip = new ChipController(frontend.arcade, () =>
-    sourceTranslate("chip.scan_failed"),
+  const chip = new ChipController(
+    frontend.arcade,
+    () => sourceTranslate("chip.scan_failed"),
+    frontend.scene,
   );
   const previewRuntime = {
     subscribe: (listener: () => void) =>
@@ -290,7 +283,13 @@ function createSourceSession() {
       locale,
       playSound: frontend.audio.playCue,
     },
-    pictionary: { controller: pictionary, drawing, locale, playSound: frontend.audio.playCue, startSoundLoop: frontend.audio.startCueLoop },
+    pictionary: {
+      controller: pictionary,
+      drawing,
+      locale,
+      playSound: frontend.audio.playCue,
+      startSoundLoop: frontend.audio.startCueLoop,
+    },
     chess: {
       controller: chess,
       translate: sourceTranslate,
@@ -383,6 +382,10 @@ export function SourceApp() {
 }
 
 function SourceSessionView({ source }: { source: SourceSession }) {
+  const sceneMusic = useSyncExternalStore(
+    source.frontend.scene.subscribe,
+    () => source.frontend.scene.snapshot().bgm,
+  );
   const graphicsMode = useGraphicsSettings((state) => state.mode);
   const [auth, setAuth] = useState<AuthState>(source.frontend.auth.snapshot());
   const [facts, setFacts] = useState(() => worldFacts(source.frontend));
@@ -444,11 +447,13 @@ function SourceSessionView({ source }: { source: SourceSession }) {
   }, [source]);
   useEffect(() => {
     const target = desktopMusicTarget(facts);
+    if (sceneMusic !== "auto")
+      target.track = sceneMusic === "silent" ? null : sceneMusic;
     source.frontend.audio.setDesktopMusic(
       auth.status === "authenticated" && ready ? target.track : null,
       target.fade,
     );
-  }, [source, auth.status, ready, facts]);
+  }, [source, auth.status, ready, facts, sceneMusic]);
   const chipOffline =
     facts.has("arg.memory.shown") && !facts.has("arg.ending.shown");
   useEffect(() => {
@@ -492,7 +497,13 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       background={
         <>
           <DesktopSurface />
-          <NoriStage frontend={source.frontend} facts={facts} exclusive={() => source.bundle.runtime.store.getState().exclusiveAppId !== null} />
+          <NoriStage
+            frontend={source.frontend}
+            facts={facts}
+            exclusive={() =>
+              source.bundle.runtime.store.getState().exclusiveAppId !== null
+            }
+          />
         </>
       }
       overlay={

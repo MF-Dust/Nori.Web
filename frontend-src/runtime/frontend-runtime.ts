@@ -144,7 +144,11 @@ export class NoriFrontendRuntime {
     this.mail = new MailAppModel(this.artifacts, this.manifold);
     this.messenger = new MessengerAppModel(this.artifacts, this.manifold);
     this.terminal = new TerminalAppModel(this.manifold);
-    this.conversation = new ChatRuntimeController(this.world, this.arcade);
+    this.conversation = new ChatRuntimeController(
+      this.world,
+      this.arcade,
+      this.scene.snapshot,
+    );
     this.speech = new SpeechPlayer(
       {
         started: (operationId, blockId) => {

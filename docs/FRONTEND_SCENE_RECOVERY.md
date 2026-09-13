@@ -22,3 +22,15 @@ The behavioral reference is the repository's authorized `public/assets/NormalApp
 ## Remaining boundary
 
 Three.js camera/environment/shadows, gesture plugins, story reveal and interrupt choreography, full corruption/finale sequences, scene-specific audio, and live-agent synchronization remain open. The scene host now accepts a controlled subset of the original director state; the remaining director producers are not yet restored. The `live2d` and `messenger` cutover flags therefore remain incomplete.
+
+## Conversation and shell handoff
+
+The scene store now carries the original `normal`, `bubbles` and `hidden` chat modes plus the `auto`, `silent` and named desktop music choices. Normal chat fades out during takeover; bubbles-only mode removes the composer. Hidden content is inert, loses input focus, ignores the focus shortcut and rejects sends at the controller boundary. Returning to normal keeps the draft. Scene music overrides are released back to fact-selected desktop music through the same shared mixer.
+
+Corrupt model texture now selects the shipped red bubble gradient, angular border, glow and dark text. Visual characters change at the original 110 ms / 12% cadence. Assistive text remains stable and the reduced-motion preference stops the changing characters. Normal send/receive cues are connected; hidden, cinematic and corrupt bubbles do not emit the normal receive cue.
+
+Between `arg.memory.shown` and `arg.ending.shown`, player messages are shown locally without a chat command, matching the shipped void conversation. The latest twenty local lines are retained for the current world and discarded on world replacement. World facts are read through one shared `WorldStore.facts()` implementation.
+
+Chip scanning subscribes directly to the scene store. Takeover or non-normal chat mode cancels the scan and prevents reentry, including after a late RPC result. Scene updates that leave the blocked state unchanged do not repeatedly reset the chip.
+
+The runtime suite now has 35 passing tests. The real-model browser fixture also checks hidden input, focus-shortcut blocking, draft restoration, red bubble styles, stable assistive text, reduced motion and suppressed receive cues. `nori-corrupt-chat.png` is included in the application artifact. These are restored scene consumers and fact-driven conversation behavior; full cinematic timeline producers and corruption voice DSP remain open.

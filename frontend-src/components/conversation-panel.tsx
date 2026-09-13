@@ -1,3 +1,4 @@
+import { CorruptedChatText } from "./corrupted-chat-text";
 import {
   useEffect,
   useMemo,
@@ -27,9 +28,11 @@ import "./conversation-panel.css";
 function BubbleStack({
   bubbles,
   epoch,
+  corrupt,
 }: {
   bubbles: ConversationBubble[];
   epoch: number;
+  corrupt: boolean;
 }) {
   const [display, setDisplay] = useState<
     Array<ConversationBubble & { exiting?: number }>
@@ -82,10 +85,17 @@ function BubbleStack({
           key={bubble.id}
           className="conversation-bubble"
           data-sender={bubble.sender}
+          data-corrupt={(corrupt && bubble.sender === "agent") || undefined}
           data-exiting={bubble.exiting || undefined}
           aria-hidden={!!bubble.exiting || undefined}
         >
-          <span>{bubble.content}</span>
+          <span>
+            {corrupt && bubble.sender === "agent" ? (
+              <CorruptedChatText text={bubble.content} />
+            ) : (
+              bubble.content
+            )}
+          </span>
         </div>
       ))}
     </div>
@@ -117,6 +127,16 @@ export function ConversationPanel({
     frontend.conversation.subscribe,
     frontend.conversation.snapshot,
   );
+  const scene = useSyncExternalStore(
+    frontend.scene.subscribe,
+    frontend.scene.snapshot,
+  );
+  const hidden =
+    scene.chatMode === "hidden" ||
+    (scene.chatMode === "normal" && scene.active);
+  const bubblesOnly = scene.chatMode === "bubbles";
+  const inputBlocked = hidden || bubblesOnly;
+  const received = useRef<{ epoch: number; ids: Set<string> } | null>(null);
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
   const [bottom, setBottom] = useState(dockCenter);
@@ -152,14 +172,51 @@ export function ConversationPanel({
           ),
         );
     };
-    timeline.current.update(state.presentationEpoch, state.lines, Date.now());
+    const next = timeline.current.update(
+      state.presentationEpoch,
+      state.lines,
+      Date.now(),
+    );
+    const prior = received.current;
+    const ids = new Set(
+      next
+        .filter((bubble) => bubble.sender === "agent")
+        .map((bubble) => bubble.id),
+    );
+    if (
+      prior &&
+      prior.epoch === state.presentationEpoch &&
+      [...ids].some((id) => !prior.ids.has(id)) &&
+      !hidden &&
+      !bubblesOnly &&
+      scene.noriTexture !== "corrupt"
+    )
+      frontend.audio.playCue("comms-norichat-receive");
+    received.current = { epoch: state.presentationEpoch, ids };
     refresh();
     return () => clearTimeout(timer);
-  }, [state.lines, state.presentationEpoch]);
+  }, [
+    state.lines,
+    state.presentationEpoch,
+    hidden,
+    bubblesOnly,
+    scene.noriTexture,
+    frontend,
+  ]);
+  useEffect(() => {
+    if (inputBlocked) {
+      input.current?.blur();
+      setFocused(false);
+    }
+  }, [inputBlocked]);
   useEffect(() => {
     const resize = () => setBottom(dockCenter());
     const keydown = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      if (
+        !inputBlocked &&
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === "k"
+      ) {
         event.preventDefault();
         event.stopPropagation();
         input.current?.focus();
@@ -171,15 +228,23 @@ export function ConversationPanel({
       window.removeEventListener("resize", resize);
       window.removeEventListener("keydown", keydown, true);
     };
-  }, []);
+  }, [inputBlocked]);
   async function send(event: FormEvent) {
     event.preventDefault();
-    if (composing.current || sending.current || !sanitizeChatText(text)) return;
+    if (
+      inputBlocked ||
+      composing.current ||
+      sending.current ||
+      !sanitizeChatText(text)
+    )
+      return;
     sending.current = true;
     input.current?.blur();
     try {
-      if (await frontend.conversation.send(sanitizeChatText(text)))
+      if (await frontend.conversation.send(sanitizeChatText(text))) {
+        frontend.audio.playCue("comms-norichat-send");
         setText((current) => (current === text ? "" : current));
+      }
     } finally {
       sending.current = false;
     }
@@ -188,19 +253,28 @@ export function ConversationPanel({
     <section
       className="conversation-panel"
       aria-label={zh ? "对话" : "Conversation"}
+      aria-hidden={hidden || undefined}
+      inert={hidden || undefined}
+      data-scene-hidden={hidden || undefined}
+      data-bubbles-only={bubblesOnly || undefined}
       data-low-effects={lowEffects || undefined}
       style={{ bottom, zIndex: NORI_SHELL_LAYERS.DOCK_TOOLTIP }}
     >
-      {chipNotice?.(
-        Math.max(
-          0,
-          ...bubbles
-            .filter((bubble) => bubble.sender === "agent")
-            .map((bubble) => bubble.receivedAt),
-        ),
-      )}
+      {!inputBlocked &&
+        chipNotice?.(
+          Math.max(
+            0,
+            ...bubbles
+              .filter((bubble) => bubble.sender === "agent")
+              .map((bubble) => bubble.receivedAt),
+          ),
+        )}
       {chipReadout}
-      <BubbleStack bubbles={bubbles} epoch={state.presentationEpoch} />
+      <BubbleStack
+        bubbles={bubbles}
+        epoch={state.presentationEpoch}
+        corrupt={scene.noriTexture === "corrupt"}
+      />
       <span className="sr-only" role="status">
         {!state.connected
           ? zh
@@ -217,67 +291,72 @@ export function ConversationPanel({
           {state.error}
         </p>
       )}
-      <form onSubmit={(event) => void send(event)}>
-        <div
-          className="conversation-composer"
-          data-focused={focused || undefined}
-        >
-          <input
-            ref={input}
-            type="text"
-            aria-label={zh ? "消息" : "Message"}
-            aria-keyshortcuts="Control+K Meta+K"
-            value={text}
-            onChange={(event) =>
-              setText(Array.from(event.target.value).slice(0, 100).join(""))
-            }
-            onFocus={() => {
-              setFocused(true);
-              frontend.audio.playCue("comms-norichat-focus");
-            }}
-            onBlur={() => setFocused(false)}
-            onCompositionStart={() => {
-              composing.current = true;
-            }}
-            onCompositionEnd={() => {
-              composing.current = false;
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") input.current?.blur();
-              if (
-                event.key === "Enter" &&
-                (composing.current ||
-                  event.nativeEvent.isComposing ||
-                  event.keyCode === 229)
-              )
-                event.preventDefault();
-            }}
-            disabled={!state.connected}
-          />
-          {!text && (
-            <span className="conversation-placeholder" aria-hidden="true">
-              {t("chat.placeholder")}
-              {!focused && (
-                <span className="conversation-shortcut">
-                  <kbd>{mac ? "⌘" : "Ctrl"}</kbd>+<kbd>K</kbd>
-                </span>
-              )}
-            </span>
-          )}
-          {chipButton}
-          <button
-            className="conversation-send"
-            type="submit"
-            aria-label={zh ? "发送" : "Send"}
-            disabled={
-              !state.connected || state.pending || !sanitizeChatText(text)
-            }
-            data-filled={!!sanitizeChatText(text) || undefined}
+      {!bubblesOnly && (
+        <form onSubmit={(event) => void send(event)}>
+          <div
+            className="conversation-composer"
+            data-focused={focused || undefined}
           >
-            <ArrowUp size={16} strokeWidth={2.5} />
-          </button>
-        </div>
-      </form>
+            <input
+              ref={input}
+              type="text"
+              aria-label={zh ? "消息" : "Message"}
+              aria-keyshortcuts="Control+K Meta+K"
+              value={text}
+              onChange={(event) =>
+                setText(Array.from(event.target.value).slice(0, 100).join(""))
+              }
+              onFocus={() => {
+                setFocused(true);
+                frontend.audio.playCue("comms-norichat-focus");
+              }}
+              onBlur={() => setFocused(false)}
+              onCompositionStart={() => {
+                composing.current = true;
+              }}
+              onCompositionEnd={() => {
+                composing.current = false;
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") input.current?.blur();
+                if (
+                  event.key === "Enter" &&
+                  (composing.current ||
+                    event.nativeEvent.isComposing ||
+                    event.keyCode === 229)
+                )
+                  event.preventDefault();
+              }}
+              disabled={!state.connected || inputBlocked}
+            />
+            {!text && (
+              <span className="conversation-placeholder" aria-hidden="true">
+                {t("chat.placeholder")}
+                {!focused && (
+                  <span className="conversation-shortcut">
+                    <kbd>{mac ? "⌘" : "Ctrl"}</kbd>+<kbd>K</kbd>
+                  </span>
+                )}
+              </span>
+            )}
+            {chipButton}
+            <button
+              className="conversation-send"
+              type="submit"
+              aria-label={zh ? "发送" : "Send"}
+              disabled={
+                inputBlocked ||
+                !state.connected ||
+                state.pending ||
+                !sanitizeChatText(text)
+              }
+              data-filled={!!sanitizeChatText(text) || undefined}
+            >
+              <ArrowUp size={16} strokeWidth={2.5} />
+            </button>
+          </div>
+        </form>
+      )}
     </section>
   );
 }

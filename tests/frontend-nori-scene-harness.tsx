@@ -1,3 +1,4 @@
+import { ConversationPanel } from "../frontend-src/components/conversation-panel";
 import { createRoot } from "react-dom/client";
 import { NoriStage } from "../frontend-src/live2d/nori-stage";
 import { NoriSceneEffects } from "../frontend-src/components/nori-scene-effects";
@@ -28,7 +29,11 @@ let chat: ChatSnapshot = {
   error: null,
 };
 const listeners = new Set<() => void>();
+const cues: string[] = [];
 const conversation = {
+  async send() {
+    return true;
+  },
   snapshot: () => chat,
   subscribe(listener: () => void) {
     listeners.add(listener);
@@ -41,6 +46,11 @@ const frontend = {
   scene,
   speech,
   conversation,
+  audio: {
+    playCue(cue: string) {
+      cues.push(cue);
+    },
+  },
 } as unknown as NoriFrontendRuntime;
 const facts = new Set<string>();
 const root = createRoot(document.getElementById("root")!);
@@ -48,11 +58,13 @@ root.render(
   <>
     <NoriStage frontend={frontend} facts={facts} exclusive={() => false} />
     <NoriSceneEffects scene={scene} />
+    <ConversationPanel frontend={frontend} locale="en" />
   </>,
 );
 const leases: ReturnType<NoriSceneStore["acquire"]>[] = [];
 Object.assign(window, {
   noriSceneProbe: {
+    cues,
     chat(patch: Partial<ChatSnapshot>) {
       chat = { ...chat, ...patch };
       listeners.forEach((listener) => listener());

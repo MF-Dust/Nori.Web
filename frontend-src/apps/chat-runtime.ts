@@ -1,3 +1,4 @@
+import type { NoriSceneState } from "../state/nori-scene";
 import { z } from "zod";
 import type { ArcadeClient } from "../runtime/arcade-client";
 import type { WorldStore } from "../runtime/world-store";
@@ -48,9 +49,11 @@ export class ChatRuntimeController {
   private disposed = false;
   private fence = -1;
   private joined = false;
+  private localLines: ChatLine[] = [];
   constructor(
     private world: WorldStore,
     private arcade: ArcadeClient,
+    private scene?: () => Pick<NoriSceneState, "active" | "chatMode">,
   ) {
     this.cleanup.push(
       world.subscribe((_state, message) => {
@@ -65,6 +68,7 @@ export class ChatRuntimeController {
         if (
           ["world_left", "world_joined", "world_created"].includes(raw.type)
         ) {
+          this.localLines = [];
           this.cancel();
           this.fence = -1;
           this.joined = raw.type !== "world_left";
@@ -126,7 +130,7 @@ export class ChatRuntimeController {
       state = runtime?.state;
     const parsed = z.array(lineSchema).safeParse(state?.lines ?? []);
     this.publish({
-      lines: parsed.success ? parsed.data : [],
+      lines: [...(parsed.success ? parsed.data : []), ...this.localLines],
       connected:
         this.joined && !!runtime && this.arcade.connectionState === "open",
       phase:
@@ -148,7 +152,31 @@ export class ChatRuntimeController {
   };
   send = (text: string): Promise<boolean> => {
     const clean = sanitizeChatText(text);
-    if (!clean || this.value.pending) return Promise.resolve(false);
+    const scene = this.scene?.();
+    if (
+      !clean ||
+      this.disposed ||
+      !this.value.connected ||
+      this.value.pending ||
+      scene?.active ||
+      (scene && scene.chatMode !== "normal")
+    )
+      return Promise.resolve(false);
+    const facts = this.world.facts();
+    if (facts.has("arg.memory.shown") && !facts.has("arg.ending.shown")) {
+      this.localLines = [
+        ...this.localLines,
+        {
+          messageId: `void:${crypto.randomUUID()}`,
+          content: clean,
+          sender: "player",
+          isSpeech: true,
+          createdAt: Date.now(),
+        },
+      ].slice(-20) as ChatLine[];
+      this.refresh();
+      return Promise.resolve(true);
+    }
     return this.command({ type: "playerMessage", text: clean });
   };
   setMode = (mode: "text" | "audio") =>

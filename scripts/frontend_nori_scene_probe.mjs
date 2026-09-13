@@ -17,7 +17,7 @@ export async function verifyNoriScene(browser, output) {
   await page.route("**/nori-scene-harness", (route) =>
     route.fulfill({
       contentType: "text/html",
-      body: `<html><body style="margin:0;background:#161a1e"><div id="root"></div><script src="/cubism_sdk/Core/live2dcubismcore.js"></script><script type="module">import RefreshRuntime from "/@react-refresh"; RefreshRuntime.injectIntoGlobalHook(window); window.$RefreshReg$=()=>{}; window.$RefreshSig$=()=>type=>type; window.__vite_plugin_react_preamble_installed__=true;</script><script type="module" src="/@fs/${resolve("tests/frontend-nori-scene-harness.tsx")}"></script></body></html>`,
+      body: `<html><head><link rel="stylesheet" href="/styles/app.css"></head><body style="margin:0;background:#161a1e"><div id="root"></div><script src="/cubism_sdk/Core/live2dcubismcore.js"></script><script type="module">import RefreshRuntime from "/@react-refresh"; RefreshRuntime.injectIntoGlobalHook(window); window.$RefreshReg$=()=>{}; window.$RefreshSig$=()=>type=>type; window.__vite_plugin_react_preamble_installed__=true;</script><script type="module" src="/@fs/${resolve("tests/frontend-nori-scene-harness.tsx")}"></script></body></html>`,
     }),
   );
   const expectState = async (values) =>
@@ -76,6 +76,8 @@ export async function verifyNoriScene(browser, output) {
       await page.evaluate((facts) => window.noriSceneProbe.facts(facts), facts);
       await expectState({ noriIdle: idle, noriLipSync: lip });
     }
+    const input = page.locator(".conversation-composer input");
+    await input.fill("preserve draft");
     await page.evaluate(() =>
       window.noriSceneProbe.acquire({
         active: true,
@@ -92,6 +94,18 @@ export async function verifyNoriScene(browser, output) {
       noriRestPose: "true",
       noriExpression: "neutral",
     });
+    await page.waitForFunction(
+      () => document.querySelector(".conversation-panel")?.inert === true,
+    );
+    assert.equal(
+      await input.evaluate((node) => document.activeElement === node),
+      false,
+    );
+    await page.keyboard.press("Control+k");
+    assert.equal(
+      await input.evaluate((node) => document.activeElement === node),
+      false,
+    );
     assert.equal(textures.length, 1);
     assert.equal(await page.locator("[data-scene-effect]").count(), 2);
     assert.equal(
@@ -119,6 +133,52 @@ export async function verifyNoriScene(browser, output) {
       noriRestPose: "false",
     });
     assert.equal(await page.locator("[data-scene-effect]").count(), 0);
+    assert.equal(await input.inputValue(), "preserve draft");
+    const cuesBefore = await page.evaluate(
+      () => window.noriSceneProbe.cues.length,
+    );
+    await page.evaluate(() =>
+      window.noriSceneProbe.acquire({
+        active: true,
+        chatMode: "bubbles",
+        noriTexture: "corrupt",
+      }),
+    );
+    await page.locator(".conversation-panel[data-bubbles-only]").waitFor();
+    assert.equal(
+      await page.getByRole("textbox", { name: "Message", exact: true }).count(),
+      0,
+    );
+    await page.evaluate(() => window.noriSceneProbe.emotion("serious"));
+    const corrupt = page.locator(".conversation-bubble[data-corrupt]").last();
+    await corrupt.waitFor();
+    assert.equal(
+      await corrupt.evaluate(
+        (node) => getComputedStyle(node).borderTopLeftRadius,
+      ),
+      "3px",
+    );
+    assert.equal(
+      await corrupt.locator(".sr-only").textContent(),
+      "Model check",
+    );
+    await page.clock.runFor(600);
+    assert.equal(
+      await page.evaluate(() => window.noriSceneProbe.cues.length),
+      cuesBefore,
+    );
+    await page.screenshot({ path: resolve(output, "nori-corrupt-chat.png") });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.waitForFunction(() =>
+      [
+        ...document.querySelectorAll(
+          ".conversation-bubble[data-corrupt] > span > span[aria-hidden]",
+        ),
+      ].every((node) => node.textContent === "Model check"),
+    );
+    await page.evaluate(() => window.noriSceneProbe.reset());
+    await input.waitFor();
+    assert.equal(await input.inputValue(), "preserve draft");
     await page.evaluate(() => window.noriSceneProbe.unmount());
     await page.clock.fastForward(30000);
     assert.equal(await page.locator("canvas").count(), 0);
