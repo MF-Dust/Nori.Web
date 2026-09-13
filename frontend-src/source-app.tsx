@@ -1,3 +1,5 @@
+import { StoryScenes } from "./story/story-scenes";
+import { DebugScreen } from "./screens/debug-screen";
 import { subscribeManifoldChanges } from "./runtime/manifold-subscription";
 import { SignalDanielConversationRuntime } from "./apps/signal-daniel";
 import { ChipController } from "./runtime/chip-controller";
@@ -293,7 +295,7 @@ function createSourceSession() {
     chess: {
       controller: chess,
       translate: sourceTranslate,
-      onSound: (sound) => frontend.audio.playCue(`chess.${sound}`),
+      onSound: (sound) => frontend.audio.playCue(sound === "response" ? "boardgames-chess-response-toast" : `chess.${sound}`),
     },
     cakeduel: {
       controller: cakeduel,
@@ -303,6 +305,7 @@ function createSourceSession() {
     desktop: {
       playCue: frontend.audio.playCue,
       windows: {
+        debug: { main: { component: () => <DebugScreen frontend={frontend} /> } },
         system: {
           about: { component: AboutScreen },
           alert: {
@@ -508,6 +511,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       }
       overlay={
         <>
+          <StoryScenes frontend={source.frontend} />
           <NoriSceneEffects scene={source.frontend.scene} />
           <ConversationPanel
             frontend={source.frontend}

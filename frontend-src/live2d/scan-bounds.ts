@@ -1,6 +1,7 @@
 import type { Live2DModel } from "./engine.js";
 import type { WindowRect } from "../state/window-types";
 const models = new WeakMap<Element, Live2DModel>();
+const projections = new WeakMap<Element, () => WindowRect>();
 const parts = [
   "Part",
   "Part3",
@@ -32,15 +33,16 @@ const parts = [
   "Part66",
   "Part67",
 ];
-export function registerScanModel(element: Element, model: Live2DModel) {
+export function registerScanModel(element: Element, model: Live2DModel, project?: () => WindowRect) {
+  if (project) projections.set(element, project);
   models.set(element, model);
   return () => {
-    if (models.get(element) === model) models.delete(element);
+    if (models.get(element) === model) { models.delete(element); projections.delete(element); }
   };
 }
 /** NormalApp Uet: project the original part set and add 14 CSS pixels of padding. */
 export function noriScanBounds(element: Element): WindowRect {
-  const rect = element.getBoundingClientRect();
+  const rect = projections.get(element)?.() ?? element.getBoundingClientRect();
   const model = models.get(element);
   const bounds = model?.getPartsBounds(parts);
   const first = bounds && model?.modelToCanvasUV(bounds.left, bounds.top);

@@ -45,14 +45,21 @@ The Chromium suite mounts the actual React game screens with a test transport an
 
 ## Remaining work before the Games gate can be completed
 
-- Codenames still needs original start/results decoration, full card illustrations, narrative/tutorial dialogue and event-based sudden-death chat. The local backend currently starts tutorial mode at `free_play`; the frontend gates also support scripted states from a compatible backend. Validate the full scripted tutorial with its agent.
-- Chess needs the full original tutorial presentation, notification and sound routing, result/overlay timing and visual comparison.
+- Codenames still needs remaining start/results decoration, narrative/tutorial dialogue and event-based sudden-death chat. The local backend currently starts tutorial mode at `free_play`; the frontend gates also support scripted states from a compatible backend. Validate the full scripted tutorial with its agent.
+- Chess needs the full original tutorial presentation, remaining result/overlay timing and visual comparison.
 - Pictionary still needs original renderer/animation fidelity, original help/results decoration and scene-expression choreography. Progressive hints and SFX are connected. Check snapshot inference against a live agent.
 - Verify closing/reopening games and reconnecting through the real world/media lifecycle. Current tests cover the transport contract with controlled events.
 - Verify both locales, original window sizes, input devices and reduced motion in full desktop composition.
 
 ## Remaining full frontend boundaries
 
-Games is only part of the final cutover. The remaining boundaries are Messenger story/corruption/reveal choreography, game fidelity and live-agent verification, the outer Live2D 3D scene/story runtime, Debug and remaining scene audio, and production entry. Auth/bootstrap, source CSS ownership, shared audio, Preview, chips and Daniel integration have separate completed recovery records. A recovered module alone does not establish whole-app parity.
+Games is only part of the final cutover. The remaining boundaries are Messenger story/corruption/reveal choreography, game fidelity and live-agent verification, remaining Live2D postprocessing/gestures/story runtime, remaining Debug labs and scene audio, and production entry. Auth/bootstrap, source CSS ownership, shared audio, Preview, chips and Daniel integration have separate completed recovery records. A recovered module alone does not establish whole-app parity.
 
 The authoritative gate remains frontend-src/migration/cutover-status.ts. Keep Games and the other pending boundaries false until their production behavior is restored and verified. This PR does not switch public/index.html or remove historical assets.
+
+
+## Original card art and Chess transition feedback
+
+Codenames board reveals, flying cards and the help sheet now share the recovered original treasure, monster and berry SVG artwork. The start menu includes the original layered forest backdrop. The assets live under `frontend-src/screens/` and do not import historical JavaScript. Remaining Start/Results decorations and tutorial narrative are still tracked above.
+
+Chess now routes transition-only move, check, capture, castle and promotion cues. Checkmate delays the end cue by 200 ms. Draw/takeback responses show the original three-second notices and response cue; cancelling one's own request does not look like an opponent refusal. Presentation epochs and reconnect resets suppress historical feedback and clear delayed effects. Unit coverage includes checkmate timing, acknowledgement transitions, cancelled requests and world/reconnect fences. The browser game suite still covers all three playable screens, including the new Codenames SVGs in the existing reveal/flight path.

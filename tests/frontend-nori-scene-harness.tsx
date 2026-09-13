@@ -1,3 +1,4 @@
+import { noriScanBounds } from "../frontend-src/live2d/scan-bounds";
 import { ConversationPanel } from "../frontend-src/components/conversation-panel";
 import { createRoot } from "react-dom/client";
 import { NoriStage } from "../frontend-src/live2d/nori-stage";
@@ -30,6 +31,7 @@ let chat: ChatSnapshot = {
 };
 const listeners = new Set<() => void>();
 const cues: string[] = [];
+const spatial = { position: { x: 0, y: 0, z: 0 } };
 const conversation = {
   async send() {
     return true;
@@ -47,6 +49,7 @@ const frontend = {
   speech,
   conversation,
   audio: {
+    setSpatialTransform(position: { x: number; y: number; z: number }) { spatial.position = { ...position }; },
     playCue(cue: string) {
       cues.push(cue);
     },
@@ -65,6 +68,8 @@ const leases: ReturnType<NoriSceneStore["acquire"]>[] = [];
 Object.assign(window, {
   noriSceneProbe: {
     cues,
+    spatial,
+    bounds: () => noriScanBounds(document.querySelector("[data-model-texture]")!),
     chat(patch: Partial<ChatSnapshot>) {
       chat = { ...chat, ...patch };
       listeners.forEach((listener) => listener());

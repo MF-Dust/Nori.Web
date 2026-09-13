@@ -41,6 +41,7 @@
     "@types/node": "^22.20.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
+    "@types/three": "0.180.0",
     "@vitejs/plugin-react": "^4.7.0",
     "js-beautify": "^2.0.3",
     "playwright": "^1.62.1",
@@ -59,6 +60,7 @@
     "pdfjs-dist": "5.4.624",
     "react": "^19.2.8",
     "react-dom": "^19.2.5",
+    "three": "0.180.0",
     "zod": "^3.25.76",
     "zustand": "^5.0.15"
   }

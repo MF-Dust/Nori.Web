@@ -1,3 +1,4 @@
+import { ChessFeedback, type ChessNotice } from "../apps/chess-feedback";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { CHESS_DIFFICULTIES, CHESS_START_FEN, CHESS_TUTORIAL_STEPS, chessCaptures, chessHistory, chessLayout, type ChessSide, type ChessState } from "../apps/chess-model";
 import type { GameCartridgeController } from "../apps/game-cartridge-controller";
@@ -50,16 +51,26 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
   }, [help]);
-  const previousLength = useRef<number | null>(null);
+  const [notice, setNotice] = useState<{ kind: ChessNotice } | null>(null);
+  const sound = useRef(onSound); sound.current = onSound;
+  const feedback = useRef<ChessFeedback | null>(null);
   useEffect(() => {
-    const previous = previousLength.current;
-    previousLength.current = history.length;
-    if (previous === null || history.length <= previous) return;
-    for (const item of history.slice(previous)) {
-      onSound?.(item.isCheck ? "check" : item.captured ? "capture" : item.isCastling ? "castle" : item.isPromotion ? "promote" : item.by === playerSide ? "moveSelf" : "moveOpponent");
-    }
-  }, [history, onSound, playerSide]);
-  const dispatch = (type: string) => { void controller.dispatch({ type }); };
+    const current = new ChessFeedback(cue => sound.current?.(cue), kind => setNotice({ kind }));
+    feedback.current = current;
+    current.update(controller.snapshot().state, controller.snapshot().presentationEpoch ?? 0, controller.snapshot().connected !== false);
+    const unsubscribe = controller.subscribe(() => {
+      const next = controller.snapshot();
+      if (next.connected === false || !next.state) setNotice(null);
+      current.update(next.state, next.presentationEpoch ?? 0, next.connected !== false);
+    });
+    return () => { unsubscribe(); current.reset(); feedback.current = null; };
+  }, [controller]);
+  useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(null), 3000); return () => clearTimeout(timer); }, [notice]);
+  const dispatch = (type: string) => {
+    const kind = type === "cancelDrawOffer" ? "draw" : type === "cancelTakebackRequest" ? "takeback" : null;
+    if (kind) feedback.current?.suppressCancellation(kind);
+    void controller.dispatch({ type }).then(ok => { if (!ok && kind) feedback.current?.cancellationFailed(kind); });
+  };
   function capturedRow(pieces: Record<string, number>, color: ChessSide, advantage: number) {
     return <div className="source-chess-captures" style={{ width: layout.board + 16, opacity: setup ? 0 : 1 }}>
       {["q", "r", "b", "n", "p"].flatMap(piece => Array.from({ length: pieces[piece] ?? 0 }, (_, index) =>
@@ -126,6 +137,7 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
         {snapshot.error && <p role="alert">{snapshot.error}</p>}
       </aside>
     </div>
+    {notice && <div className="source-chess-notification source-chess-glass" role="status"><span>{t("toast." + notice.kind, notice.kind)}</span><button type="button" aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
     {incoming && <div className="source-chess-request source-chess-glass" role="dialog" aria-label={incoming}>
       <p>{incoming === "Draw" ? t("request.noriOffersDraw", "Nori offers a draw") : t("request.noriRequestsTakeback", "Nori requests a takeback")}</p>
       {[true, false].map(accept => <button type="button" key={String(accept)} disabled={snapshot.pending} onClick={() => void controller.dispatch({ type: incoming === "Draw" ? "respondDraw" : "respondTakeback", accept })}>

@@ -1,3 +1,4 @@
+import { NoriSceneRenderer } from "./scene-renderer";
 import { registerScanModel } from "./scan-bounds";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -44,8 +45,18 @@ export function NoriStage({
     if (!host.current) return;
     // A fresh canvas for each effect lifetime also survives StrictMode's setup/cleanup probe.
     const canvas = document.createElement("canvas");
-    canvas.setAttribute("aria-label", "Nori");
-    host.current.append(canvas);
+    canvas.setAttribute("aria-label", "Nori model texture");
+    canvas.dataset.modelTexture = "true";
+    const sceneCanvas = document.createElement("canvas");
+    sceneCanvas.setAttribute("aria-label", "Nori");
+    sceneCanvas.dataset.sceneCanvas = "true";
+    let renderer: NoriSceneRenderer | undefined;
+    let sceneFrame = 0, lastFrame = 0;
+    let projected = { x: 0, y: 0, width: 0, height: 0 };
+    const pointer = { x: 0, y: 0 };
+    const move = (event: PointerEvent) => { pointer.x = event.clientX / window.innerWidth * 2 - 1; pointer.y = 1 - event.clientY / window.innerHeight * 2; };
+    window.addEventListener("pointermove", move, { passive: true });
+    host.current.append(canvas, sceneCanvas);
     let unregisterScan: (() => void) | undefined;
     let unbindModel: (() => void) | undefined;
     let disposed = false,
@@ -70,6 +81,7 @@ export function NoriStage({
       );
       const stable = resolution.update(budget.resolution, performance.now());
       session.setMaxFps(budget.fps);
+      renderer?.resize(host.current.clientWidth, host.current.clientHeight, Math.min(window.devicePixelRatio || 1, graphicsMode === "quality" ? 2 : 1));
       session.setResolution(stable.resolution);
       host.current.dataset.live2dFps = String(budget.fps);
       host.current.dataset.live2dResolution = String(stable.resolution);
@@ -123,7 +135,20 @@ export function NoriStage({
         })
         .then((model) => {
           if (disposed) return;
-          unregisterScan = registerScanModel(canvas, model);
+          try {
+            renderer = new NoriSceneRenderer(sceneCanvas, canvas, frontend.audio);
+            host.current!.dataset.sceneRenderer = "three";
+            updateBudget();
+          } catch (error) {
+            console.warn("[NoriScene] renderer unavailable", error);
+            host.current!.dataset.sceneRenderer = "fallback";
+            sceneCanvas.remove();
+          }
+          unregisterScan = registerScanModel(canvas, model, () => {
+            if (!renderer) return canvas.getBoundingClientRect();
+            const rect = host.current!.getBoundingClientRect();
+            return { x: rect.x + projected.x - projected.width / 2, y: rect.y + projected.y - projected.height / 2, width: projected.width, height: projected.height };
+          });
           model.setIdleSequence({ group: "Idle", index: 0, loop: true });
           unbindModel = bindNoriModel({
             model,
@@ -135,6 +160,14 @@ export function NoriStage({
             host: host.current!,
           });
           session!.start();
+          const renderScene = (now: number) => {
+            if (disposed) return;
+            sceneFrame = requestAnimationFrame(renderScene);
+            if (!renderer || now - lastFrame < 1000 / (graphicsMode === "ultra-performance" ? 30 : 60)) return;
+            lastFrame = now;
+            projected = renderer.render(now / 1000, frontend.scene.snapshot(), { exclusive: latest.current.exclusive(), facts: latest.current.facts, pointer, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches }) ?? projected;
+          };
+          sceneFrame = requestAnimationFrame(renderScene);
           setStatus("ready");
         })
         .catch((error) => {
@@ -154,6 +187,10 @@ export function NoriStage({
       unbindModel?.();
       clearTimeout(budgetTimer);
       resize.disconnect();
+      cancelAnimationFrame(sceneFrame);
+      window.removeEventListener("pointermove", move);
+      renderer?.dispose();
+      sceneCanvas.remove();
       engine?.dispose();
       canvas.remove();
     };

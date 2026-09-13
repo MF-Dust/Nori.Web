@@ -65,8 +65,8 @@ Chess and Pictionary now have source-driven game screens, and Codenames is bound
 
 ## Supporting applications
 
-Settings, About, system alerts and Credits now have source components and desktop bindings. [The supporting-app ledger](FRONTEND_SYSTEM_RECOVERY.md) records restored flows, browser verification and the remaining Debug/Preview/audio/visual gaps. These previously implicit production-entry gaps now have their own incomplete `supporting-apps` boundary.
+Settings, About, system alerts and Credits now have source components and desktop bindings. [The supporting-app ledger](FRONTEND_SYSTEM_RECOVERY.md) records restored flows, browser verification and the remaining Debug labs/audio/visual gaps. These previously implicit production-entry gaps now have their own incomplete `supporting-apps` boundary.
 
 ## Nori scene integration
 
-[The scene recovery ledger](FRONTEND_SCENE_RECOVERY.md) records speech cuts, emotion timing, idle/sleep and story-fact poses, thinking light, model face/texture controls, screen effects and the six-mode corruption voice DSP. The real-model browser fixture checks these bindings independently of the unfinished story director. Live2D and Messenger remain incomplete until their remaining scene and choreography flows are restored.
+[The scene recovery ledger](FRONTEND_SCENE_RECOVERY.md) records speech cuts, emotion timing, idle/sleep and story-fact poses, thinking light, model face/texture controls, screen effects and the six-mode corruption voice DSP. The source Three.js environment, camera, shadow and scan/audio transforms are now bound. A priority/acknowledgement director plays the recovered cult timeline; six cinematics remain open. Real-model and scene-tool browser fixtures verify these bindings. Live2D and Messenger remain incomplete until their remaining scene and choreography flows are restored.

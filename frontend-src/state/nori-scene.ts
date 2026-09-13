@@ -1,5 +1,23 @@
 export interface NoriSceneState {
   active: boolean;
+  camera: { x: number; y: number; z: number } | null;
+  cameraRot: { x: number; y: number; z: number } | null;
+  fov: number | null;
+  cameraFar: number | null;
+  lerp: number;
+  shake: number;
+  darkness: number;
+  noriDolly: number | null;
+  noriTint: number;
+  noriDim: number;
+  noriReveal: number;
+  redLight: number;
+  alertLoop: number;
+  alertClock: number;
+  manifoldEnv: number | null;
+  voidEnv: number | null;
+  fogNear: number;
+  fogFar: number;
   corruptVoice: boolean;
   chatMode: "normal" | "bubbles" | "hidden";
   bgm: "auto" | "silent" | "bgm1" | "bgm_manifold" | "bgm_void";
@@ -15,6 +33,11 @@ export interface NoriSceneState {
 }
 const defaults = (): NoriSceneState => ({
   active: false,
+  camera: null, cameraRot: null, fov: null, cameraFar: null,
+  lerp: 0.08, shake: 0, darkness: 0, noriDolly: null,
+  noriTint: 0, noriDim: 0, noriReveal: 1, redLight: 0,
+  alertLoop: 0, alertClock: 0, manifoldEnv: null, voidEnv: null,
+  fogNear: 20, fogFar: 220,
   corruptVoice: false,
   chatMode: "normal",
   bgm: "auto",

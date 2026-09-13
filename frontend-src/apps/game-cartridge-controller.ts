@@ -5,6 +5,7 @@ import type { BuiltInGame, GameService } from "../services/games";
 
 export interface GameSnapshot<T> {
   state: T | null;
+  presentationEpoch?: number;
   mounted: boolean;
   pending: boolean;
   error: string | null;
@@ -83,7 +84,7 @@ export class GameCartridgeController<T> {
     this.presentationAbort.abort(); this.presentationAbort = new AbortController();
     this.presentationQueue = Promise.resolve(); this.presentationCount = 0;
     this.head = null;
-    this.publish({ presenting: false });
+    this.publish({ presenting: false, state: null, presentationEpoch: (this.value.presentationEpoch ?? 0) + 1 });
   }
   /** Presentation owners may pace replicated transitions before acknowledging visibility. */
   setTransitionPresenter = (presenter: GameTransitionPresenter<T>): (() => void) => {

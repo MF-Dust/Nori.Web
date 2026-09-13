@@ -199,6 +199,21 @@ export class AudioMixer {
     if (active) void this.corruption?.init();
   }
 
+  setSpatialTransform(position: { x: number; y: number; z: number }, forward: { x: number; y: number; z: number }, up: { x: number; y: number; z: number }, voice: { x: number; y: number; z: number }) {
+    if (!this.context || this.disposed) return;
+    const listener = this.context.listener;
+    for (const [prefix, value] of [["position", position], ["forward", forward], ["up", up]] as const)
+      for (const axis of ["X", "Y", "Z"] as const) {
+        const parameter = listener[`${prefix}${axis}`];
+        if (parameter) parameter.value = value[axis.toLowerCase() as "x" | "y" | "z"];
+      }
+    if (this.panner) {
+      this.panner.positionX.value = voice.x;
+      this.panner.positionY.value = voice.y;
+      this.panner.positionZ.value = voice.z;
+    }
+  }
+
   resetSpeechEffects() {
     if (this.disposed || !this.corruption || !this.voiceInput) return;
     this.corruption.dispose();
@@ -300,6 +315,31 @@ export class AudioMixer {
   };
 
   /** The caller owns cancellation, including while the asset is still loading. */
+  playSceneAudio(url: string, options: { duration: number; fadeOut?: number; gain?: number; loop?: boolean; elapsed: () => number }) {
+    let stopped = false;
+    let source: PlayingSource | null = null;
+    const stop = () => { stopped = true; source?.stop(); source = null; };
+    if (this.disposed || this.context?.state !== "running") return stop;
+    void this.load(url).then(buffer => {
+      const elapsed = Math.max(0, options.elapsed());
+      if (stopped || this.disposed || elapsed >= options.duration || this.context?.state !== "running") return;
+      source = this.createSource(buffer, this.tracks!.music, this.effects);
+      const gain = options.gain ?? 1, now = this.context.currentTime;
+      const fade = Math.min(options.fadeOut ?? 0, options.duration);
+      const fadeStart = options.duration - fade;
+      source.gain.gain.value = fade > 0 && elapsed > fadeStart ? gain * (options.duration - elapsed) / fade : gain;
+      if (fade > 0) {
+        source.gain.gain.setValueAtTime(source.gain.gain.value, now + Math.max(0, fadeStart - elapsed));
+        source.gain.gain.linearRampToValueAtTime(0, now + options.duration - elapsed);
+      }
+      source.node.loop = options.loop ?? false;
+      if (!source.node.loop && elapsed >= buffer.duration) { stop(); return; }
+      source.node.start(0, source.node.loop ? elapsed % buffer.duration : elapsed);
+      source.node.stop(now + options.duration - elapsed);
+    }).catch(() => {});
+    return stop;
+  }
+
   readonly startCueLoop = (cue: string): (() => void) => {
     let cancelled = false;
     let source: PlayingSource | null = null;

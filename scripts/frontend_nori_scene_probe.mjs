@@ -20,8 +20,9 @@ export async function verifyNoriScene(browser, output) {
       body: `<html><head><link rel="stylesheet" href="/styles/app.css"></head><body style="margin:0;background:#161a1e"><div id="root"></div><script src="/cubism_sdk/Core/live2dcubismcore.js"></script><script type="module">import RefreshRuntime from "/@react-refresh"; RefreshRuntime.injectIntoGlobalHook(window); window.$RefreshReg$=()=>{}; window.$RefreshSig$=()=>type=>type; window.__vite_plugin_react_preamble_installed__=true;</script><script type="module" src="/@fs/${resolve("tests/frontend-nori-scene-harness.tsx")}"></script></body></html>`,
     }),
   );
-  const expectState = async (values) =>
-    page.waitForFunction((values) => {
+  const expectState = async (values) => {
+    await page.clock.runFor(220);
+    return page.waitForFunction((values) => {
       const host = document.querySelector(".nori-stage");
       return (
         host &&
@@ -30,6 +31,7 @@ export async function verifyNoriScene(browser, output) {
         )
       );
     }, values);
+  };
   try {
     console.log("Nori scene harness loading");
     await page.goto("http://127.0.0.1:47174/nori-scene-harness");
@@ -38,7 +40,16 @@ export async function verifyNoriScene(browser, output) {
       noriIdle: "idle",
       noriLipSync: "true",
     });
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
     console.log("Nori scene model ready/wake");
+    assert.equal(await page.locator(".nori-stage").getAttribute("data-scene-renderer"), "three");
+    const initialBounds = await page.evaluate(() => window.noriSceneProbe.bounds());
+    await page.evaluate(() => window.noriSceneProbe.acquire({ camera: { x: 0, y: 0, z: 10 }, lerp: 1 }));
+    await page.clock.runFor(220);
+    const distantBounds = await page.evaluate(() => window.noriSceneProbe.bounds());
+    assert.ok(distantBounds.width < initialBounds.width * 0.85, "camera movement must update chip scan projection");
+    assert.equal(await page.evaluate(() => window.noriSceneProbe.spatial.position.z), 10);
+    await page.evaluate(() => window.noriSceneProbe.release());
     await page.evaluate(() => window.noriSceneProbe.emotion("happy"));
     await expectState({ noriExpression: "07_Smile" });
     await page.screenshot({ path: resolve(output, "nori-expression.png") });
@@ -58,7 +69,8 @@ export async function verifyNoriScene(browser, output) {
       noriIdle: "sleep",
       noriExpression: "neutral",
     });
-    await page.clock.runFor(11000); // Let the original ten-second sleep fade become visible.
+    await page.clock.fastForward(11000); // Advance the model clock through the ten-second sleep fade.
+    await page.clock.runFor(220);
     await page.screenshot({ path: resolve(output, "nori-sleep.png") });
     console.log("Nori scene model ready/wake");
     await page.evaluate(() => window.noriSceneProbe.emotion("happy"));

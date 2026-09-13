@@ -16,3 +16,11 @@
   color: #9ca3af;
   font-size: 0.75rem;
 }
+
+.nori-stage[data-scene-renderer="three"] canvas[data-model-texture] {
+  position: absolute;
+  width: 400px;
+  height: 800px;
+  visibility: hidden;
+}
+.nori-stage canvas[data-scene-canvas] { position: absolute; inset: 0; }

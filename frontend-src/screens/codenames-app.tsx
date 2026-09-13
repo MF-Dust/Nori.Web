@@ -1,3 +1,4 @@
+import { CodenamesForest } from "./codenames-forest.js";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { GameCartridgeController } from "../apps/game-cartridge-controller";
 import { codenamesClueError, codenamesHistoryMessages, codenamesUiState, type CodenamesState } from "../apps/codenames-model";
@@ -91,6 +92,7 @@ export function CodenamesApp({ controller, translate: t, locale = "en", playSoun
   const canEndTurn = ui.type === "HUMAN_GUESSING" && !!turn?.guesses.length && !busy && codenamesTutorialAllows(gate, "endTurn");
   const shouldPulseEndTurn = canEndTurn && typeof turn?.clue.count === "number" && turn.clue.count > 0 && turn.guesses.filter(guess => guess.result === "AGENT").length >= turn.clue.count;
   return <section ref={root} className="source-codenames-app">
+    {!game && <div aria-hidden className="source-codenames-forest"><CodenamesForest /></div>}
     {!game ? <div className="source-codenames-menu">
       <p>{t("codenames.badge")}</p><h1>{t("codenames.title")}</h1><p>{t("codenames.subtitle")}</p>
       <fieldset disabled={!snapshot.mounted || snapshot.pending}><legend>{t("codenames.difficulty.label")}</legend>

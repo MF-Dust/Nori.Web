@@ -165,7 +165,13 @@ test("World replacement aborts presentation and fences late completions", async 
   h.emit({ type: "runtime_transition", cartridgeId: "pictionary", version: 1,
     transition: { patches: [{ op: "replace", path: "/gameState", value: next.gameState }], events: [] } });
   await Promise.resolve();
+  const epoch = h.controller.snapshot().presentationEpoch!;
+  const snapshots: Array<{ epoch: number | undefined; round: string | undefined }> = [];
+  const unsubscribe = h.controller.subscribe(() => snapshots.push({ epoch: h.controller.snapshot().presentationEpoch, round: h.controller.snapshot().state?.gameState?.round.roundId }));
   h.emit({ type: "world_joined", world: { worldId: "replacement", mountedCartridges: [] } });
+  assert.ok(h.controller.snapshot().presentationEpoch! > epoch);
+  assert.ok(snapshots.every(snapshot => snapshot.round === undefined), "new presentation epochs must not expose the previous world's state");
+  unsubscribe();
   assert.equal(signal.aborted, true);
   h.mount(); complete(); await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "one");

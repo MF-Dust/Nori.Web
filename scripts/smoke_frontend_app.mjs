@@ -1,3 +1,4 @@
+import { verifySceneTools } from "./frontend_scene_tools_probe.mjs";
 import { verifyVoiceCorruption } from "./frontend_voice_corruption_probe.mjs";
 import { verifyNoriScene } from "./frontend_nori_scene_probe.mjs";
 import { verifyPreview, verifyChip } from "./frontend_preview_chip_probe.mjs";
@@ -427,6 +428,7 @@ try {
   );
   await verifyVoiceCorruption(page, output);
   await verifyNoriScene(browser, output);
+  await verifySceneTools(browser, output);
   await verifyPreview(browser, output);
   await verifyChip(page, output);
 

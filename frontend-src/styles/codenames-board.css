@@ -386,3 +386,7 @@
   .codenames-end-turn-pulse, .codenames-rounds-zero span:last-child { animation: none; transition: none; }
   .codenames-card-motion[data-hovered] { scale: 1; }
 }
+
+.source-codenames-art > div { width:100%!important; height:100%!important; }
+.source-codenames-forest { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.source-codenames-menu { position:relative; z-index:1; }

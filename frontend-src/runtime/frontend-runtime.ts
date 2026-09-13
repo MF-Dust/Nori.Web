@@ -1,3 +1,4 @@
+import { StoryDirector } from "../story/story-director";
 import { ChatRuntimeController } from "../apps/chat-runtime";
 import { decodeChatAudioFrame } from "./chat-media";
 import { SpeechPlayer } from "./speech-player";
@@ -43,6 +44,7 @@ export class NoriFrontendRuntime {
   readonly speech: SpeechPlayer;
   readonly audio = new AudioMixer();
   readonly scene = new NoriSceneStore();
+  readonly story: StoryDirector;
   private cleanup: Array<() => void> = [];
   private disposed = false;
   private started = false;
@@ -115,6 +117,7 @@ export class NoriFrontendRuntime {
     this.rpc = new EventRpcClient(this.arcade);
     this.artifacts = new ArtifactService(this.rpc);
     this.manifold = new ManifoldService(this.rpc);
+    this.story = new StoryDirector(new Set(["cult-flash"]), factId => this.manifold.commandResult("client.emitFact", { factId }));
     this.desktop = new DesktopService(this.rpc);
     this.chat = new ChatService(this.arcade, this.world);
     this.games = new GameService(this.arcade, this.world);
@@ -180,6 +183,7 @@ export class NoriFrontendRuntime {
         if (state === "open" && this.started)
           this.arcade.openMyWorld(this.locale);
         if (state !== "open") {
+          this.story.sync(null, new Set());
           this.scene.reset();
           this.speech.reset();
           this.media.close();
@@ -224,6 +228,7 @@ export class NoriFrontendRuntime {
           this.speech.reset();
           this.media.close();
         }
+        this.story.sync(this.world.snapshot().worldId, this.world.facts());
         const raw = message as unknown as {
           type: string;
           channel?: string;
@@ -275,6 +280,7 @@ export class NoriFrontendRuntime {
     if (this.disposed) return;
     this.disposed = true;
     this.cleanup.forEach((fn) => fn());
+    this.story.dispose();
     this.scene.reset();
     this.conversation.dispose();
     this.speech.dispose();

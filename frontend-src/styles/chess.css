@@ -13,3 +13,5 @@
 .source-chess-glass{background:rgba(22,28,42,.85);backdrop-filter:blur(24px) saturate(140%);border:1px solid rgba(120,180,210,.12);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.4);padding:16px}
 .source-chess-request,.source-chess-results{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:25;min-width:240px;max-width:90%}.source-chess-request{display:flex;align-items:center;gap:8px}.source-chess-results{text-align:center}.source-chess-results>button{width:100%}
 .source-chess-help-backdrop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(8,12,20,.5);backdrop-filter:blur(10px);z-index:60}.source-chess-help{max-width:520px;max-height:100%;overflow:auto}.source-chess-help p{display:flex;gap:10px;align-items:center;margin-top:14px}
+
+.source-chess-notification { position:absolute; left:50%; top:16px; transform:translateX(-50%); z-index:20; display:flex; align-items:center; gap:12px; padding:10px 16px; max-width:90%; }

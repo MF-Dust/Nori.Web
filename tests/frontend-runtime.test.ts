@@ -1,3 +1,4 @@
+import "./frontend-story-feedback.test";
 import test from "node:test";
 import "./frontend-nori-scene.test";
 import "./frontend-voice-corruption.test";

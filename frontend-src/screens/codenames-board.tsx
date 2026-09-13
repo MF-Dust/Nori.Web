@@ -1,3 +1,4 @@
+import { CodenamesTreasureArt, CodenamesMonsterArt, CodenamesBerryArt } from "./codenames-art.js";
 import {
   memo,
   useCallback,
@@ -74,74 +75,13 @@ interface CodenamesBoardCellProps {
 }
 
 function RevealedAgent({ side }: { side: CodenamesSide }) {
-  return (
-    <div
-      className="absolute inset-0 z-20 rounded-xl overflow-hidden"
-      style={{
-        transform: side === "B" ? "rotate(180deg)" : "none",
-        background:
-          "radial-gradient(ellipse 80% 65% at 45% 35%, hsl(48 50% 92%) 0%, hsl(42 55% 85%) 45%, hsl(35 55% 68%) 100%)",
-        border: "3px solid hsl(38 50% 48% / .7)",
-        boxShadow: "0 2px 8px rgba(0,0,0,.15)",
-      }}
-      data-codenames-revealed-agent={side}
-    >
-      <div
-        className="absolute inset-[14%] rounded-lg"
-        style={{ border: "2px solid hsl(35 45% 42% / .3)" }}
-      />
-      <div
-        className="absolute left-1/2 top-1/2 h-10 w-14 -translate-x-1/2 -translate-y-1/2 rounded-md"
-        style={{
-          background: "linear-gradient(145deg, hsl(48 65% 72%), hsl(40 45% 50%))",
-          border: "1px solid hsl(35 45% 42% / .35)",
-        }}
-      />
-    </div>
-  );
+  return <div className="absolute inset-0 z-20 source-codenames-art" style={{ transform: side === "B" ? "rotate(180deg)" : "none" }} data-codenames-revealed-agent={side}><CodenamesTreasureArt /></div>;
 }
-
 function RevealedAssassin({ side }: { side: CodenamesSide }) {
-  return (
-    <div
-      className="absolute inset-0 z-20 rounded-xl overflow-hidden"
-      style={{
-        transform: side === "B" ? "rotate(180deg)" : "none",
-        background:
-          "radial-gradient(ellipse 80% 60% at 50% 50%, hsla(180,30%,30%,.4) 0%, transparent 70%), linear-gradient(170deg, hsl(195 35% 28%) 0%, hsl(200 40% 20%) 50%, hsl(205 45% 14%) 100%)",
-        border: "3px solid hsl(190 35% 35%)",
-        boxShadow: "0 2px 8px rgba(0,0,0,.15)",
-      }}
-      data-codenames-revealed-assassin={side}
-    >
-      <div
-        className="absolute left-1/2 top-1/2 size-14 -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{ border: "2px solid hsla(195,25%,65%,.3)", background: "hsla(205,45%,8%,.72)" }}
-      />
-      <div className="absolute left-[35%] top-[42%] size-2 rounded-full" style={{ background: "hsl(45 90% 70%)" }} />
-      <div className="absolute right-[35%] top-[42%] size-2 rounded-full" style={{ background: "hsl(45 90% 70%)" }} />
-    </div>
-  );
+  return <div className="absolute inset-0 z-20 source-codenames-art" style={{ transform: side === "B" ? "rotate(180deg)" : "none" }} data-codenames-revealed-assassin={side}><CodenamesMonsterArt /></div>;
 }
-
 function BystanderMark({ side, slot }: { side: CodenamesSide; slot: 0 | 1 }) {
-  return (
-    <div
-      className={`absolute z-20 pointer-events-none w-[46px] h-[46px] top-1 ${
-        slot === 0 ? "right-1" : "right-[54px]"
-      } ${side === "B" ? "rotate-180" : ""}`}
-      data-codenames-bystander-mark={side}
-    >
-      <div
-        className="size-full rounded-full"
-        style={{
-          background: "radial-gradient(circle at 35% 30%, hsl(12 80% 75%), hsl(5 55% 55%) 55%, hsl(2 50% 45%))",
-          border: "2px solid hsl(15 40% 55% / .6)",
-          boxShadow: "0 1px 3px rgba(0,0,0,.18)",
-        }}
-      />
-    </div>
-  );
+  return <div className={`absolute z-20 pointer-events-none w-[46px] h-[46px] top-1 source-codenames-art ${slot === 0 ? "right-1" : "right-[54px]"} ${side === "B" ? "rotate-180" : ""}`} data-codenames-bystander-mark={side}><CodenamesBerryArt /></div>;
 }
 
 const CodenamesBoardCell = memo(function CodenamesBoardCell({

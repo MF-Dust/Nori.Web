@@ -1,6 +1,6 @@
 # Nori scene and speech recovery
 
-This increment connects the source conversation to the real ARGNori model. It does not complete the outer 3D scene or the story director.
+The source conversation now connects to the real ARGNori model, a source-owned Three.js environment and the first recovered story timeline. Full cinematic and gesture parity remains open.
 
 ## Restored behavior
 
@@ -21,7 +21,7 @@ The behavioral reference is the repository's authorized `public/assets/NormalApp
 
 ## Remaining boundary
 
-Three.js camera/environment/shadows, gesture plugins, story reveal and interrupt choreography, full corruption/finale sequences, remaining scene audio cues, and live-agent synchronization remain open. The scene host now accepts a controlled subset of the original director state; the remaining director producers are not yet restored. The `live2d` and `messenger` cutover flags therefore remain incomplete.
+Postprocessing, gesture plugins, story reveal and interrupt choreography, the six remaining cinematics, remaining scene audio cues, and live-agent synchronization remain open. The source scene host and director now support the cult timeline; the other producers are not yet restored. The `live2d` and `messenger` cutover flags therefore remain incomplete.
 
 ## Conversation and shell handoff
 
@@ -33,7 +33,7 @@ Between `arg.memory.shown` and `arg.ending.shown`, player messages are shown loc
 
 Chip scanning subscribes directly to the scene store. Takeover or non-normal chat mode cancels the scan and prevents reentry, including after a late RPC result. Scene updates that leave the blocked state unchanged do not repeatedly reset the chip.
 
-The runtime suite now has 39 passing tests. The real-model browser fixture also checks hidden input, focus-shortcut blocking, draft restoration, red bubble styles, stable assistive text, reduced motion and suppressed receive cues. `nori-corrupt-chat.png` is included in the application artifact. These are restored scene consumers and fact-driven conversation behavior; full cinematic timeline producers remain open. The corruption voice DSP is now restored as described below.
+The runtime suite now has 43 passing tests. The real-model browser fixture also checks hidden input, focus-shortcut blocking, draft restoration, red bubble styles, stable assistive text, reduced motion and suppressed receive cues. `nori-corrupt-chat.png` is included in the application artifact. These are restored scene consumers and fact-driven conversation behavior; full cinematic timeline producers remain open. The corruption voice DSP is now restored as described below.
 
 
 ## Corruption voice processing
@@ -45,3 +45,18 @@ The scene store's `corruptVoice` consumer connects to the shared mixer before sp
 `tests/frontend-voice-corruption.test.ts` compares all six worklet presets against the authorized shipped processor sample for sample across 102,400 samples per preset. It also covers dry bypass, captured-sample cleanup, concurrent initialization, current scene state, disposal races, retry after synchronous loading failure, room impulse timing and waveshaping. `scripts/frontend_voice_corruption_probe.mjs` renders the full chain in Chromium for each preset, verifies dry output and native fallback, and checks actual scene binding, pre-unlock activation, mixer gain, speech reset and disposal. Numerical results are saved as `voice-corruption.json` in the application smoke artifact.
 
 The behavioral references are `public/assets/NormalApp-Cn6agT0F.js` and `public/assets/corruptionProcessor.worklet-lw-jqXOl.js`. The application build emits its own worklet from `frontend-src/runtime/corruption-processor.worklet.js`; historical JavaScript is only a test oracle. The cinematic producers that drive corruption over time, the other scene cues and the overall scene/audio cutover boundary remain unfinished.
+
+
+## Three.js environment and first story timeline
+
+`live2d/scene-renderer.ts` owns Three.js 0.180.0, matching the shipped renderer revision. `scene-materials.js` recovers the original GLSL background, ground grid, particles, bokeh, model surface, alpha silhouette prepass and blurred ground shadow. The host uploads the real Cubism canvas as its own texture. Desktop/exclusive camera positions, pointer parallax, camera rotation/FOV/far plane, shake, darkness, tint, reveal and fact-selected manifold/void palettes are bound to the shared scene state. Resize follows the graphics budget. Unmount cancels animation, removes pointer listeners and disposes textures, render targets, materials and the WebGL context.
+
+The camera and model position now update the shared spatial listener/panner. Chip scan bounds use the projected model surface instead of the hidden source texture canvas. The browser fixture asserts that moving the camera changes the scan projection and voice listener position, while retaining its real-model expression, pose, corruption and cleanup checks. Test time advances through model transitions without rendering hundreds of unnecessary software-GPU frames.
+
+`story/story-director.ts` restores the seven-scene priority catalogue, completion acknowledgement, two-second retry, 1.5-second completion hold, and world/disposal fences. Only `cult-flash` currently has a registered renderer. An earlier eligible unrecovered scene blocks later scenes; the director never fabricates its completion fact.
+
+`story/cult-renderer.ts` uses the original two-pass WebGL2 shaders. `StoryScenes` plays the seven-second cult timeline, the original looping drone and its fade, locks normal scene interaction, and reports `arg.cult_truth` after rendering. Decode latency offsets playback into the current timeline; completion or world replacement stops audio. Reduced motion uses a static frame. Renderer failure exposes Retry and never reports successful completion.
+
+`frontend-story-feedback.test.ts` covers priority, acknowledgement/retry, duplicate completion and stale-world handling, alongside Chess feedback transitions. `frontend_scene_tools_probe.mjs` exercises the real cult shaders/audio, successful completion, cancellation and released scene state. Its screenshots include `cult-flash.png` and `debug-audio.png`.
+
+Still required: boot, corruption climax, memory, datasea, farewell and ending timelines; their interaction, speech and audio choreography; original bloom/SMAA and advanced scene render passes; gesture plugins; full live-agent story verification. The five cutover boundaries remain false.
