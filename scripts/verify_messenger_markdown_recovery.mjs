@@ -87,8 +87,45 @@ async function main() {
     "source Messenger markdown must parse non-HTTP markdown links and keep them inert",
   );
 
+  const runtimeImport = markdownChunk.source.match(
+    /import \{ M as \w+, r as \w+ \} from "\.\/(index-[^"]+\.js)";/,
+  );
+  assert(runtimeImport, "shipped MarkdownMessage no longer imports the expected GFM runtime plugin");
+  const markdownRuntime = await read(path.join("public", "assets", runtimeImport[1]));
+  for (const marker of [
+    "singleTilde",
+    'className = ["task-list-item"]',
+    'className = ["contains-task-list"]',
+    'properties: { type: "checkbox", checked:',
+    "disabled: !0",
+  ]) {
+    assert(
+      markdownRuntime.includes(marker),
+      `shipped Markdown GFM contract changed: ${marker}`,
+    );
+  }
+  assertPattern(
+    markdownRuntime,
+    /singleTilde[\s\S]{0,240}== null[\s\S]{0,80}= !0/,
+    "shipped GFM strikethrough must keep single-tilde enabled by default",
+  );
+
+  for (const marker of [
+    "(~{1,2})(\\S(?:[^~]*?\\S)?)\\6",
+    "nodes.push(<del key={key++}>{match[7]}</del>)",
+    "const task = text.match(/^\\[([ xX])\\](?:[ \\t]+(.*))?$/)",
+    'className={item.checked !== undefined ? "task-list-item" : undefined}',
+    "contains-task-list",
+    '<input type="checkbox" checked={item.checked} disabled />',
+  ]) {
+    assert(
+      sourceMarkdown.includes(marker),
+      `source Messenger GFM recovery missing marker: ${marker}`,
+    );
+  }
+
   console.log(
-    `[ok] Messenger service markdown matches shipped ${markdownChunk.file} presentation and link contracts`,
+    `[ok] Messenger service markdown matches shipped ${markdownChunk.file} presentation, link, strikethrough and task-list contracts`,
   );
 }
 
