@@ -64,11 +64,20 @@ export class StoryAudio {
         );
     }
   }
+  /** Recreate even a still-active interval: an existing buffer cannot follow a scrub. */
+  seek(state: StoryClockState) {
+    if (this.disposed) return;
+    this.stopTracks();
+    this.sync(state);
+  }
+  private stopTracks() {
+    this.active.forEach((stop) => stop());
+    this.active.clear();
+  }
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
-    this.active.forEach((stop) => stop());
-    this.active.clear();
+    this.stopTracks();
     this.state = null;
   }
 }

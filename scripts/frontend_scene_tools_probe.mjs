@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { verifyAntivirus } from "./frontend_antivirus_probe.mjs";
+import { verifySceneEditor } from "./frontend_scene_editor_probe.mjs";
 export async function verifySceneTools(browser, output) {
   const page = await browser.newPage({ viewport: { width: 900, height: 650 } });
   const errors = [],
@@ -60,22 +61,47 @@ export async function verifySceneTools(browser, output) {
       true,
     );
     await page.screenshot({ path: resolve(output, "debug-audio.png") });
-    await page.getByRole("button", { name: "Scene editor", exact: true }).click();
-    await page.getByRole("button", { name: "Play preview", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Scene editor", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Play preview", exact: true })
+      .click();
     await page.locator('[data-scene-preview-phase="inspect"]').waitFor();
-    assert.equal(await page.evaluate(() => window.sceneTools.state().darkness), .65);
+    assert.equal(
+      await page.evaluate(() => window.sceneTools.state().darkness),
+      0.65,
+    );
     await page.waitForTimeout(150);
-    assert.equal(await page.evaluate(() => window.sceneTools.completions.length), 0);
+    assert.equal(
+      await page.evaluate(() => window.sceneTools.completions.length),
+      0,
+    );
     await page.screenshot({ path: resolve(output, "scene-editor-gate.png") });
-    await page.getByRole("button", { name: "Continue phase", exact: true }).click();
-    await page.getByRole("button", { name: "Play preview", exact: true }).waitFor({ state: "visible" });
+    await page
+      .getByRole("button", { name: "Continue phase", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Play preview", exact: true })
+      .waitFor({ state: "visible" });
     await page.waitForFunction(() => !window.sceneTools.state().active);
-    assert.equal(await page.evaluate(() => window.sceneTools.state().darkness), 0);
-    assert.equal(await page.evaluate(() => window.sceneTools.completions.length), 0);
+    assert.equal(
+      await page.evaluate(() => window.sceneTools.state().darkness),
+      0,
+    );
+    assert.equal(
+      await page.evaluate(() => window.sceneTools.completions.length),
+      0,
+    );
     await page.getByLabel("Scene project JSON").fill('{"name":"invalid"}');
-    await page.getByRole("button", { name: "Play preview", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Play preview", exact: true })
+      .click();
     await page.getByRole("alert").waitFor();
-    assert.equal(await page.evaluate(() => window.sceneTools.state().active), false);
+    assert.equal(
+      await page.evaluate(() => window.sceneTools.state().active),
+      false,
+    );
     await page.evaluate(() => window.sceneTools.closeDebug());
     await page.waitForFunction(() => !window.sceneTools.state().corruptVoice);
     await page.evaluate(() => window.sceneTools.start());
@@ -129,6 +155,7 @@ export async function verifySceneTools(browser, output) {
     );
     await page.evaluate(() => window.sceneTools.openDebug());
     await verifyAntivirus(page, output);
+    await verifySceneEditor(page, output);
     await page.evaluate(() => window.sceneTools.dispose());
     assert.deepEqual(errors, []);
     assert.deepEqual(
@@ -137,7 +164,7 @@ export async function verifySceneTools(browser, output) {
       "static scene fixture must not open a development socket",
     );
     console.log(
-      "Scene tools probe passed: Debug controls, scoped overrides, cult shader/audio, completion and cancellation",
+      "Scene tools probe passed: Debug controls, scoped overrides, cult shader/audio, scene editor, completion and cancellation",
     );
   } catch (error) {
     console.log("Scene tools errors", errors, error);

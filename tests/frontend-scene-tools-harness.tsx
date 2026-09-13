@@ -15,7 +15,7 @@ const root = createRoot(document.getElementById("root")!);
 const render = (debug: boolean) =>
   root.render(
     <>
-      <div style={{ height: 580, width: 760 }}>
+      <div style={{ height: 580, width: "min(760px, 100vw)" }}>
         {debug && <DebugScreen frontend={frontend} />}
       </div>
       <StoryScenes frontend={frontend} />
@@ -30,6 +30,12 @@ Object.assign(window, {
     },
     cancel() {
       frontend.story.sync(null, new Set());
+    },
+    joinWorld(worldId = "preview-world") {
+      frontend.world.consume({
+        type: "world_joined",
+        world: { worldId, mountedCartridges: [] },
+      } as Parameters<typeof frontend.world.consume>[0]);
     },
     state() {
       return frontend.scene.snapshot();

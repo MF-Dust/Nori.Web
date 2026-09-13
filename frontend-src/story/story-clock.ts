@@ -27,7 +27,8 @@ export class StoryClock {
         !phase.id ||
         ids.has(phase.id) ||
         !Number.isFinite(phase.duration) ||
-        phase.duration < 0
+        phase.duration < 0 ||
+        !Number.isFinite(duration + phase.duration)
       )
         throw new Error(
           "Story phases require unique IDs and finite nonnegative durations",
@@ -74,6 +75,46 @@ export class StoryClock {
     this.anchor = previous === null ? now : Math.max(previous, now);
     if (previous !== null && this.value.playing)
       this.move(this.value.time + Math.max(0, now - previous) / 1000);
+    return this.value;
+  }
+  /** Authoring-only discontinuity. Gates before the target are skipped, not completed.
+   * Gates at/after the target are rearmed, including consecutive zero-length gates.
+   * Production playback uses advance/wake and never calls this method. */
+  seek(time: number, now: number) {
+    if (this.disposed || !Number.isFinite(time) || !Number.isFinite(now))
+      return this.value;
+    const target = Math.max(0, Math.min(time, this.value.duration));
+    this.consumed = new Set(
+      this.phases
+        .filter((phase) => phase.pauseAtStart && phase.start < target)
+        .map((phase) => phase.id),
+    );
+    this.anchor = now;
+    this.move(target);
+    return this.value;
+  }
+  /** Select a phase exactly, even when several input gates share one timestamp. */
+  seekPhase(id: string, now: number) {
+    const index = this.phases.findIndex((phase) => phase.id === id);
+    if (this.disposed || index < 0 || !Number.isFinite(now)) return this.value;
+    this.consumed = new Set(
+      this.phases
+        .slice(0, index)
+        .filter((phase) => phase.pauseAtStart)
+        .map((phase) => phase.id),
+    );
+    this.anchor = now;
+    this.move(this.phases[index].start);
+    const selected = this.phases[index];
+    const complete =
+      !selected.pauseAtStart && selected.start === this.value.duration;
+    this.value = {
+      ...this.value,
+      phase: selected.id,
+      parkedAt: selected.pauseAtStart ? selected.id : null,
+      complete,
+      playing: !selected.pauseAtStart && !complete && !this.suspended,
+    };
     return this.value;
   }
   wake(phase: string, now: number) {
