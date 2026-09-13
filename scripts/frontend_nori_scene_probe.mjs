@@ -13,7 +13,11 @@ export async function verifyNoriScene(browser, output) {
       textures.push(response.url());
   });
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.clock.install();
+  // Freeze the clock while the page is still blank. Sampling Date.now() from a
+  // busy WebGL page and pausing it in a second protocol call races slow CI GPUs.
+  const installedAt = Date.now();
+  await page.clock.install({ time: installedAt });
+  await page.clock.pauseAt(installedAt + 60000);
   await page.route("**/nori-scene-harness", (route) =>
     route.fulfill({
       contentType: "text/html",
@@ -21,16 +25,17 @@ export async function verifyNoriScene(browser, output) {
     }),
   );
   const expectState = async (values) => {
-    await page.clock.runFor(220);
-    return page.waitForFunction((values) => {
-      const host = document.querySelector(".nori-stage");
-      return (
-        host &&
-        Object.entries(values).every(
+    const deadline = Date.now() + 60000;
+    do {
+      await page.clock.runFor(220);
+      if (await page.evaluate((values) => {
+        const host = document.querySelector(".nori-stage");
+        return host && Object.entries(values).every(
           ([key, value]) => host.dataset[key] === value,
-        )
-      );
-    }, values);
+        );
+      }, values)) return;
+    } while (Date.now() < deadline);
+    assert.fail(`Scene state did not settle: ${JSON.stringify(values)}`);
   };
   try {
     console.log("Nori scene harness loading");
@@ -40,7 +45,6 @@ export async function verifyNoriScene(browser, output) {
       noriIdle: "idle",
       noriLipSync: "true",
     });
-    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
     console.log("Nori scene model ready/wake");
     assert.equal(await page.locator(".nori-stage").getAttribute("data-scene-renderer"), "three");
     const rubbing = await page.evaluate(async url => {
