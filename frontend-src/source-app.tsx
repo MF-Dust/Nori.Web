@@ -1,3 +1,12 @@
+import { subscribeManifoldChanges } from "./runtime/manifold-subscription";
+import { SignalDanielConversationRuntime } from "./apps/signal-daniel";
+import { ChipController } from "./runtime/chip-controller";
+import {
+  ChipButton,
+  ChipReadout,
+  ChipOverlay,
+  ChipUpgradeNotice,
+} from "./components/chip-overlay";
 import { PreviewScreen } from "./screens/preview-screen";
 import { BrowserPodcastRuntime } from "./apps/browser-page-runtime";
 import { desktopMusicTarget } from "./runtime/audio-mixer";
@@ -71,6 +80,20 @@ function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
 function createSourceSession() {
   initializeGraphics();
   const frontend = new NoriFrontendRuntime();
+  const daniel = new SignalDanielConversationRuntime({
+    manifold: frontend.manifold,
+    hasFact: (factId) => hasWorldFact(frontend, factId),
+    playCue: frontend.audio.playCue,
+  });
+  const chip = new ChipController(frontend.arcade, () =>
+    sourceTranslate("chip.scan_failed"),
+  );
+  const previewRuntime = {
+    subscribe: (listener: () => void) =>
+      subscribeManifoldChanges(frontend.world, listener),
+    hasFact: (factId: string) => hasWorldFact(frontend, factId),
+    setContentKey: chip.setContentKey,
+  };
   const podcast = new BrowserPodcastRuntime((audio) =>
     frontend.audio.connectMediaElement(audio),
   );
@@ -104,7 +127,8 @@ function createSourceSession() {
   );
   const idle = createSourceIdleRuntimeEngine({
     getFacts: () => worldFacts(frontend),
-    subscribeFacts: (listener) => frontend.world.subscribe(() => listener()),
+    subscribeFacts: (listener) =>
+      subscribeManifoldChanges(frontend.world, listener),
     emitFact: async (factId) => {
       await frontend.manifold.command("client.emitFact", { factId });
     },
@@ -192,6 +216,11 @@ function createSourceSession() {
       },
     },
     mail: {
+      setContentKey: chip.setContentKey,
+      subscribe: (listener) =>
+        subscribeManifoldChanges(frontend.world, listener),
+      translate: sourceTranslate,
+      playCue: frontend.audio.playCue,
       model: frontend.mail,
       attachmentDownloadDurationMs: MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS,
     },
@@ -199,12 +228,14 @@ function createSourceSession() {
       model: frontend.files,
       translate: sourceTranslate,
       hasFact: (factId) => hasWorldFact(frontend, factId),
-      subscribe: (listener) => frontend.world.subscribe(() => listener()),
+      subscribe: (listener) =>
+        subscribeManifoldChanges(frontend.world, listener),
       launchApp,
       reduceMotion: () =>
         window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     },
     browser: {
+      setPageContext: chip.setContentKey,
       playCue: frontend.audio.playCue,
       page: {
         podcast,
@@ -212,7 +243,7 @@ function createSourceSession() {
         locale: () => locale,
         getFacts: () => worldFacts(frontend),
         subscribeFacts: (listener) =>
-          frontend.world.subscribe(() => listener()),
+          subscribeManifoldChanges(frontend.world, listener),
         subscribeEnvelopeChanges: (listener) =>
           frontend.arcade.onMessage((message) => {
             const raw = message as unknown as {
@@ -231,6 +262,8 @@ function createSourceSession() {
       translate: sourceTranslate,
     },
     signal: {
+      daniel,
+      setContentKey: chip.setContentKey,
       playSound: frontend.audio.playCue,
       service: frontend.signal,
       accountName: () => {
@@ -241,6 +274,10 @@ function createSourceSession() {
       translate: sourceTranslate,
       messenger: {
         model: frontend.messenger,
+        hasFact: (factId) => hasWorldFact(frontend, factId),
+        subscribe: (listener) =>
+          subscribeManifoldChanges(frontend.world, listener),
+        playCue: frontend.audio.playCue,
         translate: sourceTranslate,
         openUrl,
       },
@@ -294,6 +331,7 @@ function createSourceSession() {
                 {...props}
                 model={frontend.files}
                 locale={locale}
+                runtime={previewRuntime}
               />
             ),
           },
@@ -305,6 +343,8 @@ function createSourceSession() {
   });
   return {
     frontend,
+    chip,
+    daniel,
     idle,
     codenames,
     cakeduel,
@@ -325,6 +365,8 @@ export function SourceApp() {
     const session = createSourceSession();
     setSource(session);
     return () => {
+      session.chip.dispose();
+      session.daniel.dispose();
       session.cakeduel.dispose();
       session.chess.dispose();
       session.codenames.dispose();
@@ -367,7 +409,14 @@ function SourceSessionView({ source }: { source: SourceSession }) {
     globalWindow.NoriAPI = api;
     const unsubscribeAuth = source.frontend.auth.subscribe(setAuth);
     const unsubscribeWorld = source.frontend.world.subscribe((state) => {
-      setFacts(worldFacts(source.frontend));
+      source.daniel.syncJumpEpoch(state.worldId);
+      const nextFacts = worldFacts(source.frontend);
+      setFacts((previous) =>
+        previous.size === nextFacts.size &&
+        [...nextFacts].every((fact) => previous.has(fact))
+          ? previous
+          : nextFacts,
+      );
       setReady(!!state.worldId);
     });
     const unsubscribeConnection = source.frontend.arcade.onState((state) => {
@@ -399,6 +448,17 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       target.fade,
     );
   }, [source, auth.status, ready, facts]);
+  const chipOffline =
+    facts.has("arg.memory.shown") && !facts.has("arg.ending.shown");
+  useEffect(() => {
+    source.chip.configure(
+      source.frontend.world.snapshot().worldId,
+      auth.status === "authenticated" &&
+        ready &&
+        facts.has("system.repaired") &&
+        !chipOffline,
+    );
+  }, [source, facts, ready, auth.status, chipOffline]);
   if (auth.status !== "authenticated")
     return (
       <SourceLogin
@@ -436,7 +496,43 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       }
       overlay={
         <>
-          <ConversationPanel frontend={source.frontend} locale={locale} />
+          <ConversationPanel
+            frontend={source.frontend}
+            locale={locale}
+            chipButton={
+              facts.has("system.repaired") && (
+                <ChipButton
+                  controller={source.chip}
+                  locale={locale}
+                  offline={chipOffline}
+                  playCue={source.frontend.audio.playCue}
+                />
+              )
+            }
+            chipNotice={
+              facts.has("system.repaired") &&
+              facts.has("virus.cleared") &&
+              !chipOffline
+                ? (lastNoriAt) => (
+                    <ChipUpgradeNotice
+                      controller={source.chip}
+                      locale={locale}
+                      lastNoriAt={lastNoriAt}
+                    />
+                  )
+                : undefined
+            }
+            chipReadout={
+              <ChipReadout controller={source.chip} locale={locale} />
+            }
+          />
+          <ChipOverlay
+            controller={source.chip}
+            locale={locale}
+            store={source.bundle.runtime.store}
+            upgraded={facts.has("virus.cleared")}
+            playCue={source.frontend.audio.playCue}
+          />
           {error && (
             <div className="source-connection-error" role="alert">
               {error}

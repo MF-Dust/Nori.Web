@@ -2,6 +2,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { pdfAssetsPlugin } from "./pdf-assets-plugin";
 import { defineConfig } from "vite";
 
 const sourceRoot = dirname(fileURLToPath(import.meta.url));
@@ -19,7 +20,7 @@ export default defineConfig({
   root: sourceRoot,
   base: "/",
   publicDir: publicRoot,
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), pdfAssetsPlugin()],
   server: {
     proxy: {
       "/api": {

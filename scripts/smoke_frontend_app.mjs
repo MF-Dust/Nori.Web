@@ -1,3 +1,4 @@
+import { verifyPreview, verifyChip } from "./frontend_preview_chip_probe.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -112,6 +113,8 @@ try {
             const item = JSON.parse(data);
             window.sourceSmoke.sent.push({
               type: item.type,
+              channel: item.channel,
+              ...(item.channel === "manifold.chip.scan" ? { payload: item.payload } : {}),
               command: item.command?.type ?? item.cmd?.type,
             });
           } catch {}
@@ -411,6 +414,9 @@ try {
     "37",
   );
   await page.getByRole("button", { name: "Close", exact: true }).click();
+
+  await verifyPreview(browser, output);
+  await verifyChip(page, output);
 
   // Make the shipped Credits Dock condition true in the disposable local world.
   await page.evaluate(() => {

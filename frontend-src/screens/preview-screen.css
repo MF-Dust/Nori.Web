@@ -1,29 +1,126 @@
 .source-preview {
   height: 100%;
+  min-height: 0;
   overflow: auto;
   color: var(--foreground);
   background: var(--background);
+  display: flex;
+  flex-direction: column;
 }
-.source-preview article,
-.source-preview > p,
-.source-preview > ol {
+.source-preview > p {
   padding: 1.5rem;
-  max-width: 60rem;
-  margin: auto;
 }
-.source-preview img {
-  display: block;
+.preview-text {
+  padding: 24px;
+  max-width: 48rem;
+  margin: 0 auto;
+  width: 100%;
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  unicode-bidi: plaintext;
+  line-height: 1.65;
+}
+.preview-bold {
+  color: #fbbf24;
+}
+.preview-clue {
+  color: var(--primary);
+}
+.preview-red {
+  color: #f87171;
+}
+.source-preview .preview-corrupted {
+  padding: 8px 16px;
+  background: #f59e0b18;
+  color: #d99e36;
+  font-size: 12px;
+  border-bottom: 1px solid #f59e0b33;
+  flex-shrink: 0;
+}
+.preview-image {
+  padding: 24px;
+  display: grid;
+  place-items: center;
+  flex: 1;
+  min-height: 0;
+}
+.preview-image img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  margin: auto;
+  border-radius: 8px;
 }
-.source-preview iframe {
-  border: 0;
+.preview-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--muted-foreground);
+}
+.preview-empty img {
+  width: 80px;
+  height: 80px;
+}
+.preview-empty span {
+  font-size: 12px;
+}
+.source-preview > .pdf-preview {
+  flex: 1;
+  min-height: 0;
+}
+.preview-training-log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px;
+  max-width: 768px;
   width: 100%;
-  height: 100%;
+  margin: 0 auto;
+  font-family: "Nori Conversation Nunito", "Sarasa UI SC", sans-serif;
 }
-.source-preview pre {
+.preview-training-turn {
+  max-width: 85%;
+  padding: 10px 16px;
+  font-size: 14px;
+  line-height: 1.625;
+  font-weight: 500;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  align-self: flex-start;
+  color: #56565fd9;
+  background: linear-gradient(135deg, #d2e8e9e0, #caf5f1e8, #d2e8e9e0);
+  border: 1px solid #fefefe70;
+  border-radius: 16px 16px 16px 4px;
+  box-shadow:
+    0 4px 24px #caf5f159,
+    0 2px 8px #0000000f;
+  backdrop-filter: blur(16px) saturate(180%);
+}
+.preview-training-turn[data-sender="player"] {
+  align-self: flex-end;
+  color: #e8e8ecf2;
+  background: linear-gradient(135deg, #3d3d47f0, #4a4a55f5);
+  border-color: #8b8b9930;
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 0 4px 16px #0004;
+}
+.preview-training-photo {
+  align-self: flex-end;
+  width: 300px;
+  max-width: 85%;
+  border-radius: 12px;
+  border: 1px solid #ffffff26;
+  box-shadow: 0 18px 50px -18px #000;
+}
+.preview-training-poem {
+  text-align: center;
+  white-space: pre-line;
+  color: #cffafe;
+  font-size: 17px;
+  line-height: 2;
+  letter-spacing: 0.025em;
+  padding: 8px 0;
 }

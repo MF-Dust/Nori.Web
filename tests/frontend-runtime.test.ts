@@ -1,5 +1,7 @@
 import test from "node:test";
 import "./frontend-audio.test";
+import "./frontend-chip.test";
+import "./frontend-signal-story.test";
 import { ConversationTimeline } from "../frontend-src/apps/conversation-presentation";
 import assert from "node:assert/strict";
 import { ArcadeClient } from "../frontend-src/runtime/arcade-client";

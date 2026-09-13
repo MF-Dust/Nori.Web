@@ -5,6 +5,7 @@ import {
   useState,
   useSyncExternalStore,
   type FormEvent,
+  type ReactNode,
 } from "react";
 import { ArrowUp } from "lucide-react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
@@ -102,9 +103,15 @@ function dockCenter() {
 export function ConversationPanel({
   frontend,
   locale,
+  chipButton,
+  chipReadout,
+  chipNotice,
 }: {
   frontend: NoriFrontendRuntime;
   locale: string;
+  chipButton?: ReactNode;
+  chipReadout?: ReactNode;
+  chipNotice?: (lastNoriAt: number) => ReactNode;
 }) {
   const state = useSyncExternalStore(
     frontend.conversation.subscribe,
@@ -184,6 +191,15 @@ export function ConversationPanel({
       data-low-effects={lowEffects || undefined}
       style={{ bottom, zIndex: NORI_SHELL_LAYERS.DOCK_TOOLTIP }}
     >
+      {chipNotice?.(
+        Math.max(
+          0,
+          ...bubbles
+            .filter((bubble) => bubble.sender === "agent")
+            .map((bubble) => bubble.receivedAt),
+        ),
+      )}
+      {chipReadout}
       <BubbleStack bubbles={bubbles} epoch={state.presentationEpoch} />
       <span className="sr-only" role="status">
         {!state.connected
@@ -248,6 +264,7 @@ export function ConversationPanel({
               )}
             </span>
           )}
+          {chipButton}
           <button
             className="conversation-send"
             type="submit"

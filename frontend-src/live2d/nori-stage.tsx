@@ -1,3 +1,4 @@
+import { registerScanModel } from "./scan-bounds";
 import { useEffect, useRef, useState } from "react";
 import {
   Live2DEngine,
@@ -27,6 +28,7 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
     const canvas = document.createElement("canvas");
     canvas.setAttribute("aria-label", "Nori");
     host.current.append(canvas);
+    let unregisterScan: (() => void) | undefined;
     let disposed = false,
       engine: Live2DEngine | undefined,
       session: Live2DSession | undefined;
@@ -88,6 +90,7 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
         })
         .then((model) => {
           if (disposed) return;
+          unregisterScan = registerScanModel(canvas, model);
           model.setIdleSequence({ group: "Idle", index: 0, loop: true });
           session!.start();
           setStatus("ready");
@@ -105,6 +108,7 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
     return () => {
       disposed = true;
       unsubscribeGraphics();
+      unregisterScan?.();
       clearTimeout(budgetTimer);
       resize.disconnect();
       engine?.dispose();

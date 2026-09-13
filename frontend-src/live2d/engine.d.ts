@@ -7,6 +7,10 @@ export interface MotionStep {
   fadeOut?: number;
 }
 export interface Live2DModel {
+  getPartsBounds(
+    parts: string[],
+  ): { left: number; right: number; top: number; bottom: number } | null;
+  modelToCanvasUV(x: number, y: number): { u: number; v: number } | null;
   setIdleSequence(steps: MotionStep | MotionStep[]): void;
   startMotion(options: {
     steps: MotionStep | MotionStep[];
