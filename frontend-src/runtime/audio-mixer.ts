@@ -232,6 +232,10 @@ export class AudioMixer {
         this.panner = this.context.createPanner();
         this.panner.panningModel = "HRTF";
         this.panner.distanceModel = "inverse";
+        // Shipped spatial scale: the desktop camera is inside the 50-unit near field.
+        this.panner.refDistance = 50;
+        this.panner.maxDistance = 10000;
+        this.panner.rolloffFactor = 1;
         this.panner.positionY.value = 0.7;
         this.panner.connect(this.tracks.voice);
       }
