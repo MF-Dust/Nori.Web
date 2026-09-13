@@ -22,7 +22,10 @@ import { GameService } from "../services/games";
 import { ManifoldService } from "../services/manifold";
 import { SignalService, type CommandTransport } from "../services/signal";
 
+import { HeadPat } from "../live2d/head-pat";
+
 export class NoriFrontendRuntime {
+  readonly headPat = new HeadPat();
   readonly auth = new LocalAuthController();
   readonly arcade: ArcadeClient;
   readonly media = new ArcadeMediaClient();

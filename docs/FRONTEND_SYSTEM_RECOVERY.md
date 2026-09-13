@@ -36,3 +36,8 @@ These supporting-app gaps now have an explicit incomplete cutover boundary. The 
 The desktop Debug window now binds live connection/cartridge versions, scoped camera/model/screen controls, audio cue audition, corruption voice and desktop-music selection, and read-only fact filtering. Previously visited panels retain their local state. Scene overrides are acquired only when edited and released by the reset button, world change or window close. The browser probe verifies camera editing, reset, audio unlock and corruption-voice cleanup.
 
 This restores useful production bindings, not the entire shipped Debug application. The original network/compute/gesture/reaction labs, game injection tools and full scene editor remain open. The cult drone has a cancellable timeline player; other story-specific cues still depend on unrecovered timelines.
+
+
+## Scoped scene-project editor
+
+Debug now includes a scene editor for validated JSON phase projects. It projects camera/model/light state and plays local audio intervals through the existing shared runtime, supports explicit gates and pause/resume, and releases overrides/audio on stop, completion, tab exit or world change. It never completes a production story or invents story facts. Invalid configuration produces an error before playback. The original advanced scene tuners and other labs remain listed in [FRONTEND_REMAINING_WORK.md](FRONTEND_REMAINING_WORK.md).

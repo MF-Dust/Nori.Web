@@ -24,3 +24,5 @@
   visibility: hidden;
 }
 .nori-stage canvas[data-scene-canvas] { position: absolute; inset: 0; }
+.nori-head-pat{position:absolute;pointer-events:auto;background:transparent;border:0;border-radius:50%;cursor:grab;touch-action:none;padding:0}
+.nori-head-pat:active{cursor:grabbing}.nori-head-pat:focus-visible{outline:2px solid #b8eadd;outline-offset:3px}

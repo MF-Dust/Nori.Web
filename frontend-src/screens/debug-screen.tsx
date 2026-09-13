@@ -3,12 +3,14 @@ import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import type { NoriSceneState, NoriSceneStore } from "../state/nori-scene";
 import { UI_SOUND_CATALOG } from "../runtime/ui-sound-catalog";
 import "./debug-screen.css";
+import { SceneEditor } from "./scene-editor";
 
 const tabs = [
   { id: "connection", label: "Connection" },
   { id: "scene", label: "Scene" },
   { id: "audio", label: "Audio" },
   { id: "facts", label: "Facts" },
+  { id: "editor", label: "Scene editor" },
 ] as const;
 /** Session-scoped developer tools. Never persists scene overrides or fabricates story facts. */
 export function DebugScreen({ frontend }: { frontend: NoriFrontendRuntime }) {
@@ -89,6 +91,7 @@ export function DebugScreen({ frontend }: { frontend: NoriFrontendRuntime }) {
         ))}
       </nav>
       <div className="source-debug-panels">
+        {tab === "editor" && <SceneEditor frontend={frontend} />}
         {visited.has("connection") && (
           <div hidden={tab !== "connection"}>
             <h2>Connection</h2>

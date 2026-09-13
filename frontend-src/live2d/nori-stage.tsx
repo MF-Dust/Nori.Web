@@ -1,4 +1,6 @@
 import { NoriSceneRenderer } from "./scene-renderer";
+import { createHeadPatPlugin } from "./head-pat-plugin";
+import { bindHeadPatInput } from "./head-pat-input";
 import { registerScanModel } from "./scan-bounds";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -59,6 +61,7 @@ export function NoriStage({
     host.current.append(canvas, sceneCanvas);
     let unregisterScan: (() => void) | undefined;
     let unbindModel: (() => void) | undefined;
+    let patInput: ReturnType<typeof bindHeadPatInput> | undefined;
     let disposed = false,
       engine: Live2DEngine | undefined,
       session: Live2DSession | undefined;
@@ -122,6 +125,7 @@ export function NoriStage({
               frontend.conversation.snapshot().phase === "executing",
           ),
           createCinematicFacePlugin(frontend.scene),
+          createHeadPatPlugin(frontend.headPat),
         ],
       });
       updateBudget();
@@ -160,8 +164,12 @@ export function NoriStage({
             host: host.current!,
           });
           session!.start();
+          patInput = bindHeadPatInput(host.current!, model, frontend);
           const renderScene = (now: number) => {
             if (disposed) return;
+            patInput?.update(renderer
+              ? { x: projected.x - projected.width / 2, y: projected.y - projected.height / 2, width: projected.width, height: projected.height }
+              : { x: 0, y: 0, width: host.current!.clientWidth, height: host.current!.clientHeight });
             sceneFrame = requestAnimationFrame(renderScene);
             if (!renderer || now - lastFrame < 1000 / (graphicsMode === "ultra-performance" ? 30 : 60)) return;
             lastFrame = now;
@@ -185,6 +193,7 @@ export function NoriStage({
       unsubscribeGraphics();
       unregisterScan?.();
       unbindModel?.();
+      patInput?.dispose();
       clearTimeout(budgetTimer);
       resize.disconnect();
       cancelAnimationFrame(sceneFrame);

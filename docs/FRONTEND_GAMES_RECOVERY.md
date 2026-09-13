@@ -89,3 +89,12 @@ Verification added in this pass:
 - The full application smoke plays all 22 plies against the real local backend, continues with a free move and opponent reply, restarts a tutorial, and checks that exit/unmount followed by reopen yields a clean setup. It does not replace the local opponent with the original private agent.
 
 Review images are `chess-tutorial-zh.png`, `chess-tutorial-compact.png`, `chess-tutorial-free-play.png` in the games artifact and `chess-tutorial-local-backend.png` in the application artifact. This closes the guided-opening interaction gap; the Games production gate remains false for the separately listed work.
+
+
+## Results presentation pass
+
+Codenames now has a full result surface over the forest background, original treasure/monster art, reason-aware victory/defeat text, treasure totals, spent rounds and turn count. Existing 1.5-second win / five-second loss presentation gates and rematch/reset transport remain intact.
+
+Pictionary now presents a session sheet with a tape motif, solved/attempted score, duration, accuracy, fastest and mean solve times. The history journal identifies the drawing role and differentiates solved, skipped and unfinished entries. Empty history and restart are supported. Short-window CSS and reduced-motion fallbacks cover both result surfaces.
+
+Browser tests exercise both Codenames outcomes and actions, and mixed Pictionary outcomes/statistics/restart. The new layout is source-owned; remaining animation, typography and original-agent comparison are tracked in [FRONTEND_REMAINING_WORK.md](FRONTEND_REMAINING_WORK.md).

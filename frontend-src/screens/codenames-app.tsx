@@ -1,3 +1,4 @@
+import { CodenamesResults } from "./codenames-results";
 import { CodenamesForest } from "./codenames-forest.js";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { GameCartridgeController } from "../apps/game-cartridge-controller";
@@ -138,11 +139,8 @@ export function CodenamesApp({ controller, translate: t, locale = "en", playSoun
           });
           return true;
         }} />
-      {ended && showResults && <div className="source-codenames-results" role="status">
-        <strong>{t(game.winner === "TEAM" ? "codenames.results.victory" : "codenames.results.defeat")}</strong>
-        <button type="button" disabled={snapshot.pending} onClick={() => start()}>{t("codenames.buttons.rematch")}</button>
-        <button type="button" disabled={snapshot.pending} onClick={() => void controller.dispatch({ type: "reset" })}>{t("codenames.buttons.backToMenu")}</button>
-      </div>}
+      {ended && showResults && state && <CodenamesResults state={state} translate={t} pending={snapshot.pending}
+        onRematch={() => start()} onMenu={() => void controller.dispatch({ type: "reset" })} />}
     </>}
     {!snapshot.mounted && <button type="button" disabled={snapshot.pending} onClick={() => void controller.ensureMounted()}>{t("codenames.game.connecting")}</button>}
     {(validation || snapshot.error) && <p className="source-codenames-error" role="alert">{validation || snapshot.error}</p>}

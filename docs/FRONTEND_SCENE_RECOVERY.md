@@ -71,3 +71,12 @@ The shared `StoryClock` now supports ordered phases, explicit input gates, zero-
 Three new runtime tests exercise consecutive gates, waiting time, suspension, backwards timestamps, disposal, audio unlock, offset tracking and cancellation. The scene browser probe also verifies that a hidden cult scene holds its position and does not report completion before playback resumes.
 
 This supplies the time and audio infrastructure required by the six remaining cinematics. It does not register those cinematics or emit their completion facts. Inspection also confirmed that the missing bloom and advanced postprocessing belong to cold-open/datasea renderers; they are not a general desktop filter.
+
+
+## Head gesture and scene authoring pass
+
+`head-pat.ts` samples movement in head-width units. The projected upper head surface accepts sustained horizontal movement, requires one second of qualifying samples, ignores sampling gaps above 250 ms and completes once per held gesture. A model plugin adds damped yaw/pitch/roll offsets. Input supports pointer capture and holding Space; blur, visibility loss, world epoch changes, non-idle poses and active scenes cancel input. A completed local gesture shows a reduced-motion-aware ring; it leaves speech-owned expressions untouched. Original rubbing synthesis, richer particles and agent reaction events remain separate parity work.
+
+The Debug scene editor validates typed JSON projects and previews camera/model/light targets with smooth interpolation, explicit input gates and local audio intervals. Pause/resume, hidden tabs, stop, world replacement and unmount share the clock/audio ownership rules. Preview does not emit story facts and yields to a production story. The sample is an authored camera/light study; it is not a replacement for any of the six unfinished cinematics.
+
+See [the expanded remaining-work ledger](FRONTEND_REMAINING_WORK.md) for individual cinematic acceptance criteria. Browser coverage exercises the real model gesture and scene preview's input gate, restoration and rejected project path.

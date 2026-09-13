@@ -1,4 +1,5 @@
 import "./frontend-story-clock.test";
+import "./frontend-recovery-gaps.test";
 import "./frontend-story-feedback.test";
 import test from "node:test";
 import "./frontend-nori-scene.test";

@@ -1,3 +1,4 @@
+import { HeadPat } from "../frontend-src/live2d/head-pat";
 import { noriScanBounds } from "../frontend-src/live2d/scan-bounds";
 import { ConversationPanel } from "../frontend-src/components/conversation-panel";
 import { createRoot } from "react-dom/client";
@@ -45,6 +46,7 @@ const conversation = {
   },
 };
 const frontend = {
+  headPat: new HeadPat(),
   scene,
   speech,
   conversation,

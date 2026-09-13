@@ -58,6 +58,26 @@ const drawing = { setCapture(value: typeof capture) { capture = value; }, submit
 Object.assign(window, { fixture: {
   commands, strokes, sounds,
   loops: () => loops,
+  pictionaryResults() {
+    const state = round(); state.gameState.phase = "RESULTS";
+    state.gameState.history = [
+      { word: "apple", elapsedMs: 3000, outcome: "solved", roles: { drawer: "player", guesser: "agent" } },
+      { word: "tree", elapsedMs: 5000, outcome: "skipped", roles: { drawer: "agent", guesser: "player" } },
+      { word: "boat", elapsedMs: 2000, outcome: "unfinished", roles: { drawer: "player", guesser: "agent" } },
+    ] as any;
+    pictionary.set(state);
+  },
+  codenamesResults(win = true) {
+    const state = codenamesGame(true);
+    state.gameState.phase = "GAME_OVER";
+    state.gameState.winner = (win ? "TEAM" : null) as any;
+    state.gameState.key.A = Array.from({ length: 25 }, (_, i) => i < 15 ? "AGENT" : "BYSTANDER");
+    state.gameState.key.B = [...state.gameState.key.A];
+    state.gameState.cells.forEach((cell, i) => { if (i < (win ? 15 : 6)) cell.solvedBy = "A" as any; });
+    if (!win) state.gameState.cells[20].assassinatedBy = "A" as any;
+    state.gameState.tokensRemaining = 4;
+    codenames.set(state);
+  },
   codenames(guessing = false) { codenames.set(codenamesGame(guessing)); },
   codenamesTutorial(step: string) { codenames.set({ ...codenamesGame(true), tutorial: { step } }); },
   revealCodenames(cell = 0, type = "agent") {

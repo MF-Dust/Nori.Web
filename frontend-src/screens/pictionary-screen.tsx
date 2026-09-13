@@ -6,6 +6,7 @@ import { PictionaryCanvas, type PictionaryCanvasHandle } from "./pictionary-canv
 import { usePictionaryHints } from "./use-pictionary-hints";
 import { usePictionarySounds } from "./use-pictionary-sounds";
 import "../styles/pictionary.css";
+import { PictionaryResults } from "./pictionary-results";
 
 export interface PictionaryScreenProps {
   controller: GameCartridgeController<PictionaryState>;
@@ -94,12 +95,7 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
       <button type="button" disabled={bookOpen && (!snapshot.mounted || snapshot.pending)} onClick={() => bookOpen ? start() : setBookOpen(true)}>{bookOpen ? text("Start session", "开始游戏") : text("Play", "开始")}</button>
       {bookOpen && <button type="button" onClick={() => setBookOpen(false)}>{text("Back", "返回")}</button>}
       <button type="button" aria-label={text("Help", "帮助")} onClick={() => setHelp(true)}>?</button>
-    </div> : summary ? <div className="source-pictionary-results">
-      <h1>{text("Session results", "本局结果")}</h1><strong>{summary.solved}</strong><p>{text("Solved", "答对")} · {summary.accuracy}%</p>
-      <p>{text("Skipped", "跳过")}: {summary.skipped} · {text("Best time", "最快用时")}: {summary.bestTime === null ? "—" : (summary.bestTime / 1000).toFixed(1) + "s"}</p>
-      <ul>{game.history.map((item, index) => <li key={index}><span>{item.word}</span><span>{item.outcome} · {(item.elapsedMs / 1000).toFixed(1)}s</span></li>)}</ul>
-      <button type="button" disabled={snapshot.pending} onClick={start}>{text("Play again", "再玩一次")}</button>
-    </div> : round && <div className="source-pictionary-game">
+    </div> : summary ? <PictionaryResults game={game!} locale={locale} pending={snapshot.pending} onRestart={start} /> : round && <div className="source-pictionary-game">
       <div className="source-pictionary-tools" aria-label={text("Drawing tools", "画图工具")}>
         {PICTIONARY_COLORS.map(value => <button type="button" key={value} aria-label={value} aria-pressed={color === value && !eraser}
           disabled={!active || !isDrawer} onClick={() => { playSound?.("partygames-pictionary-tools"); setColor(value); setEraser(false); }}>

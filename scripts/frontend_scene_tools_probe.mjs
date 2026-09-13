@@ -59,6 +59,22 @@ export async function verifySceneTools(browser, output) {
       true,
     );
     await page.screenshot({ path: resolve(output, "debug-audio.png") });
+    await page.getByRole("button", { name: "Scene editor", exact: true }).click();
+    await page.getByRole("button", { name: "Play preview", exact: true }).click();
+    await page.locator('[data-scene-preview-phase="inspect"]').waitFor();
+    assert.equal(await page.evaluate(() => window.sceneTools.state().darkness), .65);
+    await page.waitForTimeout(150);
+    assert.equal(await page.evaluate(() => window.sceneTools.completions.length), 0);
+    await page.screenshot({ path: resolve(output, "scene-editor-gate.png") });
+    await page.getByRole("button", { name: "Continue phase", exact: true }).click();
+    await page.getByRole("button", { name: "Play preview", exact: true }).waitFor({ state: "visible" });
+    await page.waitForFunction(() => !window.sceneTools.state().active);
+    assert.equal(await page.evaluate(() => window.sceneTools.state().darkness), 0);
+    assert.equal(await page.evaluate(() => window.sceneTools.completions.length), 0);
+    await page.getByLabel("Scene project JSON").fill('{"name":"invalid"}');
+    await page.getByRole("button", { name: "Play preview", exact: true }).click();
+    await page.getByRole("alert").waitFor();
+    assert.equal(await page.evaluate(() => window.sceneTools.state().active), false);
     await page.evaluate(() => window.sceneTools.closeDebug());
     await page.waitForFunction(() => !window.sceneTools.state().corruptVoice);
     await page.evaluate(() => window.sceneTools.start());

@@ -251,6 +251,16 @@ try {
   await page.clock.runFor(6100);
   assert.equal(await hint.textContent(), "_ _ _ _ _", "disconnection must stop hints without disclosing the word");
   assert.equal(await page.evaluate(() => window.fixture.loops()), 0);
+  await page.evaluate(() => window.fixture.pictionaryResults());
+  await page.locator("[data-pictionary-results]").waitFor();
+  assert.match(await page.locator(".source-pictionary-result-stats").textContent(), /50%/);
+  assert.equal(await page.locator(".source-pictionary-result-log li").count(), 3);
+  assert.match(await page.locator('[data-outcome="unfinished"]').textContent(), /Time.s up/);
+  await page.clock.runFor(500);
+  await page.screenshot({ path: join(output, "pictionary-results.png"), animations: "disabled" });
+  assert.equal(await page.locator(".source-pictionary-result-sheet").evaluate(element => getComputedStyle(element).opacity), "1");
+  await page.getByRole("button", { name: "Play Again", exact: true }).click();
+  assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).type), "startSession");
   await page.clock.resume();
   await page.goto(origin + "/codenames#codenames");
   await page.getByRole("button", { name: "Start Adventure", exact: true }).click();
@@ -284,6 +294,18 @@ try {
   assert.equal(await page.evaluate(() => window.fixture.commands.length), tutorialCommands + 1);
   await page.evaluate(() => window.fixture.codenamesTutorial("nori_opening_clue"));
   assert.equal(await page.locator('[data-card-cell="0"] button').isDisabled(), true);
+  await page.evaluate(() => window.fixture.codenamesResults());
+  await page.locator('[data-codenames-results="win"]').waitFor();
+  assert.match(await page.locator(".source-codenames-result-card dl").textContent(), /15 \/ 15/);
+  await page.screenshot({ path: join(output, "codenames-results-win.png") });
+  await page.getByRole("button", { name: "Try Again", exact: true }).click();
+  assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).type), "startGame");
+  await page.evaluate(() => window.fixture.codenamesResults(false));
+  await page.locator('[data-codenames-results="loss"]').waitFor();
+  await page.setViewportSize({ width: 640, height: 480 });
+  await page.screenshot({ path: join(output, "codenames-results-compact.png") });
+  await page.getByRole("button", { name: "Leave Forest", exact: true }).click();
+  assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).type), "reset");
   assert.deepEqual(errors, [], "source screens must not throw browser errors");
   console.log("PASS: Chess moves/promotion, all 22 tutorial steps, free play, locales, history, disconnect/drag and reduced motion; Pictionary drawing/snapshots, English/Chinese hints, cancellation and audio; Codenames guesses, flight/reveal pacing and reseed cancellation.");
 } finally {
