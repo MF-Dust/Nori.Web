@@ -18,7 +18,7 @@ export const pictionaryStateSchema = z.object({
     phase: z.enum(["PLAYING", "RESULTS"]), score: z.object({ solved: z.number(), skipped: z.number() }),
     round: z.object({
       roundId: z.string(), startedAtMs: z.number(), word: z.string(), drawingId: z.string(),
-      pinyin: z.array(z.array(z.string())).optional(), roles: rolesSchema,
+      pinyin: z.array(z.tuple([z.string().nullable(), z.string()])).optional(), roles: rolesSchema,
       status: z.enum(["active", "solved", "skipped", "unfinished"]),
       noriRedrawEpoch: z.number().default(0), solvedAtMs: z.number().optional(),
       lastGuess: z.object({ by: z.enum(["player", "agent"]), text: z.string(), atMs: z.number(), correct: z.boolean() }).optional(),

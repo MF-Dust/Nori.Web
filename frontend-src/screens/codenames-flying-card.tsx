@@ -88,7 +88,7 @@ export const CodenamesFlyingCard = memo(function CodenamesFlyingCard({
         },
       ],
       {
-        duration: 500,
+        duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : 500,
         easing: "cubic-bezier(.2,.8,.2,1)",
         fill: "forwards",
       },

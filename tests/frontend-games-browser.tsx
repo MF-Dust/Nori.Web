@@ -8,20 +8,33 @@ import { createSourceTranslate } from "../frontend-src/i18n/translate";
 
 // Only transport is replaced. These are the same screens/canvas built by source-app.
 const commands: any[] = [], strokes: any[] = [];
+const sounds: string[] = [];
+let loops = 0;
 let capture: (() => any) | null = null;
 let revisions = 0;
 const chessInitial = { settings: { playerSide: "white", difficulty: "casual" }, gameState: null, tutorial: null, drawOffer: null, takebackRequest: null };
 const pictInitial = { settings: { sessionDurationMs: 180000, inferenceMode: "fast", locale: "en" }, gameState: null };
 function controller(initial: any) {
-  let snapshot = { state: initial, mounted: true, pending: false, error: null };
+  let snapshot = { state: initial, mounted: true, pending: false, error: null, presenting: false, connected: true };
   const listeners = new Set<() => void>();
+  let presenter: ((previous: any, next: any, signal: AbortSignal) => Promise<void>) | null = null;
+  let abort = new AbortController();
+  const publish = (patch: any) => { snapshot = { ...snapshot, ...patch }; listeners.forEach(listener => listener()); };
   return {
     snapshot: () => snapshot,
     subscribe: (listener: () => void) => { listeners.add(listener); return () => listeners.delete(listener); },
     retain: () => () => {},
     ensureMounted: async () => true,
     dispatch: async (command: any) => { commands.push(command); return true; },
-    set(state: any) { snapshot = { ...snapshot, state }; listeners.forEach(listener => listener()); },
+    setTransitionPresenter(value: typeof presenter) { presenter = value; return () => { abort.abort(); presenter = null; }; },
+    connection(connected: boolean) { publish({ connected }); },
+    set(state: any) { abort.abort(); abort = new AbortController(); publish({ state, presenting: false }); },
+    async transition(state: any) {
+      const signal = abort.signal;
+      publish({ presenting: true });
+      await presenter?.(snapshot.state, state, signal);
+      if (!signal.aborted) publish({ state, presenting: false });
+    },
   };
 }
 const chess = controller(chessInitial), pictionary = controller(pictInitial);
@@ -42,14 +55,26 @@ function round(id = "one", drawer = "player") {
 }
 const drawing = { setCapture(value: typeof capture) { capture = value; }, submit(stroke: any) { strokes.push(stroke); }, changed() { revisions++; } };
 Object.assign(window, { fixture: {
-  commands, strokes,
+  commands, strokes, sounds,
+  loops: () => loops,
   codenames(guessing = false) { codenames.set(codenamesGame(guessing)); },
+  codenamesTutorial(step: string) { codenames.set({ ...codenamesGame(true), tutorial: { step } }); },
+  revealCodenames(cell = 0, type = "agent") {
+    const state = structuredClone(codenames.snapshot().state);
+    if (type === "bystander") state.gameState.cells[cell].bystanderMarks[0] = "A";
+    else state.gameState.cells[cell][type === "agent" ? "solvedBy" : "assassinatedBy"] = "A";
+    void codenames.transition(state);
+  },
   snapshot: () => capture?.(),
   revisions: () => revisions,
   chess(fen = CHESS_START_FEN) { chess.set({ ...chessInitial, gameState: { fen, startFen: fen, turn: "white", status: "playing", winner: null, moveHistory: [] } }); },
   round(id?: string, drawer?: string) { pictionary.set(round(id, drawer)); },
+  pictionaryState: () => pictionary.snapshot().state,
+  setPictionary(state: any) { pictionary.set(state); },
+  pictionaryConnection(connected: boolean) { pictionary.connection(connected); },
 } });
 const pict = location.hash === "#pictionary";
-createRoot(document.getElementById("root")!).render(location.hash === "#codenames" ? <CodenamesApp controller={codenames as any} translate={createSourceTranslate("en")} /> : pict
-  ? <PictionaryScreen controller={pictionary as any} drawing={drawing as any} locale="en" />
+createRoot(document.getElementById("root")!).render(location.hash === "#codenames" ? <CodenamesApp controller={codenames as any} translate={createSourceTranslate("en")} playSound={cue => sounds.push(cue)} /> : pict
+  ? <PictionaryScreen controller={pictionary as any} drawing={drawing as any} locale="en" playSound={cue => sounds.push(cue)}
+      startSoundLoop={() => { loops++; let stopped = false; return () => { if (!stopped) { stopped = true; loops--; } }; }} />
   : <ChessScreen controller={chess as any} translate={createSourceTranslate("en")} />);

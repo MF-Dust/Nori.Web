@@ -262,6 +262,24 @@ export class AudioMixer {
       .catch(() => {});
   };
 
+  /** The caller owns cancellation, including while the asset is still loading. */
+  readonly startCueLoop = (cue: string): (() => void) => {
+    let cancelled = false;
+    let source: PlayingSource | null = null;
+    const stop = () => { cancelled = true; source?.stop(); source = null; };
+    const entry = UI_SOUND_CATALOG[cue];
+    if (!entry || this.disposed || this.context?.state !== "running") return stop;
+    void this.load(entry.url, true).then(buffer => {
+      if (cancelled || this.disposed || this.context?.state !== "running") return;
+      if (this.effects.size >= 32) this.effects.values().next().value?.stop();
+      source = this.createSource(buffer, this.tracks!.sfx, this.effects);
+      source.gain.gain.value = entry.gain;
+      source.node.loop = true;
+      source.node.start();
+    }).catch(() => {});
+    return stop;
+  };
+
   private createSource(
     buffer: AudioBuffer,
     destination: AudioNode,

@@ -210,6 +210,26 @@ test("audio loading deduplicates assets, bounds polyphony and fences late comple
   assert.ok(context.sources.every((node) => node.stopped));
 });
 
+test("loop cues cancel before decode, follow SFX mute and release their nodes on stop", async (t) => {
+  let release!: (response: Response) => void;
+  t.mock.method(globalThis, "fetch", () => new Promise<Response>(resolve => { release = resolve; }));
+  const context = new Context(), mixer = new AudioMixer(() => context as any);
+  t.after(() => mixer.dispose());
+  await mixer.unlock(); mixer.sync(settings);
+  const cancel = mixer.startCueLoop("partygames-pictionary-pen-scratch");
+  cancel(); release(new Response(new Uint8Array(8))); await tick();
+  assert.equal(context.sources.length, 0, "a cancelled pen must not start after loading");
+  const stop = mixer.startCueLoop("partygames-pictionary-pen-scratch");
+  await tick();
+  const pen = context.sources[0];
+  assert.ok(pen.started && pen.loop);
+  assert.ok(Math.abs(pathGain(pen, context.destination) - .32) < 1e-8);
+  mixer.sync({ ...settings, sfxMuted: true });
+  assert.equal(pathGain(pen, context.destination), 0);
+  stop(); stop();
+  assert.equal(pen.stopped, true); assert.equal(pen.output, null);
+});
+
 test("a cancelled desktop music load cannot replace the latest fact-selected track", async (t) => {
   const pending: Array<(response: Response) => void> = [];
   t.mock.method(

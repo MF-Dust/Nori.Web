@@ -17,6 +17,7 @@ export interface PictionaryCanvasProps {
   color: string; eraser: boolean;
   onStroke(stroke: DrawingStroke): void;
   onChange(): void;
+  startSoundLoop?: (cue: string) => () => void;
 }
 export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCanvasProps>(function PictionaryCanvas(props, handle) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -27,6 +28,19 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
   const lastPreview = useRef(0);
   const latest = useRef(props);
   latest.current = props;
+  const scratch = useRef<{ stop: () => void; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const stopScratch = () => {
+    if (!scratch.current) return;
+    clearTimeout(scratch.current.timer); scratch.current.stop(); scratch.current = null;
+  };
+  const touchScratch = () => {
+    const start = latest.current.startSoundLoop;
+    if (!start) return;
+    const stop = scratch.current?.stop ?? start("partygames-pictionary-pen-scratch");
+    if (scratch.current) clearTimeout(scratch.current.timer);
+    scratch.current = { stop, timer: setTimeout(stopScratch, 180) };
+  };
+  useEffect(() => stopScratch, []);
   const [error, setError] = useState<string | null>(null);
   const render = () => {
     const target = canvas.current;
@@ -59,11 +73,11 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
   useImperativeHandle(handle, () => ({
     clear() {
       if (!latest.current.active || latest.current.drawer !== "player") return;
-      strokes.current = []; draft.current = null; changed();
+      strokes.current = []; draft.current = null; stopScratch(); changed();
     },
     undo() {
       if (!latest.current.active || latest.current.drawer !== "player") return;
-      strokes.current.pop(); draft.current = null; changed();
+      strokes.current.pop(); draft.current = null; stopScratch(); changed();
     },
     snapshot() {
       const source = canvas.current;
@@ -86,10 +100,10 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    strokes.current = []; draft.current = null; revision.current = 0; lastPreview.current = 0; setError(null); render();
+    strokes.current = []; draft.current = null; stopScratch(); revision.current = 0; lastPreview.current = 0; setError(null); render();
   }, [props.roundId]);
   useEffect(() => {
-    if (!props.active) { draft.current = null; render(); }
+    if (!props.active) { draft.current = null; stopScratch(); render(); }
   }, [props.active]);
   useEffect(() => {
     if (props.drawer !== "agent" || !props.active) return;
@@ -116,8 +130,9 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
           const extend = () => {
             if (cancelled) return;
             if (point < source.points.length) {
-              current.points.push(source.points[point++]); render(); schedule(extend, 15); return;
+              current.points.push(source.points[point++]); touchScratch(); render(); schedule(extend, 15); return;
             }
+            stopScratch();
             const dimensions = base.current;
             const length = source.points.slice(1).reduce((sum, next, point) => sum + Math.hypot(
               (next.x - source.points[point].x) * dimensions.width,
@@ -131,7 +146,7 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
       };
       drawSample();
     }).catch(reason => { if (!cancelled) setError(String(reason)); });
-    return () => { cancelled = true; if (timer !== null) clearTimeout(timer); };
+    return () => { cancelled = true; if (timer !== null) clearTimeout(timer); stopScratch(); };
   }, [props.roundId, props.drawingId, props.redrawEpoch, props.drawer, props.active]);
   const point = (event: PointerEvent<HTMLCanvasElement>): DrawingPoint => {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -144,6 +159,7 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     const current = draft.current;
     if (!current || current.pointer !== event.pointerId) return;
     draft.current = null;
+    stopScratch();
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     if (!cancelled && props.active && props.drawer === "player") {
       const normalized = normalizeDrawingStroke(current.points, base.current.width, base.current.height, current.color, current.width);
@@ -157,8 +173,9 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
         if (!props.active || props.drawer !== "player" || event.button !== 0 || draft.current) return;
         event.currentTarget.setPointerCapture(event.pointerId);
         draft.current = { pointer: event.pointerId, points: [point(event)], color: props.eraser ? "#ffffff" : props.color || PICTIONARY_COLORS[0], width: props.eraser ? PICTIONARY_ERASER_WIDTH : PICTIONARY_PEN_WIDTH };
+        touchScratch();
       }}
-      onPointerMove={event => { if (draft.current?.pointer === event.pointerId) { draft.current.points.push(point(event)); render();
+      onPointerMove={event => { if (draft.current?.pointer === event.pointerId) { draft.current.points.push(point(event)); touchScratch(); render();
         if (Date.now() - lastPreview.current >= 1000) { lastPreview.current = Date.now(); revision.current++; latest.current.onChange(); } } }}
       onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} />
     {error && <p role="alert">{error}</p>}

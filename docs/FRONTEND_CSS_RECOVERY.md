@@ -14,8 +14,10 @@ The recovered rules preserve cascade order and original values. They were separa
 | components.css | Original component-layer code formatting and Debug controls |
 | nori-theme.css | Window glass, focus, Dock, notifications, vault, graphics modes, fonts, light/dark variables and app rules |
 | desktop-shell.css | Dock icon layering and TopBar layout/theme from NormalApp's stylesheet |
-| chess.css / pictionary.css / codenames-app.css | Source game presentation |
+| chess.css / pictionary.css / codenames-app.css / codenames-board.css | Source game presentation, including the previously omitted Codenames card-face stylesheet |
 
 Other component styles stay beside their owners. Font/model/image assets remain in `public/`.
 
 Validation uses a rebuilt application, Chromium checks of layout and utility-dependent controls, source app screenshots and the Chess/Pictionary browser scenarios. This establishes ownership of CSS generation; it does not establish visual parity for unrecovered game, scene or application behavior.
+
+The game completion pass repaired missing semicolons between 177 theme declarations. The previous token file parsed as one long custom-property value, leaving semantic utility colors unavailable. Browser verification now checks an actual `bg-primary` color and the Codenames card gradient. The card stylesheet owns scoped light/dark variables, glows and reduced-motion suspense; production does not load the historical CSS file.

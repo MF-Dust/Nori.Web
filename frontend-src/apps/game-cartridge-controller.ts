@@ -8,7 +8,10 @@ export interface GameSnapshot<T> {
   mounted: boolean;
   pending: boolean;
   error: string | null;
+  presenting?: boolean;
+  connected?: boolean;
 }
+export type GameTransitionPresenter<T> = (previous: T, next: T, signal: AbortSignal) => Promise<void>;
 type Command = { type: string; [key: string]: JsonValue };
 
 /** Shared request lifecycle for games whose UI follows the replicated head. */
@@ -21,6 +24,11 @@ export class GameCartridgeController<T> {
   private users = 0;
   private disposed = false;
   private fencedVersion = -1;
+  private head: T | null = null;
+  private presenter: GameTransitionPresenter<T> | null = null;
+  private presentationAbort = new AbortController();
+  private presentationQueue = Promise.resolve();
+  private presentationCount = 0;
 
   constructor(
     readonly game: BuiltInGame,
@@ -32,10 +40,13 @@ export class GameCartridgeController<T> {
     this.cleanup.push(world.subscribe((_state, message) => {
       const raw = message as unknown as Record<string, unknown>;
       if (raw.type === "world_left" || raw.type === "world_joined" || raw.type === "world_created") {
+        this.resetPresentation();
         this.finish(false);
         this.fencedVersion = -1;
       }
-      if (raw.cartridgeId === game && raw.type === "cartridge_unmounted") this.fencedVersion = -1;
+      if (raw.cartridgeId === game && (raw.type === "cartridge_unmounted" || raw.type === "cartridge_mounted" || raw.type === "cartridge_mounted_ack")) {
+        this.resetPresentation(); this.fencedVersion = -1;
+      }
       if (raw.requestId === this.request?.id) {
         if (raw.type === "error" || raw.success === false) {
           this.finish(false, String(raw.error ?? raw.message ?? "Game request failed"));
@@ -44,13 +55,17 @@ export class GameCartridgeController<T> {
         }
       }
       if (raw.cartridgeId === game || String(raw.type).startsWith("world_")) {
-        this.refresh();
+        this.refresh(raw.type === "runtime_transition");
         if (this.users && (raw.type === "world_joined" || raw.type === "world_created")) void this.ensureMounted();
         this.advanceFence();
       }
     }));
     this.cleanup.push(arcade.onState(state => {
-      if (state !== "open") this.finish(false, this.request ? "Connection interrupted" : undefined);
+      this.publish({ connected: state === "open" });
+      if (state !== "open") {
+        this.resetPresentation(); this.refresh();
+        this.finish(false, this.request ? "Connection interrupted" : undefined);
+      }
     }));
     this.refresh();
   }
@@ -64,10 +79,40 @@ export class GameCartridgeController<T> {
     this.value = { ...this.value, ...patch };
     for (const listener of this.listeners) listener();
   }
-  private refresh() {
+  private resetPresentation() {
+    this.presentationAbort.abort(); this.presentationAbort = new AbortController();
+    this.presentationQueue = Promise.resolve(); this.presentationCount = 0;
+    this.head = null;
+    this.publish({ presenting: false });
+  }
+  /** Presentation owners may pace replicated transitions before acknowledging visibility. */
+  setTransitionPresenter = (presenter: GameTransitionPresenter<T>): (() => void) => {
+    this.presenter = presenter;
+    return () => {
+      if (this.presenter !== presenter) return;
+      this.presenter = null; this.resetPresentation(); this.refresh(); this.advanceFence();
+    };
+  };
+  private refresh(transition = false) {
     const runtime = this.world.runtime(this.game);
-    if (!runtime) { this.publish({ state: null, mounted: false }); return; }
-    try { this.publish({ state: this.parse(runtime.state), mounted: true }); }
+    if (!runtime) { this.head = null; this.publish({ state: null, mounted: false }); return; }
+    try {
+      const next = this.parse(runtime.state), previous = this.head;
+      this.head = next;
+      if (transition && previous && this.presenter && this.users) {
+        const presenter = this.presenter, signal = this.presentationAbort.signal, version = runtime.headVersion;
+        this.presentationCount++; this.publish({ presenting: true });
+        this.presentationQueue = this.presentationQueue.then(async () => {
+          if (signal.aborted) return;
+          try { await presenter(previous, next, signal); }
+          catch { /* An unavailable visual must not leave the cartridge permanently blocked. */ }
+          if (signal.aborted) return;
+          this.presentationCount--;
+          this.publish({ state: next, mounted: true, presenting: this.presentationCount > 0 });
+          this.advanceFence(version);
+        });
+      } else if (!this.presentationCount) this.publish({ state: next, mounted: true });
+    }
     catch (error) { this.publish({ state: null, mounted: true, error: String(error) }); }
   }
   private finish(success: boolean, error?: string) {
@@ -109,6 +154,7 @@ export class GameCartridgeController<T> {
       // Route transitions may unmount/remount synchronously.
       queueMicrotask(() => {
         if (!this.users && !this.disposed) {
+          this.resetPresentation();
           this.finish(false);
           if (this.world.runtime(this.game) && this.arcade.connectionState === "open") {
             try { this.games.unmount(this.game); } catch { /* Connection may have closed. */ }
@@ -118,24 +164,27 @@ export class GameCartridgeController<T> {
     };
   };
   dispatch = (command: Command): Promise<boolean> => {
-    if (!this.value.mounted) return Promise.resolve(false);
+    if (!this.value.mounted || this.presentationCount || this.arcade.connectionState !== "open") return Promise.resolve(false);
     return this.send(() => this.games.dispatch(this.game, command));
   };
-  private advanceFence() {
+  private advanceFence(version?: number) {
     const runtime = this.world.runtime(this.game);
     if (!this.users || !runtime || this.arcade.connectionState !== "open") return;
-    if (runtime.headVersion <= runtime.visibleVersion || runtime.headVersion <= this.fencedVersion) return;
+    if (version === undefined && this.presentationCount) return;
+    const target = Math.min(version ?? runtime.headVersion, runtime.headVersion);
+    if (target <= runtime.visibleVersion || target <= this.fencedVersion) return;
     try {
       this.arcade.send({
         type: "advance_visibility_fence", cartridgeId: this.game,
-        visibilityFenceId: "ui", version: runtime.headVersion,
+        visibilityFenceId: "ui", version: target,
         requestId: "fence-" + crypto.randomUUID(),
       });
-      this.fencedVersion = runtime.headVersion;
+      this.fencedVersion = target;
     } catch { /* A new world snapshot resets the fence after reconnect. */ }
   }
   dispose() {
     this.disposed = true;
+    this.resetPresentation();
     this.finish(false);
     this.cleanup.forEach(unsubscribe => unsubscribe());
     this.listeners.clear();

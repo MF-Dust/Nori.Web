@@ -1,4 +1,7 @@
 import test from "node:test";
+import "./frontend-pictionary-hints.test";
+import { codenamesTutorialAllows, codenamesTutorialGate, codenamesTutorialUi } from "../frontend-src/apps/codenames-tutorial";
+import { codenamesReveals, waitForCodenamesAnimation } from "../frontend-src/apps/codenames-reveal";
 import assert from "node:assert/strict";
 import { Chess } from "chess.js";
 import { CHESS_START_FEN, chessCaptures, chessHistory, chessLayout, legalChessMoves } from "../frontend-src/apps/chess-model";
@@ -119,6 +122,56 @@ test("Old round stroke queues are discarded and snapshots retain the request ID"
   assert.equal(h.sent.filter(item => item.type === "dispatch").length, 1);
   bridge.dispose(); release(); h.controller.dispose();
 });
+
+test("Presentation queues preserve transition order and acknowledge only each completed visible version", async () => {
+  const h = harness(), release = h.controller.retain(); h.mount();
+  const completions: Array<() => void> = [], seen: string[] = [];
+  const detach = h.controller.setTransitionPresenter(async (before, next) => {
+    seen.push(before.gameState!.round.roundId + ">" + next.gameState!.round.roundId);
+    await new Promise<void>(resolve => completions.push(resolve));
+  });
+  const transition = (roundId: string, version: number) => {
+    const next = state(); next.gameState!.round.roundId = roundId;
+    h.emit({ type: "runtime_transition", cartridgeId: "pictionary", version,
+      transition: { patches: [{ op: "replace", path: "/gameState", value: next.gameState }], events: [] } });
+  };
+  transition("two", 1); transition("three", 2);
+  await Promise.resolve();
+  assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "one");
+  assert.equal(await h.controller.dispatch({ type: "skipRound" }), false);
+  assert.deepEqual(seen, ["one>two"]);
+  assert.equal(h.sent.filter(item => item.type === "advance_visibility_fence").length, 0);
+  completions.shift()!(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "two");
+  assert.deepEqual(seen, ["one>two", "two>three"]);
+  assert.deepEqual(h.sent.filter(item => item.type === "advance_visibility_fence").map(item => item.version), [1]);
+  // An acknowledgement cannot publish the still-hidden head while the next animation runs.
+  h.emit({ type: "visibility_fence_advanced_ack", cartridgeId: "pictionary", visibilityFenceId: "ui", version: 1 });
+  assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "two");
+  completions.shift()!(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "three");
+  assert.equal(h.controller.snapshot().presenting, false);
+  assert.deepEqual(h.sent.filter(item => item.type === "advance_visibility_fence").map(item => item.version), [1, 2]);
+  detach(); release(); h.controller.dispose();
+});
+
+test("World replacement aborts presentation and fences late completions", async () => {
+  const h = harness(), release = h.controller.retain(); h.mount();
+  let complete!: () => void, signal!: AbortSignal;
+  h.controller.setTransitionPresenter(async (_before, _next, token) => {
+    signal = token; await new Promise<void>(resolve => { complete = resolve; });
+  });
+  const next = state(); next.gameState!.round.roundId = "stale";
+  h.emit({ type: "runtime_transition", cartridgeId: "pictionary", version: 1,
+    transition: { patches: [{ op: "replace", path: "/gameState", value: next.gameState }], events: [] } });
+  await Promise.resolve();
+  h.emit({ type: "world_joined", world: { worldId: "replacement", mountedCartridges: [] } });
+  assert.equal(signal.aborted, true);
+  h.mount(); complete(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "one");
+  assert.equal(h.sent.filter(item => item.type === "advance_visibility_fence").length, 0);
+  release(); h.controller.dispose();
+});
  
 import { createSourceTranslate } from "../frontend-src/i18n/translate";
 test("Recovered translations render shipped labels and interpolate values as text", () => {
@@ -163,4 +216,34 @@ test("Codenames rejects position, overlapping, numeric and multi-word clues and 
   const messages = codenamesHistoryMessages(game, "A", key => key);
   assert.deepEqual(messages.map(item => item.sender), ["Nori", "You", "You"]);
   assert.deepEqual(messages.map(item => item.id), ["0:clue", "0:guess:0", "0:end"]);
+});
+
+test("Codenames tutorial gates restrict highlighted guesses, wait states and clue/guess lessons", () => {
+  const first = codenamesTutorialGate("player_first_treasure");
+  assert.equal(codenamesTutorialAllows(first, "submitGuess", 0), true);
+  assert.equal(codenamesTutorialAllows(first, "submitGuess", 10), false);
+  assert.equal(codenamesTutorialAllows(first, "endTurn"), false);
+  assert.equal(codenamesTutorialAllows(codenamesTutorialGate("player_real_clue"), "submitClue"), true);
+  assert.equal(codenamesTutorialAllows(codenamesTutorialGate("player_free_guessing"), "endTurn"), true);
+  const waiting = codenamesTutorialGate("nori_real_guessing");
+  assert.equal(codenamesTutorialAllows(waiting, "submitGuess", 0), false);
+  assert.equal(codenamesTutorialUi({ type: "HUMAN_GUESSING", clue: { word: "NIGHT", count: 2 } }, waiting).type, "AI_GUESSING");
+  assert.equal(codenamesTutorialUi({ type: "SUDDEN_DEATH_BOTH" }, waiting).type, "SUDDEN_DEATH_AI_TURN");
+  assert.equal(codenamesTutorialAllows(codenamesTutorialGate("free_play"), "submitGuess", 24), true);
+});
+
+test("Codenames detects both bystander slots and ignores old cards on reseed", async () => {
+  const before = codenamesFixture(), next = structuredClone(before);
+  next.cells[0].solvedBy = "B"; next.cells[1].assassinatedBy = "A";
+  next.cells[2].bystanderMarks = ["A", "B"];
+  assert.deepEqual(codenamesReveals(before, next), [
+    { cell: 0, type: "agent", rotate180: true }, { cell: 1, type: "assassin", rotate180: false },
+    { cell: 2, type: "bystander", slot: 0, rotate180: false }, { cell: 2, type: "bystander", slot: 1, rotate180: true },
+  ]);
+  assert.deepEqual(codenamesReveals(next, next), []);
+  next.board[0].text = "NEW BOARD";
+  assert.deepEqual(codenamesReveals(before, next), []);
+  const abort = new AbortController();
+  const pending = waitForCodenamesAnimation(2000, abort.signal);
+  abort.abort(); await pending;
 });

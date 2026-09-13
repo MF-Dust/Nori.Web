@@ -13,7 +13,16 @@ This change makes Chess, Pictionary and the existing Codenames presentation reac
 | Codenames | Existing board/header/chat/key/help presentation bound to cartridge state; start/reset/rematch, clue validation, selected cards, tap-to-confirm, end-turn eligibility, durable turn transcript, timed turn/outcome overlays | NormalApp gPe, j$, UIController; GameScreen-BU9F4fB5.js; backend/cartridges/codenames.py |
 | Base locale | Shipped English and Simplified Chinese base tables, fallback/interpolation/plural selection; source app respects stored language | i18n-DtIC1LRi.js Gu / Id |
 
-The Codenames start/results wrappers are an integration scaffold. Pictionary currently uses Canvas2D. Neither is a claim of pixel-identical recovery.
+The Codenames start/results wrappers retain simplified decoration. Pictionary currently uses Canvas2D. Neither is a claim of pixel-identical recovery.
+
+## Hint, reveal and audio completion pass
+
+- Pictionary now restores progressive English letters and Chinese pinyin initials, difficulty-based initial delays, cubic acceleration and repeated-letter grouping. The timer is scoped to round identity, role, locale and active state. Chinese syllables accept null initials; missing pinyin remains masked instead of leaking the answer.
+- The shared mixer exposes caller-owned cancellable loops. Pen scratching stops after 180 ms without movement, on pointer release, round change, disconnect/unmount and before a late audio decode can start. Tool, wrong-guess, correct-answer, skip, low-time and intermission cues use the existing SFX bus.
+- Codenames now queues replicated states behind the two-second suspense animation and 500 ms card flight. The controller advances each corresponding visibility version only after presentation; later acknowledgements do not expose a still-hidden head. World replacement, disconnect, cartridge reseed and release abort pending work.
+- Reveals cover agent, assassin and both bystander slots. Landing completion has a 700 ms fallback when browser animation callbacks cannot fire. Reduced motion skips visual transforms while preserving the transition contract.
+- Tutorial gates support the shipped highlighted cells, wait turns, free-clue and free-guess lessons. Card selection updates the clue count, tap-to-confirm and clue/overlay sounds are connected, and the clue highlight lasts three seconds. Ordinary results wait 1.5 seconds for a win or five seconds for a loss; tutorial epilogues reset after six seconds with a bounded three-second retry cadence on failure.
+- Restored the omitted Codenames card stylesheet, palette, hover/selection, glow and suspense animation. Fixed 177 theme-token declaration boundaries that previously prevented semantic Tailwind colors from compiling. Browser checks now assert the computed card face and semantic background rather than just the presence of class names.
 
 ## Verification
 
@@ -36,14 +45,14 @@ The Chromium suite mounts the actual React game screens with a test transport an
 
 ## Remaining work before the Games gate can be completed
 
-- Codenames needs original start/results decoration, scripted tutorial gates and epilogue, controller-driven shake/flying-card/reveal ordering, visibility fences paced by those animations, and event-based sudden-death chat.
+- Codenames still needs original start/results decoration, full card illustrations, narrative/tutorial dialogue and event-based sudden-death chat. The local backend currently starts tutorial mode at `free_play`; the frontend gates also support scripted states from a compatible backend. Validate the full scripted tutorial with its agent.
 - Chess needs the full original tutorial presentation, notification and sound routing, result/overlay timing and visual comparison.
-- Pictionary needs progressive English/Chinese/pinyin hints, original renderer/animation fidelity, original help/results decoration and sound routing. Check snapshot inference against a live agent.
+- Pictionary still needs original renderer/animation fidelity, original help/results decoration and scene-expression choreography. Progressive hints and SFX are connected. Check snapshot inference against a live agent.
 - Verify closing/reopening games and reconnecting through the real world/media lifecycle. Current tests cover the transport contract with controlled events.
 - Verify both locales, original window sizes, input devices and reduced motion in full desktop composition.
 
 ## Remaining full frontend boundaries
 
-Games is only part of the final cutover. Shared Messenger/chat/media, Live2D/Nori scene lifecycle, global CSS ownership and production entry remain incomplete. SourceApp still has incomplete facts/auth/bootstrap integration and some app presentations are not bound there. In particular, a recovered module in the source library is not proof that every source-entry user flow is connected.
+Games is only part of the final cutover. The remaining boundaries are Messenger story/corruption/reveal choreography, game fidelity and live-agent verification, the outer Live2D 3D scene/story runtime, Debug and remaining scene audio, and production entry. Auth/bootstrap, source CSS ownership, shared audio, Preview, chips and Daniel integration have separate completed recovery records. A recovered module alone does not establish whole-app parity.
 
 The authoritative gate remains frontend-src/migration/cutover-status.ts. Keep Games and the other pending boundaries false until their production behavior is restored and verified. This PR does not switch public/index.html or remove historical assets.

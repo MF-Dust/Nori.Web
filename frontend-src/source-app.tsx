@@ -289,7 +289,7 @@ function createSourceSession() {
       locale,
       playSound: frontend.audio.playCue,
     },
-    pictionary: { controller: pictionary, drawing, locale },
+    pictionary: { controller: pictionary, drawing, locale, playSound: frontend.audio.playCue, startSoundLoop: frontend.audio.startCueLoop },
     chess: {
       controller: chess,
       translate: sourceTranslate,
