@@ -8,7 +8,10 @@ export async function verifyAntivirus(page, output) {
   await page.setViewportSize({ width: 1280, height: 1050 });
   await page.bringToFront();
   await page.getByRole("button", { name: "Corruption", exact: true }).click();
-  await page.clock.install();
+  const installedAt = await page.evaluate(() => Date.now());
+  await page.clock.install({ time: installedAt });
+  // Keep driver/CI latency out of the 560 ms all-clear transition.
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   await page
     .getByRole("button", { name: "Open corruption study", exact: true })
     .click();
