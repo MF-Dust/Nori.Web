@@ -17,9 +17,27 @@ import {
 } from "../state/graphics-store";
 import "./stage.css";
 import { detectGpu } from "../runtime/graphics-detection";
+import { bindNoriModel } from "./model-runtime";
+import { noriIdleFromFacts, noriLipExpressionBlend } from "./idle-controller";
+import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
+import {
+  createCinematicFacePlugin,
+  createThinkingLightPlugin,
+} from "./scene-plugins";
 
 /** NormalApp model and plugin configuration. Story choreography remains a separate boundary. */
-export function NoriStage({ speech }: { speech: SpeechPlayer }) {
+export function NoriStage({
+  frontend,
+  facts,
+  exclusive,
+}: {
+  frontend: NoriFrontendRuntime;
+  facts: ReadonlySet<string>;
+  exclusive(): boolean;
+}) {
+  const speech: SpeechPlayer = frontend.speech;
+  const latest = useRef({ facts, exclusive });
+  latest.current = { facts, exclusive };
   const host = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState("loading");
   useEffect(() => {
@@ -29,6 +47,7 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
     canvas.setAttribute("aria-label", "Nori");
     host.current.append(canvas);
     let unregisterScan: (() => void) | undefined;
+    let unbindModel: (() => void) | undefined;
     let disposed = false,
       engine: Live2DEngine | undefined,
       session: Live2DSession | undefined;
@@ -76,7 +95,21 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
           createLipSyncPlugin({
             enabled: true,
             getAmplitude: () => speech.level(),
+            getIntensity: () => 0.4,
+            getFormIntensity: () =>
+              ["kneel", "kneelCalm"].includes(
+                noriIdleFromFacts(latest.current.facts),
+              )
+                ? 0
+                : 1,
+            getExpressionBlend: noriLipExpressionBlend,
           }),
+          createThinkingLightPlugin(
+            () =>
+              frontend.conversation.snapshot().connected &&
+              frontend.conversation.snapshot().phase === "executing",
+          ),
+          createCinematicFacePlugin(frontend.scene),
         ],
       });
       updateBudget();
@@ -92,6 +125,15 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
           if (disposed) return;
           unregisterScan = registerScanModel(canvas, model);
           model.setIdleSequence({ group: "Idle", index: 0, loop: true });
+          unbindModel = bindNoriModel({
+            model,
+            conversation: frontend.conversation,
+            speech,
+            scene: frontend.scene,
+            facts: () => latest.current.facts,
+            exclusive: () => latest.current.exclusive(),
+            host: host.current!,
+          });
           session!.start();
           setStatus("ready");
         })
@@ -109,12 +151,13 @@ export function NoriStage({ speech }: { speech: SpeechPlayer }) {
       disposed = true;
       unsubscribeGraphics();
       unregisterScan?.();
+      unbindModel?.();
       clearTimeout(budgetTimer);
       resize.disconnect();
       engine?.dispose();
       canvas.remove();
     };
-  }, [speech]);
+  }, [frontend, speech]);
   return (
     <div className="nori-stage" ref={host} data-live2d-status={status}>
       {status === "error" && (

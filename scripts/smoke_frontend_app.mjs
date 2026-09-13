@@ -1,3 +1,4 @@
+import { verifyNoriScene } from "./frontend_nori_scene_probe.mjs";
 import { verifyPreview, verifyChip } from "./frontend_preview_chip_probe.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
@@ -415,6 +416,7 @@ try {
   );
   await page.getByRole("button", { name: "Close", exact: true }).click();
 
+  await verifyNoriScene(browser, output);
   await verifyPreview(browser, output);
   await verifyChip(page, output);
 

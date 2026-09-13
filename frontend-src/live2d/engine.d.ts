@@ -7,6 +7,16 @@ export interface MotionStep {
   fadeOut?: number;
 }
 export interface Live2DModel {
+  readonly model: {
+    getParameterCount(): number;
+    getParameterId(index: number): { getString(): { s: string } };
+    getParameterValueByIndex(index: number): number;
+    setParameterValueByIndex(
+      index: number,
+      value: number,
+      weight?: number,
+    ): void;
+  } | null;
   getPartsBounds(
     parts: string[],
   ): { left: number; right: number; top: number; bottom: number } | null;
@@ -18,6 +28,12 @@ export interface Live2DModel {
     onFinish?(): void;
   }): void;
   setExpression(name: string): void;
+  addExpression(name: string): void;
+  removeExpression(name: string): void;
+  getActiveExpressions(): string[];
+  setTextureVariant(name: string | null): void;
+  setRestPose(enabled: boolean): void;
+  setPluginEnabled(id: string, enabled: boolean): void;
   clearExpressions(): void;
   setTemporaryExpression(name: string, seconds: number): void;
 }
@@ -28,6 +44,16 @@ export interface ModelSource {
 }
 export interface Live2DPlugin {
   readonly id: string;
+  install?(model: Live2DModel): {
+    readonly enabled?: boolean;
+    setEnabled?(enabled: boolean): void;
+    update(context: {
+      model: Live2DModel;
+      deltaTimeSeconds: number;
+      motionUpdated: boolean;
+    }): void;
+    dispose(): void;
+  };
 }
 export interface Live2DSession {
   readonly model: Live2DModel | null;
@@ -80,4 +106,7 @@ export function createLipSyncPlugin(options?: {
   enabled?: boolean;
   getAmplitude?(): number;
   getIntensity?(): number;
+  getFormIntensity?(): number;
+  getFormConstant?(): number | null;
+  getExpressionBlend?(expressions: string[]): number;
 }): Live2DPlugin;

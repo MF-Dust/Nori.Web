@@ -1,4 +1,5 @@
 import test from "node:test";
+import "./frontend-nori-scene.test";
 import "./frontend-audio.test";
 import "./frontend-chip.test";
 import "./frontend-signal-story.test";
@@ -313,6 +314,37 @@ class AudioFixture {
     return node;
   }
 }
+test("speech cuts keep the inclusive block, stop later playback and reject late chunks without done receipts", async t => {
+  const context = new AudioFixture(), done: string[] = [];
+  const player = new SpeechPlayer({ started() {}, done: (id, block) => done.push(`${id}:${block}`), error: error => assert.fail(error) },
+    async () => ({ context, input: context.destination }) as any);
+  t.after(() => player.dispose()); await player.unlock();
+  const frame = (operationId: string, blockId: number): ChatAudioFrame => ({ sequence: 0, operationId, blockId, messageId: "msg", chunkId: 0, complete: true, samples: new Float32Array(320), sampleRate: 32000 });
+  player.receive(frame("op", 0)); player.receive(frame("op", 1));
+  player.cut("op", 0);
+  assert.equal(context.nodes[0].stopped, false);
+  context.nodes[0].finish();
+  assert.deepEqual(done, ["op:0"]); assert.equal(context.nodes.length, 1);
+  player.receive(frame("op", 1)); assert.equal(context.nodes.length, 1);
+  player.cut("op", 2); player.receive(frame("op", 2)); assert.equal(context.nodes.length, 1, "a relaxed cut cannot resurrect discarded blocks");
+  player.receive(frame("next", 0));
+  player.cut("next", -1); assert.equal(context.nodes[1].stopped, true);
+  context.nodes[1].finish(); assert.deepEqual(done, ["op:0"]);
+  player.receive(frame("another", 0)); context.nodes[2].finish();
+  assert.deepEqual(done, ["op:0", "another:0"]);
+});
+
+test("speech cuts received before an encoded decode finishes prevent playback", async t => {
+  const context = new AudioFixture(); let release!: (value: any) => void;
+  (context as any).decodeAudioData = () => new Promise(resolve => { release = resolve; });
+  const player = new SpeechPlayer({ started: () => assert.fail("cut speech started"), done: () => assert.fail("cut speech acknowledged"), error: error => assert.fail(error) },
+    async () => ({ context, input: context.destination }) as any);
+  t.after(() => player.dispose()); await player.unlock();
+  const decode = player.receiveEncoded("op", 1, "AAAA");
+  player.cut("op", 0);
+  release({ length: 320, sampleRate: 32000, numberOfChannels: 1, getChannelData: () => new Float32Array(320) });
+  await decode; assert.equal(context.nodes.length, 0);
+});
 test("speech orders chunks, deduplicates blocks and acknowledges only after the final sample", async (t) => {
   const descriptor = Object.getOwnPropertyDescriptor(
     globalThis,

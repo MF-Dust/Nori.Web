@@ -33,6 +33,7 @@ import { SpeechModeControl } from "./components/speech-mode-control";
 import { ConversationPanel } from "./components/conversation-panel";
 import { SourceLogin } from "./components/source-login";
 import { NoriStage } from "./live2d/nori-stage";
+import { NoriSceneEffects } from "./components/nori-scene-effects";
 import { DesktopSurface } from "./components/desktop-surface";
 import { useAudioSettings } from "./state/audio-store";
 import { useGraphicsSettings } from "./state/graphics-store";
@@ -491,11 +492,12 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       background={
         <>
           <DesktopSurface />
-          <NoriStage speech={source.frontend.speech} />
+          <NoriStage frontend={source.frontend} facts={facts} exclusive={() => source.bundle.runtime.store.getState().exclusiveAppId !== null} />
         </>
       }
       overlay={
         <>
+          <NoriSceneEffects scene={source.frontend.scene} />
           <ConversationPanel
             frontend={source.frontend}
             locale={locale}

@@ -2,6 +2,7 @@ import { ChatRuntimeController } from "../apps/chat-runtime";
 import { decodeChatAudioFrame } from "./chat-media";
 import { SpeechPlayer } from "./speech-player";
 import { AudioMixer } from "./audio-mixer";
+import { NoriSceneStore } from "../state/nori-scene";
 import { ArcadeClient, type ArcadeClientOptions } from "./arcade-client";
 import { LocalAuthController } from "./auth";
 import { EventRpcClient } from "./event-rpc";
@@ -41,6 +42,7 @@ export class NoriFrontendRuntime {
   readonly conversation: ChatRuntimeController;
   readonly speech: SpeechPlayer;
   readonly audio = new AudioMixer();
+  readonly scene = new NoriSceneStore();
   private cleanup: Array<() => void> = [];
   private disposed = false;
   private started = false;
@@ -88,6 +90,24 @@ export class NoriFrontendRuntime {
     this.audioEnabled = false;
     this.speech.reset();
     void this.conversation.setMode("text");
+  }
+  private syncSpeechCuts() {
+    const operations = this.world.runtime("chat")?.state.operations;
+    if (
+      !operations ||
+      typeof operations !== "object" ||
+      Array.isArray(operations)
+    )
+      return;
+    for (const [id, operation] of Object.entries(operations)) {
+      if (
+        operation &&
+        typeof operation === "object" &&
+        !Array.isArray(operation) &&
+        typeof operation.cutBlockId === "number"
+      )
+        this.speech.cut(id, operation.cutBlockId);
+    }
   }
 
   constructor(options: ArcadeClientOptions = {}) {
@@ -146,6 +166,7 @@ export class NoriFrontendRuntime {
         if (state === "open" && this.started)
           this.arcade.openMyWorld(this.locale);
         if (state !== "open") {
+          this.scene.reset();
           this.speech.reset();
           this.media.close();
         }
@@ -153,6 +174,7 @@ export class NoriFrontendRuntime {
     );
     this.cleanup.push(
       this.media.onFrame((bytes) => {
+        this.syncSpeechCuts();
         const frame = decodeChatAudioFrame(bytes);
         if (
           frame &&
@@ -174,6 +196,7 @@ export class NoriFrontendRuntime {
           message.type === "world_joined" ||
           message.type === "world_created"
         ) {
+          this.scene.reset();
           this.speech.reset();
           // Browser audio needs a gesture. Text mode also releases pending speech after reconnect.
           this.audioEnabled = false;
@@ -183,6 +206,7 @@ export class NoriFrontendRuntime {
               this.failSpeech(String(error)),
             );
         } else if (message.type === "world_left") {
+          this.scene.reset();
           this.speech.reset();
           this.media.close();
         }
@@ -192,6 +216,7 @@ export class NoriFrontendRuntime {
           payload?: Record<string, unknown>;
         };
         const payload = raw.payload;
+        this.syncSpeechCuts();
         if (
           this.audioEnabled &&
           raw.type === "event" &&
@@ -236,6 +261,7 @@ export class NoriFrontendRuntime {
     if (this.disposed) return;
     this.disposed = true;
     this.cleanup.forEach((fn) => fn());
+    this.scene.reset();
     this.conversation.dispose();
     this.speech.dispose();
     this.audio.dispose();

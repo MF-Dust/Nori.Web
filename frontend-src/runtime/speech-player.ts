@@ -15,12 +15,21 @@ export interface SpeechCallbacks {
   done(operationId: string, blockId: number): void;
   error(message: string): void;
 }
+export type SpeechEvent =
+  | { type: "started" | "done"; operationId: string; blockId: number }
+  | { type: "cut"; operationId: string; blockId: number }
+  | { type: "reset" };
 /** PCM streaming with block/chunk deduplication and a gesture-owned AudioContext. */
 export class SpeechPlayer {
   private context: AudioContext | null = null;
   private gain: GainNode | null = null;
   private analyser: AnalyserNode | null = null;
-  private nodes = new Set<AudioBufferSourceNode>();
+  private nodes = new Map<
+    AudioBufferSourceNode,
+    { block: SpeechBlock; samples: number; end: number }
+  >();
+  private cuts = new Map<string, number>();
+  private listeners = new Set<(event: SpeechEvent) => void>();
   private blocks = new Map<string, SpeechBlock>();
   private completed = new Set<string>();
   private cursor = 0;
@@ -34,6 +43,15 @@ export class SpeechPlayer {
     private callbacks: SpeechCallbacks,
     private route?: () => Promise<AudioRoute>,
   ) {}
+  subscribe = (listener: (event: SpeechEvent) => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+  private emit(event: SpeechEvent) {
+    for (const listener of this.listeners) listener(event);
+  }
   async unlock() {
     if (this.disposed) throw new Error("Speech player is disposed");
     const epoch = this.epoch;
@@ -70,6 +88,8 @@ export class SpeechPlayer {
   }
   receive(frame: ChatAudioFrame) {
     if (this.disposed) return;
+    const cut = this.cuts.get(frame.operationId);
+    if (cut !== undefined && frame.blockId > cut) return;
     const key = frame.operationId + ":" + frame.blockId;
     if (this.completed.has(key)) return;
     let block = this.blocks.get(key);
@@ -145,11 +165,17 @@ export class SpeechPlayer {
     for (const [key, block] of this.blocks) {
       let chunk;
       while ((chunk = block.chunks.get(block.next))) {
-        block.chunks.delete(block.next++);
         if (!block.started) {
           block.started = true;
+          this.emit({
+            type: "started",
+            operationId: block.operationId,
+            blockId: block.blockId,
+          });
           this.callbacks.started(block.operationId, block.blockId);
         }
+        if (!this.blocks.has(key)) break;
+        block.chunks.delete(block.next++);
         if (!chunk.samples.length) continue;
         const audio = context.createBuffer(1, chunk.samples.length, chunk.rate);
         audio.copyToChannel(new Float32Array(chunk.samples), 0);
@@ -163,7 +189,7 @@ export class SpeechPlayer {
         node.start(this.cursor);
         this.cursor += audio.duration / this.rate;
         block.active++;
-        this.nodes.add(node);
+        this.nodes.set(node, { block, samples: sampleCount, end: this.cursor });
         node.onended = () => {
           this.nodes.delete(node);
           node.disconnect();
@@ -193,10 +219,52 @@ export class SpeechPlayer {
     if (this.completed.size > 512)
       this.completed.delete(this.completed.values().next().value!);
     this.callbacks.done(block.operationId, block.blockId);
+    this.emit({
+      type: "done",
+      operationId: block.operationId,
+      blockId: block.blockId,
+    });
+  }
+  /** Keep the cut block itself, discard everything later, including delayed media/decode work. */
+  cut(operationId: string, blockId: number) {
+    if (this.disposed || !Number.isInteger(blockId)) return;
+    const previous = this.cuts.get(operationId);
+    if (previous !== undefined && previous <= blockId) return;
+    this.cuts.set(operationId, blockId);
+    if (this.cuts.size > 512) this.cuts.delete(this.cuts.keys().next().value!);
+    for (const [node, playing] of this.nodes) {
+      if (
+        playing.block.operationId !== operationId ||
+        playing.block.blockId <= blockId
+      )
+        continue;
+      node.onended = null;
+      try {
+        node.stop();
+      } catch {}
+      node.disconnect();
+      this.nodes.delete(node);
+      playing.block.active--;
+      this.bufferedSamples -= playing.samples;
+    }
+    for (const [key, block] of this.blocks) {
+      if (block.operationId !== operationId || block.blockId <= blockId)
+        continue;
+      for (const chunk of block.chunks.values())
+        this.bufferedSamples -= chunk.samples.length;
+      this.blocks.delete(key);
+    }
+    this.bufferedSamples = Math.max(0, this.bufferedSamples);
+    this.cursor = Math.max(
+      this.context?.currentTime ?? 0,
+      ...[...this.nodes.values()].map((node) => node.end),
+    );
+    this.emit({ type: "cut", operationId, blockId });
+    this.drain();
   }
   reset() {
     this.epoch++;
-    for (const node of this.nodes) {
+    for (const node of this.nodes.keys()) {
       node.onended = null;
       try {
         node.stop();
@@ -206,13 +274,16 @@ export class SpeechPlayer {
     this.nodes.clear();
     this.blocks.clear();
     this.completed.clear();
+    this.cuts.clear();
     this.cursor = 0;
     this.bufferedSamples = 0;
+    this.emit({ type: "reset" });
   }
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
     this.reset();
+    this.listeners.clear();
     this.gain?.disconnect();
     this.analyser?.disconnect();
     if (!this.route) void this.context?.close();
