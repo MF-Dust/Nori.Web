@@ -1,0 +1,185 @@
+/* Recovered source styles. Provenance and ownership: docs/FRONTEND_CSS_RECOVERY.md. */
+@layer components {
+  [data-rehype-pretty-code-figure] figure {
+    --tw-border-style: none;
+    border-style: none;
+    background-color: var(--secondary) !important;
+  }
+  @supports (color: color-mix(in lab, red, red)) {
+    [data-rehype-pretty-code-figure] figure {
+      background-color: color-mix(
+        in oklab,
+        var(--secondary) 50%,
+        transparent
+      ) !important;
+    }
+  }
+  [data-line] span {
+    color: var(--shiki-light);
+  }
+  [data-line] span:is(.dark *) {
+    color: var(--shiki-dark);
+  }
+  .debug-tab {
+    --dbg-text-title: 10px;
+    --dbg-text-label: 11px;
+    --dbg-text-value: 11px;
+    --dbg-control-h: 1.5rem;
+    --dbg-section-gap: 0.5rem;
+    --dbg-field-gap: 0.375rem;
+    --dbg-row-gap: 0.375rem;
+    --dbg-pad-x: 0.625rem;
+    --dbg-radius: 0.375rem;
+  }
+  .debug-tab :where(button, input, select, textarea):not([data-slot]) {
+    font-size: var(--dbg-text-label);
+    height: var(--dbg-control-h);
+  }
+  .debug-tab :where(label, span, p):not([data-slot]) {
+    font-size: var(--dbg-text-label);
+  }
+  .debug-tab :where(pre, code):not([data-slot]) {
+    font-size: var(--dbg-text-value);
+  }
+  .qfr-dock {
+    --crt-bg: #04080b;
+    --crt-bg2: #060d11;
+    --phos: #4ee0c8;
+    --phos-dim: #4ee0c875;
+    --log: #5fe39a;
+    --crt-amber: #f1b24a;
+    --crt-line: #4ee0c829;
+    isolation: isolate;
+    border-left: 1px solid var(--crt-line);
+    background:
+      radial-gradient(120% 80% at 50% 0%, #4ee0c80b, transparent 60%),
+      linear-gradient(180deg, var(--crt-bg2), var(--crt-bg));
+    min-height: 0;
+    color: var(--phos);
+    text-shadow: 0 0 4px #4ee0c84d;
+    flex-direction: column;
+    flex: 0 0 388px;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+  }
+  .qfr-dock:before {
+    content: "";
+    z-index: 8;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    opacity: 0.7;
+    background: repeating-linear-gradient(#0003 0 1px, #0000 1px 3px);
+    position: absolute;
+    inset: 0;
+  }
+  .qfr-dock:after {
+    content: "";
+    z-index: 9;
+    pointer-events: none;
+    opacity: 0.9;
+    background:
+      radial-gradient(120% 120%, #0000 56%, #0000008c),
+      repeating-linear-gradient(#4ee0c809 0 1px, #0000 1px 4px);
+    animation: 6.5s steps(60, end) infinite qfr-flicker;
+    position: absolute;
+    inset: 0;
+  }
+  @keyframes qfr-flicker {
+    0%,
+    to {
+      opacity: 0.9;
+    }
+    8% {
+      opacity: 0.84;
+    }
+    9% {
+      opacity: 0.95;
+    }
+    22% {
+      opacity: 0.88;
+    }
+    47% {
+      opacity: 0.93;
+    }
+    48% {
+      opacity: 0.82;
+    }
+    49% {
+      opacity: 0.92;
+    }
+    73% {
+      opacity: 0.9;
+    }
+    86% {
+      opacity: 0.86;
+    }
+  }
+  .qfr-dock.qfr-suspended {
+    color: var(--crt-amber);
+    text-shadow: 0 0 4px #f1b24a47;
+  }
+  .qfr-dock > * {
+    z-index: 2;
+    position: relative;
+  }
+  .qfr-term {
+    scrollbar-gutter: stable;
+    flex: auto;
+    min-height: 0;
+    padding: 12px 9px 0;
+    overflow: hidden auto;
+  }
+  .qfr-status {
+    padding: 2px 9px 10px;
+    padding-right: calc(9px + var(--qfr-gutter));
+    flex: none;
+  }
+  .qfr-dock {
+    --qfr-gutter: 8px;
+  }
+  .qfr-term::-webkit-scrollbar {
+    width: var(--qfr-gutter);
+  }
+  .qfr-term::-webkit-scrollbar-track {
+    background: #4ee0c80d;
+  }
+  .qfr-term::-webkit-scrollbar-thumb {
+    background: #4ee0c847;
+    border-radius: 0;
+  }
+  .qfr-term::-webkit-scrollbar-thumb:hover {
+    background: #4ee0c873;
+  }
+  .qfr-dock.qfr-suspended .qfr-term::-webkit-scrollbar-thumb {
+    background: #f1b24a4d;
+  }
+  .qfr-host {
+    width: 100%;
+  }
+  .qfr-term .qfr-host {
+    overflow: hidden;
+  }
+  .qfr-status .qfr-host {
+    height: 100%;
+  }
+  .qfr-dock .xterm,
+  .qfr-dock .xterm-viewport,
+  .qfr-dock .xterm-screen {
+    background: 0 0 !important;
+  }
+  .qfr-dock .xterm-viewport {
+    overflow-y: hidden !important;
+  }
+  .qfr-dock .xterm-rows {
+    text-shadow: 0 0 4px #4ee0c859;
+  }
+  .qfr-dock.qfr-suspended .xterm-rows {
+    text-shadow: 0 0 4px #f1b24a4d;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qfr-dock:after {
+      animation: none;
+    }
+  }
+}

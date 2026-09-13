@@ -1,0 +1,249 @@
+import test from "node:test";
+import "./frontend-pictionary-hints.test";
+import { codenamesTutorialAllows, codenamesTutorialGate, codenamesTutorialUi } from "../frontend-src/apps/codenames-tutorial";
+import { codenamesReveals, waitForCodenamesAnimation } from "../frontend-src/apps/codenames-reveal";
+import assert from "node:assert/strict";
+import { Chess } from "chess.js";
+import { CHESS_START_FEN, chessCaptures, chessHistory, chessLayout, legalChessMoves } from "../frontend-src/apps/chess-model";
+import { chooseDrawingSample, drawingSampleStrokes, normalizeDrawingStroke, pictionaryElapsed, pictionaryNextRoundAt, pictionaryStateSchema, pictionarySummary } from "../frontend-src/apps/pictionary-model";
+import { GameCartridgeController } from "../frontend-src/apps/game-cartridge-controller";
+import { PictionaryDrawingBridge } from "../frontend-src/apps/pictionary-runtime";
+import { WorldStore } from "../frontend-src/runtime/world-store";
+
+test("Chess legality handles pins, en passant, castling and all promotions", () => {
+  assert.deepEqual(legalChessMoves(CHESS_START_FEN, "e2").map(move => move.to), ["e3", "e4"]);
+  assert.equal(legalChessMoves("4r1k1/8/8/8/8/8/4R3/4K3 w - - 0 1", "e2").some(move => move.to === "d2"), false);
+  assert.ok(legalChessMoves("4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1", "e5").some(move => move.to === "d6" && move.isEnPassant()));
+  assert.ok(legalChessMoves("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1", "e1").some(move => move.to === "g1"));
+  assert.deepEqual(legalChessMoves("4k3/P7/8/8/8/8/8/4K3 w - - 0 1", "a7").map(move => move.promotion).sort(), ["b", "n", "q", "r"]);
+});
+test("History review replays the original position without mutating the replicated history", () => {
+  const moves = [{ by: "white" as const, move: { from: "e2", to: "e4" } }, { by: "black" as const, move: { from: "d7", to: "d5" } }, { by: "white" as const, move: { from: "e4", to: "d5" }, captured: "p" }];
+  const original = structuredClone(moves);
+  const history = chessHistory(CHESS_START_FEN, moves);
+  assert.deepEqual(history.san, ["e4", "d5", "exd5"]);
+  assert.equal(history.fens.length, 4);
+  assert.equal(new Chess(history.fens[1]).get("e4")?.type, "p");
+  assert.equal(chessCaptures(moves, "white").advantage, 1);
+  assert.equal(chessCaptures(moves, "black").advantage, -1);
+  assert.deepEqual(moves, original);
+  assert.deepEqual(chessLayout(1100, 720), { board: 560, rail: 280, compact: false });
+  assert.equal(chessLayout(550, 420).compact, true);
+});
+function state(status: "active" | "solved" | "skipped" = "active") {
+  return pictionaryStateSchema.parse({
+    settings: { sessionDurationMs: 180000, inferenceMode: "fast", locale: "en" },
+    gameState: { phase: "PLAYING", score: { solved: 0, skipped: 0 }, history: [],
+      round: { roundId: "one", startedAtMs: 1000, word: "apple", drawingId: "apple", roles: { drawer: "player", guesser: "agent" }, status, noriRedrawEpoch: 0 } },
+  });
+}
+test("Session clock excludes the five-second intermission and unfinished guesses from accuracy", () => {
+  const value = state(); const game = value.gameState!;
+  assert.equal(pictionaryElapsed(game, 11000), 10000);
+  assert.equal(pictionaryElapsed(game, 500), 0);
+  game.round.status = "solved"; game.round.solvedAtMs = 11000;
+  game.history.push({ word: "apple", roles: game.round.roles, elapsedMs: 10000, outcome: "solved" });
+  assert.equal(pictionaryElapsed(game, 16000), 10000);
+  assert.equal(pictionaryNextRoundAt(game), 16000);
+  game.history.push({ word: "cat", roles: game.round.roles, elapsedMs: 3000, outcome: "unfinished" });
+  assert.equal(pictionarySummary(game).accuracy, 100);
+  assert.equal(pictionarySummary(game).unfinished, 1);
+  assert.equal(pictionarySummary(game).durationMs, 13000);
+});
+test("Stroke payloads respect the 128-point normalized protocol and drawing sample bounds", () => {
+  const points = Array.from({ length: 1000 }, (_, index) => ({ x: index, y: -index }));
+  const stroke = normalizeDrawingStroke(points, 100, 100, "#363636", 6)!;
+  assert.ok(stroke.points.length <= 128 && stroke.points.length >= 2);
+  assert.ok(stroke.points.every(point => point.x >= 0 && point.x <= 1 && point.y === 0));
+  assert.equal(normalizeDrawingStroke([{ x: 0, y: 0 }], 10, 10, "#000", 6), null);
+  const sample: [number[], number[]][] = [[[0, 128, 255], [255, 128, 0]]];
+  const strokes = drawingSampleStrokes(sample);
+  assert.ok(strokes[0].points.every(point => point.x >= .16 - 1e-12 && point.x <= .84 + 1e-12 && point.y >= .16 - 1e-12 && point.y <= .84 + 1e-12));
+  const used = new Set<number>();
+  const index = { apple: [sample, [[[10, 20], [30, 40]]] as typeof sample] };
+  const first = chooseDrawingSample(index, "Apple", used, () => 0);
+  const second = chooseDrawingSample(index, "Apple", used, () => 0);
+  assert.notEqual(first, second);
+  assert.equal(used.size, 2);
+});
+function harness() {
+  const world = new WorldStore();
+  const stateListeners = new Set<(state: string) => void>();
+  const eventListeners = new Set<(message: any) => void>();
+  let serial = 0;
+  const sent: any[] = [];
+  const arcade = {
+    connectionState: "open", onState(listener: any) { stateListeners.add(listener); listener("open"); return () => stateListeners.delete(listener); },
+    onMessage(listener: any) { eventListeners.add(listener); return () => eventListeners.delete(listener); },
+    send(message: any) { sent.push(message); },
+    sendEvent(channel: string, payload: any, extra: any) { sent.push({ channel, payload, ...extra }); return "event"; },
+  };
+  const games = { mount(game: string) { const id = "mount-" + ++serial; sent.push({ type: "mount", game, id }); return id; },
+    unmount(game: string) { sent.push({ type: "unmount", game }); return "unmount"; },
+    dispatch(game: string, command: any) { const id = "dispatch-" + ++serial; sent.push({ type: "dispatch", game, command, id }); return id; } };
+  const emit = (message: any) => { world.consume(message); eventListeners.forEach(listener => listener(message)); };
+  emit({ type: "world_joined", world: { worldId: "world", mountedCartridges: [] } });
+  const controller = new GameCartridgeController("pictionary", games as any, world, arcade as any, raw => pictionaryStateSchema.parse(raw));
+  const mount = (value = state()) => emit({ type: "cartridge_mounted", cartridgeId: "pictionary", requestId: sent.find(item => item.type === "mount")?.id,
+    runtimes: [{ visibilityFenceId: "ui", headVersion: 0, visibleVersion: 0, state: value }] });
+  return { world, arcade, sent, emit, controller, mount, stateListeners };
+}
+test("Controller correlates acks, blocks duplicate commands and cleans up on window release", async () => {
+  const h = harness(), release = h.controller.retain();
+  h.mount(); assert.equal(h.controller.snapshot().mounted, true);
+  const action = h.controller.dispatch({ type: "skipRound", atMs: 1000 });
+  const request = h.sent.at(-1);
+  assert.equal(await h.controller.dispatch({ type: "skipRound", atMs: 1000 }), false);
+  h.emit({ type: "dispatch_ack", cartridgeId: "pictionary", requestId: "unrelated", success: true });
+  assert.equal(h.controller.snapshot().pending, true);
+  h.emit({ type: "dispatch_ack", cartridgeId: "pictionary", requestId: request.id, success: false, error: "Round is still active" });
+  assert.equal(await action, false);
+  assert.match(h.controller.snapshot().error!, /Round/);
+  release(); await Promise.resolve();
+  assert.equal(h.sent.at(-1).type, "unmount");
+  h.controller.dispose();
+  assert.equal(h.stateListeners.size, 0);
+});
+test("Old round stroke queues are discarded and snapshots retain the request ID", async () => {
+  const h = harness(), release = h.controller.retain();
+  const bridge = new PictionaryDrawingBridge(h.controller, h.arcade as any);
+  h.mount();
+  bridge.setCapture(() => ({ revision: 1, image: "base64", width: 256, height: 128 }));
+  h.emit({ type: "event", channel: "pictionary.snapshot.request", requestId: "snapshot-id", cartridgeId: "pictionary", payload: { roundId: "one" } });
+  assert.equal(h.sent.at(-1).requestId, "snapshot-id");
+  assert.equal(h.sent.at(-1).channel, "pictionary.snapshot");
+  const stroke = { points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], color: "#000", width: 6 };
+  bridge.submit(stroke); bridge.submit(stroke);
+  const request = h.sent.at(-1);
+  const next = state(); next.gameState!.round.roundId = "two";
+  h.emit({ type: "runtime_transition", cartridgeId: "pictionary", version: 1, transition: { patches: [{ op: "replace", path: "/gameState", value: next.gameState }], events: [] } });
+  h.emit({ type: "dispatch_ack", cartridgeId: "pictionary", requestId: request.id, success: true });
+  await Promise.resolve(); await Promise.resolve();
+  assert.equal(h.sent.filter(item => item.type === "dispatch").length, 1);
+  bridge.dispose(); release(); h.controller.dispose();
+});
+
+test("Presentation queues preserve transition order and acknowledge only each completed visible version", async () => {
+  const h = harness(), release = h.controller.retain(); h.mount();
+  const completions: Array<() => void> = [], seen: string[] = [];
+  const detach = h.controller.setTransitionPresenter(async (before, next) => {
+    seen.push(before.gameState!.round.roundId + ">" + next.gameState!.round.roundId);
+    await new Promise<void>(resolve => completions.push(resolve));
+  });
+  const transition = (roundId: string, version: number) => {
+    const next = state(); next.gameState!.round.roundId = roundId;
+    h.emit({ type: "runtime_transition", cartridgeId: "pictionary", version,
+      transition: { patches: [{ op: "replace", path: "/gameState", value: next.gameState }], events: [] } });
+  };
+  transition("two", 1); transition("three", 2);
+  await Promise.resolve();
+  assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "one");
+  assert.equal(await h.controller.dispatch({ type: "skipRound" }), false);
+  assert.deepEqual(seen, ["one>two"]);
+  assert.equal(h.sent.filter(item => item.type === "advance_visibility_fence").length, 0);
+  completions.shift()!(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "two");
+  assert.deepEqual(seen, ["one>two", "two>three"]);
+  assert.deepEqual(h.sent.filter(item => item.type === "advance_visibility_fence").map(item => item.version), [1]);
+  // An acknowledgement cannot publish the still-hidden head while the next animation runs.
+  h.emit({ type: "visibility_fence_advanced_ack", cartridgeId: "pictionary", visibilityFenceId: "ui", version: 1 });
+  assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "two");
+  completions.shift()!(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "three");
+  assert.equal(h.controller.snapshot().presenting, false);
+  assert.deepEqual(h.sent.filter(item => item.type === "advance_visibility_fence").map(item => item.version), [1, 2]);
+  detach(); release(); h.controller.dispose();
+});
+
+test("World replacement aborts presentation and fences late completions", async () => {
+  const h = harness(), release = h.controller.retain(); h.mount();
+  let complete!: () => void, signal!: AbortSignal;
+  h.controller.setTransitionPresenter(async (_before, _next, token) => {
+    signal = token; await new Promise<void>(resolve => { complete = resolve; });
+  });
+  const next = state(); next.gameState!.round.roundId = "stale";
+  h.emit({ type: "runtime_transition", cartridgeId: "pictionary", version: 1,
+    transition: { patches: [{ op: "replace", path: "/gameState", value: next.gameState }], events: [] } });
+  await Promise.resolve();
+  h.emit({ type: "world_joined", world: { worldId: "replacement", mountedCartridges: [] } });
+  assert.equal(signal.aborted, true);
+  h.mount(); complete(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.controller.snapshot().state!.gameState!.round.roundId, "one");
+  assert.equal(h.sent.filter(item => item.type === "advance_visibility_fence").length, 0);
+  release(); h.controller.dispose();
+});
+ 
+import { createSourceTranslate } from "../frontend-src/i18n/translate";
+test("Recovered translations render shipped labels and interpolate values as text", () => {
+  const t = createSourceTranslate("zh-HK");
+  assert.equal(t("chess.title"), "与 Nori 下棋");
+  assert.equal(createSourceTranslate("en")("chess.start.elo", { elo: 700 }), "700 ELO");
+  assert.equal(t("unknown.key"), "unknown.key");
+});
+
+import { codenamesStateSchema, codenamesUiState, codenamesClueError, codenamesHistoryMessages } from "../frontend-src/apps/codenames-model";
+function codenamesFixture() {
+  return codenamesStateSchema.parse({
+    counterpartSide: "A", agentSide: "B", settings: { tokens: 9, wordLocale: "en" }, tutorial: null,
+    gameState: { board: Array.from({ length: 25 }, (_, index) => ({ text: index === 0 ? "MOON" : "WORD" + index })),
+      key: { A: Array(25).fill("AGENT"), B: Array(25).fill("AGENT") },
+      cells: Array.from({ length: 25 }, () => ({ solvedBy: null, assassinatedBy: null, bystanderMarks: [null, null] })),
+      tokensRemaining: 9, whoseTurnToGive: "A", phase: "NORMAL", winner: null, history: [] },
+  }).gameState!;
+}
+test("Codenames derives both clue turns and sudden-death eligibility from the opposite key", () => {
+  const game = codenamesFixture();
+  assert.equal(codenamesUiState(game, "A").type, "HUMAN_GIVING_CLUE");
+  game.history.push({ clueGiver: "A", clue: { word: "NIGHT", count: 2 }, guesses: [], endedBy: null });
+  assert.equal(codenamesUiState(game, "A").type, "AI_GUESSING");
+  assert.equal(codenamesUiState(game, "B").type, "HUMAN_GUESSING");
+  game.phase = "SUDDEN_DEATH"; game.key.A.fill("BYSTANDER");
+  assert.equal(codenamesUiState(game, "A").type, "SUDDEN_DEATH_HUMAN_TURN");
+  assert.equal(codenamesUiState(game, "B").type, "SUDDEN_DEATH_AI_TURN");
+  game.phase = "GAME_OVER";
+  assert.equal(codenamesUiState(game, "A").type, "GAME_OVER");
+});
+test("Codenames rejects position, overlapping, numeric and multi-word clues and reconstructs stable history", () => {
+  const game = codenamesFixture();
+  assert.equal(codenamesClueError(game, "MOON", 2), "wordOnBoard");
+  assert.equal(codenamesClueError(game, "MOONLIGHT", 2), "substring");
+  assert.equal(codenamesClueError(game, "TOP", 2), "positionHint");
+  assert.equal(codenamesClueError(game, "NIGHT 2", 2), "phrase");
+  assert.equal(codenamesClueError(game, "N1GHT", 2), "containsNumbers");
+  assert.equal(codenamesClueError(game, "NIGHT", -1), "countInvalid");
+  assert.equal(codenamesClueError(game, "NIGHT", "infinity"), null);
+  game.history.push({ clueGiver: "B", clue: { word: "NIGHT", count: 2 }, guesses: [{ cell: 0, result: "AGENT", at: 123 }], endedBy: "VOLUNTARY_END" });
+  const messages = codenamesHistoryMessages(game, "A", key => key);
+  assert.deepEqual(messages.map(item => item.sender), ["Nori", "You", "You"]);
+  assert.deepEqual(messages.map(item => item.id), ["0:clue", "0:guess:0", "0:end"]);
+});
+
+test("Codenames tutorial gates restrict highlighted guesses, wait states and clue/guess lessons", () => {
+  const first = codenamesTutorialGate("player_first_treasure");
+  assert.equal(codenamesTutorialAllows(first, "submitGuess", 0), true);
+  assert.equal(codenamesTutorialAllows(first, "submitGuess", 10), false);
+  assert.equal(codenamesTutorialAllows(first, "endTurn"), false);
+  assert.equal(codenamesTutorialAllows(codenamesTutorialGate("player_real_clue"), "submitClue"), true);
+  assert.equal(codenamesTutorialAllows(codenamesTutorialGate("player_free_guessing"), "endTurn"), true);
+  const waiting = codenamesTutorialGate("nori_real_guessing");
+  assert.equal(codenamesTutorialAllows(waiting, "submitGuess", 0), false);
+  assert.equal(codenamesTutorialUi({ type: "HUMAN_GUESSING", clue: { word: "NIGHT", count: 2 } }, waiting).type, "AI_GUESSING");
+  assert.equal(codenamesTutorialUi({ type: "SUDDEN_DEATH_BOTH" }, waiting).type, "SUDDEN_DEATH_AI_TURN");
+  assert.equal(codenamesTutorialAllows(codenamesTutorialGate("free_play"), "submitGuess", 24), true);
+});
+
+test("Codenames detects both bystander slots and ignores old cards on reseed", async () => {
+  const before = codenamesFixture(), next = structuredClone(before);
+  next.cells[0].solvedBy = "B"; next.cells[1].assassinatedBy = "A";
+  next.cells[2].bystanderMarks = ["A", "B"];
+  assert.deepEqual(codenamesReveals(before, next), [
+    { cell: 0, type: "agent", rotate180: true }, { cell: 1, type: "assassin", rotate180: false },
+    { cell: 2, type: "bystander", slot: 0, rotate180: false }, { cell: 2, type: "bystander", slot: 1, rotate180: true },
+  ]);
+  assert.deepEqual(codenamesReveals(next, next), []);
+  next.board[0].text = "NEW BOARD";
+  assert.deepEqual(codenamesReveals(before, next), []);
+  const abort = new AbortController();
+  const pending = waitForCodenamesAnimation(2000, abort.signal);
+  abort.abort(); await pending;
+});

@@ -34,6 +34,8 @@ export type MailTranslate = (
 
 export interface MailScreenRuntime {
   model: MailAppModel;
+  subscribe?: (listener: () => void) => () => void;
+  setContentKey?: (instanceId: string, contentKey: string | null) => void;
   translate?: MailTranslate;
   playCue?: (cue: string) => void;
   resolveMedia?: (mediaKey: string) => string | undefined;
@@ -401,7 +403,7 @@ function ComposeDialog({
   );
 }
 
-export function MailScreen({ runtime }: { runtime: MailScreenRuntime }) {
+export function MailScreen({ runtime, instanceId }: { runtime: MailScreenRuntime; instanceId?: string }) {
   const t = runtime.translate ?? defaultTranslate;
   const [folder, setFolder] = useState<MailFolder>("inbox");
   const [selectedId, setSelectedId] = useState<string>();
@@ -412,11 +414,13 @@ export function MailScreen({ runtime }: { runtime: MailScreenRuntime }) {
   const [error, setError] = useState<unknown>();
   const firstLaunchCuePlayed = useRef(false);
 
+  const loadRevision = useRef(0);
   const load = useCallback(async () => {
-    setLoading(true);
+    const revision = ++loadRevision.current;
     setError(undefined);
     try {
       const next = await runtime.model.messages();
+      if (revision !== loadRevision.current) return;
       setMessages(next);
       setLocalRead((current) => {
         const copy = new Set(current);
@@ -424,15 +428,17 @@ export function MailScreen({ runtime }: { runtime: MailScreenRuntime }) {
         return copy;
       });
     } catch (loadError) {
-      setError(loadError);
+      if (revision === loadRevision.current) setError(loadError);
     } finally {
-      setLoading(false);
+      if (revision === loadRevision.current) setLoading(false);
     }
   }, [runtime.model]);
 
   useEffect(() => {
     void load();
-  }, [load]);
+    const unsubscribe = runtime.subscribe?.(() => void load());
+    return () => { loadRevision.current++; unsubscribe?.(); };
+  }, [load, runtime.subscribe]);
 
   useEffect(() => {
     if (loading) return;
@@ -476,6 +482,11 @@ export function MailScreen({ runtime }: { runtime: MailScreenRuntime }) {
     [folder, messages],
   );
   const selected = messages.find((mail) => mail.id === selectedId);
+  useEffect(() => {
+    if (!instanceId) return;
+    runtime.setContentKey?.(instanceId, selected ? `mail:${selected.id}` : "mail:inbox");
+    return () => runtime.setContentKey?.(instanceId, null);
+  }, [instanceId, selected?.id, runtime.setContentKey]);
   const unreadInbox = messages.filter(
     (mail) => mail.folder === "inbox" && !mail.read && !localRead.has(mail.id),
   ).length;

@@ -186,7 +186,8 @@ const CodenamesBoardCell = memo(function CodenamesBoardCell({
             className="origin-top-left overflow-visible"
             style={{ width: CARD_BASE_WIDTH, height: CARD_BASE_HEIGHT, transform: "scale(var(--card-scale,1))" }}
           >
-            <div className="relative w-full h-full overflow-visible">
+            <div className="relative w-full h-full overflow-visible codenames-card-motion"
+              data-shaking={isShaking || undefined} data-hovered={isHovered && !isPending && !isDisabled && !solved && !assassinated || undefined}>
               {showUnrevealedOutline ? (
                 <div
                   className="codenames-treasure-glow"

@@ -1,0 +1,117 @@
+.credits-root {
+  scrollbar-width: none;
+}
+.credits-root::-webkit-scrollbar {
+  display: none;
+}
+.credits-root {
+  --credits-ink: #dcf3ff;
+  --credits-dim: rgba(190, 224, 244, 0.62);
+  --credits-accent: #7de3ff;
+  --credits-line: rgba(125, 227, 255, 0.14);
+  --credits-abyss: #050e1a;
+  background: radial-gradient(
+    120% 60% at 50% -10%,
+    #0f2d47 0%,
+    #081a2e 55%,
+    var(--credits-abyss) 100%
+  );
+  color: var(--credits-ink);
+  font-variant-numeric: tabular-nums;
+}
+.credits-hero {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 55%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+}
+.credits-mote {
+  position: absolute;
+  bottom: -12px;
+  left: var(--x);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 9999px;
+  background: radial-gradient(circle, #7de3ffe6, #7de3ff00 70%);
+  opacity: 0;
+  animation: credits-mote-rise var(--dur) linear var(--delay) infinite;
+  pointer-events: none;
+}
+@keyframes credits-mote-rise {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--peak, 0.5);
+  }
+  80% {
+    opacity: var(--peak, 0.5);
+  }
+  to {
+    transform: translateY(calc(-1 * var(--rise)));
+    opacity: 0;
+  }
+}
+.credits-reveal {
+  opacity: 0;
+  animation: credits-surface 0.9s cubic-bezier(0.16, 1, 0.3, 1)
+    var(--reveal-delay, 0ms) forwards;
+}
+@keyframes credits-surface {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.credits-heading {
+  text-shadow:
+    0 0 18px rgba(125, 227, 255, 0.45),
+    0 0 60px rgba(125, 227, 255, 0.25);
+}
+.credits-row {
+  border: 1px solid var(--credits-line);
+  background: #0c20348c;
+  transition:
+    border-color 0.24s ease,
+    background-color 0.24s ease,
+    box-shadow 0.24s ease;
+}
+.credits-row:hover {
+  border-color: #7de3ff61;
+  background: #102a42b3;
+  box-shadow:
+    0 0 24px #7de3ff14,
+    inset 0 0 18px #7de3ff0d;
+}
+.credits-action {
+  border: 1px solid rgba(125, 227, 255, 0.3);
+  color: var(--credits-accent);
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+.credits-action:hover {
+  background: #7de3ff24;
+  border-color: #7de3ff99;
+}
+.credits-action:active {
+  background: #7de3ff3d;
+}
+@media (prefers-reduced-motion: reduce) {
+  .credits-mote {
+    animation: none;
+  }
+  .credits-reveal {
+    animation: none;
+    opacity: 1;
+  }
+}

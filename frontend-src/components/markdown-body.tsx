@@ -5,9 +5,19 @@ export interface MarkdownBodyProps {
   className?: string;
 }
 
+type NoriBrowserApi = Window & {
+  NoriAPI?: {
+    openUrlInBrowser?: (url: string) => void;
+  };
+};
+
+function openUrlInBrowser(url: string): void {
+  (window as NoriBrowserApi).NoriAPI?.openUrlInBrowser?.(url);
+}
+
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const token = /(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*)/g;
+  const token = /(\[([^\]]+)\]\(([^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*)/g;
   let cursor = 0;
   let match: RegExpExecArray | null;
   let key = 0;
@@ -15,23 +25,34 @@ function renderInline(text: string): ReactNode[] {
   while ((match = token.exec(text))) {
     if (match.index > cursor) nodes.push(text.slice(cursor, match.index));
     if (match[2] && match[3]) {
+      const label = match[2];
+      const href = match[3];
       nodes.push(
-        <a
-          key={key++}
-          href={match[3]}
-          target="_blank"
-          rel="noreferrer"
-          className="underline underline-offset-2 hover:opacity-80"
-        >
-          {match[2]}
-        </a>,
+        /^https?:\/\//i.test(href) ? (
+          <span
+            key={key++}
+            role="link"
+            tabIndex={0}
+            title={href}
+            onClick={() => openUrlInBrowser(href)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openUrlInBrowser(href);
+              }
+            }}
+            className="cursor-pointer underline underline-offset-2 hover:opacity-80"
+          >
+            {label}
+          </span>
+        ) : (
+          <span key={key++} className="underline underline-offset-2" title={href || undefined}>
+            {label}
+          </span>
+        ),
       );
     } else if (match[4]) {
-      nodes.push(
-        <code key={key++} className="rounded bg-muted px-1 py-0.5 font-mono text-[0.9em]">
-          {match[4]}
-        </code>,
-      );
+      nodes.push(<code key={key++}>{match[4]}</code>);
     } else if (match[5]) {
       nodes.push(<strong key={key++}>{match[5]}</strong>);
     } else if (match[6]) {
@@ -56,7 +77,7 @@ export function MarkdownBody({ markdown, className }: MarkdownBodyProps) {
   const flushParagraph = () => {
     if (!paragraph.length) return;
     blocks.push(
-      <p key={key++} className="my-2 leading-relaxed">
+      <p key={key++} className="mb-2 last:mb-0">
         {paragraph.map((line, index) => (
           <Fragment key={index}>
             {index ? <br /> : null}
@@ -150,7 +171,10 @@ export function MarkdownBody({ markdown, className }: MarkdownBodyProps) {
       flushParagraph();
       flushList();
       blocks.push(
-        <blockquote key={key++} className="my-2 border-l-2 pl-3 text-muted-foreground">
+        <blockquote
+          key={key++}
+          className="my-2 border-l-2 border-current pl-3 not-italic opacity-80 last:mb-0"
+        >
           {renderInline(quote[1])}
         </blockquote>,
       );
@@ -170,5 +194,6 @@ export function MarkdownBody({ markdown, className }: MarkdownBodyProps) {
     );
   }
 
-  return <div className={className}>{blocks}</div>;
+  const content = <>{blocks}</>;
+  return className ? <div className={className}>{content}</div> : content;
 }

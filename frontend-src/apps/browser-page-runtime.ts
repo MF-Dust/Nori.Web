@@ -418,6 +418,11 @@ export interface BrowserPodcastState {
 }
 
 export class BrowserPodcastRuntime {
+  private disconnectAudio: (() => void) | null = null;
+  private audioConnection: Promise<void> | null = null;
+  private disposed = false;
+  private playbackVersion = 0;
+  constructor(private connectAudio?: (audio: HTMLAudioElement) => Promise<() => void>) {}
   private audio: HTMLAudioElement | null = null;
   private currentOwner: string | null = null;
   private readonly owners = new Map<string, number>();
@@ -468,6 +473,7 @@ export class BrowserPodcastRuntime {
   }
 
   async invoke(command: string, payload: unknown, owner: string): Promise<JsonValue> {
+    if (this.disposed) return { ok: false, reason: "disposed" };
     const record = payload && typeof payload === "object" && !Array.isArray(payload)
       ? payload as Record<string, unknown>
       : {};
@@ -477,7 +483,8 @@ export class BrowserPodcastRuntime {
     const src = record.src;
     const audio = this.ensureAudio();
     switch (command) {
-      case "podcast.play":
+      case "podcast.play": {
+        const version = ++this.playbackVersion;
         if (audio.dataset.podcastSrc !== src) {
           audio.dataset.podcastSrc = src;
           audio.src = src;
@@ -487,6 +494,16 @@ export class BrowserPodcastRuntime {
           audio.currentTime = record.at;
         this.currentOwner = owner;
         try {
+          if (this.connectAudio && !this.audioConnection) {
+            this.audioConnection = this.connectAudio(audio).then(disconnect => {
+              if (this.disposed) disconnect();
+              else this.disconnectAudio = disconnect;
+            }).catch(error => { this.audioConnection = null; throw error; });
+          }
+          const connection = this.audioConnection;
+          await connection;
+          if (this.audioConnection === connection) this.audioConnection = null;
+          if (this.disposed || version !== this.playbackVersion || this.currentOwner !== owner) return { ok: false, reason: "cancelled" };
           await audio.play();
           this.publish();
           return { ok: true };
@@ -494,8 +511,9 @@ export class BrowserPodcastRuntime {
           this.publish();
           return { ok: false, reason: "play_failed", message: error instanceof Error ? error.message : String(error) };
         }
+      }
       case "podcast.pause":
-        if (audio.dataset.podcastSrc === src) audio.pause();
+        if (audio.dataset.podcastSrc === src) { this.playbackVersion++; audio.pause(); }
         return { ok: true };
       case "podcast.seek":
         if (audio.dataset.podcastSrc === src && typeof record.to === "number" && Number.isFinite(record.to)) {
@@ -525,7 +543,21 @@ export class BrowserPodcastRuntime {
     }
     this.owners.delete(owner);
     if (this.currentOwner === owner && this.audio && !this.audio.paused) this.audio.pause();
-    if (this.currentOwner === owner) this.currentOwner = null;
+    if (this.currentOwner === owner) { this.playbackVersion++; this.currentOwner = null; }
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.playbackVersion++;
+    this.audio?.pause();
+    this.audio?.removeAttribute("src");
+    this.audio?.load();
+    this.disconnectAudio?.();
+    this.disconnectAudio = null;
+    this.listeners.clear();
+    this.owners.clear();
+    this.currentOwner = null;
   }
 }
 

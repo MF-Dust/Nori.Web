@@ -1,3 +1,4 @@
+import { useManagedWindowRuntime } from "../components/window-runtime-context";
 import { useEffect, useState } from "react";
 import type { SignalDanielConversationRuntime } from "./signal-daniel";
 import type { SignalService } from "../services/signal";
@@ -23,6 +24,7 @@ export interface SignalPresentationRuntime {
   ) => void;
   onAuthenticatedChange?: (authenticated: boolean) => void;
   messenger?: MessengerScreenRuntime;
+  setContentKey?: (instanceId: string, contentKey: string | null) => void;
   /** Optional source-owned Daniel story runtime; facts/cursor remain host inputs. */
   daniel?: SignalDanielConversationRuntime;
 }
@@ -111,6 +113,7 @@ export function createSignalProductionWindowBinding(
   }
 
   function MessengerRoute({ navigate }: WindowScreenComponentProps) {
+    const { instanceId } = useManagedWindowRuntime();
     useEffect(() => {
       runtime.onScreenActive?.("signal:messenger");
       if (!authenticated) navigate("login");
@@ -119,6 +122,8 @@ export function createSignalProductionWindowBinding(
     if (!authenticated || !runtime.messenger) return null;
     return (
       <MessengerScreen
+        instanceId={instanceId}
+        setContentKey={runtime.setContentKey}
         runtime={runtime.daniel
           ? { ...runtime.messenger, serviceConversation: runtime.daniel }
           : runtime.messenger}

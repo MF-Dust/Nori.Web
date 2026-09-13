@@ -8,7 +8,8 @@ import {
   type JsonValue,
 } from "./protocol";
 
-export type ArcadeConnectionState = "idle" | "connecting" | "open" | "waiting" | "closed";
+export type ArcadeConnectionState =
+  "idle" | "connecting" | "open" | "waiting" | "closed";
 export type ArcadeMessageListener = (message: ArcadeServerMessage) => void;
 export type ArcadeStateListener = (state: ArcadeConnectionState) => void;
 
@@ -37,6 +38,9 @@ export class ArcadeClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
   private manualClose = false;
+  private epoch = 0;
+  private opening: Promise<void> | null = null;
+  private cancelOpening: (() => void) | null = null;
   private readonly listeners = new Set<ArcadeMessageListener>();
   private readonly stateListeners = new Set<ArcadeStateListener>();
   private readonly options: Required<ArcadeClientOptions>;
@@ -74,34 +78,81 @@ export class ArcadeClient {
     for (const listener of this.stateListeners) listener(state);
   }
 
-  async connect(): Promise<void> {
+  connect(): Promise<void> {
+    if (this.opening) return this.opening;
+    if (this.socket?.readyState === WebSocket.OPEN) return Promise.resolve();
     this.manualClose = false;
     this.clearReconnect();
+    const epoch = ++this.epoch;
     this.setState("connecting");
-    const { ticket } = await issueArcadeTicket();
-    const socket = new WebSocket(websocketUrl(ARCADE_MAIN_PATH), [
-      ARCADE_SUBPROTOCOL,
-      `ticket.${ticket}`,
-    ]);
-    this.socket = socket;
+    const attempt = this.openSocket(epoch);
+    this.opening = attempt;
+    void attempt
+      .finally(() => {
+        if (this.opening === attempt) this.opening = null;
+      })
+      .catch(() => {});
+    return attempt;
+  }
 
-    await new Promise<void>((resolve, reject) => {
-      const fail = () => reject(new Error("Arcade WebSocket failed before opening"));
-      socket.addEventListener("error", fail, { once: true });
-      socket.addEventListener("open", () => {
-        socket.removeEventListener("error", fail);
-        this.reconnectAttempt = 0;
-        this.setState("open");
-        this.installKeepAlive();
-        resolve();
-      }, { once: true });
-    });
-
-    socket.addEventListener("message", (event) => this.handleMessage(event.data));
-    socket.addEventListener("close", () => this.handleClose(socket));
-    socket.addEventListener("error", () => {
-      if (socket.readyState === WebSocket.OPEN) socket.close();
-    });
+  private async openSocket(epoch: number): Promise<void> {
+    try {
+      const { ticket } = await issueArcadeTicket();
+      if (epoch !== this.epoch || this.manualClose) return;
+      const socket = new WebSocket(websocketUrl(ARCADE_MAIN_PATH), [
+        ARCADE_SUBPROTOCOL,
+        `ticket.${ticket}`,
+      ]);
+      this.socket = socket;
+      await new Promise<void>((resolve, reject) => {
+        let settled = false;
+        const finish = (error?: Error) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          this.cancelOpening = null;
+          if (error) reject(error);
+          else resolve();
+        };
+        const timeout = setTimeout(() => {
+          finish(new Error("Arcade connection timed out"));
+          socket.close();
+        }, 15000);
+        this.cancelOpening = () => finish();
+        socket.addEventListener("message", (event) => {
+          if (epoch === this.epoch) this.handleMessage(event.data);
+        });
+        socket.addEventListener(
+          "open",
+          () => {
+            if (epoch !== this.epoch || this.manualClose) {
+              socket.close();
+              finish();
+              return;
+            }
+            this.reconnectAttempt = 0;
+            this.setState("open");
+            this.installKeepAlive();
+            finish();
+          },
+          { once: true },
+        );
+        socket.addEventListener("close", () => {
+          finish(new Error("Arcade connection closed before opening"));
+          if (epoch === this.epoch) this.handleClose(socket);
+        });
+        socket.addEventListener("error", () => {
+          finish(new Error("Arcade connection failed"));
+          socket.close();
+        });
+      });
+    } catch (error) {
+      if (epoch !== this.epoch || this.manualClose) return;
+      if (this.options.reconnect && this.state !== "waiting")
+        this.scheduleReconnect();
+      else if (!this.options.reconnect) this.setState("closed");
+      throw error;
+    }
   }
 
   private handleMessage(data: unknown): void {
@@ -112,7 +163,12 @@ export class ArcadeClient {
     } catch {
       return;
     }
-    if (!message || typeof message !== "object" || typeof message.type !== "string") return;
+    if (
+      !message ||
+      typeof message !== "object" ||
+      typeof message.type !== "string"
+    )
+      return;
     for (const listener of this.listeners) listener(message);
   }
 
@@ -131,10 +187,13 @@ export class ArcadeClient {
     this.clearReconnect();
     this.setState("waiting");
     const exponent = Math.min(this.reconnectAttempt++, 8);
-    const base = Math.min(this.options.reconnectMaxMs, this.options.reconnectMinMs * 2 ** exponent);
+    const base = Math.min(
+      this.options.reconnectMaxMs,
+      this.options.reconnectMinMs * 2 ** exponent,
+    );
     const delay = Math.round(base * (0.8 + Math.random() * 0.4));
     this.reconnectTimer = setTimeout(() => {
-      this.connect().catch(() => this.scheduleReconnect());
+      void this.connect().catch(() => {});
     }, delay);
   }
 
@@ -142,7 +201,8 @@ export class ArcadeClient {
     this.clearKeepAlive();
     if (this.options.keepAliveMs <= 0) return;
     this.keepAliveTimer = setInterval(() => {
-      if (this.socket?.readyState === WebSocket.OPEN) this.send({ type: "ping" });
+      if (this.socket?.readyState === WebSocket.OPEN)
+        this.send({ type: "ping" });
     }, this.options.keepAliveMs);
   }
 
@@ -167,13 +227,31 @@ export class ArcadeClient {
     this.send({ type: "open_my_web_world", locale });
   }
 
-  sendEvent(channel: string, payload: JsonValue = {}, extra: Partial<EventMessage> = {}): string {
-    const id = typeof extra.requestId === "string" ? extra.requestId : requestId("event");
-    this.send({ type: "event", channel, payload, ...extra, requestId: id } as EventMessage);
+  sendEvent(
+    channel: string,
+    payload: JsonValue = {},
+    extra: Partial<EventMessage> = {},
+  ): string {
+    const id =
+      typeof extra.requestId === "string"
+        ? extra.requestId
+        : requestId("event");
+    this.send({
+      type: "event",
+      channel,
+      payload,
+      ...extra,
+      requestId: id,
+    } as EventMessage);
     return id;
   }
 
-  dispatch(cartridgeId: string, expectedHeadVersion: number, cmd: { type: string; [key: string]: JsonValue }, actor = "player"): string {
+  dispatch(
+    cartridgeId: string,
+    expectedHeadVersion: number,
+    cmd: { type: string; [key: string]: JsonValue },
+    actor = "player",
+  ): string {
     const id = requestId("dispatch");
     this.send({
       type: "dispatch",
@@ -188,6 +266,10 @@ export class ArcadeClient {
 
   close(): void {
     this.manualClose = true;
+    this.epoch++;
+    this.cancelOpening?.();
+    this.cancelOpening = null;
+    this.opening = null;
     this.clearReconnect();
     this.clearKeepAlive();
     this.socket?.close(1000, "client_close");

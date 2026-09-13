@@ -1,0 +1,7 @@
+.source-codenames-app{height:100%;min-height:0;position:relative;display:flex;flex-direction:column;overflow:hidden}
+.source-codenames-menu{margin:auto;max-width:620px;padding:32px;text-align:center;color:hsl(43 45% 85%);background:hsl(110 20% 16%);border:1px solid hsl(43 35% 40%);border-radius:24px}
+.source-codenames-menu h1{font:700 42px "Fredoka",system-ui}.source-codenames-menu fieldset{display:flex;gap:8px;margin:24px 0}
+.source-codenames-menu button,.source-codenames-results button{padding:10px 16px;margin:4px;border:1px solid hsl(43 35% 40%);border-radius:12px}
+.source-codenames-menu button[aria-pressed=true]{background:hsl(43 50% 35%)}.source-codenames-menu button:disabled,.source-codenames-results button:disabled{opacity:.45}
+.source-codenames-results{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);padding:16px;background:hsl(110 20% 16%);color:hsl(43 45% 85%);border-radius:16px;z-index:40;display:flex;align-items:center;white-space:nowrap}
+.source-codenames-error{position:absolute;bottom:8px;left:16px;right:16px;z-index:50;margin:0;padding:10px;background:#642d27;color:#fff;border-radius:8px}

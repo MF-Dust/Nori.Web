@@ -26,3 +26,6 @@ scraper/.scraper_token.txt
 live_archive/
 NoriOS_live_archive_*.zip
 backend/data/*.sqlite3
+
+frontend-app-smoke/
+frontend-games-smoke/

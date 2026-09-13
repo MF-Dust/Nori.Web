@@ -231,7 +231,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         ],
       },
     ],
-    recoveryStatus: "protocol-recovered",
+    recoveryStatus: "ui-partial",
   },
   {
     sourceBinding: "UPe",
@@ -258,7 +258,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         ],
       },
     ],
-    recoveryStatus: "protocol-recovered",
+    recoveryStatus: "ui-partial",
   },
   {
     sourceBinding: "jPe",
@@ -281,7 +281,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         screens: [{ id: "main", transition: "fade" }],
       },
     ],
-    recoveryStatus: "protocol-recovered",
+    recoveryStatus: "ui-partial",
   },
   {
     sourceBinding: "rOe",

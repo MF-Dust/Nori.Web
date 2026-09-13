@@ -1,6 +1,8 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { pdfAssetsPlugin } from "./pdf-assets-plugin";
 import { defineConfig } from "vite";
 
 const sourceRoot = dirname(fileURLToPath(import.meta.url));
@@ -18,7 +20,15 @@ export default defineConfig({
   root: sourceRoot,
   base: "/",
   publicDir: publicRoot,
-  plugins: [react()],
+  plugins: [react(), tailwindcss(), pdfAssetsPlugin()],
+  server: {
+    proxy: {
+      "/api": {
+        target: process.env.NORI_BACKEND_ORIGIN ?? "http://127.0.0.1:4173",
+        ws: true,
+      },
+    },
+  },
   build: {
     outDir: resolve(sourceRoot, "../.frontend-app-build"),
     emptyOutDir: true,

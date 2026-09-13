@@ -1,0 +1,46 @@
+.source-login {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: #191522;
+  color: #f4edf9;
+  font-family: var(--font-sans), SarasaFixed, sans-serif;
+}
+.source-login form {
+  display: grid;
+  gap: 1rem;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 2rem;
+  border: 1px solid #ffffff26;
+  border-radius: 1rem;
+  background: #ffffff08;
+}
+.source-login h1 {
+  font-size: 2rem;
+}
+.source-login label {
+  display: grid;
+  gap: 0.5rem;
+}
+.source-login input {
+  padding: 0.5rem;
+  background: #0003;
+  border: 1px solid #ffffff40;
+  border-radius: 0.4rem;
+}
+.source-login button {
+  background: #745298;
+  padding: 0.6rem;
+  border-radius: 0.4rem;
+}
+.source-login button:disabled {
+  opacity: 0.5;
+}
+.source-connection-error {
+  position: absolute;
+  top: 3rem;
+  left: 1rem;
+  padding: 0.5rem;
+  background: #3d2030;
+  color: #fff;
+}
