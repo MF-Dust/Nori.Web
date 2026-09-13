@@ -294,6 +294,42 @@ export default {
     "placeholder": "和 Nori 聊天..."
   },
   "chess": {
+    "tutorial": {
+      "title": "开局引导",
+      "progress": "第 {{step}} 步，共 {{total}} 步",
+      "move": "你的走法：{{from}} → {{to}}",
+      "wait": "等待 Nori：{{from}} → {{to}}",
+      "freeTitle": "自由对局",
+      "freeBody": "接下来可以自行选择合法走法。和棋、悔棋与认输功能已开放。",
+      "review": "正在回看之前的局面。",
+      "live": "回到当前走法",
+      "disconnected": "重新连接后可继续教程。",
+      "unknown": "正在等待可用的教程步骤。",
+      "steps": {
+        "player_pawn_opens": "王前兵前进两格，占据中心空间。",
+        "agent_pawn_mirrors": "黑方回应中心布局，并为后和象打开路线。",
+        "player_knight_develops": "马向中心出动，同时攻击 e5 格的兵。",
+        "agent_knight_defends": "黑方出马，保护中心兵。",
+        "player_bishop_aims": "象沿斜线出动，瞄准 f7 格。",
+        "agent_bishop_mirrors": "黑方出象，朝白方王翼施加压力。",
+        "player_pawn_supports": "这个兵为下一步 d2 到 d4 的推进提供支持。",
+        "agent_knight_counters": "黑方另一匹马出动，攻击 e4 格。",
+        "player_pawn_strikes": "d 兵前进两格，争夺中心。",
+        "agent_pawn_captures": "黑兵吃掉 d4 格的白兵。",
+        "player_pawn_recaptures": "用 c 兵吃回 d4，保留并列的中心兵。",
+        "agent_bishop_checks": "黑象走到 b4，沿斜线将军。",
+        "player_blocks_check": "把象移到 d2，挡住对方的将军。",
+        "agent_trades_bishops": "黑方在 d2 格交换双方的象。",
+        "player_knight_recaptures": "用马吃回，同时完成出子。",
+        "agent_frees_bishop": "黑方推进 d 兵，为另一只象打开路线。",
+        "player_castles": "进行王翼易位：王移到 g1，车会同时移到 f1。",
+        "agent_castles": "黑方也进行王翼易位，保护自己的王。",
+        "player_rook_guards": "把车移到 e1，在中心兵后方提供保护。",
+        "agent_rook_mirrors": "黑方也把车移到 e 线。",
+        "player_queen_develops": "后出动到 b3，与象共同控制斜线。",
+        "agent_queen_connects": "黑后出动，引导开局到此完成。"
+      }
+    },
     "game": {
       "acceptDraw": "接受和棋",
       "cancelDrawOffer": "取消和棋提议",

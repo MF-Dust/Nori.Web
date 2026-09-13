@@ -1,9 +1,10 @@
 import { CodenamesApp } from "../frontend-src/screens/codenames-app";
 import React from "react";
+import { Chess } from "chess.js";
 import { createRoot } from "react-dom/client";
 import { ChessScreen } from "../frontend-src/screens/chess-screen";
 import { PictionaryScreen } from "../frontend-src/screens/pictionary-screen";
-import { CHESS_START_FEN } from "../frontend-src/apps/chess-model";
+import { CHESS_START_FEN, CHESS_TUTORIAL_STEPS } from "../frontend-src/apps/chess-model";
 import { createSourceTranslate } from "../frontend-src/i18n/translate";
 
 // Only transport is replaced. These are the same screens/canvas built by source-app.
@@ -65,6 +66,16 @@ Object.assign(window, { fixture: {
     else state.gameState.cells[cell][type === "agent" ? "solvedBy" : "assassinatedBy"] = "A";
     void codenames.transition(state);
   },
+  chessConnection(connected: boolean) { chess.connection(connected); },
+  chessTutorial(index: number, override?: string) {
+    const board = new Chess();
+    const history = CHESS_TUTORIAL_STEPS.slice(0, index).map(step => {
+      const move = board.move(step.move);
+      return { by: move.color === "w" ? "white" : "black", move: step.move, san: move.san, captured: move.captured, isCheck: board.isCheck(), isCastling: move.isKingsideCastle() };
+    });
+    chess.set({ ...chessInitial, tutorial: { step: override ?? CHESS_TUTORIAL_STEPS[index]?.id ?? "free_play" },
+      gameState: { fen: board.fen(), startFen: CHESS_START_FEN, turn: board.turn() === "w" ? "white" : "black", status: "playing", winner: null, isCheck: board.isCheck(), moveHistory: history } });
+  },
   snapshot: () => capture?.(),
   revisions: () => revisions,
   chess(fen = CHESS_START_FEN) { chess.set({ ...chessInitial, gameState: { fen, startFen: fen, turn: "white", status: "playing", winner: null, moveHistory: [] } }); },
@@ -77,4 +88,4 @@ const pict = location.hash === "#pictionary";
 createRoot(document.getElementById("root")!).render(location.hash === "#codenames" ? <CodenamesApp controller={codenames as any} translate={createSourceTranslate("en")} playSound={cue => sounds.push(cue)} /> : pict
   ? <PictionaryScreen controller={pictionary as any} drawing={drawing as any} locale="en" playSound={cue => sounds.push(cue)}
       startSoundLoop={() => { loops++; let stopped = false; return () => { if (!stopped) { stopped = true; loops--; } }; }} />
-  : <ChessScreen controller={chess as any} translate={createSourceTranslate("en")} />);
+  : <ChessScreen controller={chess as any} translate={createSourceTranslate(new URLSearchParams(location.search).get("locale") ?? "en")} />);

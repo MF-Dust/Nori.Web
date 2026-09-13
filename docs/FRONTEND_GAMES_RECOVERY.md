@@ -46,7 +46,7 @@ The Chromium suite mounts the actual React game screens with a test transport an
 ## Remaining work before the Games gate can be completed
 
 - Codenames still needs remaining start/results decoration, narrative/tutorial dialogue and event-based sudden-death chat. The local backend currently starts tutorial mode at `free_play`; the frontend gates also support scripted states from a compatible backend. Validate the full scripted tutorial with its agent.
-- Chess needs the full original tutorial presentation, remaining result/overlay timing and visual comparison.
+- Chess guided-opening interaction is complete in this pass. Remaining result/overlay timing, original-agent speech choreography and visual comparison are still open.
 - Pictionary still needs remaining animation comparison, original help/results decoration and scene-expression choreography. Progressive hints and SFX are connected. Check snapshot inference against a live agent.
 - Verify closing/reopening games and reconnecting through the real world/media lifecycle. Current tests cover the transport contract with controlled events.
 - Verify both locales, original window sizes, input devices and reduced motion in full desktop composition.
@@ -72,3 +72,20 @@ Chess now routes transition-only move, check, capture, castle and promotion cues
 Each effect lifetime owns a fresh canvas and renderer. Input waits for initialization; a cancelled import never creates a renderer, and an initialization that finishes after unmount is disposed. Resizing redraws the stored strokes, and unmount releases the scene and renderer. Existing browser tests now require a ready Pixi canvas before drawing and still verify normalized transport, distinct drawn/undone snapshots, eraser width and round-change cancellation. `pictionary-pixi-strokes.png` shows a stroke before undo.
 
 This closes the Canvas2D substitute in the drawing path. Help/results decoration, expression choreography and live-agent snapshot inference remain pending.
+
+
+## Chess guided opening: completed interaction gap
+
+The tutorial now runs all 22 plies through the source desktop, Arcade transport and local Python opponent before handing off to `free_play`. The backend previously started directly at that handoff. Player and agent moves now follow the shared protocol sequence, each accepted move advances the replicated step and emits `tutorial_step`, and game actions unlock after the final black move. Unsupported steps and off-script moves cannot silently enter free play. Python embeds the sequence for Worker import safety; a reducer test checks it against `shared/chess-tutorial.json` used by the frontend.
+
+The source screen provides authored English/Chinese teaching notes, move coordinates, progress, opponent-wait and free-play instructions. These notes are a local educational presentation, not a transcript of original agent dialogue. The board highlights only the taught source/target, filters legal-move markers to that target, accepts click/drag, and uses a mint pulse with a reduced-motion alternative. History review hides current-move highlights and offers a return-to-live action. Disconnect cancels a held drag and blocks moves until reconnection. Unknown tutorial steps stay locked with a visible explanation.
+
+Compact rails keep their heading accessible when content overflows. Full-desktop testing also found the ordinary window-position effect overwriting the exclusive game's inset layout, placing Exit underneath the topbar. The effect now leaves exclusive geometry to WindowChrome, so the tutorial can be exited and reopened with actual pointer input.
+
+Verification added in this pass:
+
+- Reducer checks execute the full opening, reject wrong moves/actors and restricted actions without state/version changes, verify check blocking and both castles, then exercise free play and restart. The sequence parity check runs in CI with the cartridge suite.
+- The React browser suite visits every player/wait step and the handoff. It checks Chinese instructions, ordinary free moves, restricted targets, history review, interrupted drag, reconnection, unknown steps and compact/reduced-motion behavior.
+- The full application smoke plays all 22 plies against the real local backend, continues with a free move and opponent reply, restarts a tutorial, and checks that exit/unmount followed by reopen yields a clean setup. It does not replace the local opponent with the original private agent.
+
+Review images are `chess-tutorial-zh.png`, `chess-tutorial-compact.png`, `chess-tutorial-free-play.png` in the games artifact and `chess-tutorial-local-backend.png` in the application artifact. This closes the guided-opening interaction gap; the Games production gate remains false for the separately listed work.

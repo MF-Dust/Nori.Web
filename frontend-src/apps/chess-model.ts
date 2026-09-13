@@ -1,3 +1,4 @@
+import tutorialSteps from "../../shared/chess-tutorial.json";
 import { Chess, type Square } from "chess.js";
 import { z } from "zod";
 
@@ -68,28 +69,5 @@ export function legalChessMoves(fen: string, square: string) {
   return new Chess(fen).moves({ square: square as Square, verbose: true });
 }
 
-/** Shipped guided opening; free_play is the local backend handoff. */
-export const CHESS_TUTORIAL_STEPS = [
-    { id: "player_pawn_opens", mover: "player", move: { from: "e2", to: "e4" } },
-    { id: "agent_pawn_mirrors", mover: "agent", move: { from: "e7", to: "e5" } },
-    { id: "player_knight_develops", mover: "player", move: { from: "g1", to: "f3" } },
-    { id: "agent_knight_defends", mover: "agent", move: { from: "b8", to: "c6" } },
-    { id: "player_bishop_aims", mover: "player", move: { from: "f1", to: "c4" } },
-    { id: "agent_bishop_mirrors", mover: "agent", move: { from: "f8", to: "c5" } },
-    { id: "player_pawn_supports", mover: "player", move: { from: "c2", to: "c3" } },
-    { id: "agent_knight_counters", mover: "agent", move: { from: "g8", to: "f6" } },
-    { id: "player_pawn_strikes", mover: "player", move: { from: "d2", to: "d4" } },
-    { id: "agent_pawn_captures", mover: "agent", move: { from: "e5", to: "d4" } },
-    { id: "player_pawn_recaptures", mover: "player", move: { from: "c3", to: "d4" } },
-    { id: "agent_bishop_checks", mover: "agent", move: { from: "c5", to: "b4" } },
-    { id: "player_blocks_check", mover: "player", move: { from: "c1", to: "d2" } },
-    { id: "agent_trades_bishops", mover: "agent", move: { from: "b4", to: "d2" } },
-    { id: "player_knight_recaptures", mover: "player", move: { from: "b1", to: "d2" } },
-    { id: "agent_frees_bishop", mover: "agent", move: { from: "d7", to: "d6" } },
-    { id: "player_castles", mover: "player", move: { from: "e1", to: "g1" } },
-    { id: "agent_castles", mover: "agent", move: { from: "e8", to: "g8" } },
-    { id: "player_rook_guards", mover: "player", move: { from: "f1", to: "e1" } },
-    { id: "agent_rook_mirrors", mover: "agent", move: { from: "f8", to: "e8" } },
-    { id: "player_queen_develops", mover: "player", move: { from: "d1", to: "b3" } },
-    { id: "agent_queen_connects", mover: "agent", move: { from: "d8", to: "d7" } },
-  ] as const;
+/** Shared protocol sequence; both runtimes advance to free_play after the final move. */
+export const CHESS_TUTORIAL_STEPS = tutorialSteps;

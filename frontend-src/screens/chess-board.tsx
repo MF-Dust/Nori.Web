@@ -20,8 +20,9 @@ export function ChessBoard({ fen, side, size, interactive, lastMove, tutorialMov
   const drag = useRef<{ from: string; x: number; y: number; pointer: number } | null>(null);
   const suppressClick = useRef(false);
   const [dragged, setDragged] = useState<{ from: string; x: number; y: number } | null>(null);
-  useEffect(() => { select(null); setPromotion(null); setDragged(null); drag.current = null; }, [fen, interactive]);
-  const legal = selected && (!tutorialMove || selected === tutorialMove.from) ? legalChessMoves(fen, selected) : [];
+  useEffect(() => { select(null); setPromotion(null); setDragged(null); drag.current = null; suppressClick.current = false; }, [fen, interactive, tutorialMove?.from, tutorialMove?.to]);
+  const legal = selected && (!tutorialMove || selected === tutorialMove.from)
+    ? legalChessMoves(fen, selected).filter(move => !tutorialMove || move.to === tutorialMove.to) : [];
   const files = side === "white" ? "abcdefgh" : "hgfedcba";
   const ranks = side === "white" ? "87654321" : "12345678";
   function move(from: string, to: string) {
@@ -37,10 +38,11 @@ export function ChessBoard({ fen, side, size, interactive, lastMove, tutorialMov
     if (!interactive) { onReturnToLive?.(); return; }
     if (promotion) return;
     if (selected && legal.some(item => item.to === square)) { move(selected, square); return; }
+    if (tutorialMove && square !== tutorialMove.from) return;
     select(selected === square ? null : legalChessMoves(fen, square).length ? square : null);
   }
   function down(event: PointerEvent<HTMLButtonElement>, square: string) {
-    if (!interactive || event.button !== 0 || promotion || !legalChessMoves(fen, square).length) return;
+    if (!interactive || event.button !== 0 || promotion || (tutorialMove && square !== tutorialMove.from) || !legalChessMoves(fen, square).length) return;
     drag.current = { from: square, x: event.clientX, y: event.clientY, pointer: event.pointerId };
     event.currentTarget.setPointerCapture(event.pointerId);
   }
@@ -68,6 +70,7 @@ export function ChessBoard({ fen, side, size, interactive, lastMove, tutorialMov
         const recent = lastMove && (square === lastMove.from || square === lastMove.to);
         const tutorial = tutorialMove && (square === tutorialMove.from || square === tutorialMove.to);
         return <button type="button" key={square} data-chess-square={square}
+          data-chess-guide={tutorial ? square === tutorialMove.from ? "from" : "to" : undefined}
           aria-label={square + (piece ? " " + (piece.color === "w" ? "white" : "black") + " " + piece.type : "")}
           aria-pressed={selected === square}
           className={"source-chess-square " + (light ? "light" : "dark")}

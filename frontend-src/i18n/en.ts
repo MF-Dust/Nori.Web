@@ -294,6 +294,42 @@ export default {
     "placeholder": "Talk to Nori..."
   },
   "chess": {
+    "tutorial": {
+      "title": "Guided opening",
+      "progress": "Step {{step}} of {{total}}",
+      "move": "Your move: {{from}} → {{to}}",
+      "wait": "Waiting for Nori: {{from}} → {{to}}",
+      "freeTitle": "Free play",
+      "freeBody": "Choose your own legal moves from here. Draw, takeback and resign controls are available.",
+      "review": "You are reviewing an earlier position.",
+      "live": "Return to the current move",
+      "disconnected": "Reconnect to continue the tutorial.",
+      "unknown": "Waiting for a supported tutorial step.",
+      "steps": {
+        "player_pawn_opens": "Advance the king’s pawn two squares to claim central space.",
+        "agent_pawn_mirrors": "Black answers in the center and opens lines for its pieces.",
+        "player_knight_develops": "The knight develops toward the center and attacks the e5 pawn.",
+        "agent_knight_defends": "Black develops a knight to defend its central pawn.",
+        "player_bishop_aims": "The bishop takes an active diagonal toward f7.",
+        "agent_bishop_mirrors": "Black develops its bishop toward the white kingside.",
+        "player_pawn_supports": "This pawn supports a later advance from d2 to d4.",
+        "agent_knight_counters": "Black develops its other knight and attacks e4.",
+        "player_pawn_strikes": "Advance the d-pawn to challenge Black’s central pawn.",
+        "agent_pawn_captures": "Black captures the pawn on d4.",
+        "player_pawn_recaptures": "Recapture on d4 with the c-pawn to keep a central pawn pair.",
+        "agent_bishop_checks": "The bishop moves to b4 and gives check along the diagonal.",
+        "player_blocks_check": "Block the check by placing your bishop on d2.",
+        "agent_trades_bishops": "Black exchanges bishops on d2.",
+        "player_knight_recaptures": "Recapture with the knight and develop another piece.",
+        "agent_frees_bishop": "Black moves its d-pawn and opens a path for the remaining bishop.",
+        "player_castles": "Castle kingside: move the king to g1; the rook also moves to f1.",
+        "agent_castles": "Black castles kingside to bring its king to safety.",
+        "player_rook_guards": "Place the rook on e1 behind the central pawn.",
+        "agent_rook_mirrors": "Black brings its rook to the e-file as well.",
+        "player_queen_develops": "Develop the queen to b3, where it supports the bishop’s diagonal.",
+        "agent_queen_connects": "Black develops its queen. The guided opening is now complete."
+      }
+    },
     "game": {
       "acceptDraw": "Accept Draw",
       "cancelDrawOffer": "Cancel Draw Offer",

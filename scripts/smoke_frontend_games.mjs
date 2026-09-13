@@ -5,6 +5,8 @@ import { createServer } from "node:http";
 import { mkdir, readFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 
+const tutorialSteps = JSON.parse(await readFile("shared/chess-tutorial.json", "utf8"));
+
 const output = resolve("frontend-games-smoke");
 const appHtml = await readFile(".frontend-app-build/index.html", "utf8");
 const appStyles = [...appHtml.matchAll(/href="(\/assets\/[^" ]+\.css)"/g)].map(match => match[1]);
@@ -66,6 +68,90 @@ try {
   assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).promotion), "q");
   await page.setViewportSize({ width: 640, height: 480 });
   await page.screenshot({ path: join(output, "chess-compact.png") });
+
+  await page.setViewportSize({ width: 1100, height: 720 });
+  await page.goto(origin + "/?locale=zh-CN");
+  await page.getByRole("button", { name: "让 Nori 教你下棋", exact: true }).click();
+  assert.deepEqual(await page.evaluate(() => window.fixture.commands.at(-1)), { type: "startGame", mode: "tutorial" });
+  for (let index = 0; index < tutorialSteps.length; index++) {
+    const step = tutorialSteps[index];
+    await page.evaluate(index => window.fixture.chessTutorial(index), index);
+    const panel = page.locator(`[data-chess-tutorial="${step.id}"]`);
+    await panel.waitFor();
+    assert.match(await panel.textContent(), new RegExp(`第 ${index + 1} 步，共 22 步`));
+    assert.equal(await page.getByRole("button", { name: "认输", exact: true }).isDisabled(), true);
+    assert.equal(await page.locator("[data-chess-guide]").count(), step.mover === "player" ? 2 : 0);
+    const before = await page.evaluate(() => window.fixture.commands.length);
+    if (step.mover === "player") {
+      if (index === 0) {
+        await page.locator('[data-chess-square="d2"]').click();
+        await page.locator('[data-chess-square="d4"]').click();
+        assert.equal(await page.evaluate(() => window.fixture.commands.length), before);
+      }
+      await page.locator(`[data-chess-square="${step.move.from}"]`).click();
+      assert.equal(await page.locator(".source-chess-target,.source-chess-capture-target").count(), 1);
+      if (index === 0) {
+        await page.locator('[data-chess-square="e3"]').click();
+        assert.equal(await page.evaluate(() => window.fixture.commands.length), before);
+        await page.screenshot({ path: join(output, "chess-tutorial-zh.png") });
+      }
+      await page.locator(`[data-chess-square="${step.move.to}"]`).click();
+      assert.deepEqual(await page.evaluate(() => window.fixture.commands.at(-1)), { type: "move", ...step.move });
+    } else {
+      assert.match(await panel.textContent(), /等待 Nori/);
+      await page.locator(`[data-chess-square="${step.move.from}"]`).click();
+      await page.locator(`[data-chess-square="${step.move.to}"]`).click();
+      assert.equal(await page.evaluate(() => window.fixture.commands.length), before);
+    }
+  }
+  await page.evaluate(() => window.fixture.chessTutorial(22));
+  await page.getByText("自由对局", { exact: true }).waitFor();
+  assert.equal(await page.locator("[data-chess-guide]").count(), 0);
+  assert.equal(await page.getByRole("button", { name: "认输", exact: true }).isEnabled(), true);
+  await page.locator('[data-chess-square="a2"]').click();
+  await page.locator('[data-chess-square="a3"]').click();
+  assert.deepEqual(await page.evaluate(() => window.fixture.commands.at(-1)), { type: "move", from: "a2", to: "a3" });
+  await page.screenshot({ path: join(output, "chess-tutorial-free-play.png") });
+
+  await page.goto(origin);
+  await page.evaluate(() => window.fixture.chessTutorial(16));
+  await page.getByRole("button", { name: "First position", exact: true }).click();
+  assert.equal(await page.locator("[data-chess-guide]").count(), 0);
+  await page.getByRole("button", { name: "Return to the current move", exact: true }).click();
+  assert.equal(await page.locator('[data-chess-guide="from"]').getAttribute("data-chess-square"), "e1");
+  await page.setViewportSize({ width: 640, height: 480 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  assert.equal(await page.locator('[data-chess-guide="from"]').evaluate(el => getComputedStyle(el, "::after").animationName), "none");
+  assert.equal(await page.locator(".source-chess-rail").evaluate(el => {
+    const rail = el.getBoundingClientRect(), heading = el.querySelector("h1").getBoundingClientRect();
+    return heading.top >= rail.top && heading.bottom <= rail.bottom;
+  }), true, "the compact tutorial rail must keep its heading reachable");
+  await page.screenshot({ path: join(output, "chess-tutorial-compact.png") });
+  const from = await page.locator('[data-chess-square="e1"]').boundingBox();
+  const to = await page.locator('[data-chess-square="g1"]').boundingBox();
+  const beforeDisconnect = await page.evaluate(() => window.fixture.commands.length);
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 5 });
+  await page.evaluate(() => window.fixture.chessConnection(false));
+  await page.getByText("Reconnect to continue the tutorial.", { exact: true }).waitFor();
+  await page.mouse.up();
+  assert.equal(await page.evaluate(() => window.fixture.commands.length), beforeDisconnect);
+  assert.equal(await page.locator("[data-chess-guide]").count(), 0);
+  await page.evaluate(() => window.fixture.chessConnection(true));
+  await page.locator('[data-chess-guide="from"]').waitFor();
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 5 });
+  await page.mouse.up();
+  assert.deepEqual(await page.evaluate(() => window.fixture.commands.at(-1)), { type: "move", from: "e1", to: "g1" });
+  await page.evaluate(() => window.fixture.chessTutorial(0, "future_step"));
+  await page.getByText("Waiting for a supported tutorial step.", { exact: true }).waitFor();
+  const beforeUnknown = await page.evaluate(() => window.fixture.commands.length);
+  await page.locator('[data-chess-square="e2"]').click();
+  await page.locator('[data-chess-square="e4"]').click();
+  assert.equal(await page.evaluate(() => window.fixture.commands.length), beforeUnknown);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
 
   await page.setViewportSize({ width: 1100, height: 720 });
   await page.clock.install();
@@ -199,7 +285,7 @@ try {
   await page.evaluate(() => window.fixture.codenamesTutorial("nori_opening_clue"));
   assert.equal(await page.locator('[data-card-cell="0"] button').isDisabled(), true);
   assert.deepEqual(errors, [], "source screens must not throw browser errors");
-  console.log("PASS: Chess moves/promotion; Pictionary drawing/snapshots, English/Chinese hints, cancellation and audio; Codenames guesses, flight/reveal pacing and reseed cancellation.");
+  console.log("PASS: Chess moves/promotion, all 22 tutorial steps, free play, locales, history, disconnect/drag and reduced motion; Pictionary drawing/snapshots, English/Chinese hints, cancellation and audio; Codenames guesses, flight/reveal pacing and reseed cancellation.");
 } finally {
   await browser?.close();
   await new Promise(done => server.close(done));

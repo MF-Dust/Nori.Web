@@ -5,6 +5,7 @@ import type { GameCartridgeController } from "../apps/game-cartridge-controller"
 import { useElementSize } from "../hooks/use-element-size";
 import { ChessBoard } from "./chess-board";
 import { ChessPiece } from "./chess-piece";
+import { ChessTutorial } from "./chess-tutorial";
 import "../styles/chess.css";
 
 export interface ChessScreenProps {
@@ -33,7 +34,8 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
   const timeline = useMemo(() => game ? chessHistory(game.startFen, game.moveHistory) : null, [game]);
   const captures = chessCaptures(history.slice(0, activePly), playerSide);
   const tutorial = CHESS_TUTORIAL_STEPS.find(step => step.id === state?.tutorial?.step);
-  const guided = !!tutorial;
+  const guided = !!state?.tutorial && state.tutorial.step !== "free_play";
+  const connected = snapshot.connected !== false;
   const myTurn = playing && game?.turn === playerSide;
   const t = (key: string, fallback: string, values?: Record<string, string | number>) => {
     const result = translate?.("chess." + key, values);
@@ -86,8 +88,8 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
         {capturedRow(captures.opponent, playerSide, -captures.advantage)}
         <ChessBoard fen={setup ? CHESS_START_FEN : timeline?.fens[activePly] ?? game?.fen ?? CHESS_START_FEN}
           side={playerSide} size={layout.board} lastMove={setup ? null : history[activePly - 1]?.move}
-          tutorialMove={tutorial?.mover === "player" && ply === null ? tutorial.move : null}
-          interactive={!!myTurn && !snapshot.pending && ply === null && (!guided || tutorial?.mover === "player")}
+          tutorialMove={playing && connected && tutorial?.mover === "player" && ply === null ? tutorial.move : null}
+          interactive={connected && !!myTurn && !snapshot.pending && ply === null && (!guided || tutorial?.mover === "player")}
           onReturnToLive={() => setPly(null)}
           onMove={(from, to, promotion) => { void controller.dispatch({ type: "move", from, to, ...(promotion ? { promotion } : {}) }).then(ok => { if (!ok) onSound?.("illegal"); }); }} />
         {capturedRow(captures.player, playerSide === "white" ? "black" : "white", captures.advantage)}
@@ -112,6 +114,8 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
           }}>{t("start.tutorial", "Tutorial")}</button>
         </> : <>
           <p role="status">{game?.isCheck ? t("game.check", "Check") + " · " : ""}{playing ? myTurn ? t("game.yourTurn", "Your turn") : t("game.norisTurn", "Nori's turn") : t("results." + game?.status, game?.status ?? "")}</p>
+          {playing && state?.tutorial && <ChessTutorial step={state.tutorial.step} reviewing={ply !== null}
+            connected={connected} translate={translate} onReturnToLive={() => setPly(null)} />}
           <div className="source-chess-history" aria-label="Move history">
             {timeline?.san.map((san, index) => <button type="button" key={index} aria-pressed={activePly === index + 1}
               onClick={() => setPly(index + 1 === history.length ? null : index + 1)}>{index % 2 === 0 && <small>{Math.floor(index / 2) + 1}. </small>}{san}</button>)}
@@ -122,7 +126,7 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
             <button type="button" aria-label="Next move" onClick={() => setPly(activePly + 1 >= history.length ? null : activePly + 1)}>›</button>
             <button type="button" aria-label="Live position" onClick={() => setPly(null)}>⏭</button>
           </div>
-          {playing && <fieldset disabled={snapshot.pending || guided}>
+          {playing && <fieldset disabled={!connected || snapshot.pending || guided}>
             <button type="button" disabled={!myTurn || history.length < 2} onClick={() => dispatch(state?.takebackRequest === playerSide ? "cancelTakebackRequest" : "requestTakeback")}>
               {state?.takebackRequest === playerSide ? t("game.cancelTakeback", "Cancel takeback") : t("game.requestTakeback", "Request takeback")}
             </button>
