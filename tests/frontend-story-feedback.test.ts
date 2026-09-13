@@ -10,6 +10,55 @@ const settle = async () => {
   await Promise.resolve();
   await Promise.resolve();
 };
+test("same-ID world replacement invalidates scene instances and pending completion", async (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout"] });
+  const accepts: Array<() => void> = [];
+  const director = new StoryDirector(
+    new Set(["cult-flash"]),
+    () => new Promise<void>((resolve) => accepts.push(resolve)),
+  );
+  const facts = new Set(["cult.unpacked"]);
+  director.sync("same", facts);
+  const previous = director.snapshot()!;
+  director.complete(previous);
+  director.sync("same", facts, true);
+  const current = director.snapshot()!;
+  assert.notEqual(previous.instance, current.instance);
+  director.complete(previous);
+  assert.equal(
+    accepts.length,
+    1,
+    "a stale renderer cannot finish the replacement",
+  );
+  accepts[0]();
+  await settle();
+  context.mock.timers.tick(5000);
+  assert.equal(director.snapshot(), current);
+  director.complete(current);
+  assert.equal(accepts.length, 2);
+  accepts[1]();
+  await settle();
+  context.mock.timers.tick(1500);
+  assert.equal(director.snapshot(), null);
+  director.dispose();
+});
+
+test("replacement cancels completion retries even when the world ID is unchanged", async (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout"] });
+  let calls = 0;
+  const director = new StoryDirector(new Set(["cult-flash"]), async () => {
+    calls++;
+    throw Error("offline");
+  });
+  director.sync("same", new Set(["cult.unpacked"]));
+  director.complete();
+  await settle();
+  director.sync("same", new Set(["cult.unpacked"]), true);
+  context.mock.timers.tick(10000);
+  assert.equal(calls, 1);
+  assert.equal(director.snapshot()?.id, "cult-flash");
+  director.dispose();
+});
 test("story priority preserves unrecovered scenes and completion waits for acknowledged sentinel", async (context) => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
   let calls = 0,

@@ -22,6 +22,29 @@ import { ChatRuntimeController } from "../frontend-src/apps/chat-runtime";
 import { ManifoldService } from "../frontend-src/services/manifold";
 import { createTerminalLocalFileSystem } from "../frontend-src/apps/terminal-filesystem";
 import { NoriFrontendRuntime } from "../frontend-src/runtime/frontend-runtime";
+
+test("head gesture requests use the original cartridge event and cannot send after takeover", () => {
+  const sent: unknown[][] = [];
+  const state = { active: false, noriSleep: false, chatMode: "normal" };
+  const frontend = {
+    disposed: false, headPat: { enabled: true }, scene: { snapshot: () => state },
+    conversation: { snapshot: () => ({ connected: true }) },
+    world: { snapshot: () => ({ worldId: "one" }) },
+    arcade: { connectionState: "open", sendEvent(...args: unknown[]) { sent.push(args); } },
+  };
+  const request = () => NoriFrontendRuntime.prototype.requestPatReaction.call(frontend as unknown as NoriFrontendRuntime);
+  assert.equal(request(), true);
+  assert.deepEqual(sent, [["nori_talk.request", { talkId: "pat" }, { cartridgeId: "manifold.web" }]]);
+  state.active = true;
+  assert.equal(request(), false);
+  state.active = false;
+  frontend.arcade.connectionState = "closed";
+  assert.equal(request(), false);
+  frontend.arcade.connectionState = "open";
+  frontend.disposed = true;
+  assert.equal(request(), false);
+  assert.equal(sent.length, 1);
+});
 import {
   requestSystemReply,
   SystemService,
@@ -566,3 +589,4 @@ test("story chat stays local between memory and ending, blocks scene input and r
   assert.equal(await remote, true);
 });
 import "./frontend-antivirus.test";
+import "./frontend-head-pat-audio.test";

@@ -66,6 +66,10 @@ function Preview({
     };
   }, []);
   useEffect(() => {
+    if (frontend.story.snapshot()) {
+      closeRef.current();
+      return;
+    }
     const clock = new StoryClock(CORRUPTION_PHASES),
       audio = new StoryAudio(frontend.audio, CORRUPTION_AUDIO);
     clockRef.current = clock;
@@ -74,25 +78,43 @@ function Preview({
     const world = frontend.world.snapshot().worldId;
     let frame = 0,
       previous = performance.now(),
-      voiceWait = 0;
+      voiceWait = 0,
+      stopped = false;
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      cancelAnimationFrame(frame);
+      audio.dispose();
+      clock.dispose();
+      lease.release();
+      clockRef.current = null;
+      audioRef.current = null;
+      closeRef.current();
+    };
     const visibility = () => {
+      if (stopped) return;
       previous = performance.now();
       if (document.hidden || pausedRef.current || !document.hasFocus())
         clock.suspend(previous);
       else clock.resume(previous);
       audio.sync(clock.snapshot());
     };
-    const unsubscribeWorld = frontend.world.subscribe((next) => {
-      if (next.worldId !== world) closeRef.current();
+    const unsubscribeWorld = frontend.world.subscribe((next, event) => {
+      if (
+        next.worldId !== world ||
+        ["world_joined", "world_created", "world_left"].includes(event.type)
+      )
+        stop();
     });
     const unsubscribeStory = frontend.story.subscribe(() => {
-      if (frontend.story.snapshot()) closeRef.current();
+      if (frontend.story.snapshot()) stop();
     });
     document.addEventListener("visibilitychange", visibility);
     window.addEventListener("blur", visibility);
     window.addEventListener("focus", visibility);
     visibility();
     const render = (now: number) => {
+      if (stopped) return;
       const dt = Math.max(0, Math.min(0.05, (now - previous) / 1000));
       previous = now;
       let next = clock.advance(now);
@@ -111,11 +133,12 @@ function Preview({
       lease.set(corruptionScene(next));
       audio.sync(next);
       setState(next);
-      if (next.complete) closeRef.current();
+      if (next.complete) stop();
       else frame = requestAnimationFrame(render);
     };
     frame = requestAnimationFrame(render);
     return () => {
+      stopped = true;
       cancelAnimationFrame(frame);
       unsubscribeWorld();
       unsubscribeStory();

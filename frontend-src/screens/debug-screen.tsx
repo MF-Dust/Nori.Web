@@ -35,12 +35,33 @@ export function DebugScreen({ frontend }: { frontend: NoriFrontendRuntime }) {
   const [sound, setSound] = useState("chess.moveSelf");
   const [error, setError] = useState<string | null>(null);
   const override = useRef<ReturnType<NoriSceneStore["acquire"]> | null>(null);
-  useEffect(() => () => override.current?.release(), [frontend]);
+  useEffect(() => {
+    const release = () => {
+      override.current?.release();
+      override.current = null;
+    };
+    const offWorld = frontend.world.subscribe((_state, event) => {
+      if (["world_joined", "world_created", "world_left"].includes(event.type))
+        release();
+    });
+    const offStory = frontend.story.subscribe(() => {
+      if (frontend.story.snapshot()) release();
+    });
+    return () => {
+      offWorld();
+      offStory();
+      release();
+    };
+  }, [frontend]);
   useEffect(() => {
     override.current?.release();
     override.current = null;
   }, [world.worldId]);
   function set(patch: Partial<NoriSceneState>) {
+    if (frontend.story.snapshot()) {
+      setError("A production story is active");
+      return;
+    }
     override.current ??= frontend.scene.acquire();
     override.current.set(patch);
   }
@@ -93,6 +114,7 @@ export function DebugScreen({ frontend }: { frontend: NoriFrontendRuntime }) {
         ))}
       </nav>
       <div className="source-debug-panels">
+        {error && <p role="alert">{error}</p>}
         {tab === "editor" && <SceneEditor frontend={frontend} />}
         {tab === "corruption" && <CorruptionPreview frontend={frontend} />}
         {visited.has("connection") && (
@@ -283,7 +305,6 @@ export function DebugScreen({ frontend }: { frontend: NoriFrontendRuntime }) {
                 )}
               </select>
             </label>
-            {error && <p role="alert">{error}</p>}
           </div>
         )}
         {visited.has("facts") && (

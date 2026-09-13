@@ -16,6 +16,8 @@ Projects retain the existing strict schema: at most 64 unique phases, 32 unique 
 
 Seeking to the endpoint holds the last projection for inspection. **Restart preview** starts again at zero. Ordinary uninterrupted playback still releases the preview at completion. **Continue phase** acknowledges the current preview gate only; a hidden document cannot acknowledge it.
 
+`srcStart` selects the source-file offset independently of timeline elapsed time and fade envelopes. Looping files wrap their offset; non-looping files never restart after their source endpoint.
+
 `StoryAudio.seek` cancels both active and pending track handles. Resuming recreates the current interval at its new offset, including a seek within the same audio track. No audio plays while scrubbing. A manual pause survives a hide/show cycle.
 
 ## Channel editing
@@ -24,7 +26,7 @@ Seeking to the endpoint holds the last projection for inspection. **Restart prev
 
 The form and JSON document use the same validator. Numeric/vector endpoints interpolate smoothly. Nullable camera/environment channels switch from automatic mode to the first explicit value at phase entry, avoiding invalid interpolation from a zero field of view. Existing eye/mouth interpolation is preserved. Fog endpoints are checked with inherited values; valid linear blends keep near below far.
 
-The remaining model, expression, chat, lighting and audio channels are editable in JSON. These controls target the current source renderer; original per-cinematic tuners and unimplemented render passes remain separate acceptance work.
+Model, expression, chat and lighting channels now also have form controls. The **Phases and audio tracks** section supports phase creation, ordering, removal, IDs, durations and input gates, plus track paths, time intervals, buses, looping, gain, fades and source offsets. Invalid edits leave the last valid document intact. Phase/channel selection follows the phase ID when reordering. Removing a phase is rejected if existing audio intervals no longer fit. These controls target the current source renderer; original per-cinematic tuners and unimplemented render passes remain separate acceptance work.
 
 ## Ownership and regression coverage
 
@@ -36,7 +38,7 @@ The remaining model, expression, chat, lighting and audio channels are editable 
 
 The production entry and all five incomplete cutover flags are unchanged. Boot, corruption climax, memory, datasea, farewell and ending remain unregistered pending their own reconstruction and original-agent acceptance.
 
-## Verification of this patch
+## Original patch verification record
 
 Against source revision `90576c08bdc227f6b3bbbcbd42a79af33195e0ed`, local TypeScript checking, both frontend builds, all 67 runtime tests, all 16 game tests and the recovery checks passed. The cutover check still reports five pending boundaries as intended.
 
@@ -47,3 +49,7 @@ Browser smoke was attempted but the environment blocked navigation to the local 
 The supplied patch was applied to PR #43 revision `90576c08bdc227f6b3bbbcbd42a79af33195e0ed` without conflicts. The prior browser-environment limitation was resolved in this workspace: the editor probe passed in Chromium, including file round-trip, strict imports, form edits, paused scrubbing, coincident input gates, compact layout and replacement/takeover cleanup. Generated screenshots and the exported JSON are included in the existing CI artifact directory.
 
 Review found an additional exact-selection gap for non-gated, zero-duration phases. Phase seeking now retains the selected phase and its projection while paused, so a later instantaneous change at the same timestamp cannot overwrite it. Resuming still encounters the following input gate. A unit regression and browser check cover this boundary. All 68 runtime tests pass after this fix. Full application/CI verification is reported on PR #43.
+
+## Follow-up acceptance
+
+The next implementation pass adds same-world director instance fencing, immediate preview/Debug cleanup, complete forms for the currently supported channels, structural phase/audio editing and source-file audio offsets. The editor browser probe now checks reordering, gates, invalid duration/path rollback and 2.8 model dim, and saves `scene-editor-structure.png`. Runtime tests additionally cover source offset wrapping, independent fade time, and same-ID completion/retry cancellation. Current full-app and remote CI results are recorded on PR #43.

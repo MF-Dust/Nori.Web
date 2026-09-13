@@ -1,3 +1,5 @@
+import { AudioMixer } from "../frontend-src/runtime/audio-mixer";
+import { WorldStore } from "../frontend-src/runtime/world-store";
 import { HeadPat } from "../frontend-src/live2d/head-pat";
 import { noriScanBounds } from "../frontend-src/live2d/scan-bounds";
 import { ConversationPanel } from "../frontend-src/components/conversation-panel";
@@ -45,17 +47,25 @@ const conversation = {
     };
   },
 };
+const reactions: string[] = [];
 const frontend = {
+  world: new WorldStore(),
+  requestPatReaction() {
+    reactions.push("pat");
+    return true;
+  },
   headPat: new HeadPat(),
   scene,
   speech,
   conversation,
-  audio: {
-    setSpatialTransform(position: { x: number; y: number; z: number }) { spatial.position = { ...position }; },
+  audio: Object.assign(new AudioMixer(), {
+    setSpatialTransform(position: { x: number; y: number; z: number }) {
+      spatial.position = { ...position };
+    },
     playCue(cue: string) {
       cues.push(cue);
     },
-  },
+  }),
 } as unknown as NoriFrontendRuntime;
 const facts = new Set<string>();
 const root = createRoot(document.getElementById("root")!);
@@ -69,9 +79,11 @@ root.render(
 const leases: ReturnType<NoriSceneStore["acquire"]>[] = [];
 Object.assign(window, {
   noriSceneProbe: {
+    reactions,
     cues,
     spatial,
-    bounds: () => noriScanBounds(document.querySelector("[data-model-texture]")!),
+    bounds: () =>
+      noriScanBounds(document.querySelector("[data-model-texture]")!),
     chat(patch: Partial<ChatSnapshot>) {
       chat = { ...chat, ...patch };
       listeners.forEach((listener) => listener());
@@ -111,6 +123,7 @@ Object.assign(window, {
     unmount() {
       root.unmount();
       speech.dispose();
+      frontend.audio.dispose();
     },
   },
 });

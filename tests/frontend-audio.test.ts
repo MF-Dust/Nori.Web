@@ -39,6 +39,7 @@ class Node {
   buffer: any;
   loop = false;
   started = false;
+  offset = 0;
   stopped = false;
   onended: (() => void) | null = null;
   connect(output: Node) {
@@ -47,8 +48,9 @@ class Node {
   disconnect() {
     this.output = null;
   }
-  start() {
+  start(_when = 0, offset = 0) {
     this.started = true;
+    this.offset = offset;
   }
   stop() {
     this.stopped = true;
@@ -110,6 +112,44 @@ const settings = {
   voiceMuted: false,
   spatialVoice: false,
 };
+
+test("scene source offsets are independent of fade time and wrap only looping files", async (t) => {
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () => new Response(new Uint8Array(8)),
+  );
+  const context = new Context();
+  t.mock.method(context, "decodeAudioData", async () => buffer(1, 60000, 1000));
+  const mixer = new AudioMixer(() => context as any);
+  t.after(() => mixer.dispose());
+  await mixer.unlock();
+  mixer.playSceneAudio("/audio/bgm_landing.m4a", {
+    duration: 10,
+    srcStart: 44,
+    elapsed: () => 2,
+    fadeIn: 4,
+  });
+  await tick();
+  assert.equal(context.sources.at(-1)?.offset, 46);
+  assert.equal(context.sources.at(-1)?.started, true);
+  mixer.playSceneAudio("/audio/bgm_landing.m4a", {
+    duration: 10,
+    srcStart: 59,
+    elapsed: () => 2,
+    loop: true,
+  });
+  await tick();
+  assert.equal(context.sources.at(-1)?.offset, 1);
+  mixer.playSceneAudio("/audio/bgm_landing.m4a", {
+    duration: 10,
+    srcStart: 59,
+    elapsed: () => 2,
+  });
+  await tick();
+  assert.equal(context.sources.at(-1)?.started, false);
+  assert.equal(context.sources.at(-1)?.stopped, true);
+});
 function pathGain(node: Node, destination: Node): number {
   let gain = 1;
   for (let step = 0; step < 20; step++) {
@@ -212,22 +252,39 @@ test("audio loading deduplicates assets, bounds polyphony and fences late comple
 
 test("loop cues cancel before decode, follow SFX mute and release their nodes on stop", async (t) => {
   let release!: (response: Response) => void;
-  t.mock.method(globalThis, "fetch", () => new Promise<Response>(resolve => { release = resolve; }));
-  const context = new Context(), mixer = new AudioMixer(() => context as any);
+  t.mock.method(
+    globalThis,
+    "fetch",
+    () =>
+      new Promise<Response>((resolve) => {
+        release = resolve;
+      }),
+  );
+  const context = new Context(),
+    mixer = new AudioMixer(() => context as any);
   t.after(() => mixer.dispose());
-  await mixer.unlock(); mixer.sync(settings);
+  await mixer.unlock();
+  mixer.sync(settings);
   const cancel = mixer.startCueLoop("partygames-pictionary-pen-scratch");
-  cancel(); release(new Response(new Uint8Array(8))); await tick();
-  assert.equal(context.sources.length, 0, "a cancelled pen must not start after loading");
+  cancel();
+  release(new Response(new Uint8Array(8)));
+  await tick();
+  assert.equal(
+    context.sources.length,
+    0,
+    "a cancelled pen must not start after loading",
+  );
   const stop = mixer.startCueLoop("partygames-pictionary-pen-scratch");
   await tick();
   const pen = context.sources[0];
   assert.ok(pen.started && pen.loop);
-  assert.ok(Math.abs(pathGain(pen, context.destination) - .32) < 1e-8);
+  assert.ok(Math.abs(pathGain(pen, context.destination) - 0.32) < 1e-8);
   mixer.sync({ ...settings, sfxMuted: true });
   assert.equal(pathGain(pen, context.destination), 0);
-  stop(); stop();
-  assert.equal(pen.stopped, true); assert.equal(pen.output, null);
+  stop();
+  stop();
+  assert.equal(pen.stopped, true);
+  assert.equal(pen.output, null);
 });
 
 test("a cancelled desktop music load cannot replace the latest fact-selected track", async (t) => {
@@ -372,7 +429,10 @@ test("podcast pause and owner release cancel playback while mixer connection is 
     media!: Media,
     disconnected = false;
   const podcast = new BrowserPodcastRuntime((element) => {
-    if (media) return Promise.resolve(() => { disconnected = true; });
+    if (media)
+      return Promise.resolve(() => {
+        disconnected = true;
+      });
     media = element as unknown as Media;
     return new Promise((resolve) => {
       finish = resolve;

@@ -43,12 +43,31 @@ export async function verifyNoriScene(browser, output) {
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
     console.log("Nori scene model ready/wake");
     assert.equal(await page.locator(".nori-stage").getAttribute("data-scene-renderer"), "three");
+    const rubbing = await page.evaluate(async url => {
+      const { HeadPatAudio } = await import(url);
+      const render = async pressing => {
+        const context = new OfflineAudioContext(1, 24000, 48000);
+        const audio = new HeadPatAudio(() => ({ context, input: context.destination }));
+        audio.update(3, pressing);
+        const buffer = await context.startRendering();
+        audio.dispose();
+        const samples = buffer.getChannelData(0);
+        let energy = 0, peak = 0;
+        for (const value of samples) { if (!Number.isFinite(value)) throw Error("Nonfinite rubbing output"); energy += value * value; peak = Math.max(peak, Math.abs(value)); }
+        return { rms: Math.sqrt(energy / samples.length), peak };
+      };
+      return { active: await render(true), silent: await render(false) };
+    }, `/@fs/${resolve("frontend-src/live2d/head-pat-audio.ts")}`);
+    assert.ok(rubbing.active.rms > 0.0001 && rubbing.active.peak < 0.2);
+    assert.equal(rubbing.silent.rms, 0);
     const pat = page.getByRole("button", { name: "Pat Nori's head", exact: true });
     await page.clock.runFor(220);
     await pat.focus();
     await page.keyboard.down("Space");
-    await page.clock.runFor(1500);
+    await page.clock.runFor(1100);
     assert.equal(await pat.getAttribute("data-completions"), "1");
+    assert.deepEqual(await page.evaluate(() => window.noriSceneProbe.reactions), ["pat"]);
+    assert.ok(await page.locator(".nori-pat-spark").count() > 0);
     await page.screenshot({ path: resolve(output, "nori-head-gesture.png") });
     await page.keyboard.up("Space");
     await page.clock.runFor(220);
@@ -56,6 +75,7 @@ export async function verifyNoriScene(browser, output) {
     await page.evaluate(() => window.noriSceneProbe.acquire({ active: true }));
     await page.clock.runFor(220);
     assert.equal(await pat.isHidden(), true);
+    assert.equal(await page.locator(".nori-pat-spark").count(), 0);
     await page.evaluate(() => window.noriSceneProbe.release());
     await page.clock.runFor(220);
     const initialBounds = await page.evaluate(() => window.noriSceneProbe.bounds());

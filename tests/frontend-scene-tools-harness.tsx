@@ -31,10 +31,27 @@ Object.assign(window, {
     cancel() {
       frontend.story.sync(null, new Set());
     },
-    joinWorld(worldId = "preview-world") {
+    joinWorld(worldId = "preview-world", cult = false) {
       frontend.world.consume({
         type: "world_joined",
-        world: { worldId, mountedCartridges: [] },
+        world: {
+          worldId,
+          mountedCartridges: cult
+            ? [
+                {
+                  cartridgeId: "manifold.web",
+                  runtimes: [
+                    {
+                      visibilityFenceId: "ui",
+                      headVersion: 1,
+                      visibleVersion: 1,
+                      state: { facts: { "cult.unpacked": true } },
+                    },
+                  ],
+                },
+              ]
+            : [],
+        },
       } as Parameters<typeof frontend.world.consume>[0]);
     },
     state() {

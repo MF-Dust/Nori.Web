@@ -90,6 +90,31 @@ export class NoriFrontendRuntime {
     }
     return accepted;
   }
+  /** The agent owns the reply; a local gesture only submits the shipped request event. */
+  requestPatReaction(): boolean {
+    if (
+      this.disposed ||
+      !this.headPat.enabled ||
+      this.scene.snapshot().active ||
+      this.scene.snapshot().chatMode !== "normal" ||
+      this.scene.snapshot().noriSleep ||
+      !this.conversation.snapshot().connected ||
+      !this.world.snapshot().worldId ||
+      this.arcade.connectionState !== "open"
+    )
+      return false;
+    try {
+      this.arcade.sendEvent(
+        "nori_talk.request",
+        { talkId: "pat" },
+        { cartridgeId: "manifold.web" },
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private failSpeech(message: string) {
     this.mediaError = message;
     this.audioEnabled = false;
@@ -120,7 +145,9 @@ export class NoriFrontendRuntime {
     this.rpc = new EventRpcClient(this.arcade);
     this.artifacts = new ArtifactService(this.rpc);
     this.manifold = new ManifoldService(this.rpc);
-    this.story = new StoryDirector(new Set(["cult-flash"]), factId => this.manifold.commandResult("client.emitFact", { factId }));
+    this.story = new StoryDirector(new Set(["cult-flash"]), (factId) =>
+      this.manifold.commandResult("client.emitFact", { factId }),
+    );
     this.desktop = new DesktopService(this.rpc);
     this.chat = new ChatService(this.arcade, this.world);
     this.games = new GameService(this.arcade, this.world);
@@ -231,7 +258,11 @@ export class NoriFrontendRuntime {
           this.speech.reset();
           this.media.close();
         }
-        this.story.sync(this.world.snapshot().worldId, this.world.facts());
+        this.story.sync(
+          this.world.snapshot().worldId,
+          this.world.facts(),
+          message.type === "world_joined" || message.type === "world_created",
+        );
         const raw = message as unknown as {
           type: string;
           channel?: string;

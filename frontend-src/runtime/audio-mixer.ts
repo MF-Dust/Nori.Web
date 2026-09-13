@@ -169,6 +169,13 @@ export class AudioMixer {
     return { context: this.context!, input: this.voiceInput! };
   }
 
+  /** Procedural model sounds share SFX volume/mute and require an existing audio gesture. */
+  sfxRoute(): AudioRoute | null {
+    return this.canPlay() && this.context && this.tracks
+      ? { context: this.context, input: this.tracks.sfx }
+      : null;
+  }
+
   sync(settings: MixerSettings) {
     this.settings = settings;
     if (!this.master || !this.tracks || !this.context || !this.voiceInput)
@@ -199,13 +206,23 @@ export class AudioMixer {
     if (active) void this.corruption?.init();
   }
 
-  setSpatialTransform(position: { x: number; y: number; z: number }, forward: { x: number; y: number; z: number }, up: { x: number; y: number; z: number }, voice: { x: number; y: number; z: number }) {
+  setSpatialTransform(
+    position: { x: number; y: number; z: number },
+    forward: { x: number; y: number; z: number },
+    up: { x: number; y: number; z: number },
+    voice: { x: number; y: number; z: number },
+  ) {
     if (!this.context || this.disposed) return;
     const listener = this.context.listener;
-    for (const [prefix, value] of [["position", position], ["forward", forward], ["up", up]] as const)
+    for (const [prefix, value] of [
+      ["position", position],
+      ["forward", forward],
+      ["up", up],
+    ] as const)
       for (const axis of ["X", "Y", "Z"] as const) {
         const parameter = listener[`${prefix}${axis}`];
-        if (parameter) parameter.value = value[axis.toLowerCase() as "x" | "y" | "z"];
+        if (parameter)
+          parameter.value = value[axis.toLowerCase() as "x" | "y" | "z"];
       }
     if (this.panner) {
       this.panner.positionX.value = voice.x;
@@ -319,33 +336,93 @@ export class AudioMixer {
   };
 
   /** The caller owns cancellation, including while the asset is still loading. */
-  canPlay() { return !this.disposed && this.context?.state === "running"; }
+  canPlay() {
+    return !this.disposed && this.context?.state === "running";
+  }
 
-  playSceneAudio(url: string, options: { duration: number; fadeIn?: number; fadeOut?: number; gain?: number; loop?: boolean; track?: "music" | "sfx" | "voice"; elapsed: () => number }) {
+  playSceneAudio(
+    url: string,
+    options: {
+      duration: number;
+      srcStart?: number;
+      fadeIn?: number;
+      fadeOut?: number;
+      gain?: number;
+      loop?: boolean;
+      track?: "music" | "sfx" | "voice";
+      elapsed: () => number;
+    },
+  ) {
     let stopped = false;
     let source: PlayingSource | null = null;
-    const stop = () => { stopped = true; source?.stop(); source = null; };
+    const stop = () => {
+      stopped = true;
+      source?.stop();
+      source = null;
+    };
     if (this.disposed || this.context?.state !== "running") return stop;
-    void this.load(url).then(buffer => {
-      const elapsed = Math.max(0, options.elapsed());
-      if (stopped || this.disposed || elapsed >= options.duration || this.context?.state !== "running") return;
-      source = this.createSource(buffer, this.tracks![options.track ?? "music"], this.effects);
-      const gain = options.gain ?? 1, now = this.context.currentTime;
-      const fade = Math.min(options.fadeOut ?? 0, options.duration);
-      const fadeStart = options.duration - fade;
-      const attack = Math.min(Math.max(0, options.fadeIn ?? 0), fadeStart);
-      source.gain.gain.value = attack > elapsed ? gain * elapsed / attack : fade > 0 && elapsed > fadeStart ? gain * (options.duration - elapsed) / fade : gain;
-      source.gain.gain.setValueAtTime(source.gain.gain.value, now);
-      if (attack > elapsed) source.gain.gain.linearRampToValueAtTime(gain, now + attack - elapsed);
-      if (fade > 0) {
-        source.gain.gain.setValueAtTime(elapsed < fadeStart ? gain : source.gain.gain.value, now + Math.max(0, fadeStart - elapsed));
-        source.gain.gain.linearRampToValueAtTime(0, now + options.duration - elapsed);
-      }
-      source.node.loop = options.loop ?? false;
-      if (!source.node.loop && elapsed >= buffer.duration) { stop(); return; }
-      source.node.start(0, source.node.loop ? elapsed % buffer.duration : elapsed);
-      source.node.stop(now + options.duration - elapsed);
-    }).catch(() => {});
+    void this.load(url)
+      .then((buffer) => {
+        const elapsed = Math.max(0, options.elapsed());
+        if (
+          stopped ||
+          this.disposed ||
+          elapsed >= options.duration ||
+          this.context?.state !== "running"
+        )
+          return;
+        source = this.createSource(
+          buffer,
+          this.tracks![options.track ?? "music"],
+          this.effects,
+        );
+        const gain = options.gain ?? 1,
+          now = this.context.currentTime;
+        const fade = Math.min(options.fadeOut ?? 0, options.duration);
+        const fadeStart = options.duration - fade;
+        const attack = Math.min(Math.max(0, options.fadeIn ?? 0), fadeStart);
+        source.gain.gain.value =
+          attack > elapsed
+            ? (gain * elapsed) / attack
+            : fade > 0 && elapsed > fadeStart
+              ? (gain * (options.duration - elapsed)) / fade
+              : gain;
+        source.gain.gain.setValueAtTime(source.gain.gain.value, now);
+        if (attack > elapsed)
+          source.gain.gain.linearRampToValueAtTime(
+            gain,
+            now + attack - elapsed,
+          );
+        if (fade > 0) {
+          source.gain.gain.setValueAtTime(
+            elapsed < fadeStart ? gain : source.gain.gain.value,
+            now + Math.max(0, fadeStart - elapsed),
+          );
+          source.gain.gain.linearRampToValueAtTime(
+            0,
+            now + options.duration - elapsed,
+          );
+        }
+        source.node.loop = options.loop ?? false;
+        const offset =
+          Math.max(
+            0,
+            Number.isFinite(options.srcStart) ? options.srcStart! : 0,
+          ) + elapsed;
+        if (
+          buffer.duration <= 0 ||
+          (!source.node.loop && offset >= buffer.duration)
+        ) {
+          stop();
+          return;
+        }
+        source.node.start(
+          0,
+          source.node.loop ? offset % buffer.duration : offset,
+        );
+        source.node.stop(now + options.duration - elapsed);
+      })
+      .catch(() => {});
     return stop;
   }
 

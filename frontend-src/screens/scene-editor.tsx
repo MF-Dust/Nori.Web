@@ -11,6 +11,7 @@ import {
 import { ScenePreview } from "../story/scene-preview";
 import { STORY_ORDER } from "../story/story-director";
 import { SceneEditorChannels } from "./scene-editor-channels";
+import { SceneEditorStructure } from "./scene-editor-structure";
 import "./scene-editor.css";
 
 const message = (error: unknown) =>
@@ -224,6 +225,13 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
           }}
         />
       </label>
+      {parsed && (
+        <SceneEditorStructure
+          project={parsed}
+          disabled={busy}
+          onChange={apply}
+        />
+      )}
       {parsed && (
         <SceneEditorChannels
           project={parsed}

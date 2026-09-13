@@ -6,6 +6,7 @@ export interface StoryAudioTrack {
   at: number;
   until: number;
   gain?: number;
+  srcStart?: number;
   fadeIn?: number;
   fadeOut?: number;
   loop?: boolean;
@@ -28,7 +29,9 @@ export class StoryAudio {
         !Number.isFinite(track.at) ||
         !Number.isFinite(track.until) ||
         track.at < 0 ||
-        track.until <= track.at
+        track.until <= track.at ||
+        (track.srcStart !== undefined &&
+          (!Number.isFinite(track.srcStart) || track.srcStart < 0))
       )
         throw new Error(
           "Story audio requires unique IDs and valid time ranges",
@@ -54,6 +57,7 @@ export class StoryAudio {
           this.mixer.playSceneAudio(track.src, {
             duration: track.until - track.at,
             gain: track.gain,
+            srcStart: track.srcStart,
             fadeIn: track.fadeIn,
             fadeOut: track.fadeOut,
             loop: track.loop,

@@ -3,6 +3,9 @@ export interface StoryDefinition {
   trigger: string;
   sentinel: string;
 }
+export interface StoryInstance extends StoryDefinition {
+  instance: number;
+}
 export const STORY_ORDER: readonly StoryDefinition[] = [
   { id: "boot", trigger: "session.ready", sentinel: "boot.completed" },
   {
@@ -26,7 +29,8 @@ export const STORY_ORDER: readonly StoryDefinition[] = [
 ];
 /** Original priority, sentinel acknowledgement/retry and world fencing, independent of rendering. */
 export class StoryDirector {
-  private current: StoryDefinition | null = null;
+  private current: StoryInstance | null = null;
+  private serial = 0;
   private world: string | null = null;
   private facts: ReadonlySet<string> = new Set();
   private completed = new Set<string>();
@@ -46,9 +50,9 @@ export class StoryDirector {
       this.listeners.delete(listener);
     };
   };
-  sync(world: string | null, facts: ReadonlySet<string>) {
+  sync(world: string | null, facts: ReadonlySet<string>, replacement = false) {
     if (this.disposed) return;
-    if (world !== this.world) {
+    if (replacement || world !== this.world) {
       this.epoch++;
       clearTimeout(this.timer);
       this.current = null;
@@ -67,12 +71,21 @@ export class StoryDirector {
           !this.completed.has(item.id),
       );
       // Do not skip an earlier unrecovered scene or record completion on its behalf.
-      this.current = next && this.supported.has(next.id) ? next : null;
+      this.current =
+        next && this.supported.has(next.id)
+          ? { ...next, instance: ++this.serial }
+          : null;
     }
     this.listeners.forEach((listener) => listener());
   }
-  complete = () => {
-    if (!this.current || this.finishing || this.disposed) return;
+  complete = (expected = this.current) => {
+    if (
+      !expected ||
+      expected !== this.current ||
+      this.finishing ||
+      this.disposed
+    )
+      return;
     const scene = this.current,
       epoch = this.epoch;
     this.finishing = true;

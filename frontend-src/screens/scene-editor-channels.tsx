@@ -61,6 +61,35 @@ const channels: Array<{
   },
   { key: "alertLoop", label: "Alert intensity", min: 0, max: 1, step: 0.01 },
   { key: "alertClock", label: "Alert clock", min: 0, max: 600, step: 0.1 },
+  ...(
+    [
+      "darkness",
+      "noriTint",
+      "noriReveal",
+      "redLight",
+      "shake",
+      "whiteFlash",
+    ] as const
+  ).map((key) => ({ key, label: key, min: 0, max: 1, step: 0.01 })),
+  { key: "noriDim", label: "Model dim", min: 0, max: 4, step: 0.01 },
+  { key: "vignette", label: "Vignette", min: 0, max: 5, step: 0.01 },
+  { key: "blur", label: "Blur", min: 0, max: 20, step: 0.1 },
+  {
+    key: "eyeOpen",
+    label: "Eye open",
+    min: 0,
+    max: 1,
+    step: 0.01,
+    automatic: true,
+  },
+  {
+    key: "mouthOpen",
+    label: "Mouth open",
+    min: 0,
+    max: 1,
+    step: 0.01,
+    automatic: true,
+  },
 ];
 
 /** Edits the same validated project as the JSON view; never writes directly to the scene. */
@@ -73,8 +102,8 @@ export function SceneEditorChannels({
   disabled: boolean;
   onChange: (project: SceneProject) => boolean;
 }) {
-  const [selection, setSelection] = useState(-1);
-  const index = selection < project.phases.length ? selection : -1;
+  const [selection, setSelection] = useState<string | null>(null);
+  const index = project.phases.findIndex((phase) => phase.id === selection);
   const target = index < 0 ? project.initial : project.phases[index].to;
   function update(
     key: keyof SceneProjectPatch,
@@ -103,7 +132,11 @@ export function SceneEditorChannels({
           <select
             aria-label="Scene channel target"
             value={index}
-            onChange={(event) => setSelection(Number(event.target.value))}
+            onChange={(event) =>
+              setSelection(
+                project.phases[Number(event.target.value)]?.id ?? null,
+              )
+            }
           >
             <option value={-1}>Initial state</option>
             {project.phases.map((phase, i) => (
@@ -165,6 +198,79 @@ export function SceneEditorChannels({
                 Inherit
               </button>
             </div>
+          ))}
+        </div>
+        <div className="source-scene-channel-grid">
+          {(
+            ["noriRestPose", "noriSleep", "noriSmile", "corruptVoice"] as const
+          ).map((key) => (
+            <label key={key}>
+              {key}
+              <select
+                aria-label={`Scene ${key}`}
+                value={
+                  target[key] === undefined
+                    ? "inherit"
+                    : target[key] === null
+                      ? "auto"
+                      : String(target[key])
+                }
+                onChange={(event) =>
+                  update(
+                    key,
+                    event.target.value === "inherit"
+                      ? undefined
+                      : event.target.value === "auto"
+                        ? null
+                        : event.target.value === "true",
+                  )
+                }
+              >
+                <option value="inherit">Inherit</option>
+                {key === "noriSmile" && <option value="auto">Auto</option>}
+                <option value="true">On</option>
+                <option value="false">Off</option>
+              </select>
+            </label>
+          ))}
+          {(
+            [
+              { key: "chatMode", values: ["normal", "bubbles", "hidden"] },
+              {
+                key: "bgm",
+                values: ["auto", "silent", "bgm1", "bgm_manifold", "bgm_void"],
+              },
+              { key: "noriTexture", values: ["default", "corrupt"] },
+            ] as const
+          ).map(({ key, values }) => (
+            <label key={key}>
+              {key}
+              <select
+                aria-label={`Scene ${key}`}
+                value={
+                  target[key] === undefined
+                    ? "inherit"
+                    : (target[key] ?? "default")
+                }
+                onChange={(event) =>
+                  update(
+                    key,
+                    event.target.value === "inherit"
+                      ? undefined
+                      : event.target.value === "default"
+                        ? null
+                        : (event.target.value as SceneProjectPatch[typeof key]),
+                  )
+                }
+              >
+                <option value="inherit">Inherit</option>
+                {values.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
           ))}
         </div>
         {(["camera", "cameraRot"] as const).map((key) => (

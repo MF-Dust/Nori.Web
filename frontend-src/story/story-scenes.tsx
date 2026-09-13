@@ -4,8 +4,15 @@ import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import { StoryClock } from "./story-clock";
 import { StoryAudio } from "./story-audio";
 import { createCultRenderer } from "./cult-renderer";
+import type { StoryInstance } from "./story-director";
 
-function CultFlash({ frontend }: { frontend: NoriFrontendRuntime }) {
+function CultFlash({
+  frontend,
+  story,
+}: {
+  frontend: NoriFrontendRuntime;
+  story: StoryInstance;
+}) {
   const host = useRef<HTMLDivElement>(null);
   const [attempt, setAttempt] = useState(0),
     [failed, setFailed] = useState(false);
@@ -30,7 +37,16 @@ function CultFlash({ frontend }: { frontend: NoriFrontendRuntime }) {
         loop: true,
       },
     ]);
+    const offStory = frontend.story.subscribe(() => {
+      if (frontend.story.snapshot() === story) return;
+      stopped = true;
+      cancelAnimationFrame(frame);
+      audio.dispose();
+      clock.dispose();
+      lease.release();
+    });
     const visibility = () => {
+      if (stopped) return;
       if (document.hidden) clock.suspend(performance.now());
       else clock.resume(performance.now());
       audio.sync(clock.snapshot());
@@ -54,7 +70,7 @@ function CultFlash({ frontend }: { frontend: NoriFrontendRuntime }) {
           host.current!.dataset.progress = String(progress);
           if (progress >= 1) {
             audio.dispose();
-            frontend.story.complete();
+            frontend.story.complete(story);
           } else frame = requestAnimationFrame(render);
         } catch (error) {
           console.error("[CultFlash]", error);
@@ -69,6 +85,7 @@ function CultFlash({ frontend }: { frontend: NoriFrontendRuntime }) {
     }
     return () => {
       stopped = true;
+      offStory();
       cancelAnimationFrame(frame);
       audio.dispose();
       clock.dispose();
@@ -77,7 +94,7 @@ function CultFlash({ frontend }: { frontend: NoriFrontendRuntime }) {
       lease.release();
       canvas.remove();
     };
-  }, [frontend, attempt]);
+  }, [frontend, story, attempt]);
   return (
     <div
       ref={host}
@@ -118,6 +135,6 @@ export function StoryScenes({ frontend }: { frontend: NoriFrontendRuntime }) {
     frontend.story.snapshot,
   );
   return current?.id === "cult-flash" ? (
-    <CultFlash key={frontend.world.snapshot().worldId} frontend={frontend} />
+    <CultFlash key={current.instance} frontend={frontend} story={current} />
   ) : null;
 }

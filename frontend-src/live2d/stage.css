@@ -26,3 +26,5 @@
 .nori-stage canvas[data-scene-canvas] { position: absolute; inset: 0; }
 .nori-head-pat{position:absolute;pointer-events:auto;background:transparent;border:0;border-radius:50%;cursor:grab;touch-action:none;padding:0}
 .nori-head-pat:active{cursor:grabbing}.nori-head-pat:focus-visible{outline:2px solid #b8eadd;outline-offset:3px}
+
+.nori-pat-spark{position:absolute;pointer-events:none;color:#b9f5df;font-size:18px;line-height:1;text-shadow:0 0 7px #78eac6;z-index:2}

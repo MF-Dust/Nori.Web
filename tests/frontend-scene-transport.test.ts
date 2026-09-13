@@ -101,3 +101,44 @@ test("audio discontinuities cancel pending handles and recreate same-interval of
   assert.equal(calls[2].stops, 1);
   assert.equal(calls.length, 3);
 });
+test("timeline audio forwards source offsets without changing timeline fade duration", () => {
+  let options: any;
+  const audio = new StoryAudio(
+    {
+      canPlay: () => true,
+      playSceneAudio(_src, value) {
+        options = value;
+        return () => {};
+      },
+    },
+    [
+      {
+        id: "landing",
+        src: "/audio/bgm_landing.m4a",
+        at: 2,
+        until: 8,
+        srcStart: 44,
+        fadeIn: 2.5,
+      },
+    ],
+  );
+  const clock = new StoryClock([{ id: "boot", duration: 10 }]);
+  audio.sync(clock.seek(3, 0));
+  assert.equal(options.srcStart, 44);
+  assert.equal(options.elapsed(), 1);
+  assert.equal(options.duration, 6);
+  assert.equal(options.fadeIn, 2.5);
+  audio.dispose();
+  assert.throws(
+    () =>
+      new StoryAudio(
+        {
+          canPlay: () => true,
+          playSceneAudio() {
+            return () => {};
+          },
+        },
+        [{ id: "invalid", src: "test", at: 0, until: 1, srcStart: -1 }],
+      ),
+  );
+});

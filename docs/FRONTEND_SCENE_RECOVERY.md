@@ -90,3 +90,11 @@ The source-owned microgames cover four hostile processes with protected system r
 This is an interaction study, not a production registration. Node/terminal animation, tuning drift/lock presentation, steering impulse/trail effects, original preference dialogue and the warning/heal renderer still need original-parity work. The five binary prompts here are newly authored technical checks. The voice gate does not impersonate the original agent handoff. Boot, corruption climax, memory, datasea, farewell and ending remain unregistered; all five production boundaries stay false.
 
 Verification includes protected targets, duplicate input, timing and completion fences in unit tests, plus a browser walkthrough of all six microgames and the recovery/wake transition. Screenshots cover the six panels, all-clear state and a 390 px viewport.
+
+## Gesture audio and world replacement
+
+The source gesture now uses a per-model filtered-noise generator with the inspected two-second buffer, 1200/3200 Hz high-pass stages, 5200 Hz peaking stage, 8000–11500 Hz velocity-dependent low-pass, parallel 350 Hz body filters and 0.4 frequency scale. Strength follows `min(1, abs(velocity)/3)^1.4` with 30 ms attack and 60 ms release. The final 0.05 level and 0.5 body gain route through the shared SFX mute/volume controls. Nodes allocate after audio unlock and disconnect on model disposal. Browser verification renders the real filters and checks finite nonzero active output and silent inactive output.
+
+Completion adds a disposable, reduced-motion-aware spark burst and submits the original cartridge-scoped pat request once per hold. The local backend returns `noop`, so original-agent reply/media parity remains unverified. Original particle shape and pacing comparison is still open.
+
+Director activations now carry unique instance IDs. Rejoining the same world invalidates old completion callbacks and pending acknowledgement/retry work. The Cult renderer checks its captured instance before completion and releases on takeover. Corruption previews and Debug overrides now stop for same-ID replacement snapshots as well as changed world IDs.

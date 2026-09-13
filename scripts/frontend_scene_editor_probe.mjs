@@ -55,6 +55,36 @@ export async function verifySceneEditor(page, output) {
     await page.getByLabel("Scene Field of view", { exact: true }).fill("70");
     await page.getByLabel("Scene Field of view", { exact: true }).press("Tab");
     assert.equal(JSON.parse(await editor.inputValue()).initial.fov, 70);
+    await page.getByLabel("Scene Model dim", { exact: true }).fill("2.8");
+    await page.getByLabel("Scene Model dim", { exact: true }).press("Tab");
+    await page.getByLabel("Scene noriSmile", { exact: true }).selectOption("false");
+    await page.getByLabel("Scene chatMode", { exact: true }).selectOption("bubbles");
+    assert.equal(JSON.parse(await editor.inputValue()).initial.noriDim, 2.8);
+    assert.equal(JSON.parse(await editor.inputValue()).initial.noriSmile, false);
+    assert.equal(JSON.parse(await editor.inputValue()).initial.chatMode, "bubbles");
+    await page.getByText("Phases and audio tracks", { exact: true }).click();
+    await page.getByRole("button", { name: "Add phase", exact: true }).click();
+    await page.getByLabel("Phase 4 ID", { exact: true }).fill("exit");
+    await page.getByLabel("Phase 4 ID", { exact: true }).press("Tab");
+    await page.getByRole("button", { name: "Move exit earlier", exact: true }).click();
+    assert.equal(JSON.parse(await editor.inputValue()).phases[2].id, "exit");
+    await page.getByRole("button", { name: "Move exit later", exact: true }).click();
+    await page.getByLabel("Phase 4 input gate", { exact: true }).check();
+    assert.equal(JSON.parse(await editor.inputValue()).phases[3].pauseAtStart, true);
+    await page.getByLabel("Phase 4 duration", { exact: true }).fill("-1");
+    await page.getByLabel("Phase 4 duration", { exact: true }).press("Tab");
+    assert.equal(await page.getByLabel("Phase 4 duration", { exact: true }).inputValue(), "1");
+    await page.getByRole("button", { name: "Remove phase exit", exact: true }).click();
+    await page.getByRole("button", { name: "Add audio track", exact: true }).click();
+    await page.getByLabel("Track 1 srcStart", { exact: true }).fill("44");
+    await page.getByLabel("Track 1 srcStart", { exact: true }).press("Tab");
+    assert.equal(JSON.parse(await editor.inputValue()).audio[0].srcStart, 44);
+    await page.getByLabel("Track 1 source", { exact: true }).fill("https://example.invalid/audio.mp3");
+    await page.getByLabel("Track 1 source", { exact: true }).press("Tab");
+    assert.equal(await page.getByLabel("Track 1 source", { exact: true }).inputValue(), "/audio/cult/drone.ogg");
+    await page.screenshot({ path: resolve(output, "scene-editor-structure.png"), animations: "disabled" });
+    await page.getByRole("button", { name: "Remove track track1", exact: true }).click();
+    await page.getByText("Phases and audio tracks", { exact: true }).click();
     const downloadPromise = page.waitForEvent("download");
     await page
       .getByRole("button", { name: "Export project", exact: true })

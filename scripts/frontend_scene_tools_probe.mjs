@@ -155,6 +155,28 @@ export async function verifySceneTools(browser, output) {
     );
     await page.evaluate(() => window.sceneTools.openDebug());
     await verifyAntivirus(page, output);
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+    await page.evaluate(() => window.sceneTools.joinWorld("corruption-replacement"));
+    await page.getByRole("button", { name: "Open corruption study", exact: true }).click();
+    await page.getByRole("dialog", { name: "Corruption interaction preview", exact: true }).waitFor();
+    const replacementActive = await page.evaluate(() => {
+      window.sceneTools.joinWorld("corruption-replacement");
+      return window.sceneTools.state().active;
+    });
+    assert.equal(replacementActive, false, "replacement releases the Corruption lease synchronously");
+    await page.getByRole("dialog", { name: "Corruption interaction preview", exact: true }).waitFor({ state: "detached" });
+    const completionsBeforeReplacement = await page.evaluate(() => window.sceneTools.completions.length);
+    await page.evaluate(() => window.sceneTools.joinWorld("cult-replacement", true));
+    await page.locator("[data-story-scene]").waitFor();
+    await page.clock.runFor(2100);
+    const progressBeforeReplacement = Number(await page.locator("[data-story-scene]").getAttribute("data-progress"));
+    assert.ok(progressBeforeReplacement > 0.2);
+    await page.evaluate(() => window.sceneTools.joinWorld("cult-replacement", true));
+    await page.clock.runFor(100);
+    assert.ok(Number(await page.locator("[data-story-scene]").getAttribute("data-progress")) < 0.1, "same-world replacement restarts the renderer instance");
+    await page.evaluate(() => window.sceneTools.cancel());
+    await page.locator("[data-story-scene]").waitFor({ state: "detached" });
+    assert.equal(await page.evaluate(() => window.sceneTools.completions.length), completionsBeforeReplacement);
     await verifySceneEditor(page, output);
     await page.evaluate(() => window.sceneTools.dispose());
     assert.deepEqual(errors, []);
