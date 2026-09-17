@@ -6,7 +6,7 @@ import {
   SignalLoginScreen,
   type SignalDestination,
 } from "../screens/signal-login-screen";
-import { MessengerScreen, type MessengerScreenRuntime } from "../screens/messenger-screen";
+import { MessengerScreen, type MessengerScreenRuntime } from "../screens/messenger-shipped-surfaces";
 import { SignalResetScreen } from "../screens/signal-reset-screen";
 import { SignalTempPasswordScreen } from "../screens/signal-temp-password-screen";
 import type { ProductionWindowBinding } from "../state/production-window-apps";
