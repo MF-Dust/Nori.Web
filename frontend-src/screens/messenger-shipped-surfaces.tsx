@@ -21,6 +21,49 @@ const SHIPPED_SURFACE_CSS = String.raw`
   outline: none;
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 60%, transparent);
 }
+
+[data-messenger-shipped-surfaces] button.w-full.border-b.border-l-2 {
+  border-bottom-color: color-mix(in oklab, var(--border) 50%, transparent);
+  border-left-color: transparent;
+  transition-duration: 150ms;
+  outline: none;
+}
+
+[data-messenger-shipped-surfaces] button.w-full.border-b.border-l-2:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--ring) 60%, transparent);
+}
+
+[data-messenger-shipped-surfaces] button.w-full.border-b.border-l-2[aria-current="true"] {
+  border-left-color: var(--primary);
+}
+
+[data-messenger-shipped-surfaces] button.w-full.border-b.border-l-2[aria-current="true"]:hover {
+  background: color-mix(in oklab, var(--primary) 18%, transparent);
+}
+
+[data-messenger-shipped-surfaces] button.w-full.border-b.border-l-2[aria-current="true"]:active {
+  background: color-mix(in oklab, var(--primary) 24%, transparent);
+}
+
+[data-messenger-shipped-surfaces] button.w-full.border-b.border-l-2:not([aria-current="true"]):active {
+  background: color-mix(in oklab, var(--muted) 60%, transparent);
+}
+
+[data-messenger-shipped-surfaces]
+  button.w-full.border-b.border-l-2[aria-current="true"]:not(:has(span[aria-label]))
+  > div.min-w-0.flex-1
+  > div:first-child
+  > span:last-child {
+  color: color-mix(in oklab, var(--foreground) 70%, transparent);
+}
+
+[data-messenger-shipped-surfaces]
+  button.w-full.border-b.border-l-2[aria-current="true"]:not(:has(span[aria-label]))
+  > div.min-w-0.flex-1
+  > div:nth-child(2)
+  > span:first-child {
+  color: color-mix(in oklab, var(--foreground) 80%, transparent);
+}
 `;
 
 export function MessengerScreen(

@@ -29,6 +29,7 @@ function assertPattern(source, pattern, message) {
 async function main() {
   const messengerChunk = await findAsset("MessengerScreen-");
   const source = await read("frontend-src/screens/messenger-shipped-surfaces.tsx");
+  const baseSource = await read("frontend-src/screens/messenger-screen.tsx");
   const binding = await read("frontend-src/apps/signal-presentation.tsx");
 
   const normalAppImport = messengerChunk.source.match(/from "\.\/(NormalApp-[^"]+\.js)"/);
@@ -45,6 +46,18 @@ async function main() {
       "image keyboard focus",
       /cursor-zoom-in outline-none transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring\/60/,
     ],
+    ["thread row transition timing", /transition-colors duration-150/],
+    [
+      "thread row keyboard focus",
+      /outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring\/60/,
+    ],
+    [
+      "selected thread hover and active states",
+      /border-l-primary bg-primary\/\[0\.12\] hover:bg-primary\/\[0\.18\] active:bg-primary\/\[0\.24\]/,
+    ],
+    ["unselected thread active state", /hover:bg-muted\/40 active:bg-muted\/60/],
+    ["selected read timestamp tone", /text-foreground\/70/],
+    ["selected read preview tone", /text-foreground\/80/],
   ]) {
     assertPattern(
       messengerChunk.source,
@@ -67,8 +80,32 @@ async function main() {
     "button.cursor-zoom-in:focus-visible",
     "button.rounded-full:has(> img.rounded-full):focus-visible",
     "color-mix(in oklab, var(--ring) 60%, transparent)",
+    "button.w-full.border-b.border-l-2",
+    "border-bottom-color: color-mix(in oklab, var(--border) 50%, transparent)",
+    "transition-duration: 150ms",
+    "box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--ring) 60%, transparent)",
+    '[aria-current="true"]:hover',
+    "color-mix(in oklab, var(--primary) 18%, transparent)",
+    '[aria-current="true"]:active',
+    "color-mix(in oklab, var(--primary) 24%, transparent)",
+    ':not([aria-current="true"]):active',
+    "color-mix(in oklab, var(--muted) 60%, transparent)",
+    ':not(:has(span[aria-label]))',
+    "color-mix(in oklab, var(--foreground) 70%, transparent)",
+    "color-mix(in oklab, var(--foreground) 80%, transparent)",
   ]) {
     assert(source.includes(marker), `source Messenger shipped-surface recovery missing marker: ${marker}`);
+  }
+
+  for (const marker of [
+    'aria-current={selected ? "true" : undefined}',
+    "border-b border-l-2",
+    "min-w-0 flex-1",
+  ]) {
+    assert(
+      baseSource.includes(marker),
+      `Messenger thread-row structure changed under shipped-surface recovery: ${marker}`,
+    );
   }
 
   assert(
@@ -76,7 +113,9 @@ async function main() {
     "production Signal binding does not use the source-owned shipped-surface wrapper",
   );
 
-  console.log(`[ok] Messenger bubble palette/shadows and photo focus affordances match shipped ${messengerChunk.file}`);
+  console.log(
+    `[ok] Messenger bubbles, photo focus and thread-row interaction states match shipped ${messengerChunk.file}`,
+  );
 }
 
 main().catch((error) => {
