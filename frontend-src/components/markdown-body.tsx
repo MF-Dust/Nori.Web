@@ -21,9 +21,39 @@ function openUrlInBrowser(url: string): void {
   (window as NoriBrowserApi).NoriAPI?.openUrlInBrowser?.(url);
 }
 
+function renderMarkdownLink(label: ReactNode, href: string, key: number): ReactNode {
+  return /^https?:\/\//i.test(href) ? (
+    <span
+      key={key}
+      role="link"
+      tabIndex={0}
+      title={href}
+      onClick={() => openUrlInBrowser(href)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openUrlInBrowser(href);
+        }
+      }}
+      className="cursor-pointer underline underline-offset-2 hover:opacity-80"
+    >
+      {label}
+    </span>
+  ) : (
+    <span key={key} className="underline underline-offset-2" title={href || undefined}>
+      {label}
+    </span>
+  );
+}
+
+function splitAutolinkTrailingPunctuation(value: string): [string, string] {
+  const match = value.match(/^(.*?)([.,!?;:]*)$/);
+  return [match?.[1] ?? value, match?.[2] ?? ""];
+}
+
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const token = /(\[([^\]]+)\]\(([^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|(~{1,2})(\S(?:[^~]*?\S)?)\6|\*([^*]+)\*)/g;
+  const token = /(\[([^\]]+)\]\(([^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|(~{1,2})(\S(?:[^~]*?\S)?)\6|\*([^*]+)\*|((?:https?:\/\/|www(?=\.))[-.\w]+[^\s<]*)|(\b[-.\w+]+@[-\w]+(?:\.[-\w]+)+))/gi;
   let cursor = 0;
   let match: RegExpExecArray | null;
   let key = 0;
@@ -31,32 +61,7 @@ function renderInline(text: string): ReactNode[] {
   while ((match = token.exec(text))) {
     if (match.index > cursor) nodes.push(text.slice(cursor, match.index));
     if (match[2] && match[3]) {
-      const label = match[2];
-      const href = match[3];
-      nodes.push(
-        /^https?:\/\//i.test(href) ? (
-          <span
-            key={key++}
-            role="link"
-            tabIndex={0}
-            title={href}
-            onClick={() => openUrlInBrowser(href)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                openUrlInBrowser(href);
-              }
-            }}
-            className="cursor-pointer underline underline-offset-2 hover:opacity-80"
-          >
-            {label}
-          </span>
-        ) : (
-          <span key={key++} className="underline underline-offset-2" title={href || undefined}>
-            {label}
-          </span>
-        ),
-      );
+      nodes.push(renderMarkdownLink(match[2], match[3], key++));
     } else if (match[4]) {
       nodes.push(<code key={key++}>{match[4]}</code>);
     } else if (match[5]) {
@@ -65,6 +70,14 @@ function renderInline(text: string): ReactNode[] {
       nodes.push(<del key={key++}>{match[7]}</del>);
     } else if (match[8]) {
       nodes.push(<em key={key++}>{match[8]}</em>);
+    } else if (match[9]) {
+      const [label, trailing] = splitAutolinkTrailingPunctuation(match[9]);
+      const href = /^www\./i.test(label) ? `http://${label}` : label;
+      nodes.push(renderMarkdownLink(label, href, key++));
+      if (trailing) nodes.push(trailing);
+    } else if (match[10]) {
+      const label = match[10];
+      nodes.push(renderMarkdownLink(label, `mailto:${label}`, key++));
     }
     cursor = token.lastIndex;
   }

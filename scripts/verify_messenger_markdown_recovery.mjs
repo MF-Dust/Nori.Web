@@ -98,6 +98,9 @@ async function main() {
     'className = ["contains-task-list"]',
     'properties: { type: "checkbox", checked:',
     "disabled: !0",
+    "www(?=\\.)",
+    '"http://"',
+    '"mailto:" +',
   ]) {
     assert(
       markdownRuntime.includes(marker),
@@ -117,6 +120,12 @@ async function main() {
     'className={item.checked !== undefined ? "task-list-item" : undefined}',
     "contains-task-list",
     '<input type="checkbox" checked={item.checked} disabled />',
+    "splitAutolinkTrailingPunctuation",
+    "www(?=\\.)",
+    "match[9]",
+    "match[10]",
+    "`http://${label}`",
+    "`mailto:${label}`",
   ]) {
     assert(
       sourceMarkdown.includes(marker),
@@ -125,7 +134,7 @@ async function main() {
   }
 
   console.log(
-    `[ok] Messenger service markdown matches shipped ${markdownChunk.file} presentation, link, strikethrough and task-list contracts`,
+    `[ok] Messenger service markdown matches shipped ${markdownChunk.file} presentation, link, GFM autolink-literal, strikethrough and task-list contracts`,
   );
 }
 
