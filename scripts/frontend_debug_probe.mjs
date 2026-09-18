@@ -115,6 +115,78 @@ export async function verifyDebugLabs(browser, output, baseUrl) {
       await page.evaluate(() => window.debugLabProbe.scenarios),
       ["codenames:sudden_death_both"],
     );
+
+    await page.getByRole("button", { name: "Live2D", exact: true }).click();
+    const physics = page.getByRole("button", { name: "Physics", exact: true });
+    assert.equal(await physics.getAttribute("aria-pressed"), "true");
+    await physics.click();
+    assert.equal(
+      await page.evaluate(() => window.debugLabProbe.live2d().plugins.physics),
+      false,
+    );
+    await page.getByRole("button", { name: "Rest Pose", exact: true }).click();
+    assert.equal(await page.evaluate(() => window.debugLabProbe.live2d().rest), true);
+    await page.getByRole("button", { name: "13_Happy", exact: true }).click();
+    assert.deepEqual(
+      await page.evaluate(() => window.debugLabProbe.live2d().expressions),
+      ["13_Happy"],
+    );
+    await page.getByRole("button", { name: "Play Idle 0", exact: true }).click();
+    assert.equal(
+      await page.evaluate(() => window.debugLabProbe.live2d().motions.length),
+      1,
+    );
+
+    await page.getByRole("button", { name: "Pat", exact: true }).click();
+    await page.getByLabel("Pat Required pat time").evaluate((element) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      ).set;
+      setter.call(element, "500");
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.equal(await page.getByLabel("Pat Required pat time").inputValue(), "500");
+
+    await page.getByRole("button", { name: "Reactions", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Player guesses correctly", exact: true })
+      .click();
+    await page
+      .getByText("Player guesses correctly: No Live2D model mounted", { exact: true })
+      .waitFor();
+
+    await page.getByRole("button", { name: "Inject Talk", exact: true }).click();
+    await page
+      .getByText(/does not implement debug\.chat_inject_talk\.request/)
+      .waitFor();
+    await page.getByRole("button", { name: "Nori Context", exact: true }).click();
+    await page
+      .getByText(/does not implement debug\.chat_context\.stats/)
+      .waitFor();
+    await page.getByRole("button", { name: "Notifications", exact: true }).click();
+    assert.equal(
+      await page.getByRole("button", { name: "Push from server", exact: true }).isDisabled(),
+      true,
+    );
+    await page.getByRole("button", { name: "Audio", exact: true }).click();
+    await page.getByLabel("Master", { exact: true }).evaluate((element) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      ).set;
+      setter.call(element, "65");
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.equal(
+      await page.evaluate(() => window.debugLabProbe.audio().masterVolume),
+      65,
+    );
+    await page
+      .getByRole("button", { name: "Game scenarios", exact: true })
+      .click();
     await page
       .getByRole("button", { name: "Acting forks Counterpart", exact: true })
       .click();

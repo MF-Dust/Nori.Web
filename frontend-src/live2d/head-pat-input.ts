@@ -16,7 +16,10 @@ export function bindHeadPatInput(
   surface.title = "Drag across the head, or hold Space";
   host.append(surface);
   const gesture = frontend.headPat;
-  const rubbing = new HeadPatAudio(() => frontend.audio.sfxRoute());
+  const rubbing = new HeadPatAudio(
+    () => frontend.audio.sfxRoute(),
+    () => frontend.headPat.tuning(),
+  );
   const particles = new Map<HTMLElement, Animation>();
   const clearParticles = () => {
     particles.forEach((animation, element) => {
@@ -113,11 +116,12 @@ export function bindHeadPatInput(
       return;
     }
     const point = sample(event);
+    const tuning = gesture.tuning();
     if (
-      point.x < -0.75 ||
-      point.x > 1.75 ||
-      point.y < -0.75 ||
-      point.y > 1.75
+      point.x < -tuning.leashHeadWidths ||
+      point.x > 1 + tuning.leashHeadWidths ||
+      point.y < -tuning.leashHeadWidths ||
+      point.y > 1 + tuning.leashHeadWidths
     ) {
       stop();
       return;
@@ -185,7 +189,8 @@ export function bindHeadPatInput(
           complete();
       } else if (now - idleAt > 140) gesture.pressing = false;
       gesture.velocity *= Math.exp(
-        -Math.min(0.05, (now - previous) / 1000) / 0.3,
+        -Math.min(0.05, (now - previous) / 1000) /
+          gesture.tuning().strokeReleaseTau,
       );
       previous = now;
       try {
@@ -199,7 +204,8 @@ export function bindHeadPatInput(
         bounds &&
         model.modelToCanvasUV(
           bounds.right,
-          bounds.top - (bounds.top - bounds.bottom) * 0.6,
+          bounds.top -
+            (bounds.top - bounds.bottom) * gesture.tuning().skullTopBand,
         );
       if (!first || !last) {
         surface.hidden = true;

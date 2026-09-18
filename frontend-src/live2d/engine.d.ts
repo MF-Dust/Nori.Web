@@ -31,6 +31,15 @@ export interface Live2DModel {
   addExpression(name: string): void;
   removeExpression(name: string): void;
   getActiveExpressions(): string[];
+  getExpressionNames(): string[];
+  getSetting(): {
+    getMotionGroupCount(): number;
+    getMotionGroupName(index: number): string;
+    getMotionCount(group: string): number;
+    getMotionFileName(group: string, index: number): string;
+  };
+  getPluginEnabled(id: string): boolean;
+  isRestPose(): boolean;
   setTextureVariant(name: string | null): void;
   setRestPose(enabled: boolean): void;
   setPluginEnabled(id: string, enabled: boolean): void;

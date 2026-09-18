@@ -1,4 +1,5 @@
 import type { AudioRoute } from "../runtime/audio-mixer";
+import type { HeadPatTuning } from "./head-pat";
 
 /** One mounted model owns its noise source. No autoplay or module-global audio nodes. */
 export class HeadPatAudio {
@@ -6,9 +7,18 @@ export class HeadPatAudio {
   private nodes: AudioNode[] = [];
   private gain: GainNode | null = null;
   private lowpass: BiquadFilterNode | null = null;
+  private filters: Array<{ node: BiquadFilterNode; base: number }> = [];
+  private bodyGain: GainNode | null = null;
+  private outputGain: GainNode | null = null;
   private context: AudioContext | null = null;
   private disposed = false;
-  constructor(private route: () => AudioRoute | null) {}
+  constructor(
+    private route: () => AudioRoute | null,
+    private tuning: () => Pick<
+      HeadPatTuning,
+      "soundLevel" | "soundFreqScale" | "soundBodyGain"
+    > = () => ({ soundLevel: 0.05, soundFreqScale: 0.4, soundBodyGain: 0.5 }),
+  ) {}
 
   private initialize() {
     if (this.disposed || this.source) return;
@@ -29,12 +39,14 @@ export class HeadPatAudio {
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
       source.buffer = buffer;
       source.loop = true;
+      const tuning = this.tuning();
       const filter = (type: BiquadFilterType, frequency: number, q = -3) => {
         const node = context.createBiquadFilter();
         this.nodes.push(node);
         node.type = type;
-        node.frequency.value = frequency * 0.4;
+        node.frequency.value = frequency * tuning.soundFreqScale;
         node.Q.value = q;
+        this.filters.push({ node, base: frequency });
         return node;
       };
       const gain = (value: number) => {
@@ -55,12 +67,14 @@ export class HeadPatAudio {
         .connect(peak)
         .connect(this.lowpass)
         .connect(this.gain);
+      this.bodyGain = gain(tuning.soundBodyGain);
       source
         .connect(filter("lowpass", 350))
         .connect(filter("lowpass", 350))
-        .connect(gain(0.5))
+        .connect(this.bodyGain)
         .connect(this.gain);
-      this.gain.connect(gain(0.05)).connect(route.input);
+      this.outputGain = gain(tuning.soundLevel);
+      this.gain.connect(this.outputGain).connect(route.input);
       source.start();
     } catch (error) {
       this.release();
@@ -71,6 +85,7 @@ export class HeadPatAudio {
     if (this.disposed) return;
     if (pressing) this.initialize();
     if (!this.context || !this.gain || !this.lowpass) return;
+    const tuning = this.tuning();
     const strength =
       pressing && Number.isFinite(velocity)
         ? Math.min(1, Math.abs(velocity) / 3)
@@ -82,10 +97,19 @@ export class HeadPatAudio {
       pressing ? 0.03 : 0.06,
     );
     this.lowpass.frequency.setTargetAtTime(
-      (8000 + 3500 * strength) * 0.4,
+      (8000 + 3500 * strength) * tuning.soundFreqScale,
       now,
       0.05,
     );
+    for (const filter of this.filters)
+      if (filter.node !== this.lowpass)
+        filter.node.frequency.setTargetAtTime(
+          filter.base * tuning.soundFreqScale,
+          now,
+          0.05,
+        );
+    this.bodyGain?.gain.setTargetAtTime(tuning.soundBodyGain, now, 0.05);
+    this.outputGain?.gain.setTargetAtTime(tuning.soundLevel, now, 0.05);
   }
   stop() {
     this.update(0, false);
@@ -98,9 +122,12 @@ export class HeadPatAudio {
     }
     this.nodes.forEach((node) => node.disconnect());
     this.nodes = [];
+    this.filters = [];
     this.source = null;
     this.gain = null;
     this.lowpass = null;
+    this.bodyGain = null;
+    this.outputGain = null;
     this.context = null;
   }
   dispose() {

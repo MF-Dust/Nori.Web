@@ -24,9 +24,11 @@ import { ManifoldService } from "../services/manifold";
 import { SignalService, type CommandTransport } from "../services/signal";
 
 import { HeadPat } from "../live2d/head-pat";
+import { Live2DDebugRuntime } from "../live2d/debug-runtime";
 
 export class NoriFrontendRuntime {
   readonly headPat = new HeadPat();
+  readonly live2dDebug = new Live2DDebugRuntime();
   readonly reactions = new NoriReactionDirector();
   readonly auth = new LocalAuthController();
   readonly arcade: ArcadeClient;

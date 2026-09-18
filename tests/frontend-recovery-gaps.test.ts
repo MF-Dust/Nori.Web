@@ -31,6 +31,28 @@ test("Head strokes require sustained horizontal motion and complete once per ges
   assert.equal(gesture.move(3100, 0.5, 0), false);
 });
 
+test("Head pat debug tuning clamps values and changes the production recognizer", () => {
+  const gesture = new HeadPat();
+  gesture.setTuning({ requiredMs: 500, minSpeedX: 0.9, maxYawDeg: 99 });
+  assert.equal(gesture.tuning().requiredMs, 500);
+  assert.equal(gesture.tuning().maxYawDeg, 30);
+  gesture.start(0, 0, 0);
+  for (let time = 100; time <= 500; time += 100)
+    assert.equal(
+      gesture.move(time, time % 200 ? 0.02 : 0, 0),
+      false,
+      "slow strokes must respect the tuned production threshold",
+    );
+  gesture.setTuning({ minSpeedX: 0 });
+  gesture.end();
+  gesture.start(1_000, 0, 0);
+  for (let time = 1_100; time <= 1_500; time += 100)
+    assert.equal(gesture.move(time, time % 200 ? 0.2 : 0, 0), time === 1_500);
+  assert.equal(gesture.completions, 1);
+  gesture.resetTuning();
+  assert.equal(gesture.tuning().requiredMs, 1_000);
+});
+
 test("Scene projection interpolates numeric targets and holds before a gated phase", () => {
   const project = sceneProjectSchema.parse(SCENE_EDITOR_SAMPLE);
   assert.equal(projectScene(project, 1).darkness, 0.325);

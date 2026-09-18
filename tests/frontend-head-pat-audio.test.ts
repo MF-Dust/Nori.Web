@@ -50,8 +50,10 @@ test("gesture audio stays lazy, follows strength and disposes every owned node",
     }),
   };
   let unlocked = false;
-  const audio = new HeadPatAudio(() =>
-    unlocked ? ({ context, input: {} } as any) : null,
+  const tuning = { soundLevel: 0.05, soundFreqScale: 0.4, soundBodyGain: 0.5 };
+  const audio = new HeadPatAudio(
+    () => (unlocked ? ({ context, input: {} } as any) : null),
+    () => tuning,
   );
   audio.update(3, true);
   assert.equal(nodes.length, 0);
@@ -63,6 +65,13 @@ test("gesture audio stays lazy, follows strength and disposes every owned node",
   assert.equal(stroke.gain.value, 1);
   audio.update(1.5, true);
   assert.equal(stroke.gain.value, 0.5 ** 1.4);
+  tuning.soundLevel = 0.2;
+  tuning.soundFreqScale = 0.8;
+  tuning.soundBodyGain = 0.9;
+  audio.update(3, true);
+  assert.ok(nodes.some((item) => item.gain.targets.includes(0.2)));
+  assert.ok(nodes.some((item) => item.gain.targets.includes(0.9)));
+  assert.ok(nodes.some((item) => item.frequency.targets.length > 0));
   assert.equal(nodes.length, count);
   audio.stop();
   assert.equal(stroke.gain.value, 0);

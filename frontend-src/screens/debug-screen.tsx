@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import type { NoriSceneState, NoriSceneStore } from "../state/nori-scene";
-import { UI_SOUND_CATALOG } from "../runtime/ui-sound-catalog";
 import "./debug-screen.css";
 import { SceneEditor } from "./scene-editor";
 import { CorruptionPreview } from "../story/corruption-preview";
@@ -15,9 +14,19 @@ import {
 } from "./debug-labs";
 import { DataseaSceneTuner, ShatterSceneTuner } from "./scene-advanced-tuners";
 import { GlitchDebugLab } from "./glitch-debug-lab";
+import { Live2DDebugTab } from "./debug-live2d-tab";
+import { PatDebugTab } from "./debug-pat-tab";
+import { DebugReactionsTab } from "./debug-reactions-tab";
+import {
+  AudioDebugTab,
+  InjectTalkDebugTab,
+  NoriContextDebugTab,
+  NotificationsDebugTab,
+} from "./debug-system-tabs";
 
 const tabs = [
   { id: "connection", label: "Connection" },
+  { id: "live2d", label: "Live2D" },
   { id: "scene", label: "Scene" },
   { id: "audio", label: "Audio" },
   { id: "facts", label: "Facts" },
@@ -27,8 +36,13 @@ const tabs = [
   { id: "network", label: "Network lab" },
   { id: "compute", label: "Compute lab" },
   { id: "gesture", label: "Gesture lab" },
+  { id: "pat", label: "Pat" },
   { id: "reaction", label: "Reaction lab" },
+  { id: "reactions", label: "Reactions" },
   { id: "scenarios", label: "Game scenarios" },
+  { id: "notifications", label: "Notifications" },
+  { id: "inject-talk", label: "Inject Talk" },
+  { id: "nori-context", label: "Nori Context" },
   { id: "shatter-tuner", label: "Shatter tuner" },
   { id: "datasea-tuner", label: "Datasea tuner" },
 ] as const;
@@ -56,7 +70,6 @@ export function DebugScreen({
     frontend.conversation.snapshot,
   );
   const [search, setSearch] = useState("");
-  const [sound, setSound] = useState("chess.moveSelf");
   const [error, setError] = useState<string | null>(null);
   const override = useRef<ReturnType<NoriSceneStore["acquire"]> | null>(null);
   const reactionTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -148,9 +161,11 @@ export function DebugScreen({
         {tab === "editor" && <SceneEditor frontend={frontend} />}
         {tab === "corruption" && <CorruptionPreview frontend={frontend} />}
         {tab === "glitch" && <GlitchDebugLab frontend={frontend} />}
+        {tab === "live2d" && <Live2DDebugTab frontend={frontend} />}
         {tab === "network" && <NetworkDebugLab />}
         {tab === "compute" && <ComputeDebugLab actions={actions?.compute} />}
         {tab === "gesture" && <GestureDebugLab frontend={frontend} />}
+        {tab === "pat" && <PatDebugTab frontend={frontend} />}
         {tab === "reaction" && (
           <ReactionDebugLab
             preview={(reaction) => {
@@ -174,11 +189,15 @@ export function DebugScreen({
             }}
           />
         )}
+        {tab === "reactions" && <DebugReactionsTab frontend={frontend} />}
         {tab === "scenarios" && (
           <ScenarioDebugLab load={actions?.loadScenario} />
         )}
         {tab === "shatter-tuner" && <ShatterSceneTuner frontend={frontend} />}
         {tab === "datasea-tuner" && <DataseaSceneTuner frontend={frontend} />}
+        {tab === "notifications" && <NotificationsDebugTab frontend={frontend} />}
+        {tab === "inject-talk" && <InjectTalkDebugTab frontend={frontend} />}
+        {tab === "nori-context" && <NoriContextDebugTab frontend={frontend} />}
         {visited.has("connection") && (
           <div hidden={tab !== "connection"}>
             <h2>Connection</h2>
@@ -314,61 +333,7 @@ export function DebugScreen({
             </label>
           </div>
         )}
-        {visited.has("audio") && (
-          <div hidden={tab !== "audio"}>
-            <h2>Audio</h2>
-            <label>
-              Cue
-              <select
-                value={sound}
-                onChange={(event) => setSound(event.target.value)}
-              >
-                {Object.entries(UI_SOUND_CATALOG)
-                  .filter(([, value]) => value)
-                  .map(([key]) => (
-                    <option key={key}>{key}</option>
-                  ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={() => {
-                setError(null);
-                void frontend.audio
-                  .unlock()
-                  .then(() => frontend.audio.playCue(sound))
-                  .catch((reason) => setError(String(reason)));
-              }}
-            >
-              Play cue
-            </button>
-            <label>
-              <input
-                type="checkbox"
-                checked={scene.corruptVoice}
-                onChange={(event) =>
-                  set({ corruptVoice: event.target.checked })
-                }
-              />
-              Corrupt voice
-            </label>
-            <label>
-              Desktop music
-              <select
-                value={scene.bgm}
-                onChange={(event) =>
-                  set({ bgm: event.target.value as NoriSceneState["bgm"] })
-                }
-              >
-                {["auto", "silent", "bgm1", "bgm_manifold", "bgm_void"].map(
-                  (value) => (
-                    <option key={value}>{value}</option>
-                  ),
-                )}
-              </select>
-            </label>
-          </div>
-        )}
+        {tab === "audio" && <AudioDebugTab frontend={frontend} />}
         {visited.has("facts") && (
           <div hidden={tab !== "facts"}>
             <h2>Facts</h2>

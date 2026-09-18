@@ -61,6 +61,7 @@ export function NoriStage({
     host.current.append(canvas, sceneCanvas);
     let unregisterScan: (() => void) | undefined;
     let unbindModel: (() => void) | undefined;
+    let unbindDebug: (() => void) | undefined;
     let patInput: ReturnType<typeof bindHeadPatInput> | undefined;
     let disposed = false,
       engine: Live2DEngine | undefined,
@@ -139,6 +140,7 @@ export function NoriStage({
         })
         .then((model) => {
           if (disposed) return;
+          unbindDebug = frontend.live2dDebug.attach(model);
           try {
             renderer = new NoriSceneRenderer(sceneCanvas, canvas, frontend.audio);
             host.current!.dataset.sceneRenderer = "three";
@@ -195,6 +197,7 @@ export function NoriStage({
       unsubscribeGraphics();
       unregisterScan?.();
       unbindModel?.();
+      unbindDebug?.();
       patInput?.dispose();
       clearTimeout(budgetTimer);
       resize.disconnect();
