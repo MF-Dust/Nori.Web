@@ -196,7 +196,27 @@ export async function verifyMemoryDatasea(
         .getAttribute("data-phase"),
       "cosmic",
     );
-    await page.screenshot({ path: resolve(output, "datasea-cosmic.png") });
+    // A paused animation clock can leave Chromium's WebGL compositor waiting
+    // for a new frame during capture. Pump a bounded 320ms of real scene frames
+    // while the screenshot is pending, without resuming wall-clock progression.
+    // Keep capture mandatory and verify that it never advances out of cosmic.
+    let captureSettled = false;
+    const cosmicCapture = page
+      .screenshot({ path: resolve(output, "datasea-cosmic.png") })
+      .then(
+        () => { captureSettled = true; },
+        (error) => { captureSettled = true; return error; },
+      );
+    for (let frame = 0; frame < 20 && !captureSettled; frame++) {
+      await page.clock.runFor(16);
+    }
+    const captureError = await cosmicCapture;
+    if (captureError) throw captureError;
+    assert.equal(
+      await page.locator('[data-story-scene="datasea"]').getAttribute("data-phase"),
+      "cosmic",
+    );
+    stage("Cosmic captured; completion and resource cleanup");
     await page.clock.fastForward(105000);
     await page.clock.runFor(40);
     assert.ok((await events()).completions.includes("datasea"));
