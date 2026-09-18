@@ -15,6 +15,7 @@ import "./frontend-window-localization.test";
 import "./frontend-live2d-debug.test";
 import "./frontend-debug-system-tabs.test";
 import "./frontend-debug-reactions-tab.test";
+import "./frontend-dock-presentation.test";
 import { ConversationTimeline } from "../frontend-src/apps/conversation-presentation";
 import assert from "node:assert/strict";
 import { ArcadeClient } from "../frontend-src/runtime/arcade-client";

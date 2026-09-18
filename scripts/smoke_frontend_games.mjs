@@ -285,6 +285,7 @@ try {
   await page.goto(origin + "/codenames#codenames");
   assert.equal(await page.locator(".source-codenames-fireflies i").count(), 12);
   assert.equal(await page.locator(".source-codenames-compass").count(), 1);
+  await page.getByRole("button", { name: "Enter Forest", exact: true }).click();
   await page.getByRole("button", { name: "Start Adventure", exact: true }).click();
   assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).settings.tokens), 9);
   await page.evaluate(() => window.fixture.codenames(true));

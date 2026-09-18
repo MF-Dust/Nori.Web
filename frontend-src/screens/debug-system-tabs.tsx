@@ -3,6 +3,7 @@ import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import type { ArcadeServerMessage, JsonValue } from "../runtime/protocol";
 import { UI_SOUND_CATALOG } from "../runtime/ui-sound-catalog";
 import { useAudioSettings } from "../state/audio-store";
+import type { NoriSceneState } from "../state/nori-scene";
 
 export interface DebugNotification {
   id: string;
@@ -347,7 +348,13 @@ function AudioSlider({
   );
 }
 
-export function AudioDebugTab({ frontend }: { frontend: NoriFrontendRuntime }) {
+export function AudioDebugTab({
+  frontend,
+  setScene,
+}: {
+  frontend: NoriFrontendRuntime;
+  setScene(patch: Partial<NoriSceneState>): void;
+}) {
   const audio = useAudioSettings();
   const scene = useSyncExternalStore(
     frontend.scene.subscribe,
@@ -416,6 +423,31 @@ export function AudioDebugTab({ frontend }: { frontend: NoriFrontendRuntime }) {
       <button type="button" onClick={() => void unlock()}>
         Resume / unlock audio
       </button>
+
+      <h3>Scene audio</h3>
+      <label>
+        <input
+          type="checkbox"
+          checked={scene.corruptVoice}
+          onChange={(event) => setScene({ corruptVoice: event.target.checked })}
+        />
+        Corrupt voice
+      </label>
+      <label>
+        Desktop music
+        <select
+          value={scene.bgm}
+          onChange={(event) =>
+            setScene({ bgm: event.target.value as NoriSceneState["bgm"] })
+          }
+        >
+          <option value="auto">auto</option>
+          <option value="silent">silent</option>
+          <option value="bgm1">bgm1</option>
+          <option value="bgm_manifold">bgm_manifold</option>
+          <option value="bgm_void">bgm_void</option>
+        </select>
+      </label>
 
       <h3>Volume (settings → session mixer)</h3>
       <AudioSlider

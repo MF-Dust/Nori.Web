@@ -8,12 +8,12 @@ import {
 } from "react";
 import {
   Volume2,
-  Music2,
+  Music,
   Sparkles,
-  Mic,
+  MicVocal,
   Monitor,
   Wifi,
-  Settings,
+  Gauge,
   type LucideIcon,
 } from "lucide-react";
 import { useAudioSettings } from "../state/audio-store";
@@ -35,9 +35,9 @@ const sections = ["sound", "graphics", "network", "system"] as const;
 type Section = (typeof sections)[number];
 const icons = {
   sound: Volume2,
-  graphics: Monitor,
+  graphics: Gauge,
   network: Wifi,
-  system: Settings,
+  system: Monitor,
 };
 
 function Toggle({
@@ -161,7 +161,7 @@ function SoundSettings({
           t={t}
         />
         <VolumeRow
-          icon={Music2}
+          icon={Music}
           label={t("settings.sound.music")}
           value={audio.musicVolume}
           onChange={audio.setMusicVolume}
@@ -179,7 +179,7 @@ function SoundSettings({
           t={t}
         />
         <VolumeRow
-          icon={Mic}
+          icon={MicVocal}
           label={t("settings.sound.voice")}
           value={audio.voiceVolume}
           onChange={audio.setVoiceVolume}

@@ -143,13 +143,25 @@ async function captureTarget({ label, outDir, historical, backendPort, previewPo
       const dock = page.locator(`[data-app-id="${game.id}"]`);
       await dock.waitFor();
       await dock.click();
-      await page.getByRole("heading", { name: game.heading, exact: true }).waitFor();
       // Both implementations keep this exclusive chrome class for the full
       // window lifetime. Source-only host ids and animation attributes are
       // deliberately excluded from the paired selector.
       const host = page.locator(".nori-window-glass.nori-window-exclusive:visible");
       await host.waitFor();
       assert.equal(await host.count(), 1, `${label} ${game.id} must expose one exclusive window`);
+      await page.waitForFunction(
+        ({ heading }) => {
+          const chrome = document.querySelector(".nori-window-glass.nori-window-exclusive");
+          if (!(chrome instanceof HTMLElement)) return false;
+          for (let element = chrome; element; element = element.parentElement) {
+            if (Number.parseFloat(getComputedStyle(element).opacity) < 0.99) return false;
+          }
+          return [...chrome.querySelectorAll("h1")].some(
+            (element) => element.getClientRects().length > 0 && element.textContent?.trim() === heading,
+          );
+        },
+        { heading: game.heading },
+      );
       await settle(page);
       const geometry = await host.boundingBox();
       assert.ok(geometry, `${label} ${game.id} window has no geometry`);

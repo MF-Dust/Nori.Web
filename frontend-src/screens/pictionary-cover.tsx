@@ -9,7 +9,7 @@ export function PictionaryCover({ locale, open, durationSec, disabled, onDuratio
       <div className="source-pictionary-cover-elastic" aria-hidden="true" />
       <div className="source-pictionary-cover-pencil" aria-hidden="true" />
       <div className="source-pictionary-cover-title">
-        <small>NORI · SKETCHBOOK</small><h1>{text("Draw & Guess", "你画我猜")}</h1><i />
+        <h1>{text("Draw & Guess", "你画我猜")}</h1><i />
         <p>{text("Take turns drawing and guessing with Nori.", "与 Nori 轮流画图和猜词。")}</p>
       </div>
       <div className="source-pictionary-mode-cards">

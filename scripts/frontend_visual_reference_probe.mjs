@@ -141,6 +141,23 @@ async function settle(page) {
 
 async function screenshot(page, directory, name, states) {
   await settle(page);
+  // A heading can be visible to Playwright while its animated ancestor is
+  // still transparent. Wait for the actual window before saving the evidence.
+  if (["03-about", "04-settings", "05-credits"].includes(name)) {
+    await page.waitForFunction(() => {
+      const windows = [...document.querySelectorAll(".nori-window-glass")]
+        .filter((element) => element.getBoundingClientRect().width > 0);
+      return windows.length > 0 && windows.every((element) => {
+        for (let node = element; node; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          if (Number(style.opacity) < 0.99 || style.visibility === "hidden") return false;
+        }
+        const bounds = element.getBoundingClientRect();
+        return bounds.width > 100 && bounds.height > 100 && bounds.top >= 0;
+      });
+    }, null, { timeout: 15_000 });
+    await settle(page);
+  }
   const bytes = await page.screenshot({ animations: "disabled" });
   const file = `${name}.png`;
   await writeFile(resolve(directory, file), bytes);

@@ -35,6 +35,7 @@ export function CodenamesApp({ controller, translate: t, locale = "en", playSoun
   const busy = snapshot.pending || !!snapshot.presenting || snapshot.connected === false;
   useEffect(() => controller.retain(), [controller]);
   const [tokens, setTokens] = useState(9), [help, setHelp] = useState(false);
+  const [missionSetup, setMissionSetup] = useState(false);
   const [count, setCount] = useState<CodenamesClueCount | -1>(-1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [hovered, setHovered] = useState<number | null>(null);
@@ -103,21 +104,20 @@ export function CodenamesApp({ controller, translate: t, locale = "en", playSoun
   const shouldPulseEndTurn = canEndTurn && typeof turn?.clue.count === "number" && turn.clue.count > 0 && turn.guesses.filter(guess => guess.result === "AGENT").length >= turn.clue.count;
   return <section ref={root} className="source-codenames-app">
     {!game && <div aria-hidden className="source-codenames-forest"><CodenamesForest /></div>}
-    {!game ? <div className="source-codenames-menu">
+    {!game ? <><div aria-hidden className="source-codenames-start-border" /><button type="button" className="source-codenames-menu-help" aria-label={t("codenames.help.button")} onClick={() => setHelp(true)}>?</button><div className="source-codenames-menu">
       <div className="source-codenames-fireflies" aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <i key={index} />)}</div>
       <div className="source-codenames-compass" aria-hidden="true"><i /><span>N</span></div>
-      <p className="source-codenames-badge">{t("codenames.badge")}</p><h1>{t("codenames.title")}</h1>
+      <h1>{t("codenames.title")}</h1>
       <div className="source-codenames-title-rule" aria-hidden="true"><i /><span>✦</span><i /></div><p>{t("codenames.subtitle")}</p>
-      <fieldset disabled={!snapshot.mounted || snapshot.pending}><legend>{t("codenames.difficulty.label")}</legend>
+      {missionSetup && <fieldset disabled={!snapshot.mounted || snapshot.pending}><legend>{t("codenames.difficulty.label")}</legend>
         {[{ tokens: 11, key: "easy" }, { tokens: 10, key: "normal" }, { tokens: 9, key: "hard" }].map(item =>
           <button type="button" key={item.tokens} aria-pressed={tokens === item.tokens} onClick={() => setTokens(item.tokens)}>
             {t("codenames.difficulty." + item.key)} · {t("codenames.difficulty.tokens", { count: item.tokens })}
-          </button>)}
-      </fieldset>
-      <button type="button" disabled={!snapshot.mounted || snapshot.pending} onClick={() => start()}>{t("codenames.buttons.startMission")}</button>
-      <button type="button" disabled={!snapshot.mounted || snapshot.pending} onClick={() => start(true)}>{t("codenames.buttons.tutorial")}</button>
-      <button type="button" onClick={() => setHelp(true)}>{t("codenames.help.button")}</button>
-    </div> : <>
+          </button>)}</fieldset>}
+      <button type="button" className="source-codenames-start-button" disabled={!snapshot.mounted || snapshot.pending}
+        onClick={() => missionSetup ? start() : setMissionSetup(true)}><span aria-hidden>▶</span>{t(missionSetup ? "codenames.buttons.startMission" : "codenames.buttons.newMission")}</button>
+      {!missionSetup && <button type="button" className="source-codenames-tutorial-button" disabled={!snapshot.mounted || snapshot.pending} onClick={() => start(true)}><span aria-hidden>▱</span>{t("codenames.buttons.tutorial")}</button>}
+    </div></> : <>
       <CodenamesScreen gameState={game} uiState={ui} counterpartSide={player} messages={messages} translate={t}
         playSound={playSound}
         {...reveal}

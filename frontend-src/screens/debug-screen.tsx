@@ -333,7 +333,9 @@ export function DebugScreen({
             </label>
           </div>
         )}
-        {tab === "audio" && <AudioDebugTab frontend={frontend} />}
+        {tab === "audio" && (
+          <AudioDebugTab frontend={frontend} setScene={set} />
+        )}
         {visited.has("facts") && (
           <div hidden={tab !== "facts"}>
             <h2>Facts</h2>

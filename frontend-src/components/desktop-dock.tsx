@@ -60,6 +60,18 @@ function defaultTranslate(key: string): string {
   return key;
 }
 
+/** Shipped `MOe`: the post-farewell Credits prompt stays active until opened. */
+export function hasCreditsDockAttention(
+  appId: string,
+  facts: ReadonlySet<string>,
+): boolean {
+  return (
+    appId === "credits" &&
+    facts.has("arg.farewell.shown") &&
+    !facts.has("credits.opened")
+  );
+}
+
 function useResponsiveDockLayout(): DockResponsiveLayout {
   const read = useCallback(() => {
     if (typeof window === "undefined") return getNoriDockResponsiveLayout(0, 0);
@@ -76,7 +88,10 @@ function useResponsiveDockLayout(): DockResponsiveLayout {
 
 function useInstallState(runtime: DesktopRuntime, appId: string) {
   return useSyncExternalStore(
-    useCallback((listener) => runtime.installs.subscribe(appId, listener), [appId, runtime]),
+    useCallback(
+      (listener) => runtime.installs.subscribe(appId, listener),
+      [appId, runtime],
+    ),
     useCallback(() => runtime.installs.getState(appId), [appId, runtime]),
     () => "downloaded" as const,
   );
@@ -99,7 +114,10 @@ function DefaultDockIcon({ app }: { app: DockAppModel }) {
       className="dock-ic flex h-full w-full items-center justify-center bg-white/85 shadow-lg dark:bg-[rgba(35,40,50,0.85)]"
       style={{ borderRadius: "22.5%" }}
     >
-      <AppWindow className="h-[55%] w-[55%] text-gray-700 dark:text-gray-200" aria-label={app.title} />
+      <AppWindow
+        className="h-[55%] w-[55%] text-gray-700 dark:text-gray-200"
+        aria-label={app.title}
+      />
     </div>
   );
 }
@@ -114,7 +132,10 @@ function DownloadOverlay({
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
       <div
         className="relative"
-        style={{ width: "var(--dock-icon-fill, 88%)", height: "var(--dock-icon-fill, 88%)" }}
+        style={{
+          width: "var(--dock-icon-fill, 88%)",
+          height: "var(--dock-icon-fill, 88%)",
+        }}
       >
         <div
           className="absolute -right-1 -top-1 rounded-full bg-zinc-900/80 p-px transition-opacity"
@@ -275,6 +296,7 @@ interface DesktopDockItemProps {
   renderIcon?: DesktopDockProps["renderIcon"];
   badgeCount: number;
   badgeDot: boolean;
+  attention: boolean;
   tooltip?: ReactNode;
   reducedMotion: boolean;
   playCue?: (cue: string) => void;
@@ -299,6 +321,7 @@ function DesktopDockItem({
   renderIcon,
   badgeCount,
   badgeDot,
+  attention,
   tooltip,
   reducedMotion,
   playCue,
@@ -325,9 +348,15 @@ function DesktopDockItem({
   };
 
   useEffect(() => {
-    if (previousInstallState.current === "downloading" && installState === "downloaded") {
+    if (
+      previousInstallState.current === "downloading" &&
+      installState === "downloaded"
+    ) {
       const now = performance.now();
-      if (now - lastDownloadCueAt >= NORI_DOCK_INTERACTION.DOWNLOAD_CUE_DEBOUNCE_MS) {
+      if (
+        now - lastDownloadCueAt >=
+        NORI_DOCK_INTERACTION.DOWNLOAD_CUE_DEBOUNCE_MS
+      ) {
         lastDownloadCueAt = now;
         playCue?.("shell-dock-download-complete");
       }
@@ -394,7 +423,9 @@ function DesktopDockItem({
     void activateDockApp(runtime.store, app.id);
   };
 
-  const contextMenu = (event: ReactPointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
+  const contextMenu = (
+    event: ReactPointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>,
+  ) => {
     event.preventDefault();
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     playCue?.("shell-menu-open");
@@ -405,7 +436,7 @@ function DesktopDockItem({
   const darkened = pressed || menuOpen;
   const tooltipText = damaged
     ? translate("appError.damaged")
-    : tooltip ?? app.title;
+    : (tooltip ?? app.title);
   const indicatorSize = Math.max(3, size * 0.06);
   const inverseScale = scale === 0 ? 1 : 1 / scale;
 
@@ -420,7 +451,11 @@ function DesktopDockItem({
         height: size,
         transform: `scale(${scale})`,
         transformOrigin: "50% 100%",
-        transition: reducedMotion ? "none" : animated ? "opacity 250ms cubic-bezier(0.23, 1, 0.32, 1)" : undefined,
+        transition: reducedMotion
+          ? "none"
+          : animated
+            ? "opacity 250ms cubic-bezier(0.23, 1, 0.32, 1)"
+            : undefined,
       }}
     >
       <div
@@ -445,13 +480,17 @@ function DesktopDockItem({
             transform: pressed
               ? "translateY(var(--dock-press-depth, 2%)) scale(var(--dock-press-scale, 0.95))"
               : "translateY(0%) scale(1)",
-            filter: installState !== "downloaded" ? "brightness(0.5)" : undefined,
+            filter:
+              installState !== "downloaded" ? "brightness(0.5)" : undefined,
           }}
         >
           {renderIcon ? (
             renderIcon(app, { active, darkened, installState })
           ) : (
-            <div style={darkened ? { filter: "brightness(0.82)" } : undefined} className="h-full w-full">
+            <div
+              style={darkened ? { filter: "brightness(0.82)" } : undefined}
+              className="h-full w-full"
+            >
               <DefaultDockIcon app={app} />
             </div>
           )}
@@ -461,7 +500,10 @@ function DesktopDockItem({
         {installState === "downloaded" && (
           <>
             <DockBadge count={badgeCount} size={size} />
-            <DockDotBadge visible={badgeCount <= 0 && (badgeDot || newInstallDot)} size={size} />
+            <DockDotBadge
+              visible={badgeCount <= 0 && (badgeDot || newInstallDot)}
+              size={size}
+            />
           </>
         )}
 
@@ -484,7 +526,11 @@ function DesktopDockItem({
 
         <div
           className={`dock-item-tooltip nori-dock-tooltip absolute pointer-events-none whitespace-nowrap rounded px-2 py-1 text-xs font-medium transition-opacity duration-150 ${
-            damaged ? "opacity-100 nori-dock-tooltip-damaged" : "opacity-0 group-hover:opacity-100"
+            damaged
+              ? "opacity-100 nori-dock-tooltip-damaged"
+              : attention
+                ? "opacity-100"
+                : "opacity-0 group-hover:opacity-100"
           }`}
           style={{
             bottom: "calc(100% + 8px)",
@@ -497,7 +543,9 @@ function DesktopDockItem({
             transformOrigin: "50% 100%",
           }}
         >
-          {damaged && <CircleAlert className="mr-1 inline size-3" aria-hidden="true" />}
+          {damaged && (
+            <CircleAlert className="mr-1 inline size-3" aria-hidden="true" />
+          )}
           {tooltipText}
         </div>
 
@@ -562,7 +610,10 @@ export function DesktopDock({
   const focusedWindowId = runtime.store((state) => state.focusedWindowId);
   const exclusiveAppId = runtime.store((state) => state.exclusiveAppId);
   const openAppIds = useMemo(
-    () => Object.values(processes).filter((process) => process.windowIds.length > 0).map((process) => process.appId),
+    () =>
+      Object.values(processes)
+        .filter((process) => process.windowIds.length > 0)
+        .map((process) => process.appId),
     [processes],
   );
   const selection = useMemo(
@@ -590,7 +641,7 @@ export function DesktopDock({
   const appCount = allApps.length;
   const activeAppId =
     exclusiveAppId ??
-    (focusedWindowId ? windows[focusedWindowId]?.appId ?? null : null);
+    (focusedWindowId ? (windows[focusedWindowId]?.appId ?? null) : null);
 
   const currentScales = useRef<number[]>([]);
   const currentCenters = useRef<number[]>([]);
@@ -599,7 +650,13 @@ export function DesktopDock({
   const initialize = useCallback(() => {
     const scales = Array(slotCount).fill(1) as number[];
     const centers = computeDockSlotCenters(scales, layout, separatorIndex);
-    const width = computeDockContentWidth(centers, scales, layout, separatorIndex, appCount);
+    const width = computeDockContentWidth(
+      centers,
+      scales,
+      layout,
+      separatorIndex,
+      appCount,
+    );
     currentScales.current = scales;
     currentCenters.current = centers;
     currentWidth.current = width;
@@ -618,7 +675,11 @@ export function DesktopDock({
       layout.maxScale,
       layout.effectWidth,
     );
-    const targetCenters = computeDockSlotCenters(targetScales, layout, separatorIndex);
+    const targetCenters = computeDockSlotCenters(
+      targetScales,
+      layout,
+      separatorIndex,
+    );
     const targetWidth = computeDockContentWidth(
       targetCenters,
       targetScales,
@@ -626,9 +687,10 @@ export function DesktopDock({
       separatorIndex,
       appCount,
     );
-    const alpha = pointerX.current === null
-      ? NORI_DOCK_INTERACTION.REST_LERP
-      : NORI_DOCK_INTERACTION.HOVER_LERP;
+    const alpha =
+      pointerX.current === null
+        ? NORI_DOCK_INTERACTION.REST_LERP
+        : NORI_DOCK_INTERACTION.HOVER_LERP;
 
     const scales = currentScales.current.map(
       (value, index) => value + ((targetScales[index] ?? 1) - value) * alpha,
@@ -636,13 +698,16 @@ export function DesktopDock({
     const centers = currentCenters.current.map(
       (value, index) => value + ((targetCenters[index] ?? 0) - value) * alpha,
     );
-    const width = currentWidth.current + (targetWidth - currentWidth.current) * alpha;
+    const width =
+      currentWidth.current + (targetWidth - currentWidth.current) * alpha;
     currentScales.current = scales;
     currentCenters.current = centers;
     currentWidth.current = width;
     setRenderState({ scales, centers, contentWidth: width });
 
-    let unsettled = Math.abs(width - targetWidth) > NORI_DOCK_INTERACTION.WIDTH_SETTLE_EPSILON;
+    let unsettled =
+      Math.abs(width - targetWidth) >
+      NORI_DOCK_INTERACTION.WIDTH_SETTLE_EPSILON;
     if (!unsettled) {
       unsettled = scales.some(
         (value, index) =>
@@ -661,7 +726,8 @@ export function DesktopDock({
   }, [appCount, layout, separatorIndex]);
 
   const ensureAnimation = useCallback(() => {
-    if (animationFrame.current === null) animationFrame.current = requestAnimationFrame(animate);
+    if (animationFrame.current === null)
+      animationFrame.current = requestAnimationFrame(animate);
   }, [animate]);
 
   useEffect(() => {
@@ -671,14 +737,19 @@ export function DesktopDock({
 
   useEffect(
     () => () => {
-      if (animationFrame.current !== null) cancelAnimationFrame(animationFrame.current);
+      if (animationFrame.current !== null)
+        cancelAnimationFrame(animationFrame.current);
     },
     [],
   );
 
   const mouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (menuOpen.current) return;
-    if (performance.now() - menuClosedAt.current < NORI_DOCK_INTERACTION.PRESS_HOLD_MS) return;
+    if (
+      performance.now() - menuClosedAt.current <
+      NORI_DOCK_INTERACTION.PRESS_HOLD_MS
+    )
+      return;
     const rect = rootRef.current?.getBoundingClientRect();
     if (!rect) return;
     pointerX.current = event.clientX - rect.left - layout.padding;
@@ -724,23 +795,33 @@ export function DesktopDock({
     <div
       ref={rootRef}
       className={`nori-dock ${className}`.trim()}
-      style={{
-        position: "relative",
-        width: outerWidth,
-        borderRadius: layout.borderRadius,
-        padding: layout.padding,
-        "--dock-oversample": String(NORI_DOCK_INTERACTION.MAX_SCALE),
-      } as React.CSSProperties}
+      style={
+        {
+          position: "relative",
+          width: outerWidth,
+          borderRadius: layout.borderRadius,
+          padding: layout.padding,
+          "--dock-oversample": String(NORI_DOCK_INTERACTION.MAX_SCALE),
+        } as React.CSSProperties
+      }
       onMouseMove={mouseMove}
       onMouseLeave={mouseLeave}
       data-nori-dock="true"
     >
-      <div aria-hidden="true" className="nori-dock-container" style={backgroundStyle} />
-      <div className="relative" style={{ height: layout.baseIconSize, width: "100%" }}>
+      <div
+        aria-hidden="true"
+        className="nori-dock-container"
+        style={backgroundStyle}
+      />
+      <div
+        className="relative"
+        style={{ height: layout.baseIconSize, width: "100%" }}
+      >
         {pinned.map((app, appIndex) => {
           const placement = appAt(appIndex);
           const process = processes[app.id];
           const open = Boolean(process && process.windowIds.length > 0);
+          const attention = hasCreditsDockAttention(app.id, facts);
           return (
             <DesktopDockItem
               key={app.id}
@@ -752,12 +833,20 @@ export function DesktopDock({
               active={app.id === activeAppId}
               open={open}
               minimized={isDockAppMinimized(runtime.store, app.id)}
-              windowItems={selectDockWindowItems(runtime.store, runtime.registry, app.id, formatWindowNumber)}
+              windowItems={selectDockWindowItems(
+                runtime.store,
+                runtime.registry,
+                app.id,
+                formatWindowNumber,
+              )}
               translate={translate}
               renderIcon={renderIcon}
               badgeCount={getBadgeCount(app.id)}
-              badgeDot={getBadgeDot(app.id)}
-              tooltip={getTooltip?.(app)}
+              badgeDot={attention || getBadgeDot(app.id)}
+              attention={attention}
+              tooltip={
+                attention ? translate("credits.dockTooltip") : getTooltip?.(app)
+              }
               reducedMotion={reducedMotion}
               playCue={playCue}
               onMenuOpenChange={setAnyMenuOpen}
@@ -779,7 +868,10 @@ export function DesktopDock({
           >
             <div
               className="nori-dock-separator h-full w-full"
-              style={{ backgroundColor: "rgba(255, 255, 255, 0.4)", transformOrigin: "center" }}
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.4)",
+                transformOrigin: "center",
+              }}
             />
           </div>
         )}
@@ -789,6 +881,7 @@ export function DesktopDock({
           const placement = appAt(appIndex);
           const process = processes[app.id];
           const open = Boolean(process && process.windowIds.length > 0);
+          const attention = hasCreditsDockAttention(app.id, facts);
           return (
             <DesktopDockItem
               key={app.id}
@@ -800,13 +893,21 @@ export function DesktopDock({
               active={app.id === activeAppId}
               open={open}
               minimized={isDockAppMinimized(runtime.store, app.id)}
-              windowItems={selectDockWindowItems(runtime.store, runtime.registry, app.id, formatWindowNumber)}
+              windowItems={selectDockWindowItems(
+                runtime.store,
+                runtime.registry,
+                app.id,
+                formatWindowNumber,
+              )}
               animated
               translate={translate}
               renderIcon={renderIcon}
               badgeCount={getBadgeCount(app.id)}
-              badgeDot={getBadgeDot(app.id)}
-              tooltip={getTooltip?.(app)}
+              badgeDot={attention || getBadgeDot(app.id)}
+              attention={attention}
+              tooltip={
+                attention ? translate("credits.dockTooltip") : getTooltip?.(app)
+              }
               reducedMotion={reducedMotion}
               playCue={playCue}
               onMenuOpenChange={setAnyMenuOpen}
