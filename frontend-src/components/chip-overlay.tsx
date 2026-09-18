@@ -1,6 +1,6 @@
 import { noriScanBounds } from "../live2d/scan-bounds";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { Cpu } from "lucide-react";
+import { ScanSearch } from "lucide-react";
 import {
   ChipController,
   chipAvailability,
@@ -66,18 +66,16 @@ export function ChipButton({
         if (!accepted) setRefused(true);
       }}
     >
-      <Cpu size={17} />
-      <span
-        className="chip-charge-meter"
+      <ScanSearch
+        size={16}
+        strokeWidth={2.5}
         style={{
           opacity: charge.capacity
             ? 0.5 + (0.5 * charge.charges) / charge.capacity
             : 0.5,
         }}
         aria-hidden="true"
-      >
-        {charge.charges}
-      </span>
+      />
     </button>
   );
 }
@@ -303,20 +301,23 @@ export function ChipUpgradeNotice({
   if (acknowledged || !ready || state.phase === "picking") return null;
   return (
     <aside className="chip-upgrade-notice">
-      <p>{t("chip.upgraded_notice")}</p>
-      <button
-        type="button"
-        onClick={() => {
-          setAcknowledged(true);
-          try {
-            localStorage.setItem("nori.chip.upgrade_notice.ack", "1");
-          } catch {
-            /* Session acknowledgement still applies. */
-          }
-        }}
-      >
-        {t("chip.upgraded_ack")}
-      </button>
+      <p className="chip-upgrade-copy">{t("chip.upgraded_notice")}</p>
+      <div className="chip-upgrade-actions">
+        <button
+          type="button"
+          onClick={() => {
+            setAcknowledged(true);
+            try {
+              localStorage.setItem("nori.chip.upgrade_notice.ack", "1");
+            } catch {
+              /* Session acknowledgement still applies. */
+            }
+          }}
+        >
+          {t("chip.upgraded_ack")}
+        </button>
+      </div>
+      <span className="chip-upgrade-tail" aria-hidden="true" />
     </aside>
   );
 }

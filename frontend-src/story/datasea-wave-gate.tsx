@@ -12,7 +12,7 @@ import {
 } from "./datasea-games-original.js";
 import "./datasea-wave-gate.css";
 
-const GAMES = [
+export const DATASEA_GAMES = [
   ["steady", "稳态", 400, 300],
   ["resonance", "共振", 400, 420],
   ["current", "逆流", 380, 380],
@@ -71,7 +71,7 @@ const clampPosition = (
   y: Math.max(56, Math.min(window.innerHeight - height - 8, y)),
 });
 
-function GameWindow({
+export function DataseaGameWindow({
   gameIndex,
   order,
   solved,
@@ -82,7 +82,7 @@ function GameWindow({
   solved: boolean;
   api: DataseaGameApi;
 }) {
-  const [id, title, width, height] = GAMES[gameIndex],
+  const [id, title, width, height] = DATASEA_GAMES[gameIndex],
     point = POSITIONS[order];
   const initial = useMemo(
     () =>
@@ -269,7 +269,7 @@ export function DataseaWaveGate({
         return next;
       }),
     hit: (intensity = 1) => {
-      hit?.(GAMES[gameIndex][0], intensity);
+      hit?.(DATASEA_GAMES[gameIndex][0], intensity);
       frontend.audio.playCue("cutscenes-microgame-hit", {
         volume: 0.6 + 0.4 * Math.max(0, Math.min(1, intensity)),
       });
@@ -284,7 +284,7 @@ export function DataseaWaveGate({
       {!breakState &&
         finishedWave.current < wave &&
         WAVES[wave].map((gameIndex, order) => (
-          <GameWindow
+          <DataseaGameWindow
             key={`${wave}-${gameIndex}`}
             gameIndex={gameIndex}
             order={order}

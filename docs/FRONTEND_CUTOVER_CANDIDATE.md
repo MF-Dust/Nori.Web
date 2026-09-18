@@ -57,8 +57,10 @@ these contracts is broken:
 - a copied rollback file differs from its production SHA-256 hash.
 
 The browser may still load the explicit vendor/runtime boundary referenced by
-the source index: Cubism Core, `nori-runtime-shims.js`,
-`nori-ai-settings.js`, and `fonts.css`. Historical application chunks remain
+the source index: Cubism Core, `nori-runtime-shims.js`, the repository-owned
+AI/provider/TTS/UI settings and wallpaper compatibility scripts,
+`nori-settings-glass.css`, and `fonts.css`. These are the same maintained
+compatibility entry files used by the existing public index. Historical application chunks remain
 present in the staged public asset set for rollback, but the candidate index and
 generated source graph do not execute them.
 
@@ -105,8 +107,11 @@ guard incorrectly treated two unrelated `LICENSE` basenames as a leak.
 The corrected asset guard compares SHA-256 file contents, allowing dependency
 license notices in both distributions. It detects even renamed frontend
 payloads in the Worker output. A regression case covers the observed license
-collision and a genuinely copied payload. The corrected CI result remains
-pending until the next run completes.
+collision and a genuinely copied payload. The corrected guard was
+verified by [run 35361093541](https://github.com/MF-Dust/Nori.Web/actions/runs/35361093541)
+on head `719b9993` (CI merge ref `d011f8bf`): candidate browser, paired visual
+capture, asset-content guard and Worker dry-run all passed. Visual differences
+found by inspecting those images are tracked separately from capture success.
 
 ## Remaining production evidence
 
@@ -114,8 +119,7 @@ Before switching the public entry, the materialized candidate still needs:
 
 - the normal typecheck, build, recovery, ownership, cutover, and application
   smoke gates;
-- a Cloudflare deployment dry-run using the materialized candidate or an
-  equivalent verified union of build/public roots;
+- the passing Cloudflare candidate dry-run repeated for the final revision;
 - browser checks served from that exact candidate entry, including boot,
   login, desktop/app lifecycle, persistence, and sign-out;
 - the visual and original-agent acceptance recorded by the recovery ledgers;

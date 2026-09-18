@@ -26,7 +26,7 @@ export function SystemAlert({
     }
   }, [heading, setTitle]);
   return (
-    <div className="flex h-full flex-col bg-background text-foreground">
+    <div className="flex h-full flex-col text-foreground">
       <div className="flex flex-1 items-start gap-3 px-5 pt-5">
         <TriangleAlert className="mt-0.5 size-6 shrink-0 text-amber-500" />
         <div className="min-w-0 space-y-1">
@@ -102,7 +102,7 @@ export function AboutScreen() {
     return () => cancelAnimationFrame(frame);
   }, [reduced]);
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
+    <div className="flex h-full flex-col overflow-hidden text-foreground">
       <div className="flex shrink-0 flex-col items-center pb-2 pt-8">
         <AboutLogo reduced={reduced} />
         <h1 className="text-2xl font-semibold tracking-tight">NoriOS</h1>

@@ -97,7 +97,8 @@ export async function verifyMemoryDatasea(
       }
     }
     await page.screenshot({ path: resolve(output, "memory-five-windows.png") });
-    await page.clock.runFor(4900);
+    // Final record holds for 4.8s, then its 0.3s phase tail precedes flood.
+    await page.clock.runFor(5200);
     assert.equal(
       await page
         .locator('[data-story-scene="memory"]')

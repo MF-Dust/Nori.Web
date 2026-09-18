@@ -4,6 +4,7 @@ import {
   useState,
   useSyncExternalStore,
   type ReactNode,
+  type CSSProperties,
 } from "react";
 import {
   Volume2,
@@ -101,6 +102,7 @@ function VolumeRow({
           max={100}
           step={1}
           value={value}
+          style={{ "--volume": `${value}%` } as CSSProperties}
           aria-label={label}
           disabled={disabled || mute?.muted}
           onChange={(event) => onChange(event.target.valueAsNumber)}
@@ -136,13 +138,18 @@ function SoundSettings({
             {t("settings.sound.description")}
           </p>
         </div>
-        <Toggle
-          checked={!audio.isMuted}
-          label={t("settings.sound.title")}
-          onChange={audio.toggleMute}
-        />
+        <div className="flex items-center gap-2">
+          <Volume2
+            aria-hidden="true"
+            className="size-4 text-muted-foreground"
+          />
+          <Toggle
+            checked={!audio.isMuted}
+            label={t("settings.sound.title")}
+            onChange={audio.toggleMute}
+          />
+        </div>
       </div>
-      {speechControl}
       <hr />
       <div className="space-y-1">
         <VolumeRow
@@ -181,6 +188,9 @@ function SoundSettings({
           t={t}
         />
       </div>
+      {speechControl && (
+        <div className="border-t border-border pt-5">{speechControl}</div>
+      )}
     </div>
   );
 }

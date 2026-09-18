@@ -310,6 +310,7 @@ function createSourceSession() {
     },
     desktop: {
       playCue: frontend.audio.playCue,
+      translate: sourceTranslate,
       windows: {
         debug: { main: { component: () => <DebugScreen frontend={frontend} actions={{
           compute: idle.debug,

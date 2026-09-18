@@ -24,6 +24,8 @@ export interface ProductionScreenDescriptor {
 export interface ProductionWindowDescriptor {
   type: string;
   title?: string;
+  /** Translation key for the catalog-provided fallback title. */
+  titleKey?: string;
   defaultSize: { width: number; height: number };
   minSize?: { width: number; height: number };
   resizable?: boolean;
@@ -40,6 +42,8 @@ export interface ProductionAppDescriptor {
   sourceBinding: string;
   id: string;
   title: string;
+  /** Translation key for the catalog-provided title; omitted for proper names. */
+  titleKey?: string;
   pinned: boolean;
   exclusive?: boolean;
   keepAlive?: boolean;
@@ -78,6 +82,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
       {
         type: "about",
         title: "About NoriOS",
+        titleKey: "windows.aboutNoriOS",
         defaultSize: { width: 400, height: 440 },
         resizable: false,
         minimizable: false,
@@ -98,6 +103,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "LOe",
     id: "credits",
     title: "Credits",
+    titleKey: "apps.credits",
     pinned: true,
     dockWhen: "arg.farewell.shown",
     windows: [
@@ -114,6 +120,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "bOe",
     id: "idle",
     title: "算力",
+    titleKey: "apps.idle",
     accentColor: "#22d3ee",
     pinned: true,
     windows: [
@@ -130,6 +137,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "oOe",
     id: "mail",
     title: "Mail",
+    titleKey: "apps.mail",
     pinned: true,
     windows: [
       {
@@ -145,6 +153,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "cOe",
     id: "files",
     title: "Files",
+    titleKey: "apps.files",
     pinned: true,
     windows: [
       {
@@ -160,6 +169,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "fOe",
     id: "browser",
     title: "Browser",
+    titleKey: "apps.browser",
     accentColor: "#0ea5e9",
     pinned: true,
     installWhen: "system.repaired",
@@ -187,6 +197,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "fX",
     id: "signal",
     title: "Messages",
+    titleKey: "apps.signal",
     pinned: true,
     installWhen: "system.repaired",
     windows: [
@@ -210,6 +221,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "xAe",
     id: "pictionary",
     title: "Draw & Guess",
+    titleKey: "apps.pictionary",
     pinned: true,
     exclusive: true,
     runtime: {
@@ -237,6 +249,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "UPe",
     id: "codenames",
     title: "Woodland Quest",
+    titleKey: "apps.codenames",
     pinned: true,
     exclusive: true,
     runtime: {
@@ -264,6 +277,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "jPe",
     id: "chess",
     title: "Chess",
+    titleKey: "apps.chess",
     pinned: true,
     exclusive: true,
     runtime: {
@@ -287,6 +301,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "rOe",
     id: "cakeduel",
     title: "Cake Duel",
+    titleKey: "apps.cakeduel",
     pinned: true,
     exclusive: true,
     runtime: {
@@ -314,6 +329,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "a2e",
     id: "terminal",
     title: "Terminal",
+    titleKey: "apps.terminal",
     pinned: true,
     windows: [
       {
@@ -328,6 +344,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "c2e",
     id: "debug",
     title: "Debug",
+    titleKey: "apps.debug",
     pinned: false,
     windows: [
       {
@@ -344,6 +361,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "sAe",
     id: "settings",
     title: "Settings",
+    titleKey: "apps.settings",
     pinned: false,
     windows: [
       {
@@ -358,6 +376,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     sourceBinding: "mOe",
     id: "preview",
     title: "Preview",
+    titleKey: "apps.preview",
     pinned: false,
     windows: [
       {

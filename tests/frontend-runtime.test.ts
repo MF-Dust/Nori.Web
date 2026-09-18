@@ -11,6 +11,7 @@ import "./frontend-signal-story.test";
 import "./frontend-messenger-interactions.test";
 import "./frontend-reaction-director.test";
 import "./frontend-debug-tools.test";
+import "./frontend-window-localization.test";
 import { ConversationTimeline } from "../frontend-src/apps/conversation-presentation";
 import assert from "node:assert/strict";
 import { ArcadeClient } from "../frontend-src/runtime/arcade-client";

@@ -26,6 +26,7 @@ jobs:
             messenger,
             boot-corruption,
             memory-datasea,
+            datasea-games,
             farewell-ending,
           ]
     steps:

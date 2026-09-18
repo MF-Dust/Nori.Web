@@ -1,27 +1,33 @@
 .chip-button {
   position: relative;
   width: 28px;
-  height: 30px;
+  height: 28px;
   flex-shrink: 0;
-  color: #1d7a68;
-  display: grid;
-  place-items: center;
-  border-radius: 6px;
+  color: #d2e8e990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
   pointer-events: auto;
+  transition:
+    transform 0.2s,
+    color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
 }
 .chip-button[aria-pressed="true"] {
-  background: #4ee0c833;
-  color: #0b5246;
+  color: #02070a;
+  background: linear-gradient(135deg, #4ee0c8 0%, #9be8c8 100%);
+  box-shadow: 0 2px 8px #4ee0c880;
+}
+.conversation-composer[data-focused] .chip-button:not([aria-pressed="true"]) {
+  color: #56565f90;
 }
 .chip-button[data-offline] {
-  color: #7d8c89;
-}
-.chip-charge-meter {
-  position: absolute;
-  font-family: monospace;
-  font-size: 8px;
-  right: 0;
-  bottom: 0;
+  opacity: 0.35;
 }
 .chip-button[data-refused] {
   animation: chip-refuse 0.25s linear;
@@ -170,20 +176,50 @@
 }
 .chip-upgrade-notice {
   pointer-events: auto;
-  margin-bottom: 10px;
-  padding: 12px;
-  border: 1px solid #2f7e7266;
-  border-radius: 9px;
-  background: #d2e8e9ed;
-  color: #36534d;
-  font-size: 12px;
-  line-height: 1.6;
+  position: absolute;
+  right: -4px;
+  bottom: calc(100% + 14px);
+  box-sizing: border-box;
+  width: 236px;
+  padding: 10px 12px;
+  border: 1px solid #d2e8e940;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #56565fe6 0%, #56565ff2 100%);
+  color: #fefefe;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 8px 24px #00000059,
+    inset 0 1px 0 #ffffff0f;
+}
+.chip-upgrade-copy {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 18px;
+}
+.chip-upgrade-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 .chip-upgrade-notice button {
-  display: block;
-  margin: 8px 0 0 auto;
-  border: 1px solid #1d7a6866;
-  border-radius: 5px;
-  padding: 3px 10px;
-  color: #1d7a68;
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: #56565f;
+  background: linear-gradient(135deg, #d2e8e9 0%, #caf5f1 100%);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+}
+.chip-upgrade-tail {
+  position: absolute;
+  right: 50px;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  background: #56565ff2;
+  border-right: 1px solid #d2e8e940;
+  border-bottom: 1px solid #d2e8e940;
 }

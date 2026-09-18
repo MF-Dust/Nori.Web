@@ -1,15 +1,37 @@
 .settings-root {
   color: var(--foreground);
-  background: var(--background);
+  background: transparent;
 }
 .settings-root hr {
   border-color: var(--border);
 }
 .settings-root input[type="range"] {
+  appearance: none;
   width: 100%;
   height: 6px;
-  accent-color: var(--primary);
+  border-radius: 99px;
+  background: linear-gradient(
+    to right,
+    var(--primary) var(--volume),
+    var(--secondary) var(--volume)
+  );
   cursor: pointer;
+}
+.settings-root input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--primary);
+  background: white;
+  box-shadow: 0 1px 2px #0003;
+}
+.settings-root input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--primary);
+  background: white;
 }
 .settings-switch {
   width: 32px;
