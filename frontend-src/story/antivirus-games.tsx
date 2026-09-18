@@ -22,15 +22,19 @@ export function AntivirusGames({
   onComplete,
   audio,
   paused = false,
+  onCleared,
 }: {
   onComplete(): void;
   audio: AudioMixer;
   paused?: boolean;
+  onCleared?(count: number): void;
 }) {
   const [session] = useState(() => new AntivirusSession());
   const [, refresh] = useState(0);
   const callback = useRef(onComplete);
   callback.current = onComplete;
+  const clearedCallback = useRef(onCleared);
+  clearedCallback.current = onCleared;
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
   const keys = useRef(new Set<string>());
@@ -84,6 +88,7 @@ export function AntivirusGames({
         session.step(dt);
         if (session.cleared.size > count) {
           count = session.cleared.size;
+          clearedCallback.current?.(count);
           audio.playCue("cutscenes-microgame-solve");
         }
         if (session.complete && !complete) {

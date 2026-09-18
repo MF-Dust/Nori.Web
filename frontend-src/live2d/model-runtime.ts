@@ -7,6 +7,7 @@ import {
   NoriExpressionController,
 } from "./expression-controller";
 import { NoriIdleController, noriIdleFromFacts } from "./idle-controller";
+import type { NoriReactionDirector } from "./reaction-director";
 
 export function bindNoriModel(options: {
   model: Live2DModel;
@@ -16,6 +17,7 @@ export function bindNoriModel(options: {
   facts(): ReadonlySet<string>;
   exclusive(): boolean;
   host: HTMLElement;
+  reactions?: NoriReactionDirector;
 }) {
   const { model, conversation, speech, scene, host } = options;
   let sleeping = false,
@@ -25,6 +27,7 @@ export function bindNoriModel(options: {
     if (next) model.addExpression(next);
     host.dataset.noriExpression = next ?? "neutral";
   });
+  const unbindReactions = options.reactions?.bindModel(model);
   const observer = new NoriEmotionObserver();
   const idle = new NoriIdleController((step, sleep) => {
     sleeping = sleep;
@@ -34,6 +37,7 @@ export function bindNoriModel(options: {
   let texture: string | null | undefined,
     rest: boolean | undefined,
     lipEnabled: boolean | undefined;
+  let cinematicMotion: string | null = null;
   const update = () => {
     const state = scene.snapshot(),
       chat = conversation.snapshot();
@@ -51,15 +55,27 @@ export function bindNoriModel(options: {
       lipEnabled = nextLipEnabled;
       model.setPluginEnabled("lipSync", lipEnabled);
     }
-    host.dataset.noriIdle = idle.update(
-      idleState,
-      state.noriSleep,
-      speech.level(),
-      state.active ||
-        options.exclusive() ||
-        chat.phase === "executing" ||
-        !chat.connected,
-    );
+    const motion = state.noriIdleMotion;
+    const motionKey = motion ? `${motion.group}:${motion.index}` : null;
+    if (motionKey !== cinematicMotion) {
+      cinematicMotion = motionKey;
+      if (motion) {
+        const step = { ...motion, loop: true };
+        model.setIdleSequence(step);
+        model.startMotion({ steps: step });
+      } else idle.invalidate();
+    }
+    host.dataset.noriIdle =
+      motionKey ??
+      idle.update(
+        idleState,
+        state.noriSleep,
+        speech.level(),
+        state.active ||
+          options.exclusive() ||
+          chat.phase === "executing" ||
+          !chat.connected,
+      );
     host.dataset.noriThinking = String(
       chat.connected && chat.phase === "executing",
     );
@@ -68,6 +84,16 @@ export function bindNoriModel(options: {
     host.dataset.noriLipSync = String(lipEnabled);
     expressions.suppress(
       state.active || state.noriSleep || sleeping || !chat.connected,
+    );
+    options.reactions?.setBlocked(
+      state.active ||
+        state.noriSleep ||
+        sleeping ||
+        state.noriIdleMotion !== null ||
+        options.exclusive() ||
+        chat.phase === "executing" ||
+        !chat.connected ||
+        speech.level() > 0,
     );
   };
   const observe = () => {
@@ -107,6 +133,7 @@ export function bindNoriModel(options: {
     unsubscribeChat();
     unsubscribeSpeech();
     unsubscribeScene();
+    unbindReactions?.();
     expressions.dispose();
     for (const name of ["mousemove", "pointerdown", "keydown"])
       window.removeEventListener(name, activity);

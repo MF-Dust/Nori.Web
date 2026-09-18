@@ -7,6 +7,9 @@ import { usePictionaryHints } from "./use-pictionary-hints";
 import { usePictionarySounds } from "./use-pictionary-sounds";
 import "../styles/pictionary.css";
 import { PictionaryResults } from "./pictionary-results";
+import { PictionaryCover } from "./pictionary-cover";
+import { PictionaryHelpOverlay } from "./pictionary-help-overlay";
+import { pictionaryReaction, type PictionaryReaction } from "../apps/pictionary-reactions";
 
 export interface PictionaryScreenProps {
   controller: GameCartridgeController<PictionaryState>;
@@ -14,8 +17,9 @@ export interface PictionaryScreenProps {
   locale?: string;
   playSound?: (cue: string) => void;
   startSoundLoop?: (cue: string) => () => void;
+  onNoriReaction?: (reaction: PictionaryReaction) => void;
 }
-export function PictionaryScreen({ controller, drawing, locale = "en", playSound, startSoundLoop }: PictionaryScreenProps) {
+export function PictionaryScreen({ controller, drawing, locale = "en", playSound, startSoundLoop, onNoriReaction }: PictionaryScreenProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
   const [now, setNow] = useState(Date.now);
   const [bookOpen, setBookOpen] = useState(false);
@@ -29,6 +33,7 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
   const canvas = useRef<PictionaryCanvasHandle>(null);
   const chat = useRef<HTMLDivElement>(null);
   const autoRequest = useRef<string | null>(null);
+  const previousReactionState = useRef<PictionaryState | null>(null);
   const state = snapshot.state, game = state?.gameState, round = game?.round;
   const playing = game?.phase === "PLAYING";
   const roundActive = playing && round?.status === "active";
@@ -43,6 +48,12 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
   const zh = locale.toLowerCase().startsWith("zh");
   const text = (en: string, cn: string) => zh ? cn : en;
   useEffect(() => controller.retain(), [controller]);
+  useEffect(() => {
+    const next = snapshot.connected === false ? null : state ?? null;
+    const reaction = pictionaryReaction(previousReactionState.current, next);
+    previousReactionState.current = next;
+    if (reaction) onNoriReaction?.(reaction);
+  }, [snapshot.connected, state, onNoriReaction]);
   useEffect(() => {
     drawing.setCapture(() => canvas.current?.snapshot() ?? null);
     return () => drawing.setCapture(null);
@@ -73,12 +84,6 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
       if (!ok) { autoRequest.current = null; setRetryAt(Date.now() + 2000); }
     });
   }, [active, remaining, nextRoundAt, now, playing, round, snapshot.pending, controller, retryAt, state?.settings.roundTimeLimitMs]);
-  useEffect(() => {
-    if (!help) return;
-    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setHelp(false); };
-    window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
-  }, [help]);
   const start = () => {
     void controller.dispatch({ type: "startSession", atMs: Date.now(), settings: { sessionDurationMs: durationSec * 1000, locale: zh ? "zh-CN" : "en" } }).then(ok => {
       if (ok) { autoRequest.current = null; setMessages([]); setNow(Date.now()); playSound?.("partygames-session-start"); }
@@ -86,16 +91,9 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
   };
   const summary = game?.phase === "RESULTS" ? pictionarySummary(game) : null;
   return <section className="source-pictionary">
-    {!game ? <div className="source-pictionary-cover">
-      <div className="source-pictionary-cover-rule" /><p>NORI · SKETCHBOOK</p>
-      <h1>{text("Draw & Guess", "你画我猜")}</h1><p>{text("Take turns drawing with Nori.", "与 Nori 轮流画图，一起猜出更多词语。")}</p>
-      {bookOpen && <fieldset disabled={snapshot.pending} aria-label={text("Session duration", "游戏时长")}>
-        {[120, 180, 300].map(value => <button type="button" key={value} aria-pressed={durationSec === value} onClick={() => setDurationSec(value)}>{value / 60} {text("min", "分钟")}</button>)}
-      </fieldset>}
-      <button type="button" disabled={bookOpen && (!snapshot.mounted || snapshot.pending)} onClick={() => bookOpen ? start() : setBookOpen(true)}>{bookOpen ? text("Start session", "开始游戏") : text("Play", "开始")}</button>
-      {bookOpen && <button type="button" onClick={() => setBookOpen(false)}>{text("Back", "返回")}</button>}
-      <button type="button" aria-label={text("Help", "帮助")} onClick={() => setHelp(true)}>?</button>
-    </div> : summary ? <PictionaryResults game={game!} locale={locale} pending={snapshot.pending} onRestart={start} /> : round && <div className="source-pictionary-game">
+    {!game ? <PictionaryCover locale={locale} open={bookOpen} durationSec={durationSec}
+      disabled={!snapshot.mounted || snapshot.pending} onDuration={setDurationSec} onToggle={() => setBookOpen(value => !value)}
+      onStart={start} onHelp={() => setHelp(true)} /> : summary ? <PictionaryResults game={game!} locale={locale} pending={snapshot.pending} onRestart={start} /> : round && <div className="source-pictionary-game">
       <div className="source-pictionary-tools" aria-label={text("Drawing tools", "画图工具")}>
         {PICTIONARY_COLORS.map(value => <button type="button" key={value} aria-label={value} aria-pressed={color === value && !eraser}
           disabled={!active || !isDrawer} onClick={() => { playSound?.("partygames-pictionary-tools"); setColor(value); setEraser(false); }}>
@@ -135,12 +133,6 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
     </div>}
     {!snapshot.mounted && <button type="button" disabled={snapshot.pending} onClick={() => void controller.ensureMounted()}>{text("Connect game", "连接游戏")}</button>}
     {snapshot.error && <p className="source-pictionary-error" role="alert">{snapshot.error}</p>}
-    {help && <div className="source-pictionary-help-backdrop" onClick={() => setHelp(false)}>
-      <div role="dialog" aria-modal="true" aria-label="Draw & Guess help" tabIndex={-1} onClick={event => event.stopPropagation()} onKeyDown={event => { if (event.key === "Escape") setHelp(false); }}>
-        <button type="button" aria-label="Close help" onClick={() => setHelp(false)}>×</button>
-        <h2>{text("Draw & Guess", "你画我猜")}</h2><p>{text("Draw the word on the paper with the pencils. When Nori draws, type your guess in the chat.", "用铅笔在纸上画出词语；Nori 画图时，在聊天框输入答案。")}</p>
-        <p>{text("You can undo, erase or clear your drawing. Skip a difficult word to swap roles.", "可以撤销、擦除或清空自己的画稿。遇到难题时，跳过便会交换角色。")}</p>
-      </div>
-    </div>}
+    {help && <PictionaryHelpOverlay locale={locale} onClose={() => setHelp(false)} />}
   </section>;
 }

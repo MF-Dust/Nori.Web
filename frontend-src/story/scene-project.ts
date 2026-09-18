@@ -63,6 +63,15 @@ const patch = z
     noriRestPose: z.boolean().optional(),
     noriSleep: z.boolean().optional(),
     noriSmile: z.boolean().nullable().optional(),
+    noriExpression: z.string().trim().min(1).max(80).nullable().optional(),
+    noriIdleMotion: z
+      .object({
+        group: z.string().trim().min(1).max(80),
+        index: z.number().int().min(0).max(255),
+      })
+      .strict()
+      .nullable()
+      .optional(),
     noriTexture: z.literal("corrupt").nullable().optional(),
     corruptVoice: z.boolean().optional(),
     chatMode: z.enum(["normal", "bubbles", "hidden"]).optional(),

@@ -43,6 +43,8 @@ export interface NoriSceneState {
   eyeOpen: number | null;
   mouthOpen: number | null;
   noriSmile: boolean | null;
+  noriExpression: string | null;
+  noriIdleMotion: { group: string; index: number } | null;
   vignette: number;
   blur: number;
   whiteFlash: number;
@@ -80,6 +82,8 @@ const defaults = (): NoriSceneState => ({
   eyeOpen: null,
   mouthOpen: null,
   noriSmile: null,
+  noriExpression: null,
+  noriIdleMotion: null,
   vignette: 0,
   blur: 0,
   whiteFlash: 0,

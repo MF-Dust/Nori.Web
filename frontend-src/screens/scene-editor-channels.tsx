@@ -1,4 +1,8 @@
 import { useState } from "react";
+import {
+  NORI_MODEL_EXPRESSIONS,
+  NORI_MODEL_MOTIONS,
+} from "../live2d/model-catalog";
 import type { SceneProject, SceneProjectPatch } from "../story/scene-project";
 
 type NumericKey = {
@@ -342,6 +346,71 @@ export function SceneEditorChannels({
             )}
           </fieldset>
         ))}
+        <fieldset className="source-scene-vector">
+          <legend>Model expression and motion</legend>
+          <label>
+            Expression
+            <select
+              aria-label="Scene model expression"
+              value={
+                target.noriExpression === undefined
+                  ? "inherit"
+                  : (target.noriExpression ?? "auto")
+              }
+              onChange={(event) =>
+                update(
+                  "noriExpression",
+                  event.target.value === "inherit"
+                    ? undefined
+                    : event.target.value === "auto"
+                      ? null
+                      : event.target.value,
+                )
+              }
+            >
+              <option value="inherit">Inherit</option>
+              <option value="auto">Auto</option>
+              {NORI_MODEL_EXPRESSIONS.map((name) => (
+                <option key={name}>{name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Idle motion
+            <select
+              aria-label="Scene model idle motion"
+              value={
+                target.noriIdleMotion === undefined
+                  ? "inherit"
+                  : target.noriIdleMotion
+                    ? `${target.noriIdleMotion.group}:${target.noriIdleMotion.index}`
+                    : "auto"
+              }
+              onChange={(event) => {
+                const value = event.target.value;
+                const [group, index] = value.split(":");
+                update(
+                  "noriIdleMotion",
+                  value === "inherit"
+                    ? undefined
+                    : value === "auto"
+                      ? null
+                      : { group, index: Number(index) },
+                );
+              }}
+            >
+              <option value="inherit">Inherit</option>
+              <option value="auto">Auto</option>
+              {Object.entries(NORI_MODEL_MOTIONS).flatMap(([group, count]) =>
+                Array.from({ length: count }, (_, index) => (
+                  <option key={`${group}:${index}`} value={`${group}:${index}`}>
+                    {group} {index}
+                  </option>
+                )),
+              )}
+            </select>
+          </label>
+        </fieldset>
         <fieldset className="source-scene-vector">
           <legend>Ocean and glyph</legend>
           <label>

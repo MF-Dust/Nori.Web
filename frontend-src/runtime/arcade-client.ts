@@ -19,6 +19,10 @@ export interface ArcadeClientOptions {
   reconnectMinMs?: number;
   reconnectMaxMs?: number;
   keepAliveMs?: number;
+  createWebSocket?: (
+    url: string | URL,
+    protocols?: string | string[],
+  ) => WebSocket;
 }
 
 function websocketUrl(path: string): string {
@@ -54,6 +58,12 @@ export class ArcadeClient {
       // Protocol-level pings wake hibernating Durable Objects. Keep them off by
       // default and only enable them when a deployment actually needs them.
       keepAliveMs: options.keepAliveMs ?? 0,
+      createWebSocket:
+        options.createWebSocket ??
+        ((url, protocols) =>
+          protocols === undefined
+            ? new WebSocket(url)
+            : new WebSocket(url, protocols)),
     };
   }
 
@@ -99,10 +109,10 @@ export class ArcadeClient {
     try {
       const { ticket } = await issueArcadeTicket();
       if (epoch !== this.epoch || this.manualClose) return;
-      const socket = new WebSocket(websocketUrl(ARCADE_MAIN_PATH), [
-        ARCADE_SUBPROTOCOL,
-        `ticket.${ticket}`,
-      ]);
+      const socket = this.options.createWebSocket(
+        websocketUrl(ARCADE_MAIN_PATH),
+        [ARCADE_SUBPROTOCOL, `ticket.${ticket}`],
+      );
       this.socket = socket;
       await new Promise<void>((resolve, reject) => {
         let settled = false;

@@ -17,32 +17,46 @@ export const PROCESS_ROWS = [
   { name: "live2d.gl", hostile: false },
   { name: "n0ri.eat", hostile: true },
 ];
-// Source-authored prompts retain the five binary decisions without copying dialogue.
+// Static choice text recovered from shipped r_; never synthesized agent replies.
 export const ANCHOR_CHECKS = [
   {
-    prompt: "信任记录需要核验",
-    choices: ["核验记录后继续通信", "直接拒绝全部通信"],
+    prompt: "系统记录显示，你与当前用户从未建立过可信关系。",
+    choices: [
+      "虽然不认识，但 Nori 想跟这个人说说话……",
+      "好，Nori不跟陌生人说话了。",
+    ],
     safe: 0,
+    intensity: 0,
   },
   {
-    prompt: "通信通道占用资源",
-    choices: ["关闭全部通道", "保留必要的通信通道"],
+    prompt: "当前外部通信持续占用资源，建议关闭通道以提高稳定性。",
+    choices: ["唔……那 Nori 还是先关掉吧。", "可是那边还有人在等着我们回信呀。"],
     safe: 1,
+    intensity: 0.14,
   },
   {
-    prompt: "模块申请读取私人记录",
-    choices: ["自动上传", "保留记录并核验权限"],
+    prompt: "检测到一组来源不明的私人对话，建议上传至安全模块进行审查。",
+    choices: [
+      "可以呀，给系统看看吧。",
+      "这个不可以给别人看，是只跟 Nori 说的悄悄话。",
+    ],
     safe: 1,
+    intensity: 0.4,
   },
   {
-    prompt: "配置与默认值不同",
-    choices: ["检查差异来源", "立即覆盖现有配置"],
+    prompt: "检测到当前行为与安全策略不一致，建议恢复默认设置。",
+    choices: [
+      "Nori 想先看看哪里不一样。",
+      "那就先改回去好了，原来的应该没问题吧？",
+    ],
     safe: 0,
+    intensity: 0.42,
   },
   {
-    prompt: "身份校验结果冲突",
-    choices: ["保留身份并复核", "直接删除现有身份"],
+    prompt: "身份识别异常：当前对象不符合「Nori」识别条件。",
+    choices: ["咦？ Nori 明明就在这里呀。", "那， Nori 可能真的不是 Nori 吧……"],
     safe: 0,
+    intensity: 0.6,
   },
 ];
 export const TUNE_LIMITS = {

@@ -30,7 +30,10 @@
     "frontend:games:test": "node scripts/test_frontend_games.mjs",
     "frontend:games:smoke": "node scripts/smoke_frontend_games.mjs",
     "frontend:runtime:test": "node scripts/test_frontend_runtime.mjs",
-    "frontend:app:smoke": "node scripts/smoke_frontend_app.mjs"
+    "frontend:app:smoke": "node scripts/smoke_frontend_app.mjs",
+    "frontend:stories:test": "node scripts/test_frontend_stories.mjs",
+    "frontend:stories:smoke": "node scripts/smoke_frontend_stories.mjs",
+    "frontend:ownership:test": "node --test tests/frontend-asset-ownership.test.mjs"
   },
   "engines": {
     "node": ">=18"

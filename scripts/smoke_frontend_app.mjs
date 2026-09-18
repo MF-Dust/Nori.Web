@@ -3,6 +3,7 @@ import { verifyChessTutorial } from "./frontend_chess_tutorial_probe.mjs";
 import { verifyVoiceCorruption } from "./frontend_voice_corruption_probe.mjs";
 import { verifyNoriScene } from "./frontend_nori_scene_probe.mjs";
 import { verifyPreview, verifyChip } from "./frontend_preview_chip_probe.mjs";
+import { verifyMessenger } from "./frontend_messenger_probe.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -432,6 +433,7 @@ try {
   await verifyNoriScene(browser, output);
   await verifySceneTools(browser, output);
   await verifyPreview(browser, output);
+  await verifyMessenger(browser, output);
   await verifyChip(page, output);
 
   // Make the shipped Credits Dock condition true in the disposable local world.

@@ -12,6 +12,7 @@ import {
   type Ref,
 } from "react";
 import { CircleAlert, Send, TriangleAlert, Zap } from "lucide-react";
+import { shouldSubmitMessageKey } from "../apps/messenger-interactions";
 
 export type ChatCardColor = "agent" | "bystander" | "assassin";
 
@@ -306,14 +307,19 @@ function ChatComposer({
   const [invalid, setInvalid] = useState(false);
   const textarea = useRef<HTMLTextAreaElement | null>(null);
   const wasEnabled = useRef(false);
+  const composing = useRef(false);
+  const focusTimer = useRef<number | undefined>(undefined);
   const lastTypingSound = useRef(0);
   const enabled = isPlayerGuesser && active;
 
   useEffect(() => {
     if (enabled && !wasEnabled.current) {
-      window.setTimeout(() => textarea.current?.focus(), 100);
+      focusTimer.current = window.setTimeout(() => textarea.current?.focus(), 100);
     }
     wasEnabled.current = enabled;
+    return () => {
+      if (focusTimer.current !== undefined) window.clearTimeout(focusTimer.current);
+    };
   }, [enabled]);
 
   const submit = useCallback(() => {
@@ -334,7 +340,7 @@ function ChatComposer({
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === "Enter" && !event.shiftKey) {
+      if (shouldSubmitMessageKey(event, composing.current, true)) {
         event.preventDefault();
         submit();
       }
@@ -364,6 +370,12 @@ function ChatComposer({
             if (invalid) setInvalid(false);
           }}
           onFocus={() => playSound?.("primitives-input-focus")}
+          onCompositionStart={() => {
+            composing.current = true;
+          }}
+          onCompositionEnd={() => {
+            composing.current = false;
+          }}
           onKeyDown={onKeyDown}
           placeholder={enabled ? placeholder : disabledPlaceholder}
           disabled={!enabled}

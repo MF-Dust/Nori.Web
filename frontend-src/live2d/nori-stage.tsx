@@ -156,6 +156,7 @@ export function NoriStage({
           model.setIdleSequence({ group: "Idle", index: 0, loop: true });
           unbindModel = bindNoriModel({
             model,
+            reactions: frontend.reactions,
             conversation: frontend.conversation,
             speech,
             scene: frontend.scene,

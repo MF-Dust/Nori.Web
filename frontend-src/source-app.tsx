@@ -48,6 +48,7 @@ import {
 } from "./apps/recovered-presentation";
 import { RecoveredDesktopShell } from "./components/recovered-desktop-shell";
 import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
+import { createNetworkFaultWebSocketFactory, readNetworkFaultProfile } from "./runtime/debug-tools";
 import { createSourceIdleRuntimeEngine } from "./state/idle-runtime-engine";
 
 /** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
@@ -73,7 +74,9 @@ function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
 
 function createSourceSession() {
   initializeGraphics();
-  const frontend = new NoriFrontendRuntime();
+  const frontend = new NoriFrontendRuntime({
+    createWebSocket: createNetworkFaultWebSocketFactory(readNetworkFaultProfile(localStorage)),
+  });
   const daniel = new SignalDanielConversationRuntime({
     manifold: frontend.manifold,
     hasFact: (factId) => hasWorldFact(frontend, factId),
@@ -291,9 +294,11 @@ function createSourceSession() {
       locale,
       playSound: frontend.audio.playCue,
       startSoundLoop: frontend.audio.startCueLoop,
+      onNoriReaction: (reaction) => { frontend.reactions.play("pictionary", reaction); },
     },
     chess: {
       controller: chess,
+      onNoriReaction: (reaction) => { frontend.reactions.play("chess", reaction); },
       translate: sourceTranslate,
       onSound: (sound) => frontend.audio.playCue(sound === "response" ? "boardgames-chess-response-toast" : `chess.${sound}`),
     },
@@ -305,7 +310,14 @@ function createSourceSession() {
     desktop: {
       playCue: frontend.audio.playCue,
       windows: {
-        debug: { main: { component: () => <DebugScreen frontend={frontend} /> } },
+        debug: { main: { component: () => <DebugScreen frontend={frontend} actions={{
+          compute: idle.debug,
+          loadScenario: async (_game, scenarioId) => {
+            if (!codenames.snapshot().state || !await codenames.dispatch({ type: "debugLoadScenario", scenarioId })) {
+              throw new Error(codenames.snapshot().error ?? "Open Codenames and start a game before loading a scenario.");
+            }
+          },
+        }} /> } },
         system: {
           about: { component: AboutScreen },
           alert: {
@@ -511,7 +523,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       }
       overlay={
         <>
-          <StoryScenes frontend={source.frontend} />
+          <StoryScenes frontend={source.frontend} minimizeWindows={source.bundle.runtime.store.getState().minimizeAllWindows} />
           <NoriSceneEffects scene={source.frontend.scene} />
           <ConversationPanel
             frontend={source.frontend}

@@ -4,6 +4,8 @@ export type ChessNotice =
   | "noriDeclinedDraw"
   | "noriAcceptedTakeback"
   | "noriDeclinedTakeback";
+export type ChessReaction = "captureMinor" | "captureMajor" | "lostMajorPiece" | "checked" | "givesCheck"
+  | "playerPromotes" | "acceptsRequest" | "declinesRequest" | "wins" | "loses" | "draw";
 /** Transition-only feedback; snapshots and reconnects never replay historical move sounds. */
 export class ChessFeedback {
   private previous: ChessState | null = null;
@@ -13,6 +15,7 @@ export class ChessFeedback {
   constructor(
     private sound: (sound: string) => void,
     private notify: (notice: ChessNotice) => void,
+    private react: (reaction: ChessReaction) => void = () => {},
   ) {}
   suppressCancellation(kind: "draw" | "takeback") {
     this.cancelled.add(kind);
@@ -47,6 +50,12 @@ export class ChessFeedback {
                   ? "moveSelf"
                   : "moveOpponent",
       );
+      if (move.captured) {
+        if (move.by !== side) this.react(move.captured === "q" || move.captured === "r" ? "captureMajor" : "captureMinor");
+        else if (move.captured === "q" || move.captured === "r") this.react("lostMajorPiece");
+      }
+      if (move.isCheck) this.react(move.by === side ? "checked" : "givesCheck");
+      if (move.isPromotion && move.by === side) this.react("playerPromotes");
       if (move.isCheckmate) {
         const timer = setTimeout(() => {
           this.timers.delete(timer);
@@ -61,23 +70,24 @@ export class ChessFeedback {
       game.status !== "checkmate"
     )
       this.sound("gameEnd");
+    if (before.status === "playing" && game.status !== "playing")
+      this.react(game.winner === "draw" || game.winner === null ? "draw" : game.winner === side ? "loses" : "wins");
     if (previous.drawOffer === side && state.drawOffer === null) {
       if (this.cancelled.has("draw")) this.cancelled.delete("draw");
-      else if (game.status === "draw") this.notify("noriAcceptedDraw");
+      else if (game.status === "draw") { this.notify("noriAcceptedDraw"); this.react("acceptsRequest"); }
       else if (game.status === "playing") {
         this.sound("response");
         this.notify("noriDeclinedDraw");
+        this.react("declinesRequest");
       }
     }
     if (previous.takebackRequest === side && state.takebackRequest === null) {
       if (this.cancelled.has("takeback")) this.cancelled.delete("takeback");
       else {
         this.sound("response");
-        this.notify(
-          game.moveHistory.length < before.moveHistory.length
-            ? "noriAcceptedTakeback"
-            : "noriDeclinedTakeback",
-        );
+        const accepted = game.moveHistory.length < before.moveHistory.length;
+        this.notify(accepted ? "noriAcceptedTakeback" : "noriDeclinedTakeback");
+        this.react(accepted ? "acceptsRequest" : "declinesRequest");
       }
     }
   }

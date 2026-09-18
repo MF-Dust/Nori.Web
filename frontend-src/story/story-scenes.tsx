@@ -5,6 +5,12 @@ import { StoryClock } from "./story-clock";
 import { StoryAudio } from "./story-audio";
 import { createCultRenderer } from "./cult-renderer";
 import type { StoryInstance } from "./story-director";
+import { BootScene } from "./boot-scene";
+import { CorruptionScene } from "./corruption-scene";
+import { MemoryScene } from "./memory-scene";
+import { DataseaScene } from "./datasea-scene";
+import { FarewellScene } from "./farewell-scene";
+import { EndingScene } from "./ending-scene";
 
 function CultFlash({
   frontend,
@@ -129,12 +135,41 @@ function CultFlash({
     </div>
   );
 }
-export function StoryScenes({ frontend }: { frontend: NoriFrontendRuntime }) {
+export function StoryScenes({
+  frontend,
+  minimizeWindows,
+}: {
+  frontend: NoriFrontendRuntime;
+  minimizeWindows?(): void;
+}) {
   const current = useSyncExternalStore(
     frontend.story.subscribe,
     frontend.story.snapshot,
   );
-  return current?.id === "cult-flash" ? (
-    <CultFlash key={current.instance} frontend={frontend} story={current} />
-  ) : null;
+  if (!current) return null;
+  const props = { frontend, story: current };
+  switch (current.id) {
+    case "boot":
+      return <BootScene key={current.instance} {...props} />;
+    case "nori-corruption-climax":
+      return (
+        <CorruptionScene
+          key={current.instance}
+          {...props}
+          minimizeWindows={minimizeWindows}
+        />
+      );
+    case "cult-flash":
+      return <CultFlash key={current.instance} {...props} />;
+    case "memory":
+      return <MemoryScene key={current.instance} {...props} />;
+    case "datasea":
+      return <DataseaScene key={current.instance} {...props} />;
+    case "farewell":
+      return <FarewellScene key={current.instance} {...props} />;
+    case "ending":
+      return <EndingScene key={current.instance} {...props} />;
+    default:
+      return null;
+  }
 }

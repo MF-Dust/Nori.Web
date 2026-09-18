@@ -229,6 +229,12 @@ jobs:
       - name: Verify frontend connections and media
         run: npm run frontend:runtime:test
 
+      - name: Verify production story contracts
+        run: npm run frontend:stories:test
+
+      - name: Verify historical asset ownership scanner
+        run: npm run frontend:ownership:test
+
       - name: Verify frontend cutover gate
         run: npm run frontend:cutover:check
 

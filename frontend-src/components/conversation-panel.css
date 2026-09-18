@@ -273,6 +273,15 @@
   }
 }
 
+@media (max-height: 480px) {
+  .conversation-lines {
+    max-height: max(72px, calc(100dvh - 120px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+}
+
 .conversation-panel {
   opacity: 1;
   transform: translateY(0);

@@ -14,8 +14,7 @@ export function createCinematicFacePlugin(scene: NoriSceneStore): Live2DPlugin {
     id: "cinematicFace",
     install(model) {
       const ids = parameters(model);
-      let smile: boolean | null = null,
-        sleep = false;
+      let expressions = new Set<string>();
       return {
         update() {
           const state = scene.snapshot();
@@ -27,20 +26,19 @@ export function createCinematicFacePlugin(scene: NoriSceneStore): Live2DPlugin {
           apply("ParamEyeLOpen", state.eyeOpen);
           apply("ParamEyeROpen", state.eyeOpen);
           apply("ParamMouthOpenY", state.mouthOpen);
-          if (state.noriSmile !== smile) {
-            if (state.noriSmile) model.addExpression("13_Happy");
-            else if (smile) model.removeExpression("13_Happy");
-            smile = state.noriSmile;
-          }
-          if (state.noriSleep !== sleep) {
-            if (state.noriSleep) model.addExpression("Sleep");
-            else model.removeExpression("Sleep");
-            sleep = state.noriSleep;
-          }
+          const next = new Set<string>();
+          if (state.noriSmile) next.add("13_Happy");
+          if (state.noriSleep) next.add("Sleep");
+          if (state.noriExpression) next.add(state.noriExpression);
+          for (const name of expressions)
+            if (!next.has(name)) model.removeExpression(name);
+          for (const name of next)
+            if (!expressions.has(name)) model.addExpression(name);
+          expressions = next;
         },
         dispose() {
-          if (smile) model.removeExpression("13_Happy");
-          if (sleep) model.removeExpression("Sleep");
+          for (const name of expressions) model.removeExpression(name);
+          expressions.clear();
         },
       };
     },

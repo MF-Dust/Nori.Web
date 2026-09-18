@@ -1,12 +1,14 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { historicalAssetReferences } from "./frontend_asset_ownership.mjs";
 
 const sourceHtml = await readFile("frontend-src/index.html", "utf8");
 const publicHtml = await readFile("public/index.html", "utf8");
 const statusSource = await readFile("frontend-src/migration/cutover-status.ts", "utf8");
 
 const legacyJsPatterns = ["index-CyHAbkO5.js", "NormalApp-Cn6agT0F.js"];
-const sourceExtensions = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".html"]);
+const historicalAssets = (await readdir("public/assets")).filter((name) => /\.(?:js|css)$/.test(name));
+const sourceExtensions = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".html", ".css"]);
 
 async function collectSourceFiles(directory) {
   const files = [];
@@ -24,10 +26,8 @@ async function collectSourceFiles(directory) {
 
 for (const path of await collectSourceFiles("frontend-src")) {
   const content = await readFile(path, "utf8");
-  for (const pattern of legacyJsPatterns) {
-    if (content.includes(pattern)) {
-      throw new Error(`source frontend file ${path} references historical JavaScript chunk: ${pattern}`);
-    }
+  for (const asset of historicalAssetReferences(content, historicalAssets)) {
+    throw new Error(`source frontend file ${path} references historical application asset: ${asset}`);
   }
 }
 

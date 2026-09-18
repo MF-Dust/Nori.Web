@@ -1,6 +1,6 @@
 import test from "node:test";
 import "./frontend-pictionary-hints.test";
-import { codenamesTutorialAllows, codenamesTutorialGate, codenamesTutorialUi } from "../frontend-src/apps/codenames-tutorial";
+import { CODENAMES_TUTORIAL_STEPS, codenamesTutorialAllows, codenamesTutorialGate, codenamesTutorialInstruction, codenamesTutorialUi } from "../frontend-src/apps/codenames-tutorial";
 import { codenamesReveals, waitForCodenamesAnimation } from "../frontend-src/apps/codenames-reveal";
 import assert from "node:assert/strict";
 import { Chess } from "chess.js";
@@ -8,6 +8,7 @@ import { CHESS_START_FEN, chessCaptures, chessHistory, chessLayout, legalChessMo
 import { chooseDrawingSample, drawingSampleStrokes, normalizeDrawingStroke, pictionaryElapsed, pictionaryNextRoundAt, pictionaryStateSchema, pictionarySummary } from "../frontend-src/apps/pictionary-model";
 import { GameCartridgeController } from "../frontend-src/apps/game-cartridge-controller";
 import { PictionaryDrawingBridge } from "../frontend-src/apps/pictionary-runtime";
+import { pictionaryReaction } from "../frontend-src/apps/pictionary-reactions";
 import { WorldStore } from "../frontend-src/runtime/world-store";
 
 test("Chess legality handles pins, en passant, castling and all promotions", () => {
@@ -49,6 +50,21 @@ test("Session clock excludes the five-second intermission and unfinished guesses
   assert.equal(pictionarySummary(game).accuracy, 100);
   assert.equal(pictionarySummary(game).unfinished, 1);
   assert.equal(pictionarySummary(game).durationMs, 13000);
+});
+test("Pictionary maps replicated outcomes to the shipped expression choreography", () => {
+  const before = state(), solved = structuredClone(before);
+  solved.gameState!.history.push({ word: "apple", roles: { drawer: "agent", guesser: "player" }, elapsedMs: 12_000, outcome: "solved" });
+  assert.equal(pictionaryReaction(before, solved), "playerCorrect");
+  const fast = structuredClone(before);
+  fast.gameState!.history.push({ word: "apple", roles: { drawer: "player", guesser: "agent" }, elapsedMs: 29_999, outcome: "solved" });
+  assert.equal(pictionaryReaction(before, fast), "noriCorrectFast");
+  fast.gameState!.history[0].elapsedMs = 30_000;
+  assert.equal(pictionaryReaction(before, fast), "noriCorrectSlow");
+  const skipped = structuredClone(before);
+  skipped.gameState!.history.push({ word: "apple", roles: { drawer: "agent", guesser: "player" }, elapsedMs: 5_000, outcome: "skipped" });
+  assert.equal(pictionaryReaction(before, skipped), "skipNoriDrawing");
+  const results = structuredClone(before); results.gameState!.phase = "RESULTS"; results.gameState!.score.solved = 16;
+  assert.equal(pictionaryReaction(before, results), "sessionGreat");
 });
 test("Stroke payloads respect the 128-point normalized protocol and drawing sample bounds", () => {
   const points = Array.from({ length: 1000 }, (_, index) => ({ x: index, y: -index }));
@@ -236,6 +252,16 @@ test("Codenames tutorial gates restrict highlighted guesses, wait states and clu
   assert.equal(codenamesTutorialUi({ type: "HUMAN_GUESSING", clue: { word: "NIGHT", count: 2 } }, waiting).type, "AI_GUESSING");
   assert.equal(codenamesTutorialUi({ type: "SUDDEN_DEATH_BOTH" }, waiting).type, "SUDDEN_DEATH_AI_TURN");
   assert.equal(codenamesTutorialAllows(codenamesTutorialGate("free_play"), "submitGuess", 24), true);
+  assert.equal(CODENAMES_TUTORIAL_STEPS.length, 13);
+  assert.deepEqual(codenamesTutorialInstruction("player_monster_touch", "zh-CN"), {
+    step: 11, total: 13, actor: "player", title: "翻开怪兽", body: "确认高亮卡片，看看为什么必须避开怪兽。",
+  });
+});
+
+test("Codenames retains the sudden-death event in the finished transcript", () => {
+  const game = codenamesFixture(); game.phase = "GAME_OVER"; game.tokensRemaining = 0;
+  const ids = codenamesHistoryMessages(game, "A", key => key).map(message => message.id);
+  assert.deepEqual(ids, ["sudden-death", "result"]);
 });
 
 test("Codenames detects both bystander slots and ignores old cards on reseed", async () => {

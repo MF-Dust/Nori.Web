@@ -5,6 +5,14 @@ import { UI_SOUND_CATALOG } from "../runtime/ui-sound-catalog";
 import "./debug-screen.css";
 import { SceneEditor } from "./scene-editor";
 import { CorruptionPreview } from "../story/corruption-preview";
+import {
+  NetworkDebugLab,
+  ComputeDebugLab,
+  GestureDebugLab,
+  ReactionDebugLab,
+  ScenarioDebugLab,
+  type DebugLabActions,
+} from "./debug-labs";
 
 const tabs = [
   { id: "connection", label: "Connection" },
@@ -13,9 +21,20 @@ const tabs = [
   { id: "facts", label: "Facts" },
   { id: "editor", label: "Scene editor" },
   { id: "corruption", label: "Corruption" },
+  { id: "network", label: "Network lab" },
+  { id: "compute", label: "Compute lab" },
+  { id: "gesture", label: "Gesture lab" },
+  { id: "reaction", label: "Reaction lab" },
+  { id: "scenarios", label: "Game scenarios" },
 ] as const;
 /** Session-scoped developer tools. Never persists scene overrides or fabricates story facts. */
-export function DebugScreen({ frontend }: { frontend: NoriFrontendRuntime }) {
+export function DebugScreen({
+  frontend,
+  actions,
+}: {
+  frontend: NoriFrontendRuntime;
+  actions?: DebugLabActions;
+}) {
   const [tab, setTab] = useState<string>("connection");
   const [visited, setVisited] = useState(() => new Set(["connection"]));
   const scene = useSyncExternalStore(
@@ -35,8 +54,12 @@ export function DebugScreen({ frontend }: { frontend: NoriFrontendRuntime }) {
   const [sound, setSound] = useState("chess.moveSelf");
   const [error, setError] = useState<string | null>(null);
   const override = useRef<ReturnType<NoriSceneStore["acquire"]> | null>(null);
+  const reactionTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   useEffect(() => {
     const release = () => {
+      clearTimeout(reactionTimer.current);
       override.current?.release();
       override.current = null;
     };
@@ -117,6 +140,35 @@ export function DebugScreen({ frontend }: { frontend: NoriFrontendRuntime }) {
         {error && <p role="alert">{error}</p>}
         {tab === "editor" && <SceneEditor frontend={frontend} />}
         {tab === "corruption" && <CorruptionPreview frontend={frontend} />}
+        {tab === "network" && <NetworkDebugLab />}
+        {tab === "compute" && <ComputeDebugLab actions={actions?.compute} />}
+        {tab === "gesture" && <GestureDebugLab frontend={frontend} />}
+        {tab === "reaction" && (
+          <ReactionDebugLab
+            preview={(reaction) => {
+              if (frontend.story.snapshot()) {
+                setError("A production story is active");
+                return;
+              }
+              const expressions = {
+                happy: "13_Happy",
+                serious: "12_Serious",
+                surprised: "14_Surprised",
+                angry: "03_Angry",
+                sad: "08_Tears",
+              };
+              clearTimeout(reactionTimer.current);
+              set({ active: true, noriExpression: expressions[reaction] });
+              reactionTimer.current = setTimeout(() => {
+                override.current?.release();
+                override.current = null;
+              }, 3000);
+            }}
+          />
+        )}
+        {tab === "scenarios" && (
+          <ScenarioDebugLab load={actions?.loadScenario} />
+        )}
         {visited.has("connection") && (
           <div hidden={tab !== "connection"}>
             <h2>Connection</h2>

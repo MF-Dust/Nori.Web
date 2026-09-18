@@ -78,7 +78,7 @@ export class StoryDirector {
     }
     this.listeners.forEach((listener) => listener());
   }
-  complete = (expected = this.current) => {
+  complete = (expected = this.current, onAcknowledged?: () => void) => {
     if (
       !expected ||
       expected !== this.current ||
@@ -92,13 +92,21 @@ export class StoryDirector {
     const attempt = async () => {
       try {
         await this.emit(scene.sentinel);
-        if (this.disposed || epoch !== this.epoch) return;
+        if (this.disposed || epoch !== this.epoch || this.current !== scene)
+          return;
         this.completed.add(scene.id);
         this.timer = setTimeout(() => {
           this.finishing = false;
           this.current = null;
           this.sync(this.world, this.facts);
         }, 1500);
+        // Reload/handoff belongs after server acknowledgement, never after a
+        // stale world response. A consumer failure must not resubmit the fact.
+        try {
+          onAcknowledged?.();
+        } catch (error) {
+          console.error("[StoryDirector] acknowledgement handoff", error);
+        }
       } catch {
         if (!this.disposed && epoch === this.epoch)
           this.timer = setTimeout(attempt, 2000);

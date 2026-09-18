@@ -9,10 +9,11 @@ import type { CodenamesClueCount, CodenamesTranslate } from "../apps/codenames-c
 import { CodenamesScreen } from "./codenames-screen";
 import { CodenamesHelpOverlay } from "./codenames-help-overlay";
 import { useCodenamesReveal } from "./use-codenames-reveal";
-import { codenamesTutorialAllows, codenamesTutorialGate, codenamesTutorialUi } from "../apps/codenames-tutorial";
+import { codenamesTutorialAllows, codenamesTutorialGate, codenamesTutorialInstruction, codenamesTutorialUi } from "../apps/codenames-tutorial";
 import type { CodenamesClueHighlight } from "../apps/codenames-clue-presentation";
 import "../styles/codenames-app.css";
 import "../styles/codenames-board.css";
+import { CodenamesTutorialNarrative } from "./codenames-tutorial-narrative";
 
 export interface CodenamesAppProps {
   controller: GameCartridgeController<CodenamesState>;
@@ -36,6 +37,7 @@ export function CodenamesApp({ controller, translate: t, locale = "en", playSoun
   const state = snapshot.state, game = state?.gameState ?? null, player = state?.counterpartSide ?? "A";
   const tutorialStep = state?.tutorial?.step;
   const gate = useMemo(() => codenamesTutorialGate(tutorialStep), [tutorialStep]);
+  const tutorialInstruction = useMemo(() => codenamesTutorialInstruction(tutorialStep, locale), [tutorialStep, locale]);
   const ui = useMemo(() => codenamesTutorialUi(codenamesUiState(game, player), gate), [game, player, gate]);
   const messages = useMemo(() => game ? codenamesHistoryMessages(game, player, t) : [], [game, player, t]);
   const turn = game?.history.at(-1);
@@ -95,7 +97,10 @@ export function CodenamesApp({ controller, translate: t, locale = "en", playSoun
   return <section ref={root} className="source-codenames-app">
     {!game && <div aria-hidden className="source-codenames-forest"><CodenamesForest /></div>}
     {!game ? <div className="source-codenames-menu">
-      <p>{t("codenames.badge")}</p><h1>{t("codenames.title")}</h1><p>{t("codenames.subtitle")}</p>
+      <div className="source-codenames-fireflies" aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <i key={index} />)}</div>
+      <div className="source-codenames-compass" aria-hidden="true"><i /><span>N</span></div>
+      <p className="source-codenames-badge">{t("codenames.badge")}</p><h1>{t("codenames.title")}</h1>
+      <div className="source-codenames-title-rule" aria-hidden="true"><i /><span>✦</span><i /></div><p>{t("codenames.subtitle")}</p>
       <fieldset disabled={!snapshot.mounted || snapshot.pending}><legend>{t("codenames.difficulty.label")}</legend>
         {[{ tokens: 11, key: "easy" }, { tokens: 10, key: "normal" }, { tokens: 9, key: "hard" }].map(item =>
           <button type="button" key={item.tokens} aria-pressed={tokens === item.tokens} onClick={() => setTokens(item.tokens)}>
@@ -139,6 +144,7 @@ export function CodenamesApp({ controller, translate: t, locale = "en", playSoun
           });
           return true;
         }} />
+      <CodenamesTutorialNarrative instruction={tutorialInstruction} />
       {ended && showResults && state && <CodenamesResults state={state} translate={t} pending={snapshot.pending}
         onRematch={() => start()} onMenu={() => void controller.dispatch({ type: "reset" })} />}
     </>}

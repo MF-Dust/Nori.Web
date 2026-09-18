@@ -80,6 +80,15 @@ Object.assign(window, { fixture: {
   },
   codenames(guessing = false) { codenames.set(codenamesGame(guessing)); },
   codenamesTutorial(step: string) { codenames.set({ ...codenamesGame(true), tutorial: { step } }); },
+  codenamesScenario(scenario: "sudden_death_both" | "sudden_death_counterpart_only" | "sudden_death_agent_only") {
+    const state = codenamesGame(true);
+    state.gameState.phase = "SUDDEN_DEATH"; state.gameState.tokensRemaining = 0;
+    state.gameState.key.A = Array(25).fill("BYSTANDER"); state.gameState.key.B = Array(25).fill("BYSTANDER");
+    state.gameState.key.A[0] = "AGENT"; state.gameState.key.B[1] = "AGENT";
+    if (scenario === "sudden_death_counterpart_only") state.gameState.cells[0].solvedBy = "B" as any;
+    if (scenario === "sudden_death_agent_only") state.gameState.cells[1].solvedBy = "A" as any;
+    codenames.set(state);
+  },
   revealCodenames(cell = 0, type = "agent") {
     const state = structuredClone(codenames.snapshot().state);
     if (type === "bystander") state.gameState.cells[cell].bystanderMarks[0] = "A";
@@ -95,6 +104,15 @@ Object.assign(window, { fixture: {
     });
     chess.set({ ...chessInitial, tutorial: { step: override ?? CHESS_TUTORIAL_STEPS[index]?.id ?? "free_play" },
       gameState: { fen: board.fen(), startFen: CHESS_START_FEN, turn: board.turn() === "w" ? "white" : "black", status: "playing", winner: null, isCheck: board.isCheck(), moveHistory: history } });
+  },
+  chessRequest(kind: "draw" | "takeback") {
+    const state: any = { ...chessInitial, gameState: { fen: CHESS_START_FEN, startFen: CHESS_START_FEN, turn: "white", status: "playing", winner: null, isCheck: false, moveHistory: [] } };
+    if (kind === "draw") state.drawOffer = "black"; else state.takebackRequest = "black";
+    chess.set(state);
+  },
+  chessResults(winner: "white" | "black" | "draw" = "white") {
+    chess.set({ ...chessInitial, gameState: { fen: CHESS_START_FEN, startFen: CHESS_START_FEN, turn: "white", status: winner === "draw" ? "draw" : "checkmate", winner,
+      isCheck: winner !== "draw", moveHistory: [{ by: "white", move: { from: "e2", to: "e4" }, san: "e4", captured: null, isCheck: winner !== "draw", isCastling: false, isPromotion: false, isCheckmate: winner !== "draw" }] } });
   },
   snapshot: () => capture?.(),
   revisions: () => revisions,

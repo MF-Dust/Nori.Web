@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Check, Copy, ExternalLink } from "lucide-react";
 import {
-  Check,
-  Copy,
-  ExternalLink,
-  Gamepad2,
-  Users,
-  TvMinimal,
-} from "lucide-react";
+  SteamBrandIcon,
+  QqBrandIcon,
+  BilibiliBrandIcon,
+} from "../components/credits-brand-icons";
 import type { createSourceTranslate } from "../i18n/translate";
 import { CREDITS_MOTES } from "../apps/system-presentation-data";
 import "../styles/credits.css";
@@ -14,14 +12,14 @@ import "../styles/credits.css";
 const rows = [
   {
     id: "steam",
-    icon: Gamepad2,
+    icon: SteamBrandIcon,
     href: "https://store.steampowered.com/app/4996280/I_NORI/",
   },
-  { id: "qq", icon: Users, copy: "1041616195" },
-  { id: "qq2", icon: Users, copy: "1107531061" },
+  { id: "qq", icon: QqBrandIcon, copy: "1041616195" },
+  { id: "qq2", icon: QqBrandIcon, copy: "1107531061" },
   {
     id: "bilibili",
-    icon: TvMinimal,
+    icon: BilibiliBrandIcon,
     href: "https://space.bilibili.com/326505494",
   },
 ] as const;

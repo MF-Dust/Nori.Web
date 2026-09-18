@@ -1,4 +1,5 @@
-import { StoryDirector } from "../story/story-director";
+import { NoriReactionDirector } from "../live2d/reaction-director";
+import { StoryDirector, STORY_ORDER } from "../story/story-director";
 import { ChatRuntimeController } from "../apps/chat-runtime";
 import { decodeChatAudioFrame } from "./chat-media";
 import { SpeechPlayer } from "./speech-player";
@@ -26,6 +27,7 @@ import { HeadPat } from "../live2d/head-pat";
 
 export class NoriFrontendRuntime {
   readonly headPat = new HeadPat();
+  readonly reactions = new NoriReactionDirector();
   readonly auth = new LocalAuthController();
   readonly arcade: ArcadeClient;
   readonly media = new ArcadeMediaClient();
@@ -145,7 +147,7 @@ export class NoriFrontendRuntime {
     this.rpc = new EventRpcClient(this.arcade);
     this.artifacts = new ArtifactService(this.rpc);
     this.manifold = new ManifoldService(this.rpc);
-    this.story = new StoryDirector(new Set(["cult-flash"]), (factId) =>
+    this.story = new StoryDirector(new Set(STORY_ORDER.map((story) => story.id)), (factId) =>
       this.manifold.commandResult("client.emitFact", { factId }),
     );
     this.desktop = new DesktopService(this.rpc);
@@ -215,6 +217,7 @@ export class NoriFrontendRuntime {
         if (state !== "open") {
           this.story.sync(null, new Set());
           this.scene.reset();
+          this.reactions.reset();
           this.speech.reset();
           this.media.close();
         }
@@ -245,6 +248,7 @@ export class NoriFrontendRuntime {
           message.type === "world_created"
         ) {
           this.scene.reset();
+          this.reactions.reset();
           this.speech.reset();
           // Browser audio needs a gesture. Text mode also releases pending speech after reconnect.
           this.audioEnabled = false;
@@ -255,6 +259,7 @@ export class NoriFrontendRuntime {
             );
         } else if (message.type === "world_left") {
           this.scene.reset();
+          this.reactions.reset();
           this.speech.reset();
           this.media.close();
         }
@@ -316,6 +321,7 @@ export class NoriFrontendRuntime {
     this.cleanup.forEach((fn) => fn());
     this.story.dispose();
     this.scene.reset();
+    this.reactions.reset();
     this.conversation.dispose();
     this.speech.dispose();
     this.audio.dispose();

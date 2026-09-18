@@ -90,6 +90,68 @@ def test_codenames() -> None:
     assert cartridge_en.state["gameState"]["history"][-1]["clue"]["word"] == "NORI"
 
 
+def test_codenames_debug_scenarios() -> None:
+    expected = {
+        "sudden_death_both": (True, True),
+        "sudden_death_counterpart_only": (False, True),
+        "sudden_death_agent_only": (True, False),
+    }
+    for scenario_id, remaining in expected.items():
+        cartridge = CodenamesCartridge()
+        cartridge.dispatch("player", {"type": "startGame", "settings": {"tokens": 9, "seed": 41, "wordLocale": "en"}})
+        commit = cartridge.dispatch("player", {"type": "debugLoadScenario", "scenarioId": scenario_id})
+        game = cartridge.state["gameState"]
+        counts = tuple(cartridge._remaining_agents(game, side) > 0 for side in ("A", "B"))
+        assert counts == remaining
+        assert game["phase"] == "SUDDEN_DEATH" and game["tokensRemaining"] == 0
+        assert len(game["history"]) == cartridge.state["settings"]["tokens"]
+        assert commit.result == {"success": True}
+        assert any(event["type"] == "sudden_death" for event in commit.transition["events"])
+
+
+def test_codenames_tutorial_script() -> None:
+    cartridge = CodenamesCartridge()
+    cartridge.dispatch("player", {"type": "startGame", "mode": "tutorial", "settings": {"wordLocale": "en"}})
+    game = cartridge.state["gameState"]
+    assert cartridge.state["tutorial"] == {"step": "nori_opening_clue"}
+    assert game["whoseTurnToGive"] == "B" and game["board"][0]["text"] == "MOON"
+    try:
+        cartridge.dispatch("player", {"type": "submitGuess", "cell": 0})
+        raise AssertionError("tutorial wait step accepted a player guess")
+    except CommandRejected:
+        pass
+
+    def agent(expected_type: str) -> None:
+        command = cartridge.agent_next_command()
+        assert command and command["type"] == expected_type
+        cartridge.dispatch("agent", command)
+
+    agent("submitClue")
+    assert cartridge.state["gameState"]["history"][-1]["clue"] == {"word": "NIGHT", "count": 2}
+    for cell, step in ((0, "player_second_treasure"), (10, "player_berry_lesson"), (17, "player_real_clue")):
+        cartridge.dispatch("player", {"type": "submitGuess", "cell": cell})
+        assert cartridge.state["tutorial"]["step"] == step
+    cartridge.dispatch("player", {"type": "submitClue", "clue": {"word": "BUILDING", "count": 2}})
+    agent("submitGuess")
+    agent("endTurn")
+    agent("submitClue")
+    assert cartridge.state["tutorial"]["step"] == "player_free_guessing"
+    cartridge.dispatch("player", {"type": "submitGuess", "cell": 6})
+    cartridge.dispatch("player", {"type": "endTurn"})
+    agent("tutorialLoadStage")
+    agent("submitClue")
+    assert cartridge.state["tutorial"]["step"] == "player_monster_touch"
+    cartridge.dispatch("player", {"type": "submitGuess", "cell": 23})
+    assert cartridge.state["gameState"]["phase"] == "GAME_OVER"
+    agent("tutorialLoadStage")
+    assert cartridge.state["gameState"]["phase"] == "SUDDEN_DEATH"
+    final = cartridge.dispatch("player", {"type": "submitGuess", "cell": 12})
+    assert cartridge.state["tutorial"] == {"step": "free_play"}
+    assert cartridge.state["gameState"]["winner"] == "TEAM"
+    event_types = [event["type"] for event in final.transition["events"]]
+    assert event_types == ["card_reveal", "guess", "game_over", "tutorial_step"]
+
+
 def test_cakeduel() -> None:
     cartridge = CakeDuelCartridge()
     cartridge.dispatch("player", {"type": "startGame", "mode": "normal", "difficulty": "soldier"})
@@ -257,6 +319,8 @@ if __name__ == "__main__":
     test_registry()
     test_chat()
     test_codenames()
+    test_codenames_debug_scenarios()
+    test_codenames_tutorial_script()
     test_cakeduel()
     test_chess()
     test_chess_tutorial()

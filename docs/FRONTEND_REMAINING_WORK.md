@@ -1,3 +1,19 @@
+# Current execution status — PR #43
+
+Updated 2026-09-18. This section supersedes the historical status paragraphs below.
+
+Six production story components are now registered in source alongside Cult. The implementation includes Boot fracture and timeline, Corruption overlays and input gates, Memory archive presentation, Datasea GLB rendering, a dedicated Farewell actor and Ending camera/wake timeline. Registration is implemented; full behavioral and visual acceptance is pending. Datasea microgames and Memory choreography are under substantive review.
+
+Messenger interaction fixes, real Debug socket/compute controls, Credits SVGs, expression/motion scene channels, game presentation and model-reaction integration are in the current implementation batch. `FRONTEND_COVERAGE_MATRIX.md` records all 15 registered applications and their remaining evidence. Independent Chromium jobs prevent one broken surface from hiding other results.
+
+The local test baseline is 86 runtime cases, 10 story cases and 3 historical-asset scanner cases passing. Browser verification runs in GitHub Actions because the execution sandbox denies Chromium socket creation. The cold-open fault probe now isolates failed/retried/cancelled image loads in fresh contexts; its final CI result is still pending.
+
+All five incomplete cutover gates stay false. Required remaining work includes actual browser acceptance, original/source visual comparison, any defects found by those runs, dedicated scene tuners, original-agent/media integration, candidate-entry verification and rollback evidence. `nori_talk.request` remains a documented local no-op, so this environment cannot certify original agent replies. No production entry has been switched.
+
+See `FRONTEND_RECOVERY_EXECUTION_PLAN.md` for task IDs and the scene-specific recovery documents for exact boundaries.
+
+---
+
 # Frontend recovery: remaining acceptance work
 
 This ledger expands the five incomplete cutover boundaries into concrete tasks. It records source ownership and verification separately from original visual/agent parity. The authoritative switch remains `frontend-src/migration/cutover-status.ts`.

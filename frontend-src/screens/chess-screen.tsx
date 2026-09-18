@@ -1,4 +1,4 @@
-import { ChessFeedback, type ChessNotice } from "../apps/chess-feedback";
+import { ChessFeedback, type ChessNotice, type ChessReaction } from "../apps/chess-feedback";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { CHESS_DIFFICULTIES, CHESS_START_FEN, CHESS_TUTORIAL_STEPS, chessCaptures, chessHistory, chessLayout, type ChessSide, type ChessState } from "../apps/chess-model";
 import type { GameCartridgeController } from "../apps/game-cartridge-controller";
@@ -12,8 +12,9 @@ export interface ChessScreenProps {
   controller: GameCartridgeController<ChessState>;
   translate?: (key: string, values?: Record<string, string | number>) => string;
   onSound?: (sound: string) => void;
+  onNoriReaction?: (reaction: ChessReaction) => void;
 }
-export function ChessScreen({ controller, translate, onSound }: ChessScreenProps) {
+export function ChessScreen({ controller, translate, onSound, onNoriReaction }: ChessScreenProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
   useEffect(() => controller.retain(), [controller]);
   const [ref, size] = useElementSize();
@@ -57,7 +58,7 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
   const sound = useRef(onSound); sound.current = onSound;
   const feedback = useRef<ChessFeedback | null>(null);
   useEffect(() => {
-    const current = new ChessFeedback(cue => sound.current?.(cue), kind => setNotice({ kind }));
+    const current = new ChessFeedback(cue => sound.current?.(cue), kind => setNotice({ kind }), reaction => onNoriReaction?.(reaction));
     feedback.current = current;
     current.update(controller.snapshot().state, controller.snapshot().presentationEpoch ?? 0, controller.snapshot().connected !== false);
     const unsubscribe = controller.subscribe(() => {
@@ -66,7 +67,7 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
       current.update(next.state, next.presentationEpoch ?? 0, next.connected !== false);
     });
     return () => { unsubscribe(); current.reset(); feedback.current = null; };
-  }, [controller]);
+  }, [controller, onNoriReaction]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(null), 3000); return () => clearTimeout(timer); }, [notice]);
   const dispatch = (type: string) => {
     const kind = type === "cancelDrawOffer" ? "draw" : type === "cancelTakebackRequest" ? "takeback" : null;
@@ -142,17 +143,25 @@ export function ChessScreen({ controller, translate, onSound }: ChessScreenProps
       </aside>
     </div>
     {notice && <div className="source-chess-notification source-chess-glass" role="status"><span>{t("toast." + notice.kind, notice.kind)}</span><button type="button" aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
-    {incoming && <div className="source-chess-request source-chess-glass" role="dialog" aria-label={incoming}>
+    {incoming && <div className="source-chess-request source-chess-glass" role="dialog" aria-modal="false" aria-label={incoming} data-chess-request={incoming.toLowerCase()}>
+      <span className="source-chess-request-icon" aria-hidden="true">{incoming === "Draw" ? "½" : "↶"}</span>
       <p>{incoming === "Draw" ? t("request.noriOffersDraw", "Nori offers a draw") : t("request.noriRequestsTakeback", "Nori requests a takeback")}</p>
       {[true, false].map(accept => <button type="button" key={String(accept)} disabled={snapshot.pending} onClick={() => void controller.dispatch({ type: incoming === "Draw" ? "respondDraw" : "respondTakeback", accept })}>
         {accept ? t("request.accept", "Accept") : t("request.decline", "Decline")}</button>)}
     </div>}
-    {game && !playing && !setup && <div className="source-chess-results source-chess-glass">
-      <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{game.winner === "draw" ? t("results.draw", "Draw") : game.winner === playerSide ? t("results.youWin", "You win") : t("results.noriWins", "Nori wins")}</button>
-      {expanded && <><p>{t("results.totalMoves", "Total moves")}: {history.length}</p>
-        <p>{t("results.captures", "Captures")}: {history.filter(item => item.by === playerSide && item.captured).length} / {history.filter(item => item.by !== playerSide && item.captured).length}</p>
-        <p>{t("results.checks", "Checks")}: {history.filter(item => item.by === playerSide && item.isCheck).length} / {history.filter(item => item.by !== playerSide && item.isCheck).length}</p>
-        <button type="button" className="primary" onClick={() => setRestart(true)}>{t("results.playAgain", "Play again")}</button></>}
+    {game && !playing && !setup && <div className="source-chess-results source-chess-glass" role="dialog" aria-label={t("results." + game.status, game.status)}
+      data-chess-result={game.winner === "draw" || game.winner === null ? "draw" : game.winner === playerSide ? "win" : "loss"}>
+      <button type="button" className="source-chess-results-handle" aria-label={expanded ? "Collapse results" : "Expand results"} aria-expanded={expanded} onClick={() => setExpanded(!expanded)}><i /></button>
+      {expanded ? <div className="source-chess-results-expanded">
+        <header><span aria-hidden="true">{game.winner === "draw" || game.winner === null ? "½" : game.winner === playerSide ? "♔" : "♚"}</span><div>
+          <h2>{game.winner === "draw" || game.winner === null ? t("results.draw", "Draw") : game.winner === playerSide ? t("results.youWin", "You win") : t("results.noriWins", "Nori wins")}</h2>
+          <p>{t("results." + game.status, game.status)}</p></div></header>
+        <dl><div><dt>{t("results.totalMoves", "Total moves")}</dt><dd>{history.length}</dd></div>
+          <div><dt>{t("results.captures", "Captures")}</dt><dd>{history.filter(item => item.by === playerSide && item.captured).length} / {history.filter(item => item.by !== playerSide && item.captured).length}</dd></div>
+          <div><dt>{t("results.checks", "Checks")}</dt><dd>{history.filter(item => item.by === playerSide && item.isCheck).length} / {history.filter(item => item.by !== playerSide && item.isCheck).length}</dd></div></dl>
+        <button type="button" className="primary" onClick={() => setRestart(true)}>↶ {t("results.playAgain", "Play again")}</button>
+      </div> : <div className="source-chess-results-collapsed"><strong>{game.winner === "draw" || game.winner === null ? t("results.draw", "Draw") : game.winner === playerSide ? t("results.youWin", "You win") : t("results.noriWins", "Nori wins")}</strong>
+        <button type="button" className="primary" onClick={() => setRestart(true)}>↶ {t("results.playAgain", "Play again")}</button></div>}
     </div>}
     {help && <div className="source-chess-help-backdrop" onClick={() => setHelp(false)}>
       <div className="source-chess-glass source-chess-help" role="dialog" aria-modal="true" aria-label={t("help.title", "Chess help")} onClick={event => event.stopPropagation()}>

@@ -30,6 +30,10 @@ export class NoriIdleController {
   activity() {
     this.lastActivity = this.now();
   }
+  invalidate() {
+    this.current = null;
+    this.activity();
+  }
   update(
     state: NoriIdleState,
     forcedSleep: boolean,

@@ -69,6 +69,20 @@ try {
   await page.setViewportSize({ width: 640, height: 480 });
   await page.screenshot({ path: join(output, "chess-compact.png") });
 
+  await page.evaluate(() => window.fixture.chessRequest("draw"));
+  const drawRequest = page.getByRole("dialog", { name: "Draw" });
+  await drawRequest.waitFor();
+  assert.equal(await drawRequest.getByRole("button").count(), 2);
+  await drawRequest.getByRole("button", { name: "Accept", exact: true }).click();
+  assert.deepEqual(await page.evaluate(() => window.fixture.commands.at(-1)), { type: "respondDraw", accept: true });
+  await page.evaluate(() => window.fixture.chessResults("white"));
+  const chessResults = page.locator('[data-chess-result="win"]');
+  await chessResults.waitFor();
+  assert.match(await chessResults.textContent(), /You win/);
+  await page.getByRole("button", { name: "Collapse results", exact: true }).click();
+  assert.equal(await page.getByRole("button", { name: "Expand results", exact: true }).getAttribute("aria-expanded"), "false");
+  await page.screenshot({ path: join(output, "chess-results-collapsed.png") });
+
   await page.setViewportSize({ width: 1100, height: 720 });
   await page.goto(origin + "/?locale=zh-CN");
   await page.getByRole("button", { name: "让 Nori 教你下棋", exact: true }).click();
@@ -156,6 +170,12 @@ try {
   await page.setViewportSize({ width: 1100, height: 720 });
   await page.clock.install();
   await page.goto(origin + "/pictionary#pictionary");
+  await page.getByRole("button", { name: "Help", exact: true }).click();
+  const pictionaryHelp = page.getByRole("dialog", { name: "Draw & Guess help" });
+  await pictionaryHelp.waitFor();
+  assert.equal(await pictionaryHelp.locator("li").count(), 4);
+  await page.keyboard.press("Escape");
+  await pictionaryHelp.waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.getByRole("button", { name: "5 min", exact: true }).click();
   await page.getByRole("button", { name: "Start session", exact: true }).click();
@@ -263,6 +283,8 @@ try {
   assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).type), "startSession");
   await page.clock.resume();
   await page.goto(origin + "/codenames#codenames");
+  assert.equal(await page.locator(".source-codenames-fireflies i").count(), 12);
+  assert.equal(await page.locator(".source-codenames-compass").count(), 1);
   await page.getByRole("button", { name: "Start Adventure", exact: true }).click();
   assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).settings.tokens), 9);
   await page.evaluate(() => window.fixture.codenames(true));
@@ -294,6 +316,24 @@ try {
   assert.equal(await page.evaluate(() => window.fixture.commands.length), tutorialCommands + 1);
   await page.evaluate(() => window.fixture.codenamesTutorial("nori_opening_clue"));
   assert.equal(await page.locator('[data-card-cell="0"] button').isDisabled(), true);
+  const codenamesTutorialSteps = [
+    "nori_opening_clue", "player_first_treasure", "player_second_treasure", "player_berry_lesson",
+    "player_real_clue", "nori_real_guessing", "nori_canine_clue", "player_free_guessing",
+    "load_monster_lesson", "nori_chime_clue", "player_monster_touch", "load_sudden_death", "player_finale_guess",
+  ];
+  for (let index = 0; index < codenamesTutorialSteps.length; index++) {
+    await page.evaluate(step => window.fixture.codenamesTutorial(step), codenamesTutorialSteps[index]);
+    const narrative = page.locator(`[data-codenames-tutorial="${index + 1}"]`);
+    await narrative.waitFor();
+    assert.match(await narrative.textContent(), new RegExp(`${index + 1} / 13`));
+  }
+  const suddenDeathStatus = page.locator("[data-codenames-footer]");
+  await page.evaluate(() => window.fixture.codenamesScenario("sudden_death_both"));
+  assert.match(await suddenDeathStatus.textContent(), /both/i);
+  await page.evaluate(() => window.fixture.codenamesScenario("sudden_death_counterpart_only"));
+  assert.match(await suddenDeathStatus.textContent(), /You/);
+  await page.evaluate(() => window.fixture.codenamesScenario("sudden_death_agent_only"));
+  assert.match(await suddenDeathStatus.textContent(), /Nori/);
   await page.evaluate(() => window.fixture.codenamesResults());
   await page.locator('[data-codenames-results="win"]').waitFor();
   assert.match(await page.locator(".source-codenames-result-card dl").textContent(), /15 \/ 15/);
@@ -307,7 +347,7 @@ try {
   await page.getByRole("button", { name: "Leave Forest", exact: true }).click();
   assert.equal(await page.evaluate(() => window.fixture.commands.at(-1).type), "reset");
   assert.deepEqual(errors, [], "source screens must not throw browser errors");
-  console.log("PASS: Chess moves/promotion, all 22 tutorial steps, free play, locales, history, disconnect/drag and reduced motion; Pictionary drawing/snapshots, English/Chinese hints, cancellation and audio; Codenames guesses, flight/reveal pacing and reseed cancellation.");
+  console.log("PASS: Chess moves/promotion, requests/results, all 22 tutorial steps, free play, locales, history, disconnect/drag and reduced motion; Pictionary cover/help, drawing/snapshots, English/Chinese hints, cancellation and audio; Codenames menu, 13-step tutorial narrative, sudden-death scenarios, guesses, flight/reveal pacing and reseed cancellation.");
 } finally {
   await browser?.close();
   await new Promise(done => server.close(done));

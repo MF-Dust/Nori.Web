@@ -71,7 +71,10 @@ export function codenamesHistoryMessages(game: CodenamesGame, player: CodenamesS
     if (turn.endedBy) messages.push({ id: index + ":end", sender: sender(guesser), message: { type: "turnEnded",
       reason: turn.endedBy === "ALL_FOUND" ? "all_found" : turn.endedBy === "BYSTANDER" ? "bystander" : "voluntary" } });
   });
-  if (game.phase === "SUDDEN_DEATH") messages.push({ id: "sudden-death", sender: "", message: { type: "suddenDeath" } });
+  // Sudden-death is an event in the shipped controller. Preserve it in the
+  // durable transcript after the phase advances to GAME_OVER as well.
+  if (game.phase === "SUDDEN_DEATH" || (game.phase === "GAME_OVER" && game.tokensRemaining === 0))
+    messages.push({ id: "sudden-death", sender: "", message: { type: "suddenDeath" } });
   if (game.phase === "GAME_OVER") messages.push({ id: "result", sender: "", message: { type: "system",
     text: translate(game.winner === "TEAM" ? "codenames.results.victory" : "codenames.results.defeat"), tone: game.winner === "TEAM" ? "success" : "warning" } });
   return messages;

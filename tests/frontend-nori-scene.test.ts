@@ -162,6 +162,12 @@ test("Cinematic face overrides and expressions release cleanly; thinking light b
   face.update(tick);
   assert.deepEqual([...values.values()], [0.3, 0.3, 0.2]);
   assert.deepEqual([...expressions], ["13_Happy", "Sleep"]);
+  lease.set({ noriExpression: "13_Happy", noriSmile: false });
+  face.update(tick);
+  assert.deepEqual([...expressions].sort(), ["13_Happy", "Sleep"]);
+  lease.set({ noriExpression: "03_Angry", noriSleep: false });
+  face.update(tick);
+  assert.deepEqual([...expressions], ["03_Angry"]);
   lease.release();
   values.clear();
   face.update(tick);
