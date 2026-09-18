@@ -32,7 +32,7 @@
 ### 2.1 PR 和实现状态
 
 - PR #43 为 Open、未合并，目标分支为 master，审计时 mergeable 为 true。
-- 本次状态审计对应实施提交 `f7a7fa6683adc8c9088d416a2fa6784c94464ac1`；`94107bbf0b33911c519b50670664115c1a4efd47` 保留为本计划开始时的审计基线。
+- 本次状态审计对应实施提交 `7de88a5`；`94107bbf0b33911c519b50670664115c1a4efd47` 保留为本计划开始时的审计基线。
 - 用户提供的 `Nori.Web-PR43-scene-editor.patch` 已在此前应用；PR 记录 `4f63429875d3d8db4b423be6b531c9d07a1e30af` 已完成对应浏览器验收。后续以分支源码为准，不重复应用补丁。
 - 15 项 cutover 边界中，10 项当前标为完成，5 项仍为 false。此数量只描述门禁状态，不代表项目完成百分比。
 - `story-director.ts` 定义七段剧情优先级，`story-scenes.tsx` 已挂载 Cult 与六段新增正式剧情。注册和完成事实已有源码/单元证据；逐段视觉、浏览器、原版语料与私有代理验收仍分别结算。
@@ -42,17 +42,19 @@
 
 ### 2.2 最新 CI 状态
 
-初始失败审计对象为 [Cloudflare Worker run 35285404971](https://github.com/MF-Dust/Nori.Web/actions/runs/35285404971)；该 run 的 cold-open 错误路径已由 P0 修复并在 run `35354435518` 通过。当前 head `f7a7fa6683adc8c9088d416a2fa6784c94464ac1` 的最新证据如下。
+初始失败审计对象为 [Cloudflare Worker run 35285404971](https://github.com/MF-Dust/Nori.Web/actions/runs/35285404971)；该 run 的 cold-open 错误路径已由 P0 修复并在 run `35354435518` 通过。当前实施提交 `7de88a5` 的最新证据如下。
 
 | 检查 | 审计结果 |
 | --- | --- |
 | [Frontend recovery surfaces 35364523143](https://github.com/MF-Dust/Nori.Web/actions/runs/35364523143)：Debug、cold-open、Boot/Corruption、Farewell/Ending | 通过 |
 | 同一 surface run：Messenger | 通过 |
-| 同一 surface run：Memory/Datasea、Datasea games、candidate | 运行中 |
+| 同一 surface run：Datasea games job `105663601161` | 12/12 真实鼠标/键盘操作通过，含 Sweep、Current、Lure、Ripple |
+| 同一 surface run：Memory/Datasea | Relay 后波次交接等待失败；已修正为有限等待真实 transmission/phase，完整串联由后续检查验收 |
+| [候选 35365741246](https://github.com/MF-Dust/Nori.Web/actions/runs/35365741246)，job `105667660666` | 物化静态入口、五组系统配对、四游戏配对、Worker dry-run 全通过 |
 | [Cloudflare Worker 35364523162](https://github.com/MF-Dust/Nori.Web/actions/runs/35364523162)：validate-worker | 通过 |
 | 同一 Worker run：类型检查、两种构建、runtime/story/ownership/cutover/recovery、Chromium 游戏 | 通过 |
-| [Cloudflare Worker 35364031131](https://github.com/MF-Dust/Nori.Web/actions/runs/35364031131)，job `105661992194`：真实 NoriStage 模型 | `Nori scene and cold-open lifecycle` 通过 catalog、physics 恢复与 HeadPat 参数恢复断言 |
-| 同一 job：Scene editor | 失败：新 Audio Debug tab 漏掉真实 `Corrupt voice` checkbox；控件已恢复并复用 DebugScreen scene lease，待新 head CI 复验 |
+| [Cloudflare Worker 35365741254](https://github.com/MF-Dust/Nori.Web/actions/runs/35365741254)，job `105667661060` | 通过；含真实 NoriStage/cold-open、Scene editor/Scene tools、Preview、Messenger、Chip 及最终整站 smoke |
+| 先前 job `105661992194` 的回归记录 | 真实模型步骤通过，随后 Scene editor 因新 Audio tab 漏掉 `Corrupt voice` checkbox 失败；`7de88a5` 恢复真实 scene 控件后由上述 job 复验通过 |
 
 初始失败明确位于 `frontend_cold_open_probe.mjs` 的资源错误路径：
 
@@ -244,7 +246,7 @@
 
 验收：每个控制项都有实际作用和释放路径；通用编辑能力保持稳定，新增场景通道有往返和浏览器证据。
 
-部分状态：Network fault、真实 Idle ledger、Gesture、Reaction、Codenames scenario、Shatter 与 Datasea tuner 已接实际运行时；Debug Chromium job `105644556047` 通过压缩 GLB、范围约束、持久化、失败重试、剧情接管与资源释放。对 `Debug-D6AtxpLT.js` 的注册项审计确认原版没有其他「按剧情分组」的专属 tuner。全页 Glitch 已接生产 filter；33 个 Chess 与 4 个 Cake Duel 原版 scenario ID 已进入 UI，并由 controller/backend 的真实 `debugLoadScenario` 命令执行。Live2D 使用当前挂载的生产模型执行插件、rest pose、expression 和 motion；Audio 直接修改持久化设置并同步 mixer/speech；Pat 参数直接作用于生产 recognizer、spring、输入区域和 friction synth；Reactions 覆盖生产 director 已绑定的 28 个 Pictionary/Chess/Codenames 事件；Notifications 执行真实 `notification.debug.push` 往返并观察 `notification.pushed`。Inject Talk 与 Nori Context 所需的私有 handler 不存在，因此只呈现可观测会话状态和明确阻塞，不伪造代理输出或上下文。仍缺 Live2D idle crossfade/lip-form、Audio manager 内部 suspend/seek/track/panner/effects、Pat armed/zone/model-pointer telemetry、Cake Duel/强制 variant/冷却绕过/mood/tell reaction，以及通知 shell queue/dismiss；原版布局也待对照。上述新增路径已有 106 项聚合运行时测试；Debug Chromium job `105657772066` 通过 UI 到 facade 的交互合同。Worker job `105661992194` 的 `Nori scene and cold-open lifecycle` 步骤使用真实 NoriStage 模型，通过 catalog、physics 切换/恢复和 HeadPat 参数恢复断言；该 job 随后的 Scene editor 步骤发现新 Audio Debug tab 漏掉真实 `Corrupt voice` checkbox。控件现已恢复并接回 DebugScreen 的 scene lease，保留剧情接管、世界切换及关闭 Debug 清理；现有浏览器断言未放宽，等待新 head CI 复验。由于未暴露控制与原版布局对照仍缺，P5-01 至 P5-03 暂不关闭。P5-06 至 P5-08 的辅助应用完整矩阵未因单次候选截图而关闭。
+部分状态：Network fault、真实 Idle ledger、Gesture、Reaction、Codenames scenario、Shatter 与 Datasea tuner 已接实际运行时；Debug Chromium job `105644556047` 通过压缩 GLB、范围约束、持久化、失败重试、剧情接管与资源释放。对 `Debug-D6AtxpLT.js` 的注册项审计确认原版没有其他「按剧情分组」的专属 tuner。全页 Glitch 已接生产 filter；33 个 Chess 与 4 个 Cake Duel 原版 scenario ID 已进入 UI，并由 controller/backend 的真实 `debugLoadScenario` 命令执行。Live2D 使用当前挂载的生产模型执行插件、rest pose、expression 和 motion；Audio 直接修改持久化设置并同步 mixer/speech；Pat 参数直接作用于生产 recognizer、spring、输入区域和 friction synth；Reactions 覆盖生产 director 已绑定的 28 个 Pictionary/Chess/Codenames 事件；Notifications 执行真实 `notification.debug.push` 往返并观察 `notification.pushed`。Inject Talk 与 Nori Context 所需的私有 handler 不存在，因此只呈现可观测会话状态和明确阻塞，不伪造代理输出或上下文。仍缺 Live2D idle crossfade/lip-form、Audio manager 内部 suspend/seek/track/panner/effects、Pat armed/zone/model-pointer telemetry、Cake Duel/强制 variant/冷却绕过/mood/tell reaction，以及通知 shell queue/dismiss；原版布局也待对照。上述新增路径已有 106 项聚合运行时测试；Debug Chromium job `105657772066` 通过 UI 到 facade 的交互合同。Worker job `105661992194` 的 `Nori scene and cold-open lifecycle` 步骤使用真实 NoriStage 模型，通过 catalog、physics 切换/恢复和 HeadPat 参数恢复断言；该 job 随后的 Scene editor 步骤发现新 Audio Debug tab 漏掉真实 `Corrupt voice` checkbox。控件现已恢复并接回 DebugScreen 的 scene lease，保留剧情接管、世界切换及关闭 Debug 清理；现有浏览器断言未放宽，并由 Worker job `105667661060` 的 Scene tools 与完整 Scene editor 步骤复验通过。由于未暴露控制与原版布局对照仍缺，P5-01 至 P5-03 暂不关闭。P5-06 至 P5-08 的辅助应用完整矩阵未因单次候选截图而关闭。
 
 ## 10. P6：原版代理与媒体验收
 
@@ -389,7 +391,7 @@ npm run frontend:app:smoke
 
 P0 验收：修复提交 `55c79a86715c807ea8a7dfd906e09f598b78ae21` 的 [CI 35354435518](https://github.com/MF-Dust/Nori.Web/actions/runs/35354435518) 已成功，含整站 smoke。独立 browser context 消除了已解码图片缓存对失败注入的干扰，保留成功、失败、重试、释放及迟到回调断言。整合提交 `3e2808de355b1cd18a762f2e22683eb72c5f0df8` 的 cold-open 和 Boot/Corruption 浏览器任务通过，其余新矩阵失败仍在修复。
 
-`c9fb95c4b8522c9902e9fe5b507759f0fb6b0c5c` 的独立矩阵中 cold-open、Boot/Corruption、Messenger、Debug 已通过；Debug job `105644556047` 实际加载 Meshopt 压缩 Datasea GLB，并覆盖调参、错误重试、接管与释放。此后 `f7a7fa6683adc8c9088d416a2fa6784c94464ac1` 的 surface run `35364523143` 再次通过 Debug、cold-open、Boot/Corruption、Farewell/Ending 与 Messenger；Memory/Datasea、Datasea games 和 candidate 仍在运行。此前 Worker job `105661992194` 的真实 NoriStage 模型步骤通过，随后 Scene editor 因新 Audio tab 遗漏 `Corrupt voice` checkbox 失败；工作区已恢复该真实 scene 控件并保持原浏览器功能断言，等待新 head CI，不能将当前整站 smoke 记为通过。
+`c9fb95c4b8522c9902e9fe5b507759f0fb6b0c5c` 的独立矩阵中 cold-open、Boot/Corruption、Messenger、Debug 已通过；Debug job `105644556047` 实际加载 Meshopt 压缩 Datasea GLB，并覆盖调参、错误重试、接管与释放。此后 `f7a7fa6683adc8c9088d416a2fa6784c94464ac1` 的 surface run `35364523143` 再次通过 Debug、cold-open、Boot/Corruption、Farewell/Ending 与 Messenger；Datasea games job `105663601161` 已通过全部 12 项真实输入；完整 Memory/Datasea 交接由后续提交复验。此前 Worker job `105661992194` 的真实 NoriStage 模型步骤通过，随后 Scene editor 因新 Audio tab 遗漏 `Corrupt voice` checkbox 失败。`7de88a5` 已恢复该真实 scene 控件并保持原浏览器功能断言；Worker run `35365741254` 的 job `105667661060` 随后通过真实 NoriStage/cold-open、Scene editor/Scene tools、Preview、Messenger、Chip 与最终整站 smoke。
 ### 当前工作包与证据归属
 
 | 工作包 | 源码/脚本交付 | 已取得证据 | 尚未关闭的验收 |
@@ -397,11 +399,11 @@ P0 验收：修复提交 `55c79a86715c807ea8a7dfd906e09f598b78ae21` 的 [CI 3535
 | P0 | 独立浏览器上下文错误注入 | 55c79a8 整站 CI 通过；3c73c80 独立检查通过 | 已关闭 |
 | P1 | 15 应用覆盖矩阵 | 注册表与实际 source session 接线核对 | 已有配对截图；逐功能/场景参考索引仍不完整 |
 | P2 | Messenger 交互、媒体失败、场景通道 | Messenger 独立 Chromium 通过；运行时测试 | 原版代理媒体、完整语料与浮动区视觉对照 |
-| P3 | 六段正式剧情及专用渲染 | 11 项剧情测试；f7a7fa6 的 Boot/Corruption、Farewell/Ending 浏览器通过 | Memory/Datasea 运行中；静态 narrative placeholder；原版视觉/语音 |
+| P3 | 六段正式剧情及专用渲染 | 11 项剧情测试；f7a7fa6 的 Boot/Corruption、Farewell/Ending 浏览器通过 | 12 小游戏独立验收通过；完整 Memory/Datasea 串联待最终检查；静态 narrative placeholder；原版视觉/语音 |
 | P4 | 教程 reducer、四游戏表现、模型反应 | Python cartridge、20 项游戏测试及主游戏浏览器通过 | 完整双语/全部状态对照；原版代理推理/语音 |
-| P5 | 实际网络/算力/情景控制、Shatter/Datasea 调参、生产 Glitch filter、原版游戏 scenario 命令，以及生产绑定的 Live2D/Audio/Pat/Reaction/通知诊断 | 106 项运行时测试、cartridge 隔离实例测试；Debug jobs 105644556047、105657772066、105663601223 通过；job 105661992194 的真实 NoriStage facade 步骤通过 | Audio scene 控件恢复待新 CI；未暴露的 manager/model telemetry 与原版布局；Inject Talk/Nori Context 私有服务 |
+| P5 | 实际网络/算力/情景控制、Shatter/Datasea 调参、生产 Glitch filter、原版游戏 scenario 命令，以及生产绑定的 Live2D/Audio/Pat/Reaction/通知诊断 | 106 项运行时测试、cartridge 隔离实例测试；Debug jobs 105644556047、105657772066、105663601223 通过；job 105661992194 的真实 NoriStage facade 步骤通过 | 未暴露的 manager/model telemetry 与原版布局；Inject Talk/Nori Context 私有服务。Audio scene 控件恢复已由 job 105667661060 复验通过 |
 | P6 | 保留接口、请求和媒体生命周期 | noop 位置与真实所需输入已记录 | 原版代理实现/授权测试会话 |
-| P7 | 独立矩阵、原版/源码配对截图脚本 | 资产引用检查、固定环境脚本和已有成功截图 | 系统配对已审阅并修差异；About及四游戏需复采，完整矩阵待验收 |
+| P7 | 独立矩阵、原版/源码配对截图脚本 | 资产引用检查、固定环境脚本和已有成功截图 | About及四游戏已取得可审阅配对并修差异；最新世界隔离/样式复采及完整矩阵待最终检查 |
 | P8 | 隔离候选入口、静态资源/回滚哈希校验 | 本地候选、14 个回滚文件、静态入口 smoke 与 Worker dry-run 通过 | 最终修订视觉与完整资源/回退浏览器；全部功能门禁前置条件 |
 
 状态按验收结算，不把已提交实现等同为全部还原成功。
