@@ -20,7 +20,17 @@ export async function verifyFarewellEnding(browser, output, origin = "http://127
       await page.clock.runFor(40);
       if (await predicate()) return;
     } while (Date.now() < deadline);
-    assert.fail(`Timed out waiting for ${description}`);
+    const diagnostics = await page.evaluate(() => {
+      const stage = document.querySelector(".nori-stage");
+      return {
+        scene: document.querySelector("[data-story-scene]")?.getAttribute("data-story-scene") ?? null,
+        live2d: stage?.getAttribute("data-live2d-status") ?? null,
+        renderer: stage?.getAttribute("data-scene-renderer") ?? null,
+        coldOpen: stage?.getAttribute("data-cold-open") ?? null,
+        body: document.body.innerText.slice(0, 240),
+      };
+    });
+    assert.fail(`Timed out waiting for ${description}: ${JSON.stringify(diagnostics)}`);
   };
   const waitForCold = (value) => advanceUntil(`cold-open ${value}`, () =>
     page.locator(".nori-stage").getAttribute("data-cold-open").then((state) => state === value));
@@ -35,6 +45,19 @@ export async function verifyFarewellEnding(browser, output, origin = "http://127
     await page.clock.fastForward(9000); await run(40);
     assert.equal(await farewell.getAttribute("data-speaking"), "true");
     assert.ok(await farewell.locator("canvas").first().evaluate((canvas) => canvas.width > 1 && canvas.height > 1));
+    const farewellPixels = await farewell.locator("canvas").nth(1).evaluate((canvas) => {
+      const gl = canvas.getContext("webgl2"), pixels = new Uint8Array(canvas.width * canvas.height * 4);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      let count = 0, minX = canvas.width, maxX = 0;
+      for (let index = 0; index < pixels.length; index += 16) {
+        if (pixels[index] > 245 && pixels[index + 1] > 245 && pixels[index + 2] > 245) continue;
+        const pixel = index / 4, x = pixel % canvas.width;
+        count++; minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      }
+      return { count, minX: minX / canvas.width, maxX: maxX / canvas.width };
+    });
+    assert.ok(farewellPixels.count > 1000, "Farewell compositor must contain a visible actor/shadow");
+    assert.ok(farewellPixels.minX < .46 && farewellPixels.maxX > .46, "Farewell actor must straddle its authored 46% center");
     await page.screenshot({ path: resolve(output, "farewell-production.png") });
     await page.clock.fastForward(114000); await run(40);
     assert.deepEqual(await page.evaluate(() => window.farewellEndingProbe.events), ["complete-requested"]);
@@ -85,10 +108,16 @@ export async function verifyFarewellEnding(browser, output, origin = "http://127
     const wake = page.getByRole("button", { name: "Wake Nori" });
     await advanceUntil("Ending wake gate", () => wake.count().then((count) => count === 1));
     assert.equal(await ending.getAttribute("data-parked"), "true");
+    const face = await page.evaluate(() => window.farewellEndingProbe.state());
+    assert.ok(Math.abs(face.camera.x) < 1e-6 && Math.abs(face.camera.y - 1.75) < 1e-3 && Math.abs(face.camera.z - 7.4) < 1e-3);
+    assert.ok(Math.abs(face.fov - 15) < 1e-3, "Ending wake gate must frame the evidenced face camera");
     await page.clock.fastForward(3000); await run(40);
     assert.equal(await ending.getAttribute("data-parked"), "true");
     await page.screenshot({ path: resolve(output, "ending-wake-gate.png") });
     await wake.click(); await page.clock.fastForward(3500); await run(40);
+    const desktop = await page.evaluate(() => window.farewellEndingProbe.state());
+    assert.ok(Math.abs(desktop.camera.y) < 1e-3 && Math.abs(desktop.camera.z - 7.4) < 1e-3);
+    assert.ok(Math.abs(desktop.fov - 60) < 1e-3, "Ending settle must return to the desktop camera");
     assert.deepEqual(await page.evaluate(() => window.farewellEndingProbe.events), ["complete-requested"]);
     assert.deepEqual(errors, []);
     console.log("Farewell/Ending probe passed: Finale actor/WebGL, ack ordering, cancellation, resource retry and wake gate");

@@ -25,6 +25,10 @@ test("memory projection orders attack, sweep, drain, and void", () => {
 
 test("datasea parks only for route alignment and descends to evidence camera target", () => {
   assert.deepEqual(DATASEA_PHASES.filter((phase) => phase.pauseAtStart).map((phase) => phase.id), ["waves"]);
+  assert.equal(DATASEA_PHASES.find((phase) => phase.id === "messages")?.duration, 44.8);
+  assert.equal(DATASEA_PHASES.find((phase) => phase.id === "cosmic")?.duration, 59.815178571428596);
+  assert.equal(DATASEA_PHASES.find((phase) => phase.id === "white")?.duration, 28.3);
+  assert.equal(DATASEA_PHASES.reduce((sum, phase) => sum + phase.duration, 0), 198.4151785714286);
   assert.deepEqual(dataseaCamera(0).camera, { x: 0, y: 0, z: 7.4 });
   assert.equal(dataseaCamera(27).camera.y, -190);
   assert.ok(Math.abs(dataseaCamera(13).cameraRot.x + Math.PI / 2) < 1e-9);

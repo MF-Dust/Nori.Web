@@ -4,6 +4,7 @@ import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import type { StoryInstance } from "./story-director";
 import { StoryClock, type StoryClockState } from "./story-clock";
 import { StoryAudio } from "./story-audio";
+import { useStoryFocus } from "./use-story-focus";
 import {
   CORRUPTION_AUDIO,
   CORRUPTION_MARKERS as m,
@@ -24,6 +25,8 @@ export function CorruptionScene({
   story: StoryInstance;
   minimizeWindows?(): void;
 }) {
+  const host = useRef<HTMLDivElement>(null);
+  useStoryFocus(host);
   const clockRef = useRef<StoryClock | null>(null),
     cleared = useRef(0),
     minimize = useRef(minimizeWindows);
@@ -207,6 +210,11 @@ export function CorruptionScene({
   };
   return (
     <div
+      ref={host}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Recover Nori"
+      tabIndex={-1}
       data-story-scene="nori-corruption-climax"
       data-phase={view.phase}
       data-time={view.time}

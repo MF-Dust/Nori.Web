@@ -3,6 +3,7 @@ import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import { StoryClock } from "./story-clock";
 import { StoryAudio } from "./story-audio";
+import { useStoryFocus } from "./use-story-focus";
 import type { StoryInstance } from "./story-director";
 import { BOOT_AUDIO, BOOT_PHASES, bootScene } from "./boot-timeline";
 import {
@@ -20,6 +21,7 @@ export function BootScene({
 }) {
   const host = useRef<HTMLDivElement>(null),
     clockRef = useRef<StoryClock | null>(null);
+  useStoryFocus(host);
   const [attempt, setAttempt] = useState(0),
     [failed, setFailed] = useState(false),
     [loading, setLoading] = useState(true),
@@ -164,6 +166,10 @@ export function BootScene({
   return (
     <div
       ref={host}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Wake Nori"
+      tabIndex={-1}
       data-story-scene="boot"
       style={{
         position: "fixed",

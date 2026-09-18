@@ -1,6 +1,6 @@
 # Boot and corruption production recovery
 
-Reference: `public/assets/NormalApp-Cn6agT0F.js`, inspected as source text. This recovery does not import or execute that historical application chunk. Status: production components implemented; browser and visual comparison pending CI. Original agent/media acceptance remains externally blocked by the local `nori_talk.request` noop.
+Reference: `public/assets/NormalApp-Cn6agT0F.js`, inspected as source text. This recovery does not import or execute that historical application chunk. Status: production components implemented. First CI passed behavioral gates, and screenshot inspection identified a backward-facing boot camera; that defect is corrected with a camera-ray regression and rendered actor visibility check. Updated CI run `35356495551` passed the rendered actor visibility check; the new wake screenshot was inspected and shows the correctly framed sleeping actor. Historical paired visual comparison remains pending. Original agent/media acceptance remains externally blocked by the local `nori_talk.request` noop.
 
 ## Boot
 
@@ -18,7 +18,9 @@ Open acceptance: reference/source keyframe comparison, Three shader compilation 
 - All six source microgames gate the transition. Static preference-choice content now comes from the shipped `r_` array, replacing previously authored technical substitute questions. The existing protected target, rhythm, tune/hold, choice lock, steer and release logic is preserved.
 - Eerie drone level follows six-game completion; entry and wake cues use the existing mixer. Cleanup stops loops, subscriptions and scene ownership. Hidden/background intervals do not advance input or the voice fallback. The final wake remains a user gate before `virus.cleared`.
 
-Open acceptance: exact glitch overlay/behind-glow channels, all six original/source visual comparisons, entry/heal error UI when a shader cannot compile, keyboard focus trapping across the production overlay, and original agent response/media causality. The local noop response cannot close agent parity.
+The original SVG band-slice/RGB-split/jolt filter is source-owned in `corruption-glitch.js`, with per-instance filter ownership and release. Healing shader failures now stop the scene and expose Retry.
+
+Open acceptance: exact behind-glow channels, all six original/source visual comparisons, original agent response/media causality. Boot and Corruption now constrain Tab navigation to their modal surface and restore prior focus on exit. The local noop response cannot close agent parity.
 
 ## Verification
 
@@ -26,4 +28,4 @@ Open acceptance: exact glitch overlay/behind-glow channels, all six original/sou
 - `npm run frontend:typecheck`: passed after integration.
 - `npm run frontend:app:build`: passed for the integrated source components.
 - `scripts/frontend_boot_corruption_probe.mjs` uses real production components/model/renderers with transport-only fixtures. It captures fracture, dive and wake; checks no completion before input, real completion after input, corruption request/voice/QTE entry and cancellation without a completion fact.
-- `scripts/smoke_frontend_stories.mjs` runs all six production scene probes under a dedicated Vite server. Browser execution is pending CI because local Chromium process launch is blocked by the environment's socket permission. No browser success or screenshots are claimed here.
+- `scripts/smoke_frontend_stories.mjs` runs all six production scene probes under a dedicated Vite server. Local Chromium process launch is blocked by the environment's socket permission. GitHub Actions run `35355349021`, boot/corruption job `105633237177`, passed the behavior probe and produced screenshots. Visual inspection caught the wake camera defect despite that pass; the updated probe in run `35356495551`, job `105637021426`, passed its actor pixel comparison, and the new screenshot was inspected. This is not a claim of historical visual parity.

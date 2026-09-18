@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
+import { solveDataseaCoreGame } from "./frontend_datasea_core_game_inputs.mjs";
+import { solveDataseaGame } from "./frontend_datasea_game_inputs.mjs";
 
 async function waitWithClock(page, locator, timeout = 60000) {
   for (let elapsed = 0; elapsed < timeout; elapsed += 40) {
@@ -36,43 +38,33 @@ export async function verifyMemoryDatasea(browser, output, origin = "http://127.
     assert.equal((await events()).leases, 0); assert.equal(await page.locator('[data-story-scene="memory"]').count(), 0);
 
     let failGlb = true;
-    const rejectGlb = (route) => failGlb ? route.abort() : route.continue();
+    let failedGlbRequests = 0, retriedGlbRequests = 0;
+    const rejectGlb = (route) => { if (failGlb) { failedGlbRequests++; return route.abort(); } retriedGlbRequests++; return route.continue(); };
     await page.route("**/datasea/cosmicweb.min.glb", rejectGlb);
     await page.evaluate(() => window.memoryDataseaProbe.mount("datasea"));
     await waitWithClock(page, page.getByRole("alert")); assert.equal((await events()).leases, 0);
-    failGlb = false; const glbResponse = page.waitForResponse((response) => response.url().endsWith("cosmicweb.min.glb") && response.ok(), { timeout: 60000 }); await page.getByRole("button", { name: "Retry" }).click();
-    await waitWithClock(page, page.locator("canvas.datasea-canvas"));
-    await glbResponse;
-    await waitWithClock(page, page.locator('[data-story-scene="datasea"][data-ready="true"]')); assert.equal((await events()).leases, 1);
-    await page.clock.runFor(90500); await waitWithClock(page, page.locator(".datasea-waves"));
+    assert.ok(failedGlbRequests > 0, "failure must reach the real GLB request");
+    failGlb = false; await page.getByRole("button", { name: "Retry" }).click();
+    await waitWithClock(page, page.locator('[data-story-scene="datasea"][data-ready="true"]'));
+    assert.ok(retriedGlbRequests > 0, "retry must issue a fresh GLB request");
+    assert.equal((await events()).leases, 1);
+    await page.clock.fastForward(90500); await page.clock.runFor(80); await waitWithClock(page, page.locator(".datasea-waves"));
     await page.screenshot({ path: resolve(output, "datasea-route-gate.png") });
     for (let wave = 0; wave < 3; wave++) {
       const games = page.locator(".datasea-game"); await waitWithClock(page, games.first());
       assert.equal(await games.count(), 4);
-      // This is a harness-only gate/completion probe. The recovered canvases are
-      // mounted and rendered above; invoke their production API boundary so CI
-      // does not replace physics validation with fragile coordinate macros.
-      await page.evaluate(() => {
-        for (const game of document.querySelectorAll(".datasea-game")) {
-          const key = Object.keys(game).find((entry) => entry.startsWith("__reactFiber$"));
-          const root = key ? game[key] : null;
-          const stack = root ? [root] : [];
-          let solved = false;
-          while (stack.length && !solved) {
-            const fiber = stack.pop();
-            if (fiber?.memoizedProps?.api?.onSolved) { fiber.memoizedProps.api.onSolved(); solved = true; break; }
-            if (fiber?.child) stack.push(fiber.child);
-            if (fiber?.sibling) stack.push(fiber.sibling);
-          }
-          if (!solved) throw new Error(`Missing Datasea game API for ${game.getAttribute("data-game")}`);
-        }
-      });
-      await page.clock.runFor(wave === 2 ? 1500 : 2700);
+      await page.clock.runFor(650);
+      for (const id of [["denoise", "sweep", "unknot", "relay"], ["discern", "echo", "steady", "balance"], ["current", "lure", "resonance", "ripple"]][wave]) {
+        const handled = await solveDataseaCoreGame(page, id) || await solveDataseaGame(page, id);
+        assert.ok(handled, `a real-input solver exists for ${id}`);
+      }
+      if (wave < 2) await waitWithClock(page, page.locator(`.datasea-waves[aria-label="Signal wave ${wave + 2} of 3"] .datasea-game`));
+      else await page.clock.runFor(1500);
     }
-    await page.clock.runFor(12000);
+    await page.clock.fastForward(12000); await page.clock.runFor(160);
     assert.equal(await page.locator('[data-story-scene="datasea"]').getAttribute("data-phase"), "cosmic");
     await page.screenshot({ path: resolve(output, "datasea-cosmic.png") });
-    await page.clock.runFor(82000); assert.ok((await events()).completions.includes("datasea"));
+    await page.clock.fastForward(105000); await page.clock.runFor(40); assert.ok((await events()).completions.includes("datasea"));
     await page.evaluate(() => window.memoryDataseaProbe.cancel()); await page.clock.runFor(100);
     assert.equal((await events()).leases, 0); assert.equal(await page.locator("canvas.datasea-canvas").count(), 0);
     assert.deepEqual(errors, []); assert.deepEqual(shaderErrors, []);

@@ -42,11 +42,11 @@ media/state.
   `/ARGNori_web/` model does not contain the Finale expressions. The recovered actor applies
   each shipped `Finale_*` expression and corresponding Idle motion index at its cue boundary;
   the shared desktop actor is suppressed for the scene.
-- The Farewell compositor preserves the shader's evidenced effects but uses a stable authored
-  model rectangle rather than the historical periodic alpha-bound sampling. It still needs
-  frame-by-frame positioning comparison.
-- Ending now uses the shipped default phase durations. The exact camera curve remains pending
-  because it depends on camera presets owned by the historical authoring system.
+- The Farewell compositor uses the shipped 24×48 periodic alpha-bound sampling, smoothing,
+  model rectangle, stance-based contact shadow and multi-tap upper rim calculation. It still
+  needs frame-by-frame comparison against an original-client capture.
+- Ending uses the shipped default phase durations and recovered ascent/arrival/formed/face/rest
+  camera presets, smooth transitions, look-at rotations, FOV and far-plane progression.
 - Ending observes the maintained renderer's fallback/error status and releases the scene before
   offering Retry, which forces cold-open resources to be recreated.
 - Local `nori_talk.request` returns `noop`; this does not affect these shipped static voice

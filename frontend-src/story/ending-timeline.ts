@@ -21,6 +21,48 @@ export const ENDING_AUDIO: readonly StoryAudioTrack[] = [
 
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const span = (time: number, start: number, duration: number) => clamp((time - start) / duration);
+const smooth = (value: number) => value * value * (3 - 2 * value);
+const mix = (a: number, b: number, value: number) => a + (b - a) * value;
+type Point = { x: number; y: number; z: number };
+const presets = {
+  arrive: { pos: { x: 0, y: 1.1, z: 13.5 }, look: { x: 0, y: 0, z: -1 }, fov: 60 },
+  formed: { pos: { x: 0, y: .8, z: 9.2 }, look: { x: 0, y: .4, z: 0 }, fov: 52 },
+  face: { pos: { x: 0, y: 1.75, z: 7.4 }, look: { x: 0, y: 1.55, z: 0 }, fov: 15 },
+  rest: { pos: { x: 0, y: 0, z: 7.4 }, look: { x: 0, y: .05, z: 0 }, fov: 60 },
+};
+const pointMix = (a: Point, b: Point, value: number): Point => ({
+  x: mix(a.x, b.x, value), y: mix(a.y, b.y, value), z: mix(a.z, b.z, value),
+});
+const rotationTo = (pos: Point, look: Point) => {
+  const dx = look.x - pos.x, dy = look.y - pos.y, dz = look.z - pos.z;
+  return { x: Math.atan2(dy, Math.hypot(dx, dz)), y: Math.atan2(-dx, -dz), z: 0 };
+};
+
+export function endingCamera(time: number) {
+  let pos: Point, look: Point, fov: number;
+  if (time <= 17.6) {
+    const progress = smooth(span(time, 2.4, 15.2)), angle = progress * Math.PI / 2;
+    pos = { x: 0, y: -42.9 + 44 * Math.sin(angle), z: 19.5 - 6 * (1 - Math.cos(angle)) };
+    const movingLook = { x: pos.x, y: pos.y + 22, z: pos.z - 10 };
+    const settle = smooth(span(time, 14.1, 3.5));
+    look = pointMix(movingLook, presets.arrive.look, settle);
+    fov = mix(66, 60, smooth(span(time, 3.4, 14.2)));
+  } else {
+    const segments = [
+      [17.6, 21.7, presets.arrive, presets.arrive],
+      [21.7, 26.9, presets.arrive, presets.formed],
+      [26.9, 30.4, presets.formed, presets.formed],
+      [30.4, 32.6, presets.formed, presets.face],
+      [32.6, 35.4, presets.face, presets.rest],
+    ] as const;
+    const segment = segments.find((item) => time < item[1]) ?? segments.at(-1)!;
+    const progress = smooth(span(time, segment[0], segment[1] - segment[0]));
+    pos = pointMix(segment[2].pos, segment[3].pos, progress);
+    look = pointMix(segment[2].look, segment[3].look, progress);
+    fov = mix(segment[2].fov, segment[3].fov, progress);
+  }
+  return { camera: pos, cameraRot: rotationTo(pos, look), fov, cameraFar: mix(60, 170, smooth(span(time, 2.4, 15.2))) };
+}
 
 export function endingFrame(time: number, waking = false) {
   const rise = span(time, 2.4, 15.2);
@@ -29,6 +71,7 @@ export function endingFrame(time: number, waking = false) {
   const reveal = span(time, 28, 2.4);
   const settle = waking ? span(time, 32.6, 2.8) : 0;
   return {
+    ...endingCamera(time),
     coldOpen: {
       ocean: true, oceanFade: 1 - settle, oceanDepth: 1 - rise * 0.26 - settle * 0.32,
       oceanGodray: rise * 0.08, oceanEdge: rise * 2.4,

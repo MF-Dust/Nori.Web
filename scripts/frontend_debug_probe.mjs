@@ -22,6 +22,16 @@ async function openHarness(browser, baseUrl, assetRoute) {
   return { page, errors };
 }
 
+async function waitForDataseaReady(page) {
+  const ready = page.getByText("Datasea renderer: ready", { exact: true });
+  const failure = page.getByText(/^Datasea preview failed:/);
+  const failureText = await Promise.race([
+    ready.waitFor().then(() => null),
+    failure.waitFor().then(() => failure.innerText()),
+  ]);
+  if (failureText) throw new Error(failureText);
+}
+
 export async function verifyDebugLabs(browser, output, baseUrl) {
   const { page, errors } = await openHarness(browser, baseUrl);
   try {
@@ -137,12 +147,18 @@ export async function verifyDebugLabs(browser, output, baseUrl) {
     await page
       .getByRole("button", { name: "Datasea tuner", exact: true })
       .click();
-    await page.getByText("Datasea renderer: ready", { exact: true }).waitFor();
+    await waitForDataseaReady(page);
     await page.getByLabel("Datasea phase").selectOption("cosmic");
     await page.getByLabel("Datasea Scene time").fill("42");
     assert.equal(
       await page.getByLabel("Datasea Scene time").inputValue(),
       "42",
+    );
+    await page.getByLabel("Datasea Bloom", { exact: true }).fill("99");
+    assert.equal(
+      await page.getByLabel("Datasea Bloom", { exact: true }).inputValue(),
+      "1.5",
+      "Datasea material controls must enforce renderer ranges",
     );
     await page.screenshot({
       path: resolve(output, "debug-labs.png"),
@@ -163,6 +179,13 @@ export async function verifyDebugLabs(browser, output, baseUrl) {
       .getByText("Flaky WebSocket profile: severe", { exact: true })
       .waitFor();
     assert.deepEqual(errors, []);
+  } catch (error) {
+    await page.screenshot({
+      path: resolve(output, "debug-labs-failure.png"),
+      animations: "disabled",
+      fullPage: true,
+    });
+    throw error;
   } finally {
     await page.close();
   }
@@ -182,9 +205,7 @@ export async function verifyDebugLabs(browser, output, baseUrl) {
     await failed.page
       .getByRole("button", { name: "Retry Datasea preview" })
       .click();
-    await failed.page
-      .getByText("Datasea renderer: ready", { exact: true })
-      .waitFor();
+    await waitForDataseaReady(failed.page);
     await failed.page.evaluate(() => window.debugLabProbe.unmountTuners());
     await failed.page.locator("canvas").waitFor({ state: "detached" });
     assert.deepEqual(failed.errors, []);

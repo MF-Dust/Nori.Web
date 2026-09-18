@@ -29,7 +29,7 @@ const runtime = {
     ] }),
   },
   audio: {
-    canPlay: () => false,
+    canPlay: () => false, playCue: () => {},
     playSceneAudio: () => { let stopped = false; return () => { if (!stopped) { stopped = true; events.audioStops++; } }; },
   },
 } as unknown as NoriFrontendRuntime;

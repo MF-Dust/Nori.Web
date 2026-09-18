@@ -5,14 +5,14 @@ import { StoryAudio } from "./story-audio";
 import { StoryClock, type StoryPhase } from "./story-clock";
 import type { StoryInstance } from "./story-director";
 import { createDataseaRenderer } from "./datasea-renderer";
-import { DATASEA_GAME_COMPONENTS } from "./datasea-games-original.js";
+import { DataseaWaveGate } from "./datasea-wave-gate";
 import "./datasea-scene.css";
 
 export const DATASEA_PHASES: readonly StoryPhase[] = [
-  { id: "descent", duration: 30 }, { id: "messages", duration: 45.1 },
+  { id: "descent", duration: 30 }, { id: "messages", duration: 44.8 },
   { id: "vizIn", duration: 14 }, { id: "waves", duration: 0.5, pauseAtStart: true },
-  { id: "converge", duration: 10 }, { id: "cosmic", duration: 42 },
-  { id: "white", duration: 28 }, { id: "cg", duration: 11 },
+  { id: "converge", duration: 10 }, { id: "cosmic", duration: 59.815178571428596 },
+  { id: "white", duration: 28.3 }, { id: "cg", duration: 11 },
 ];
 const startOf = (id: string) => DATASEA_PHASES.slice(0, DATASEA_PHASES.findIndex((phase) => phase.id === id)).reduce((sum, phase) => sum + phase.duration, 0);
 
@@ -24,28 +24,6 @@ export function dataseaCamera(time: number) {
   const eased = mix * mix * (3 - 2 * mix), y = left[1] + (right[1] - left[1]) * eased;
   const tilt = Math.max(0, Math.min(1, (time - 5) / 8));
   return { camera: { x: 0, y, z: 7.4 }, cameraRot: { x: -(Math.PI / 2) * (tilt * tilt * (3 - 2 * tilt)), y: 0, z: 0 }, fov: 60 };
-}
-
-function WaveGate({ wake }: { wake: () => void }) {
-  const [wave, setWave] = useState(0), [solved, setSolved] = useState(() => new Set<number>()), [between, setBetween] = useState(false);
-  const timers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
-  const groups = [[5, 8, 9, 3], [6, 4, 0, 11], [2, 10, 1, 7]] as const;
-  const ids = ["steady", "resonance", "current", "relay", "echo", "denoise", "discern", "ripple", "sweep", "unknot", "lure", "balance"] as const;
-  const solve = (gameIndex: number) => {
-    if (between || solved.has(gameIndex)) return;
-    const next = new Set(solved); next.add(gameIndex); setSolved(next);
-    if (next.size !== 4) return;
-    setBetween(true);
-    const timer = setTimeout(() => {
-      if (wave === 2) wake(); else { setWave((value) => value + 1); setSolved(new Set()); setBetween(false); }
-    }, wave === 2 ? 1400 : 2600);
-    timers.current.push(timer);
-  };
-  return <div className="datasea-waves" aria-label={`Signal wave ${wave + 1} of 3`}>
-    {!between && groups[wave].map((gameIndex, index) => { const id = ids[gameIndex], Game = DATASEA_GAME_COMPONENTS[id]; return <div className="datasea-game-window" key={gameIndex} style={{ left: `${5 + (index % 2) * 50}%`, top: `${7 + Math.floor(index / 2) * 48}%` }}><div className="datasea-game datasea-game-original" data-game={id} data-solved={solved.has(gameIndex)}><Game api={{ onProgress: () => undefined, onSolved: () => solve(gameIndex), hit: () => undefined }} /></div></div>; })}
-    {between && <div className="datasea-wave-break" role="status"><b>WAVE {wave + 1} CLEARED</b><span>Channel synchronization in progress</span><i /><i /><i /></div>}
-  </div>;
 }
 
 export function DataseaScene({ frontend, story }: { frontend: NoriFrontendRuntime; story: StoryInstance }) {
@@ -77,7 +55,7 @@ export function DataseaScene({ frontend, story }: { frontend: NoriFrontendRuntim
       if (stopped) return;
       try {
         const state = clock.advance(now), camera = dataseaCamera(state.time), whiteProgress = Math.max(0, Math.min(1, (state.time - white) / 5));
-        audio.sync(state); renderer!.render({ time: state.time, phase: state.phase, ...camera }); lease.set({ active: true, ...camera, lerp: 1, darkness: state.time < 30 ? Math.min(1, state.time / 18) : 1, whiteFlash: whiteProgress, bgm: "silent", chatMode: "hidden" });
+        audio.sync(state); renderer!.render({ time: state.time, phaseTime: state.phase ? state.time - startOf(state.phase) : state.time, phase: state.phase, ...camera }); lease.set({ active: true, ...camera, lerp: 1, darkness: state.time < 30 ? Math.min(1, state.time / 18) : 1, whiteFlash: whiteProgress, bgm: "silent", chatMode: "hidden" });
         setView({ time: state.time, phase: state.phase, parkedAt: state.parkedAt, ready: true });
         if (state.complete) frontend.story.complete(story); else frame = requestAnimationFrame(render);
       } catch (error) { fail(error); }
@@ -95,7 +73,7 @@ export function DataseaScene({ frontend, story }: { frontend: NoriFrontendRuntim
     <canvas ref={canvasRef} className="datasea-canvas" />
     <div className="datasea-depth" style={{ transform: `translateY(${Math.min(55, view.time * 1.7)}vh)` }} />
     {!view.ready && !failure && <div className="datasea-loading" role="status">Loading Datasea geometry…</div>}
-    {view.parkedAt === "waves" && <WaveGate wake={wake} />}
+    {view.parkedAt === "waves" && <DataseaWaveGate wake={wake} frontend={frontend} />}
     {(view.phase === "converge" || view.phase === "cosmic") && <div className="datasea-cosmic"><div className="datasea-core" /></div>}
     <div className="datasea-white" style={{ opacity: whiteProgress }} />
     {view.time >= cg && <div className="datasea-cg"><img src="/datasea/cg-touch-her.webp" alt="" /><img src="/datasea/cg-touch-hand.webp" alt="" /></div>}

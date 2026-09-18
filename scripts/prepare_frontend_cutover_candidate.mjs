@@ -16,11 +16,14 @@ import { dirname, extname, relative, resolve, sep } from "node:path";
 import { historicalAssetReferences } from "./frontend_asset_ownership.mjs";
 
 const root = resolve(process.cwd());
+const defaultCandidate = resolve(root, ".frontend-app-build/cutover-candidate");
+const defaultRollback = resolve(root, ".frontend-app-build/cutover-rollback");
+const candidateMarker = ".frontend-cutover-candidate.json";
 const options = {
   build: resolve(root, ".frontend-app-build"),
   public: resolve(root, "public"),
-  candidate: resolve(root, ".frontend-app-build/cutover-candidate"),
-  rollback: resolve(root, ".frontend-app-build/cutover-rollback"),
+  candidate: defaultCandidate,
+  rollback: defaultRollback,
   materialize: false,
 };
 
@@ -49,7 +52,13 @@ function inside(parent, child) {
 }
 
 for (const [name, path] of Object.entries({ candidate: options.candidate, rollback: options.rollback })) {
-  if (path === options.public || path === options.build || inside(path, options.public) || inside(path, options.build))
+  if (
+    path === options.public ||
+    path === options.build ||
+    inside(path, options.public) ||
+    inside(path, options.build) ||
+    inside(options.public, path)
+  )
     throw new Error(`${name} directory must not contain or replace the public/build source tree: ${path}`);
 }
 if (inside(options.candidate, options.rollback) || inside(options.rollback, options.candidate))
@@ -85,17 +94,38 @@ async function sha256(path) {
   return createHash("sha256").update(await readFile(path)).digest("hex");
 }
 
+async function assertReplaceable(path, kind) {
+  if (!(await exists(path))) return;
+  if ((kind === "candidate" && path === defaultCandidate) || (kind === "rollback" && path === defaultRollback)) return;
+  const markerPath = kind === "candidate"
+    ? resolve(path, candidateMarker)
+    : resolve(path, "rollback-manifest.json");
+  try {
+    const marker = JSON.parse(await readFile(markerPath, "utf8"));
+    if (marker.version === 1 && (kind !== "candidate" || marker.kind === "frontend-cutover-candidate")) return;
+  } catch {}
+  throw new Error(`refusing to replace unrecognized ${kind} directory: ${path}`);
+}
+
+await Promise.all([
+  assertReplaceable(options.candidate, "candidate"),
+  assertReplaceable(options.rollback, "rollback"),
+]);
+
+const stagedPublicPaths = new Set();
 async function stagePublic(source, destination) {
   if (await exists(destination))
     throw new Error(`candidate overlay collision: ${relative(root, destination)}`);
   await mkdir(dirname(destination), { recursive: true });
   if (options.materialize) {
     await cp(source, destination, { recursive: true, dereference: true, errorOnExist: true, force: false });
+    stagedPublicPaths.add(destination);
     return;
   }
   const sourceStat = await stat(source);
   const target = relative(dirname(destination), source) || ".";
   await symlink(target, destination, sourceStat.isDirectory() ? "dir" : "file");
+  stagedPublicPaths.add(destination);
 }
 
 async function stagePublicTree() {
@@ -113,11 +143,14 @@ const generatedFiles = [];
 async function copyGeneratedTree(source = options.build, relativePath = "") {
   for (const entry of await readdir(source, { withFileTypes: true })) {
     const sourcePath = resolve(source, entry.name);
+    if (!relativePath && /^\.cutover-(?:candidate|rollback)\.tmp-\d+-\d+$/.test(entry.name)) continue;
     if (excludedBuildPaths.has(sourcePath)) continue;
     const nextRelative = relativePath ? `${relativePath}/${entry.name}` : entry.name;
     if (nextRelative === "index.html") continue;
     const destination = resolve(candidateTemp, nextRelative);
     if (entry.isDirectory()) {
+      if (stagedPublicPaths.has(destination))
+        throw new Error(`generated output would overwrite a public rollback asset directory: ${nextRelative}`);
       await mkdir(destination, { recursive: true });
       await copyGeneratedTree(sourcePath, nextRelative);
       continue;
@@ -289,6 +322,11 @@ try {
     rollbackDrill: { ...rollbackDrill, restoredCandidateAfterDrill: true, productionSourcesUnchanged: true },
     r2,
   };
+  await writeFile(resolve(candidateTemp, candidateMarker), `${JSON.stringify({
+    version: 1,
+    kind: "frontend-cutover-candidate",
+    stagingMode: manifest.stagingMode,
+  }, null, 2)}\n`);
   await writeFile(resolve(rollbackTemp, "rollback-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 
   await Promise.all([

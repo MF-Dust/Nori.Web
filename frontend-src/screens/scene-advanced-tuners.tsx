@@ -153,8 +153,14 @@ export function ShatterSceneTuner({
     }
   }, [params, progress]);
 
-  const update = (key: string, value: number) =>
-    setParams((current) => ({ ...current, [key]: value }));
+  const update = (key: string, value: number) => {
+    if (!Number.isFinite(value)) return;
+    const metadata = SHATTER_PARAMETERS[key];
+    setParams((current) => ({
+      ...current,
+      [key]: Math.min(metadata.max, Math.max(metadata.min, value)),
+    }));
+  };
 
   return (
     <section aria-label="Shatter scene tuner">
@@ -313,6 +319,14 @@ export function DataseaSceneTuner({
     key: Key,
     value: DataseaTunerValues[Key],
   ) => setValues((current) => ({ ...current, [key]: value }));
+  const updateNumber = (
+    key: keyof typeof DATASEA_TUNER_PARAMETERS,
+    value: number,
+  ) => {
+    if (!Number.isFinite(value)) return;
+    const metadata = DATASEA_TUNER_PARAMETERS[key];
+    update(key, Math.min(metadata.max, Math.max(metadata.min, value)));
+  };
 
   return (
     <section aria-label="Datasea scene tuner">
@@ -370,7 +384,7 @@ export function DataseaSceneTuner({
               step={metadata.step}
               value={values[key as keyof typeof DATASEA_TUNER_PARAMETERS]}
               onChange={(event) =>
-                update(
+                updateNumber(
                   key as keyof typeof DATASEA_TUNER_PARAMETERS,
                   event.target.valueAsNumber,
                 )
