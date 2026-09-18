@@ -44,6 +44,18 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: recovery-validation-workspace-${{ github.event.pull_request.head.sha }}
-          path: /tmp/recovery-validation/
+          path: |
+            /tmp/recovery-validation/source.tar.gz
+            /tmp/recovery-validation/node_modules.tar.gz
+            /tmp/recovery-validation/manifests.tar.gz
+            /tmp/recovery-validation/source-revision.txt
+          retention-days: 1
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: recovery-browser-backend-${{ github.event.pull_request.head.sha }}
+          path: |
+            /tmp/recovery-validation/browsers.tar.gz
+            /tmp/recovery-validation/python-wheels/
           retention-days: 1
           if-no-files-found: error
