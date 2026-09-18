@@ -16,6 +16,19 @@ const SHIPPED_SURFACE_CSS = String.raw`
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
+[data-messenger-shipped-surfaces] header + div > div.rounded-md.border {
+  background: color-mix(in oklab, var(--background) 60%, transparent);
+  border-color: color-mix(in oklab, var(--secondary-foreground) 12%, transparent);
+}
+
+[data-messenger-shipped-surfaces]
+  div.relative.shrink-0.border-t
+  > div.flex.items-end
+  > div.min-w-0.flex-1.items-center.rounded-2xl.border {
+  background: color-mix(in oklab, var(--background) 60%, transparent);
+  border-color: color-mix(in oklab, var(--secondary-foreground) 12%, transparent);
+}
+
 [data-messenger-shipped-surfaces] button.cursor-zoom-in:focus-visible,
 [data-messenger-shipped-surfaces] button.rounded-full:has(> img.rounded-full):focus-visible {
   outline: none;
