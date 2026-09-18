@@ -44,6 +44,7 @@ export async function verifyFarewellEnding(
         live2d: stage?.getAttribute("data-live2d-status") ?? null,
         renderer: stage?.getAttribute("data-scene-renderer") ?? null,
         coldOpen: stage?.getAttribute("data-cold-open") ?? null,
+        visibility: document.visibilityState,
         body: document.body.innerText.slice(0, 240),
       };
     });
@@ -160,7 +161,11 @@ export async function verifyFarewellEnding(
     await page.close();
     page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
     await preparePage();
+    await page.bringToFront();
     await page.goto(`${origin}/farewell-ending-harness`);
+    await advanceUntil("visible Ending page", () =>
+      page.evaluate(() => document.visibilityState === "visible"),
+    );
     await advanceUntil("fresh story harness", () =>
       page.evaluate(() => Boolean(window.farewellEndingProbe)),
     );

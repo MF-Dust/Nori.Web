@@ -12,6 +12,35 @@ async function waitWithClock(page, locator, timeout = 60000) {
   throw new Error(`Timed out waiting for ${locator}`);
 }
 
+async function captureViewportWithoutSurfaceCopy(page, path) {
+  const session = await page.context().newCDPSession(page);
+  let timeoutId;
+  try {
+    const capture = session.send("Page.captureScreenshot", {
+      format: "png",
+      fromSurface: false,
+      captureBeyondViewport: false,
+    });
+    const { data } = await Promise.race([
+      capture,
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error("Timed out capturing the composited viewport")),
+          15000,
+        );
+      }),
+    ]);
+    const png = Buffer.from(data, "base64");
+    assert.equal(png.subarray(1, 4).toString("ascii"), "PNG");
+    assert.equal(png.readUInt32BE(16), 1090);
+    assert.equal(png.readUInt32BE(20), 760);
+    await writeFile(path, png);
+  } finally {
+    clearTimeout(timeoutId);
+    await session.detach();
+  }
+}
+
 export async function verifyMemoryDatasea(
   browser,
   output,
@@ -196,22 +225,13 @@ export async function verifyMemoryDatasea(
         .getAttribute("data-phase"),
       "cosmic",
     );
-    // A paused animation clock can leave Chromium's WebGL compositor waiting
-    // for a new frame during capture. Pump a bounded 320ms of real scene frames
-    // while the screenshot is pending, without resuming wall-clock progression.
-    // Keep capture mandatory and verify that it never advances out of cosmic.
-    let captureSettled = false;
-    const cosmicCapture = page
-      .screenshot({ path: resolve(output, "datasea-cosmic.png") })
-      .then(
-        () => { captureSettled = true; },
-        (error) => { captureSettled = true; return error; },
-      );
-    for (let frame = 0; frame < 20 && !captureSettled; frame++) {
-      await page.clock.runFor(16);
-    }
-    const captureError = await cosmicCapture;
-    if (captureError) throw captureError;
+    // Chromium's surface-copy screenshot path can stall indefinitely after
+    // prolonged SwiftShader/WebGL work. Capture the same composited viewport
+    // through the browser view and validate the PNG dimensions.
+    await captureViewportWithoutSurfaceCopy(
+      page,
+      resolve(output, "datasea-cosmic.png"),
+    );
     assert.equal(
       await page.locator('[data-story-scene="datasea"]').getAttribute("data-phase"),
       "cosmic",
