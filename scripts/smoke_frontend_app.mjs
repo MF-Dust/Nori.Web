@@ -428,13 +428,19 @@ try {
       body: "/* Fixture intentionally registers no processor. */",
     }),
   );
-  await verifyChessTutorial(page, output);
-  await verifyVoiceCorruption(page, output);
-  await verifyNoriScene(browser, output);
-  await verifySceneTools(browser, output);
-  await verifyPreview(browser, output);
-  await verifyMessenger(browser, output);
-  await verifyChip(page, output);
+  for (const [name, verify] of [
+    ["Chess tutorial", () => verifyChessTutorial(page, output)],
+    ["Voice and Corruption", () => verifyVoiceCorruption(page, output)],
+    ["Nori scene and cold-open lifecycle", () => verifyNoriScene(browser, output)],
+    ["Scene editor", () => verifySceneTools(browser, output)],
+    ["Preview", () => verifyPreview(browser, output)],
+    ["Messenger", () => verifyMessenger(browser, output)],
+    ["Chip", () => verifyChip(page, output)],
+  ]) {
+    console.log(`[Source app ${new Date().toISOString()}] ${name}: start`);
+    await verify();
+    console.log(`[Source app ${new Date().toISOString()}] ${name}: passed`);
+  }
 
   // Make the shipped Credits Dock condition true in the disposable local world.
   await page.evaluate(() => {

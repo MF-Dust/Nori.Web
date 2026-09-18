@@ -1,20 +1,35 @@
 /** Source-owned slice/RGB/jolt filter recovered from the shipped corruption effect. */
+export const CORRUPTION_GLITCH_DEFAULTS = Object.freeze({
+  maxShiftPx: 28,
+  sliceCount: 7,
+  blockiness: 0.5,
+  verticalAmount: 0.1,
+  rgbSplitPx: 4,
+  joltPx: 6,
+  tickMs: 90,
+  density: 0.8,
+  moshCells: 0,
+  deepFry: 0,
+  noise: 0,
+  invertChance: 0,
+});
+export const CORRUPTION_GLITCH_PARAMETERS = Object.freeze({
+  maxShiftPx: { min: 0, max: 200, step: 1 },
+  sliceCount: { min: 0, max: 64, step: 1 },
+  blockiness: { min: 0, max: 1, step: 0.01 },
+  verticalAmount: { min: 0, max: 1, step: 0.01 },
+  rgbSplitPx: { min: 0, max: 60, step: 0.5 },
+  joltPx: { min: 0, max: 100, step: 1 },
+  tickMs: { min: 16, max: 1000, step: 1 },
+  density: { min: 0, max: 1, step: 0.01 },
+  moshCells: { min: 0, max: 64, step: 1 },
+  deepFry: { min: 0, max: 1, step: 0.01 },
+  noise: { min: 0, max: 1, step: 0.01 },
+  invertChance: { min: 0, max: 1, step: 0.01 },
+});
 let serial = 0;
 export function createCorruptionGlitch(target = document.documentElement) {
-  const d$e = {
-    maxShiftPx: 28,
-    sliceCount: 7,
-    blockiness: 0.5,
-    verticalAmount: 0.1,
-    rgbSplitPx: 4,
-    joltPx: 6,
-    tickMs: 90,
-    density: 0.8,
-    moshCells: 0,
-    deepFry: 0,
-    noise: 0,
-    invertChance: 0,
-  };
+  const d$e = { ...CORRUPTION_GLITCH_DEFAULTS };
   const oJ = Object.freeze({
     bands: Object.freeze([]),
     scalePx: 0,
@@ -316,9 +331,34 @@ export function createCorruptionGlitch(target = document.documentElement) {
   const filter = `url("#${lJ}")`;
   let disposed = false,
     active = false,
+    frozen = false,
     tick = -Infinity;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  const renderOnce = () => {
+    if (disposed || reduced.matches) return;
+    GI(aJ(d$e));
+    target.style.filter = filter;
+    active = true;
+  };
   return {
+    params() {
+      return { ...d$e };
+    },
+    setParams(patch) {
+      if (disposed) return;
+      for (const [key, value] of Object.entries(patch)) {
+        const range = CORRUPTION_GLITCH_PARAMETERS[key];
+        if (!range || typeof value !== "number" || !Number.isFinite(value))
+          continue;
+        const bounded = Math.max(range.min, Math.min(range.max, value));
+        d$e[key] = range.step === 1 ? Math.round(bounded) : bounded;
+      }
+      tick = -Infinity;
+    },
+    freeze(value = true) {
+      frozen = value;
+    },
+    renderOnce,
     update(milliseconds, enabled) {
       if (disposed) return;
       enabled = enabled && !reduced.matches;
@@ -328,11 +368,9 @@ export function createCorruptionGlitch(target = document.documentElement) {
         active = false;
         return;
       }
-      if (milliseconds - tick < d$e.tickMs && active) return;
+      if (frozen || (milliseconds - tick < d$e.tickMs && active)) return;
       tick = milliseconds;
-      GI(aJ(d$e));
-      target.style.filter = filter;
-      active = true;
+      renderOnce();
     },
     dispose() {
       if (disposed) return;

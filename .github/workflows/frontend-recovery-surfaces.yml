@@ -103,13 +103,8 @@ jobs:
             exit 1
           fi
 
-          find .frontend-app-build/cutover-candidate -type f -printf '%f\n' | sort -u > /tmp/candidate-static-files.txt
-          find "$outdir" -type f -printf '%f\n' | sort -u > /tmp/candidate-worker-files.txt
-          if comm -12 /tmp/candidate-static-files.txt /tmp/candidate-worker-files.txt | grep -q .; then
-            echo "::error::Candidate static files leaked into the Worker module output"
-            comm -12 /tmp/candidate-static-files.txt /tmp/candidate-worker-files.txt
-            exit 1
-          fi
+          node --test tests/frontend-candidate-worker-assets.test.mjs
+          node scripts/verify_frontend_candidate_worker_assets.mjs .frontend-app-build/cutover-candidate "$outdir"
 
           gzip_kib=$(sed -n 's/.*gzip: \([0-9.]*\) KiB.*/\1/p' "$log" | tail -n 1)
           if [ -z "$gzip_kib" ]; then

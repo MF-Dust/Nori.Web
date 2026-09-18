@@ -6,4 +6,7 @@ export interface DataseaGameApi {
   hit(intensity: number): void;
 }
 
-export const DATASEA_GAME_COMPONENTS: Record<string, ComponentType<{ api: DataseaGameApi }>>;
+export const DATASEA_GAME_COMPONENTS: Record<
+  string,
+  ComponentType<{ api: DataseaGameApi }>
+>;

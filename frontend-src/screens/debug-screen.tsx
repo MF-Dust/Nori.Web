@@ -14,6 +14,7 @@ import {
   type DebugLabActions,
 } from "./debug-labs";
 import { DataseaSceneTuner, ShatterSceneTuner } from "./scene-advanced-tuners";
+import { GlitchDebugLab } from "./glitch-debug-lab";
 
 const tabs = [
   { id: "connection", label: "Connection" },
@@ -22,6 +23,7 @@ const tabs = [
   { id: "facts", label: "Facts" },
   { id: "editor", label: "Scene editor" },
   { id: "corruption", label: "Corruption" },
+  { id: "glitch", label: "Glitch" },
   { id: "network", label: "Network lab" },
   { id: "compute", label: "Compute lab" },
   { id: "gesture", label: "Gesture lab" },
@@ -145,6 +147,7 @@ export function DebugScreen({
         {error && <p role="alert">{error}</p>}
         {tab === "editor" && <SceneEditor frontend={frontend} />}
         {tab === "corruption" && <CorruptionPreview frontend={frontend} />}
+        {tab === "glitch" && <GlitchDebugLab frontend={frontend} />}
         {tab === "network" && <NetworkDebugLab />}
         {tab === "compute" && <ComputeDebugLab actions={actions?.compute} />}
         {tab === "gesture" && <GestureDebugLab frontend={frontend} />}

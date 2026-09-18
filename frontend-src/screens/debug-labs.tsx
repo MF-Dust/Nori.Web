@@ -13,6 +13,7 @@ import {
   simulateQualifyingHeadPat,
   writeNetworkFaultProfile,
   type NetworkFaultPreset,
+  type DebugGame,
 } from "../runtime/debug-tools";
 
 export interface ComputeDebugActions {
@@ -28,7 +29,7 @@ export interface ComputeDebugActions {
 export interface DebugLabActions {
   compute?: ComputeDebugActions;
   previewReaction?(reaction: (typeof DEBUG_REACTIONS)[number]): void;
-  loadScenario?(game: "codenames", scenarioId: string): Promise<void>;
+  loadScenario?(game: DebugGame, scenarioId: string): Promise<void>;
 }
 
 function Lab({
@@ -211,23 +212,42 @@ export function ScenarioDebugLab({
   load?: DebugLabActions["loadScenario"];
 }) {
   const [status, setStatus] = useState("Select a scenario");
+  const [pending, setPending] = useState<string | null>(null);
   return (
     <Lab title="Game scenarios">
-      {DEBUG_GAME_SCENARIOS.map((scenario) => (
-        <button
-          type="button"
-          key={scenario.id}
-          disabled={!load}
-          onClick={() => {
-            setStatus(`Loading ${scenario.id}…`);
-            void load?.(scenario.game, scenario.id).then(
-              () => setStatus(`Loaded ${scenario.id}`),
-              (error) => setStatus(`Failed: ${String(error)}`),
-            );
-          }}
-        >
-          {scenario.label}
-        </button>
+      {(["chess", "codenames", "cakeduel"] as const).map((game) => (
+        <section key={game} aria-label={`${game} scenarios`}>
+          <h3>{game === "cakeduel" ? "Cake Duel" : game[0].toUpperCase() + game.slice(1)}</h3>
+          <div className="source-debug-lab-actions">
+            {DEBUG_GAME_SCENARIOS.filter(
+              (scenario) => scenario.game === game,
+            ).map((scenario) => (
+              <button
+                type="button"
+                key={scenario.id}
+                disabled={!load || pending !== null}
+                onClick={() => {
+                  setPending(`${scenario.game}:${scenario.id}`);
+                  setStatus(`Loading ${scenario.id}…`);
+                  void load?.(scenario.game, scenario.id).then(
+                    () => {
+                      setPending(null);
+                      setStatus(`Loaded ${scenario.id}`);
+                    },
+                    (error) => {
+                      setPending(null);
+                      setStatus(`Failed: ${String(error)}`);
+                    },
+                  );
+                }}
+              >
+                {pending === `${scenario.game}:${scenario.id}`
+                  ? "Loading…"
+                  : scenario.label}
+              </button>
+            ))}
+          </div>
+        </section>
       ))}
       <p role="status">{status}</p>
     </Lab>

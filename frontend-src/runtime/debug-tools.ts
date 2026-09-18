@@ -338,6 +338,147 @@ export function computeGrantToTarget(current: number, target: number): number {
 
 export const DEBUG_GAME_SCENARIOS = [
   {
+    game: "chess",
+    id: "acting-forked-counterpart",
+    label: "Acting forks Counterpart",
+  },
+  {
+    game: "chess",
+    id: "counterpart-forked-acting",
+    label: "Counterpart forks the acting side",
+  },
+  {
+    game: "chess",
+    id: "acting-trapped-in-opening",
+    label: "Acting trapped in the opening",
+  },
+  {
+    game: "chess",
+    id: "counterpart-trapped-in-opening",
+    label: "Counterpart trapped in the opening",
+  },
+  {
+    game: "chess",
+    id: "acting-blundered-repeatedly",
+    label: "Acting blundered repeatedly",
+  },
+  {
+    game: "chess",
+    id: "counterpart-blundered-repeatedly",
+    label: "Counterpart blundered repeatedly",
+  },
+  { game: "chess", id: "draw-stalemate", label: "Draw by stalemate" },
+  {
+    game: "chess",
+    id: "acting-offers-draw",
+    label: "Acting offers a draw",
+  },
+  {
+    game: "chess",
+    id: "acting-checked-counterpart-repeatedly",
+    label: "Acting checks Counterpart repeatedly",
+  },
+  {
+    game: "chess",
+    id: "counterpart-checked-acting-repeatedly",
+    label: "Counterpart checks the acting side repeatedly",
+  },
+  {
+    game: "chess",
+    id: "acting-checked-counterpart",
+    label: "Acting checks Counterpart",
+  },
+  {
+    game: "chess",
+    id: "counterpart-checked-acting",
+    label: "Counterpart checks the acting side",
+  },
+  {
+    game: "chess",
+    id: "counterpart-offered-sacrifice",
+    label: "Counterpart offered a sacrifice",
+  },
+  {
+    game: "chess",
+    id: "acting-offered-sacrifice",
+    label: "Acting offered a sacrifice",
+  },
+  {
+    game: "chess",
+    id: "acting-accepted-counterpart-sacrifice",
+    label: "Acting accepted Counterpart sacrifice",
+  },
+  {
+    game: "chess",
+    id: "acting-declined-counterpart-sacrifice",
+    label: "Acting declined Counterpart sacrifice",
+  },
+  {
+    game: "chess",
+    id: "counterpart-accepted-acting-sacrifice",
+    label: "Counterpart accepted acting sacrifice",
+  },
+  {
+    game: "chess",
+    id: "counterpart-declined-acting-sacrifice",
+    label: "Counterpart declined acting sacrifice",
+  },
+  {
+    game: "chess",
+    id: "counterpart-skewered-acting",
+    label: "Counterpart skewers the acting side",
+  },
+  {
+    game: "chess",
+    id: "acting-skewered-counterpart",
+    label: "Acting skewers Counterpart",
+  },
+  {
+    game: "chess",
+    id: "counterpart-pinned-acting",
+    label: "Counterpart pins a piece",
+  },
+  {
+    game: "chess",
+    id: "acting-pinned-counterpart",
+    label: "Acting pins Counterpart",
+  },
+  {
+    game: "chess",
+    id: "acting-captured-repeatedly",
+    label: "Acting captured repeatedly",
+  },
+  {
+    game: "chess",
+    id: "counterpart-captured-repeatedly",
+    label: "Counterpart captured repeatedly",
+  },
+  { game: "chess", id: "position-reversed", label: "Position reversed" },
+  { game: "chess", id: "endgame-entered", label: "Endgame entered" },
+  { game: "chess", id: "king-hunt-endgame", label: "King hunt endgame" },
+  { game: "chess", id: "race-endgame", label: "Race endgame" },
+  {
+    game: "chess",
+    id: "acting-used-opening",
+    label: "Acting used an opening move",
+  },
+  {
+    game: "chess",
+    id: "counterpart-used-opening",
+    label: "Counterpart used an opening move",
+  },
+  {
+    game: "chess",
+    id: "counterpart-moved-quickly",
+    label: "Counterpart moved quickly",
+  },
+  {
+    game: "chess",
+    id: "counterpart-thought-long",
+    label: "Counterpart thought long",
+  },
+  { game: "chess", id: "critical-move", label: "Critical move for Acting" },
+  {
     game: "codenames",
     id: "sudden_death_both",
     label: "Sudden death (both guessers)",
@@ -352,7 +493,13 @@ export const DEBUG_GAME_SCENARIOS = [
     id: "sudden_death_agent_only",
     label: "Sudden death (agent only)",
   },
+  { game: "cakeduel", id: "attack-phase", label: "Attack phase" },
+  { game: "cakeduel", id: "block-phase", label: "Block phase" },
+  { game: "cakeduel", id: "stacked", label: "Stacked piles" },
+  { game: "cakeduel", id: "empty", label: "Empty board" },
 ] as const;
+
+export type DebugGame = (typeof DEBUG_GAME_SCENARIOS)[number]["game"];
 
 export const DEBUG_REACTIONS = [
   "happy",

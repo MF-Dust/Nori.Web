@@ -107,9 +107,7 @@ export function CorruptionScene({
     let phase: string | null = null;
     const render = (now: number) => {
       if (stopped) return;
-      const dt = canAdvance()
-        ? Math.max(0, (now - previous) / 1000)
-        : 0;
+      const dt = canAdvance() ? Math.max(0, (now - previous) / 1000) : 0;
       previous = now;
       foreground += dt;
       const before = clock.snapshot();
@@ -169,9 +167,10 @@ export function CorruptionScene({
       const projected = corruptionScene(next);
       glitch.update(
         foreground * 1000,
-        canAdvance() && (next.time < m.panUp
-          ? foreground % 1.5 < 0.15
-          : next.time < m.exitDark),
+        canAdvance() &&
+          (next.time < m.panUp
+            ? foreground % 1.5 < 0.15
+            : next.time < m.exitDark),
       );
       // The original only takes camera control after the initial minimize/voice gate.
       if (next.time < m.panUp) {

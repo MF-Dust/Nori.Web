@@ -16,8 +16,8 @@ const render = (visible = true) =>
         frontend={frontend}
         actions={{
           compute: idle.debug,
-          loadScenario: async (_game, scenarioId) => {
-            scenarios.push(scenarioId);
+          loadScenario: async (game, scenarioId) => {
+            scenarios.push(`${game}:${scenarioId}`);
           },
         }}
       />

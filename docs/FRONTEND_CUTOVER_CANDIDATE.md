@@ -85,6 +85,29 @@ policy. Verify the deployed index and referenced JavaScript/CSS against the
 manifest hashes. Generated hashed source assets may remain because the restored
 production index does not execute them.
 
+## Candidate browser and Worker evidence
+
+The `candidate` job in `frontend-recovery-surfaces.yml` builds and materializes
+the source entry, then serves that exact directory through Vite preview. The
+browser probe checks model loading, chat, Terminal, persistence after reload,
+narrow layout, missing resources and historical application requests. This
+probe passed on `c9fb95c4` and `a72aea36`; it is not a full authentication or
+production deployment test.
+
+The same job writes a temporary Wrangler configuration whose Assets directory
+is the materialized candidate, preserving the production configuration. It
+runs `pywrangler deploy --dry-run` and checks the required game word modules,
+live-world archive exclusion, frontend asset exclusion and the 3 MiB gzip
+budget. The dry-run runs after successful staging even if visual capture fails.
+On `a72aea36` Wrangler completed with 2458.76 KiB gzip; the subsequent asset
+guard incorrectly treated two unrelated `LICENSE` basenames as a leak.
+
+The corrected asset guard compares SHA-256 file contents, allowing dependency
+license notices in both distributions. It detects even renamed frontend
+payloads in the Worker output. A regression case covers the observed license
+collision and a genuinely copied payload. The corrected CI result remains
+pending until the next run completes.
+
 ## Remaining production evidence
 
 Before switching the public entry, the materialized candidate still needs:

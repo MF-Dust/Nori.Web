@@ -113,7 +113,63 @@ export async function verifyDebugLabs(browser, output, baseUrl) {
     await page.getByText("Loaded sudden_death_both", { exact: true }).waitFor();
     assert.deepEqual(
       await page.evaluate(() => window.debugLabProbe.scenarios),
-      ["sudden_death_both"],
+      ["codenames:sudden_death_both"],
+    );
+    await page
+      .getByRole("button", { name: "Acting forks Counterpart", exact: true })
+      .click();
+    await page
+      .getByText("Loaded acting-forked-counterpart", { exact: true })
+      .waitFor();
+    await page
+      .getByRole("button", { name: "Attack phase", exact: true })
+      .click();
+    await page.getByText("Loaded attack-phase", { exact: true }).waitFor();
+    assert.deepEqual(
+      await page.evaluate(() => window.debugLabProbe.scenarios),
+      [
+        "codenames:sudden_death_both",
+        "chess:acting-forked-counterpart",
+        "cakeduel:attack-phase",
+      ],
+    );
+
+    await page.getByRole("button", { name: "Glitch", exact: true }).click();
+    await page.getByRole("button", { name: "Slam", exact: true }).click();
+    assert.equal(await page.getByLabel("Glitch Max shift").inputValue(), "90");
+    await page.getByRole("button", { name: "Start", exact: true }).click();
+    await page.waitForFunction(() =>
+      document.documentElement.style.filter.includes("nori-corruption-glitch"),
+    );
+    await page.getByRole("button", { name: "Stop", exact: true }).click();
+    assert.equal(
+      await page.evaluate(() => document.documentElement.style.filter),
+      "",
+      "stopping the production glitch must restore the page filter",
+    );
+    await page.getByRole("button", { name: "Start", exact: true }).click();
+    await page.evaluate(() => window.debugLabProbe.takeover());
+    await page
+      .getByText("Production story active; glitch released.", { exact: true })
+      .waitFor();
+    assert.equal(
+      await page.evaluate(() => document.documentElement.style.filter),
+      "",
+      "story takeover must release the production glitch",
+    );
+    await page.evaluate(() => window.debugLabProbe.releaseTakeover());
+    await page.getByRole("button", { name: "Start", exact: true }).click();
+    await page.waitForFunction(() =>
+      document.documentElement.style.filter.includes("nori-corruption-glitch"),
+    );
+    await page
+      .getByRole("button", { name: "Connection", exact: true })
+      .click();
+    await page.waitForFunction(() => document.documentElement.style.filter === "");
+    assert.equal(
+      await page.evaluate(() => document.documentElement.style.filter),
+      "",
+      "leaving the Glitch tab must dispose the whole-page filter",
     );
 
     await page

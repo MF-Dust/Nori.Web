@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { FullScreenQuad, Pass } from "three/addons/postprocessing/Pass.js";
 
-const vertex = "varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}";
+const vertex =
+  "varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}";
 const reproject = `
 uniform sampler2D currentFrame, historyFrame;
 uniform mat4 inverseViewProjection, previousViewProjection;
@@ -19,10 +20,13 @@ void main(){
   vec3 history=valid?texture2D(historyFrame,oldUv).rgb:current;
   gl_FragColor=vec4(mix(current,history,valid?historyWeight:0.0),1.0);
 }`;
-const copy = "uniform sampler2D source;varying vec2 vUv;void main(){gl_FragColor=texture2D(source,vUv);}";
+const copy =
+  "uniform sampler2D source;varying vec2 vUv;void main(){gl_FragColor=texture2D(source,vUv);}";
 
 export class DataseaTemporalPass extends Pass {
-  private history = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType });
+  private history = new THREE.WebGLRenderTarget(1, 1, {
+    type: THREE.HalfFloatType,
+  });
   private initialized = false;
   private resetRequested = true;
   private previousViewProjection = new THREE.Matrix4();
@@ -41,20 +45,46 @@ export class DataseaTemporalPass extends Pass {
       focusDistance: { value: 300 },
     },
   });
-  private readonly copyMaterial = new THREE.ShaderMaterial({ vertexShader: vertex, fragmentShader: copy, depthTest: false, depthWrite: false, uniforms: { source: { value: null as THREE.Texture | null } } });
+  private readonly copyMaterial = new THREE.ShaderMaterial({
+    vertexShader: vertex,
+    fragmentShader: copy,
+    depthTest: false,
+    depthWrite: false,
+    uniforms: { source: { value: null as THREE.Texture | null } },
+  });
   private readonly quad = new FullScreenQuad(this.material);
-  constructor(private readonly camera: THREE.PerspectiveCamera) { super(); }
-  reset() { this.resetRequested = true; }
-  setFocusDistance(distance: number) { this.material.uniforms.focusDistance.value = Math.max(1, distance); }
-  setSize(width: number, height: number) { this.history.setSize(Math.max(1, width), Math.max(1, height)); this.reset(); }
-  render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget) {
+  constructor(private readonly camera: THREE.PerspectiveCamera) {
+    super();
+  }
+  reset() {
+    this.resetRequested = true;
+  }
+  setFocusDistance(distance: number) {
+    this.material.uniforms.focusDistance.value = Math.max(1, distance);
+  }
+  setSize(width: number, height: number) {
+    this.history.setSize(Math.max(1, width), Math.max(1, height));
+    this.reset();
+  }
+  render(
+    renderer: THREE.WebGLRenderer,
+    writeBuffer: THREE.WebGLRenderTarget,
+    readBuffer: THREE.WebGLRenderTarget,
+  ) {
     this.camera.updateMatrixWorld();
-    const viewProjection = new THREE.Matrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+    const viewProjection = new THREE.Matrix4().multiplyMatrices(
+      this.camera.projectionMatrix,
+      this.camera.matrixWorldInverse,
+    );
     const reset = this.resetRequested || !this.initialized;
     this.material.uniforms.currentFrame.value = readBuffer.texture;
     this.material.uniforms.historyFrame.value = this.history.texture;
-    this.material.uniforms.inverseViewProjection.value.copy(viewProjection).invert();
-    this.material.uniforms.uReprojectionCameraPosition.value.setFromMatrixPosition(this.camera.matrixWorld);
+    this.material.uniforms.inverseViewProjection.value
+      .copy(viewProjection)
+      .invert();
+    this.material.uniforms.uReprojectionCameraPosition.value.setFromMatrixPosition(
+      this.camera.matrixWorld,
+    );
     this.material.uniforms.historyWeight.value = reset ? 0 : 0.9;
     renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
     this.quad.material = this.material;
@@ -69,5 +99,10 @@ export class DataseaTemporalPass extends Pass {
     this.initialized = true;
     this.resetRequested = false;
   }
-  dispose() { this.history.dispose(); this.material.dispose(); this.copyMaterial.dispose(); this.quad.dispose(); }
+  dispose() {
+    this.history.dispose();
+    this.material.dispose();
+    this.copyMaterial.dispose();
+    this.quad.dispose();
+  }
 }

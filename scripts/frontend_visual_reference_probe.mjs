@@ -17,10 +17,16 @@ const referencePort = Number(process.env.NORI_VISUAL_REFERENCE_PORT ?? 47180);
 const candidatePort = Number(process.env.NORI_VISUAL_CANDIDATE_PORT ?? 47181);
 const backendOrigin = `http://127.0.0.1:${backendPort}`;
 const viewport = { width: 1366, height: 900 };
+const captureLocale = "zh-CN";
+const ui = {
+  about: "关于...",
+  settings: "系统设置...",
+  creditsHeading: "谢谢你",
+};
 const browserOptions = {
   viewport,
   deviceScaleFactor: 1,
-  locale: "en-US",
+  locale: captureLocale,
   colorScheme: "dark",
   reducedMotion: "reduce",
 };
@@ -210,6 +216,7 @@ async function captureTarget({ label, origin, historical }) {
   await mkdir(directory, { recursive: true });
   const context = await browser.newContext(browserOptions);
   await context.addInitScript(() => {
+    localStorage.setItem("arcade-language", "zh-CN");
     const Native = window.WebSocket;
     window.visualReference = { sockets: [] };
     window.WebSocket = class extends Native {
@@ -240,6 +247,8 @@ async function captureTarget({ label, origin, historical }) {
   });
 
   const states = {};
+  let chatControl;
+  let masterVolumeControl;
   try {
     const response = await page.goto(origin, {
       waitUntil: "domcontentloaded",
@@ -250,7 +259,7 @@ async function captureTarget({ label, origin, historical }) {
     if (await bypass.count()) await bypass.click();
     await page.locator(".topbar-system-trigger").waitFor({ timeout: 90_000 });
     const input = await findFloatingChatInput(page, label);
-    const chatControl = await input.evaluate((element) => ({
+    chatControl = await input.evaluate((element) => ({
       tag: element.tagName,
       type: element.getAttribute("type"),
       ariaLabel: element.getAttribute("aria-label"),
@@ -281,21 +290,34 @@ async function captureTarget({ label, origin, historical }) {
     await input.press("Escape");
 
     await page.locator(".topbar-app-name").first().click();
-    await page.getByRole("menuitem", { name: "About...", exact: true }).click();
+    await page.getByRole("menuitem", { name: ui.about, exact: true }).click();
     await page.getByRole("heading", { name: "NoriOS", exact: true }).waitFor();
     await screenshot(page, directory, "03-about", states);
     await closeWindow(page);
 
-    await openSystemItem(page, "System Settings...");
-    await page
-      .getByRole("slider", { name: "Master Volume", exact: true })
-      .waitFor();
+    await openSystemItem(page, ui.settings);
+    // The shipped Radix slider thumb is not labelled by the adjacent visible
+    // text. Both implementations present master volume first in the same four
+    // sound controls, so preserve that structural order for the paired state.
+    const volumeSliders = page.getByRole("slider");
+    await volumeSliders.first().waitFor();
+    assert.equal(
+      await volumeSliders.count(),
+      4,
+      `${label} settings must expose four visible sound sliders`,
+    );
+    masterVolumeControl = await volumeSliders.first().evaluate((element) => ({
+      tag: element.tagName,
+      type: element.getAttribute("type"),
+      ariaLabel: element.getAttribute("aria-label"),
+      ariaValueNow: element.getAttribute("aria-valuenow"),
+    }));
     await screenshot(page, directory, "04-settings", states);
     await closeWindow(page);
 
     await page.locator('[data-app-id="credits"]').click();
     await page
-      .getByRole("heading", { name: "Thanks for playing", exact: true })
+      .getByRole("heading", { name: ui.creditsHeading, exact: true })
       .waitFor();
     await screenshot(page, directory, "05-credits", states);
 
@@ -326,6 +348,7 @@ async function captureTarget({ label, origin, historical }) {
     assert.deepEqual(pageErrors, [], `${label} raised browser page errors`);
 
     const result = {
+      status: "complete",
       label,
       entry: historical
         ? "shipped public/index.html"
@@ -333,6 +356,7 @@ async function captureTarget({ label, origin, historical }) {
       origin,
       runtime,
       chatControl,
+      masterVolumeControl,
       states,
       legacyRequests,
       pageErrors,
@@ -343,12 +367,36 @@ async function captureTarget({ label, origin, historical }) {
       resolve(directory, "metadata.json"),
       `${JSON.stringify(result, null, 2)}\n`,
     );
-    return result;
+    return { result, error: null };
   } catch (error) {
-    await page
-      .screenshot({ path: resolve(directory, "capture-failure.png") })
-      .catch(() => {});
-    throw error;
+    await screenshot(page, directory, "capture-failure", states).catch(
+      () => {},
+    );
+    const failure = {
+      status: "failed",
+      label,
+      entry: historical
+        ? "shipped public/index.html"
+        : "materialized source cutover candidate",
+      origin,
+      error: {
+        name: error instanceof Error ? error.name : "Error",
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      chatControl,
+      masterVolumeControl,
+      states,
+      legacyRequests,
+      pageErrors,
+      consoleErrors,
+      failedAssets,
+    };
+    await writeFile(
+      resolve(directory, "metadata.json"),
+      `${JSON.stringify(failure, null, 2)}\n`,
+    );
+    return { result: failure, error };
   } finally {
     await context.close();
   }
@@ -367,19 +415,32 @@ try {
       "--enable-unsafe-swiftshader",
     ],
   });
-  manifest.captures.reference = await captureTarget({
-    label: "reference",
-    origin: `http://127.0.0.1:${referencePort}`,
-    historical: true,
-  });
-  manifest.captures.candidate = await captureTarget({
-    label: "candidate",
-    origin: `http://127.0.0.1:${candidatePort}`,
-    historical: false,
-  });
+  const failures = [];
+  for (const target of [
+    {
+      label: "reference",
+      origin: `http://127.0.0.1:${referencePort}`,
+      historical: true,
+    },
+    {
+      label: "candidate",
+      origin: `http://127.0.0.1:${candidatePort}`,
+      historical: false,
+    },
+  ]) {
+    const outcome = await captureTarget(target);
+    manifest.captures[target.label] = outcome.result;
+    if (outcome.error) failures.push(outcome.error);
+  }
   manifest.completedAt = new Date().toISOString();
-  manifest.reviewStatus =
-    "paired captures generated; human image review pending";
+  manifest.reviewStatus = failures.length
+    ? "paired capture incomplete; inspect partial metadata and failure screenshots"
+    : "paired captures generated; human image review pending";
+  if (failures.length)
+    throw new AggregateError(
+      failures,
+      `${failures.length} visual-reference target capture(s) failed`,
+    );
   console.log(
     `Visual reference generated at ${output}: five paired states; image review remains pending.`,
   );

@@ -49,6 +49,206 @@ TUTORIAL_STEPS = [
 ]
 TUTORIAL_INDEX = {step["id"]: index for index, step in enumerate(TUTORIAL_STEPS)}
 
+# Exact runtime fixtures exported by Debug-D6AtxpLT.js (`ss`).
+CHESS_DEBUG_SCENARIOS = {'acting-forked-counterpart': {'id': 'acting-forked-counterpart',
+                               'settings': {'playerSide': 'black', 'difficulty': 'serious', 'locale': 'en'},
+                               'startFen': 'rnbq3r/1p3kpp/p4n2/2b5/2pNP3/2N5/PPP3PP/R1BQ1RK1 w - - 2 12',
+                               'startPly': 0,
+                               'script': [{'uci': 'd1h5'}]},
+ 'counterpart-forked-acting': {'id': 'counterpart-forked-acting',
+                               'settings': {'playerSide': 'black', 'difficulty': 'serious', 'locale': 'en'},
+                               'startFen': '5rk1/5ppp/4p3/4N3/8/1Pn5/5PPP/2R3K1 b - - 1 28',
+                               'startPly': 0,
+                               'script': [{'uci': 'c3e2'}]},
+ 'acting-trapped-in-opening': {'id': 'acting-trapped-in-opening',
+                               'settings': {'playerSide': 'black', 'difficulty': 'serious', 'locale': 'en'},
+                               'startFen': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                               'startPly': 4,
+                               'script': [{'uci': 'e2e4'},
+                                          {'uci': 'e7e5'},
+                                          {'uci': 'd1h5'},
+                                          {'uci': 'b8c6'},
+                                          {'uci': 'h5e5'}]},
+ 'counterpart-trapped-in-opening': {'id': 'counterpart-trapped-in-opening',
+                                    'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                    'startFen': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                                    'startPly': 4,
+                                    'script': [{'uci': 'e2e4'},
+                                               {'uci': 'e7e5'},
+                                               {'uci': 'g1f3'},
+                                               {'uci': 'b8c6'},
+                                               {'uci': 'f1c4'},
+                                               {'uci': 'b7b5'}]},
+ 'acting-blundered-repeatedly': {'id': 'acting-blundered-repeatedly',
+                                 'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                 'startFen': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                                 'startPly': 4,
+                                 'script': [{'uci': 'e2e4'},
+                                            {'uci': 'e7e5'},
+                                            {'uci': 'g2g4'},
+                                            {'uci': 'd7d5'},
+                                            {'uci': 'f2f4'}]},
+ 'counterpart-blundered-repeatedly': {'id': 'counterpart-blundered-repeatedly',
+                                      'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                      'startFen': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                                      'startPly': 6,
+                                      'script': [{'uci': 'e2e4'},
+                                                 {'uci': 'e7e5'},
+                                                 {'uci': 'g1f3'},
+                                                 {'uci': 'b8c6'},
+                                                 {'uci': 'f1c4'},
+                                                 {'uci': 'b7b5'},
+                                                 {'uci': 'c4b5'},
+                                                 {'uci': 'd8h4'}]},
+ 'draw-stalemate': {'id': 'draw-stalemate',
+                    'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                    'startFen': '7k/5K2/8/6Q1/8/8/8/8 w - - 0 1',
+                    'startPly': 0,
+                    'script': [{'uci': 'g5g6'}]},
+ 'acting-offers-draw': {'id': 'acting-offers-draw',
+                        'settings': {'playerSide': 'white', 'difficulty': 'casual', 'locale': 'en'},
+                        'startFen': '7r/p5kp/6p1/8/8/6P1/P5KP/R7 b - - 0 1',
+                        'startPly': 7,
+                        'script': [{'uci': 'h8g8'},
+                                   {'uci': 'a1b1'},
+                                   {'uci': 'g8h8'},
+                                   {'uci': 'b1a1'},
+                                   {'uci': 'h8g8'},
+                                   {'uci': 'a1b1'},
+                                   {'uci': 'g8h8'},
+                                   {'uci': 'b1a1'}]},
+ 'acting-checked-counterpart-repeatedly': {'id': 'acting-checked-counterpart-repeatedly',
+                                           'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                           'startFen': '4k3/8/2p5/1B6/8/8/8/3Q2K1 w - - 0 1',
+                                           'startPly': 0,
+                                           'script': [{'uci': 'b5c6'}, {'uci': 'e8f8'}, {'uci': 'd1d8'}]},
+ 'counterpart-checked-acting-repeatedly': {'id': 'counterpart-checked-acting-repeatedly',
+                                           'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                           'startFen': '3qk3/8/8/8/1b6/2P5/8/4K3 b - - 0 1',
+                                           'startPly': 0,
+                                           'script': [{'uci': 'b4c3'}, {'uci': 'e1f2'}, {'uci': 'd8d2'}]},
+ 'acting-checked-counterpart': {'id': 'acting-checked-counterpart',
+                                'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                'startFen': '4k3/8/8/8/8/8/4Q3/4K3 w - - 0 1',
+                                'startPly': 0,
+                                'script': [{'uci': 'e2e7'}]},
+ 'counterpart-checked-acting': {'id': 'counterpart-checked-acting',
+                                'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                'startFen': '4k3/8/8/8/8/8/4r3/6K1 b - - 0 1',
+                                'startPly': 0,
+                                'script': [{'uci': 'e2e1'}]},
+ 'counterpart-offered-sacrifice': {'id': 'counterpart-offered-sacrifice',
+                                   'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                   'startFen': 'r2b2k1/1p3q1p/p2p4/3P2p1/2P1PB2/6Q1/P6P/2R4K b - - 0 30',
+                                   'startPly': 0,
+                                   'script': [{'uci': 'f7f4'}, {'uci': 'g3f4'}, {'uci': 'g5f4'}]},
+ 'acting-offered-sacrifice': {'id': 'acting-offered-sacrifice',
+                              'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                              'startFen': '4r1k1/ppq3pp/2p2p2/4r3/4p1Q1/P5RP/1P3PP1/3R2K1 w - - 4 35',
+                              'startPly': 0,
+                              'script': [{'uci': 'd1d7'}, {'uci': 'c7d7'}, {'uci': 'g4d7'}]},
+ 'acting-accepted-counterpart-sacrifice': {'id': 'acting-accepted-counterpart-sacrifice',
+                                           'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                           'startFen': 'r2b2k1/1p3q1p/p2p4/3P2p1/2P1PB2/6Q1/P6P/2R4K b - - 0 30',
+                                           'startPly': 1,
+                                           'script': [{'uci': 'f7f4'}, {'uci': 'g3f4'}, {'uci': 'g5f4'}]},
+ 'acting-declined-counterpart-sacrifice': {'id': 'acting-declined-counterpart-sacrifice',
+                                           'settings': {'playerSide': 'black', 'difficulty': 'serious', 'locale': 'en'},
+                                           'startFen': '5rk1/1p3ppp/pq1Q1b2/8/8/1P3N2/P4PPP/3R2K1 b - - 3 27',
+                                           'startPly': 1,
+                                           'script': [{'uci': 'f8d8'}, {'uci': 'd6c7'}]},
+ 'counterpart-accepted-acting-sacrifice': {'id': 'counterpart-accepted-acting-sacrifice',
+                                           'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                           'startFen': '4r1k1/ppq3pp/2p2p2/4r3/4p1Q1/P5RP/1P3PP1/3R2K1 w - - 4 35',
+                                           'startPly': 1,
+                                           'script': [{'uci': 'd1d7'}, {'uci': 'c7d7'}, {'uci': 'g4d7'}]},
+ 'counterpart-declined-acting-sacrifice': {'id': 'counterpart-declined-acting-sacrifice',
+                                           'settings': {'playerSide': 'black', 'difficulty': 'serious', 'locale': 'en'},
+                                           'startFen': 'r6r/pp1qbQpk/2p4p/3pP3/3Pb3/2P1B3/PP4PP/R4RK1 w - - 4 19',
+                                           'startPly': 1,
+                                           'script': [{'uci': 'f1f6'}, {'uci': 'a7a6'}]},
+ 'counterpart-skewered-acting': {'id': 'counterpart-skewered-acting',
+                                 'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                 'startFen': '8/7R/8/5p2/4b2P/5k2/2r5/4K1R1 b - - 10 52',
+                                 'startPly': 0,
+                                 'script': [{'uci': 'c2c1'}, {'uci': 'e1d2'}, {'uci': 'c1g1'}]},
+ 'acting-skewered-counterpart': {'id': 'acting-skewered-counterpart',
+                                 'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                 'startFen': '5R2/1p6/p1p1k3/2P1r3/2K3p1/2P1p1P1/1P5P/8 w - - 2 45',
+                                 'startPly': 0,
+                                 'script': [{'uci': 'f8e8'}, {'uci': 'e6f5'}, {'uci': 'e8e5'}, {'uci': 'f5e5'}]},
+ 'counterpart-pinned-acting': {'id': 'counterpart-pinned-acting',
+                               'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                               'startFen': '3r2k1/pr4pp/2R1b3/5p2/2P1p3/8/P4PPP/3BR1K1 b - - 0 27',
+                               'startPly': 0,
+                               'script': [{'uci': 'b7b1'}, {'uci': 'g1f1'}, {'uci': 'd8d1'}, {'uci': 'e1d1'}]},
+ 'acting-pinned-counterpart': {'id': 'acting-pinned-counterpart',
+                               'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                               'startFen': 'r2qk2r/p2bnppp/3p4/1Bp5/4P3/4Q3/PPP2PPP/2KR3R w kq - 1 13',
+                               'startPly': 0,
+                               'script': [{'uci': 'd1d6'}, {'uci': 'd7b5'}, {'uci': 'd6d8'}]},
+ 'acting-captured-repeatedly': {'id': 'acting-captured-repeatedly',
+                                'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                'startFen': '6k1/8/8/4p3/2p5/5N2/8/6K1 w - - 0 1',
+                                'startPly': 0,
+                                'script': [{'uci': 'f3e5'}, {'uci': 'g8f8'}, {'uci': 'e5c4'}]},
+ 'counterpart-captured-repeatedly': {'id': 'counterpart-captured-repeatedly',
+                                     'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                                     'startFen': '6k1/8/5n2/2P5/4P3/8/8/6K1 b - - 0 1',
+                                     'startPly': 0,
+                                     'script': [{'uci': 'f6e4'}, {'uci': 'g1g2'}, {'uci': 'e4c5'}]},
+ 'position-reversed': {'id': 'position-reversed',
+                       'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                       'startFen': 'r2q2k1/ppp2ppp/8/2b5/2B5/5N2/PPP2PPP/R5K1 w - - 0 15',
+                       'startPly': 0,
+                       'script': [{'uci': 'h2h3'}, {'uci': 'd8h4'}]},
+ 'endgame-entered': {'id': 'endgame-entered',
+                     'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                     'startFen': 'r2q2k1/pppb1ppp/8/8/2B5/5N2/PPP2PPP/R2Q2K1 w - - 0 1',
+                     'startPly': 0,
+                     'script': [{'uci': 'd1d7'}]},
+ 'king-hunt-endgame': {'id': 'king-hunt-endgame',
+                       'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                       'startFen': '6k1/8/8/8/8/8/8/R5K1 w - - 0 1',
+                       'startPly': 0,
+                       'script': [{'uci': 'g1f2'}]},
+ 'race-endgame': {'id': 'race-endgame',
+                  'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                  'startFen': '4k3/8/8/P6p/8/8/8/4K3 w - - 0 1',
+                  'startPly': 0,
+                  'script': [{'uci': 'a5a6'}, {'uci': 'h5h4'}, {'uci': 'a6a7'}]},
+ 'acting-used-opening': {'id': 'acting-used-opening',
+                         'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                         'startFen': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                         'startPly': 0,
+                         'script': [{'uci': 'e2e4'}]},
+ 'counterpart-used-opening': {'id': 'counterpart-used-opening',
+                              'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                              'startFen': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                              'startPly': 1,
+                              'script': [{'uci': 'e2e4'}, {'uci': 'e7e5'}]},
+ 'counterpart-moved-quickly': {'id': 'counterpart-moved-quickly',
+                               'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                               'startFen': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 15',
+                               'startPly': 0,
+                               'script': [{'uci': 'a7a6', 'durationMs': 500}]},
+ 'counterpart-thought-long': {'id': 'counterpart-thought-long',
+                              'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                              'startFen': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 15',
+                              'startPly': 0,
+                              'script': [{'uci': 'a7a6', 'durationMs': 65000}]},
+ 'critical-move': {'id': 'critical-move',
+                   'settings': {'playerSide': 'black', 'difficulty': 'casual', 'locale': 'en'},
+                   'startFen': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                   'startPly': 6,
+                   'script': [{'uci': 'e2e4'},
+                              {'uci': 'e7e5'},
+                              {'uci': 'g1f3'},
+                              {'uci': 'b8c6'},
+                              {'uci': 'f1c4'},
+                              {'uci': 'b7b5'}]}}
+
+
 
 class ChessCartridge(BaseCartridge):
     def __init__(self) -> None:
@@ -227,6 +427,28 @@ class ChessCartridge(BaseCartridge):
             raise CommandRejected("Invalid difficulty")
         return {**previous, "playerSide": side, "difficulty": difficulty}
 
+    @classmethod
+    def _debug_game(cls, fixture: Dict[str, Any]) -> Dict[str, Any]:
+        start_fen = fixture["startFen"]
+        try:
+            board = chess.Board(start_fen)
+        except Exception as exc:
+            raise CommandRejected(f"Invalid debug start position: {exc}") from exc
+        game = cls._state_from_board(board, [], start_fen)
+        script = fixture["script"]
+        start_ply = fixture["startPly"]
+        if not isinstance(start_ply, int) or start_ply < 0 or start_ply > len(script):
+            raise CommandRejected("Invalid debug start ply")
+        for index, step in enumerate(script[:start_ply]):
+            uci = step.get("uci")
+            if not isinstance(uci, str) or len(uci) not in {4, 5}:
+                raise CommandRejected("Invalid debug move")
+            game, move_info = cls._make_move(game, uci[:2], uci[2:4], uci[4:] or None)
+            if isinstance(step.get("durationMs"), int):
+                move_info["durationMs"] = step["durationMs"]
+                game["moveHistory"][-1] = move_info
+        return game
+
     def reduce(self, actor: str, cmd: Dict[str, Any]) -> ReducerResult:
         command_type = cmd["type"]
         state = deepcopy(self.state)
@@ -256,6 +478,26 @@ class ChessCartridge(BaseCartridge):
                 [{"type": "game_start", "playerSide": settings["playerSide"], "difficulty": settings["difficulty"]}],
             )
 
+        if command_type == "debugLoadScenario":
+            if actor != "player":
+                raise CommandRejected("Only player may load debug scenarios")
+            scenario_id = cmd.get("scenarioId")
+            fixture = CHESS_DEBUG_SCENARIOS.get(scenario_id)
+            if fixture is None:
+                raise CommandRejected("Unknown Chess debug scenario")
+            settings = deepcopy(fixture["settings"])
+            game = self._debug_game(fixture)
+            state.update({
+                "settings": settings,
+                "gameState": game,
+                "drawOffer": None,
+                "takebackRequest": None,
+                "tutorial": None,
+                "debugScenarioId": scenario_id,
+                "debugScenario": {"script": deepcopy(fixture["script"]), "nextPly": fixture["startPly"]},
+            })
+            return ReducerResult(state, {"success": True}, [{"type": "debug_scenario_loaded", "scenarioId": scenario_id}])
+
         game = state.get("gameState")
         if not isinstance(game, dict):
             raise CommandRejected("Game not started")
@@ -283,6 +525,13 @@ class ChessCartridge(BaseCartridge):
                 expected = TUTORIAL_STEPS[tutorial_index]
                 if actor != expected["mover"] or {"from": from_square, "to": to_square} != expected["move"] or promotion is not None:
                     raise CommandRejected("Follow the highlighted tutorial move")
+            debug = state.get("debugScenario")
+            if isinstance(debug, dict) and debug.get("nextPly", 0) < len(debug.get("script", [])):
+                scripted = debug["script"][debug["nextPly"]]
+                expected = scripted.get("uci")
+                actual = from_square + to_square + (promotion or "")
+                if actual != expected:
+                    raise CommandRejected("Follow the loaded debug scenario move")
             next_game, move_info = self._make_move(game, from_square, to_square, promotion)
             now = int(time.time() * 1000)
             previous = game["moveHistory"][-1].get("madeAtMs") if game["moveHistory"] else None
@@ -290,6 +539,12 @@ class ChessCartridge(BaseCartridge):
             if isinstance(previous, int):
                 move_info["durationMs"] = max(0, now - previous)
             next_game["moveHistory"][-1] = move_info
+            if isinstance(debug, dict):
+                scripted = debug.get("script", [])[debug.get("nextPly", 0)] if debug.get("nextPly", 0) < len(debug.get("script", [])) else {}
+                if isinstance(scripted.get("durationMs"), int):
+                    move_info["durationMs"] = scripted["durationMs"]
+                    next_game["moveHistory"][-1] = move_info
+                debug["nextPly"] = debug.get("nextPly", 0) + 1
             state["gameState"] = next_game
             state["drawOffer"] = None
             state["takebackRequest"] = None
@@ -377,9 +632,6 @@ class ChessCartridge(BaseCartridge):
                 events.append({"type": "history_rewound", "pliesUndone": needed, "prevPly": old_plies, "nextPly": len(state["gameState"]["moveHistory"]), "fen": state["gameState"]["fen"]})
             return ReducerResult(state, {"success": True}, events)
 
-        if command_type == "debugLoadScenario":
-            raise CommandRejected("Chess debug harness is disabled")
-
         raise CommandRejected(f"Unknown chess command: {command_type}")
 
     def agent_next_command(self) -> Optional[Dict[str, Any]]:
@@ -389,6 +641,17 @@ class ChessCartridge(BaseCartridge):
         agent_side = self._side_for_actor(self.state, "agent")
         if game.get("turn") != agent_side:
             return None
+        debug = self.state.get("debugScenario")
+        if isinstance(debug, dict):
+            next_ply = debug.get("nextPly", 0)
+            script = debug.get("script", [])
+            if next_ply < len(script):
+                uci = script[next_ply].get("uci")
+                if isinstance(uci, str) and len(uci) in {4, 5}:
+                    command = {"type": "move", "from": uci[:2], "to": uci[2:4]}
+                    if len(uci) == 5:
+                        command["promotion"] = uci[4]
+                    return command
         tutorial_id = (self.state.get("tutorial") or {}).get("step")
         if tutorial_id is not None and tutorial_id != "free_play":
             index = TUTORIAL_INDEX.get(tutorial_id)

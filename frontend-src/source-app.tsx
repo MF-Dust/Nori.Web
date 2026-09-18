@@ -313,10 +313,16 @@ function createSourceSession() {
       windows: {
         debug: { main: { component: () => <DebugScreen frontend={frontend} actions={{
           compute: idle.debug,
-          loadScenario: async (_game, scenarioId) => {
-            if (!codenames.snapshot().state || !await codenames.dispatch({ type: "debugLoadScenario", scenarioId })) {
-              throw new Error(codenames.snapshot().error ?? "Open Codenames and start a game before loading a scenario.");
-            }
+          loadScenario: async (game, scenarioId) => {
+            const ok = game === "chess"
+              ? await chess.dispatch({ type: "debugLoadScenario", scenarioId })
+              : game === "cakeduel"
+                ? await cakeduel.loadDebugScenario(scenarioId)
+                : await codenames.dispatch({ type: "debugLoadScenario", scenarioId });
+            if (!ok) throw new Error(
+              (game === "chess" ? chess.snapshot().error : game === "cakeduel" ? cakeduel.snapshot().error : codenames.snapshot().error)
+                ?? `Unable to load ${game} scenario.`,
+            );
           },
         }} /> } },
         system: {

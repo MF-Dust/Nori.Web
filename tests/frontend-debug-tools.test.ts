@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { HeadPat } from "../frontend-src/live2d/head-pat";
 import { createSourceIdleRuntimeEngine } from "../frontend-src/state/idle-runtime-engine";
 import {
+  DEBUG_GAME_SCENARIOS,
   FLAKY_WEBSOCKET_STORAGE_KEY,
   NETWORK_FAULT_PRESETS,
   computeGrantToTarget,
@@ -13,6 +14,31 @@ import {
   simulateQualifyingHeadPat,
   writeNetworkFaultProfile,
 } from "../frontend-src/runtime/debug-tools";
+
+test("debug scenario catalog exposes every shipped game family without duplicate ids", () => {
+  const grouped = Object.groupBy(DEBUG_GAME_SCENARIOS, (scenario) => scenario.game);
+  assert.equal(grouped.chess?.length, 33);
+  assert.deepEqual(
+    grouped.codenames?.map((scenario) => scenario.id),
+    [
+      "sudden_death_both",
+      "sudden_death_counterpart_only",
+      "sudden_death_agent_only",
+    ],
+  );
+  assert.deepEqual(
+    grouped.cakeduel?.map((scenario) => scenario.id),
+    ["attack-phase", "block-phase", "stacked", "empty"],
+  );
+  assert.equal(
+    new Set(
+      DEBUG_GAME_SCENARIOS.map(
+        (scenario) => `${scenario.game}:${scenario.id}`,
+      ),
+    ).size,
+    DEBUG_GAME_SCENARIOS.length,
+  );
+});
 
 class FakeSocket extends EventTarget {
   readonly CONNECTING = 0;

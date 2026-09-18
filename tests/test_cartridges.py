@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from backend.cartridges.cakeduel import CakeDuelCartridge
 from backend.virtual_apps import live_pack
 from backend.cartridges.chat import ChatCartridge
-from backend.cartridges.chess import ChessCartridge, TUTORIAL_STEPS
+from backend.cartridges.chess import CHESS_DEBUG_SCENARIOS, ChessCartridge, TUTORIAL_STEPS
 from backend.cartridges.base import CommandRejected
 from backend.cartridges.codenames import CodenamesCartridge
 from backend.cartridges.manifold import ManifoldWebCartridge
@@ -167,6 +167,24 @@ def test_cakeduel() -> None:
     cartridge.dispatch("agent", command)
 
 
+def test_cakeduel_debug_scenarios() -> None:
+    expected = {
+        "attack-phase": (5, 3, 2, 0, 12, 3),
+        "block-phase": (3, 4, 2, 2, 8, 5),
+        "stacked": (7, 5, 3, 3, 4, 10),
+        "empty": (0, 0, 0, 0, 0, 0),
+    }
+    for scenario_id, counts in expected.items():
+        cartridge = CakeDuelCartridge()
+        commit = cartridge.dispatch("player", {"type": "debugLoadScenario", "scenarioId": scenario_id})
+        scenario = cartridge.state["debugScenario"]
+        assert cartridge.state["debugScenarioId"] == scenario_id
+        assert tuple(len(scenario[key]) for key in ("playerHand", "opponentHand", "attackPile", "blockPile")) == counts[:4]
+        assert (scenario["deckCount"], scenario["discardCount"]) == counts[4:]
+        assert [card["entityId"] for key in ("playerHand", "opponentHand", "attackPile", "blockPile", "deckTop") for card in scenario[key]] == list(range(1000, 1000 + sum(counts[:4]) + len(scenario["deckTop"])))
+        assert commit.result == {"success": True}
+
+
 def test_chess() -> None:
     cartridge = ChessCartridge()
     cartridge.dispatch("player", {"type": "startGame", "mode": "normal", "side": "white", "difficulty": "casual"})
@@ -177,6 +195,30 @@ def test_chess() -> None:
     assert command is not None and command["type"] == "move"
     cartridge.dispatch("agent", command)
     assert cartridge.state["gameState"]["turn"] == "white"
+
+
+def test_chess_debug_scenarios() -> None:
+    assert len(CHESS_DEBUG_SCENARIOS) == 33
+    for scenario_id, fixture in CHESS_DEBUG_SCENARIOS.items():
+        cartridge = ChessCartridge()
+        commit = cartridge.dispatch("player", {"type": "debugLoadScenario", "scenarioId": scenario_id})
+        game = cartridge.state["gameState"]
+        assert cartridge.state["debugScenarioId"] == scenario_id
+        assert cartridge.state["settings"] == fixture["settings"]
+        assert game["startFen"] == fixture["startFen"]
+        assert len(game["moveHistory"]) == fixture["startPly"]
+        assert cartridge.state["debugScenario"]["nextPly"] == fixture["startPly"]
+        assert commit.result == {"success": True}
+        assert commit.transition["events"] == [{"type": "debug_scenario_loaded", "scenarioId": scenario_id}]
+        if fixture["startPly"] < len(fixture["script"]):
+            player_side = fixture["settings"]["playerSide"]
+            agent_side = "black" if player_side == "white" else "white"
+            command = cartridge.agent_next_command()
+            if game["turn"] == agent_side:
+                uci = fixture["script"][fixture["startPly"]]["uci"]
+                assert command == {"type": "move", "from": uci[:2], "to": uci[2:4], **({"promotion": uci[4]} if len(uci) == 5 else {})}
+            else:
+                assert command is None
 
 
 def test_chess_tutorial() -> None:

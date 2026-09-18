@@ -103,7 +103,9 @@ export function BootScene({
             canvas,
             params,
             createFractureGraph(params),
-            document.querySelector<HTMLCanvasElement>("canvas[data-scene-canvas]"),
+            document.querySelector<HTMLCanvasElement>(
+              "canvas[data-scene-canvas]",
+            ),
           );
           renderer.ensureBreakStage();
           renderer.render(0, params);

@@ -82,21 +82,38 @@ export async function verifyBootCorruption(
     await page.evaluate(() => window.storyProbe.actorCapture(true));
     await page.clock.runFor(40);
     const withoutActor = (await page.screenshot()).toString("base64");
-    const actorPixels = await page.evaluate(async ([a, b]) => {
-      const decode = async (base64) => {
-        const image = new Image(); image.src = "data:image/png;base64," + base64;
-        await image.decode();
-        const canvas = document.createElement("canvas"); canvas.width = image.width; canvas.height = image.height;
-        const ctx = canvas.getContext("2d"); ctx.drawImage(image, 0, 0);
-        return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      };
-      const [one, two] = await Promise.all([decode(a), decode(b)]);
-      let changed = 0;
-      for (let i = 0; i < one.length; i += 4)
-        if (Math.max(Math.abs(one[i] - two[i]), Math.abs(one[i + 1] - two[i + 1]), Math.abs(one[i + 2] - two[i + 2])) > 15) changed++;
-      return changed;
-    }, [withActor, withoutActor]);
-    assert.ok(actorPixels > 5000, `wake actor must occupy rendered pixels; changed ${actorPixels}`);
+    const actorPixels = await page.evaluate(
+      async ([a, b]) => {
+        const decode = async (base64) => {
+          const image = new Image();
+          image.src = "data:image/png;base64," + base64;
+          await image.decode();
+          const canvas = document.createElement("canvas");
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(image, 0, 0);
+          return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        };
+        const [one, two] = await Promise.all([decode(a), decode(b)]);
+        let changed = 0;
+        for (let i = 0; i < one.length; i += 4)
+          if (
+            Math.max(
+              Math.abs(one[i] - two[i]),
+              Math.abs(one[i + 1] - two[i + 1]),
+              Math.abs(one[i + 2] - two[i + 2]),
+            ) > 15
+          )
+            changed++;
+        return changed;
+      },
+      [withActor, withoutActor],
+    );
+    assert.ok(
+      actorPixels > 5000,
+      `wake actor must occupy rendered pixels; changed ${actorPixels}`,
+    );
     await page.evaluate(() => window.storyProbe.actorCapture(null));
     await page.clock.runFor(40);
     await page.clock.fastForward(100000);

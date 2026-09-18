@@ -100,13 +100,19 @@ Object.assign(window, {
     state: scene.snapshot,
     minimized: () => minimized,
     actorCapture(hidden: boolean | null) {
-      if (hidden === null) { actorCaptureLease?.release(); actorCaptureLease = null; return; }
+      if (hidden === null) {
+        actorCaptureLease?.release();
+        actorCaptureLease = null;
+        return;
+      }
       if (!actorCaptureLease) {
         const snapshot = scene.snapshot();
         actorCaptureLease = scene.acquire();
         actorCaptureLease.set({ ...snapshot, plankton: 0 });
       }
-      actorCaptureLease.set({ coldOpen: { ...scene.snapshot().coldOpen!, noriForm: hidden ? 0 : 1 } });
+      actorCaptureLease.set({
+        coldOpen: { ...scene.snapshot().coldOpen!, noriForm: hidden ? 0 : 1 },
+      });
     },
     start(id: string) {
       const definition = STORY_ORDER.find((s) => s.id === id)!;

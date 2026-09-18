@@ -1,13 +1,26 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { StoryClock } from "../frontend-src/story/story-clock";
-import { FAREWELL_CUES, FAREWELL_CUT_AT, FAREWELL_DURATION, farewellFrame } from "../frontend-src/story/farewell-timeline";
-import { ENDING_PHASES, endingCamera, endingFrame } from "../frontend-src/story/ending-timeline";
+import {
+  FAREWELL_CUES,
+  FAREWELL_CUT_AT,
+  FAREWELL_DURATION,
+  farewellFrame,
+} from "../frontend-src/story/farewell-timeline";
+import {
+  ENDING_PHASES,
+  endingCamera,
+  endingFrame,
+} from "../frontend-src/story/ending-timeline";
 
 test("farewell preserves cue boundaries and hard cut", () => {
   assert.equal(FAREWELL_CUES.length, 21);
   assert.equal(FAREWELL_CUES[0].at, 8.4);
-  assert.ok(FAREWELL_CUES.every((cue, index) => index === 0 || cue.at >= FAREWELL_CUES[index - 1].until));
+  assert.ok(
+    FAREWELL_CUES.every(
+      (cue, index) => index === 0 || cue.at >= FAREWELL_CUES[index - 1].until,
+    ),
+  );
   assert.equal(farewellFrame(FAREWELL_CUT_AT - 0.001).black, false);
   assert.equal(farewellFrame(FAREWELL_CUT_AT).black, true);
   assert.equal(FAREWELL_DURATION - FAREWELL_CUT_AT, 5);
