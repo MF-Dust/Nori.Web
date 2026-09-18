@@ -23,6 +23,12 @@ export async function verifyBootCorruption(
   const time = Date.now();
   await page.clock.install({ time });
   await page.clock.pauseAt(time + 1000);
+  let failOcean = false;
+  // Register before the successful load, so decoded-image cache cannot bypass
+  // the subsequent failure injection.
+  await page.route("**/ocean/gradient-noise.jpg", (route) =>
+    failOcean ? route.abort() : route.continue(),
+  );
   await page.route("**/boot-corruption-harness", (route) =>
     route.fulfill({
       contentType: "text/html",
@@ -68,6 +74,31 @@ export async function verifyBootCorruption(
       [],
     );
     await page.screenshot({ path: resolve(output, "boot-wake-gate.png") });
+    // Compare rendered pixels with only the actor coverage toggled, catching a
+    // backward-facing camera even when timeline and wake button both work.
+    await page.evaluate(() => window.storyProbe.actorCapture(false));
+    await page.clock.runFor(40);
+    const withActor = (await page.screenshot()).toString("base64");
+    await page.evaluate(() => window.storyProbe.actorCapture(true));
+    await page.clock.runFor(40);
+    const withoutActor = (await page.screenshot()).toString("base64");
+    const actorPixels = await page.evaluate(async ([a, b]) => {
+      const decode = async (base64) => {
+        const image = new Image(); image.src = "data:image/png;base64," + base64;
+        await image.decode();
+        const canvas = document.createElement("canvas"); canvas.width = image.width; canvas.height = image.height;
+        const ctx = canvas.getContext("2d"); ctx.drawImage(image, 0, 0);
+        return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      };
+      const [one, two] = await Promise.all([decode(a), decode(b)]);
+      let changed = 0;
+      for (let i = 0; i < one.length; i += 4)
+        if (Math.max(Math.abs(one[i] - two[i]), Math.abs(one[i + 1] - two[i + 1]), Math.abs(one[i + 2] - two[i + 2])) > 15) changed++;
+      return changed;
+    }, [withActor, withoutActor]);
+    assert.ok(actorPixels > 5000, `wake actor must occupy rendered pixels; changed ${actorPixels}`);
+    await page.evaluate(() => window.storyProbe.actorCapture(null));
+    await page.clock.runFor(40);
     await page.clock.fastForward(100000);
     assert.deepEqual(
       await page.evaluate(() => window.storyProbe.completions),
@@ -85,6 +116,31 @@ export async function verifyBootCorruption(
       await page.evaluate(() => window.storyProbe.state().active),
       false,
     );
+
+    failOcean = true;
+    await page.evaluate(() => window.storyProbe.start("boot"));
+    await until(
+      () =>
+        Boolean(
+          document.querySelector('[data-story-scene="boot"] [role="alert"]'),
+        ),
+      "Boot resource failure must offer retry",
+    );
+    assert.equal(
+      await page.evaluate(() => window.storyProbe.state().active),
+      false,
+    );
+    failOcean = false;
+    await page.getByRole("button", { name: "Retry", exact: true }).click();
+    await until(
+      () => document.querySelector(".nori-stage")?.dataset.coldOpen === "ready",
+      "Boot retry must create fresh resources",
+    );
+    await page.evaluate(() => window.storyProbe.cancel());
+    await page.clock.runFor(40);
+    assert.deepEqual(await page.evaluate(() => window.storyProbe.completions), [
+      "boot.completed",
+    ]);
 
     await page.evaluate(() =>
       window.storyProbe.start("nori-corruption-climax"),

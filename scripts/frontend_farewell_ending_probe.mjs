@@ -52,18 +52,33 @@ export async function verifyFarewellEnding(browser, output, origin = "http://127
     assert.deepEqual(await page.evaluate(() => window.farewellEndingProbe.events), ["cancel"]);
 
     // A failed cold-open resource exposes Retry; retry reconstructs a fresh renderer.
-    let failOcean = true;
-    const oceanRoute = (route) => failOcean ? route.abort() : route.continue();
-    await page.route("**/ocean/gradient-noise.jpg", oceanRoute);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Network.enable");
+    await cdp.send("Network.clearBrowserCache");
+    await cdp.detach();
+    let failOcean = true, gradientRequests = 0;
+    const oceanRoute = (route) => {
+      if (!route.request().url().includes("/ocean/gradient-noise.jpg")) return route.continue();
+      gradientRequests++;
+      return failOcean ? route.abort() : route.continue();
+    };
+    // Route the directory before mounting so decoded-image caching cannot bypass the injected
+    // gradient failure. Non-target ocean resources still load normally.
+    await page.route("**/ocean/**", oceanRoute);
     await page.evaluate(() => window.farewellEndingProbe.mount("ending"));
     const ending = page.locator('[data-story-scene="ending"]');
     const retry = page.getByRole("button", { name: "Retry" });
+    await advanceUntil("Ending mount", async () =>
+      await ending.count() === 1 && await page.locator(".nori-stage").getAttribute("data-live2d-status") === "ready");
+    assert.equal(await page.evaluate(() => window.farewellEndingProbe.state().active), true);
+    await advanceUntil("Ending gradient request", async () => gradientRequests === 1);
     await advanceUntil("Ending resource failure", () => retry.count().then((count) => count === 1));
     assert.equal(await page.evaluate(() => window.farewellEndingProbe.state().active), false);
     failOcean = false;
     await retry.click();
     await waitForCold("ready");
-    await page.unroute("**/ocean/gradient-noise.jpg", oceanRoute);
+    assert.equal(gradientRequests, 2, "retry must request a fresh ocean gradient");
+    await page.unroute("**/ocean/**", oceanRoute);
 
     // The zero-duration ready phase remains parked until the real wake control is used.
     await page.clock.fastForward(32650); await run(40);

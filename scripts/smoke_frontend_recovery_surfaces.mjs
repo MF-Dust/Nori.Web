@@ -4,6 +4,7 @@ import { createServer } from "vite";
 import { chromium } from "playwright";
 
 const groups = {
+  "debug-labs": ["./frontend_debug_probe.mjs", "verifyDebugLabs"],
   "boot-corruption": ["./frontend_boot_corruption_probe.mjs", "verifyBootCorruption"],
   "cold-open": ["./frontend_nori_scene_probe.mjs", "verifyNoriScene"],
   "messenger": ["./frontend_messenger_probe.mjs", "verifyMessenger"],

@@ -41,7 +41,13 @@ export async function verifyMessenger(browser, output) {
     const viewport = page.locator(".flex-1.overflow-y-auto.px-4.py-3");
     await viewport.evaluate((node) => {
       node.scrollTop = 0;
+      node.dispatchEvent(new Event("scroll", { bubbles: true }));
     });
+    await page.waitForFunction(
+      () =>
+        document.querySelector(".flex-1.overflow-y-auto.px-4.py-3")
+          ?.scrollTop === 0,
+    );
     const scrollBefore = await viewport.evaluate((node) => node.scrollTop);
     await page.evaluate(() => window.messengerProbe.appendMessage());
     await page.waitForFunction(() =>
@@ -50,6 +56,7 @@ export async function verifyMessenger(browser, output) {
     assert.equal(
       await viewport.evaluate((node) => node.scrollTop),
       scrollBefore,
+      "a reader who scrolled up must not be pulled to the newest message",
     );
 
     await page

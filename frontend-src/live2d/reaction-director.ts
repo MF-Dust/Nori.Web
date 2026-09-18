@@ -403,6 +403,11 @@ export class NoriReactionDirector {
   private model: Live2DModel | null = null;
   private blocked = false;
   private lastMotionAt = Number.NEGATIVE_INFINITY;
+  private activeExpression: {
+    model: Live2DModel;
+    name: string;
+    timer: ReturnType<typeof setTimeout>;
+  } | null = null;
 
   constructor(
     private readonly clock: () => number = () => performance.now(),
@@ -410,24 +415,40 @@ export class NoriReactionDirector {
   ) {}
 
   bindModel(model: Live2DModel) {
+    this.interrupt();
     this.model = model;
     return () => {
-      if (this.model === model) this.model = null;
+      if (this.model === model) {
+        this.interrupt();
+        this.model = null;
+      }
     };
   }
 
   setBlocked(blocked: boolean) {
     this.blocked = blocked;
+    if (blocked) this.interrupt();
+  }
+
+  /** Cancels only the expression currently owned by this director. */
+  interrupt() {
+    const active = this.activeExpression;
+    if (!active) return;
+    this.activeExpression = null;
+    clearTimeout(active.timer);
+    active.model.removeExpression(active.name);
   }
 
   reset() {
+    this.interrupt();
     this.lastMotionAt = Number.NEGATIVE_INFINITY;
   }
 
   dispose() {
+    this.interrupt();
     this.model = null;
     this.blocked = true;
-    this.reset();
+    this.lastMotionAt = Number.NEGATIVE_INFINITY;
   }
 
   play<Game extends keyof NoriReactionMap>(
@@ -466,11 +487,21 @@ export class NoriReactionDirector {
       model.startMotion({ steps: variant.motion });
       this.lastMotionAt = now;
     }
-    if (variant.expression)
-      model.setTemporaryExpression(
-        variant.expression,
-        variant.expressionSeconds ?? 3,
-      );
+    if (variant.expression) {
+      this.interrupt();
+      const active = {
+        model,
+        name: variant.expression,
+        timer: undefined as unknown as ReturnType<typeof setTimeout>,
+      };
+      model.addExpression(active.name);
+      active.timer = setTimeout(() => {
+        if (this.activeExpression !== active) return;
+        this.activeExpression = null;
+        active.model.removeExpression(active.name);
+      }, (variant.expressionSeconds ?? 3) * 1_000);
+      this.activeExpression = active;
+    }
     return { outcome: "played", variant };
   }
 }

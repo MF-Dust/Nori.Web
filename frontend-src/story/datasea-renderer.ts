@@ -4,34 +4,39 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
 
 const GLB = "/datasea/cosmicweb.min.glb";
 const NEBULA = "/datasea/nebula_color_live.png";
 const HEIGHT = "/datasea/disp_height.png";
 
-const vertexShader = `
-uniform float uTime, uReveal, uTravel;
+const gasVertexShader = `
+uniform float uTime, uReveal;
 uniform sampler2D uHeight;
-varying vec2 vUv; varying float vGlow;
+varying vec2 vUv; varying vec3 vNormal; varying float vHeight;
 void main(){
-  vUv=uv; float h=texture2D(uHeight,uv).r;
-  vec3 p=position + normal*(h-.5)*(1.4+uReveal*2.8);
-  p.z += sin((p.x+p.y)*.19+uTime*.42)*.16*uReveal;
-  vGlow=smoothstep(.18,.82,h)*uReveal;
+  vUv=uv; vHeight=texture2D(uHeight,uv).r;
+  vec3 p=position + normalize(normal)*(vHeight-.5)*30.0;
+  p += normalize(normal)*sin((p.x+p.y)*.019+uTime*.18)*.55*uReveal;
+  vNormal=normalize(normalMatrix*normal);
   gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);
 }`;
-const fragmentShader = `
-uniform float uReveal,uDissolve,uGrade; uniform sampler2D uNebula,uHeight;
-varying vec2 vUv; varying float vGlow;
+const gasFragmentShader = `
+uniform float uReveal,uDissolve,uGrade; uniform sampler2D uNebula;
+varying vec2 vUv; varying vec3 vNormal; varying float vHeight;
 void main(){
-  float h=texture2D(uHeight,vUv).r;
-  if(h < uDissolve-.12) discard;
+  if(vHeight < uDissolve-.12) discard;
   vec3 neb=texture2D(uNebula,vUv).rgb;
-  vec3 deep=mix(vec3(.004,.014,.028),vec3(.06,.32,.43),vGlow);
-  vec3 color=mix(deep,neb,.38+vGlow*.5);
+  float facing=.35+.65*abs(vNormal.z);
+  vec3 deep=mix(vec3(.004,.014,.028),vec3(.06,.32,.43),smoothstep(.18,.82,vHeight));
+  vec3 color=mix(deep,neb,.58)*facing;
   color=mix(color,color/(color+vec3(1.0)),uGrade);
-  gl_FragColor=vec4(color,clamp(uReveal*2.0,0.0,1.0));
+  gl_FragColor=vec4(color,clamp(uReveal*2.0,0.0,1.0)*.0008);
 }`;
+const starVertexShader = `varying vec3 vNormal; void main(){vNormal=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
+const starFragmentShader = `uniform float uReveal; varying vec3 vNormal; void main(){float light=.5+.5*abs(vNormal.z);gl_FragColor=vec4(vec3(10.0)*light*uReveal,.645);}`;
+const moteVertexShader = `uniform float uTime,uFade;attribute vec3 aVelocity,aTint;attribute float aSize;varying vec3 vTint;varying float vFade;void main(){vec3 lo=vec3(-28.,-20.,-70.),sz=vec3(56.,40.,66.);vec3 p=mod(position+aVelocity*uTime-lo,sz)+lo;vec4 mv=modelViewMatrix*vec4(p,1.);gl_PointSize=clamp(aSize*(180./max(1.,-mv.z)),1.,18.);gl_Position=projectionMatrix*mv;vTint=aTint;vFade=uFade;}`;
+const moteFragmentShader = `varying vec3 vTint;varying float vFade;void main(){vec2 p=gl_PointCoord*2.-1.;float r=dot(p,p);if(r>1.)discard;float core=exp(-6.*r),halo=exp(-1.6*r);gl_FragColor=vec4(vTint*(core+halo*.32)*vFade,(core+halo*.18)*vFade);}`;
 
 export interface DataseaRenderFrame { time: number; phase: string | null; camera: { x: number; y: number; z: number }; cameraRot: { x: number; y: number; z: number }; fov: number; }
 export interface DataseaRenderer { readonly ready: Promise<void>; render(frame: DataseaRenderFrame): void; resize(): void; dispose(): void; }

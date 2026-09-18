@@ -63,7 +63,7 @@ export function MemoryScene({ frontend, story }: { frontend: NoriFrontendRuntime
       if (stopped) return;
       try { const state = clock.advance(now), projection = memoryProjection(state.time);
         audio.sync(state);
-        lease.set({ active: !projection.drain, shake: projection.attack && !projection.sweep ? 0.35 : 0, alertLoop: projection.attack ? 1 - projection.voidProgress : 0, alertClock: Math.max(0, state.time - phaseStart("attack")), noriTint: projection.attack ? 0.55 * (1 - projection.voidProgress) : 0, chatMode: projection.sweep ? "bubbles" : "normal", bgm: projection.attack ? (projection.voidProgress > 0 ? "bgm_void" : "silent") : "auto", voidEnv: projection.voidProgress });
+        lease.set({ active: !projection.drain, shake: projection.attack && !projection.sweep ? 0.35 : 0, alertLoop: projection.attack ? 1 - projection.voidProgress : 0, alertClock: Math.max(0, state.time - phaseStart("attack")), noriTint: projection.attack ? 0.55 * (1 - projection.voidProgress) : 0, chatMode: projection.sweep ? "bubbles" : "normal", bgm: projection.attack ? (projection.voidProgress > 0 ? "bgm_void" : "silent") : "auto", voidEnv: projection.voidProgress, memoryComputeDrain: projection.drainProgress });
         setView({ time: state.time, phase: state.phase, parkedAt: state.parkedAt, complete: state.complete });
         if (state.complete) frontend.story.complete(story); else frame = requestAnimationFrame(render);
       } catch (error) { fail(error); }

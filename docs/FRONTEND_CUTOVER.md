@@ -17,6 +17,19 @@ There are now two independent builds:
 
 The app build writes to ignored `.frontend-app-build/` until the production entry boundary is ready. It bundles React and runtime dependencies rather than externalizing them.
 
+## Candidate preparation
+
+`node scripts/prepare_frontend_cutover_candidate.mjs` builds an isolated local
+overlay from the source application output and the existing static public
+assets. It also snapshots and hashes the production entry's JavaScript/CSS
+rollback set and performs an exact index restore drill. Use `--materialize` for
+a self-contained CI or deployment dry-run artifact; the default relative
+symlink overlay is local-only and avoids duplicating the public asset tree.
+
+See [the candidate and rollback procedure](FRONTEND_CUTOVER_CANDIDATE.md) for
+the verified boundaries and remaining production evidence. Preparing this
+artifact does not change the public entry, feature gates, or deployment.
+
 ## Migration order
 
 1. Browser main renderer (`BrowserPageView`) and sandbox/navigation behavior.

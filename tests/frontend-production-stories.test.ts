@@ -1,4 +1,5 @@
 import test from "node:test";
+import { Euler, Vector3 } from "three";
 import assert from "node:assert/strict";
 import { StoryClock } from "../frontend-src/story/story-clock";
 import { StoryDirector } from "../frontend-src/story/story-director";
@@ -26,6 +27,10 @@ test("boot traverses source camera and formation channels but cannot complete be
   assert.equal(parked.parkedAt, "ready");
   assert.equal(parked.complete, false);
   assert.equal(bootScene(parked).eyeOpen, 0);
+  const atWake = bootScene(parked), rotation = atWake.cameraRot!;
+  const forward = new Vector3(0, 0, -1).applyEuler(new Euler(rotation.x, rotation.y, rotation.z, "YXZ"));
+  const target = new Vector3(0, 1.55, 0).sub(new Vector3(atWake.camera!.x, atWake.camera!.y, atWake.camera!.z)).normalize();
+  assert.ok(forward.dot(target) > 0.9999, "wake camera must face the actor, using camera -Z semantics");
   assert.equal(clock.wake("wrong", 999001), false);
   clock.wake("ready", 999001);
   const complete = clock.advance(1003001);

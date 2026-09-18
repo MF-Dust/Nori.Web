@@ -13,6 +13,7 @@ import {
   ScenarioDebugLab,
   type DebugLabActions,
 } from "./debug-labs";
+import { DataseaSceneTuner, ShatterSceneTuner } from "./scene-advanced-tuners";
 
 const tabs = [
   { id: "connection", label: "Connection" },
@@ -26,6 +27,8 @@ const tabs = [
   { id: "gesture", label: "Gesture lab" },
   { id: "reaction", label: "Reaction lab" },
   { id: "scenarios", label: "Game scenarios" },
+  { id: "shatter-tuner", label: "Shatter tuner" },
+  { id: "datasea-tuner", label: "Datasea tuner" },
 ] as const;
 /** Session-scoped developer tools. Never persists scene overrides or fabricates story facts. */
 export function DebugScreen({
@@ -85,6 +88,8 @@ export function DebugScreen({
       setError("A production story is active");
       return;
     }
+    clearTimeout(reactionTimer.current);
+    reactionTimer.current = undefined;
     override.current ??= frontend.scene.acquire();
     override.current.set(patch);
   }
@@ -157,11 +162,11 @@ export function DebugScreen({
                 angry: "03_Angry",
                 sad: "08_Tears",
               };
-              clearTimeout(reactionTimer.current);
               set({ active: true, noriExpression: expressions[reaction] });
               reactionTimer.current = setTimeout(() => {
                 override.current?.release();
                 override.current = null;
+                reactionTimer.current = undefined;
               }, 3000);
             }}
           />
@@ -169,6 +174,8 @@ export function DebugScreen({
         {tab === "scenarios" && (
           <ScenarioDebugLab load={actions?.loadScenario} />
         )}
+        {tab === "shatter-tuner" && <ShatterSceneTuner frontend={frontend} />}
+        {tab === "datasea-tuner" && <DataseaSceneTuner frontend={frontend} />}
         {visited.has("connection") && (
           <div hidden={tab !== "connection"}>
             <h2>Connection</h2>

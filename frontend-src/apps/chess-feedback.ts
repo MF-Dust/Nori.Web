@@ -50,12 +50,13 @@ export class ChessFeedback {
                   ? "moveSelf"
                   : "moveOpponent",
       );
-      if (move.captured) {
-        if (move.by !== side) this.react(move.captured === "q" || move.captured === "r" ? "captureMajor" : "captureMinor");
-        else if (move.captured === "q" || move.captured === "r") this.react("lostMajorPiece");
+      if (!move.isCheckmate) {
+        const majorCapture = move.captured === "q" || move.captured === "r";
+        if (move.captured && move.by !== side) this.react(majorCapture ? "captureMajor" : "captureMinor");
+        else if (move.captured && majorCapture) this.react("lostMajorPiece");
+        else if (move.isCheck) this.react(move.by === side ? "checked" : "givesCheck");
+        else if (move.isPromotion && move.by === side) this.react("playerPromotes");
       }
-      if (move.isCheck) this.react(move.by === side ? "checked" : "givesCheck");
-      if (move.isPromotion && move.by === side) this.react("playerPromotes");
       if (move.isCheckmate) {
         const timer = setTimeout(() => {
           this.timers.delete(timer);
@@ -74,7 +75,7 @@ export class ChessFeedback {
       this.react(game.winner === "draw" || game.winner === null ? "draw" : game.winner === side ? "loses" : "wins");
     if (previous.drawOffer === side && state.drawOffer === null) {
       if (this.cancelled.has("draw")) this.cancelled.delete("draw");
-      else if (game.status === "draw") { this.notify("noriAcceptedDraw"); this.react("acceptsRequest"); }
+      else if (game.status === "draw") this.notify("noriAcceptedDraw");
       else if (game.status === "playing") {
         this.sound("response");
         this.notify("noriDeclinedDraw");

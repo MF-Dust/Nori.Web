@@ -24,6 +24,7 @@ export interface NoriSceneState {
   shake: number;
   darkness: number;
   noriDolly: number | null;
+  memoryComputeDrain: number;
   noriTint: number;
   noriDim: number;
   noriReveal: number;
@@ -63,6 +64,7 @@ const defaults = (): NoriSceneState => ({
   shake: 0,
   darkness: 0,
   noriDolly: null,
+  memoryComputeDrain: 0,
   noriTint: 0,
   noriDim: 0,
   noriReveal: 1,

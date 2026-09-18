@@ -72,6 +72,7 @@ const channels: Array<{
     [
       "darkness",
       "noriTint",
+      "memoryComputeDrain",
       "noriReveal",
       "redLight",
       "shake",
@@ -364,7 +365,7 @@ export function SceneEditorChannels({
                     ? undefined
                     : event.target.value === "auto"
                       ? null
-                      : event.target.value,
+                      : NORI_MODEL_EXPRESSIONS.find((name) => name === event.target.value),
                 )
               }
             >
@@ -395,7 +396,7 @@ export function SceneEditorChannels({
                     ? undefined
                     : value === "auto"
                       ? null
-                      : { group, index: Number(index) },
+                      : { group: group as keyof typeof NORI_MODEL_MOTIONS, index: Number(index) },
                 );
               }}
             >

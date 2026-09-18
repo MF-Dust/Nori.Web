@@ -321,7 +321,7 @@ export class NoriFrontendRuntime {
     this.cleanup.forEach((fn) => fn());
     this.story.dispose();
     this.scene.reset();
-    this.reactions.reset();
+    this.reactions.dispose();
     this.conversation.dispose();
     this.speech.dispose();
     this.audio.dispose();

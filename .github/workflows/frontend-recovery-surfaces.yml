@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        surface: [cold-open, messenger, boot-corruption, memory-datasea, farewell-ending]
+        surface: [cold-open, debug-labs, messenger, boot-corruption, memory-datasea, farewell-ending]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

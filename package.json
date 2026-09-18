@@ -33,7 +33,8 @@
     "frontend:app:smoke": "node scripts/smoke_frontend_app.mjs",
     "frontend:stories:test": "node scripts/test_frontend_stories.mjs",
     "frontend:stories:smoke": "node scripts/smoke_frontend_stories.mjs",
-    "frontend:ownership:test": "node --test tests/frontend-asset-ownership.test.mjs"
+    "frontend:ownership:test": "node --test tests/frontend-asset-ownership.test.mjs",
+    "frontend:cutover:candidate": "node scripts/prepare_frontend_cutover_candidate.mjs"
   },
   "engines": {
     "node": ">=18"

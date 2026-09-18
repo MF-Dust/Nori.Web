@@ -1,4 +1,4 @@
-import { Object3D, Vector3 } from "three";
+import { PerspectiveCamera, Vector3 } from "three";
 import { NoriSceneStore, type NoriSceneState } from "../state/nori-scene";
 import type { StoryPhase, StoryClockState } from "./story-clock";
 import type { StoryAudioTrack } from "./story-audio";
@@ -105,7 +105,7 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const progress = (t: number, start: number, duration: number) =>
   clamp((t - start) / duration);
 const baseline = new NoriSceneStore().snapshot();
-const cameraObject = new Object3D();
+const cameraObject = new PerspectiveCamera();
 cameraObject.rotation.order = "YXZ";
 function divePosition(t: number) {
   const seconds = Math.max(0, t - m.surface),

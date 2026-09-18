@@ -101,7 +101,7 @@ export function BootScene({
             canvas,
             params,
             createFractureGraph(params),
-            document.querySelector<HTMLCanvasElement>(".nori-scene-canvas"),
+            document.querySelector<HTMLCanvasElement>("canvas[data-scene-canvas]"),
           );
           renderer.ensureBreakStage();
           renderer.render(0, params);
@@ -126,7 +126,10 @@ export function BootScene({
         lease.set(bootScene(state));
         audio.sync(state);
         setParked(state.parkedAt === "ready");
-        if (state.time <= 16) renderer.render(state.time / 16, params);
+        if (state.time <= 16) {
+          renderer.drawBackdrop();
+          renderer.render(state.time / 16, params);
+        }
         canvas.style.visibility = state.time < 16 ? "visible" : "hidden";
         host.current!.dataset.phase = state.phase ?? "";
         host.current!.dataset.time = String(state.time);

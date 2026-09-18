@@ -23,6 +23,7 @@ export function bindNoriModel(options: {
   let sleeping = false,
     epoch = conversation.snapshot().presentationEpoch;
   const expressions = new NoriExpressionController((previous, next) => {
+    options.reactions?.interrupt();
     if (previous) model.removeExpression(previous);
     if (next) model.addExpression(next);
     host.dataset.noriExpression = next ?? "neutral";

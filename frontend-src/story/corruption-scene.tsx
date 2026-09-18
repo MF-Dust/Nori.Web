@@ -12,6 +12,7 @@ import {
 } from "./corruption-timeline";
 import { AntivirusGames } from "./antivirus-games";
 import { CorruptionEntry, CorruptionHeal } from "./corruption-overlays.js";
+import { createCorruptionGlitch } from "./corruption-glitch.js";
 
 /** Production scene keeps the reference's 12s voice fallback, unlike a simulated reply. */
 export function CorruptionScene({
@@ -41,6 +42,7 @@ export function CorruptionScene({
     const lease = frontend.scene.acquire(),
       clock = new StoryClock(CORRUPTION_PHASES),
       audio = new StoryAudio(frontend.audio, CORRUPTION_AUDIO);
+    const glitch = createCorruptionGlitch();
     clockRef.current = clock;
     cleared.current = 0;
     let frame = 0,
@@ -59,6 +61,7 @@ export function CorruptionScene({
       cancelAnimationFrame(frame);
       audio.dispose();
       droneStop?.();
+      glitch.dispose();
       clock.dispose();
       lease.release();
       clockRef.current = null;
@@ -161,6 +164,12 @@ export function CorruptionScene({
           frontend.audio.playCue("cutscenes-entry-console-alarm");
       }
       const projected = corruptionScene(next);
+      glitch.update(
+        foreground * 1000,
+        canAdvance() && (next.time < m.panUp
+          ? foreground % 1.5 < 0.15
+          : next.time < m.exitDark),
+      );
       // The original only takes camera control after the initial minimize/voice gate.
       if (next.time < m.panUp) {
         projected.camera = null;

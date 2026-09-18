@@ -592,10 +592,12 @@ class CodenamesCartridge(BaseCartridge):
             game = state.get("gameState")
             if actor == "agent" and game and game.get("phase") != GAME_OVER:
                 raise CommandRejected("A game is already in progress — only the player may start a new one")
-            settings = self._validate_settings(cmd.get("settings"), state["settings"])
+            raw_settings = cmd.get("settings")
+            settings = self._validate_settings(raw_settings, state["settings"])
             tutorial_mode = cmd.get("mode") == "tutorial"
             if tutorial_mode:
-                settings = {"tokens": 9, **({"wordLocale": settings["wordLocale"]} if settings.get("wordLocale") else {})}
+                tutorial_locale = raw_settings.get("wordLocale") if isinstance(raw_settings, dict) else None
+                settings = {"tokens": 9, **({"wordLocale": tutorial_locale} if isinstance(tutorial_locale, str) else {})}
             state.update(
                 {
                     "gameState": self._new_tutorial_game(settings.get("wordLocale")) if tutorial_mode else self._new_game(settings),

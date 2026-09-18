@@ -5,7 +5,7 @@ import { StoryAudio } from "./story-audio";
 import { StoryClock, type StoryPhase } from "./story-clock";
 import type { StoryInstance } from "./story-director";
 import { createDataseaRenderer } from "./datasea-renderer";
-import { DataseaMicrogame, DATASEA_GAME_IDS } from "./datasea-games";
+import { DATASEA_GAME_COMPONENTS } from "./datasea-games-original.js";
 import "./datasea-scene.css";
 
 export const DATASEA_PHASES: readonly StoryPhase[] = [
@@ -31,6 +31,7 @@ function WaveGate({ wake }: { wake: () => void }) {
   const timers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const groups = [[5, 8, 9, 3], [6, 4, 0, 11], [2, 10, 1, 7]] as const;
+  const ids = ["steady", "resonance", "current", "relay", "echo", "denoise", "discern", "ripple", "sweep", "unknot", "lure", "balance"] as const;
   const solve = (gameIndex: number) => {
     if (between || solved.has(gameIndex)) return;
     const next = new Set(solved); next.add(gameIndex); setSolved(next);
@@ -42,7 +43,7 @@ function WaveGate({ wake }: { wake: () => void }) {
     timers.current.push(timer);
   };
   return <div className="datasea-waves" aria-label={`Signal wave ${wave + 1} of 3`}>
-    {!between && groups[wave].map((gameIndex, index) => <div className="datasea-game-window" key={gameIndex} style={{ left: `${5 + (index % 2) * 50}%`, top: `${7 + Math.floor(index / 2) * 48}%` }}><DataseaMicrogame id={DATASEA_GAME_IDS[gameIndex]} solved={solved.has(gameIndex)} onSolved={() => solve(gameIndex)} /></div>)}
+    {!between && groups[wave].map((gameIndex, index) => { const id = ids[gameIndex], Game = DATASEA_GAME_COMPONENTS[id]; return <div className="datasea-game-window" key={gameIndex} style={{ left: `${5 + (index % 2) * 50}%`, top: `${7 + Math.floor(index / 2) * 48}%` }}><div className="datasea-game datasea-game-original" data-game={id} data-solved={solved.has(gameIndex)}><Game api={{ onProgress: () => undefined, onSolved: () => solve(gameIndex), hit: () => undefined }} /></div></div>; })}
     {between && <div className="datasea-wave-break" role="status"><b>WAVE {wave + 1} CLEARED</b><span>Channel synchronization in progress</span><i /><i /><i /></div>}
   </div>;
 }

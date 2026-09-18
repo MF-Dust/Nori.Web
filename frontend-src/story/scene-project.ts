@@ -1,3 +1,4 @@
+import { NORI_MODEL_EXPRESSIONS, NORI_MODEL_MOTIONS } from "../live2d/model-catalog";
 import { z } from "zod";
 import { NoriSceneStore, type NoriSceneState } from "../state/nori-scene";
 
@@ -50,6 +51,7 @@ const patch = z
     alertLoop: unit.optional(),
     alertClock: z.number().finite().min(0).max(600).optional(),
     darkness: unit.optional(),
+    memoryComputeDrain: unit.optional(),
     noriTint: unit.optional(),
     noriDim: z.number().finite().min(0).max(4).optional(),
     noriReveal: unit.optional(),
@@ -63,13 +65,14 @@ const patch = z
     noriRestPose: z.boolean().optional(),
     noriSleep: z.boolean().optional(),
     noriSmile: z.boolean().nullable().optional(),
-    noriExpression: z.string().trim().min(1).max(80).nullable().optional(),
+    noriExpression: z.enum(NORI_MODEL_EXPRESSIONS).nullable().optional(),
     noriIdleMotion: z
       .object({
-        group: z.string().trim().min(1).max(80),
-        index: z.number().int().min(0).max(255),
+        group: z.enum(["Background", "Idle", "Reactions", "Effects", "Poses"]),
+        index: z.number().int().min(0),
       })
       .strict()
+      .refine(({group, index}) => index < NORI_MODEL_MOTIONS[group], "Motion index is unavailable in this model")
       .nullable()
       .optional(),
     noriTexture: z.literal("corrupt").nullable().optional(),

@@ -15,6 +15,18 @@ import { ScenePreview } from "../frontend-src/story/scene-preview";
 import { NoriSceneStore } from "../frontend-src/state/nori-scene";
 const mixer = { canPlay: () => false, playSceneAudio: () => () => {} };
 
+test("scene model channels reject nonexistent assets and preserve valid JSON round trips", () => {
+  const project = { ...SCENE_EDITOR_SAMPLE, initial: { noriExpression: "14_Surprised", noriIdleMotion: { group: "Reactions", index: 5 }, memoryComputeDrain: 0.5 } };
+  const parsed = sceneProjectSchema.parse(project);
+  assert.deepEqual(parseSceneProject(serializeSceneProject(parsed)), parsed);
+  for (const initial of [
+    { noriExpression: "missing" },
+    { noriIdleMotion: { group: "Reactions", index: 6 } },
+    { noriIdleMotion: { group: "missing", index: 0 } },
+    { memoryComputeDrain: 1.1 },
+  ]) assert.equal(sceneProjectSchema.safeParse({ ...SCENE_EDITOR_SAMPLE, initial }).success, false);
+});
+
 test("project JSON import and export round-trip Unicode, BOM, gates and audio", async () => {
   const project = {
     ...SCENE_EDITOR_SAMPLE,

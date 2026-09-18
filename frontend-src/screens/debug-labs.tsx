@@ -131,10 +131,7 @@ export function ComputeDebugLab({
             disabled={!actions?.advanceTime}
             onClick={() => actions?.advanceTime?.(seconds)}
           >
-            +
-            {seconds < 3_600
-              ? `${seconds / 60}m`
-              : `${seconds / 3_600}h`}
+            +{seconds < 3_600 ? `${seconds / 60}m` : `${seconds / 3_600}h`}
           </button>
         ))}
       </div>

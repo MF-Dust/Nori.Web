@@ -14,15 +14,22 @@ import type { CodenamesClueHighlight } from "../apps/codenames-clue-presentation
 import "../styles/codenames-app.css";
 import "../styles/codenames-board.css";
 import { CodenamesTutorialNarrative } from "./codenames-tutorial-narrative";
+import { CodenamesFeedback } from "../apps/codenames-feedback";
+import type { NoriReactionMap } from "../live2d/reaction-director";
 
 export interface CodenamesAppProps {
   controller: GameCartridgeController<CodenamesState>;
   translate: CodenamesTranslate;
   locale?: string;
   playSound?: (cue: string) => void;
+  onNoriReaction?: (reaction: NoriReactionMap["codenames"]) => void;
 }
-export function CodenamesApp({ controller, translate: t, locale = "en", playSound }: CodenamesAppProps) {
+export function CodenamesApp({ controller, translate: t, locale = "en", playSound, onNoriReaction }: CodenamesAppProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
+  const feedback = useRef(new CodenamesFeedback());
+  const reaction = useRef(onNoriReaction); reaction.current = onNoriReaction;
+  useEffect(() => { feedback.current.reset(); }, [controller, snapshot.presentationEpoch]);
+  useEffect(() => { for (const cue of feedback.current.observe(snapshot.state)) reaction.current?.(cue); }, [snapshot.state]);
   const root = useRef<HTMLElement>(null);
   const reveal = useCodenamesReveal(controller, root, playSound);
   const busy = snapshot.pending || !!snapshot.presenting || snapshot.connected === false;

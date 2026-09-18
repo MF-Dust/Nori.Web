@@ -86,11 +86,11 @@
 ## 4. P0：恢复可用验收基线
 
 - [x] P0-01 获取 PR 最新 head、base、工作区状态和仓库约束；建立对应分支工作区，保留所有已有修改。
-- [ ] P0-02 保存失败 run/job、浏览器状态、资源请求和截图的关联记录，固定 Node、Python、锁文件及浏览器版本。
-- [ ] P0-03 独立复现 cold-open 错误路径，区分首次加载、成功后重开、缓存命中、世界替换四种情况。
-- [ ] P0-04 检查资源拦截是否命中、失败资源是否实际被请求、ready/error 状态是否属于新实例、异步完成是否越过释放边界。
-- [ ] P0-05 修复经证实的根因，保留成功、失败、失败后重试、退出与迟到加载的必要回归。
-- [ ] P0-06 运行受影响场景与完整应用 smoke，确认修复提交的 CI 最终完成；记录 PR head 和 CI 合并引用。
+- [x] P0-02 保存失败 run/job、浏览器状态、资源请求和截图的关联记录，固定 Node、Python、锁文件及浏览器版本。
+- [x] P0-03 独立复现 cold-open 错误路径，区分首次加载、成功后重开、缓存命中、世界替换四种情况。
+- [x] P0-04 检查资源拦截是否命中、失败资源是否实际被请求、ready/error 状态是否属于新实例、异步完成是否越过释放边界。
+- [x] P0-05 修复经证实的根因，保留成功、失败、失败后重试、退出与迟到加载的必要回归。
+- [x] P0-06 运行受影响场景与完整应用 smoke，确认修复提交的 CI 最终完成；记录 PR head 和 CI 合并引用。
 
 主要位置：`scripts/frontend_cold_open_probe.mjs`、`scripts/frontend_nori_scene_probe.mjs`、`frontend-src/live2d/cold-open-renderer.ts`、`scene-renderer.ts`、对应测试与 workflow。
 
@@ -371,3 +371,5 @@ npm run frontend:app:smoke
 新增检查：`frontend:stories:test`、`frontend:stories:smoke`、`frontend:ownership:test`，以及按 cold-open、Messenger、Boot/Corruption、Memory/Datasea、Farewell/Ending 隔离的 Actions 浏览器任务。当前本地运行时 86 项、剧情 10 项、扫描器 3 项通过。浏览器最终结果、后续修复与提交关联将补入交付记录。
 
 原版代理与生产切换仍有明确前置条件，五个 false 门禁保持不变。
+
+P0 验收：修复提交 `55c79a86715c807ea8a7dfd906e09f598b78ae21` 的 [CI 35354435518](https://github.com/MF-Dust/Nori.Web/actions/runs/35354435518) 已成功，含整站 smoke。独立 browser context 消除了已解码图片缓存对失败注入的干扰，保留成功、失败、重试、释放及迟到回调断言。整合提交 `3e2808de355b1cd18a762f2e22683eb72c5f0df8` 的 cold-open 和 Boot/Corruption 浏览器任务通过，其余新矩阵失败仍在修复。

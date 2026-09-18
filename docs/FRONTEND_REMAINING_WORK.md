@@ -6,7 +6,7 @@ Six production story components are now registered in source alongside Cult. The
 
 Messenger interaction fixes, real Debug socket/compute controls, Credits SVGs, expression/motion scene channels, game presentation and model-reaction integration are in the current implementation batch. `FRONTEND_COVERAGE_MATRIX.md` records all 15 registered applications and their remaining evidence. Independent Chromium jobs prevent one broken surface from hiding other results.
 
-The local test baseline is 86 runtime cases, 10 story cases and 3 historical-asset scanner cases passing. Browser verification runs in GitHub Actions because the execution sandbox denies Chromium socket creation. The cold-open fault probe now isolates failed/retried/cancelled image loads in fresh contexts; its final CI result is still pending.
+The local test baseline is 92 runtime cases, 10 story cases, 20 game cases and 3 historical-asset scanner cases passing. Browser verification runs in GitHub Actions because the execution sandbox denies Chromium socket creation. The cold-open fault probe now isolates failed/retried/cancelled image loads in fresh contexts; CI 35354435518 passed the full source application smoke. Integration 3e2808 also passed independent cold-open and Boot/Corruption jobs. The new remaining surface failures are being repaired.
 
 All five incomplete cutover gates stay false. Required remaining work includes actual browser acceptance, original/source visual comparison, any defects found by those runs, dedicated scene tuners, original-agent/media integration, candidate-entry verification and rollback evidence. `nori_talk.request` remains a documented local no-op, so this environment cannot certify original agent replies. No production entry has been switched.
 

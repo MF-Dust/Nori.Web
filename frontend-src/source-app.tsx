@@ -284,6 +284,7 @@ function createSourceSession() {
     idle: idlePresentation,
     codenames: {
       controller: codenames,
+      onNoriReaction: (reaction) => { frontend.reactions.play("codenames", reaction); },
       translate: sourceTranslate,
       locale,
       playSound: frontend.audio.playCue,
@@ -401,6 +402,13 @@ function SourceSessionView({ source }: { source: SourceSession }) {
     source.frontend.scene.subscribe,
     () => source.frontend.scene.snapshot().bgm,
   );
+  const computeDrain = useSyncExternalStore(source.frontend.scene.subscribe, () => source.frontend.scene.snapshot().memoryComputeDrain);
+  const [computeState, setComputeState] = useState(() => source.idle.snapshot().computeState);
+  useEffect(() => {
+    const sync = () => setComputeState(source.idle.snapshot().computeState);
+    sync();
+    return source.idle.subscribe(sync);
+  }, [source]);
   const graphicsMode = useGraphicsSettings((state) => state.mode);
   const [auth, setAuth] = useState<AuthState>(source.frontend.auth.snapshot());
   const [facts, setFacts] = useState(() => worldFacts(source.frontend));
@@ -494,6 +502,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
     <RecoveredDesktopShell
       playCue={source.frontend.audio.playCue}
       bundle={source.bundle}
+      computeState={{ ...computeState, computeDrain }}
       facts={facts}
       factsReady={ready}
       bootstrapStartupApps

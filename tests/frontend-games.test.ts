@@ -5,11 +5,13 @@ import { codenamesReveals, waitForCodenamesAnimation } from "../frontend-src/app
 import assert from "node:assert/strict";
 import { Chess } from "chess.js";
 import { CHESS_START_FEN, chessCaptures, chessHistory, chessLayout, legalChessMoves } from "../frontend-src/apps/chess-model";
+import { ChessFeedback } from "../frontend-src/apps/chess-feedback";
 import { chooseDrawingSample, drawingSampleStrokes, normalizeDrawingStroke, pictionaryElapsed, pictionaryNextRoundAt, pictionaryStateSchema, pictionarySummary } from "../frontend-src/apps/pictionary-model";
 import { GameCartridgeController } from "../frontend-src/apps/game-cartridge-controller";
 import { PictionaryDrawingBridge } from "../frontend-src/apps/pictionary-runtime";
 import { pictionaryReaction } from "../frontend-src/apps/pictionary-reactions";
 import { WorldStore } from "../frontend-src/runtime/world-store";
+import { CodenamesFeedback } from "../frontend-src/apps/codenames-feedback";
 
 test("Chess legality handles pins, en passant, castling and all promotions", () => {
   assert.deepEqual(legalChessMoves(CHESS_START_FEN, "e2").map(move => move.to), ["e3", "e4"]);
@@ -30,6 +32,29 @@ test("History review replays the original position without mutating the replicat
   assert.deepEqual(moves, original);
   assert.deepEqual(chessLayout(1100, 720), { board: 560, rail: 280, compact: false });
   assert.equal(chessLayout(550, 420).compact, true);
+});
+test("Chess feedback preserves shipped reaction priority and request outcomes", () => {
+  const reactions: string[] = [], notices: string[] = [];
+  const feedback = new ChessFeedback(() => {}, notice => notices.push(notice), reaction => reactions.push(reaction));
+  const base: any = { settings: { playerSide: "white", difficulty: "casual" }, tutorial: null, drawOffer: null, takebackRequest: null,
+    gameState: { fen: CHESS_START_FEN, startFen: CHESS_START_FEN, turn: "black", status: "playing", winner: null, moveHistory: [] } };
+  feedback.update(base, 1, true);
+  const noriCapture = structuredClone(base);
+  noriCapture.gameState.moveHistory.push({ by: "black", move: { from: "d8", to: "d1" }, captured: "q", isCheck: true });
+  feedback.update(noriCapture, 1, true);
+  assert.deepEqual(reactions, ["captureMajor"], "capture reaction wins over the same move's check reaction");
+  const playerCapture = structuredClone(noriCapture);
+  playerCapture.gameState.moveHistory.push({ by: "white", move: { from: "a1", to: "a8" }, captured: "r", isCheck: true });
+  feedback.update(playerCapture, 1, true);
+  assert.deepEqual(reactions, ["captureMajor", "lostMajorPiece"]);
+
+  const drawOffered = structuredClone(base); drawOffered.drawOffer = "white";
+  feedback.update(drawOffered, 2, true);
+  const accepted = structuredClone(drawOffered); accepted.drawOffer = null; accepted.gameState.status = "draw"; accepted.gameState.winner = "draw";
+  feedback.update(accepted, 2, true);
+  assert.deepEqual(reactions.slice(-1), ["draw"]);
+  assert.deepEqual(notices.slice(-1), ["noriAcceptedDraw"]);
+  feedback.reset();
 });
 function state(status: "active" | "solved" | "skipped" = "active") {
   return pictionaryStateSchema.parse({
@@ -213,6 +238,21 @@ function codenamesFixture() {
       tokensRemaining: 9, whoseTurnToGive: "A", phase: "NORMAL", winner: null, history: [] },
   }).gameState!;
 }
+test("Codenames reactions follow newly presented guesses and stay silent on reopen", () => {
+  const feedback = new CodenamesFeedback();
+  const state = codenamesStateSchema.parse({ counterpartSide: "A", agentSide: "B", settings: { tokens: 9, wordLocale: "en" }, gameState: codenamesFixture() });
+  assert.deepEqual(feedback.observe(state), []);
+  const next = structuredClone(state);
+  next.gameState!.history.push({ clueGiver: "A", clue: { word: "NIGHT", count: 2 }, endedBy: null, guesses: [
+    { cell: 0, result: "AGENT", at: 1 }, { cell: 1, result: "AGENT", at: 2 },
+  ] });
+  assert.deepEqual(feedback.observe(next), ["guessAlly", "guessStreak"]);
+  assert.deepEqual(feedback.observe(next), []);
+  feedback.reset();
+  assert.deepEqual(feedback.observe(next), []);
+  const end = structuredClone(next); end.gameState!.phase = "GAME_OVER"; end.gameState!.winner = "TEAM";
+  assert.deepEqual(feedback.observe(end), ["win"]);
+});
 test("Codenames derives both clue turns and sudden-death eligibility from the opposite key", () => {
   const game = codenamesFixture();
   assert.equal(codenamesUiState(game, "A").type, "HUMAN_GIVING_CLUE");
