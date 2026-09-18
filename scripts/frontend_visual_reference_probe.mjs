@@ -90,6 +90,7 @@ const manifest = {
   locale: browserOptions.locale,
   colorScheme: browserOptions.colorScheme,
   reducedMotion: browserOptions.reducedMotion,
+  isolation: "backend world reset before each target",
   candidateMarker: marker,
   captures: {},
 };
@@ -144,18 +145,27 @@ async function screenshot(page, directory, name, states) {
   // A heading can be visible to Playwright while its animated ancestor is
   // still transparent. Wait for the actual window before saving the evidence.
   if (["03-about", "04-settings", "05-credits"].includes(name)) {
-    await page.waitForFunction(() => {
-      const windows = [...document.querySelectorAll(".nori-window-glass")]
-        .filter((element) => element.getBoundingClientRect().width > 0);
-      return windows.length > 0 && windows.every((element) => {
-        for (let node = element; node; node = node.parentElement) {
-          const style = getComputedStyle(node);
-          if (Number(style.opacity) < 0.99 || style.visibility === "hidden") return false;
-        }
-        const bounds = element.getBoundingClientRect();
-        return bounds.width > 100 && bounds.height > 100 && bounds.top >= 0;
-      });
-    }, null, { timeout: 15_000 });
+    await page.waitForFunction(
+      () => {
+        const windows = [
+          ...document.querySelectorAll(".nori-window-glass"),
+        ].filter((element) => element.getBoundingClientRect().width > 0);
+        return (
+          windows.length > 0 &&
+          windows.every((element) => {
+            for (let node = element; node; node = node.parentElement) {
+              const style = getComputedStyle(node);
+              if (Number(style.opacity) < 0.99 || style.visibility === "hidden")
+                return false;
+            }
+            const bounds = element.getBoundingClientRect();
+            return bounds.width > 100 && bounds.height > 100 && bounds.top >= 0;
+          })
+        );
+      },
+      null,
+      { timeout: 15_000 },
+    );
     await settle(page);
   }
   const bytes = await page.screenshot({ animations: "disabled" });
@@ -180,6 +190,49 @@ async function openSystemItem(page, name) {
 
 async function closeWindow(page) {
   await page.getByRole("button", { name: "Close", exact: true }).last().click();
+}
+
+async function resetCaptureWorld(page, label) {
+  await page.waitForFunction(
+    () =>
+      window.visualReference.sockets.some(
+        (socket) =>
+          socket.url.endsWith("/api/arcade/web/v1") && socket.readyState === 1,
+      ),
+    undefined,
+    { timeout: 30_000 },
+  );
+  const baseline = await page.evaluate(() => ({
+    resetAcks: window.visualReference.messages.filter(
+      (message) => message.type === "web_world_reset_ack",
+    ).length,
+    worlds: window.visualReference.messages.filter(
+      (message) => message.type === "world_created",
+    ).length,
+  }));
+  await page.evaluate((locale) => {
+    const socket = window.visualReference.sockets.find(
+      (item) =>
+        item.url.endsWith("/api/arcade/web/v1") && item.readyState === 1,
+    );
+    socket.send(JSON.stringify({ type: "reset_my_web_world", locale }));
+  }, captureLocale);
+  await page.waitForFunction(
+    ({ resetAcks, worlds }) =>
+      window.visualReference.messages.filter(
+        (message) => message.type === "web_world_reset_ack",
+      ).length > resetAcks &&
+      window.visualReference.messages.filter(
+        (message) => message.type === "world_created",
+      ).length > worlds,
+    baseline,
+    { timeout: 30_000 },
+  );
+  assert.equal(
+    await page.locator(".topbar-system-trigger").isVisible(),
+    true,
+    `${label} shell must remain ready after its isolated world reset`,
+  );
 }
 
 async function findFloatingChatInput(page, label) {
@@ -235,11 +288,17 @@ async function captureTarget({ label, origin, historical }) {
   await context.addInitScript(() => {
     localStorage.setItem("arcade-language", "zh-CN");
     const Native = window.WebSocket;
-    window.visualReference = { sockets: [] };
+    window.visualReference = { sockets: [], messages: [] };
     window.WebSocket = class extends Native {
       constructor(...args) {
         super(...args);
         window.visualReference.sockets.push(this);
+        this.addEventListener("message", (event) => {
+          if (typeof event.data !== "string") return;
+          try {
+            window.visualReference.messages.push(JSON.parse(event.data));
+          } catch {}
+        });
       }
     };
   });
@@ -266,6 +325,7 @@ async function captureTarget({ label, origin, historical }) {
   const states = {};
   let chatControl;
   let masterVolumeControl;
+  let creditsAttention;
   try {
     const response = await page.goto(origin, {
       waitUntil: "domcontentloaded",
@@ -275,6 +335,10 @@ async function captureTarget({ label, origin, historical }) {
     const bypass = page.getByText("仍要进入", { exact: true });
     if (await bypass.count()) await bypass.click();
     await page.locator(".topbar-system-trigger").waitFor({ timeout: 90_000 });
+    // Each target starts from the same default fact set. The reference opens
+    // Credits in its final state, so a shared world without this reset would
+    // leak credits.opened into the candidate's earlier states.
+    await resetCaptureWorld(page, label);
     const input = await findFloatingChatInput(page, label);
     chatControl = await input.evaluate((element) => ({
       tag: element.tagName,
@@ -297,6 +361,26 @@ async function captureTarget({ label, origin, historical }) {
         .locator('[data-live2d-status="ready"]')
         .waitFor({ timeout: 90_000 });
     await unlockCredits(page);
+    const creditsDockItem = page.locator('[data-app-id="credits"]');
+    await creditsDockItem.locator(".nori-dock-badge").waitFor();
+    await creditsDockItem.locator(".dock-item-tooltip").waitFor();
+    await page.waitForFunction(() => {
+      const tooltip = document.querySelector('[data-app-id="credits"] .dock-item-tooltip');
+      return tooltip && Number(getComputedStyle(tooltip).opacity) === 1;
+    });
+    creditsAttention = await creditsDockItem.evaluate((element) => {
+      const tooltip = element.querySelector(".dock-item-tooltip");
+      return {
+        badge: Boolean(element.querySelector(".nori-dock-badge")),
+        tooltip: tooltip?.textContent?.trim() ?? null,
+        tooltipOpacity: tooltip ? getComputedStyle(tooltip).opacity : null,
+      };
+    });
+    assert.deepEqual(
+      creditsAttention,
+      { badge: true, tooltip: "感谢游玩！", tooltipOpacity: "1" },
+      `${label} must present the unread Credits Dock prompt before Credits is opened`,
+    );
 
     await screenshot(page, directory, "01-desktop", states);
 
@@ -374,6 +458,7 @@ async function captureTarget({ label, origin, historical }) {
       runtime,
       chatControl,
       masterVolumeControl,
+      creditsAttention,
       states,
       legacyRequests,
       pageErrors,
@@ -403,6 +488,7 @@ async function captureTarget({ label, origin, historical }) {
       },
       chatControl,
       masterVolumeControl,
+      creditsAttention,
       states,
       legacyRequests,
       pageErrors,

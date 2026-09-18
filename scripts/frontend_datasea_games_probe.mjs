@@ -39,21 +39,38 @@ export async function verifyDataseaGames(
     await page.goto(`${origin}/datasea-games-harness`);
     for (let wave = 0; wave < WAVES.length; wave++) {
       const ids = WAVES[wave];
-      await page.evaluate(
-        (values) => window.dataseaGamesProbe.mount(values),
-        ids,
-      );
-      for (let elapsed = 0; elapsed < 10000; elapsed += 40) {
-        if ((await page.locator(".datasea-game").count()) === 4) break;
-        await page.clock.runFor(40);
-      }
-      assert.equal(
-        await page.locator(".datasea-game").count(),
-        4,
-        `wave ${wave + 1} mounted`,
-      );
-      await page.clock.runFor(700);
       for (const id of ids) {
+        // The integration probe retains the complete four-window wave. This
+        // diagnostic isolates each production window so other canvas loops
+        // cannot consume its software-rendering budget.
+        await page.evaluate(
+          (value) => window.dataseaGamesProbe.mount([value]),
+          id,
+        );
+        for (let elapsed = 0; elapsed < 10000; elapsed += 40) {
+          const mounted = await page
+            .locator(`.datasea-game[data-game="${id}"]`)
+            .count();
+          if (
+            mounted === 1 &&
+            (await page.locator(".datasea-game").count()) === 1
+          )
+            break;
+          await page.clock.runFor(40);
+        }
+        assert.equal(
+          await page.locator(".datasea-game").count(),
+          1,
+          `${id} mounted alone`,
+        );
+        assert.equal(
+          await page.locator(`.datasea-game[data-game="${id}"]`).count(),
+          1,
+        );
+        await page.clock.runFor(700);
+        await page.screenshot({
+          path: resolve(output, `datasea-game-${id}-ready.png`),
+        });
         const started = Date.now();
         console.log(`Datasea standalone wave ${wave + 1}: ${id} input start`);
         try {
@@ -109,9 +126,6 @@ export async function verifyDataseaGames(
           JSON.stringify({ results, errors, consoleErrors }, null, 2),
         );
       }
-      await page.screenshot({
-        path: resolve(output, `datasea-games-wave-${wave + 1}.png`),
-      });
     }
     const report = { results, errors, consoleErrors };
     await writeFile(

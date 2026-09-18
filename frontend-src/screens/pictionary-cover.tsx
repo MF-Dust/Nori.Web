@@ -9,12 +9,16 @@ export function PictionaryCover({ locale, open, durationSec, disabled, onDuratio
       <div className="source-pictionary-cover-elastic" aria-hidden="true" />
       <div className="source-pictionary-cover-pencil" aria-hidden="true" />
       <div className="source-pictionary-cover-title">
-        <h1>{text("Draw & Guess", "你画我猜")}</h1><i />
-        <p>{text("Take turns drawing and guessing with Nori.", "与 Nori 轮流画图和猜词。")}</p>
+        <div className="source-pictionary-foil-title">
+          <span aria-hidden="true">{text("Draw & Guess", "你画我猜")}</span>
+          <h1>{text("Draw & Guess", "你画我猜")}</h1>
+        </div>
+        <i />
+        <p>{text("with Nori", "与 Nori 一起")}</p>
       </div>
       <div className="source-pictionary-mode-cards">
-        <article><b aria-hidden="true">✎</b><strong>{text("Draw", "画图")}</strong><span>{text("Sketch the secret word", "画出秘密词语")}</span></article>
-        <article><b aria-hidden="true">⌕</b><strong>{text("Guess", "猜词")}</strong><span>{text("Read the changing lines", "观察线条猜答案")}</span></article>
+        <article><b aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg></b><strong>{text("DRAW", "画画")}</strong><span>{text("You sketch, Nori guesses", "你画，Nori 猜")}</span></article>
+        <article><b aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.1 12a10 10 0 0 1 19.8 0 10 10 0 0 1-19.8 0Z" /><circle cx="12" cy="12" r="3" /></svg></b><strong>{text("GUESS", "猜词")}</strong><span>{text("Nori draws, you guess", "Nori 画，你猜")}</span></article>
       </div>
       {open && <div className="source-pictionary-duration-note">
         <span>{text("Session duration", "游戏时长")}</span>

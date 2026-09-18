@@ -3,9 +3,10 @@ import * as jsxRuntime from "react/jsx-runtime";
 /** Recovered shipped SVG piece geometry and white/black material. */
 export function ChessPiece({ piece: piece, color: color, size: size = 16 }: { piece: string; color: "white" | "black"; size?: number }) {
   const white = color === "white",
-    fill = white ? "#f0f0f0" : "#1a1a1a",
-    stroke = white ? "#333" : "rgba(180, 210, 240, 0.85)",
-    strokeWidth = white ? 1.5 : 2,
+    fill = white ? "#ffffff" : "#000000",
+    stroke = "#000000",
+    detailStroke = white ? "#000000" : "#ffffff",
+    strokeWidth = 1.5,
     svgProps = {
       xmlns: "http://www.w3.org/2000/svg",
       viewBox: "0 0 45 45",
@@ -13,9 +14,7 @@ export function ChessPiece({ piece: piece, color: color, size: size = 16 }: { pi
       height: size,
       style: {
         display: "block",
-        filter: white
-          ? "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))"
-          : "drop-shadow(0 0 3px rgba(140, 180, 220, 0.6)) drop-shadow(0 0 6px rgba(120, 160, 200, 0.3))",
+        filter: "drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35))",
       },
     };
   switch (piece) {
@@ -48,11 +47,11 @@ export function ChessPiece({ piece: piece, color: color, size: size = 16 }: { pi
             }),
             jsxRuntime.jsx("path", {
               d: "M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0z",
-              fill: white ? stroke : "rgba(180, 210, 240, 0.9)",
+              fill: detailStroke,
             }),
             jsxRuntime.jsx("path", {
               d: "M14.933 15.75a.5 1.5 30 1 1-.866-.5.5 1.5 30 1 1 .866.5z",
-              fill: white ? stroke : "rgba(180, 210, 240, 0.9)",
+              fill: detailStroke,
             }),
           ],
         }),
@@ -82,7 +81,7 @@ export function ChessPiece({ piece: piece, color: color, size: size = 16 }: { pi
             }),
             jsxRuntime.jsx("path", {
               d: "M17.5 26h10M15 30h15m-7.5-14.5v5M20 18h5",
-              stroke: white ? "#333" : "rgba(180, 210, 240, 0.7)",
+              stroke: detailStroke,
               strokeLinejoin: "miter",
             }),
           ],
@@ -113,7 +112,7 @@ export function ChessPiece({ piece: piece, color: color, size: size = 16 }: { pi
             jsxRuntime.jsx("path", {
               d: "M11 14h23",
               fill: "none",
-              stroke: white ? "#333" : "rgba(180, 210, 240, 0.7)",
+              stroke: detailStroke,
               strokeLinejoin: "miter",
             }),
           ],
@@ -144,7 +143,7 @@ export function ChessPiece({ piece: piece, color: color, size: size = 16 }: { pi
             jsxRuntime.jsx("path", {
               d: "M11.5 30c3.5-1 18.5-1 22 0M12 33.5c6-1 15-1 21 0",
               fill: "none",
-              stroke: white ? "#333" : "rgba(180, 210, 240, 0.7)",
+              stroke: detailStroke,
             }),
           ],
         }),
@@ -173,7 +172,7 @@ export function ChessPiece({ piece: piece, color: color, size: size = 16 }: { pi
             }),
             jsxRuntime.jsx("path", {
               d: "M12.5 30c5.5-3 14.5-3 20 0m-20 3.5c5.5-3 14.5-3 20 0m-20 3.5c5.5-3 14.5-3 20 0",
-              stroke: white ? "#333" : "rgba(180, 210, 240, 0.7)",
+              stroke: detailStroke,
             }),
           ],
         }),
