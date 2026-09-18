@@ -4,17 +4,11 @@ import { resolve } from "node:path";
 // Uses the real Cubism canvas and production Three renderer in the scene harness.
 export async function verifyColdOpen(page, output) {
   const shaderErrors = [];
+  const pageErrors = [];
   const textureUrl = "**/ocean/gradient-noise.jpg";
-  let textureMode = "continue";
   let textureRequests = 0;
-  let pendingTexture;
   const onTexture = (route) => {
     textureRequests++;
-    if (textureMode === "abort") return route.abort();
-    if (textureMode === "defer") {
-      pendingTexture = route;
-      return;
-    }
     return route.continue();
   };
   const onConsole = (message) => {
@@ -24,7 +18,9 @@ export async function verifyColdOpen(page, output) {
     )
       shaderErrors.push(message.text());
   };
+  const onPageError = (error) => pageErrors.push(error.message);
   page.on("console", onConsole);
+  page.on("pageerror", onPageError);
   const cold = {
     ocean: true,
     oceanFade: 1,
@@ -37,8 +33,8 @@ export async function verifyColdOpen(page, output) {
     noriForm: 0,
     noriWash: 0,
   };
-  const enter = () =>
-    page.evaluate(
+  const enter = (target) =>
+    target.evaluate(
       (coldOpen) =>
         window.noriSceneProbe.acquire({
           active: true,
@@ -51,23 +47,57 @@ export async function verifyColdOpen(page, output) {
         }),
       cold,
     );
-  const state = () =>
-    page.locator(".nori-stage").getAttribute("data-cold-open");
-  const until = async (value) => {
+  const state = (target) =>
+    target.locator(".nori-stage").getAttribute("data-cold-open");
+  const until = async (target, value) => {
     const deadline = Date.now() + 60000;
     do {
-      await page.clock.runFor(40);
-      if ((await state()) === value) return;
+      await target.clock.runFor(40);
+      if ((await state(target)) === value) return;
     } while (Date.now() < deadline);
-    assert.fail(`Cold open did not reach ${value}; got ${await state()}`);
+    assert.fail(`Cold open did not reach ${value}; got ${await state(target)}`);
+  };
+  const openIsolatedPage = async (onIsolatedTexture) => {
+    const browser = page.context().browser();
+    assert.ok(browser, "cold-open fault probe requires a browser");
+    const context = await browser.newContext({
+      viewport: { width: 1000, height: 800 },
+    });
+    const isolated = await context.newPage();
+    isolated.setDefaultTimeout(30000);
+    isolated.on("console", onConsole);
+    isolated.on("pageerror", onPageError);
+    const installedAt = Date.now();
+    await isolated.clock.install({ time: installedAt });
+    await isolated.clock.pauseAt(installedAt + 60000);
+    await isolated.route(textureUrl, onIsolatedTexture);
+    await isolated.route("**/nori-scene-harness", (route) =>
+      route.fulfill({
+        contentType: "text/html",
+        body: `<html><head><link rel="stylesheet" href="/styles/app.css"></head><body style="margin:0;background:#161a1e"><div id="root"></div><script src="/cubism_sdk/Core/live2dcubismcore.js"></script><script type="module">import RefreshRuntime from "/@react-refresh"; RefreshRuntime.injectIntoGlobalHook(window); window.$RefreshReg$=()=>{}; window.$RefreshSig$=()=>type=>type; window.__vite_plugin_react_preamble_installed__=true;</script><script type="module" src="/@fs/${resolve("tests/frontend-nori-scene-harness.tsx")}"></script></body></html>`,
+      }),
+    );
+    await isolated.goto(page.url());
+    const deadline = Date.now() + 60000;
+    do {
+      await isolated.clock.runFor(220);
+      if (
+        (await isolated
+          .locator(".nori-stage")
+          .getAttribute("data-live2d-status")) === "ready"
+      )
+        return { context, page: isolated };
+    } while (Date.now() < deadline);
+    await context.close();
+    assert.fail("Isolated cold-open harness did not load the Live2D model");
   };
   // Install interception before the successful load. Chromium may otherwise
   // satisfy later Image requests from its decoded-image cache without giving
   // Playwright's newly registered route a request to fail or defer.
   await page.route(textureUrl, onTexture);
   try {
-    await enter();
-    await until("ready");
+    await enter(page);
+    await until(page, "ready");
     assert.equal(textureRequests, 1, "initial ocean texture request");
     await page.screenshot({ path: resolve(output, "cold-open-ocean.png") });
     await page.evaluate(
@@ -120,9 +150,9 @@ export async function verifyColdOpen(page, output) {
     await page.screenshot({ path: resolve(output, "cold-open-wake.png") });
     await page.setViewportSize({ width: 640, height: 480 });
     await page.clock.runFor(80);
-    assert.equal(await state(), "ready");
+    assert.equal(await state(page), "ready");
     await page.evaluate(() => window.noriSceneProbe.release());
-    await until("inactive");
+    await until(page, "inactive");
     await page.setViewportSize({ width: 1000, height: 800 });
     await page.clock.runFor(80);
     assert.deepEqual(
@@ -132,54 +162,71 @@ export async function verifyColdOpen(page, output) {
     );
 
     // A missing texture is an explicit failure, not an unhandled rejection or stuck promise.
-    textureMode = "abort";
-    const requestsBeforeFailure = textureRequests;
-    await enter();
-    await until("error");
-    assert.equal(
-      textureRequests,
-      requestsBeforeFailure + 1,
-      "missing-texture injection must intercept the new ocean instance",
-    );
-    await page.evaluate(() => window.noriSceneProbe.release());
-    await until("inactive");
+    let isolatedMode = "abort";
+    let isolatedRequests = 0;
+    const failure = await openIsolatedPage((route) => {
+      isolatedRequests++;
+      return isolatedMode === "abort" ? route.abort() : route.continue();
+    });
+    try {
+      await enter(failure.page);
+      await until(failure.page, "error");
+      assert.equal(
+        isolatedRequests,
+        1,
+        "missing-texture injection must intercept the isolated ocean instance",
+      );
+      await failure.page.evaluate(() => window.noriSceneProbe.release());
+      await until(failure.page, "inactive");
 
-    // A failed instance must not poison a later cold-open retry.
-    textureMode = "continue";
-    const requestsBeforeRetry = textureRequests;
-    await enter();
-    await until("ready");
-    assert.equal(
-      textureRequests,
-      requestsBeforeRetry + 1,
-      "retry must create and load a fresh ocean instance",
-    );
-    await page.evaluate(() => window.noriSceneProbe.release());
-    await until("inactive");
+      // A failed instance must not poison a later cold-open retry.
+      isolatedMode = "continue";
+      await enter(failure.page);
+      await until(failure.page, "ready");
+      assert.equal(
+        isolatedRequests,
+        2,
+        "retry must create and load a fresh ocean instance",
+      );
+      await failure.page.evaluate(() => window.noriSceneProbe.release());
+      await until(failure.page, "inactive");
+    } finally {
+      await failure.context.close();
+    }
 
     // Stop while the image is in flight, then let its callback arrive.
-    textureMode = "defer";
-    await enter();
-    const deadline = Date.now() + 15000;
-    while (!pendingTexture && Date.now() < deadline) await page.clock.runFor(40);
-    assert.ok(pendingTexture, "deferred ocean texture request");
-    await page.evaluate(() => window.noriSceneProbe.release());
-    await until("inactive");
-    await pendingTexture.continue();
-    pendingTexture = undefined;
-    await page.clock.runFor(200);
-    assert.equal(
-      await state(),
-      "inactive",
-      "late load cannot restore a released ocean",
-    );
+    let isolatedPending;
+    const cancellation = await openIsolatedPage((route) => {
+      isolatedPending = route;
+    });
+    try {
+      await enter(cancellation.page);
+      const deadline = Date.now() + 15000;
+      while (!isolatedPending && Date.now() < deadline)
+        await cancellation.page.clock.runFor(40);
+      assert.ok(isolatedPending, "deferred ocean texture request");
+      await cancellation.page.evaluate(() => window.noriSceneProbe.release());
+      await until(cancellation.page, "inactive");
+      await isolatedPending.continue();
+      isolatedPending = undefined;
+      await cancellation.page.clock.runFor(200);
+      assert.equal(
+        await state(cancellation.page),
+        "inactive",
+        "late load cannot restore a released ocean",
+      );
+    } finally {
+      if (isolatedPending) await isolatedPending.abort().catch(() => {});
+      await cancellation.context.close();
+    }
     assert.deepEqual(shaderErrors, []);
+    assert.deepEqual(pageErrors, []);
     console.log(
       "Cold open probe passed: real model, ocean/glyph/morph, resize, missing texture, cancellation and late load cleanup",
     );
   } finally {
-    if (pendingTexture) await pendingTexture.abort().catch(() => {});
     await page.unroute(textureUrl, onTexture);
     page.off("console", onConsole);
+    page.off("pageerror", onPageError);
   }
 }
