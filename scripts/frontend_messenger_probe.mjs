@@ -132,7 +132,10 @@ export async function verifyMessenger(browser, output) {
     await page.waitForTimeout(120);
     assert.equal(await input.inputValue(), "fail");
     await input.fill("🌱".repeat(105));
-    assert.equal(Array.from(await input.inputValue()).length, 100);
+    assert.equal(await input.getAttribute("maxlength"), "100");
+    const boundedInput = await input.inputValue();
+    assert.equal(boundedInput.length, 100);
+    assert.equal(Array.from(boundedInput).length, 50);
     await page.evaluate(() => window.messengerProbe.showFloatingLines());
     await page.locator(".conversation-bubble").first().waitFor();
     await page.setViewportSize({ width: 390, height: 260 });

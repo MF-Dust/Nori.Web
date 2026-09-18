@@ -130,7 +130,18 @@ async function solveSweep(page, root) {
       const after = await state();
       if (after?.level === before) await advance(page, 40);
     } else {
-      await advance(page, 8);
+      const effectivePeriod = barrier.period / barrier.gaps;
+      const effectiveOffset =
+        ((offset % effectivePeriod) + effectivePeriod) % effectivePeriod;
+      const target = barrier.gap / 2;
+      const distance =
+        barrier.dir > 0
+          ? (effectiveOffset - target + effectivePeriod) % effectivePeriod
+          : (target - effectiveOffset + effectivePeriod) % effectivePeriod;
+      await advance(
+        page,
+        Math.max(8, Math.ceil((distance / barrier.speed) * 1000)),
+      );
     }
   }
   await waitSolved(page, root, "sweep", 1800);
@@ -615,29 +626,55 @@ async function solveLure(page, root) {
   await waitSolved(page, root, "lure", 1500);
 }
 
-const wrapAngle = (angle) => Math.atan2(Math.sin(angle), Math.cos(angle));
 async function solveRipple(page, root) {
-  const { box } = await canvasBox(root);
-  assert.ok(
-    currentWaveObservedAt !== null,
-    "ripple solver requires current to establish the shared wave clock",
-  );
+  const { canvas, box } = await canvasBox(root);
   const radii = [0.26, 0.42, 0.58, 0.74, 0.9].map(
     (fraction) => fraction * (Math.min(box.width, box.height) / 2 - 6),
   );
-  const phases = [0.6, 2.75, -1.9, 1.35, -2.5],
-    speeds = [0.014, -0.048, 0.08, -0.115, 0.185];
   const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  const observeAngles = async () => {
+    await canvas.evaluate((surface) => {
+      const context = surface.getContext("2d");
+      if (!context) throw new Error("ripple canvas has no 2D context");
+      const own = Object.hasOwn(context, "drawImage"),
+        original = context.drawImage;
+      surface.__rippleDrawObserver = { angles: [], context, own, original };
+      context.drawImage = function (...args) {
+        if (args[0] instanceof HTMLCanvasElement && args[0] !== surface) {
+          const matrix = this.getTransform();
+          surface.__rippleDrawObserver.angles.push(
+            Math.atan2(matrix.b, matrix.a),
+          );
+        }
+        return Reflect.apply(original, this, args);
+      };
+    });
+    let angles = [];
+    try {
+      await advance(page, 17);
+    } finally {
+      angles = await canvas.evaluate((surface) => {
+        const observer = surface.__rippleDrawObserver;
+        if (!observer) return [];
+        if (observer.own) observer.context.drawImage = observer.original;
+        else delete observer.context.drawImage;
+        delete surface.__rippleDrawObserver;
+        return observer.angles.slice(-5);
+      });
+    }
+    return angles;
+  };
   for (let ring = 1; ring < radii.length; ring += 1) {
-    const now = await page.evaluate(() => performance.now());
-    const elapsed = (now - currentWaveObservedAt) / 1000;
-    const delta = wrapAngle(
-      phases[0] + speeds[0] * elapsed - (phases[ring] + speeds[ring] * elapsed),
+    const angles = await observeAngles();
+    assert.equal(angles.length, 5, "ripple rendered all five ring textures");
+    const delta = Math.atan2(
+      Math.sin(angles[0] - angles[ring]),
+      Math.cos(angles[0] - angles[ring]),
     );
     const radius = radii[ring];
     await page.mouse.move(center.x + radius, center.y);
     await page.mouse.down();
-    const steps = Math.max(4, Math.ceil(Math.abs(delta) / 0.12));
+    const steps = Math.max(2, Math.ceil(Math.abs(delta) / 0.12));
     for (let step = 1; step <= steps; step += 1) {
       const angle = (delta * step) / steps;
       await page.mouse.move(
@@ -646,9 +683,9 @@ async function solveRipple(page, root) {
       );
     }
     await page.mouse.up();
-    await advance(page, 25);
+    await advance(page, 17);
   }
-  await advance(page, 1150);
+  await advance(page, 1050);
   await waitSolved(page, root, "ripple", 1600);
 }
 
