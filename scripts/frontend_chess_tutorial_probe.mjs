@@ -23,7 +23,9 @@ export async function verifyChessTutorial(page, output) {
   await page.locator('[data-chess-square="a3"]').click();
   await page.waitForFunction(() => document.querySelectorAll('[aria-label="Move history"] button').length === 24);
   await page.getByRole("button", { name: "Resign", exact: true }).click();
-  await page.getByRole("button", { name: "Play Again", exact: true }).click();
+  const results = page.locator('[data-chess-result="loss"]');
+  await results.waitFor();
+  await results.getByRole("button", { name: /Play Again$/i }).click();
   await page.getByRole("button", { name: "Learn from Nori", exact: true }).click();
   await page.locator(`[data-chess-tutorial="${steps[0].id}"]`).waitFor();
   assert.equal(await page.locator('[aria-label="Move history"] button').count(), 0);

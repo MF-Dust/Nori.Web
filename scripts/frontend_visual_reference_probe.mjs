@@ -159,6 +159,20 @@ async function closeWindow(page) {
   await page.getByRole("button", { name: "Close", exact: true }).last().click();
 }
 
+async function findFloatingChatInput(page, label) {
+  // The shipped composer input has neither an accessible name nor a native
+  // placeholder; its visible prompt is a separate sibling. Locate the common
+  // form control structure without changing either application under test.
+  const inputs = page.locator('form input[type="text"]:visible');
+  await inputs.first().waitFor();
+  assert.equal(
+    await inputs.count(),
+    1,
+    `${label} must expose one visible text input before windows are opened`,
+  );
+  return inputs.first();
+}
+
 async function unlockCredits(page) {
   const credits = page.locator('[data-app-id="credits"]');
   if (await credits.isVisible().catch(() => false)) return;
@@ -235,7 +249,14 @@ async function captureTarget({ label, origin, historical }) {
     const bypass = page.getByText("仍要进入", { exact: true });
     if (await bypass.count()) await bypass.click();
     await page.locator(".topbar-system-trigger").waitFor({ timeout: 90_000 });
-    await page.getByRole("textbox", { name: "Message", exact: true }).waitFor();
+    const input = await findFloatingChatInput(page, label);
+    const chatControl = await input.evaluate((element) => ({
+      tag: element.tagName,
+      type: element.getAttribute("type"),
+      ariaLabel: element.getAttribute("aria-label"),
+      placeholder: element.getAttribute("placeholder"),
+      maxLength: element.maxLength,
+    }));
     if (historical)
       await page.waitForFunction(
         () =>
@@ -253,7 +274,6 @@ async function captureTarget({ label, origin, historical }) {
 
     await screenshot(page, directory, "01-desktop", states);
 
-    const input = page.getByRole("textbox", { name: "Message", exact: true });
     await input.fill("Visual reference");
     await input.focus();
     await screenshot(page, directory, "02-chat-focused", states);
@@ -312,6 +332,7 @@ async function captureTarget({ label, origin, historical }) {
         : "materialized source cutover candidate",
       origin,
       runtime,
+      chatControl,
       states,
       legacyRequests,
       pageErrors,

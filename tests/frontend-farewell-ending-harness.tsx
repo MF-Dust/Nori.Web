@@ -4,6 +4,7 @@ import { SpeechPlayer } from "../frontend-src/runtime/speech-player";
 import { HeadPat } from "../frontend-src/live2d/head-pat";
 import { NoriStage } from "../frontend-src/live2d/nori-stage";
 import { NoriSceneStore } from "../frontend-src/state/nori-scene";
+import { WorldStore } from "../frontend-src/runtime/world-store";
 import { FarewellScene } from "../frontend-src/story/farewell-scene";
 import { EndingScene } from "../frontend-src/story/ending-scene";
 import type { StoryInstance } from "../frontend-src/story/story-director";
@@ -26,6 +27,7 @@ const storyController = {
 const chat = { presentationEpoch: 1, lines: [], connected: true, phase: "idle", mode: "text", pending: false, error: null };
 const frontend = {
   scene, speech, headPat: new HeadPat(), audio: new AudioMixer(), story: storyController,
+  world: new WorldStore(), requestPatReaction: () => false,
   conversation: { snapshot: () => chat, subscribe: () => () => {} },
 } as unknown as NoriFrontendRuntime;
 const root = createRoot(document.getElementById("root")!);

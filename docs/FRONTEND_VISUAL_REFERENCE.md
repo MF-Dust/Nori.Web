@@ -26,3 +26,5 @@ Upload `frontend-visual-reference/` as the CI artifact. It contains five PNGs an
 The probe verifies that the reference executed at least one historical JS/CSS asset and that the candidate executed none of the historical application inventory. The two origins and browser contexts remain separate; only the reference server can enter through `public/index.html`.
 
 Screenshot hashes, browser/runtime metadata, loaded scripts/styles, console errors, failed static responses and the candidate marker are recorded for review. Successful capture means only that comparable evidence was generated. Pixel parity, typography parity and interaction parity remain pending until a reviewer inspects the paired images and records the result outside the generated manifest.
+
+The historical floating composer uses a separate visual prompt and leaves its text input unnamed. The probe therefore identifies the single visible text input inside a form before any desktop window is opened, then records its native control attributes in each target's metadata. It does not add an accessible name, placeholder or any other test-only DOM state.

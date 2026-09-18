@@ -5,15 +5,15 @@ const vertex = "varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy
 const reproject = `
 uniform sampler2D currentFrame, historyFrame;
 uniform mat4 inverseViewProjection, previousViewProjection;
-uniform vec3 cameraPosition;
+uniform vec3 uReprojectionCameraPosition;
 uniform float historyWeight, focusDistance;
 varying vec2 vUv;
 void main(){
   vec3 current=texture2D(currentFrame,vUv).rgb;
   vec2 clipXY=vUv*2.0-1.0;
   vec4 farPoint=inverseViewProjection*vec4(clipXY,1.0,1.0);
-  vec3 ray=normalize(farPoint.xyz/farPoint.w-cameraPosition);
-  vec4 oldClip=previousViewProjection*vec4(cameraPosition+ray*focusDistance,1.0);
+  vec3 ray=normalize(farPoint.xyz/farPoint.w-uReprojectionCameraPosition);
+  vec4 oldClip=previousViewProjection*vec4(uReprojectionCameraPosition+ray*focusDistance,1.0);
   vec2 oldUv=oldClip.xy/max(oldClip.w,0.0001)*0.5+0.5;
   bool valid=oldClip.w>0.0&&all(greaterThan(oldUv,vec2(0.0)))&&all(lessThan(oldUv,vec2(1.0)));
   vec3 history=valid?texture2D(historyFrame,oldUv).rgb:current;
@@ -36,7 +36,7 @@ export class DataseaTemporalPass extends Pass {
       historyFrame: { value: this.history.texture },
       inverseViewProjection: { value: new THREE.Matrix4() },
       previousViewProjection: { value: this.previousViewProjection },
-      cameraPosition: { value: new THREE.Vector3() },
+      uReprojectionCameraPosition: { value: new THREE.Vector3() },
       historyWeight: { value: 0.9 },
       focusDistance: { value: 300 },
     },
@@ -54,7 +54,7 @@ export class DataseaTemporalPass extends Pass {
     this.material.uniforms.currentFrame.value = readBuffer.texture;
     this.material.uniforms.historyFrame.value = this.history.texture;
     this.material.uniforms.inverseViewProjection.value.copy(viewProjection).invert();
-    this.material.uniforms.cameraPosition.value.setFromMatrixPosition(this.camera.matrixWorld);
+    this.material.uniforms.uReprojectionCameraPosition.value.setFromMatrixPosition(this.camera.matrixWorld);
     this.material.uniforms.historyWeight.value = reset ? 0 : 0.9;
     renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
     this.quad.material = this.material;

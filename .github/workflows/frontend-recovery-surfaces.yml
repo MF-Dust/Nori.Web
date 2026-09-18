@@ -65,12 +65,14 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run frontend:app:build
       - run: npm run frontend:cutover:candidate -- --materialize
+        id: stage
       - run: npm run frontend:cutover:smoke
       - name: Capture paired visual reference
         run: node scripts/frontend_visual_reference_probe.mjs
         env:
           NORI_TEST_PYTHON: .venv/bin/python
       - name: Dry-run candidate Worker bundle
+        if: ${{ !cancelled() && steps.stage.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail

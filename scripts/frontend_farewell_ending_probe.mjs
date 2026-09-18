@@ -2,17 +2,26 @@ import assert from "node:assert/strict";
 import { resolve } from "node:path";
 
 export async function verifyFarewellEnding(browser, output, origin = "http://127.0.0.1:47175") {
-  const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
+  let page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
   page.setDefaultTimeout(60000);
   const errors = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  const installedAt = Date.now();
-  await page.clock.install({ time: installedAt });
-  await page.clock.pauseAt(installedAt + 60000);
-  await page.route("**/farewell-ending-harness", (route) => route.fulfill({
+  const consoleErrors = [];
+  const harnessRoute = (route) => route.fulfill({
     contentType: "text/html",
     body: `<html><head><link rel="stylesheet" href="/styles/app.css"></head><body style="margin:0;background:#05080d"><div id="root"></div><script src="/cubism_sdk/Core/live2dcubismcore.js"></script><script type="module">import RefreshRuntime from "/@react-refresh";RefreshRuntime.injectIntoGlobalHook(window);window.$RefreshReg$=()=>{};window.$RefreshSig$=()=>type=>type;window.__vite_plugin_react_preamble_installed__=true;</script><script type="module" src="/@fs/${resolve("tests/frontend-farewell-ending-harness.tsx")}"></script></body></html>`,
-  }));
+  });
+  const preparePage = async () => {
+    page.setDefaultTimeout(60000);
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    const installedAt = Date.now();
+    await page.clock.install({ time: installedAt });
+    await page.clock.pauseAt(installedAt + 60000);
+    await page.route("**/farewell-ending-harness", harnessRoute);
+  };
+  await preparePage();
   const run = (milliseconds) => page.clock.runFor(milliseconds);
   const advanceUntil = async (description, predicate, timeout = 60000) => {
     const deadline = Date.now() + timeout;
@@ -30,7 +39,7 @@ export async function verifyFarewellEnding(browser, output, origin = "http://127
         body: document.body.innerText.slice(0, 240),
       };
     });
-    assert.fail(`Timed out waiting for ${description}: ${JSON.stringify(diagnostics)}`);
+    assert.fail(`Timed out waiting for ${description}: ${JSON.stringify({ ...diagnostics, consoleErrors: consoleErrors.slice(-5) })}`);
   };
   const waitForCold = (value) => advanceUntil(`cold-open ${value}`, () =>
     page.locator(".nori-stage").getAttribute("data-cold-open").then((state) => state === value));
@@ -74,8 +83,11 @@ export async function verifyFarewellEnding(browser, output, origin = "http://127
     assert.equal(await page.evaluate(() => window.farewellEndingProbe.state().active), false);
     assert.deepEqual(await page.evaluate(() => window.farewellEndingProbe.events), ["cancel"]);
 
-    // Farewell's acknowledged production path reloads the document. Start Ending in the same
-    // fresh-page boundary so Cubism globals and WebGL contexts are not reused across stories.
+    // Farewell's acknowledged production path reloads the document. Use a fresh page so the
+    // Ending half of the probe starts from that same document-lifecycle boundary.
+    await page.close();
+    page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
+    await preparePage();
     await page.goto(`${origin}/farewell-ending-harness`);
     await advanceUntil("fresh story harness", () =>
       page.evaluate(() => Boolean(window.farewellEndingProbe)));
