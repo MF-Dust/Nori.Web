@@ -29,9 +29,7 @@ const STANDARD_DOCK_ICON_APPS = new Set([
  * Exact asset convention used by the shipped `So(id)` helper. Credits is the
  * one pinned exception: both icon layers point at icon-a.png.
  */
-export function getProductionDockIconPair(
-  appId: string,
-): ProductionDockIconPair | null {
+export function getProductionDockIconPair(appId: string): ProductionDockIconPair | null {
   if (appId === "credits") {
     const icon = "/app-icons/credits/icon-a.png";
     return { a: icon, b: icon };
@@ -61,10 +59,7 @@ export function ProductionDockIcon({
     if (fallback !== undefined) return <>{fallback}</>;
     const FallbackIcon = app.id === "settings" ? SettingsIcon : AppWindow;
     return (
-      <div
-        className="flex h-full w-full items-center justify-center"
-        style={darkened}
-      >
+      <div className="flex h-full w-full items-center justify-center" style={darkened}>
         <div
           className="dock-ic flex items-center justify-center bg-white/85 shadow-lg dark:bg-[rgba(35,40,50,0.85)]"
           style={{ borderRadius: "22.5%" }}
@@ -79,13 +74,8 @@ export function ProductionDockIcon({
   }
 
   return (
-    <div
-      className="flex h-full w-full items-center justify-center"
-      style={darkened}
-    >
-      <div
-        className={`dock-ic ${state.active ? "dock-ic--active" : ""}`.trim()}
-      >
+    <div className="flex h-full w-full items-center justify-center" style={darkened}>
+      <div className={`dock-ic ${state.active ? "dock-ic--active" : ""}`.trim()}>
         <div aria-hidden="true" className="dock-ic__shadow" />
         <img
           src={icon.b}
@@ -104,6 +94,7 @@ export function ProductionDockIcon({
   );
 }
 
-export const renderProductionDockIcon: NonNullable<
-  DesktopDockProps["renderIcon"]
-> = (app, state) => <ProductionDockIcon app={app} state={state} />;
+export const renderProductionDockIcon: NonNullable<DesktopDockProps["renderIcon"]> = (
+  app,
+  state,
+) => <ProductionDockIcon app={app} state={state} />;

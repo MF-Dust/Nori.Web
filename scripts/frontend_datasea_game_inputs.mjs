@@ -10,7 +10,6 @@ const HANDLED = new Set([
   "ripple",
   "balance",
 ]);
-let currentWaveObservedAt = null;
 
 async function advance(page, milliseconds) {
   await page.clock.runFor(milliseconds);
@@ -44,23 +43,33 @@ async function waitSolved(page, root, id, timeout = 5000) {
         '[data-story-scene="datasea"][data-phase="converge"], [data-story-scene="datasea"][data-phase="cosmic"]',
       )
       .count()) > 0;
-  for (let elapsed = 0; elapsed <= timeout; elapsed += 50) {
-    if (await root.count()) {
-      if ((await root.getAttribute("data-solved")) === "true") return;
-    } else if (
-      (await page.locator(".datasea-wave-break").count()) ||
-      (await transitionedPastFinalWave())
-    )
-      return;
+  let deadline = timeout;
+  let sawUnmount = false;
+  for (let elapsed = 0; elapsed <= deadline; elapsed += 50) {
+    const state = await root.evaluateAll((elements) => ({
+      present: elements.length > 0,
+      solved: elements.some(
+        (element) => element.getAttribute("data-solved") === "true",
+      ),
+    }));
+    if (state.solved) return;
+    if (!state.present) {
+      if (
+        (await page.locator(".datasea-wave-break").count()) ||
+        (await transitionedPastFinalWave())
+      )
+        return;
+      // A cleared wave removes its windows before the first transmission's
+      // 900ms lead plus 900ms gap. Give that evidenced transition a bounded
+      // grace period; absence alone never proves a solve.
+      if (!sawUnmount) {
+        sawUnmount = true;
+        deadline = Math.max(deadline, elapsed + 2200);
+      }
+    }
     await advance(page, 50);
   }
-  assert.ok(
-    (!(await root.count()) &&
-      (await page.locator(".datasea-wave-break").count()) > 0) ||
-      (!(await root.count()) && (await transitionedPastFinalWave())) ||
-      (await root.getAttribute("data-solved")) === "true",
-    `${id} did not report a real gameplay solve`,
-  );
+  assert.fail(`${id} did not report a real gameplay solve or wave transition`);
 }
 
 async function canvasBox(root) {
@@ -528,6 +537,9 @@ async function solveCurrent(page, root) {
             return {
               level,
               elapsed,
+              mote,
+              velocity: hooks[4]?.current,
+              hold: hooks[9]?.current,
               failedFor: hooks[14]?.current ?? 0,
               done: hooks[11]?.current === true,
             };
@@ -539,12 +551,19 @@ async function solveCurrent(page, root) {
     });
   const initial = await state();
   assert.ok(initial, "current exposes its original motion model");
-  const observedNow = await page.evaluate(() => performance.now());
-  currentWaveObservedAt = observedNow - initial.elapsed * 1000;
   let pressed = false;
+  let observedLevel = -1;
+  let finalState = initial;
   for (let frame = 0; frame < 1800; frame += 1) {
     const current = await state();
     assert.ok(current, "current retains its original motion model");
+    finalState = current;
+    if (current.level !== observedLevel) {
+      observedLevel = current.level;
+      console.log(
+        `[datasea-current] level=${current.level} elapsed=${current.elapsed.toFixed(2)}s`,
+      );
+    }
     if (current.done || current.level >= gates.length) break;
     if (current.failedFor > 0) {
       if (pressed) {
@@ -556,10 +575,19 @@ async function solveCurrent(page, root) {
     }
     const gate = gates[current.level];
     const angle = current.elapsed * gate.orbitSpeed + gate.orbitPhase;
+    const gateVelocity = {
+      x: -Math.sin(angle) * gate.orbitRadius * gate.orbitSpeed,
+      y: Math.cos(angle) * gate.orbitRadius * gate.orbitSpeed,
+    };
+    const velocity = current.velocity ?? { x: 0, y: 0 };
     const point = normalizedPoint(
       box,
-      gate.x + Math.cos(angle) * gate.orbitRadius,
-      gate.y + Math.sin(angle) * gate.orbitRadius,
+      gate.x +
+        Math.cos(angle) * gate.orbitRadius -
+        0.3 * (velocity.x - gateVelocity.x),
+      gate.y +
+        Math.sin(angle) * gate.orbitRadius -
+        0.3 * (velocity.y - gateVelocity.y),
     );
     await page.mouse.move(point.x, point.y, { steps: pressed ? 1 : 2 });
     if (!pressed) {
@@ -569,7 +597,12 @@ async function solveCurrent(page, root) {
     await advance(page, 50);
   }
   if (pressed) await page.mouse.up();
-  await waitSolved(page, root, "current", 1500);
+  try {
+    await waitSolved(page, root, "current", 1500);
+  } catch (error) {
+    console.error("[datasea-current] final state", finalState);
+    throw error;
+  }
 }
 
 async function solveLure(page, root) {
