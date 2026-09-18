@@ -31,7 +31,7 @@ const frontend = {
 const root = createRoot(document.getElementById("root")!);
 function publish(next: StoryInstance | null) { current = next; listeners.forEach((listener) => listener()); }
 function render(instance: StoryInstance | null) {
-  root.render(<><NoriStage key={instance ? `${instance.id}:${instance.instance}` : "idle"} frontend={frontend} facts={new Set()} exclusive={() => true} />{
+  root.render(<><NoriStage frontend={frontend} facts={new Set()} exclusive={() => true} />{
     instance?.id === "farewell" ? <FarewellScene frontend={frontend} story={instance} reload={() => events.push("reload")} />
       : instance?.id === "ending" ? <EndingScene frontend={frontend} story={instance} /> : null
   }</>);

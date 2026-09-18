@@ -74,6 +74,12 @@ export async function verifyFarewellEnding(browser, output, origin = "http://127
     assert.equal(await page.evaluate(() => window.farewellEndingProbe.state().active), false);
     assert.deepEqual(await page.evaluate(() => window.farewellEndingProbe.events), ["cancel"]);
 
+    // Farewell's acknowledged production path reloads the document. Start Ending in the same
+    // fresh-page boundary so Cubism globals and WebGL contexts are not reused across stories.
+    await page.goto(`${origin}/farewell-ending-harness`);
+    await advanceUntil("fresh story harness", () =>
+      page.evaluate(() => Boolean(window.farewellEndingProbe)));
+
     // A failed cold-open resource exposes Retry; retry reconstructs a fresh renderer.
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Network.enable");
@@ -92,7 +98,9 @@ export async function verifyFarewellEnding(browser, output, origin = "http://127
     const ending = page.locator('[data-story-scene="ending"]');
     const retry = page.getByRole("button", { name: "Retry" });
     await advanceUntil("Ending mount", async () =>
-      await ending.count() === 1 && await page.locator(".nori-stage").getAttribute("data-live2d-status") === "ready");
+      await ending.count() === 1 &&
+      await page.locator(".nori-stage").getAttribute("data-live2d-status") === "ready" &&
+      await page.locator(".nori-stage").getAttribute("data-scene-renderer") === "three");
     assert.equal(await page.evaluate(() => window.farewellEndingProbe.state().active), true);
     await advanceUntil("Ending gradient request", async () => gradientRequests === 1);
     await advanceUntil("Ending resource failure", () => retry.count().then((count) => count === 1));

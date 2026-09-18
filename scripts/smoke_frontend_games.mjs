@@ -78,7 +78,7 @@ try {
   await page.evaluate(() => window.fixture.chessResults("white"));
   const chessResults = page.locator('[data-chess-result="win"]');
   await chessResults.waitFor();
-  assert.match(await chessResults.textContent(), /You win/);
+  assert.match(await chessResults.textContent(), /You Win/);
   await page.getByRole("button", { name: "Collapse results", exact: true }).click();
   assert.equal(await page.getByRole("button", { name: "Expand results", exact: true }).getAttribute("aria-expanded"), "false");
   await page.screenshot({ path: join(output, "chess-results-collapsed.png") });

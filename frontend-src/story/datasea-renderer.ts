@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { TAARenderPass } from "three/addons/postprocessing/TAARenderPass.js";
@@ -75,7 +76,8 @@ export function createDataseaRenderer(canvas: HTMLCanvasElement): DataseaRendere
   const fxaa = new ShaderPass(FXAAShader); composer.addPass(fxaa);
   let disposed = false, loadedRoot: THREE.Object3D | null = null, width = 0, height = 0;
   const manager = new THREE.LoadingManager();
-  const ready = Promise.allSettled([new GLTFLoader(manager).loadAsync(GLB), loadTexture(new THREE.TextureLoader(manager), NEBULA), loadTexture(new THREE.TextureLoader(manager), HEIGHT)]).then((results) => {
+  const gltfLoader = new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder);
+  const ready = Promise.allSettled([gltfLoader.loadAsync(GLB), loadTexture(new THREE.TextureLoader(manager), NEBULA), loadTexture(new THREE.TextureLoader(manager), HEIGHT)]).then((results) => {
     const [gltfResult, nebulaResult, heightResult] = results;
     if (results.some((result) => result.status === "rejected")) {
       if (gltfResult.status === "fulfilled") disposeObject(gltfResult.value.scene);

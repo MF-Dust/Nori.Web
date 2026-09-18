@@ -48,6 +48,8 @@ jobs:
   candidate:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      NORI_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -94,7 +96,7 @@ jobs:
             echo "::error::Candidate Worker bundle is missing required game word modules"
             exit 1
           fi
-          if grep -Fq 'backend/data/live_world_pack.json' "$log" || grep -RFlq 'live_world_pack.json' "$outdir"; then
+          if grep -Fq 'backend/data/live_world_pack.json' "$log" || find "$outdir" -type f -name 'live_world_pack.json' -print -quit | grep -q .; then
             echo "::error::The large live-world archive leaked into the candidate Worker bundle"
             exit 1
           fi
