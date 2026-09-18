@@ -147,6 +147,16 @@ function DownloadOverlay({
   );
 }
 
+const badgePosition = { top: "7%", right: "7%", transform: "translate(40%, -40%)", zIndex: 30 };
+function badgePaint(size: number) {
+  return {
+    color: "#fff",
+    background: "linear-gradient(180deg, #ff6058 0%, #e0382f 100%)",
+    border: `${Math.max(1.5, size * 0.025)}px solid rgba(255, 255, 255, 0.9)`,
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35)",
+  };
+}
+
 function DockBadge({ count, size }: { count: number; size: number }) {
   if (count <= 0) return null;
   const label = count > 99 ? "99+" : String(count);
@@ -154,7 +164,7 @@ function DockBadge({ count, size }: { count: number; size: number }) {
   const fontSize = Math.max(10, Math.round(size * 0.24));
   const padding = Math.round(height * 0.3);
   return (
-    <div className="pointer-events-none absolute right-[-4%] top-[-4%]">
+    <div className="pointer-events-none absolute" style={badgePosition}>
       <div
         className="nori-dock-badge flex items-center justify-center rounded-full font-semibold tabular-nums"
         aria-hidden="true"
@@ -165,6 +175,7 @@ function DockBadge({ count, size }: { count: number; size: number }) {
           borderRadius: 9999,
           fontSize,
           lineHeight: 1,
+          ...badgePaint(size),
         }}
       >
         {label}
@@ -177,11 +188,11 @@ function DockDotBadge({ visible, size }: { visible: boolean; size: number }) {
   if (!visible) return null;
   const diameter = Math.max(12, Math.round(size * 0.26));
   return (
-    <div className="pointer-events-none absolute right-[-4%] top-[-4%]">
+    <div className="pointer-events-none absolute" style={badgePosition}>
       <div
         className="nori-dock-badge rounded-full"
         aria-hidden="true"
-        style={{ width: diameter, height: diameter }}
+        style={{ width: diameter, height: diameter, ...badgePaint(size) }}
       />
     </div>
   );

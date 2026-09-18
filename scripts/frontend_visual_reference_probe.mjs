@@ -370,17 +370,22 @@ async function captureTarget({ label, origin, historical }) {
     });
     creditsAttention = await creditsDockItem.evaluate((element) => {
       const tooltip = element.querySelector(".dock-item-tooltip");
+      const badge = element.querySelector(".nori-dock-badge");
       return {
-        badge: Boolean(element.querySelector(".nori-dock-badge")),
+        badge: Boolean(badge),
+        badgeBackground: badge ? getComputedStyle(badge).backgroundImage : null,
         tooltip: tooltip?.textContent?.trim() ?? null,
         tooltipOpacity: tooltip ? getComputedStyle(tooltip).opacity : null,
       };
     });
+    const { badgeBackground, ...attentionState } = creditsAttention;
     assert.deepEqual(
-      creditsAttention,
+      attentionState,
       { badge: true, tooltip: "感谢游玩！", tooltipOpacity: "1" },
       `${label} must present the unread Credits Dock prompt before Credits is opened`,
     );
+    assert.match(badgeBackground ?? "", /linear-gradient\(.*rgb\(255, 96, 88\).*rgb\(224, 56, 47\)/,
+      `${label} Credits badge must paint its red surface, not only exist in the DOM`);
 
     await screenshot(page, directory, "01-desktop", states);
 
