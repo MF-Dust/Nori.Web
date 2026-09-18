@@ -243,7 +243,7 @@
 
 验收：每个控制项都有实际作用和释放路径；通用编辑能力保持稳定，新增场景通道有往返和浏览器证据。
 
-部分状态：Network fault、真实 Idle ledger、Gesture、Reaction、Codenames scenario、Shatter 与 Datasea tuner 已接实际运行时；Debug Chromium job `105644556047` 通过压缩 GLB、范围约束、持久化、失败重试、剧情接管与资源释放。对 `Debug-D6AtxpLT.js` 的注册项审计确认原版没有其他「按剧情分组」的专属 tuner；实际缺项是全页 Glitch 参数/预设、Chess/Cake Duel scenario，以及 Live2D、Audio、Pat、Reaction、Notifications、Inject Talk、Nori Context 的详细诊断。Glitch 已接生产 filter；33 个 Chess 与 4 个 Cake Duel 原版 scenario ID 已进入 UI，并由 controller/backend 的真实 `debugLoadScenario` 命令执行，cartridge 隔离实例测试通过。新 Glitch 与游戏 scenario 的隔离浏览器验收完成前，P5-01 至 P5-03 仍不关闭。P5-06 至 P5-08 的辅助应用完整矩阵未因单次候选截图而关闭。
+部分状态：Network fault、真实 Idle ledger、Gesture、Reaction、Codenames scenario、Shatter 与 Datasea tuner 已接实际运行时；Debug Chromium job `105644556047` 通过压缩 GLB、范围约束、持久化、失败重试、剧情接管与资源释放。对 `Debug-D6AtxpLT.js` 的注册项审计确认原版没有其他「按剧情分组」的专属 tuner。全页 Glitch 已接生产 filter；33 个 Chess 与 4 个 Cake Duel 原版 scenario ID 已进入 UI，并由 controller/backend 的真实 `debugLoadScenario` 命令执行。Live2D 使用当前挂载的生产模型执行插件、rest pose、expression 和 motion；Audio 直接修改持久化设置并同步 mixer/speech；Pat 参数直接作用于生产 recognizer、spring、输入区域和 friction synth；Reactions 覆盖生产 director 已绑定的 28 个 Pictionary/Chess/Codenames 事件；Notifications 执行真实 `notification.debug.push` 往返并观察 `notification.pushed`。Inject Talk 与 Nori Context 所需的私有 handler 不存在，因此只呈现可观测会话状态和明确阻塞，不伪造代理输出或上下文。仍缺 Live2D idle crossfade/lip-form、Audio manager 内部 suspend/seek/track/panner/effects、Pat armed/zone/model-pointer telemetry、Cake Duel/强制 variant/冷却绕过/mood/tell reaction，以及通知 shell queue/dismiss；原版布局也待对照。上述新增路径已有 104 项聚合运行时测试；提交 `516a29b68ee5c9a6a90006c4e506dfd65c72f6aa` 的 Debug Chromium job `105657772066` 通过 UI 到 facade 的交互合同。该 job 使用测试模型；真实 NoriStage 模型的 catalog、physics 切换/恢复和 HeadPat 参数恢复断言已加入 Nori scene probe，等待修复提交复验。由于未暴露控制与原版布局对照仍缺，P5-01 至 P5-03 暂不关闭。P5-06 至 P5-08 的辅助应用完整矩阵未因单次候选截图而关闭。
 
 ## 10. P6：原版代理与媒体验收
 
@@ -382,7 +382,7 @@ npm run frontend:app:smoke
 
 2026-09-18：在原 PR 分支继续实施。完成覆盖矩阵、六段正式剧情源码接入、Messenger 交互修复、游戏表现与 Debug 实际运行时控制、Credits SVG 与模型通道、历史 chunk 扫描扩展。各项完整验收包含的视觉/浏览器要求尚未全部满足，因此不因代码存在批量勾选。
 
-新增检查：`frontend:stories:test`、`frontend:stories:smoke`、`frontend:ownership:test`，以及按 cold-open、Messenger、Boot/Corruption、Memory/Datasea、Farewell/Ending、Debug 隔离的 Actions 浏览器任务。当前本地运行时 92 项、剧情 11 项、游戏 20 项、扫描器 3 项通过。浏览器结果和未通过步骤按下述工作包记录，不把“有检查”写成“已验收”。
+新增检查：`frontend:stories:test`、`frontend:stories:smoke`、`frontend:ownership:test`，以及按 cold-open、Messenger、Boot/Corruption、Memory/Datasea、Farewell/Ending、Debug 隔离的 Actions 浏览器任务。当前本地运行时 104 项、剧情 11 项、游戏 20 项、扫描器 3 项通过。浏览器结果和未通过步骤按下述工作包记录，不把“有检查”写成“已验收”。
 
 原版代理与生产切换仍有明确前置条件，五个 false 门禁保持不变。
 
@@ -398,7 +398,7 @@ P0 验收：修复提交 `55c79a86715c807ea8a7dfd906e09f598b78ae21` 的 [CI 3535
 | P2 | Messenger 交互、媒体失败、场景通道 | Messenger 独立 Chromium 通过；运行时测试 | 原版代理媒体、完整语料与浮动区视觉对照 |
 | P3 | 六段正式剧情及专用渲染 | 11 项剧情测试；Boot/Corruption 浏览器通过 | Memory/Datasea 运行中；Farewell/Ending 修复后复验；静态 narrative placeholder；原版视觉/语音 |
 | P4 | 教程 reducer、四游戏表现、模型反应 | Python cartridge、20 项游戏测试及主游戏浏览器通过 | 整站 Play Again 选择器；完整桌面/双语；原版代理推理/语音 |
-| P5 | 实际网络/算力/情景控制、Shatter/Datasea 调参、生产 Glitch filter 与原版游戏 scenario 命令 | 93 项运行时测试、cartridge 隔离实例测试；Debug job 105644556047 通过既有实验室 | Chess/Cake Duel 与新 Glitch 浏览器验收；原版 Live2D/Audio/Pat/Reaction/通知/上下文诊断界面对照 |
+| P5 | 实际网络/算力/情景控制、Shatter/Datasea 调参、生产 Glitch filter、原版游戏 scenario 命令，以及生产绑定的 Live2D/Audio/Pat/Reaction/通知诊断 | 104 项运行时测试、cartridge 隔离实例测试；Debug jobs 105644556047、105657772066 通过 | 真实模型 facade 的 Nori scene 浏览器复验；未暴露的 manager/model telemetry 与原版布局；Inject Talk/Nori Context 私有服务 |
 | P6 | 保留接口、请求和媒体生命周期 | noop 位置与真实所需输入已记录 | 原版代理实现/授权测试会话 |
 | P7 | 独立矩阵、原版/源码配对截图脚本 | 资产引用检查、固定环境脚本和已有成功截图 | 本轮配对视觉步骤失败；需修复并人工审阅差异 |
 | P8 | 隔离候选入口、静态资源/回滚哈希校验 | 本地候选、14 个回滚文件及候选静态入口 smoke 通过 | 候选配对视觉；因前序失败未执行的 Worker dry-run；全部功能门禁前置条件 |

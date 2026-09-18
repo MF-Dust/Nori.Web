@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { Live2DModel } from "../frontend-src/live2d/engine.js";
-import { Live2DDebugRuntime } from "../frontend-src/live2d/debug-runtime";
+import {
+  attachLive2DDebug,
+  Live2DDebugRuntime,
+} from "../frontend-src/live2d/debug-runtime";
 
 test("Live2D debug runtime mutates only the attached production model", () => {
   const plugins = new Map<string, boolean>([["physics", true]]);
@@ -43,4 +46,9 @@ test("Live2D debug runtime mutates only the attached production model", () => {
   detach();
   assert.equal(runtime.snapshot().ready, false);
   assert.equal(runtime.toggleExpression("Happy"), false);
+});
+
+test("a stage without Debug diagnostics can still mount its production model", () => {
+  const model = {} as Live2DModel;
+  assert.equal(attachLive2DDebug(undefined, model), undefined);
 });

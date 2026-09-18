@@ -17,6 +17,14 @@ export interface Live2DDebugSnapshot {
   motions: readonly { group: string; index: number; file: string }[];
 }
 
+/** Mount diagnostics when the host runtime exposes them; rendering does not depend on Debug. */
+export function attachLive2DDebug(
+  runtime: Live2DDebugRuntime | undefined,
+  model: Live2DModel,
+) {
+  return runtime?.attach(model);
+}
+
 const EMPTY: Live2DDebugSnapshot = {
   ready: false,
   restPose: false,

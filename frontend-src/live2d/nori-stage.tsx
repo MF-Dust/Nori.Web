@@ -23,6 +23,7 @@ import { detectGpu } from "../runtime/graphics-detection";
 import { bindNoriModel } from "./model-runtime";
 import { noriIdleFromFacts, noriLipExpressionBlend } from "./idle-controller";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
+import { attachLive2DDebug } from "./debug-runtime";
 import {
   createCinematicFacePlugin,
   createThinkingLightPlugin,
@@ -140,7 +141,7 @@ export function NoriStage({
         })
         .then((model) => {
           if (disposed) return;
-          unbindDebug = frontend.live2dDebug.attach(model);
+          unbindDebug = attachLive2DDebug(frontend.live2dDebug, model);
           try {
             renderer = new NoriSceneRenderer(sceneCanvas, canvas, frontend.audio);
             host.current!.dataset.sceneRenderer = "three";

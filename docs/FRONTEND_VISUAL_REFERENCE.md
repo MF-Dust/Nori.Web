@@ -17,9 +17,22 @@ npm run frontend:cutover:candidate -- --materialize
 node scripts/frontend_visual_reference_probe.mjs
 ```
 
+The four deterministic game start routes are captured separately so the
+historical entry cannot mutate the candidate's game world:
+
+```bash
+node scripts/frontend_visual_games_probe.mjs
+```
+
+That probe starts a fresh local backend for each entry, fixes both contexts to
+`zh-CN`, 1366 × 900, DPR 1 and reduced motion, and records the outer window
+geometry for Codenames, Pictionary, Chess and Cake Duel. It opens only each
+start route and exits without starting a game, so it neither invokes private
+agent output nor treats locally authored tutorial narrative as original text.
+
 The Python environment must provide FastAPI, HTTPX, python-chess, Uvicorn and websockets, matching `frontend:app:smoke`. `NORI_TEST_PYTHON` and `NORI_TEST_CHROMIUM` can select CI-managed executables. The backend and preview ports default to 47179, 47180 and 47181 and can be changed with `NORI_VISUAL_BACKEND_PORT`, `NORI_VISUAL_REFERENCE_PORT` and `NORI_VISUAL_CANDIDATE_PORT`.
 
-Upload `frontend-visual-reference/` as the CI artifact. It contains five PNGs and `metadata.json` for each entry, plus a top-level `manifest.json` and bounded backend log. `NORI_VISUAL_OUTPUT` changes the artifact directory.
+Upload `frontend-visual-reference/` as the CI artifact. It contains the five system PNGs and four game-start PNGs per entry, per-probe manifests, target metadata and bounded backend logs. `NORI_VISUAL_OUTPUT` changes the system artifact directory; `NORI_VISUAL_GAMES_OUTPUT` changes the game subdirectory.
 
 Each target is attempted independently. If one target fails partway through, its completed state records, `capture-failure.png` and failure metadata are retained and the other target still runs. After both attempts the probe raises an aggregate error so incomplete evidence remains a failing CI result.
 
@@ -46,3 +59,5 @@ The paired capture for CI merge revision `d011f8bf7c4e19334f1422c3d32e67e863b64d
 - The Chinese capture exposed English catalog fallback titles. Registry titles now use the existing app/window translation keys while preserving per-instance custom titles.
 - The source entry omitted repository-owned TTS/UI/provider and wallpaper compatibility extensions already present in the public entry. The source entry now loads the same maintained extensions and glass stylesheet; these are not historical application bundles.
 - These source fixes require a new paired capture before visual acceptance. This record does not close model timing, all layouts, or the remaining app corpus.
+
+The follow-up c771 candidate capture (manifest CI merge revision `d608e30f7867de4d67e9c7b3cdcde21930108dee`) confirmed the recovered notice dimensions, glass treatment and tail. It also exposed a structural 36 px vertical mismatch: the candidate notice was anchored to the conversation panel while the shipped notice is a direct child of the relatively positioned composer. The source notice has now been moved into that composer, preserving the recovered `bottom: calc(100% + 14px)` relationship without adding a screenshot-specific offset. This correction remains pending a paired recapture.

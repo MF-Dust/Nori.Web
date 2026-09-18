@@ -48,6 +48,39 @@ export async function verifyNoriScene(browser, output) {
     });
     console.log("Nori scene model ready/wake");
     assert.equal(await page.locator(".nori-stage").getAttribute("data-scene-renderer"), "three");
+    const live2d = await page.evaluate(() => window.noriSceneProbe.live2d());
+    assert.equal(live2d.ready, true, "Debug facade must observe the mounted production model");
+    assert.equal(live2d.plugins.physics, true);
+    assert.ok(live2d.expressions.length > 0, "production expression catalog");
+    assert.ok(live2d.motions.length > 0, "production motion catalog");
+    assert.equal(
+      await page.evaluate(() => window.noriSceneProbe.setLive2dPlugin("physics", false)),
+      true,
+    );
+    assert.equal(
+      await page.evaluate(() => window.noriSceneProbe.live2d().plugins.physics),
+      false,
+    );
+    assert.equal(
+      await page.evaluate(() => window.noriSceneProbe.setLive2dPlugin("physics", true)),
+      true,
+    );
+    const requiredMs = await page.evaluate(
+      () => window.noriSceneProbe.patTuning().requiredMs,
+    );
+    await page.evaluate(() => window.noriSceneProbe.setPatTuning(500));
+    assert.equal(
+      await page.evaluate(() => window.noriSceneProbe.patTuning().requiredMs),
+      500,
+    );
+    await page.evaluate(
+      (value) => window.noriSceneProbe.setPatTuning(value),
+      requiredMs,
+    );
+    assert.equal(
+      await page.evaluate(() => window.noriSceneProbe.patTuning().requiredMs),
+      requiredMs,
+    );
     const rubbing = await page.evaluate(async url => {
       const { HeadPatAudio } = await import(url);
       const render = async pressing => {

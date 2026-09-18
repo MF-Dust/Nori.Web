@@ -260,15 +260,6 @@ export function ConversationPanel({
       data-low-effects={lowEffects || undefined}
       style={{ bottom, zIndex: NORI_SHELL_LAYERS.DOCK_TOOLTIP }}
     >
-      {!inputBlocked &&
-        chipNotice?.(
-          Math.max(
-            0,
-            ...bubbles
-              .filter((bubble) => bubble.sender === "agent")
-              .map((bubble) => bubble.receivedAt),
-          ),
-        )}
       {chipReadout}
       <BubbleStack
         bubbles={bubbles}
@@ -300,6 +291,7 @@ export function ConversationPanel({
             <input
               ref={input}
               type="text"
+              maxLength={100}
               aria-label={zh ? "消息" : "Message"}
               aria-keyshortcuts="Control+K Meta+K"
               value={text}
@@ -338,6 +330,14 @@ export function ConversationPanel({
                   </span>
                 )}
               </span>
+            )}
+            {chipNotice?.(
+              Math.max(
+                0,
+                ...bubbles
+                  .filter((bubble) => bubble.sender === "agent")
+                  .map((bubble) => bubble.receivedAt),
+              ),
             )}
             {chipButton}
             <button

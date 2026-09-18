@@ -62,6 +62,8 @@ function preferredLocale(): string {
   }
 }
 const locale = sourceLocale(preferredLocale());
+// Shared compatibility panels and assistive technology read the document locale.
+document.documentElement.lang = locale;
 const sourceTranslate = createSourceTranslate(locale);
 
 function worldFacts(frontend: NoriFrontendRuntime): Set<string> {

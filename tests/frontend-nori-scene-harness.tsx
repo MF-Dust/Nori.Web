@@ -13,6 +13,7 @@ import {
 import { SpeechPlayer } from "../frontend-src/runtime/speech-player";
 import type { NoriFrontendRuntime } from "../frontend-src/runtime/frontend-runtime";
 import type { ChatSnapshot } from "../frontend-src/apps/chat-runtime";
+import { Live2DDebugRuntime } from "../frontend-src/live2d/debug-runtime";
 
 // Transport-only fixture; the model, engine, controllers and effects are production source.
 const scene = new NoriSceneStore();
@@ -48,6 +49,7 @@ const conversation = {
   },
 };
 const reactions: string[] = [];
+const live2dDebug = new Live2DDebugRuntime();
 const frontend = {
   world: new WorldStore(),
   requestPatReaction() {
@@ -55,6 +57,7 @@ const frontend = {
     return true;
   },
   headPat: new HeadPat(),
+  live2dDebug,
   scene,
   speech,
   conversation,
@@ -82,6 +85,14 @@ Object.assign(window, {
     reactions,
     cues,
     spatial,
+    live2d: live2dDebug.snapshot,
+    setLive2dPlugin(id: "physics", enabled: boolean) {
+      return live2dDebug.setPlugin(id, enabled);
+    },
+    patTuning: () => frontend.headPat.tuning(),
+    setPatTuning(requiredMs: number) {
+      frontend.headPat.setTuning({ requiredMs });
+    },
     bounds: () =>
       noriScanBounds(document.querySelector("[data-model-texture]")!),
     chat(patch: Partial<ChatSnapshot>) {

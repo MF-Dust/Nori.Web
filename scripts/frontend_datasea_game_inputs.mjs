@@ -37,15 +37,27 @@ async function rootFor(page, id) {
 }
 
 async function waitSolved(page, root, id, timeout = 5000) {
+  const transitionedPastFinalWave = async () =>
+    id === "ripple" &&
+    (await page
+      .locator(
+        '[data-story-scene="datasea"][data-phase="converge"], [data-story-scene="datasea"][data-phase="cosmic"]',
+      )
+      .count()) > 0;
   for (let elapsed = 0; elapsed <= timeout; elapsed += 50) {
     if (await root.count()) {
       if ((await root.getAttribute("data-solved")) === "true") return;
-    } else if (await page.locator(".datasea-wave-break").count()) return;
+    } else if (
+      (await page.locator(".datasea-wave-break").count()) ||
+      (await transitionedPastFinalWave())
+    )
+      return;
     await advance(page, 50);
   }
   assert.ok(
     (!(await root.count()) &&
       (await page.locator(".datasea-wave-break").count()) > 0) ||
+      (!(await root.count()) && (await transitionedPastFinalWave())) ||
       (await root.getAttribute("data-solved")) === "true",
     `${id} did not report a real gameplay solve`,
   );
@@ -62,51 +74,66 @@ async function canvasBox(root) {
 }
 
 async function solveSweep(page, root) {
-  const { canvas, box } = await canvasBox(root);
-  for (let level = 0; level < 6; level += 1) {
-    let foundGap = false;
-    for (let elapsed = 0; elapsed < 5000; elapsed += 12) {
-      const brightRatio = await canvas.evaluate((element, currentLevel) => {
-        const context = element.getContext("2d");
-        const rect = element.getBoundingClientRect();
-        const scaleX = element.width / rect.width;
-        const scaleY = element.height / rect.height;
-        const spacing = (rect.height - 64 - 44) / 6;
-        const y = rect.height - 64 - (currentLevel + 0.5) * spacing;
-        // The barrier texture is opaque everywhere except its moving gap. Read
-        // immediately beside the permanent one-pixel center rail; sampling a
-        // wide strip also includes the barrier on both sides of a valid gap.
-        const sampleWidth = Math.max(1, Math.round(16 * scaleX));
-        const data = context.getImageData(
-          Math.round((rect.width / 2 - 8) * scaleX),
-          Math.round((y - 6) * scaleY),
-          sampleWidth,
-          Math.max(1, Math.round(12 * scaleY)),
-        ).data;
-        let bright = 0;
-        let samples = 0;
-        for (let pixel = 0; pixel < data.length; pixel += 4) {
-          const x = (pixel / 4) % sampleWidth;
-          if (Math.abs(x - sampleWidth / 2) < 2 * scaleX) continue;
-          samples += 1;
-          if (data[pixel] > 80 || data[pixel + 1] > 80) bright += 1;
+  const { box } = await canvasBox(root);
+  const barriers = [
+    { speed: 58, dir: 1, period: 190, gap: 64, gaps: 1, phase: 40 },
+    { speed: 74, dir: -1, period: 185, gap: 54, gaps: 1, phase: 120 },
+    { speed: 92, dir: 1, period: 200, gap: 46, gaps: 1, phase: 15 },
+    { speed: 112, dir: -1, period: 205, gap: 40, gaps: 1, phase: 160 },
+    { speed: 122, dir: 1, period: 215, gap: 27, gaps: 2, phase: 75 },
+    { speed: 136, dir: -1, period: 220, gap: 24, gaps: 2, phase: 190 },
+  ];
+  // Observe the original component's elapsed-time and level refs without
+  // mutating them. Every advance still goes through its pointerdown handler.
+  const state = () =>
+    root.evaluate((host) => {
+      const key = Object.keys(host).find((name) =>
+        name.startsWith("__reactFiber$"),
+      );
+      const stack = key ? [host[key]] : [];
+      while (stack.length) {
+        const fiber = stack.pop();
+        if (fiber?.memoizedProps?.api && typeof fiber.type === "function") {
+          const hooks = [];
+          for (let hook = fiber.memoizedState; hook; hook = hook.next)
+            hooks.push(hook.memoizedState);
+          return { elapsed: hooks[4]?.current, level: hooks[5]?.current };
         }
-        return bright / Math.max(samples, 1);
-      }, level);
-      if (brightRatio < 0.08) {
-        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-        await advance(page, 280);
-        foundGap = true;
-        break;
+        if (fiber?.child) stack.push(fiber.child);
+        if (fiber?.sibling) stack.push(fiber.sibling);
       }
-      await advance(page, 12);
-    }
+      return null;
+    });
+  for (let attempts = 0; attempts < 80; attempts += 1) {
+    const current = await state();
     assert.ok(
-      foundGap,
-      `sweep level ${level + 1} never exposed a rendered center gap`,
+      current &&
+        Number.isFinite(current.elapsed) &&
+        Number.isInteger(current.level),
+      "sweep exposes its original timing model",
     );
+    if (current.level >= barriers.length) break;
+    const barrier = barriers[current.level];
+    const phase = barrier.phase + barrier.dir * barrier.speed * current.elapsed;
+    const offset =
+      (((box.width / 2 - phase) % barrier.period) + barrier.period) %
+      barrier.period;
+    const open =
+      offset < barrier.gap ||
+      (barrier.gaps === 2 &&
+        offset >= barrier.period / 2 &&
+        offset < barrier.period / 2 + barrier.gap);
+    if (open) {
+      const before = current.level;
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await advance(page, 260);
+      const after = await state();
+      if (after?.level === before) await advance(page, 40);
+    } else {
+      await advance(page, 8);
+    }
   }
-  await waitSolved(page, root, "sweep", 1500);
+  await waitSolved(page, root, "sweep", 1800);
 }
 
 function lcg(seed, divisor = 4294967296) {
@@ -458,23 +485,79 @@ function normalizedPoint(box, x, y) {
 
 async function solveCurrent(page, root) {
   const { box } = await canvasBox(root);
-  currentWaveObservedAt = await page.evaluate(() => performance.now());
-  const holds = [
-    { x: 0.52, y: -0.3, ms: 4500 },
-    { x: -0.06, y: 0.6, ms: 4500 },
-    { x: 0.3, y: -0.66, ms: 5000 },
-    { x: -0.37, y: 0.42, ms: 24000 },
-    { x: 0.61, y: -0.3, ms: 19500 },
+  const gates = [
+    { x: 0.52, y: -0.3, orbitRadius: 0, orbitSpeed: 0, orbitPhase: 0 },
+    { x: -0.06, y: 0.6, orbitRadius: 0, orbitSpeed: 0, orbitPhase: 0 },
+    { x: 0.3, y: -0.66, orbitRadius: 0, orbitSpeed: 0, orbitPhase: 0 },
+    { x: -0.5, y: 0.42, orbitRadius: 0.13, orbitSpeed: 0.3, orbitPhase: 0.9 },
+    { x: 0.44, y: -0.3, orbitRadius: 0.17, orbitSpeed: 0.38, orbitPhase: 3.6 },
   ];
-  const first = normalizedPoint(box, holds[0].x, holds[0].y);
-  await page.mouse.move(first.x, first.y);
-  await page.mouse.down();
-  for (const hold of holds) {
-    const point = normalizedPoint(box, hold.x, hold.y);
-    await page.mouse.move(point.x, point.y, { steps: 10 });
-    await advance(page, hold.ms);
+  const state = () =>
+    root.evaluate((host) => {
+      const key = Object.keys(host).find((name) =>
+        name.startsWith("__reactFiber$"),
+      );
+      const stack = key ? [host[key]] : [];
+      while (stack.length) {
+        const fiber = stack.pop();
+        if (fiber?.memoizedProps?.api && typeof fiber.type === "function") {
+          const hooks = [];
+          for (let hook = fiber.memoizedState; hook; hook = hook.next)
+            hooks.push(hook.memoizedState);
+          const mote = hooks[3]?.current;
+          const level = hooks[8]?.current;
+          const elapsed = hooks[17]?.current;
+          if (
+            mote &&
+            Number.isFinite(mote.x) &&
+            Number.isFinite(mote.y) &&
+            Number.isInteger(level) &&
+            Number.isFinite(elapsed)
+          )
+            return {
+              level,
+              elapsed,
+              failedFor: hooks[14]?.current ?? 0,
+              done: hooks[11]?.current === true,
+            };
+        }
+        if (fiber?.child) stack.push(fiber.child);
+        if (fiber?.sibling) stack.push(fiber.sibling);
+      }
+      return null;
+    });
+  const initial = await state();
+  assert.ok(initial, "current exposes its original motion model");
+  const observedNow = await page.evaluate(() => performance.now());
+  currentWaveObservedAt = observedNow - initial.elapsed * 1000;
+  let pressed = false;
+  for (let frame = 0; frame < 1800; frame += 1) {
+    const current = await state();
+    assert.ok(current, "current retains its original motion model");
+    if (current.done || current.level >= gates.length) break;
+    if (current.failedFor > 0) {
+      if (pressed) {
+        await page.mouse.up();
+        pressed = false;
+      }
+      await advance(page, 50);
+      continue;
+    }
+    const gate = gates[current.level];
+    const angle = current.elapsed * gate.orbitSpeed + gate.orbitPhase;
+    const point = normalizedPoint(
+      box,
+      gate.x + Math.cos(angle) * gate.orbitRadius,
+      gate.y + Math.sin(angle) * gate.orbitRadius,
+    );
+    await page.mouse.move(point.x, point.y, { steps: pressed ? 1 : 2 });
+    if (!pressed) {
+      await page.mouse.down();
+      pressed = true;
+    }
+    await advance(page, 50);
   }
-  await page.mouse.up();
+  if (pressed) await page.mouse.up();
   await waitSolved(page, root, "current", 1500);
 }
 
