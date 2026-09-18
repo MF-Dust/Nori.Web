@@ -22,6 +22,14 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare browser and offline backend dependencies
+        run: |
+          npx playwright install chromium
+          mkdir -p /tmp/recovery-validation/python-wheels
+          python -m pip download --dest /tmp/recovery-validation/python-wheels 'fastapi>=0.115' 'httpx>=0.27' 'python-chess>=1.999' 'uvicorn[standard]>=0.30' 'websockets>=13'
       - name: Resolve cinematic animation dependencies
         run: npm install --no-audit --no-fund --save-exact motion@12.23.24 gsap@3.15.0
       - name: Package tracked source and locked frontend dependencies
@@ -31,6 +39,7 @@ jobs:
           git archive --format=tar HEAD | gzip > /tmp/recovery-validation/source.tar.gz
           tar -czf /tmp/recovery-validation/node_modules.tar.gz node_modules
           tar -czf /tmp/recovery-validation/manifests.tar.gz package.json package-lock.json
+          tar -czf /tmp/recovery-validation/browsers.tar.gz -C "$HOME/.cache" ms-playwright
           git rev-parse HEAD > /tmp/recovery-validation/source-revision.txt
       - uses: actions/upload-artifact@v4
         with:

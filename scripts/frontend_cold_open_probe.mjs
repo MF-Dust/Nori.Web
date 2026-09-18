@@ -4,6 +4,19 @@ import { resolve } from "node:path";
 // Uses the real Cubism canvas and production Three renderer in the scene harness.
 export async function verifyColdOpen(page, output) {
   const shaderErrors = [];
+  const textureUrl = "**/ocean/gradient-noise.jpg";
+  let textureMode = "continue";
+  let textureRequests = 0;
+  let pendingTexture;
+  const onTexture = (route) => {
+    textureRequests++;
+    if (textureMode === "abort") return route.abort();
+    if (textureMode === "defer") {
+      pendingTexture = route;
+      return;
+    }
+    return route.continue();
+  };
   const onConsole = (message) => {
     if (
       message.type() === "error" &&
@@ -48,9 +61,14 @@ export async function verifyColdOpen(page, output) {
     } while (Date.now() < deadline);
     assert.fail(`Cold open did not reach ${value}; got ${await state()}`);
   };
+  // Install interception before the successful load. Chromium may otherwise
+  // satisfy later Image requests from its decoded-image cache without giving
+  // Playwright's newly registered route a request to fail or defer.
+  await page.route(textureUrl, onTexture);
   try {
     await enter();
     await until("ready");
+    assert.equal(textureRequests, 1, "initial ocean texture request");
     await page.screenshot({ path: resolve(output, "cold-open-ocean.png") });
     await page.evaluate(
       (cold) =>
@@ -114,37 +132,54 @@ export async function verifyColdOpen(page, output) {
     );
 
     // A missing texture is an explicit failure, not an unhandled rejection or stuck promise.
-    await page.route("**/ocean/gradient-noise.jpg", (route) => route.abort());
+    textureMode = "abort";
+    const requestsBeforeFailure = textureRequests;
     await enter();
     await until("error");
+    assert.equal(
+      textureRequests,
+      requestsBeforeFailure + 1,
+      "missing-texture injection must intercept the new ocean instance",
+    );
     await page.evaluate(() => window.noriSceneProbe.release());
     await until("inactive");
-    await page.unroute("**/ocean/gradient-noise.jpg");
+
+    // A failed instance must not poison a later cold-open retry.
+    textureMode = "continue";
+    const requestsBeforeRetry = textureRequests;
+    await enter();
+    await until("ready");
+    assert.equal(
+      textureRequests,
+      requestsBeforeRetry + 1,
+      "retry must create and load a fresh ocean instance",
+    );
+    await page.evaluate(() => window.noriSceneProbe.release());
+    await until("inactive");
 
     // Stop while the image is in flight, then let its callback arrive.
-    let pending;
-    await page.route("**/ocean/gradient-noise.jpg", (route) => {
-      pending = route;
-    });
+    textureMode = "defer";
     await enter();
     const deadline = Date.now() + 15000;
-    while (!pending && Date.now() < deadline) await page.clock.runFor(40);
-    assert.ok(pending, "deferred ocean texture request");
+    while (!pendingTexture && Date.now() < deadline) await page.clock.runFor(40);
+    assert.ok(pendingTexture, "deferred ocean texture request");
     await page.evaluate(() => window.noriSceneProbe.release());
     await until("inactive");
-    await pending.continue();
+    await pendingTexture.continue();
+    pendingTexture = undefined;
     await page.clock.runFor(200);
     assert.equal(
       await state(),
       "inactive",
       "late load cannot restore a released ocean",
     );
-    await page.unroute("**/ocean/gradient-noise.jpg");
     assert.deepEqual(shaderErrors, []);
     console.log(
       "Cold open probe passed: real model, ocean/glyph/morph, resize, missing texture, cancellation and late load cleanup",
     );
   } finally {
+    if (pendingTexture) await pendingTexture.abort().catch(() => {});
+    await page.unroute(textureUrl, onTexture);
     page.off("console", onConsole);
   }
 }
