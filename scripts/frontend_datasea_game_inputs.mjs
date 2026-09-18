@@ -828,11 +828,8 @@ export async function solveDataseaGame(page, id) {
     balance: solveBalance,
   };
   await solvers[id](page, root);
-  assert.ok(
-    (!(await root.count()) &&
-      (await page.locator(".datasea-wave-break").count()) > 0) ||
-      (await root.getAttribute("data-solved")) === "true",
-    `${id} interaction solver did not complete gameplay`,
-  );
+  // Reuse the same evidence check after the solver, including the final
+  // wave's production converge/cosmic transition after its windows unmount.
+  await waitSolved(page, root, id, 0);
   return true;
 }
