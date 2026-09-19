@@ -1,10 +1,10 @@
 # Frontend cutover candidate and rollback drill
 
-This procedure prepares an isolated source-app candidate without changing
-`public/index.html`, migration gates, the Cloudflare build, or a deployed site.
-It supplies reviewable evidence for parts of P8-02 and P8-07. Those tasks stay
-open until the materialized candidate also passes the deployment dry-run and
-real-browser entry checks required by P8-06.
+This procedure prepares the same isolated source-app candidate used by the
+Cloudflare production deployment without changing `public/index.html`.
+`scripts/cloudflare_builds_deploy.py` runs the materialized form automatically
+and deploys through `.wrangler-candidate.json`. The historical public entry and
+its required executable assets remain available for explicit rollback.
 
 ## Prepare the source build
 
@@ -80,12 +80,11 @@ The result is recorded under `rollbackDrill` in
 `rollback-manifest.json`. This verifies the file set and the reversible index
 swap; it does not simulate CDN caches or constitute a production rollback.
 
-For the first real cutover, retain the rollback directory with the deployment
-record. Publish all saved legacy assets before restoring its `files/index.html`,
-then invalidate the root/index HTML according to the existing Cloudflare cache
-policy. Verify the deployed index and referenced JavaScript/CSS against the
-manifest hashes. Generated hashed source assets may remain because the restored
-production index does not execute them.
+For an emergency production rollback, set
+`NORI_DEPLOY_LEGACY_FRONTEND=1` in Workers Builds and retry the deployment, or
+run the wrapper with `--legacy-frontend`. That path uses the unchanged
+`wrangler.jsonc` Assets directory, `public/`. Remove the variable after recovery
+to return subsequent deployments to the source candidate.
 
 ## Candidate browser and Worker evidence
 
@@ -113,17 +112,13 @@ on head `719b9993` (CI merge ref `d011f8bf`): candidate browser, paired visual
 capture, asset-content guard and Worker dry-run all passed. Visual differences
 found by inspecting those images are tracked separately from capture success.
 
-## Remaining production evidence
+## Remaining parity evidence
 
-Before switching the public entry, the materialized candidate still needs:
+The production entry is source-owned. Full recovery readiness remains false
+until the remaining parity boundaries close, including:
 
 - the normal typecheck, build, recovery, ownership, cutover, and application
   smoke gates;
-- the passing Cloudflare candidate dry-run repeated for the final revision;
-- browser checks served from that exact candidate entry, including boot,
-  login, desktop/app lifecycle, persistence, and sign-out;
 - the visual and original-agent acceptance recorded by the recovery ledgers;
-- a reviewable change that updates the production index and
-  `production-entry` status together.
-
-No step in this document changes a gate or deploys the candidate.
+- browser acceptance for the remaining Messenger, games, Live2D and supporting
+  app differences.
