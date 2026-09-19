@@ -27,8 +27,8 @@ export interface AudioSettingsState {
 
 /**
  * Clean-room reconstruction of NormalApp's persisted `audio-store` (`rl`).
- * The AudioManager bridge lives outside this state boundary; consumers may
- * subscribe and synchronize the values to a WebAudio implementation.
+ * SourceApp synchronizes these preferences with the session-owned AudioMixer.
+ * Keeping playback outside the store makes its lifetime explicit.
  */
 export const useAudioSettings = create<AudioSettingsState>()(
   persist(

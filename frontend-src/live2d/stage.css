@@ -1,0 +1,30 @@
+.nori-stage {
+  position: absolute;
+  inset: 2rem 0 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.nori-stage canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.nori-stage-error {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.nori-stage[data-scene-renderer="three"] canvas[data-model-texture] {
+  position: absolute;
+  width: 400px;
+  height: 800px;
+  visibility: hidden;
+}
+.nori-stage canvas[data-scene-canvas] { position: absolute; inset: 0; }
+.nori-head-pat{position:absolute;pointer-events:auto;background:transparent;border:0;border-radius:50%;cursor:grab;touch-action:none;padding:0}
+.nori-head-pat:active{cursor:grabbing}.nori-head-pat:focus-visible{outline:2px solid #b8eadd;outline-offset:3px}
+
+.nori-pat-spark{position:absolute;pointer-events:none;color:#b9f5df;font-size:18px;line-height:1;text-shadow:0 0 7px #78eac6;z-index:2}

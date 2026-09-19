@@ -52,6 +52,8 @@ export interface CakeDuelRuntimeState {
   game: CakeDuelRuntimeGame | null;
   tutorial: Record<string, JsonValue> | null;
   lastError: string | null;
+  debugScenarioId: string | null;
+  debugScenario: Record<string, JsonValue> | null;
 }
 
 export interface CakeDuelRuntimeZoneCard {
@@ -118,6 +120,8 @@ const DEFAULT_STATE: CakeDuelRuntimeState = {
   game: null,
   tutorial: null,
   lastError: null,
+  debugScenarioId: null,
+  debugScenario: null,
 };
 
 // Shipped NormalApp controller timing contract.
@@ -215,6 +219,8 @@ export function parseCakeDuelRuntimeState(state: Record<string, JsonValue> | und
     game: parseGame(state.game),
     tutorial,
     lastError: typeof state.lastError === "string" ? state.lastError : null,
+    debugScenarioId: typeof state.debugScenarioId === "string" ? state.debugScenarioId : null,
+    debugScenario: record(state.debugScenario) as Record<string, JsonValue> | null,
   };
 }
 
@@ -357,6 +363,8 @@ export class CakeDuelRuntimeController {
   private readonly listeners = new Set<() => void>();
   private readonly unsubs: Array<() => void> = [];
   private pendingRequestId: string | null = null;
+  private pendingDebugResolve: ((ok: boolean) => void) | null = null;
+  private pendingDebugScenarioId: string | null = null;
   private mountPending = false;
   private error: string | null = null;
   private banner: CakeDuelTransientBanner | null = null;
@@ -426,6 +434,20 @@ export class CakeDuelRuntimeController {
     this.dispatch({ type: "play", action: action as unknown as JsonValue });
   }
 
+  loadDebugScenario(scenarioId: string): Promise<boolean> {
+    if (this.pendingRequestId) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      this.pendingDebugResolve = resolve;
+      this.pendingDebugScenarioId = scenarioId;
+      this.dispatch({ type: "debugLoadScenario", scenarioId });
+      if (!this.pendingRequestId) {
+        this.pendingDebugResolve = null;
+        this.pendingDebugScenarioId = null;
+        resolve(false);
+      }
+    });
+  }
+
   clearError(): void {
     if (!this.error) return;
     this.error = null;
@@ -464,6 +486,12 @@ export class CakeDuelRuntimeController {
       this.error = typeof raw.error === "string" ? raw.error : "Cake Duel action failed";
     }
     this.publish();
+    if (raw.success !== true) {
+      const resolve = this.pendingDebugResolve;
+      this.pendingDebugResolve = null;
+      this.pendingDebugScenarioId = null;
+      resolve?.(false);
+    }
   }
 
   private consumeTransientEvents(
@@ -589,6 +617,13 @@ export class CakeDuelRuntimeController {
   private publish(): void {
     this.current = this.computeSnapshot();
     for (const listener of this.listeners) listener();
+    if (this.pendingRequestId === null && this.pendingDebugScenarioId !== null
+      && this.current.state.debugScenarioId === this.pendingDebugScenarioId) {
+      const resolve = this.pendingDebugResolve;
+      this.pendingDebugResolve = null;
+      this.pendingDebugScenarioId = null;
+      resolve?.(true);
+    }
   }
 
   private computeSnapshot(): CakeDuelControllerSnapshot {

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AppWindow, Settings as SettingsIcon } from "lucide-react";
 import type {
   DesktopDockIconState,
   DesktopDockProps,
@@ -50,11 +51,27 @@ export interface ProductionDockIconProps {
 export function ProductionDockIcon({
   app,
   state,
-  fallback = null,
+  fallback,
 }: ProductionDockIconProps) {
   const icon = getProductionDockIconPair(app.id);
   const darkened = state.darkened ? { filter: "brightness(0.82)" } : undefined;
-  if (!icon) return <>{fallback}</>;
+  if (!icon) {
+    if (fallback !== undefined) return <>{fallback}</>;
+    const FallbackIcon = app.id === "settings" ? SettingsIcon : AppWindow;
+    return (
+      <div className="flex h-full w-full items-center justify-center" style={darkened}>
+        <div
+          className="dock-ic flex items-center justify-center bg-white/85 shadow-lg dark:bg-[rgba(35,40,50,0.85)]"
+          style={{ borderRadius: "22.5%" }}
+        >
+          <FallbackIcon
+            className="h-[55%] w-[55%] text-gray-700 dark:text-gray-200"
+            aria-label={app.title}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full w-full items-center justify-center" style={darkened}>

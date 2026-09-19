@@ -165,9 +165,20 @@ export interface CreateSourceIdleRuntimeEngineOptions {
 }
 
 export interface SourceIdleRuntimeEngine extends IdlePresentationModel {
+  readonly debug: SourceIdleDebugActions;
   start(): void;
   dispose(): void;
   emitFact(factId: string): Promise<void>;
+}
+
+export interface SourceIdleDebugActions {
+  current(): number;
+  grant(amount: number): void;
+  maxAll(): void;
+  abdicate(): void;
+  reset(): void;
+  advanceTime(seconds: number): void;
+  grantFactionCoins(amount: number): void;
 }
 
 function factsRecord(facts: ReadonlySet<string>): Record<string, boolean> {
@@ -773,6 +784,72 @@ export function createSourceIdleRuntimeEngine(
   };
 
   const runtime: SourceIdleRuntimeEngine = {
+    debug: {
+      current: () => state.compute,
+      grant(amount) {
+        if (!Number.isFinite(amount) || amount <= 0) return;
+        const compute = finiteCompute(Math.min(computeCap(state.facts), state.compute + amount));
+        state = { ...state, compute, maxComputeThisRun: Math.max(state.maxComputeThisRun, compute) };
+        publish();
+        syncCompute();
+        save();
+      },
+      maxAll() {
+        const owned = { ...state.owned };
+        for (const generator of generators)
+          owned[generator.id] = Math.max(owned[generator.id] ?? 0, 50);
+        const nextUpgrades = { ...state.upgrades };
+        for (const upgrade of upgrades) {
+          if (upgrade.grantsThread && (upgrade.ownedThreshold ?? Number.POSITIVE_INFINITY) <= 50)
+            nextUpgrades[upgrade.id] = true;
+        }
+        const factionCoins = { ...state.factionCoins };
+        for (const factionId of EXCHANGEABLE_FACTION_IDS)
+          factionCoins[factionId] = (factionCoins[factionId] ?? 0) + 1_000;
+        const compute = finiteCompute(Math.min(computeCap(state.facts), state.compute + 1e17));
+        state = normalizeThreads({
+          ...state,
+          compute,
+          owned,
+          upgrades: nextUpgrades,
+          factionCoins,
+          maxComputeThisRun: Math.max(state.maxComputeThisRun, compute),
+          productiveClicks: state.productiveClicks + 50,
+        });
+        publish();
+        syncCompute();
+        save();
+      },
+      abdicate() {
+        runtime.abdicate();
+      },
+      reset() {
+        const facts = new Set(Object.keys(state.facts).filter((factId) => state.facts[factId]));
+        state = createInitialState(facts);
+        manifoldRevealApplied = false;
+        publish();
+        syncCompute();
+        save();
+      },
+      advanceTime(seconds) {
+        const elapsed = Math.max(0, Number(seconds));
+        if (!Number.isFinite(elapsed) || elapsed <= 0) return;
+        const steps = Math.min(240, Math.max(1, Math.ceil(elapsed)));
+        const step = elapsed / steps;
+        for (let index = 0; index < steps; index++) runtime.tick(step);
+        syncCompute();
+        save();
+      },
+      grantFactionCoins(amount) {
+        if (!Number.isFinite(amount) || amount <= 0) return;
+        const found = Object.fromEntries(
+          EXCHANGEABLE_FACTION_IDS.map((factionId) => [factionId, amount]),
+        );
+        state = grantFactionCoins(state, found, "spell");
+        publish();
+        save();
+      },
+    },
     snapshot(): IdlePresentationSnapshot {
       return {
         state: clonePresentationState(state),

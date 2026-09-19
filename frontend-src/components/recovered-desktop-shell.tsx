@@ -1,3 +1,4 @@
+import "../styles/desktop-shell.css";
 import {
   useEffect,
   useMemo,

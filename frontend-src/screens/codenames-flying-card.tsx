@@ -1,4 +1,5 @@
-import { memo, useEffect, useRef, type CSSProperties } from "react";
+import { CodenamesTreasureArt, CodenamesMonsterArt, CodenamesBerryArt } from "./codenames-art.js";
+import { memo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 export type CodenamesFlyingCardType = "agent" | "assassin" | "bystander";
@@ -29,29 +30,9 @@ const FLYING_CARD_BASE_SIZE: Readonly<Record<CodenamesFlyingCardType, { width: n
   bystander: { width: 50, height: 50 },
 };
 
-function flyingCardStyle(type: CodenamesFlyingCardType): CSSProperties {
-  if (type === "agent") {
-    return {
-      background:
-        "radial-gradient(ellipse 80% 65% at 45% 35%, hsl(48 50% 92%) 0%, hsl(42 55% 85%) 45%, hsl(35 55% 68%) 100%)",
-      border: "3px solid hsl(38 50% 48% / .7)",
-    };
-  }
-  if (type === "assassin") {
-    return {
-      background:
-        "radial-gradient(ellipse 80% 60% at 50% 50%, hsla(180,30%,30%,.4) 0%, transparent 70%), linear-gradient(170deg, hsl(195 35% 28%) 0%, hsl(200 40% 20%) 50%, hsl(205 45% 14%) 100%)",
-      border: "3px solid hsl(190 35% 35%)",
-    };
-  }
-  return {
-    background: "linear-gradient(145deg, hsl(12 65% 65%) 0%, hsl(5 55% 55%) 55%, hsl(2 50% 45%) 100%)",
-    border: "2px solid hsl(15 40% 55% / .6)",
-  };
-}
-
 function FlyingCardFace({ type }: { type: CodenamesFlyingCardType }) {
-  return <div className="w-full h-full rounded-xl" style={flyingCardStyle(type)} />;
+  const Art = type === "agent" ? CodenamesTreasureArt : type === "assassin" ? CodenamesMonsterArt : CodenamesBerryArt;
+  return <div className="w-full h-full source-codenames-art"><Art /></div>;
 }
 
 /** Source-owned fixed-layer card flight used when revealed cards move to their target cell. */
@@ -88,7 +69,7 @@ export const CodenamesFlyingCard = memo(function CodenamesFlyingCard({
         },
       ],
       {
-        duration: 500,
+        duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : 500,
         easing: "cubic-bezier(.2,.8,.2,1)",
         fill: "forwards",
       },

@@ -60,6 +60,14 @@ function defaultTranslate(key: string): string {
   return key;
 }
 
+/** Shipped `MOe`: the post-farewell Credits prompt stays active until opened. */
+export function hasCreditsDockAttention(
+  appId: string,
+  facts: ReadonlySet<string>,
+): boolean {
+  return appId === "credits" && facts.has("arg.farewell.shown") && !facts.has("credits.opened");
+}
+
 function useResponsiveDockLayout(): DockResponsiveLayout {
   const read = useCallback(() => {
     if (typeof window === "undefined") return getNoriDockResponsiveLayout(0, 0);
@@ -139,6 +147,16 @@ function DownloadOverlay({
   );
 }
 
+const badgePosition = { top: "7%", right: "7%", transform: "translate(40%, -40%)", zIndex: 30 };
+function badgePaint(size: number) {
+  return {
+    color: "#fff",
+    background: "linear-gradient(180deg, #ff6058 0%, #e0382f 100%)",
+    border: `${Math.max(1.5, size * 0.025)}px solid rgba(255, 255, 255, 0.9)`,
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35)",
+  };
+}
+
 function DockBadge({ count, size }: { count: number; size: number }) {
   if (count <= 0) return null;
   const label = count > 99 ? "99+" : String(count);
@@ -146,7 +164,7 @@ function DockBadge({ count, size }: { count: number; size: number }) {
   const fontSize = Math.max(10, Math.round(size * 0.24));
   const padding = Math.round(height * 0.3);
   return (
-    <div className="pointer-events-none absolute right-[-4%] top-[-4%]">
+    <div className="pointer-events-none absolute" style={badgePosition}>
       <div
         className="nori-dock-badge flex items-center justify-center rounded-full font-semibold tabular-nums"
         aria-hidden="true"
@@ -157,6 +175,7 @@ function DockBadge({ count, size }: { count: number; size: number }) {
           borderRadius: 9999,
           fontSize,
           lineHeight: 1,
+          ...badgePaint(size),
         }}
       >
         {label}
@@ -169,11 +188,11 @@ function DockDotBadge({ visible, size }: { visible: boolean; size: number }) {
   if (!visible) return null;
   const diameter = Math.max(12, Math.round(size * 0.26));
   return (
-    <div className="pointer-events-none absolute right-[-4%] top-[-4%]">
+    <div className="pointer-events-none absolute" style={badgePosition}>
       <div
         className="nori-dock-badge rounded-full"
         aria-hidden="true"
-        style={{ width: diameter, height: diameter }}
+        style={{ width: diameter, height: diameter, ...badgePaint(size) }}
       />
     </div>
   );
@@ -275,6 +294,7 @@ interface DesktopDockItemProps {
   renderIcon?: DesktopDockProps["renderIcon"];
   badgeCount: number;
   badgeDot: boolean;
+  attention: boolean;
   tooltip?: ReactNode;
   reducedMotion: boolean;
   playCue?: (cue: string) => void;
@@ -299,6 +319,7 @@ function DesktopDockItem({
   renderIcon,
   badgeCount,
   badgeDot,
+  attention,
   tooltip,
   reducedMotion,
   playCue,
@@ -484,7 +505,11 @@ function DesktopDockItem({
 
         <div
           className={`dock-item-tooltip nori-dock-tooltip absolute pointer-events-none whitespace-nowrap rounded px-2 py-1 text-xs font-medium transition-opacity duration-150 ${
-            damaged ? "opacity-100 nori-dock-tooltip-damaged" : "opacity-0 group-hover:opacity-100"
+            damaged
+              ? "opacity-100 nori-dock-tooltip-damaged"
+              : attention
+                ? "opacity-100"
+                : "opacity-0 group-hover:opacity-100"
           }`}
           style={{
             bottom: "calc(100% + 8px)",
@@ -741,6 +766,7 @@ export function DesktopDock({
           const placement = appAt(appIndex);
           const process = processes[app.id];
           const open = Boolean(process && process.windowIds.length > 0);
+          const attention = hasCreditsDockAttention(app.id, facts);
           return (
             <DesktopDockItem
               key={app.id}
@@ -756,8 +782,9 @@ export function DesktopDock({
               translate={translate}
               renderIcon={renderIcon}
               badgeCount={getBadgeCount(app.id)}
-              badgeDot={getBadgeDot(app.id)}
-              tooltip={getTooltip?.(app)}
+              badgeDot={attention || getBadgeDot(app.id)}
+              attention={attention}
+              tooltip={attention ? translate("credits.dockTooltip") : getTooltip?.(app)}
               reducedMotion={reducedMotion}
               playCue={playCue}
               onMenuOpenChange={setAnyMenuOpen}
@@ -789,6 +816,7 @@ export function DesktopDock({
           const placement = appAt(appIndex);
           const process = processes[app.id];
           const open = Boolean(process && process.windowIds.length > 0);
+          const attention = hasCreditsDockAttention(app.id, facts);
           return (
             <DesktopDockItem
               key={app.id}
@@ -805,8 +833,9 @@ export function DesktopDock({
               translate={translate}
               renderIcon={renderIcon}
               badgeCount={getBadgeCount(app.id)}
-              badgeDot={getBadgeDot(app.id)}
-              tooltip={getTooltip?.(app)}
+              badgeDot={attention || getBadgeDot(app.id)}
+              attention={attention}
+              tooltip={attention ? translate("credits.dockTooltip") : getTooltip?.(app)}
               reducedMotion={reducedMotion}
               playCue={playCue}
               onMenuOpenChange={setAnyMenuOpen}

@@ -136,10 +136,11 @@ export function useWindowInteraction({
   }
 
   useEffect(() => {
-    if (!dragSessionRef.current && !resizeSessionRef.current) {
+    // Exclusive windows use the inset/aspect-ratio layout owned by WindowChrome.
+    if (!exclusive && !dragSessionRef.current && !resizeSessionRef.current) {
       writeRect(rootRef.current, rect);
     }
-  }, [rect]);
+  }, [rect, exclusive]);
 
   const applyLiveRect = useCallback((next: WindowRect) => {
     liveRectRef.current = next;

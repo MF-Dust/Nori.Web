@@ -1,0 +1,222 @@
+import { NoriSceneRenderer } from "./scene-renderer";
+import { createHeadPatPlugin } from "./head-pat-plugin";
+import { bindHeadPatInput } from "./head-pat-input";
+import { registerScanModel } from "./scan-bounds";
+import { useEffect, useRef, useState } from "react";
+import {
+  Live2DEngine,
+  createDragPlugin,
+  createBlinkPlugin,
+  createBreathPlugin,
+  createPhysicsPlugin,
+  createLipSyncPlugin,
+  type Live2DSession,
+} from "./engine.js";
+import type { SpeechPlayer } from "../runtime/speech-player";
+import {
+  live2DRenderBudget,
+  useGraphicsSettings,
+  ResolutionHysteresis,
+} from "../state/graphics-store";
+import "./stage.css";
+import { detectGpu } from "../runtime/graphics-detection";
+import { bindNoriModel } from "./model-runtime";
+import { noriIdleFromFacts, noriLipExpressionBlend } from "./idle-controller";
+import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
+import { attachLive2DDebug } from "./debug-runtime";
+import {
+  createCinematicFacePlugin,
+  createThinkingLightPlugin,
+} from "./scene-plugins";
+
+/** NormalApp model and plugin configuration. Story choreography remains a separate boundary. */
+export function NoriStage({
+  frontend,
+  facts,
+  exclusive,
+}: {
+  frontend: NoriFrontendRuntime;
+  facts: ReadonlySet<string>;
+  exclusive(): boolean;
+}) {
+  const speech: SpeechPlayer = frontend.speech;
+  const latest = useRef({ facts, exclusive });
+  latest.current = { facts, exclusive };
+  const host = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState("loading");
+  useEffect(() => {
+    if (!host.current) return;
+    // A fresh canvas for each effect lifetime also survives StrictMode's setup/cleanup probe.
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("aria-label", "Nori model texture");
+    canvas.dataset.modelTexture = "true";
+    const sceneCanvas = document.createElement("canvas");
+    sceneCanvas.setAttribute("aria-label", "Nori");
+    sceneCanvas.dataset.sceneCanvas = "true";
+    let renderer: NoriSceneRenderer | undefined;
+    let sceneFrame = 0, lastFrame = 0;
+    let projected = { x: 0, y: 0, width: 0, height: 0 };
+    const pointer = { x: 0, y: 0 };
+    const move = (event: PointerEvent) => { pointer.x = event.clientX / window.innerWidth * 2 - 1; pointer.y = 1 - event.clientY / window.innerHeight * 2; };
+    window.addEventListener("pointermove", move, { passive: true });
+    host.current.append(canvas, sceneCanvas);
+    let unregisterScan: (() => void) | undefined;
+    let unbindModel: (() => void) | undefined;
+    let unbindDebug: (() => void) | undefined;
+    let patInput: ReturnType<typeof bindHeadPatInput> | undefined;
+    let disposed = false,
+      engine: Live2DEngine | undefined,
+      session: Live2DSession | undefined;
+    const resolution = new ResolutionHysteresis();
+    let budgetTimer: ReturnType<typeof setTimeout> | undefined;
+    let graphicsMode = useGraphicsSettings.getState().mode;
+    const updateBudget = () => {
+      if (!session || !host.current) return;
+      clearTimeout(budgetTimer);
+      const nextMode = useGraphicsSettings.getState().mode;
+      if (nextMode !== graphicsMode) {
+        resolution.reset();
+        graphicsMode = nextMode;
+      }
+      const budget = live2DRenderBudget(
+        useGraphicsSettings.getState().mode,
+        Math.max(host.current.clientHeight, host.current.clientWidth),
+        window.devicePixelRatio,
+        detectGpu().tier === "low",
+      );
+      const stable = resolution.update(budget.resolution, performance.now());
+      session.setMaxFps(budget.fps);
+      renderer?.resize(host.current.clientWidth, host.current.clientHeight, Math.min(window.devicePixelRatio || 1, graphicsMode === "quality" ? 2 : 1));
+      session.setResolution(stable.resolution);
+      host.current.dataset.live2dFps = String(budget.fps);
+      host.current.dataset.live2dResolution = String(stable.resolution);
+      if (stable.delay !== null)
+        budgetTimer = setTimeout(updateBudget, stable.delay);
+    };
+    const unsubscribeGraphics = useGraphicsSettings.subscribe(updateBudget);
+    const resize = new ResizeObserver(updateBudget);
+    resize.observe(host.current);
+    setStatus("loading");
+    try {
+      engine = Live2DEngine.create({ baseUrl: "/", logging: "error" });
+      session = engine.createSession({
+        canvas,
+        render: { maxResolution: 2048 },
+        camera: { viewScale: 1, offsetX: 0, offsetY: 0 },
+        input: { enableDrag: false, enableTap: false, passThrough: true },
+        plugins: [
+          createDragPlugin({ enabled: false }),
+          createBlinkPlugin({ enabled: false }),
+          createBreathPlugin({ enabled: false }),
+          createPhysicsPlugin({ enabled: true }),
+          createLipSyncPlugin({
+            enabled: true,
+            getAmplitude: () => speech.level(),
+            getIntensity: () => 0.4,
+            getFormIntensity: () =>
+              ["kneel", "kneelCalm"].includes(
+                noriIdleFromFacts(latest.current.facts),
+              )
+                ? 0
+                : 1,
+            getExpressionBlend: noriLipExpressionBlend,
+          }),
+          createThinkingLightPlugin(
+            () =>
+              frontend.conversation.snapshot().connected &&
+              frontend.conversation.snapshot().phase === "executing",
+          ),
+          createCinematicFacePlugin(frontend.scene),
+          createHeadPatPlugin(frontend.headPat),
+        ],
+      });
+      updateBudget();
+      void session
+        .loadModel({
+          dir: "/ARGNori_web/",
+          modelJson: "ARGNori.model3.json",
+          textureVariants: {
+            corrupt: { 0: "ARGNori.4096/texture_00_corrupt.png" },
+          },
+        })
+        .then((model) => {
+          if (disposed) return;
+          unbindDebug = attachLive2DDebug(frontend.live2dDebug, model);
+          try {
+            renderer = new NoriSceneRenderer(sceneCanvas, canvas, frontend.audio);
+            host.current!.dataset.sceneRenderer = "three";
+            updateBudget();
+          } catch (error) {
+            console.warn("[NoriScene] renderer unavailable", error);
+            host.current!.dataset.sceneRenderer = "fallback";
+            sceneCanvas.remove();
+          }
+          unregisterScan = registerScanModel(canvas, model, () => {
+            if (!renderer) return canvas.getBoundingClientRect();
+            const rect = host.current!.getBoundingClientRect();
+            return { x: rect.x + projected.x - projected.width / 2, y: rect.y + projected.y - projected.height / 2, width: projected.width, height: projected.height };
+          });
+          model.setIdleSequence({ group: "Idle", index: 0, loop: true });
+          unbindModel = bindNoriModel({
+            model,
+            reactions: frontend.reactions,
+            conversation: frontend.conversation,
+            speech,
+            scene: frontend.scene,
+            facts: () => latest.current.facts,
+            exclusive: () => latest.current.exclusive(),
+            host: host.current!,
+          });
+          session!.start();
+          patInput = bindHeadPatInput(host.current!, model, frontend);
+          const renderScene = (now: number) => {
+            if (disposed) return;
+            patInput?.update(renderer
+              ? { x: projected.x - projected.width / 2, y: projected.y - projected.height / 2, width: projected.width, height: projected.height }
+              : { x: 0, y: 0, width: host.current!.clientWidth, height: host.current!.clientHeight });
+            sceneFrame = requestAnimationFrame(renderScene);
+            if (!renderer || now - lastFrame < 1000 / (graphicsMode === "ultra-performance" ? 30 : 60)) return;
+            lastFrame = now;
+            projected = renderer.render(now / 1000, frontend.scene.snapshot(), { exclusive: latest.current.exclusive(), facts: latest.current.facts, pointer, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches }) ?? projected;
+            host.current!.dataset.coldOpen = renderer.coldOpenStatus;
+          };
+          sceneFrame = requestAnimationFrame(renderScene);
+          setStatus("ready");
+        })
+        .catch((error) => {
+          if (!disposed) {
+            console.error("[NoriStage]", error);
+            setStatus("error");
+          }
+        });
+    } catch (error) {
+      console.error("[NoriStage]", error);
+      setStatus("error");
+    }
+    return () => {
+      disposed = true;
+      unsubscribeGraphics();
+      unregisterScan?.();
+      unbindModel?.();
+      unbindDebug?.();
+      patInput?.dispose();
+      clearTimeout(budgetTimer);
+      resize.disconnect();
+      cancelAnimationFrame(sceneFrame);
+      window.removeEventListener("pointermove", move);
+      renderer?.dispose();
+      sceneCanvas.remove();
+      engine?.dispose();
+      canvas.remove();
+    };
+  }, [frontend, speech]);
+  return (
+    <div className="nori-stage" ref={host} data-live2d-status={status}>
+      {status === "error" && (
+        <span className="nori-stage-error" role="status">
+          Live2D unavailable
+        </span>
+      )}
+    </div>
+  );
+}

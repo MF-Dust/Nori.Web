@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   Download,
   EllipsisVertical,
+  ImageOff,
   Lock,
   Phone,
   Plus,
@@ -32,6 +33,11 @@ import type {
   SignalThread,
 } from "../apps/messenger";
 import { SIGNAL_DANIEL_EVIDENCE_FACT } from "../apps/signal-daniel";
+import {
+  draftAfterSuccessfulSend,
+  isConversationNearBottom,
+  shouldSubmitMessageKey,
+} from "../apps/messenger-interactions";
 import { MarkdownBody } from "../components/markdown-body";
 
 const DESKTOP_BREAKPOINT = 640;
@@ -66,6 +72,7 @@ export interface SignalServiceConversationRuntime {
 
 export interface MessengerScreenRuntime {
   model: MessengerAppModel;
+  subscribe?: (listener: () => void) => () => void;
   translate?: MessengerTranslate;
   playCue?: (cue: string) => void;
   openUrl?: (url: string) => void | Promise<void>;
@@ -172,6 +179,7 @@ function Avatar({
   t: MessengerTranslate;
 }) {
   const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [imageSrc]);
   if (imageSrc && !failed) {
     const image = (
       <img
@@ -368,13 +376,13 @@ function ThreadList({
           type="button"
           title={t("signal.threads.newChatHint")}
           aria-label={t("signal.threads.newChat")}
-          className="flex size-7 cursor-not-allowed items-center justify-center rounded-md text-muted-foreground/70"
+          className="flex size-7 cursor-not-allowed items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:text-muted-foreground"
         >
           <SquarePen className="size-4" />
         </button>
       </header>
       <div className="px-3 py-2.5">
-        <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 focus-within:ring-1 focus-within:ring-ring/40">
+        <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-shadow focus-within:ring-1 focus-within:ring-ring/40">
           <Search className="size-4 shrink-0 text-muted-foreground" />
           <input
             value={query}
@@ -388,7 +396,7 @@ function ThreadList({
               type="button"
               onClick={() => setQuery("")}
               aria-label={t("signal.threads.clearSearch")}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
+              className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
             >
               <X className="size-4" />
             </button>
@@ -456,14 +464,21 @@ function FileAttachment({
   const download = () => {
     if (downloading || !fact) return;
     if (downloaded) {
-      void emit();
+      void emit().catch((error) => {
+        console.warn("[Signal] Failed to reopen attachment", error);
+      });
       return;
     }
     setDownloading(true);
     setProgress(0);
     rafRef.current = requestAnimationFrame(() => setProgress(100));
     timeoutRef.current = window.setTimeout(() => {
-      void emit().finally(() => setDownloading(false));
+      void emit()
+        .catch((error) => {
+          console.warn("[Signal] Failed to download attachment", error);
+          setProgress(0);
+        })
+        .finally(() => setDownloading(false));
     }, FILE_DOWNLOAD_DURATION_MS);
   };
 
@@ -531,6 +546,51 @@ function linkedText(
   );
 }
 
+function MessagePhoto({
+  message,
+  onViewImage,
+  t,
+}: {
+  message: SignalMessage;
+  onViewImage(src: string): void;
+  t: MessengerTranslate;
+}) {
+  const [failed, setFailed] = useState(false);
+  const src = message.assetPath!;
+  useEffect(() => setFailed(false), [src]);
+
+  if (failed) {
+    return (
+      <div
+        role="img"
+        aria-label={message.alt || t("signal.message.imagePreview")}
+        className="flex min-h-24 min-w-36 flex-col items-center justify-center gap-1 rounded-[14px] bg-muted/60 px-4 py-6 text-muted-foreground"
+      >
+        <ImageOff className="size-5" />
+        <span className="text-xs">{t("signal.message.imagePreview")}</span>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onViewImage(src)}
+      aria-label={t("signal.conversation.viewPhoto")}
+      className="block w-full cursor-zoom-in outline-none transition-opacity hover:opacity-95"
+    >
+      <img
+        src={src}
+        alt={message.alt ?? ""}
+        width={message.dimensions?.width}
+        height={message.dimensions?.height}
+        onError={() => setFailed(true)}
+        className="block h-auto max-w-full rounded-[14px] object-cover"
+      />
+    </button>
+  );
+}
+
 function MessageBubble({
   message,
   thread,
@@ -567,20 +627,7 @@ function MessageBubble({
     return (
       <div className={`flex ${own ? "justify-end" : "justify-start"}`}>
         <div className={`relative max-w-[min(78%,20rem)] overflow-hidden rounded-2xl p-0.5 ${own ? "rounded-br-sm bg-primary" : "rounded-bl-sm border"}`}>
-          <button
-            type="button"
-            onClick={() => onViewImage(message.assetPath!)}
-            aria-label={t("signal.conversation.viewPhoto")}
-            className="block w-full cursor-zoom-in outline-none transition-opacity hover:opacity-95"
-          >
-            <img
-              src={message.assetPath}
-              alt={message.alt ?? ""}
-              width={message.dimensions?.width}
-              height={message.dimensions?.height}
-              className="block h-auto max-w-full rounded-[14px] object-cover"
-            />
-          </button>
+          <MessagePhoto message={message} onViewImage={onViewImage} t={t} />
           {stamp ? (
             <span className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
               {stamp}
@@ -678,7 +725,7 @@ function SealedComposer({ runtime, t }: { runtime: MessengerScreenRuntime; t: Me
               <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">{t("signal.composer.errorBody")}</p>
               <div className="mt-2 flex items-center gap-2">
                 <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{SEALED_ERROR_CODE}</span>
-                <button type="button" onClick={() => setDetailsOpen((value) => !value)} className="text-[11px] text-muted-foreground hover:text-foreground">
+                <button type="button" onClick={() => setDetailsOpen((value) => !value)} className="text-[11px] text-muted-foreground transition-colors hover:text-foreground">
                   {t("signal.composer.details")}
                 </button>
               </div>
@@ -695,7 +742,7 @@ function SealedComposer({ runtime, t }: { runtime: MessengerScreenRuntime; t: Me
                 setDetailsOpen(false);
               }}
               aria-label={t("signal.composer.dismiss")}
-              className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+              className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
             >
               <X className="size-4" />
             </button>
@@ -703,7 +750,7 @@ function SealedComposer({ runtime, t }: { runtime: MessengerScreenRuntime; t: Me
         </div>
       ) : null}
       <div className="flex items-end gap-2 px-3 py-2.5">
-        <button type="button" onClick={reject} aria-label={t("signal.composer.attach")} title={t("signal.composer.disabledHint")} className="mb-0.5 flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70">
+        <button type="button" onClick={reject} aria-label={t("signal.composer.attach")} title={t("signal.composer.disabledHint")} className="mb-0.5 flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-muted-foreground">
           <Plus className="size-5" />
         </button>
         <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2">
@@ -721,7 +768,7 @@ function SealedComposer({ runtime, t }: { runtime: MessengerScreenRuntime; t: Me
             aria-label={t("signal.composer.placeholder")}
             className="min-w-0 flex-1 cursor-not-allowed bg-transparent text-sm text-muted-foreground outline-none placeholder:text-muted-foreground"
           />
-          <button type="button" onClick={reject} aria-label={t("signal.composer.emoji")} title={t("signal.composer.disabledHint")} className="shrink-0 cursor-not-allowed text-muted-foreground/70">
+          <button type="button" onClick={reject} aria-label={t("signal.composer.emoji")} title={t("signal.composer.disabledHint")} className="shrink-0 cursor-not-allowed text-muted-foreground/70 transition-colors hover:text-muted-foreground">
             <Smile className="size-5" />
           </button>
         </div>
@@ -743,27 +790,46 @@ function ServiceComposer({
   t: MessengerTranslate;
 }) {
   const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const composing = useRef(false);
   const typing = runtime.serviceConversation?.isTyping?.(thread) === true;
-  const send = () => {
+  const send = async () => {
     const trimmed = body.trim();
-    if (!trimmed || typing || !runtime.serviceConversation?.send) return;
+    const serviceSend = runtime.serviceConversation?.send;
+    if (!trimmed || typing || sending || !serviceSend) return;
+    setSending(true);
     runtime.playCue?.("comms-signal-verify-send");
-    void runtime.serviceConversation.send(thread, trimmed);
-    setBody("");
+    try {
+      await serviceSend(thread, trimmed);
+      setBody((current) => draftAfterSuccessfulSend(current, trimmed));
+    } catch (error) {
+      console.warn("[Signal] Failed to send service message", error);
+      inputRef.current?.focus();
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <div className="relative shrink-0 border-t border-border/50">
       <div className="flex items-end gap-2 px-3 py-2.5">
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2 focus-within:ring-1 focus-within:ring-ring/40">
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2 transition-shadow focus-within:ring-1 focus-within:ring-ring/40">
           <input
+            ref={inputRef}
             type="text"
             value={body}
             onChange={(event) => setBody(event.target.value)}
+            onCompositionStart={() => {
+              composing.current = true;
+            }}
+            onCompositionEnd={() => {
+              composing.current = false;
+            }}
             onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+              if (shouldSubmitMessageKey(event, composing.current)) {
                 event.preventDefault();
-                send();
+                void send();
               }
             }}
             autoComplete="off"
@@ -772,7 +838,7 @@ function ServiceComposer({
             className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
         </div>
-        <button type="button" onClick={send} disabled={!body.trim() || typing} aria-label={t("signal.composer.send")} className="mb-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40">
+        <button type="button" onClick={() => void send()} disabled={!body.trim() || typing || sending} aria-label={t("signal.composer.send")} className="mb-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40">
           <SendHorizontal className="size-[18px]" />
         </button>
       </div>
@@ -842,11 +908,18 @@ function ConversationView({
   const serviceBadge = serviceConversation?.getServiceBadge?.(thread);
   const showServiceBadge = serviceBadge === undefined ? thread.service : serviceBadge !== null;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottom = useRef(true);
+  const previousThreadId = useRef(thread.threadId);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = scrollRef.current;
-    if (element) element.scrollTop = element.scrollHeight;
-  }, [resolvedMessages, typing]);
+    if (!element) return;
+    if (previousThreadId.current !== thread.threadId) {
+      previousThreadId.current = thread.threadId;
+      stickToBottom.current = true;
+    }
+    if (stickToBottom.current) element.scrollTop = element.scrollHeight;
+  }, [resolvedMessages, thread.threadId, typing]);
 
   const actions = [
     { Icon: Phone, label: "signal.conversation.call" },
@@ -858,7 +931,7 @@ function ConversationView({
     <div className="flex h-full flex-col text-foreground">
       <header className="flex shrink-0 items-center gap-3 border-b border-border/50 px-3 py-2.5">
         {showBack ? (
-          <button type="button" onClick={onBack} aria-label={t("signal.conversation.back")} className="-ml-1 inline-flex items-center rounded-md p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground">
+          <button type="button" onClick={onBack} aria-label={t("signal.conversation.back")} className="-ml-1 inline-flex items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground">
             <ChevronLeft className="size-5" />
           </button>
         ) : null}
@@ -885,13 +958,19 @@ function ConversationView({
         </div>
         <div className="flex items-center gap-0.5">
           {actions.map(({ Icon, label }) => (
-            <button key={label} type="button" title={t("signal.conversation.unavailable")} aria-label={t(label)} className="flex size-8 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70">
+            <button key={label} type="button" title={t("signal.conversation.unavailable")} aria-label={t(label)} className="flex size-8 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-muted-foreground">
               <Icon className="size-[18px]" />
             </button>
           ))}
         </div>
       </header>
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 py-3"
+        onScroll={(event) => {
+          stickToBottom.current = isConversationNearBottom(event.currentTarget);
+        }}
+      >
         <div className="flex justify-center pb-3 pt-1">
           <span className="max-w-[80%] rounded-lg bg-muted/60 px-3 py-1.5 text-center text-[11px] leading-relaxed text-muted-foreground">
             {t("signal.conversation.encryptionNotice")}
@@ -925,7 +1004,7 @@ function ConversationView({
         </div>
       </div>
       {interactive
-        ? <ServiceComposer thread={thread} runtime={runtime} t={t} />
+        ? <ServiceComposer key={thread.threadId} thread={thread} runtime={runtime} t={t} />
         : <SealedComposer runtime={runtime} t={t} />}
     </div>
   );
@@ -933,9 +1012,12 @@ function ConversationView({
 
 function EmptyConversation({ t }: { t: MessengerTranslate }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center text-foreground">
-      <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10">
-        <SendHorizontal className="size-8 text-primary" />
+    <div
+      className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center text-foreground"
+      style={{ backgroundImage: "radial-gradient(320px 240px at 50% 38%, color-mix(in oklab, var(--primary) 13%, transparent), transparent 72%)" }}
+    >
+      <div className="size-16">
+        <img src="/app-icons/signal/icon-a.png" alt="" className="size-full object-contain" />
       </div>
       <div>
         <div className="text-base font-medium">{t("signal.empty.title")}</div>
@@ -951,54 +1033,100 @@ function EmptyConversation({ t }: { t: MessengerTranslate }) {
 function ImageOverlay({
   src,
   onClose,
+  returnFocus,
   t,
 }: {
   src: string;
   onClose(): void;
+  returnFocus: HTMLElement | null;
   t: MessengerTranslate;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    dialogRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    };
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      if (returnFocus?.isConnected) returnFocus.focus();
+    };
+  }, [onClose, returnFocus]);
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-6" role="dialog" aria-modal="true" onClick={onClose}>
-      <img
-        src={src}
-        alt={t("signal.conversation.viewPhoto")}
-        className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      />
+    <div
+      ref={dialogRef}
+      className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-6 outline-none"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("signal.conversation.viewPhoto")}
+      tabIndex={-1}
+      onClick={onClose}
+    >
+      {failed ? (
+        <div
+          role="img"
+          aria-label={t("signal.message.imagePreview")}
+          className="flex min-h-40 min-w-56 flex-col items-center justify-center gap-2 rounded-lg bg-popover p-8 text-muted-foreground shadow-2xl"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <ImageOff className="size-8" />
+          <span className="text-sm">{t("signal.message.imagePreview")}</span>
+        </div>
+      ) : (
+        <img
+          src={src}
+          alt={t("signal.conversation.viewPhoto")}
+          onError={() => setFailed(true)}
+          className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+          onClick={(event) => event.stopPropagation()}
+        />
+      )}
     </div>
   );
 }
 
-export function MessengerScreen({ runtime }: { runtime: MessengerScreenRuntime }) {
+export function MessengerScreen({ runtime, instanceId, setContentKey }: { runtime: MessengerScreenRuntime; instanceId?: string; setContentKey?: (instanceId: string, contentKey: string | null) => void }) {
   const t = runtime.translate ?? defaultTranslate;
   const [containerRef, width] = useContainerWidth();
   const [conversations, setConversations] = useState<SignalConversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [retainedThreadId, setRetainedThreadId] = useState<string | null>(null);
-  const [image, setImage] = useState<string | null>(null);
+  const [image, setImage] = useState<{ src: string; returnFocus: HTMLElement | null } | null>(null);
   const [localReadFacts, setLocalReadFacts] = useState<Set<string>>(() => new Set());
 
+  useEffect(() => {
+    if (!instanceId) return;
+    const photo = image ? (image.src.split("/").pop() ?? image.src).replace(/\.[^.]+$/, "").replaceAll(".", "-") : null;
+    setContentKey?.(instanceId, selectedThreadId ? `signal:${selectedThreadId}${photo ? `.photo.${photo}` : ""}` : "signal:messenger");
+    return () => setContentKey?.(instanceId, null);
+  }, [instanceId, setContentKey, selectedThreadId, image]);
+
+  const loadRevision = useRef(0);
   const load = useCallback(async () => {
-    setLoading(true);
+    const revision = ++loadRevision.current;
     try {
-      setConversations(await runtime.model.conversations());
+      const next = await runtime.model.conversations();
+      if (revision === loadRevision.current) setConversations(next);
     } catch (error) {
       console.warn("[Signal] Failed to load conversations", error);
     } finally {
-      setLoading(false);
+      if (revision === loadRevision.current) setLoading(false);
     }
   }, [runtime.model]);
 
   useEffect(() => {
     void load();
-  }, [load]);
+    const unsubscribe = runtime.subscribe?.(() => void load());
+    return () => { loadRevision.current++; unsubscribe?.(); };
+  }, [load, runtime.subscribe]);
 
   const views = useMemo(
     () => buildThreadViews(conversations, localReadFacts, runtime.hasFact),
@@ -1036,6 +1164,14 @@ export function MessengerScreen({ runtime }: { runtime: MessengerScreenRuntime }
   }, [loading, runtime, selectThread]);
 
   const back = useCallback(() => setSelectedThreadId(null), []);
+  const viewImage = useCallback((src: string) => {
+    const active = document.activeElement;
+    setImage({
+      src,
+      returnFocus: active instanceof HTMLElement ? active : null,
+    });
+  }, []);
+  const closeImage = useCallback(() => setImage(null), []);
 
   if (width >= DESKTOP_BREAKPOINT) {
     return (
@@ -1045,10 +1181,10 @@ export function MessengerScreen({ runtime }: { runtime: MessengerScreenRuntime }
         </div>
         <div className="min-w-0 flex-1">
           {selected
-            ? <ConversationView conversation={selected} showBack={false} onBack={back} onViewImage={setImage} runtime={runtime} t={t} />
+            ? <ConversationView conversation={selected} showBack={false} onBack={back} onViewImage={viewImage} runtime={runtime} t={t} />
             : <EmptyConversation t={t} />}
         </div>
-        {image ? <ImageOverlay src={image} onClose={() => setImage(null)} t={t} /> : null}
+        {image ? <ImageOverlay src={image.src} returnFocus={image.returnFocus} onClose={closeImage} t={t} /> : null}
       </div>
     );
   }
@@ -1071,11 +1207,11 @@ export function MessengerScreen({ runtime }: { runtime: MessengerScreenRuntime }
         </div>
         <div className="h-full w-1/2 shrink-0">
           {retained
-            ? <ConversationView conversation={retained} showBack onBack={back} onViewImage={setImage} runtime={runtime} t={t} />
+            ? <ConversationView conversation={retained} showBack onBack={back} onViewImage={viewImage} runtime={runtime} t={t} />
             : null}
         </div>
       </div>
-      {image ? <ImageOverlay src={image} onClose={() => setImage(null)} t={t} /> : null}
+      {image ? <ImageOverlay src={image.src} returnFocus={image.returnFocus} onClose={closeImage} t={t} /> : null}
     </div>
   );
 }

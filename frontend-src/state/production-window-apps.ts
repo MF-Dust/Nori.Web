@@ -47,6 +47,18 @@ export interface CreateProductionWindowAppsOptions {
   windows?: ProductionWindowBindings;
   lifecycle?: ProductionAppLifecycleBindings;
   warn?: (message: string) => void;
+  /** Resolves only catalog defaults; per-instance titles still win in the store. */
+  translate?: (key: string) => string;
+}
+
+function catalogTitle(
+  fallback: string,
+  key: string | undefined,
+  translate: CreateProductionWindowAppsOptions["translate"],
+): string {
+  if (!key || !translate) return fallback;
+  const translated = translate(key);
+  return translated && translated !== key ? translated : fallback;
 }
 
 function defaultWindowType(app: ProductionAppDescriptor): string | null {
@@ -85,6 +97,7 @@ function createWindowDefinition(
   descriptor: ProductionWindowDescriptor,
   appTitle: string,
   binding?: ProductionWindowBinding,
+  translate?: CreateProductionWindowAppsOptions["translate"],
 ): RegisteredWindowAppDefinition["windows"][string] {
   const screenDefinitions =
     descriptor.screens && binding?.screens
@@ -111,7 +124,9 @@ function createWindowDefinition(
     // catalog stores static recovered titles, so folding the final fallback
     // here preserves the same visible result without requiring a translation
     // service inside the generic window manager.
-    title: descriptor.title ?? appTitle,
+    title: descriptor.title
+      ? catalogTitle(descriptor.title, descriptor.titleKey, translate)
+      : appTitle,
     defaultSize: descriptor.defaultSize,
     component: binding?.component,
     resizable: descriptor.resizable,
@@ -143,14 +158,17 @@ export function createProductionWindowAppDefinition(
   descriptor: ProductionAppDescriptor,
   windows: ProductionWindowBindings = {},
   lifecycle?: ProductionAppLifecycleBinding,
+  translate?: CreateProductionWindowAppsOptions["translate"],
 ): RegisteredWindowAppDefinition {
+  const appTitle = catalogTitle(descriptor.title, descriptor.titleKey, translate);
   const definitions = Object.fromEntries(
     descriptor.windows.map((window) => [
       window.type,
       createWindowDefinition(
         window,
-        descriptor.title,
+        appTitle,
         windows[descriptor.id]?.[window.type],
+        translate,
       ),
     ]),
   );
@@ -173,7 +191,7 @@ export function createProductionWindowAppDefinition(
 
   return {
     id: descriptor.id,
-    title: descriptor.title,
+    title: appTitle,
     sourceBinding: descriptor.sourceBinding,
     pinned: descriptor.pinned,
     bootstrap: descriptor.bootstrap,
@@ -202,6 +220,7 @@ export function createProductionWindowAppRegistry(
       descriptor,
       options.windows,
       options.lifecycle?.[descriptor.id],
+      options.translate,
     ),
   );
 

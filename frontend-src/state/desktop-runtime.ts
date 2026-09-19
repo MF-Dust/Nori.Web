@@ -62,6 +62,7 @@ export function createDesktopRuntime(
       windows: options.windows,
       lifecycle: options.lifecycle,
       warn: options.warn,
+      translate: options.translate,
     });
   const layout = options.layout ?? createNoriWindowLayoutRuntime();
   const ownsInstallRuntime = !options.installRuntime;

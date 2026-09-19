@@ -46,6 +46,8 @@ class CakeDuelCartridge(BaseCartridge):
                 "settings": {"difficulty": "soldier", "roundsToWin": 3, "seed": 20260127},
                 "tutorial": None,
                 "lastError": None,
+                "debugScenarioId": None,
+                "debugScenario": None,
             },
         )
         self._rng = random.Random()
@@ -84,6 +86,48 @@ class CakeDuelCartridge(BaseCartridge):
             "specialCardList": list(SPECIAL_CARD_LIST),
             "specialCardsToAdd": 0,
         }
+
+    @staticmethod
+    def _debug_scenario(scenario_id: str) -> Dict[str, Any]:
+        fixtures = {
+            "attack-phase": {
+                "playerHand": ["archer", "scientist", "soldier", "archer", "wizard"],
+                "opponentHand": ["archer", "soldier", "wizard"],
+                "attackPile": ["archer", "archer"], "blockPile": [],
+                "deckTop": ["soldier", "wizard", "archer", "scientist"], "deckCount": 12, "discardCount": 3,
+            },
+            "block-phase": {
+                "playerHand": ["soldier", "wizard", "archer"],
+                "opponentHand": ["archer", "scientist", "soldier", "wizard"],
+                "attackPile": ["archer", "archer"], "blockPile": ["soldier", "soldier"],
+                "deckTop": ["wizard", "archer", "scientist", "soldier"], "deckCount": 8, "discardCount": 5,
+            },
+            "stacked": {
+                "playerHand": ["archer", "archer", "archer", "soldier", "soldier", "wizard", "scientist"],
+                "opponentHand": ["archer", "soldier", "wizard", "scientist", "archer"],
+                "attackPile": ["archer", "archer", "archer"], "blockPile": ["soldier", "soldier", "soldier"],
+                "deckTop": ["wizard", "scientist", "archer", "soldier"], "deckCount": 4, "discardCount": 10,
+            },
+            "empty": {
+                "playerHand": [], "opponentHand": [], "attackPile": [], "blockPile": [],
+                "deckTop": [], "deckCount": 0, "discardCount": 0,
+            },
+        }
+        fixture = fixtures.get(scenario_id)
+        if fixture is None:
+            raise CommandRejected("Unknown Cake Duel debug scenario")
+        next_id = 1000
+        result: Dict[str, Any] = {}
+        for key, value in fixture.items():
+            if isinstance(value, list):
+                entities = []
+                for name in value:
+                    entities.append({"entityId": next_id, "name": name})
+                    next_id += 1
+                result[key] = entities
+            else:
+                result[key] = value
+        return result
 
     @classmethod
     def _new_engine(cls, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -364,14 +408,24 @@ class CakeDuelCartridge(BaseCartridge):
             game = self._new_engine(config)
             events: List[Dict[str, Any]] = [self._engine_event("game_started", cardList=list(game["cardList"]), config=deepcopy(config))]
             self._start_bout(game, events)
-            state.update({"settings": settings, "config": config, "game": game, "tutorial": {"step": "free_play"} if cmd.get("mode") == "tutorial" else None, "lastError": None})
+            state.update({"settings": settings, "config": config, "game": game, "tutorial": {"step": "free_play"} if cmd.get("mode") == "tutorial" else None, "lastError": None, "debugScenarioId": None, "debugScenario": None})
             return ReducerResult(state, {"success": True}, events)
 
         if command_type == "reset":
             if actor != "player":
                 raise CommandRejected("Only player may reset")
-            state.update({"config": None, "game": None, "tutorial": None, "lastError": None})
+            state.update({"config": None, "game": None, "tutorial": None, "lastError": None, "debugScenarioId": None, "debugScenario": None})
             return ReducerResult(state, {"success": True})
+
+        if command_type == "debugLoadScenario":
+            if actor != "player":
+                raise CommandRejected("Only player may load debug scenarios")
+            scenario_id = cmd.get("scenarioId")
+            if not isinstance(scenario_id, str):
+                raise CommandRejected("scenarioId is required")
+            state["debugScenarioId"] = scenario_id
+            state["debugScenario"] = self._debug_scenario(scenario_id)
+            return ReducerResult(state, {"success": True}, [{"type": "debug_scenario_loaded", "scenarioId": scenario_id}])
 
         if command_type == "debugSetDealtCardGuarantee":
             if actor != "player":

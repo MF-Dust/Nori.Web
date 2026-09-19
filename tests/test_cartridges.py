@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
+from copy import deepcopy
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -11,7 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from backend.cartridges.cakeduel import CakeDuelCartridge
 from backend.virtual_apps import live_pack
 from backend.cartridges.chat import ChatCartridge
-from backend.cartridges.chess import ChessCartridge
+from backend.cartridges.chess import CHESS_DEBUG_SCENARIOS, ChessCartridge, TUTORIAL_STEPS
+from backend.cartridges.base import CommandRejected
 from backend.cartridges.codenames import CodenamesCartridge
 from backend.cartridges.manifold import ManifoldWebCartridge
 from backend.cartridges.pictionary import PictionaryCartridge
@@ -87,6 +90,68 @@ def test_codenames() -> None:
     assert cartridge_en.state["gameState"]["history"][-1]["clue"]["word"] == "NORI"
 
 
+def test_codenames_debug_scenarios() -> None:
+    expected = {
+        "sudden_death_both": (True, True),
+        "sudden_death_counterpart_only": (False, True),
+        "sudden_death_agent_only": (True, False),
+    }
+    for scenario_id, remaining in expected.items():
+        cartridge = CodenamesCartridge()
+        cartridge.dispatch("player", {"type": "startGame", "settings": {"tokens": 9, "seed": 41, "wordLocale": "en"}})
+        commit = cartridge.dispatch("player", {"type": "debugLoadScenario", "scenarioId": scenario_id})
+        game = cartridge.state["gameState"]
+        counts = tuple(cartridge._remaining_agents(game, side) > 0 for side in ("A", "B"))
+        assert counts == remaining
+        assert game["phase"] == "SUDDEN_DEATH" and game["tokensRemaining"] == 0
+        assert len(game["history"]) == cartridge.state["settings"]["tokens"]
+        assert commit.result == {"success": True}
+        assert any(event["type"] == "sudden_death" for event in commit.transition["events"])
+
+
+def test_codenames_tutorial_script() -> None:
+    cartridge = CodenamesCartridge()
+    cartridge.dispatch("player", {"type": "startGame", "mode": "tutorial", "settings": {"wordLocale": "en"}})
+    game = cartridge.state["gameState"]
+    assert cartridge.state["tutorial"] == {"step": "nori_opening_clue"}
+    assert game["whoseTurnToGive"] == "B" and game["board"][0]["text"] == "MOON"
+    try:
+        cartridge.dispatch("player", {"type": "submitGuess", "cell": 0})
+        raise AssertionError("tutorial wait step accepted a player guess")
+    except CommandRejected:
+        pass
+
+    def agent(expected_type: str) -> None:
+        command = cartridge.agent_next_command()
+        assert command and command["type"] == expected_type
+        cartridge.dispatch("agent", command)
+
+    agent("submitClue")
+    assert cartridge.state["gameState"]["history"][-1]["clue"] == {"word": "NIGHT", "count": 2}
+    for cell, step in ((0, "player_second_treasure"), (10, "player_berry_lesson"), (17, "player_real_clue")):
+        cartridge.dispatch("player", {"type": "submitGuess", "cell": cell})
+        assert cartridge.state["tutorial"]["step"] == step
+    cartridge.dispatch("player", {"type": "submitClue", "clue": {"word": "BUILDING", "count": 2}})
+    agent("submitGuess")
+    agent("endTurn")
+    agent("submitClue")
+    assert cartridge.state["tutorial"]["step"] == "player_free_guessing"
+    cartridge.dispatch("player", {"type": "submitGuess", "cell": 6})
+    cartridge.dispatch("player", {"type": "endTurn"})
+    agent("tutorialLoadStage")
+    agent("submitClue")
+    assert cartridge.state["tutorial"]["step"] == "player_monster_touch"
+    cartridge.dispatch("player", {"type": "submitGuess", "cell": 23})
+    assert cartridge.state["gameState"]["phase"] == "GAME_OVER"
+    agent("tutorialLoadStage")
+    assert cartridge.state["gameState"]["phase"] == "SUDDEN_DEATH"
+    final = cartridge.dispatch("player", {"type": "submitGuess", "cell": 12})
+    assert cartridge.state["tutorial"] == {"step": "free_play"}
+    assert cartridge.state["gameState"]["winner"] == "TEAM"
+    event_types = [event["type"] for event in final.transition["events"]]
+    assert event_types == ["card_reveal", "guess", "game_over", "tutorial_step"]
+
+
 def test_cakeduel() -> None:
     cartridge = CakeDuelCartridge()
     cartridge.dispatch("player", {"type": "startGame", "mode": "normal", "difficulty": "soldier"})
@@ -102,6 +167,24 @@ def test_cakeduel() -> None:
     cartridge.dispatch("agent", command)
 
 
+def test_cakeduel_debug_scenarios() -> None:
+    expected = {
+        "attack-phase": (5, 3, 2, 0, 12, 3),
+        "block-phase": (3, 4, 2, 2, 8, 5),
+        "stacked": (7, 5, 3, 3, 4, 10),
+        "empty": (0, 0, 0, 0, 0, 0),
+    }
+    for scenario_id, counts in expected.items():
+        cartridge = CakeDuelCartridge()
+        commit = cartridge.dispatch("player", {"type": "debugLoadScenario", "scenarioId": scenario_id})
+        scenario = cartridge.state["debugScenario"]
+        assert cartridge.state["debugScenarioId"] == scenario_id
+        assert tuple(len(scenario[key]) for key in ("playerHand", "opponentHand", "attackPile", "blockPile")) == counts[:4]
+        assert (scenario["deckCount"], scenario["discardCount"]) == counts[4:]
+        assert [card["entityId"] for key in ("playerHand", "opponentHand", "attackPile", "blockPile", "deckTop") for card in scenario[key]] == list(range(1000, 1000 + sum(counts[:4]) + len(scenario["deckTop"])))
+        assert commit.result == {"success": True}
+
+
 def test_chess() -> None:
     cartridge = ChessCartridge()
     cartridge.dispatch("player", {"type": "startGame", "mode": "normal", "side": "white", "difficulty": "casual"})
@@ -112,6 +195,86 @@ def test_chess() -> None:
     assert command is not None and command["type"] == "move"
     cartridge.dispatch("agent", command)
     assert cartridge.state["gameState"]["turn"] == "white"
+
+
+def test_chess_debug_scenarios() -> None:
+    assert len(CHESS_DEBUG_SCENARIOS) == 33
+    for scenario_id, fixture in CHESS_DEBUG_SCENARIOS.items():
+        cartridge = ChessCartridge()
+        commit = cartridge.dispatch("player", {"type": "debugLoadScenario", "scenarioId": scenario_id})
+        game = cartridge.state["gameState"]
+        assert cartridge.state["debugScenarioId"] == scenario_id
+        assert cartridge.state["settings"] == fixture["settings"]
+        assert game["startFen"] == fixture["startFen"]
+        assert len(game["moveHistory"]) == fixture["startPly"]
+        assert cartridge.state["debugScenario"]["nextPly"] == fixture["startPly"]
+        assert commit.result == {"success": True}
+        assert commit.transition["events"] == [{"type": "debug_scenario_loaded", "scenarioId": scenario_id}]
+        if fixture["startPly"] < len(fixture["script"]):
+            player_side = fixture["settings"]["playerSide"]
+            agent_side = "black" if player_side == "white" else "white"
+            command = cartridge.agent_next_command()
+            if game["turn"] == agent_side:
+                uci = fixture["script"][fixture["startPly"]]["uci"]
+                assert command == {"type": "move", "from": uci[:2], "to": uci[2:4], **({"promotion": uci[4]} if len(uci) == 5 else {})}
+            else:
+                assert command is None
+
+
+def test_chess_tutorial() -> None:
+    cartridge = ChessCartridge()
+    cartridge.dispatch("player", {"type": "startGame", "mode": "tutorial"})
+    assert cartridge.state["settings"]["playerSide"] == "white"
+    assert cartridge.state["settings"]["difficulty"] == "sleepy"
+
+    def reject(actor, command):
+        before = deepcopy(cartridge.state)
+        version = cartridge.head_version
+        try:
+            cartridge.dispatch(actor, command)
+        except CommandRejected:
+            pass
+        else:
+            raise AssertionError("Tutorial accepted an out-of-sequence command")
+        assert cartridge.state == before and cartridge.head_version == version
+
+    assert TUTORIAL_STEPS == json.loads((Path(__file__).resolve().parents[1] / "shared/chess-tutorial.json").read_text())
+    assert len(TUTORIAL_STEPS) == 22
+    for index, step in enumerate(TUTORIAL_STEPS):
+        assert cartridge.state["tutorial"]["step"] == step["id"]
+        for command in ("resign", "offerDraw", "requestTakeback"):
+            reject("player", {"type": command})
+        if index == 0:
+            reject("player", {"type": "move", "from": "d2", "to": "d4"})
+            reject("player", {"type": "move", **step["move"], "promotion": "q"})
+        if index == 1:
+            reject("agent", {"type": "move", "from": "d7", "to": "d5"})
+        command = {"type": "move", **step["move"]}
+        if step["mover"] == "agent":
+            assert cartridge.agent_next_command() == command
+        else:
+            assert cartridge.agent_next_command() is None
+        reject("agent" if step["mover"] == "player" else "player", command)
+        commit = cartridge.dispatch(step["mover"], command)
+        assert any(event["type"] == "tutorial_step" and event["step"] == step["id"] for event in commit.transition["events"])
+        assert len(cartridge.state["gameState"]["moveHistory"]) == index + 1
+        if index in (16, 17):
+            assert cartridge.state["gameState"]["moveHistory"][-1]["isCastling"]
+        if index == 11:
+            assert cartridge.state["gameState"]["isCheck"]
+        if index == 12:
+            assert not cartridge.state["gameState"]["isCheck"]
+
+    assert cartridge.state["tutorial"] == {"step": "free_play"}
+    cartridge.dispatch("player", {"type": "offerDraw"})
+    cartridge.dispatch("player", {"type": "cancelDrawOffer"})
+    cartridge.dispatch("player", {"type": "move", "from": "a2", "to": "a3"})
+    assert cartridge.agent_next_command() is not None
+    cartridge.dispatch("player", {"type": "startGame", "mode": "normal", "side": "black", "difficulty": "casual"})
+    assert cartridge.state["tutorial"] is None
+    cartridge.dispatch("player", {"type": "startGame", "mode": "tutorial"})
+    assert cartridge.state["tutorial"]["step"] == TUTORIAL_STEPS[0]["id"]
+    assert not cartridge.state["gameState"]["moveHistory"]
 
 
 def test_pictionary() -> None:
@@ -198,8 +361,11 @@ if __name__ == "__main__":
     test_registry()
     test_chat()
     test_codenames()
+    test_codenames_debug_scenarios()
+    test_codenames_tutorial_script()
     test_cakeduel()
     test_chess()
+    test_chess_tutorial()
     test_pictionary()
     test_manifold()
     test_manifold_changed_artifact_types()

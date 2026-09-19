@@ -45,14 +45,24 @@ export interface SignalDanielSnapshot {
 
 type Listener = () => void;
 
-function isRecord(value: JsonValue | undefined): value is Record<string, JsonValue> {
-  return value !== null && value !== undefined && typeof value === "object" && !Array.isArray(value);
+function isRecord(
+  value: JsonValue | undefined,
+): value is Record<string, JsonValue> {
+  return (
+    value !== null &&
+    value !== undefined &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  );
 }
 
 function parseReplies(value: JsonValue): string[] {
-  if (!isRecord(value) || value.ok !== true || !isRecord(value.result)) return [];
+  if (!isRecord(value) || value.ok !== true || !isRecord(value.result))
+    return [];
   return Array.isArray(value.result.reply)
-    ? value.result.reply.filter((item): item is string => typeof item === "string")
+    ? value.result.reply.filter(
+        (item): item is string => typeof item === "string",
+      )
     : [];
 }
 
@@ -86,6 +96,8 @@ export class SignalDanielConversationRuntime {
   private seq = 0;
   private revision = 0;
   private jumpEpoch: unknown;
+  private generation = 0;
+  private disposed = false;
   private jumpEpochInitialized = false;
 
   constructor(private readonly options: SignalDanielRuntimeOptions) {
@@ -120,11 +132,12 @@ export class SignalDanielConversationRuntime {
   }
 
   isInteractive = (thread: SignalThread): boolean =>
-    this.isDanielThread(thread)
-    && this.options.hasFact(SIGNAL_DANIEL_DEADMAN_FACT)
-    && !this.options.hasFact(SIGNAL_DANIEL_EVIDENCE_FACT);
+    this.isDanielThread(thread) &&
+    this.options.hasFact(SIGNAL_DANIEL_DEADMAN_FACT) &&
+    !this.options.hasFact(SIGNAL_DANIEL_EVIDENCE_FACT);
 
-  isTyping = (thread: SignalThread): boolean => this.isDanielThread(thread) && this.typing;
+  isTyping = (thread: SignalThread): boolean =>
+    this.isDanielThread(thread) && this.typing;
 
   /** Daniel hides the generic service badge until the deadman fact has surfaced. */
   getServiceBadge = (thread: SignalThread): string | null | undefined => {
@@ -152,8 +165,12 @@ export class SignalDanielConversationRuntime {
       ? staticMessages.filter((message) => message.kind !== "file")
       : latestLocal > 0
         ? staticMessages.map((message) => {
-            if (message.kind !== "file" || message.sortMs === undefined) return message;
-            return { ...message, sortMs: Math.max(message.sortMs, latestLocal + 0.5) };
+            if (message.kind !== "file" || message.sortMs === undefined)
+              return message;
+            return {
+              ...message,
+              sortMs: Math.max(message.sortMs, latestLocal + 0.5),
+            };
           })
         : [...staticMessages];
 
@@ -173,7 +190,8 @@ export class SignalDanielConversationRuntime {
   }
 
   send = async (thread: SignalThread, input: string): Promise<void> => {
-    if (!this.isDanielThread(thread) || this.typing) return;
+    if (this.disposed || !this.isInteractive(thread) || this.typing) return;
+    const generation = this.generation;
     const body = input.trim();
     if (!body) return;
 
@@ -181,25 +199,31 @@ export class SignalDanielConversationRuntime {
     this.setTyping(true);
     try {
       for (const reply of await this.verify(body)) {
+        if (generation !== this.generation || this.disposed) return;
         await this.sleep(signalDanielReplyDelay(reply));
+        if (generation !== this.generation || this.disposed) return;
         this.append(SIGNAL_DANIEL_ASSISTANT_SENDER, reply);
         this.options.playCue?.(SIGNAL_DANIEL_REPLY_CUE);
       }
     } finally {
-      this.setTyping(false);
+      if (generation === this.generation && !this.disposed)
+        this.setTyping(false);
     }
   };
 
   async resumeOnce(): Promise<void> {
-    if (this.resumed) return;
+    if (this.disposed || this.resumed) return;
+    const generation = this.generation;
     this.resumed = true;
     this.notify();
     for (const reply of await this.verify()) {
+      if (generation !== this.generation || this.disposed) return;
       this.append(SIGNAL_DANIEL_ASSISTANT_SENDER, reply);
     }
   }
 
   reset(): void {
+    this.generation++;
     this.localMessages.length = 0;
     this.typing = false;
     this.resumed = false;
@@ -207,12 +231,21 @@ export class SignalDanielConversationRuntime {
     this.notify();
   }
 
+  dispose(): void {
+    this.reset();
+    this.disposed = true;
+    this.listeners.clear();
+  }
+
   private async verify(answer?: string): Promise<string[]> {
     const payload: Record<string, JsonValue> = {};
     if (answer !== undefined) payload.answer = answer;
     try {
       return parseReplies(
-        await this.options.manifold.command(SIGNAL_DANIEL_VERIFY_COMMAND, payload),
+        await this.options.manifold.command(
+          SIGNAL_DANIEL_VERIFY_COMMAND,
+          payload,
+        ),
       );
     } catch {
       return [];

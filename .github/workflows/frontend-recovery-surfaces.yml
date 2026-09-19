@@ -1,0 +1,135 @@
+name: Frontend recovery surfaces
+
+on:
+  pull_request:
+    paths:
+      - "frontend-src/**"
+      - "scripts/**"
+      - "tests/frontend-*.tsx"
+      - "package*.json"
+      - ".github/workflows/frontend-recovery-surfaces.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  surface:
+    runs-on: ubuntu-latest
+    # The complete scene retains four simultaneous canvas games and a 3D
+    # backdrop; measured SwiftShader execution reaches ~24 minutes before CG.
+    timeout-minutes: ${{ matrix.surface == 'memory-datasea' && 35 || 25 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        surface:
+          [
+            cold-open,
+            debug-labs,
+            messenger,
+            boot-corruption,
+            memory-datasea,
+            datasea-games,
+            farewell-ending,
+          ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/smoke_frontend_recovery_surfaces.mjs '${{ matrix.surface }}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-surface-${{ matrix.surface }}-${{ github.sha }}
+          path: frontend-surfaces-smoke/
+          retention-days: 7
+          if-no-files-found: warn
+
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NORI_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: astral-sh/setup-uv@v6
+      - name: Install Python 3.13
+        run: uv python install 3.13
+      - name: Sync Worker dependencies
+        run: uv sync --group dev --python 3.13
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run frontend:app:build
+      - run: npm run frontend:cutover:candidate -- --materialize
+        id: stage
+      - run: npm run frontend:cutover:smoke
+      - name: Capture paired visual reference
+        run: node scripts/frontend_visual_reference_probe.mjs
+        env:
+          NORI_TEST_PYTHON: .venv/bin/python
+      - name: Capture paired game start screens
+        run: node scripts/frontend_visual_games_probe.mjs
+        env:
+          NORI_TEST_PYTHON: .venv/bin/python
+      - name: Dry-run candidate Worker bundle
+        if: ${{ !cancelled() && steps.stage.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          config=.wrangler-candidate.json
+          outdir=.candidate-worker-dist
+          log=/tmp/candidate-pywrangler.log
+          trap 'rm -f "$config"' EXIT
+
+          node scripts/frontend_candidate_worker_config.mjs
+          set +e
+          uv run pywrangler deploy --dry-run --config "$config" --outdir "$outdir" > "$log" 2>&1
+          code=$?
+          set -e
+          tail -n 120 "$log"
+          if [ "$code" -ne 0 ]; then
+            exit "$code"
+          fi
+          if grep -Eiq 'Unexpected fields found|configuration error|config(uration)?[^[:alnum:]]+error' "$log"; then
+            echo "::error::Wrangler rejected the candidate configuration"
+            exit 1
+          fi
+          if ! grep -Fq 'backend/data/codenames_words.json' "$log" || ! grep -Fq 'backend/data/pictionary_words.json' "$log"; then
+            echo "::error::Candidate Worker bundle is missing required game word modules"
+            exit 1
+          fi
+          if grep -Fq 'backend/data/live_world_pack.json' "$log" || find "$outdir" -type f -name 'live_world_pack.json' -print -quit | grep -q .; then
+            echo "::error::The large live-world archive leaked into the candidate Worker bundle"
+            exit 1
+          fi
+
+          node --test tests/frontend-candidate-worker-assets.test.mjs
+          node scripts/verify_frontend_candidate_worker_assets.mjs .frontend-app-build/cutover-candidate "$outdir"
+
+          gzip_kib=$(sed -n 's/.*gzip: \([0-9.]*\) KiB.*/\1/p' "$log" | tail -n 1)
+          if [ -z "$gzip_kib" ]; then
+            echo "::error::Unable to determine candidate Worker gzip size"
+            exit 1
+          fi
+          echo "Candidate Worker gzip size: ${gzip_kib} KiB"
+          awk -v size="$gzip_kib" 'BEGIN { if (size >= 3072) exit 1 }' || {
+            echo "::error::Candidate Worker gzip bundle must stay below 3 MiB (3072 KiB)"
+            exit 1
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-candidate-${{ github.sha }}
+          path: |
+            frontend-candidate-smoke/
+            frontend-visual-reference/
+            .frontend-app-build/cutover-rollback/rollback-manifest.json
+          include-hidden-files: true
+          retention-days: 7

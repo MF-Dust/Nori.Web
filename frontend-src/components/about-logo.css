@@ -1,0 +1,125 @@
+.about-logo {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 12px;
+  user-select: none;
+  transform: perspective(500px) rotateX(var(--tilt-x, 0deg))
+    rotateY(var(--tilt-y, 0deg));
+  animation: about-logo-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.about-logo img {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  transition: scale 0.2s;
+}
+.about-logo:hover img {
+  scale: 1.04;
+}
+.about-logo:active img {
+  scale: 0.94;
+}
+.about-logo-halo,
+.about-logo-hover {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  filter: blur(20px);
+  background: radial-gradient(closest-side, var(--primary), transparent 72%);
+}
+.about-logo-halo {
+  animation: about-logo-breathe 5.5s ease-in-out infinite;
+}
+.about-logo-hover {
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.about-logo:hover .about-logo-hover {
+  opacity: 0.35;
+}
+.about-logo-mask {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  mask: url(/icon.png) center / contain no-repeat;
+  pointer-events: none;
+}
+.about-logo-sheen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -50%;
+  width: 50%;
+  --sheen: rgba(255, 255, 255, 0.85);
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    var(--sheen) 50%,
+    transparent 80%
+  );
+  animation: about-logo-sheen 5.6s ease-in-out infinite;
+}
+.dark .about-logo-sheen {
+  --sheen: color-mix(in oklab, var(--primary) 65%, transparent);
+}
+@keyframes about-logo-enter {
+  from {
+    opacity: 0;
+    scale: 0.92;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    filter: blur(0);
+  }
+}
+@keyframes about-logo-breathe {
+  0%,
+  100% {
+    opacity: 0.18;
+    scale: 0.94;
+  }
+  50% {
+    opacity: 0.42;
+    scale: 1.05;
+  }
+}
+@keyframes about-logo-sheen {
+  0% {
+    transform: translateX(-100%) rotate(12deg);
+  }
+  25%,
+  100% {
+    transform: translateX(400%) rotate(12deg);
+  }
+}
+.about-logo[data-reduced] {
+  animation: none;
+  transform: none;
+}
+.about-logo[data-reduced] .about-logo-halo {
+  animation: none;
+  opacity: 0.25;
+}
+.about-logo[data-reduced] img {
+  transition: none;
+  scale: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .about-logo,
+  .about-logo * {
+    animation: none !important;
+    transition: none !important;
+  }
+  .about-logo {
+    transform: none;
+  }
+  .about-logo-halo {
+    opacity: 0.25;
+  }
+  .about-logo-sheen {
+    display: none;
+  }
+}
