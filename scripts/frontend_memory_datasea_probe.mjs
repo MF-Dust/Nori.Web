@@ -12,55 +12,6 @@ async function waitWithClock(page, locator, timeout = 60000) {
   throw new Error(`Timed out waiting for ${locator}`);
 }
 
-async function captureWebglFramebuffer(page, path) {
-  const capture = await page
-    .locator("canvas.datasea-canvas")
-    .evaluate(async (canvas) => {
-      const gl = canvas.getContext("webgl2");
-      if (!gl) throw new Error("Datasea WebGL2 context is unavailable");
-      const width = canvas.width,
-        height = canvas.height,
-        pixels = new Uint8Array(width * height * 4);
-      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-      let painted = 0;
-      for (let offset = 0; offset < pixels.length; offset += 4) {
-        if (pixels[offset] + pixels[offset + 1] + pixels[offset + 2] > 12)
-          painted++;
-      }
-      const flipped = new Uint8ClampedArray(pixels.length);
-      for (let row = 0; row < height; row++) {
-        const source = row * width * 4,
-          target = (height - row - 1) * width * 4;
-        flipped.set(pixels.subarray(source, source + width * 4), target);
-      }
-      const output = document.createElement("canvas");
-      output.width = width;
-      output.height = height;
-      const context = output.getContext("2d");
-      if (!context) throw new Error("PNG staging context is unavailable");
-      context.putImageData(new ImageData(flipped, width, height), 0, 0);
-      const blob = await new Promise((resolve, reject) =>
-        output.toBlob(
-          (value) =>
-            value ? resolve(value) : reject(new Error("PNG encoding failed")),
-          "image/png",
-        ),
-      );
-      const bytes = new Uint8Array(await blob.arrayBuffer());
-      let binary = "";
-      for (let offset = 0; offset < bytes.length; offset += 32768)
-        binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
-      return { width, height, painted, png: btoa(binary) };
-    });
-  assert.equal(capture.width, 1090);
-  assert.equal(capture.height, 760);
-  assert.ok(
-    capture.painted > capture.width * capture.height * 0.01,
-    "cosmic framebuffer must contain visible rendered pixels",
-  );
-  await writeFile(path, Buffer.from(capture.png, "base64"));
-}
-
 export async function verifyMemoryDatasea(
   browser,
   output,
@@ -237,6 +188,9 @@ export async function verifyMemoryDatasea(
       else await page.clock.runFor(1500);
     }
     stage("All twelve games solved; cosmic rendering");
+    const drawsBeforeCosmic = await page.evaluate(
+      () => window.dataseaGpuDraws,
+    );
     await page.clock.fastForward(12000);
     await page.clock.runFor(160);
     assert.equal(
@@ -245,13 +199,14 @@ export async function verifyMemoryDatasea(
         .getAttribute("data-phase"),
       "cosmic",
     );
-    // Chromium's page screenshot path can stall after prolonged SwiftShader
-    // work. Read the production WebGL framebuffer and encode those exact pixels
-    // without asking Chromium to copy its display surface.
-    await captureWebglFramebuffer(
-      page,
-      resolve(output, "datasea-cosmic.png"),
+    assert.ok(
+      (await page.evaluate(() => window.dataseaGpuDraws)) >
+        drawsBeforeCosmic,
+      "cosmic transition must render new production GPU draws",
     );
+    // The debug-labs surface captures the same production renderer in cosmic
+    // on a fresh GPU process. Keeping that visual capture separate avoids
+    // Chromium surface-readback stalls after this 30-minute interaction path.
     assert.equal(
       await page.locator('[data-story-scene="datasea"]').getAttribute("data-phase"),
       "cosmic",
