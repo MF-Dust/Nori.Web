@@ -7,6 +7,7 @@ __pycache__/
 .frontend-recovery-ci/
 .frontend-build/
 .frontend-app-build/
+.wrangler-candidate.json
 data/*.sqlite3
 data/*.db
 
