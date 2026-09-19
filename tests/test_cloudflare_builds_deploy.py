@@ -80,101 +80,53 @@ def main() -> None:
             calls.append((list(command), dict(kwargs)))
 
         module._run = fake_run
-        module.deploy_worker(["pywrangler"], config=ROOT / ".wrangler-candidate.json")
+        module.deploy_worker(["pywrangler"])
     finally:
         module._run = original_run
 
     assert len(calls) == 1
     command, kwargs = calls[0]
-    assert command == ["pywrangler", "deploy", "--config", ".wrangler-candidate.json"]
+    assert command == ["pywrangler", "deploy"]
     assert "--yes" not in command
     deploy_env = kwargs.get("env")
     assert isinstance(deploy_env, dict)
     assert deploy_env.get("CI") == "true"
 
-    # Source frontend preparation installs/builds through Node and returns the
-    # ephemeral candidate config only after both expected outputs exist.
-    original_which = module.shutil.which
-    original_candidate_index = module.FRONTEND_CANDIDATE_INDEX
-    original_frontend_config = module.FRONTEND_CONFIG
-    try:
-        with TemporaryDirectory(prefix="nori-frontend-deploy-test-") as temp:
-            root = Path(temp)
-            module.FRONTEND_CANDIDATE_INDEX = root / "candidate" / "index.html"
-            module.FRONTEND_CONFIG = root / ".wrangler-candidate.json"
-            module.FRONTEND_CANDIDATE_INDEX.parent.mkdir(parents=True)
-            module.FRONTEND_CANDIDATE_INDEX.write_text("source", encoding="utf-8")
-            module.FRONTEND_CONFIG.write_text("{}", encoding="utf-8")
-            frontend_calls: list[list[str]] = []
-            module.shutil.which = lambda name: f"/tools/{name}"
-            module._run = lambda command, **kwargs: frontend_calls.append(list(command))
-            result = module.prepare_source_frontend()
-            assert result == module.FRONTEND_CONFIG
-            assert frontend_calls == [
-                ["/tools/npm", "ci", "--no-audit", "--no-fund"],
-                ["/tools/npm", "run", "frontend:app:build"],
-                ["/tools/node", str(module.FRONTEND_CANDIDATE_TOOL), "--materialize"],
-                ["/tools/node", str(module.FRONTEND_CONFIG_TOOL)],
-            ]
-    finally:
-        module._run = original_run
-        module.shutil.which = original_which
-        module.FRONTEND_CANDIDATE_INDEX = original_candidate_index
-        module.FRONTEND_CONFIG = original_frontend_config
-
-    # Normal production deployment must not pre-stage the Python runtime.
-    # pywrangler invokes Wrangler, and Wrangler executes the custom build hook
-    # exactly once. Source frontend staging happens before the remote R2 check.
+    # Normal production deployment must not pre-stage the runtime. pywrangler
+    # invokes Wrangler, and Wrangler executes the custom build hook exactly once.
     # `--prepare-only` remains the explicit diagnostic staging path.
     original_argv = sys.argv
     original_prepare = module.prepare_runtime
-    original_prepare_frontend = module.prepare_source_frontend
     original_pywrangler = module.pywrangler_command
     original_sync = module.sync_live_pack
     original_deploy = module.deploy_worker
     try:
         normal_calls: list[object] = []
         sys.argv = ["cloudflare_builds_deploy.py", "--skip-live-pack"]
-        module.prepare_runtime = lambda: normal_calls.append("prepare-runtime")
-        module.prepare_source_frontend = lambda: normal_calls.append("prepare-frontend") or (ROOT / ".wrangler-candidate.json")
+        module.prepare_runtime = lambda: normal_calls.append("prepare")
         module.pywrangler_command = lambda: ["pywrangler"]
         module.sync_live_pack = lambda *args, **kwargs: normal_calls.append("sync")
-        module.deploy_worker = lambda base, **kwargs: normal_calls.append(("deploy", list(base), kwargs.get("config")))
+        module.deploy_worker = lambda base: normal_calls.append(("deploy", list(base)))
         module.main()
-        assert "prepare-runtime" not in normal_calls
+        assert "prepare" not in normal_calls
         assert "sync" not in normal_calls
-        assert normal_calls == [
-            "prepare-frontend",
-            ("deploy", ["pywrangler"], ROOT / ".wrangler-candidate.json"),
-        ]
+        assert ("deploy", ["pywrangler"]) in normal_calls
 
         prepare_calls: list[object] = []
         sys.argv = ["cloudflare_builds_deploy.py", "--prepare-only"]
-        module.prepare_runtime = lambda: prepare_calls.append("prepare-runtime")
-        module.prepare_source_frontend = lambda: prepare_calls.append("prepare-frontend") or (ROOT / ".wrangler-candidate.json")
-        module.deploy_worker = lambda base, **kwargs: prepare_calls.append(("deploy", list(base)))
+        module.prepare_runtime = lambda: prepare_calls.append("prepare")
+        module.deploy_worker = lambda base: prepare_calls.append(("deploy", list(base)))
         module.main()
-        assert prepare_calls == ["prepare-frontend", "prepare-runtime"]
-
-        legacy_calls: list[object] = []
-        sys.argv = ["cloudflare_builds_deploy.py", "--skip-live-pack", "--legacy-frontend"]
-        module.prepare_source_frontend = lambda: legacy_calls.append("prepare-frontend")
-        module.pywrangler_command = lambda: ["pywrangler"]
-        module.deploy_worker = lambda base, **kwargs: legacy_calls.append(
-            ("deploy", list(base), kwargs.get("config"))
-        )
-        module.main()
-        assert legacy_calls == [("deploy", ["pywrangler"], None)]
+        assert prepare_calls == ["prepare"]
     finally:
         sys.argv = original_argv
         module.prepare_runtime = original_prepare
-        module.prepare_source_frontend = original_prepare_frontend
         module.pywrangler_command = original_pywrangler
         module.sync_live_pack = original_sync
         module.deploy_worker = original_deploy
 
     print(
-        "[ok] Workers Builds source frontend, rollback path, fingerprint, dashboard routing, CI mode, and single-stage runtime path behave correctly"
+        "[ok] Workers Builds deploy fingerprint, dashboard routing, bundled Python, CI mode, and single-stage runtime path behave correctly"
     )
 
 

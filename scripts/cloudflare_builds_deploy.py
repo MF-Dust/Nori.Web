@@ -1,12 +1,9 @@
 """Production deploy entrypoint for Cloudflare Workers Builds.
 
-The wrapper builds and verifies the source frontend, keeps the private R2
-live-world layout synchronized, and then invokes pywrangler with an ephemeral
-Wrangler configuration that serves the materialized source candidate. Normal
-deployments intentionally do not pre-stage the Python Worker: `pywrangler
-deploy` invokes Wrangler, and Wrangler runs the repository's custom build hook
-exactly once. The historical public entry remains available as an explicit
-emergency rollback path.
+The wrapper keeps the private R2 live-world layout synchronized before invoking
+pywrangler. Normal deployments intentionally do not pre-stage the Python Worker:
+`pywrangler deploy` invokes Wrangler, and Wrangler runs the repository's custom
+build hook exactly once. `--prepare-only` remains available for diagnostics.
 """
 
 from __future__ import annotations
@@ -24,10 +21,6 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PACK = ROOT / "backend" / "data" / "live_world_pack.json"
 LIVE_PACK_TOOL = ROOT / "scripts" / "upload_cloudflare_live_pack.py"
 PREPARE_TOOL = ROOT / "scripts" / "prepare_cloudflare_runtime.py"
-FRONTEND_CANDIDATE_TOOL = ROOT / "scripts" / "prepare_frontend_cutover_candidate.mjs"
-FRONTEND_CONFIG_TOOL = ROOT / "scripts" / "frontend_candidate_worker_config.mjs"
-FRONTEND_CANDIDATE_INDEX = ROOT / ".frontend-app-build" / "cutover-candidate" / "index.html"
-FRONTEND_CONFIG = ROOT / ".wrangler-candidate.json"
 R2_BUCKET = "nori-web-assets"
 R2_MARKER_KEY = "runtime/live/source-fingerprint.txt"
 FINGERPRINT_VERSION = "v1"
@@ -151,45 +144,13 @@ def prepare_runtime() -> None:
     _run([sys.executable, str(PREPARE_TOOL)])
 
 
-def _required_executable(name: str) -> str:
-    executable = shutil.which(name)
-    if executable:
-        return executable
-    raise RuntimeError(
-        f"{name} is unavailable. Cloudflare Workers Builds must provide Node.js "
-        "and npm to build the source frontend."
-    )
-
-
-def prepare_source_frontend() -> Path:
-    """Build and materialize the verified source frontend deployment tree."""
-    npm = _required_executable("npm")
-    node = _required_executable("node")
-    _run([npm, "ci", "--no-audit", "--no-fund"])
-    _run([npm, "run", "frontend:app:build"])
-    _run([node, str(FRONTEND_CANDIDATE_TOOL), "--materialize"])
-    _run([node, str(FRONTEND_CONFIG_TOOL)])
-    for path in (FRONTEND_CANDIDATE_INDEX, FRONTEND_CONFIG):
-        if not path.is_file():
-            raise RuntimeError(f"Source frontend deployment output is missing: {path}")
-    print(f"Source frontend deployment tree ready: {FRONTEND_CANDIDATE_INDEX.parent}")
-    return FRONTEND_CONFIG
-
-
-def deploy_worker(base: list[str], *, config: Path | None = None) -> None:
+def deploy_worker(base: list[str]) -> None:
     # Wrangler 4.127 rejects `wrangler deploy --yes` when a Wrangler config file
     # already exists. Workers Builds is a CI environment, so force CI mode and
     # let Wrangler use its non-interactive fallback for confirmation prompts.
     deploy_env = os.environ.copy()
     deploy_env["CI"] = "true"
-    command = [*base, "deploy"]
-    if config is not None:
-        command.extend(["--config", str(config.relative_to(ROOT))])
-    _run(command, env=deploy_env)
-
-
-def _environment_flag(name: str) -> bool:
-    return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+    _run([*base, "deploy"], env=deploy_env)
 
 
 def main() -> None:
@@ -207,12 +168,7 @@ def main() -> None:
     parser.add_argument(
         "--prepare-only",
         action="store_true",
-        help="Prepare the frontend and Cloudflare staging trees without accessing Cloudflare.",
-    )
-    parser.add_argument(
-        "--legacy-frontend",
-        action="store_true",
-        help="Emergency rollback: deploy the historical public/ frontend instead of the source build.",
+        help="Prepare the Cloudflare staging tree without accessing Cloudflare.",
     )
     args = parser.parse_args()
 
@@ -222,16 +178,6 @@ def main() -> None:
         f"commit={os.getenv('WORKERS_CI_COMMIT_SHA', 'local')})"
     )
 
-    legacy_frontend = args.legacy_frontend or _environment_flag(
-        "NORI_DEPLOY_LEGACY_FRONTEND"
-    )
-
-    frontend_config = None
-    if legacy_frontend:
-        print("Legacy frontend rollback enabled; deploying public/ as configured in wrangler.jsonc.")
-    else:
-        frontend_config = prepare_source_frontend()
-
     if args.prepare_only:
         prepare_runtime()
         print("Prepare-only mode complete.")
@@ -240,7 +186,7 @@ def main() -> None:
     base = pywrangler_command()
     if not args.skip_live_pack:
         sync_live_pack(base, force=args.force_live_pack)
-    deploy_worker(base, config=frontend_config)
+    deploy_worker(base)
 
 
 if __name__ == "__main__":
