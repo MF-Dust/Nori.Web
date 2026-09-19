@@ -26,9 +26,8 @@ export interface FrontendCutoverBoundary {
  *
  * A boundary is marked complete only when its production behavior is owned by
  * frontend-src and no historical JavaScript chunk is required for that slice.
- * Production entry tracks which frontend the deployment pipeline serves. It
- * can be source-owned while separate parity and acceptance boundaries remain
- * open; FRONTEND_CUTOVER_READY stays false until every boundary is complete.
+ * The public production entry must not be switched while any boundary remains
+ * incomplete.
  */
 export const FRONTEND_CUTOVER_BOUNDARIES: readonly FrontendCutoverBoundary[] = [
   { id: "desktop-shell", complete: true, note: "Desktop/window runtime, TopBar, Dock and shell composition are source-owned." },
@@ -45,7 +44,7 @@ export const FRONTEND_CUTOVER_BOUNDARIES: readonly FrontendCutoverBoundary[] = [
   { id: "live2d", complete: false, note: "The source Cubism engine, model runtime, scene host, cold-open ocean/glyph/postprocessing and seven registered story producers are implemented. Boot fracture, Corruption entry/heal, Memory, Datasea geometry, Farewell actor and Ending now have source modules and independent probes. Story registration does not certify complete behavior: browser failures, remaining interaction differences, original particle comparison and original-agent media acceptance must close before cutover. See the scene-specific recovery documents." },
   { id: "css-ownership", complete: true, note: "Source app CSS is decomposed into tokens, globals, pixel, base, components, Nori theme and desktop shell. Tailwind utilities are generated from source; missing declaration delimiters for 177 theme tokens and the omitted Codenames card stylesheet are repaired and checked through computed styles. No historical stylesheet is loaded. Browser app/game checks use the rebuilt CSS. See docs/FRONTEND_CSS_RECOVERY.md." },
   { id: "supporting-apps", complete: false, note: "Settings, About, Credits, Preview, scoped Debug and scene editing are source-owned. This pass restores Credits brand SVGs, network fault presets with real socket simulation, ledger-backed compute controls, gestures/reaction preview, verified Codenames scenario commands and expression/motion editor channels. Dedicated scene tuners and complete original visual/browser acceptance remain open; see docs/FRONTEND_SYSTEM_RECOVERY.md." },
-  { id: "production-entry", complete: true, note: "Cloudflare Workers Builds materializes and deploys the verified source-app candidate by default. public/index.html remains the preserved historical rollback entry, selected only with the explicit legacy-frontend deploy switch." },
+  { id: "production-entry", complete: false, note: "public/index.html still boots the historical production JavaScript entry." },
 ];
 
 export const FRONTEND_CUTOVER_READY = FRONTEND_CUTOVER_BOUNDARIES.every(

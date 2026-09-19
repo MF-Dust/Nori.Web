@@ -5,7 +5,6 @@ import { historicalAssetReferences } from "./frontend_asset_ownership.mjs";
 const sourceHtml = await readFile("frontend-src/index.html", "utf8");
 const publicHtml = await readFile("public/index.html", "utf8");
 const statusSource = await readFile("frontend-src/migration/cutover-status.ts", "utf8");
-const deploySource = await readFile("scripts/cloudflare_builds_deploy.py", "utf8");
 
 const legacyJsPatterns = ["index-CyHAbkO5.js", "NormalApp-Cn6agT0F.js"];
 const historicalAssets = (await readdir("public/assets")).filter((name) => /\.(?:js|css)$/.test(name));
@@ -37,26 +36,17 @@ if (!sourceHtml.includes("/main.tsx")) {
 }
 
 const incompleteBoundaries = [...statusSource.matchAll(/complete:\s*false/g)].length;
-const productionEntryMatch = statusSource.match(
-  /id:\s*"production-entry"[\s\S]*?complete:\s*(true|false)/,
-);
-if (!productionEntryMatch) throw new Error("production-entry cutover boundary is missing");
-
-if (productionEntryMatch[1] === "true") {
-  const sourceDeploymentContracts = [
-    "prepare_source_frontend()",
-    "prepare_frontend_cutover_candidate.mjs",
-    "frontend_candidate_worker_config.mjs",
-    "deploy_worker(base, config=frontend_config)",
-  ];
-  for (const contract of sourceDeploymentContracts) {
-    if (!deploySource.includes(contract)) {
-      throw new Error(`production-entry is complete but the deploy wrapper is missing: ${contract}`);
+if (incompleteBoundaries === 0) {
+  for (const pattern of legacyJsPatterns) {
+    if (publicHtml.includes(pattern)) {
+      throw new Error(
+        `all cutover boundaries are complete but public/index.html still imports ${pattern}`,
+      );
     }
   }
 } else if (!legacyJsPatterns.some((pattern) => publicHtml.includes(pattern))) {
   throw new Error(
-    "production-entry is incomplete but public/index.html no longer provides the historical entry",
+    "production entry changed before the frontend cutover boundary list reached zero",
   );
 }
 
