@@ -70,6 +70,18 @@ async function main() {
       "sealed composer translucent surface binding",
       /rounded-2xl border px-3 py-2"[\s\S]{0,80}style: F/,
     ],
+    [
+      "sealed composer alert enter/exit choreography",
+      /initial:\s*\{\s*opacity:\s*0,\s*y:\s*8\s*\}[\s\S]{0,220}animate:\s*\{\s*opacity:\s*1,\s*y:\s*0\s*\}[\s\S]{0,220}exit:\s*\{\s*opacity:\s*0,\s*y:\s*8\s*\}[\s\S]{0,220}transition:\s*\{\s*duration:\s*0\.18,\s*ease:\s*\[0\.32,\s*0\.72,\s*0,\s*1\]\s*\}/,
+    ],
+    [
+      "sealed composer details disclosure choreography",
+      /initial:\s*\{\s*height:\s*0,\s*opacity:\s*0\s*\}[\s\S]{0,180}animate:\s*\{\s*height:\s*"auto",\s*opacity:\s*1\s*\}[\s\S]{0,180}exit:\s*\{\s*height:\s*0,\s*opacity:\s*0\s*\}[\s\S]{0,180}transition:\s*\{\s*duration:\s*0\.16\s*\}/,
+    ],
+    [
+      "sealed composer details chevrons",
+      /signal\.composer\.details[\s\S]{0,260}className:\s*"size-3"[\s\S]{0,180}className:\s*"size-3"/,
+    ],
   ]) {
     assertPattern(
       messengerChunk.source,
@@ -117,6 +129,18 @@ async function main() {
     ':not(:has(span[aria-label]))',
     "color-mix(in oklab, var(--foreground) 70%, transparent)",
     "color-mix(in oklab, var(--foreground) 80%, transparent)",
+    "MESSENGER_SEALED_ERROR_TRANSITION_MS = 180",
+    "MESSENGER_SEALED_DETAILS_TRANSITION_MS = 160",
+    'MESSENGER_SEALED_ERROR_EASING = "cubic-bezier(0.32, 0.72, 0, 1)"',
+    "messenger-sealed-error-enter",
+    "messenger-sealed-error-exit",
+    "messenger-sealed-details-enter",
+    "messenger-sealed-details-exit",
+    "data-messenger-sealed-details-button",
+    'expanded ? "m18 15-6-6-6 6" : "m6 9 6 6 6-6"',
+    "MutationObserver",
+    "details.scrollHeight",
+    "onClickCapture={handleSealedComposerClickCapture}",
   ]) {
     assert(source.includes(marker), `source Messenger shipped-surface recovery missing marker: ${marker}`);
   }
@@ -128,6 +152,9 @@ async function main() {
     "flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",
     "flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",
     'className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2"',
+    'role="alert"',
+    "SEALED_ERROR_CODE",
+    'SEALED_ERROR_DETAILS.join("\\n")',
   ]) {
     assert(
       baseSource.includes(marker),
@@ -141,7 +168,7 @@ async function main() {
   );
 
   console.log(
-    `[ok] Messenger bubbles, photo focus, thread rows and translucent input surfaces match shipped ${messengerChunk.file}`,
+    `[ok] Messenger bubbles, photo focus, thread rows, translucent inputs and sealed-composer choreography match shipped ${messengerChunk.file}`,
   );
 }
 
