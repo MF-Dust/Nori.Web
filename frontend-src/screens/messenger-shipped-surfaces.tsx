@@ -21,6 +21,11 @@ const SHIPPED_SURFACE_CSS = String.raw`
   box-shadow: var(--shadow-sm);
 }
 
+[data-messenger-shipped-surfaces] .flex.justify-start > .flex.items-center.rounded-2xl.rounded-bl-sm.border.shadow-sm {
+  background: color-mix(in oklab, var(--secondary-foreground) 10%, var(--secondary));
+  border-color: color-mix(in oklab, var(--secondary-foreground) 16%, transparent);
+}
+
 [data-messenger-shipped-surfaces] .flex.justify-end > .relative.rounded-br-sm.bg-primary {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
