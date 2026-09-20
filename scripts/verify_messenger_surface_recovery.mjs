@@ -71,6 +71,10 @@ async function main() {
       /rounded-2xl border px-3 py-2"[\s\S]{0,80}style: F/,
     ],
     [
+      "typing bubble incoming surface binding",
+      /rounded-bl-sm border px-3\.5 py-2\.5 text-secondary-foreground shadow-sm"[\s\S]{0,100}style:\s*L[\s\S]{0,360}signal\.conversation\.typing/,
+    ],
+    [
       "sealed composer alert enter/exit choreography",
       /initial:\s*\{\s*opacity:\s*0,\s*y:\s*8\s*\}[\s\S]{0,220}animate:\s*\{\s*opacity:\s*1,\s*y:\s*0\s*\}[\s\S]{0,220}exit:\s*\{\s*opacity:\s*0,\s*y:\s*8\s*\}[\s\S]{0,220}transition:\s*\{\s*duration:\s*0\.18,\s*ease:\s*\[0\.32,\s*0\.72,\s*0,\s*1\]\s*\}/,
     ],
@@ -106,6 +110,7 @@ async function main() {
     "data-messenger-shipped-surfaces",
     "color-mix(in oklab, var(--secondary-foreground) 10%, var(--secondary))",
     "color-mix(in oklab, var(--secondary-foreground) 16%, transparent)",
+    ".flex.justify-start > .flex.items-center.rounded-2xl.rounded-bl-sm.border.shadow-sm",
     "0 1px 2px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.18)",
     "header + div > div.rounded-md.border",
     "div.relative.shrink-0.border-t",
@@ -152,6 +157,7 @@ async function main() {
     "flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",
     "flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",
     'className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2"',
+    "flex items-center gap-1.5 rounded-2xl rounded-bl-sm border px-3.5 py-2.5 text-secondary-foreground shadow-sm",
     'role="alert"',
     "SEALED_ERROR_CODE",
     'SEALED_ERROR_DETAILS.join("\\n")',
@@ -168,7 +174,7 @@ async function main() {
   );
 
   console.log(
-    `[ok] Messenger bubbles, photo focus, thread rows, translucent inputs and sealed-composer choreography match shipped ${messengerChunk.file}`,
+    `[ok] Messenger bubbles, typing palette, photo focus, thread rows, translucent inputs and sealed-composer choreography match shipped ${messengerChunk.file}`,
   );
 }
 
