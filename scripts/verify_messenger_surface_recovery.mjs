@@ -59,6 +59,10 @@ async function main() {
     ["selected read timestamp tone", /text-foreground\/70/],
     ["selected read preview tone", /text-foreground\/80/],
     [
+      "mobile thread-pane slide completion",
+      /className:\s*"flex h-full w-\[200%\]"[\s\S]{0,180}initial:\s*!1[\s\S]{0,180}animate:\s*\{\s*x:\s*[^}]+\}[\s\S]{0,220}transition:\s*\{\s*type:\s*"tween",\s*duration:\s*0\.25,\s*ease:\s*\[0\.32,\s*0\.72,\s*0,\s*1\]\s*\}[\s\S]{0,220}onAnimationComplete:/,
+    ],
+    [
       "thread search translucent surface binding",
       /rounded-md border px-2\.5 py-1\.5 transition-shadow focus-within:ring-1 focus-within:ring-ring\/40"[\s\S]{0,80}style: F/,
     ],
@@ -146,6 +150,10 @@ async function main() {
     "MutationObserver",
     "details.scrollHeight",
     "onClickCapture={handleSealedComposerClickCapture}",
+    "handleMobileTrackTransitionEndCapture",
+    'target.classList.contains("w-[200%]")',
+    'event.propertyName === "transform"',
+    "onTransitionEndCapture={handleMobileTrackTransitionEndCapture}",
   ]) {
     assert(source.includes(marker), `source Messenger shipped-surface recovery missing marker: ${marker}`);
   }
@@ -161,6 +169,10 @@ async function main() {
     'role="alert"',
     "SEALED_ERROR_CODE",
     'SEALED_ERROR_DETAILS.join("\\n")',
+    'className="flex h-full w-[200%]"',
+    'transition: "transform 250ms cubic-bezier(0.32,0.72,0,1)"',
+    "onTransitionEnd={() => {",
+    "if (!opened) setRetainedThreadId(null);",
   ]) {
     assert(
       baseSource.includes(marker),
@@ -174,7 +186,7 @@ async function main() {
   );
 
   console.log(
-    `[ok] Messenger bubbles, typing palette, photo focus, thread rows, translucent inputs and sealed-composer choreography match shipped ${messengerChunk.file}`,
+    `[ok] Messenger bubbles, typing palette, photo focus, thread rows, mobile slide completion, translucent inputs and sealed-composer choreography match shipped ${messengerChunk.file}`,
   );
 }
 
