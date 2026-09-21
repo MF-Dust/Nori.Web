@@ -2,6 +2,7 @@ import {
   useEffect,
   useRef,
   type MouseEvent as ReactMouseEvent,
+  type TransitionEvent as ReactTransitionEvent,
 } from "react";
 import {
   MessengerScreen as BaseMessengerScreen,
@@ -358,12 +359,26 @@ export function MessengerScreen(
     }
   };
 
+  const handleMobileTrackTransitionEndCapture = (
+    event: ReactTransitionEvent<HTMLDivElement>,
+  ): void => {
+    const target = event.target;
+    const isMobileTrackTransform =
+      target instanceof HTMLElement &&
+      target.classList.contains("flex") &&
+      target.classList.contains("h-full") &&
+      target.classList.contains("w-[200%]") &&
+      event.propertyName === "transform";
+    if (!isMobileTrackTransform) event.stopPropagation();
+  };
+
   return (
     <div
       ref={rootRef}
       className="contents"
       data-messenger-shipped-surfaces
       onClickCapture={handleSealedComposerClickCapture}
+      onTransitionEndCapture={handleMobileTrackTransitionEndCapture}
     >
       <style>{SHIPPED_SURFACE_CSS}</style>
       <BaseMessengerScreen {...props} />
