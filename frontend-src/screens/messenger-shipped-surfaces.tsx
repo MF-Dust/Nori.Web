@@ -50,6 +50,10 @@ const SHIPPED_SURFACE_CSS = String.raw`
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 60%, transparent);
 }
 
+[data-messenger-shipped-surfaces] button.rounded-full:has(> img.rounded-full):hover {
+  opacity: 0.95;
+}
+
 [data-messenger-shipped-surfaces] button.w-full.border-b.border-l-2 {
   border-bottom-color: color-mix(in oklab, var(--border) 50%, transparent);
   border-left-color: transparent;
