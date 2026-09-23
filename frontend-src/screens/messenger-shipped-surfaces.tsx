@@ -51,7 +51,7 @@ const SHIPPED_SURFACE_CSS = String.raw`
 }
 
 [data-messenger-shipped-surfaces] button.rounded-full:has(> img.rounded-full):hover {
-  opacity: 0.95;
+  opacity: 0.9;
 }
 
 [data-messenger-shipped-surfaces] button.w-full.border-b.border-l-2 {
