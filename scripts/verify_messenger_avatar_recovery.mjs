@@ -26,16 +26,16 @@ async function main() {
   const source = await read("frontend-src/screens/messenger-shipped-surfaces.tsx");
 
   assert(
-    /shrink-0 rounded-full outline-none transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring\/60/.test(
+    /shrink-0 rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring\/60/.test(
       messenger.source,
     ),
     `shipped Messenger avatar hover/focus contract changed in ${messenger.file}`,
   );
   assert(
     source.includes(
-      'button.rounded-full:has(> img.rounded-full):hover {\n  opacity: 0.95;\n}',
+      'button.rounded-full:has(> img.rounded-full):hover {\n  opacity: 0.9;\n}',
     ),
-    "source Messenger wrapper does not restore avatar hover opacity 0.95",
+    "source Messenger wrapper does not restore avatar hover opacity 0.9",
   );
   assert(
     source.includes('button.rounded-full:has(> img.rounded-full):focus-visible'),
