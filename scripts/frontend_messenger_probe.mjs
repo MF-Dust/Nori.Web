@@ -237,6 +237,83 @@ export async function verifyMessenger(browser, output) {
     });
     await backButton.waitFor({ state: "detached" });
 
+    await page.goto("http://127.0.0.1:47174/messenger-harness?mode=daniel");
+    await page.getByRole("button", { name: /Daniel Fixture/ }).click();
+    await page.getByText("Resume fixture", { exact: true }).waitFor();
+    assert.deepEqual(
+      await page.evaluate(() => window.messengerProbe.danielCommands),
+      [{ command: "signal.daniel.verify" }],
+      "opening an interactive Daniel thread must resume the shipped verification flow once",
+    );
+
+    const evidenceFile = page.getByText("handoff.pdf", { exact: true });
+    await evidenceFile.waitFor();
+    const danielInput = page.getByRole("textbox", {
+      name: "Message service account",
+      exact: true,
+    });
+    await danielInput.fill("verify me");
+    await danielInput.press("Enter");
+
+    const typing = page.getByText("Typing", { exact: true });
+    await typing.waitFor();
+    assert.equal(
+      await evidenceFile.count(),
+      0,
+      "Daniel evidence media must stay hidden while the assistant is typing",
+    );
+    await page.getByText("First verified reply", { exact: true }).waitFor();
+    assert.equal(
+      await typing.count(),
+      1,
+      "typing remains visible between sequential Daniel replies",
+    );
+    assert.equal(
+      await evidenceFile.count(),
+      0,
+      "evidence media must remain hidden until the reply sequence completes",
+    );
+    await page.getByText("Second verified reply", { exact: true }).waitFor();
+    await typing.waitFor({ state: "detached" });
+    await evidenceFile.waitFor();
+
+    const storyText = await page
+      .locator(".flex-1.overflow-y-auto.px-4.py-3")
+      .innerText();
+    assert.ok(
+      storyText.indexOf("Second verified reply") < storyText.indexOf("handoff.pdf"),
+      "the evidence attachment must reveal after the final local verification reply",
+    );
+    assert.deepEqual(
+      await page.evaluate(() => window.messengerProbe.danielCues),
+      [
+        "comms-signal-verify-send",
+        "comms-signal-typing",
+        "comms-signal-bot-reply",
+        "comms-signal-bot-reply",
+      ],
+      "Daniel send, typing and reply cues must preserve shipped order",
+    );
+
+    await danielInput.fill("interrupt");
+    await danielInput.press("Enter");
+    await typing.waitFor();
+    assert.equal(await evidenceFile.count(), 0);
+    await page.evaluate(() => window.messengerProbe.jumpDanielWorld());
+    await typing.waitFor({ state: "detached" });
+    await evidenceFile.waitFor();
+    await page.waitForTimeout(1100);
+    assert.equal(
+      await page.getByText("Obsolete delayed reply", { exact: true }).count(),
+      0,
+      "a world jump must fence a reply that was already waiting for its reveal delay",
+    );
+    assert.equal(
+      await page.getByText("interrupt", { exact: true }).count(),
+      0,
+      "a world jump must clear the interrupted local Daniel turn",
+    );
+
     await page.goto("http://127.0.0.1:47174/messenger-harness?mode=floating");
     const input = page.getByRole("textbox", { name: "Message", exact: true });
     await input.fill("composing");
@@ -270,7 +347,7 @@ export async function verifyMessenger(browser, output) {
 
     assert.deepEqual(errors, []);
     console.log(
-      "Messenger probe passed: search, scroll hold, media failure, preview focus, avatar shipped states, IME, failed-send retry, attachment retry, sealed-composer choreography, mobile pane fencing and short floating layout.",
+      "Messenger probe passed: search, scroll hold, media failure, preview focus, avatar shipped states, IME, failed-send retry, attachment retry, sealed-composer choreography, mobile pane fencing, Daniel reply/media/interrupt choreography and short floating layout.",
     );
   } catch (error) {
     console.error(

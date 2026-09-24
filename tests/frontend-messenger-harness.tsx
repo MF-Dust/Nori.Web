@@ -3,6 +3,10 @@ import { createRoot } from "react-dom/client";
 import { MessengerScreen } from "../frontend-src/screens/messenger-shipped-surfaces";
 import { ConversationPanel } from "../frontend-src/components/conversation-panel";
 import type { SignalConversation } from "../frontend-src/apps/messenger";
+import {
+  SignalDanielConversationRuntime,
+  SIGNAL_DANIEL_DEADMAN_FACT,
+} from "../frontend-src/apps/signal-daniel";
 import type { NoriFrontendRuntime } from "../frontend-src/runtime/frontend-runtime";
 import type { ChatSnapshot } from "../frontend-src/apps/chat-runtime";
 import "../frontend-src/styles/app.css";
@@ -128,6 +132,83 @@ const messengerRuntime = {
   },
 };
 
+
+const danielFacts = new Set<string>([SIGNAL_DANIEL_DEADMAN_FACT]);
+const danielCues: string[] = [];
+const danielCommands: Array<{ command: string; answer?: string }> = [];
+const danielConversation: SignalConversation = {
+  thread: {
+    threadId: "daniel",
+    title: "Daniel Fixture",
+    participants: ["Daniel Fixture", "我"],
+    service: true,
+    raw: {},
+  },
+  messages: [
+    {
+      threadId: "daniel",
+      messageId: "daniel-history",
+      sender: "Daniel Fixture",
+      kind: "text",
+      body: "Archived fixture message",
+      timestamp: "2026-08-18T11:50:00Z",
+      self: false,
+      raw: {},
+    },
+    {
+      threadId: "daniel",
+      messageId: "daniel-evidence-file",
+      sender: "OpenFlaw 助理",
+      kind: "file",
+      body: "",
+      timestamp: "2026-08-18T12:00:00Z",
+      sortMs: 1,
+      self: false,
+      fileName: "handoff.pdf",
+      sizeBytes: 4096,
+      downloadFact: "daniel.fixture.downloaded",
+      raw: {},
+    },
+  ],
+};
+
+const danielRuntime = new SignalDanielConversationRuntime({
+  manifold: {
+    async command(command: string, payload?: Record<string, unknown>) {
+      const answer = typeof payload?.answer === "string" ? payload.answer : undefined;
+      danielCommands.push({ command, ...(answer === undefined ? {} : { answer }) });
+      if (answer === undefined) {
+        return { ok: true, result: { reply: ["Resume fixture"] } } as never;
+      }
+      if (answer === "interrupt") {
+        return { ok: true, result: { reply: ["Obsolete delayed reply"] } } as never;
+      }
+      return {
+        ok: true,
+        result: { reply: ["First verified reply", "Second verified reply"] },
+      } as never;
+    },
+  } as never,
+  hasFact: (factId) => danielFacts.has(factId),
+  playCue: (cue) => danielCues.push(cue),
+  initialJumpEpoch: "world-a",
+});
+
+const danielMessengerRuntime = {
+  model: {
+    async conversations() {
+      return [danielConversation];
+    },
+    async markThreadRead() {},
+    async emitDownloadFact(factId: string) {
+      danielFacts.add(factId);
+    },
+  },
+  hasFact: (factId: string) => danielFacts.has(factId),
+  playCue: (cue: string) => danielCues.push(cue),
+  serviceConversation: danielRuntime,
+};
+
 let chat: ChatSnapshot = {
   presentationEpoch: 1,
   lines: [],
@@ -172,6 +253,9 @@ declare global {
       floatingSends: string[];
       appendMessage(): void;
       showFloatingLines(): void;
+      danielCues: string[];
+      danielCommands: Array<{ command: string; answer?: string }>;
+      jumpDanielWorld(): void;
     };
   }
 }
@@ -180,6 +264,11 @@ window.messengerProbe = {
   serviceSends,
   downloads,
   floatingSends,
+  danielCues,
+  danielCommands,
+  jumpDanielWorld() {
+    danielRuntime.syncJumpEpoch("world-b");
+  },
   appendMessage() {
     conversations = conversations.map((conversation) =>
       conversation.thread.threadId === "service"
@@ -218,6 +307,8 @@ const mode = new URLSearchParams(location.search).get("mode") ?? "messenger";
 createRoot(document.getElementById("root")!).render(
   mode === "floating" ? (
     <ConversationPanel frontend={floatingFrontend} locale="en" />
+  ) : mode === "daniel" ? (
+    <MessengerScreen runtime={danielMessengerRuntime as never} />
   ) : (
     <MessengerScreen runtime={messengerRuntime as never} />
   ),
