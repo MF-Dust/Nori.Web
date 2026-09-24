@@ -96,6 +96,10 @@ test("Signal unread state follows shipped thread read/reread windows", () => {
     message("initial-a", "2026-08-20T12:00:00"),
     message("initial-b", "2026-08-30T12:00:00"),
     message("self-after", "2026-08-31T09:00:00", true),
+    {
+      ...message("misflagged-self", "2026-08-31T09:30:00"),
+      self: true,
+    },
     message("reread-a", "2026-08-31T10:00:00"),
   ];
   const facts = new Set(["daniel.deadman.delivered"]);
@@ -105,7 +109,7 @@ test("Signal unread state follows shipped thread read/reread windows", () => {
     signalThreadReadState(thread, messages, new Set(), hasFact),
     {
       read: false,
-      unreadCount: 3,
+      unreadCount: 4,
       pendingReadFacts: ["signal.daniel.read", "signal.daniel.dm1.read"],
     },
   );
@@ -118,7 +122,7 @@ test("Signal unread state follows shipped thread read/reread windows", () => {
     ),
     {
       read: false,
-      unreadCount: 1,
+      unreadCount: 2,
       pendingReadFacts: ["signal.daniel.dm1.read"],
     },
   );

@@ -216,6 +216,7 @@ async function main() {
     "hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring/60",
     "invisible ml-2 inline-flex select-none items-center gap-1 text-[10px]",
     "pointer-events-none absolute bottom-2 right-3.5 flex items-center gap-1 text-[10px]",
+    'message.sender !== "我"',
     "signalThreadReadState",
     "compareSignalConversationRecency",
     "view.pendingReadFacts.length > 0",
@@ -254,6 +255,7 @@ async function main() {
     "if (!threadId || !title) return undefined",
     "if (!threadId || !messageId || !sender) return undefined",
     'SIGNAL_MESSAGE_KINDS.has(rawKind) ? rawKind : "text"',
+    "self: sender === SIGNAL_SELF_SENDER",
     "width !== undefined && height !== undefined",
     "rawSize !== undefined && rawSize > 0",
   ]) {
