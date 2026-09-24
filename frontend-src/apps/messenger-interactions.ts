@@ -83,7 +83,7 @@ export function signalThreadReadState(
 
   const isRead = (factId: string) =>
     localReadFacts.has(factId) || hasFact?.(factId) === true;
-  const incoming = messages.filter((message) => !message.self);
+  const incoming = messages.filter((message) => message.sender !== "我");
   const unreadEligibleCount = incoming.filter((message) =>
     messageAtOrAfter(message, thread.unreadFrom),
   ).length;
