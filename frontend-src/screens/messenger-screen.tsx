@@ -35,10 +35,12 @@ import type {
 import { SIGNAL_DANIEL_EVIDENCE_FACT } from "../apps/signal-daniel";
 import {
   compareSignalConversationRecency,
+  createSignalLocalReadFactsStore,
   draftAfterSuccessfulSend,
   isConversationNearBottom,
   shouldSubmitMessageKey,
   signalThreadReadState,
+  type SignalLocalReadFactsStore,
 } from "../apps/messenger-interactions";
 import {
   parseSignalTimestamp,
@@ -86,6 +88,7 @@ export interface MessengerScreenRuntime {
   isOwnMessage?: (message: SignalMessage) => boolean;
   getPendingFocusThreadId?: () => string | null;
   consumePendingFocusThreadId?: () => void;
+  localReadFacts?: SignalLocalReadFactsStore;
   serviceConversation?: SignalServiceConversationRuntime;
 }
 
@@ -1110,7 +1113,13 @@ export function MessengerScreen({ runtime, instanceId, setContentKey }: { runtim
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [retainedThreadId, setRetainedThreadId] = useState<string | null>(null);
   const [image, setImage] = useState<{ src: string; returnFocus: HTMLElement | null } | null>(null);
-  const [localReadFacts, setLocalReadFacts] = useState<Set<string>>(() => new Set());
+  const [ownedLocalReadFacts] = useState(() => createSignalLocalReadFactsStore());
+  const localReadFactsStore = runtime.localReadFacts ?? ownedLocalReadFacts;
+  const localReadFacts = useSyncExternalStore(
+    localReadFactsStore.subscribe,
+    localReadFactsStore.snapshot,
+    localReadFactsStore.snapshot,
+  );
 
   useEffect(() => {
     if (!instanceId) return;
@@ -1156,15 +1165,11 @@ export function MessengerScreen({ runtime, instanceId, setContentKey }: { runtim
       const pendingFacts = view.pendingReadFacts;
       void runtime.model.markThreadRead(threadId)
         .then(() => {
-          setLocalReadFacts((current) => {
-            const next = new Set(current);
-            for (const fact of pendingFacts) next.add(fact);
-            return next;
-          });
+          localReadFactsStore.mark(pendingFacts);
         })
         .catch((error) => console.warn("[Signal] Failed to mark thread as read", error));
     }
-  }, [runtime, selectedThreadId, views]);
+  }, [runtime, selectedThreadId, views, localReadFactsStore]);
 
   useEffect(() => {
     const pending = runtime.getPendingFocusThreadId?.();

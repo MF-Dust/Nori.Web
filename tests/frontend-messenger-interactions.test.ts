@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   compareSignalConversationRecency,
+  createSignalLocalReadFactsStore,
   draftAfterSuccessfulSend,
   signalConversationUnreadCount,
   isConversationNearBottom,
@@ -213,4 +214,47 @@ test("Signal Dock badge sums shipped per-thread unread counts", () => {
     ),
     2,
   );
+});
+
+
+test("Signal local read facts publish once and feed the same Dock unread reducer", () => {
+  const store = createSignalLocalReadFactsStore();
+  let publishes = 0;
+  const unsubscribe = store.subscribe(() => publishes++);
+  const conversation = {
+    thread: {
+      threadId: "shared",
+      title: "Shared",
+      participants: [],
+      service: false,
+      readFact: "shared.read",
+      raw: {},
+    },
+    messages: [{
+      threadId: "shared",
+      messageId: "m1",
+      sender: "Shared",
+      kind: "text",
+      body: "fixture",
+      timestamp: "2026-08-31T10:00:00",
+      self: false,
+      raw: {},
+    }],
+  };
+
+  assert.equal(
+    signalConversationUnreadCount([conversation], undefined, store.snapshot()),
+    1,
+  );
+  store.mark(["shared.read"]);
+  assert.equal(publishes, 1);
+  assert.equal(
+    signalConversationUnreadCount([conversation], undefined, store.snapshot()),
+    0,
+  );
+  store.mark(["shared.read"]);
+  assert.equal(publishes, 1, "duplicate local reads must not republish");
+  store.clear();
+  assert.equal(publishes, 2);
+  unsubscribe();
 });

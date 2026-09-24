@@ -144,3 +144,46 @@ export function signalConversationUnreadCount(
     0,
   );
 }
+
+
+export interface SignalLocalReadFactsStore {
+  snapshot(): ReadonlySet<string>;
+  mark(factIds: readonly string[]): void;
+  clear(): void;
+  subscribe(listener: () => void): () => void;
+}
+
+/** Source equivalent of shipped _He.localReadByFactId / markReadLocal. */
+export function createSignalLocalReadFactsStore(
+  initial: Iterable<string> = [],
+): SignalLocalReadFactsStore {
+  let facts: ReadonlySet<string> = new Set(initial);
+  const listeners = new Set<() => void>();
+  const publish = () => {
+    for (const listener of listeners) listener();
+  };
+  return {
+    snapshot: () => facts,
+    mark(factIds) {
+      const next = new Set(facts);
+      let changed = false;
+      for (const factId of factIds) {
+        if (!factId || next.has(factId)) continue;
+        next.add(factId);
+        changed = true;
+      }
+      if (!changed) return;
+      facts = next;
+      publish();
+    },
+    clear() {
+      if (facts.size === 0) return;
+      facts = new Set();
+      publish();
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}

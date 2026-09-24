@@ -2,7 +2,10 @@ import { StoryScenes } from "./story/story-scenes";
 import { DebugScreen } from "./screens/debug-screen";
 import { subscribeManifoldChanges } from "./runtime/manifold-subscription";
 import { SignalDanielConversationRuntime } from "./apps/signal-daniel";
-import { signalConversationUnreadCount } from "./apps/messenger-interactions";
+import {
+  createSignalLocalReadFactsStore,
+  signalConversationUnreadCount,
+} from "./apps/messenger-interactions";
 import { ChipController } from "./runtime/chip-controller";
 import {
   ChipButton,
@@ -80,6 +83,7 @@ function createSourceSession() {
   const frontend = new NoriFrontendRuntime({
     createWebSocket: createNetworkFaultWebSocketFactory(readNetworkFaultProfile(localStorage)),
   });
+  const signalLocalReadFacts = createSignalLocalReadFactsStore();
   const daniel = new SignalDanielConversationRuntime({
     manifold: frontend.manifold,
     hasFact: (factId) => hasWorldFact(frontend, factId),
@@ -282,6 +286,7 @@ function createSourceSession() {
         playCue: frontend.audio.playCue,
         translate: sourceTranslate,
         openUrl,
+        localReadFacts: signalLocalReadFacts,
       },
     },
     idle: idlePresentation,
@@ -369,6 +374,7 @@ function createSourceSession() {
   });
   return {
     frontend,
+    signalLocalReadFacts,
     chip,
     daniel,
     idle,
@@ -442,6 +448,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
           signalConversationUnreadCount(
             conversations,
             (factId) => currentFacts.has(factId),
+            source.signalLocalReadFacts.snapshot(),
           ),
         );
       } catch (error) {
@@ -454,10 +461,14 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       source.frontend.world,
       () => void syncSignalUnread(),
     );
+    const unsubscribeLocalReads = source.signalLocalReadFacts.subscribe(
+      () => void syncSignalUnread(),
+    );
     return () => {
       disposed = true;
       revision++;
       unsubscribe();
+      unsubscribeLocalReads();
     };
   }, [source]);
   useEffect(() => {

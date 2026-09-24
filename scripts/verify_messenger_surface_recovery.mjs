@@ -136,6 +136,10 @@ async function main() {
       "Signal Dock unread badge",
       /function EHe\([\s\S]{0,420}reduce\(\(i, s\) => i \+ s\.unreadCount, 0\)[\s\S]{0,520}Ny\("signal", i\)/,
     ],
+    [
+      "shared local read facts",
+      /localReadByFactId[\s\S]{0,180}markReadLocal[\s\S]{0,180}localReadByFactId/,
+    ],
   ]) {
     assertPattern(
       normalApp,
@@ -200,6 +204,7 @@ async function main() {
     "hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring/60",
     "signalThreadReadState",
     "compareSignalConversationRecency",
+    "localReadFactsStore.mark(pendingFacts)",
     "signalStoryDate()",
     "border-b border-border/50 border-l-2 border-l-transparent",
     "min-w-0 flex-1",
@@ -239,6 +244,7 @@ async function main() {
     "pendingReadFacts",
     "rereadEligibleCount",
     "compareSignalConversationRecency",
+    "createSignalLocalReadFactsStore",
   ]) {
     assert(interactions.includes(marker), `Signal read-state recovery missing marker: ${marker}`);
   }
@@ -258,6 +264,8 @@ async function main() {
   );
   assert(
     sourceApp.includes("signalConversationUnreadCount") &&
+      sourceApp.includes("createSignalLocalReadFactsStore") &&
+      sourceApp.includes("source.signalLocalReadFacts.snapshot()") &&
       sourceApp.includes('appId === "signal" ? signalUnreadCount : 0') &&
       sourceApp.includes("getDockBadgeCount"),
     "source shell does not wire the shipped Signal unread count into the Dock badge",
