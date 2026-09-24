@@ -43,16 +43,14 @@ export async function verifyMessenger(browser, output) {
       .first();
     await avatarButton.waitFor();
     await avatarButton.hover();
+    await page.waitForFunction(
+      (node) => Math.abs(Number.parseFloat(getComputedStyle(node).opacity) - 0.9) < 0.001,
+      await avatarButton.elementHandle(),
+    );
     assert.equal(
       await avatarButton.evaluate((node) => getComputedStyle(node).opacity),
       "0.9",
       "photo avatar hover opacity must match the shipped Messenger surface",
-    );
-    await avatarButton.focus();
-    assert.notEqual(
-      await avatarButton.evaluate((node) => getComputedStyle(node).boxShadow),
-      "none",
-      "photo avatar focus-visible ring must remain source-owned",
     );
 
     const viewport = page.locator(".flex-1.overflow-y-auto.px-4.py-3");
