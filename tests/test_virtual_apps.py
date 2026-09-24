@@ -77,8 +77,19 @@ def test_messenger_app() -> None:
     assert msg_artifacts[0]["type"] == "signal_message"
 
 
+def _assert_browser_page_contract(page: dict, url: str) -> None:
+    assert page["url"] == url
+    assert isinstance(page["supported_locales"], list)
+    assert page["supported_locales"]
+    assert isinstance(page["title"], str)
+    assert isinstance(page["body_html"], str)
+    assert isinstance(page["allowed_commands"], list)
+
+
 def test_browser_app() -> None:
-    page = get_browser_page("https://doodle.search/")
+    url = "https://doodle.search/"
+    page = get_browser_page(url)
+    _assert_browser_page_contract(page, url)
     if live_pack.is_available():
         # Archived production payload renders via body_html.
         assert "Doodle" in page["title"]
@@ -87,7 +98,9 @@ def test_browser_app() -> None:
         assert page["title"] == "Doodle Search"
         assert "<!DOCTYPE html>" in page["html"]
 
-    fallback = get_browser_page("https://unknown.local/")
+    fallback_url = "https://unknown.local/"
+    fallback = get_browser_page(fallback_url)
+    _assert_browser_page_contract(fallback, fallback_url)
     assert "Simulated Net Page" in fallback["title"]
 
 
@@ -133,7 +146,12 @@ def test_event_dispatcher() -> None:
             }
         )
         assert fetch_res["payload"]["ok"] is True
-        assert fetch_res["payload"]["artifact"]["type"] == "browser_page"
+        artifact = fetch_res["payload"]["artifact"]
+        assert artifact["type"] == "browser_page"
+        _assert_browser_page_contract(
+            artifact["data"],
+            "https://doodle.search/",
+        )
 
         # 4. network test
         net_res = await dispatcher.handle_event({"channel": "settings.network.test"})
