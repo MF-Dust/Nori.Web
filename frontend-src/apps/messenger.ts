@@ -158,7 +158,7 @@ function normalizeMessage(
       explicitTimestamp ||
       (hasSurfacedAt ? signalStoryTimestampFromEpoch(surfacedAt) : ""),
     readFact: readFact || undefined,
-    self: raw.self === true || sender === SIGNAL_SELF_SENDER,
+    self: sender === SIGNAL_SELF_SENDER,
     assetPath: assetPath || undefined,
     alt: firstString(raw, "alt") || undefined,
     dimensions,
