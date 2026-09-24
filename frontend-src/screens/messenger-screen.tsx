@@ -1128,7 +1128,7 @@ export function MessengerScreen({ runtime, instanceId, setContentKey }: { runtim
     setRetainedThreadId(threadId);
     setImage(null);
 
-    if (view && view.unreadCount > 0) {
+    if (view && view.pendingReadFacts.length > 0) {
       const pendingFacts = view.pendingReadFacts;
       void runtime.model.markThreadRead(threadId)
         .then(() => {

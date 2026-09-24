@@ -216,6 +216,7 @@ async function main() {
     "hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring/60",
     "signalThreadReadState",
     "compareSignalConversationRecency",
+    "view.pendingReadFacts.length > 0",
     "localReadFactsStore.mark(pendingFacts)",
     "signalStoryDate()",
     "border-b border-border/50 border-l-2 border-l-transparent",

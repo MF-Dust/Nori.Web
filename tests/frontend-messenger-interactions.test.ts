@@ -140,6 +140,24 @@ test("Signal unread state follows shipped thread read/reread windows", () => {
     ),
     { read: true, unreadCount: 0, pendingReadFacts: [] },
   );
+  assert.deepEqual(
+    signalThreadReadState(
+      {
+        ...thread,
+        reread: undefined,
+        unreadFrom: "2026-09-01T00:00:00",
+      },
+      messages,
+      new Set(),
+      hasFact,
+    ),
+    {
+      read: false,
+      unreadCount: 0,
+      pendingReadFacts: ["signal.daniel.read"],
+    },
+    "read persistence is driven by pending facts even when no messages fall inside the unread window",
+  );
 });
 
 

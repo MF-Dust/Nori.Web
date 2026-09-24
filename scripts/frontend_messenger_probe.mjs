@@ -37,6 +37,14 @@ export async function verifyMessenger(browser, output) {
     await page
       .getByRole("button", { name: "Clear search", exact: true })
       .click();
+    const zeroCountThread = page.getByRole("button", { name: /Zero Count Thread/ });
+    await zeroCountThread.click();
+    assert.deepEqual(
+      await page.evaluate(() => window.messengerProbe.readThreads),
+      ["zero-count"],
+      "a pending read fact must persist even when its unread window contains zero messages",
+    );
+
     await page.getByRole("button", { name: /Fixture Service/ }).click();
 
     const avatarButton = page
@@ -140,7 +148,7 @@ export async function verifyMessenger(browser, output) {
     await quietThread.click();
     assert.deepEqual(
       await page.evaluate(() => window.messengerProbe.readThreads),
-      ["quiet"],
+      ["zero-count", "quiet"],
       "initial unread thread must dispatch signal.read exactly once",
     );
     await page.getByLabel("1 unread", { exact: true }).waitFor({ state: "detached" });
@@ -150,7 +158,7 @@ export async function verifyMessenger(browser, output) {
     await page.getByLabel("1 unread", { exact: true }).waitFor({ state: "detached" });
     assert.deepEqual(
       await page.evaluate(() => window.messengerProbe.readThreads),
-      ["quiet", "quiet"],
+      ["zero-count", "quiet", "quiet"],
       "reread window must become unread after its trigger and clear through signal.read",
     );
 

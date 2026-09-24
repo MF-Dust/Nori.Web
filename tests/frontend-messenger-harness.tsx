@@ -101,6 +101,29 @@ let conversations: SignalConversation[] = [
       },
     ],
   },
+  {
+    thread: {
+      threadId: "zero-count",
+      title: "Zero Count Thread",
+      participants: ["Zero", "我"],
+      service: false,
+      readFact: "zero.read",
+      unreadFrom: "2026-09-01T00:00:00",
+      raw: {},
+    },
+    messages: [
+      {
+        threadId: "zero-count",
+        messageId: "zero-old",
+        sender: "Zero",
+        kind: "text",
+        body: "Old message outside unread window",
+        timestamp: "2026-08-16T09:00:00Z",
+        self: false,
+        raw: {},
+      },
+    ],
+  },
 ];
 
 const messengerListeners = new Set<() => void>();
