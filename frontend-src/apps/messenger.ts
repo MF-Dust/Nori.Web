@@ -5,6 +5,12 @@ import { signalStoryTimestampFromEpoch } from "./signal-story-clock";
 
 const SIGNAL_SELF_SENDER = "我";
 
+export interface SignalThreadReread {
+  when: string;
+  readFact: string;
+  unreadFrom?: string;
+}
+
 export interface SignalThread {
   threadId: string;
   title: string;
@@ -12,6 +18,9 @@ export interface SignalThread {
   avatarPath?: string;
   service: boolean;
   status?: string;
+  unreadFrom?: string;
+  readFact?: string;
+  reread?: SignalThreadReread;
   raw: Readonly<Record<string, JsonValue>>;
 }
 
@@ -69,12 +78,30 @@ function firstString(
   return "";
 }
 
+function normalizeThreadReread(
+  value: JsonValue | undefined,
+): SignalThreadReread | undefined {
+  const raw = objectValue(value);
+  if (!raw) return undefined;
+  const when = firstString(raw, "when");
+  const readFact = firstString(raw, "readFact", "read_fact");
+  if (!when || !readFact) return undefined;
+  const unreadFrom = firstString(raw, "unreadFrom", "unread_from");
+  return {
+    when,
+    readFact,
+    unreadFrom: unreadFrom || undefined,
+  };
+}
+
 function normalizeThread(
   fallbackId: string,
   raw: Record<string, JsonValue>,
 ): SignalThread {
   const threadId = firstString(raw, "threadId", "thread_id") || fallbackId;
   const avatarPath = firstString(raw, "avatarPath", "avatar_path");
+  const unreadFrom = firstString(raw, "unreadFrom", "unread_from");
+  const readFact = firstString(raw, "readFact", "read_fact");
   return {
     threadId,
     title: firstString(raw, "title", "name") || threadId,
@@ -82,6 +109,9 @@ function normalizeThread(
     avatarPath: avatarPath || undefined,
     service: raw.service === true,
     status: firstString(raw, "status") || undefined,
+    unreadFrom: unreadFrom || undefined,
+    readFact: readFact || undefined,
+    reread: normalizeThreadReread(raw.reread),
     raw,
   };
 }

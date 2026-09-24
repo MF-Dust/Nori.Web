@@ -34,10 +34,16 @@ import type {
 } from "../apps/messenger";
 import { SIGNAL_DANIEL_EVIDENCE_FACT } from "../apps/signal-daniel";
 import {
+  compareSignalConversationRecency,
   draftAfterSuccessfulSend,
   isConversationNearBottom,
   shouldSubmitMessageKey,
+  signalThreadReadState,
 } from "../apps/messenger-interactions";
+import {
+  parseSignalTimestamp,
+  signalStoryDate,
+} from "../apps/signal-story-clock";
 import { MarkdownBody } from "../components/markdown-body";
 
 const DESKTOP_BREAKPOINT = 640;
@@ -198,7 +204,7 @@ function Avatar({
         type="button"
         onClick={onZoom}
         aria-label={t("signal.conversation.viewPhoto")}
-        className="shrink-0 rounded-full outline-none transition-opacity hover:opacity-90"
+        className="shrink-0 rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/60"
       >
         {image}
       </button>
@@ -221,14 +227,14 @@ function Avatar({
 }
 
 function validDate(timestamp: string): Date | undefined {
-  const date = new Date(timestamp);
+  const date = parseSignalTimestamp(timestamp);
   return Number.isFinite(date.getTime()) ? date : undefined;
 }
 
 function formatThreadTime(timestamp: string): string {
   const date = validDate(timestamp);
   if (!date) return "";
-  if (date.toDateString() === new Date().toDateString()) {
+  if (date.toDateString() === signalStoryDate().toDateString()) {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
   return date.toLocaleDateString([], { month: "short", day: "numeric" });
@@ -261,21 +267,25 @@ function buildThreadViews(
   localReadFacts: ReadonlySet<string>,
   hasFact?: (factId: string) => boolean,
 ): ThreadView[] {
-  return conversations.map((conversation) => {
-    const pendingReadFacts = conversation.messages
-      .map((message) => message.readFact)
-      .filter((fact): fact is string => Boolean(fact))
-      .filter((fact) => !localReadFacts.has(fact) && !hasFact?.(fact));
-    const last = conversation.messages.at(-1);
-    return {
-      conversation,
-      unreadCount: pendingReadFacts.length,
-      pendingReadFacts,
-      lastKind: last?.kind ?? "text",
-      lastBody: last?.body ?? "",
-      lastTimestamp: last?.timestamp ?? "",
-    };
-  });
+  return [...conversations]
+    .sort(compareSignalConversationRecency)
+    .map((conversation) => {
+      const readState = signalThreadReadState(
+        conversation.thread,
+        conversation.messages,
+        localReadFacts,
+        hasFact,
+      );
+      const last = conversation.messages.at(-1);
+      return {
+        conversation,
+        unreadCount: readState.unreadCount,
+        pendingReadFacts: readState.pendingReadFacts,
+        lastKind: last?.kind ?? "text",
+        lastBody: last?.body ?? "",
+        lastTimestamp: last?.timestamp ?? "",
+      };
+    });
 }
 
 function ThreadRow({
@@ -305,10 +315,10 @@ function ThreadRow({
       type="button"
       onClick={onSelect}
       aria-current={selected ? "true" : undefined}
-      className={`flex w-full items-center gap-3 border-b border-l-2 px-3 py-2.5 text-left transition-colors ${
+      className={`flex w-full items-center gap-3 border-b border-border/50 border-l-2 border-l-transparent px-3 py-2.5 text-left outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/60 ${
         selected
-          ? "border-l-primary bg-primary/[0.12]"
-          : "border-l-transparent border-border/50 hover:bg-muted/40"
+          ? "border-l-primary bg-primary/[0.12] hover:bg-primary/[0.18] active:bg-primary/[0.24]"
+          : "hover:bg-muted/40 active:bg-muted/60"
       }`}
     >
       <Avatar
@@ -323,12 +333,12 @@ function ThreadRow({
           <span className={`truncate text-sm text-foreground ${unread ? "font-semibold" : "font-medium"}`}>
             {thread.title}
           </span>
-          <span className={`shrink-0 text-[11px] ${unread ? "font-medium text-primary" : "text-muted-foreground"}`}>
+          <span className={`shrink-0 text-[11px] ${unread ? "font-medium text-primary" : selected ? "text-foreground/70" : "text-muted-foreground"}`}>
             {formatThreadTime(view.lastTimestamp)}
           </span>
         </div>
         <div className="mt-0.5 flex items-center gap-2">
-          <span className={`min-w-0 flex-1 truncate text-[13px] ${unread ? "font-medium text-foreground/90" : "text-muted-foreground"}`}>
+          <span className={`min-w-0 flex-1 truncate text-[13px] ${unread ? "font-medium text-foreground/90" : selected ? "text-foreground/80" : "text-muted-foreground"}`}>
             {preview}
           </span>
           {unread ? (
@@ -577,7 +587,7 @@ function MessagePhoto({
       type="button"
       onClick={() => onViewImage(src)}
       aria-label={t("signal.conversation.viewPhoto")}
-      className="block w-full cursor-zoom-in outline-none transition-opacity hover:opacity-95"
+      className="block w-full cursor-zoom-in outline-none transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring/60"
     >
       <img
         src={src}
@@ -685,7 +695,7 @@ interface MessageGroup {
 
 function groupMessages(messages: readonly SignalMessage[]): MessageGroup[] {
   const groups: MessageGroup[] = [];
-  const now = new Date();
+  const now = signalStoryDate();
   const today = now.toDateString();
   const yesterdayDate = new Date(now);
   yesterdayDate.setDate(now.getDate() - 1);

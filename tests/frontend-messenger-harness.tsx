@@ -79,6 +79,13 @@ let conversations: SignalConversation[] = [
       title: "Quiet Thread",
       participants: ["Quiet", "我"],
       service: false,
+      readFact: "quiet.unread",
+      unreadFrom: "2026-08-17T00:00:00",
+      reread: {
+        when: "quiet.reread.when",
+        readFact: "quiet.reread",
+        unreadFrom: "2026-08-17T08:30:00",
+      },
       raw: {},
     },
     messages: [
@@ -89,7 +96,6 @@ let conversations: SignalConversation[] = [
         kind: "text",
         body: "Searchable final body",
         timestamp: "2026-08-17T09:00:00Z",
-        readFact: "quiet.unread",
         self: false,
         raw: {},
       },
@@ -101,12 +107,15 @@ const messengerListeners = new Set<() => void>();
 const facts = new Set<string>();
 const serviceSends: string[] = [];
 const downloads: string[] = [];
+const readThreads: string[] = [];
 const messengerRuntime = {
   model: {
     async conversations() {
       return conversations;
     },
-    async markThreadRead() {},
+    async markThreadRead(threadId: string) {
+      readThreads.push(threadId);
+    },
     async emitDownloadFact(factId: string) {
       downloads.push(factId);
       if (factId === "download.fail")
@@ -256,6 +265,8 @@ declare global {
       danielCues: string[];
       danielCommands: Array<{ command: string; answer?: string }>;
       jumpDanielWorld(): void;
+      readThreads: string[];
+      triggerQuietReread(): void;
     };
   }
 }
@@ -266,6 +277,12 @@ window.messengerProbe = {
   floatingSends,
   danielCues,
   danielCommands,
+  readThreads,
+  triggerQuietReread() {
+    facts.add("quiet.reread.when");
+    conversations = [...conversations];
+    messengerListeners.forEach((listener) => listener());
+  },
   jumpDanielWorld() {
     danielRuntime.syncJumpEpoch("world-b");
   },

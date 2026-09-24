@@ -5,6 +5,10 @@ import {
   SIGNAL_DANIEL_DEADMAN_FACT,
 } from "../frontend-src/apps/signal-daniel";
 import type { SignalThread } from "../frontend-src/apps/messenger";
+import {
+  parseSignalTimestamp,
+  signalStoryDate,
+} from "../frontend-src/apps/signal-story-clock";
 const thread = { threadId: "daniel", service: true } as SignalThread;
 const tick = async () => {
   for (let i = 0; i < 8; i++) await Promise.resolve();
@@ -103,4 +107,33 @@ test("artifact subscriptions react to manifold revisions without reloading on th
   } as any);
   assert.equal(reloads, 2);
   unsubscribe();
+});
+
+
+test("Signal calendar parsing and current-day comparisons stay on the shipped story date", () => {
+  const parsed = parseSignalTimestamp("2026-08-31T23:45:12Z");
+  assert.deepEqual(
+    [
+      parsed.getFullYear(),
+      parsed.getMonth(),
+      parsed.getDate(),
+      parsed.getHours(),
+      parsed.getMinutes(),
+      parsed.getSeconds(),
+    ],
+    [2026, 7, 31, 23, 45, 12],
+  );
+  const storyNow = signalStoryDate(new Date(2030, 0, 2, 9, 8, 7, 6));
+  assert.deepEqual(
+    [
+      storyNow.getFullYear(),
+      storyNow.getMonth(),
+      storyNow.getDate(),
+      storyNow.getHours(),
+      storyNow.getMinutes(),
+      storyNow.getSeconds(),
+      storyNow.getMilliseconds(),
+    ],
+    [2026, 7, 31, 9, 8, 7, 6],
+  );
 });

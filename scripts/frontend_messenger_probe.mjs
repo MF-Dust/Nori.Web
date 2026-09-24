@@ -26,6 +26,7 @@ export async function verifyMessenger(browser, output) {
 
   try {
     await page.goto("http://127.0.0.1:47174/messenger-harness");
+    await page.getByLabel("1 unread", { exact: true }).waitFor();
     const search = page.getByRole("textbox", { name: "Search", exact: true });
     await search.fill("searchable final");
     await page.getByRole("button", { name: /Quiet Thread/ }).waitFor();
@@ -135,7 +136,24 @@ export async function verifyMessenger(browser, output) {
     );
     await page.screenshot({ path: resolve(output, "messenger.png") });
 
-    await page.getByRole("button", { name: /Quiet Thread/ }).click();
+    const quietThread = page.getByRole("button", { name: /Quiet Thread/ });
+    await quietThread.click();
+    assert.deepEqual(
+      await page.evaluate(() => window.messengerProbe.readThreads),
+      ["quiet"],
+      "initial unread thread must dispatch signal.read exactly once",
+    );
+    await page.getByLabel("1 unread", { exact: true }).waitFor({ state: "detached" });
+    await page.evaluate(() => window.messengerProbe.triggerQuietReread());
+    await page.getByLabel("1 unread", { exact: true }).waitFor();
+    await quietThread.click();
+    await page.getByLabel("1 unread", { exact: true }).waitFor({ state: "detached" });
+    assert.deepEqual(
+      await page.evaluate(() => window.messengerProbe.readThreads),
+      ["quiet", "quiet"],
+      "reread window must become unread after its trigger and clear through signal.read",
+    );
+
     const sealedSend = page.getByRole("button", { name: "Send", exact: true });
     await sealedSend.click();
     const alert = page.getByRole("alert");
@@ -351,7 +369,7 @@ export async function verifyMessenger(browser, output) {
 
     assert.deepEqual(errors, []);
     console.log(
-      "Messenger probe passed: search, scroll hold, media failure, preview focus, avatar shipped states, IME, failed-send retry, attachment retry, sealed-composer choreography, mobile pane fencing, Daniel reply/media/interrupt choreography and short floating layout.",
+      "Messenger probe passed: search, scroll hold, media failure, preview focus, avatar shipped states, IME, failed-send retry, attachment retry, sealed-composer choreography, mobile pane fencing, thread read/reread windows, Daniel reply/media/interrupt choreography and short floating layout.",
     );
   } catch (error) {
     console.error(
