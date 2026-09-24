@@ -220,7 +220,6 @@ async function main() {
     "compareSignalConversationRecency",
     "view.pendingReadFacts.length > 0",
     "localReadFactsStore.mark(pendingFacts)",
-    "signalStoryDate()",
     "border-b border-border/50 border-l-2 border-l-transparent",
     "min-w-0 flex-1",
     "flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",
