@@ -38,6 +38,23 @@ export async function verifyMessenger(browser, output) {
       .click();
     await page.getByRole("button", { name: /Fixture Service/ }).click();
 
+    const avatarButton = page
+      .locator('button.rounded-full:has(> img.rounded-full)')
+      .first();
+    await avatarButton.waitFor();
+    await avatarButton.hover();
+    assert.equal(
+      await avatarButton.evaluate((node) => getComputedStyle(node).opacity),
+      "0.9",
+      "photo avatar hover opacity must match the shipped Messenger surface",
+    );
+    await avatarButton.focus();
+    assert.notEqual(
+      await avatarButton.evaluate((node) => getComputedStyle(node).boxShadow),
+      "none",
+      "photo avatar focus-visible ring must remain source-owned",
+    );
+
     const viewport = page.locator(".flex-1.overflow-y-auto.px-4.py-3");
     await viewport.evaluate((node) => {
       node.scrollTop = 0;
@@ -117,6 +134,108 @@ export async function verifyMessenger(browser, output) {
     );
     await page.screenshot({ path: resolve(output, "messenger.png") });
 
+    await page.getByRole("button", { name: /Quiet Thread/ }).click();
+    const sealedSend = page.getByRole("button", { name: "Send", exact: true });
+    await sealedSend.click();
+    const alert = page.getByRole("alert");
+    await alert.waitFor();
+    const alertAnimation = await alert.evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {
+        name: style.animationName,
+        duration: style.animationDuration,
+        timing: style.animationTimingFunction,
+      };
+    });
+    assert.equal(alertAnimation.name, "messenger-sealed-error-enter");
+    assert.equal(alertAnimation.duration, "0.18s");
+    assert.ok(
+      alertAnimation.timing.includes("0.32") &&
+        alertAnimation.timing.includes("0.72"),
+      "sealed composer alert must use the shipped easing curve",
+    );
+
+    const detailsButton = page.getByRole("button", {
+      name: "Details",
+      exact: true,
+    });
+    await detailsButton.click();
+    const details = alert.locator("pre");
+    await details.waitFor();
+    await page.waitForFunction(
+      () =>
+        document.querySelector("pre[data-messenger-sealed-details-state]")?.dataset
+          .messengerSealedDetailsState === "open",
+    );
+    assert.equal(
+      await details.evaluate(
+        (node) => node.dataset.messengerSealedDetailsState,
+      ),
+      "open",
+    );
+
+    await detailsButton.click();
+    await page.waitForFunction(
+      () =>
+        document.querySelector("pre[data-messenger-sealed-details-state]")?.dataset
+          .messengerSealedDetailsState === "exiting",
+    );
+    assert.equal(
+      await details.count(),
+      1,
+      "details content must remain mounted while the exit animation runs",
+    );
+    await details.waitFor({ state: "detached" });
+
+    const dismiss = page.getByRole("button", {
+      name: "Dismiss",
+      exact: true,
+    });
+    await dismiss.click();
+    await page.waitForFunction(
+      () =>
+        document.querySelector('[data-messenger-sealed-alert="true"]')?.dataset
+          .messengerSealedExiting === "true",
+    );
+    assert.equal(
+      await alert.count(),
+      1,
+      "sealed alert must remain mounted while its exit animation runs",
+    );
+    await alert.waitFor({ state: "detached" });
+
+    await page.setViewportSize({ width: 600, height: 700 });
+    const backButton = page.getByRole("button", { name: "Back", exact: true });
+    await backButton.waitFor();
+    await backButton.click();
+    await backButton.evaluate((node) => {
+      node.dispatchEvent(
+        new TransitionEvent("transitionend", {
+          bubbles: true,
+          propertyName: "color",
+        }),
+      );
+    });
+    await page.waitForTimeout(30);
+    assert.equal(
+      await backButton.count(),
+      1,
+      "a descendant transition must not complete the mobile pane slide",
+    );
+    await page.evaluate(() => {
+      const track = Array.from(document.querySelectorAll("div")).find((node) =>
+        node.classList.contains("w-[200%]"),
+      );
+      if (!track) throw new Error("Messenger mobile track not found");
+      track.dispatchEvent(
+        new TransitionEvent("transitionend", {
+          bubbles: true,
+          propertyName: "transform",
+        }),
+      );
+    });
+    await backButton.waitFor({ state: "detached" });
+
     await page.goto("http://127.0.0.1:47174/messenger-harness?mode=floating");
     const input = page.getByRole("textbox", { name: "Message", exact: true });
     await input.fill("composing");
@@ -150,7 +269,7 @@ export async function verifyMessenger(browser, output) {
 
     assert.deepEqual(errors, []);
     console.log(
-      "Messenger probe passed: search, scroll hold, media failure, preview focus, IME, failed-send retry, attachment retry and short floating layout.",
+      "Messenger probe passed: search, scroll hold, media failure, preview focus, avatar shipped states, IME, failed-send retry, attachment retry, sealed-composer choreography, mobile pane fencing and short floating layout.",
     );
   } catch (error) {
     console.error(
