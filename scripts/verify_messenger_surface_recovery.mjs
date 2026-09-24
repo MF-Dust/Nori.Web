@@ -214,6 +214,8 @@ async function main() {
     "active:bg-muted/60",
     "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/60",
     "hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring/60",
+    "invisible ml-2 inline-flex select-none items-center gap-1 text-[10px]",
+    "pointer-events-none absolute bottom-2 right-3.5 flex items-center gap-1 text-[10px]",
     "signalThreadReadState",
     "compareSignalConversationRecency",
     "view.pendingReadFacts.length > 0",

@@ -611,9 +611,10 @@ function MessageBubble({
   const own = runtime.isOwnMessage?.(message) ?? message.self;
   const timestamp = message.timestamp ? formatMessageTime(message.timestamp) : "";
   const stamp = timestamp ? (
-    <span className="flex items-center gap-1">
-      {timestamp}{own ? <CheckCheck className="size-3" /> : null}
-    </span>
+    <>
+      <span>{timestamp}</span>
+      {own ? <CheckCheck className="size-3" /> : null}
+    </>
   ) : null;
 
   if (message.kind === "deleted") {
@@ -633,7 +634,7 @@ function MessageBubble({
         <div className={`relative max-w-[min(78%,20rem)] overflow-hidden rounded-2xl p-0.5 ${own ? "rounded-br-sm bg-primary" : "rounded-bl-sm border"}`}>
           <MessagePhoto message={message} onViewImage={onViewImage} t={t} />
           {stamp ? (
-            <span className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
+            <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
               {stamp}
             </span>
           ) : null}
@@ -647,7 +648,13 @@ function MessageBubble({
       <div className="flex justify-start">
         <div className="max-w-[min(78%,18rem)]">
           <FileAttachment message={message} runtime={runtime} t={t} />
-          {timestamp ? <div className="mt-1 text-right text-[10px] text-muted-foreground">{timestamp}</div> : null}
+          {stamp ? (
+            <div className="mt-1 flex justify-end">
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                {stamp}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -658,7 +665,13 @@ function MessageBubble({
       <div className="flex justify-start">
         <div className="relative max-w-[78%] rounded-2xl rounded-bl-sm border px-3.5 py-2 text-sm text-secondary-foreground shadow-sm">
           <MarkdownBody markdown={`🤖 ${message.body}`} className="select-text break-words italic leading-relaxed" />
-          {timestamp ? <div className="mt-1 text-right text-[10px] not-italic text-muted-foreground">{timestamp}</div> : null}
+          {stamp ? (
+            <div className="mt-1 flex justify-end">
+              <span className="flex items-center gap-1 text-[10px] not-italic text-muted-foreground">
+                {stamp}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -669,10 +682,14 @@ function MessageBubble({
       <div className={`relative max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${own ? "rounded-br-sm bg-primary text-primary-foreground" : "rounded-bl-sm border text-secondary-foreground"}`}>
         <div className="select-text whitespace-pre-wrap break-words leading-relaxed">
           {linkedText(message.body, own ? "text-primary-foreground" : "text-primary", runtime.openUrl)}
-          {timestamp ? <span aria-hidden className="invisible ml-2 inline-flex text-[10px]">{timestamp}</span> : null}
+          {stamp ? (
+            <span aria-hidden className="invisible ml-2 inline-flex select-none items-center gap-1 text-[10px]">
+              {stamp}
+            </span>
+          ) : null}
         </div>
         {stamp ? (
-          <span className={`pointer-events-none absolute bottom-2 right-3.5 text-[10px] ${own ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+          <span className={`pointer-events-none absolute bottom-2 right-3.5 flex items-center gap-1 text-[10px] ${own ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
             {stamp}
           </span>
         ) : null}
