@@ -492,6 +492,7 @@ class EventDispatcher:
                                     "supported_locales": ["zh-CN"],
                                     "title": filename,
                                     "body_html": embed_html,
+                                    "allowed_commands": [],
                                     "favicon": "/webAssets/favicon.svg"
                                     if False else None,
                                 },
