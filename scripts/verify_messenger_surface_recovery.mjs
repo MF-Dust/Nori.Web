@@ -249,6 +249,12 @@ async function main() {
     "readFact?: string",
     "reread?: SignalThreadReread",
     "normalizeThreadReread",
+    "SIGNAL_MESSAGE_KINDS",
+    "if (!threadId || !title) return undefined",
+    "if (!threadId || !messageId || !sender) return undefined",
+    'SIGNAL_MESSAGE_KINDS.has(rawKind) ? rawKind : "text"',
+    "width !== undefined && height !== undefined",
+    "rawSize !== undefined && rawSize > 0",
   ]) {
     assert(model.includes(marker), `Signal model is missing shipped thread metadata: ${marker}`);
   }
