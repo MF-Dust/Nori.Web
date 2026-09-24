@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   compareSignalConversationRecency,
   draftAfterSuccessfulSend,
+  signalConversationUnreadCount,
   isConversationNearBottom,
   isMessageCompositionActive,
   shouldSubmitMessageKey,
@@ -170,4 +171,46 @@ test("Signal thread recency matches shipped newest-message ordering", () => {
     "older",
     "empty",
   ]);
+});
+
+
+test("Signal Dock badge sums shipped per-thread unread counts", () => {
+  const makeConversation = (
+    threadId: string,
+    readFact: string | undefined,
+    messageCount: number,
+  ) => ({
+    thread: {
+      threadId,
+      title: threadId,
+      participants: [],
+      service: false,
+      readFact,
+      unreadFrom: "2026-08-01T00:00:00",
+      raw: {},
+    },
+    messages: Array.from({ length: messageCount }, (_, index) => ({
+      threadId,
+      messageId: `${threadId}-${index}`,
+      sender: threadId,
+      kind: "text",
+      body: "fixture",
+      timestamp: `2026-08-${String(index + 10).padStart(2, "0")}T12:00:00`,
+      self: false,
+      raw: {},
+    })),
+  });
+  const conversations = [
+    makeConversation("one", "one.read", 2),
+    makeConversation("two", "two.read", 3),
+    makeConversation("always-read", undefined, 4),
+  ];
+  const facts = new Set(["two.read"]);
+  assert.equal(
+    signalConversationUnreadCount(
+      conversations,
+      (fact: string) => facts.has(fact),
+    ),
+    2,
+  );
 });

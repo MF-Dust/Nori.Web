@@ -124,3 +124,23 @@ export function compareSignalConversationRecency(
   if (leftLast && rightLast) return compareSignalMessages(rightLast, leftLast);
   return (leftLast ? 0 : 1) - (rightLast ? 0 : 1);
 }
+
+
+/** Shipped CHe/EHe total used by the Signal Dock badge. */
+export function signalConversationUnreadCount(
+  conversations: readonly SignalConversation[],
+  hasFact?: (factId: string) => boolean,
+  localReadFacts: ReadonlySet<string> = new Set<string>(),
+): number {
+  return conversations.reduce(
+    (total, conversation) =>
+      total +
+      signalThreadReadState(
+        conversation.thread,
+        conversation.messages,
+        localReadFacts,
+        hasFact,
+      ).unreadCount,
+    0,
+  );
+}

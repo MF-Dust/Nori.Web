@@ -1,7 +1,7 @@
 import type { JsonValue } from "../runtime/protocol";
 import type { ArtifactService } from "../services/artifacts";
 import type { ManifoldService } from "../services/manifold";
-import { signalStoryTimestampFromEpoch } from "./signal-story-clock";
+import { parseSignalTimestamp, signalStoryTimestampFromEpoch } from "./signal-story-clock";
 
 const SIGNAL_SELF_SENDER = "我";
 
@@ -159,7 +159,7 @@ function normalizeMessage(
 }
 
 function parsedTimestamp(timestamp: string): number {
-  const parsed = Date.parse(timestamp);
+  const parsed = parseSignalTimestamp(timestamp).getTime();
   return Number.isFinite(parsed) ? parsed : 0;
 }
 

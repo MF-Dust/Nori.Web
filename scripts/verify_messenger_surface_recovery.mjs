@@ -35,6 +35,7 @@ async function main() {
   const interactions = await read("frontend-src/apps/messenger-interactions.ts");
   const storyClock = await read("frontend-src/apps/signal-story-clock.ts");
   const backend = await read("backend/services/event_dispatcher.py");
+  const sourceApp = await read("frontend-src/source-app.tsx");
 
   const normalAppImport = messengerChunk.source.match(/from "\.\/(NormalApp-[^"]+\.js)"/);
   assert(normalAppImport, "shipped Messenger no longer imports NormalApp runtime contracts");
@@ -130,6 +131,10 @@ async function main() {
     [
       "story calendar clock",
       /oY = 2026,[\s\S]{0,80}aY = 7,[\s\S]{0,80}lY = 31;[\s\S]{0,120}function Ga\(\)/,
+    ],
+    [
+      "Signal Dock unread badge",
+      /function EHe\([\s\S]{0,420}reduce\(\(i, s\) => i \+ s\.unreadCount, 0\)[\s\S]{0,520}Ny\("signal", i\)/,
     ],
   ]) {
     assertPattern(
@@ -251,9 +256,15 @@ async function main() {
       backend.includes('reread.get("read_fact")'),
     "local backend does not persist shipped Signal read/reread facts",
   );
+  assert(
+    sourceApp.includes("signalConversationUnreadCount") &&
+      sourceApp.includes('appId === "signal" ? signalUnreadCount : 0') &&
+      sourceApp.includes("getDockBadgeCount"),
+    "source shell does not wire the shipped Signal unread count into the Dock badge",
+  );
 
   console.log(
-    `[ok] Messenger read/reread state, story clock, bubbles, photo focus, thread rows, mobile slide completion, translucent inputs and sealed-composer choreography match shipped ${messengerChunk.file}`,
+    `[ok] Messenger read/reread state, Dock badge, story clock, bubbles, photo focus, thread rows, mobile slide completion, translucent inputs and sealed-composer choreography match shipped ${messengerChunk.file}`,
   );
 }
 
