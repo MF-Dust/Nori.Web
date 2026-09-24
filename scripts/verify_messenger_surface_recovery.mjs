@@ -196,7 +196,7 @@ async function main() {
     "signalThreadReadState",
     "compareSignalConversationRecency",
     "signalStoryDate()",
-    "border-b border-l-2",
+    "border-b border-border/50 border-l-2 border-l-transparent",
     "min-w-0 flex-1",
     "flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",
     "flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",
