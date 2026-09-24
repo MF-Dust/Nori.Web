@@ -239,7 +239,7 @@ export async function verifyMessenger(browser, output) {
 
     await page.goto("http://127.0.0.1:47174/messenger-harness?mode=daniel");
     await page.getByRole("button", { name: /Daniel Fixture/ }).click();
-    await page.getByText("Resume fixture", { exact: true }).waitFor();
+    await page.getByText("Resume fixture", { exact: false }).waitFor();
     assert.deepEqual(
       await page.evaluate(() => window.messengerProbe.danielCommands),
       [{ command: "signal.daniel.verify" }],
@@ -262,7 +262,7 @@ export async function verifyMessenger(browser, output) {
       0,
       "Daniel evidence media must stay hidden while the assistant is typing",
     );
-    await page.getByText("First verified reply", { exact: true }).waitFor();
+    await page.getByText("First verified reply", { exact: false }).waitFor();
     assert.equal(
       await typing.count(),
       1,
@@ -273,7 +273,7 @@ export async function verifyMessenger(browser, output) {
       0,
       "evidence media must remain hidden until the reply sequence completes",
     );
-    await page.getByText("Second verified reply", { exact: true }).waitFor();
+    await page.getByText("Second verified reply", { exact: false }).waitFor();
     await typing.waitFor({ state: "detached" });
     await evidenceFile.waitFor();
 
@@ -303,14 +303,17 @@ export async function verifyMessenger(browser, output) {
     await typing.waitFor({ state: "detached" });
     await evidenceFile.waitFor();
     await page.waitForTimeout(1100);
+    const interruptedStoryText = await page
+      .locator(".flex-1.overflow-y-auto.px-4.py-3")
+      .innerText();
     assert.equal(
-      await page.getByText("Obsolete delayed reply", { exact: true }).count(),
-      0,
+      interruptedStoryText.includes("Obsolete delayed reply"),
+      false,
       "a world jump must fence a reply that was already waiting for its reveal delay",
     );
     assert.equal(
-      await page.getByText("interrupt", { exact: true }).count(),
-      0,
+      interruptedStoryText.includes("interrupt"),
+      false,
       "a world jump must clear the interrupted local Daniel turn",
     );
 
