@@ -3,6 +3,8 @@ import test from "node:test";
 import {
   compareSignalConversationRecency,
   createSignalLocalReadFactsStore,
+  formatSignalThreadTimestamp,
+  groupSignalMessages,
   draftAfterSuccessfulSend,
   signalConversationUnreadCount,
   isConversationNearBottom,
@@ -139,6 +141,68 @@ test("Signal unread state follows shipped thread read/reread windows", () => {
     { read: true, unreadCount: 0, pendingReadFacts: [] },
   );
 });
+
+
+test("Signal thread timestamps use shipped numeric month/day outside story today", () => {
+  const now = new Date(2026, 7, 31, 14, 0, 0);
+  const old = new Date(2026, 7, 18, 9, 5, 0);
+  assert.equal(
+    formatSignalThreadTimestamp("2026-08-18T09:05:00", now),
+    old.toLocaleDateString([], { month: "numeric", day: "numeric" }),
+  );
+  assert.equal(
+    formatSignalThreadTimestamp("2026-08-31T09:05:00", now),
+    new Date(2026, 7, 31, 9, 5, 0).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  );
+});
+
+test("Signal date groups preserve shipped empty-timestamp continuation and month/day labels", () => {
+  const message = (id: string, timestamp: string) => ({
+    threadId: "fixture",
+    messageId: id,
+    sender: "Fixture",
+    kind: "text",
+    body: id,
+    timestamp,
+    self: false,
+    raw: {},
+  });
+  const now = new Date(2026, 7, 31, 14, 0, 0);
+  const grouped = groupSignalMessages(
+    [
+      message("dated", "2026-08-18T09:00:00"),
+      message("missing", ""),
+      message("today", "2026-08-31T09:00:00"),
+      message("invalid", "not-a-date"),
+    ],
+    now,
+  );
+  assert.equal(grouped.length, 2);
+  assert.deepEqual(grouped[0].messages.map((item) => item.messageId), [
+    "dated",
+    "missing",
+  ]);
+  assert.deepEqual(grouped[1].messages.map((item) => item.messageId), [
+    "today",
+    "invalid",
+  ]);
+  assert.deepEqual(grouped[1].separator, { kind: "today" });
+  assert.deepEqual(grouped[0].separator, {
+    kind: "date",
+    label: new Date(2026, 7, 18, 9, 0, 0).toLocaleDateString([], {
+      month: "long",
+      day: "numeric",
+    }),
+  });
+  assert.deepEqual(
+    groupSignalMessages([message("invalid-first", "")], now),
+    [{ key: "", separator: null, messages: [message("invalid-first", "")] }],
+  );
+});
+
 
 test("Signal thread recency matches shipped newest-message ordering", () => {
   const conversation = (threadId: string, timestamp?: string) => ({

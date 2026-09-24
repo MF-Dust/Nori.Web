@@ -129,6 +129,18 @@ async function main() {
       /\.sort\(\(s, o\) => \(s\.last && o\.last \? SY\(o\.last, s\.last\)/,
     ],
     [
+      "thread timestamp numeric month/day",
+      /toLocaleDateString\(void 0, \{ month: "numeric", day: "numeric" \}\)/,
+    ],
+    [
+      "message date long month/day",
+      /toLocaleDateString\(void 0, \{ month: "long", day: "numeric" \}\)/,
+    ],
+    [
+      "timestamp-less message group continuation",
+      /s && \(i === "" \|\| i === s\.key\)/,
+    ],
+    [
       "story calendar clock",
       /oY = 2026,[\s\S]{0,80}aY = 7,[\s\S]{0,80}lY = 31;[\s\S]{0,120}function Ga\(\)/,
     ],
@@ -240,6 +252,10 @@ async function main() {
     assert(model.includes(marker), `Signal model is missing shipped thread metadata: ${marker}`);
   }
   for (const marker of [
+    "formatSignalThreadTimestamp",
+    "groupSignalMessages",
+    "month: \"numeric\"",
+    "month: \"long\"",
     "signalThreadReadState",
     "pendingReadFacts",
     "rereadEligibleCount",

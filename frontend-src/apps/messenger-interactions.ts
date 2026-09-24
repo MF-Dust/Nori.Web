@@ -4,7 +4,7 @@ import {
   type SignalMessage,
   type SignalThread,
 } from "./messenger";
-import { parseSignalTimestamp } from "./signal-story-clock";
+import { parseSignalTimestamp, signalStoryDate } from "./signal-story-clock";
 
 export interface MessageKeyGesture {
   key: string;
@@ -113,6 +113,93 @@ export function signalThreadReadState(
     pendingReadFacts,
   };
 }
+
+
+export function formatSignalThreadTimestamp(
+  timestamp: string,
+  now = signalStoryDate(),
+): string {
+  if (!timestamp) return "";
+  const date = parseSignalTimestamp(timestamp);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+    ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : date.toLocaleDateString([], { month: "numeric", day: "numeric" });
+}
+
+function signalMessageDateKey(timestamp: string): string {
+  if (!timestamp) return "";
+  const date = parseSignalTimestamp(timestamp);
+  if (Number.isNaN(date.getTime())) return "";
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+export type SignalDateSeparator =
+  | { kind: "today" }
+  | { kind: "yesterday" }
+  | { kind: "date"; label: string };
+
+function signalDateSeparator(
+  timestamp: string,
+  now = signalStoryDate(),
+): SignalDateSeparator | null {
+  if (!timestamp) return null;
+  const date = parseSignalTimestamp(timestamp);
+  if (Number.isNaN(date.getTime())) return null;
+  const key = signalMessageDateKey(timestamp);
+  const todayKey = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+  if (key === todayKey) return { kind: "today" };
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = [
+    yesterday.getFullYear(),
+    String(yesterday.getMonth() + 1).padStart(2, "0"),
+    String(yesterday.getDate()).padStart(2, "0"),
+  ].join("-");
+  return key === yesterdayKey
+    ? { kind: "yesterday" }
+    : {
+        kind: "date",
+        label: date.toLocaleDateString([], { month: "long", day: "numeric" }),
+      };
+}
+
+export interface SignalMessageGroup {
+  key: string;
+  separator: SignalDateSeparator | null;
+  messages: SignalMessage[];
+}
+
+/** Exact shipped $rt grouping: timestamp-less messages continue the previous group. */
+export function groupSignalMessages(
+  messages: readonly SignalMessage[],
+  now = signalStoryDate(),
+): SignalMessageGroup[] {
+  const groups: SignalMessageGroup[] = [];
+  for (const message of messages) {
+    const key = signalMessageDateKey(message.timestamp);
+    const previous = groups.at(-1);
+    if (previous && (key === "" || key === previous.key)) {
+      previous.messages.push(message);
+      continue;
+    }
+    groups.push({ key, separator: null, messages: [message] });
+  }
+  for (const group of groups) {
+    const timestamp = group.messages.find((message) => message.timestamp)?.timestamp;
+    if (timestamp) group.separator = signalDateSeparator(timestamp, now);
+  }
+  return groups;
+}
+
 
 /** Shipped thread list is ordered by each conversation's newest message. */
 export function compareSignalConversationRecency(

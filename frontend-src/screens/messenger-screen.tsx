@@ -38,6 +38,8 @@ import {
   compareSignalConversationRecency,
   createSignalLocalReadFactsStore,
   draftAfterSuccessfulSend,
+  formatSignalThreadTimestamp,
+  groupSignalMessages,
   isConversationNearBottom,
   shouldSubmitMessageKey,
   signalThreadReadState,
@@ -235,15 +237,6 @@ function validDate(timestamp: string): Date | undefined {
   return Number.isFinite(date.getTime()) ? date : undefined;
 }
 
-function formatThreadTime(timestamp: string): string {
-  const date = validDate(timestamp);
-  if (!date) return "";
-  if (date.toDateString() === signalStoryDate().toDateString()) {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
 function formatMessageTime(timestamp: string): string {
   return validDate(timestamp)?.toLocaleTimeString([], {
     hour: "2-digit",
@@ -338,7 +331,7 @@ function ThreadRow({
             {thread.title}
           </span>
           <span className={`shrink-0 text-[11px] ${unread ? "font-medium text-primary" : selected ? "text-foreground/70" : "text-muted-foreground"}`}>
-            {formatThreadTime(view.lastTimestamp)}
+            {formatSignalThreadTimestamp(view.lastTimestamp)}
           </span>
         </div>
         <div className="mt-0.5 flex items-center gap-2">
@@ -691,35 +684,6 @@ function MessageBubble({
   );
 }
 
-interface MessageGroup {
-  key: string;
-  label: "today" | "yesterday" | string;
-  messages: SignalMessage[];
-}
-
-function groupMessages(messages: readonly SignalMessage[]): MessageGroup[] {
-  const groups: MessageGroup[] = [];
-  const now = signalStoryDate();
-  const today = now.toDateString();
-  const yesterdayDate = new Date(now);
-  yesterdayDate.setDate(now.getDate() - 1);
-  const yesterday = yesterdayDate.toDateString();
-
-  for (const message of messages) {
-    const date = validDate(message.timestamp);
-    const key = date?.toDateString() ?? "unknown";
-    const label = key === today
-      ? "today"
-      : key === yesterday
-        ? "yesterday"
-        : date?.toLocaleDateString() ?? "";
-    const previous = groups.at(-1);
-    if (previous?.key === key) previous.messages.push(message);
-    else groups.push({ key, label, messages: [message] });
-  }
-  return groups;
-}
-
 function SealedComposer({ runtime, t }: { runtime: MessengerScreenRuntime; t: MessengerTranslate }) {
   const [errorOpen, setErrorOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -918,7 +882,7 @@ function ConversationView({
     evidenceWasUnlocked.current = evidenceUnlocked;
   }, [evidenceUnlocked, runtime]);
   const resolvedMessages = serviceConversation?.resolveMessages?.(thread, messages) ?? messages;
-  const grouped = useMemo(() => groupMessages(resolvedMessages), [resolvedMessages]);
+  const grouped = useMemo(() => groupSignalMessages(resolvedMessages), [resolvedMessages]);
   const serviceBadge = serviceConversation?.getServiceBadge?.(thread);
   const showServiceBadge = serviceBadge === undefined ? thread.service : serviceBadge !== null;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -993,15 +957,17 @@ function ConversationView({
         <div className="space-y-2">
           {grouped.map((group) => (
             <div key={group.key} className="space-y-2">
-              <div className="flex justify-center py-1">
-                <span className="rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground">
-                  {group.label === "today"
-                    ? t("signal.day.today")
-                    : group.label === "yesterday"
-                      ? t("signal.day.yesterday")
-                      : group.label}
-                </span>
-              </div>
+              {group.separator ? (
+                <div className="flex justify-center py-1">
+                  <span className="rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                    {group.separator.kind === "today"
+                      ? t("signal.day.today")
+                      : group.separator.kind === "yesterday"
+                        ? t("signal.day.yesterday")
+                        : group.separator.label}
+                  </span>
+                </div>
+              ) : null}
               {group.messages.map((message) => (
                 <MessageBubble
                   key={message.messageId}
