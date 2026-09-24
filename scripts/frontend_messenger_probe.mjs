@@ -287,6 +287,7 @@ export async function verifyMessenger(browser, output) {
     assert.deepEqual(
       await page.evaluate(() => window.messengerProbe.danielCues),
       [
+        "comms-signal-open-thread",
         "comms-signal-verify-send",
         "comms-signal-typing",
         "comms-signal-bot-reply",
