@@ -24,6 +24,7 @@ let conversations: SignalConversation[] = [
       title: "Fixture Service",
       participants: ["Fixture Service", "我"],
       service: true,
+      avatarPath: "/messenger-good.png",
       raw: {},
     },
     messages: [
