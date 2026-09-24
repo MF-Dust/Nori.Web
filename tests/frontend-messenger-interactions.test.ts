@@ -10,8 +10,19 @@ import {
   isConversationNearBottom,
   isMessageCompositionActive,
   shouldSubmitMessageKey,
+  signalAvatarColor,
+  signalAvatarInitial,
   signalThreadReadState,
 } from "../frontend-src/apps/messenger-interactions";
+
+test("Signal fallback avatars match shipped initials and FNV palette", () => {
+  assert.equal(signalAvatarInitial(" Fixture Service "), "F");
+  assert.equal(signalAvatarInitial("房东"), "房");
+  assert.equal(signalAvatarInitial("   "), "?");
+  assert.equal(signalAvatarColor("daniel"), "oklch(0.55 0.10 262)");
+  assert.equal(signalAvatarColor("quiet"), "oklch(0.55 0.09 182)");
+  assert.equal(signalAvatarColor("Fixture Service"), "oklch(0.52 0.05 240)");
+});
 
 test("message Enter handling does not submit an IME confirmation", () => {
   assert.equal(shouldSubmitMessageKey({ key: "Enter" }), true);

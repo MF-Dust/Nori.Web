@@ -6,6 +6,28 @@ import {
 } from "./messenger";
 import { parseSignalTimestamp, signalStoryDate } from "./signal-story-clock";
 
+const SIGNAL_AVATAR_COLORS = [
+  "oklch(0.55 0.10 200)",
+  "oklch(0.54 0.11 232)",
+  "oklch(0.55 0.10 262)",
+  "oklch(0.55 0.09 182)",
+  "oklch(0.56 0.10 158)",
+  "oklch(0.52 0.05 240)",
+] as const;
+
+export function signalAvatarInitial(title: string): string {
+  return title.trim().slice(0, 1).toUpperCase() || "?";
+}
+
+export function signalAvatarColor(seed: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index++) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return SIGNAL_AVATAR_COLORS[(hash >>> 0) % SIGNAL_AVATAR_COLORS.length];
+}
+
 export interface MessageKeyGesture {
   key: string;
   shiftKey?: boolean;

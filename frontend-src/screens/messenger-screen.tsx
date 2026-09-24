@@ -42,6 +42,8 @@ import {
   groupSignalMessages,
   isConversationNearBottom,
   shouldSubmitMessageKey,
+  signalAvatarColor,
+  signalAvatarInitial,
   signalThreadReadState,
   type SignalLocalReadFactsStore,
 } from "../apps/messenger-interactions";
@@ -159,19 +161,6 @@ function useContainerWidth(): [RefObject<HTMLDivElement | null>, number] {
   return [ref, width];
 }
 
-function avatarInitials(title: string): string {
-  const parts = title.trim().split(/\s+/).filter(Boolean);
-  return parts.length
-    ? parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("")
-    : "?";
-}
-
-function avatarColor(seed: string): string {
-  let hash = 0;
-  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) | 0;
-  return `hsl(${Math.abs(hash) % 360} 58% 46%)`;
-}
-
 function Avatar({
   title,
   seed,
@@ -220,11 +209,11 @@ function Avatar({
         width: size,
         height: size,
         fontSize: Math.round(size * 0.42),
-        background: avatarColor(seed ?? title),
+        background: signalAvatarColor(seed ?? title),
       }}
       aria-hidden
     >
-      {avatarInitials(title)}
+      {signalAvatarInitial(title)}
     </div>
   );
 }

@@ -152,6 +152,18 @@ async function main() {
       "shared local read facts",
       /localReadByFactId[\s\S]{0,180}markReadLocal[\s\S]{0,180}localReadByFactId/,
     ],
+    [
+      "fallback avatar palette",
+      /oklch\(0\.55 0\.10 200\)[\s\S]{0,360}oklch\(0\.52 0\.05 240\)/,
+    ],
+    [
+      "fallback avatar FNV-1a hash",
+      /2166136261[\s\S]{0,180}Math\.imul\(e, 16777619\)[\s\S]{0,160}>>> 0/,
+    ],
+    [
+      "fallback avatar initial",
+      /trim\(\)\.slice\(0, 1\)\.toUpperCase\(\) \|\| "\?"/,
+    ],
   ]) {
     assertPattern(
       normalApp,
@@ -209,6 +221,8 @@ async function main() {
   }
 
   for (const marker of [
+    "signalAvatarColor(seed ?? title)",
+    "signalAvatarInitial(title)",
     'aria-current={selected ? "true" : undefined}',
     "active:bg-primary/[0.24]",
     "active:bg-muted/60",
@@ -262,6 +276,10 @@ async function main() {
     assert(model.includes(marker), `Signal model is missing shipped thread metadata: ${marker}`);
   }
   for (const marker of [
+    "signalAvatarInitial",
+    "signalAvatarColor",
+    "2166136261",
+    "Math.imul(hash, 16777619)",
     "formatSignalThreadTimestamp",
     "groupSignalMessages",
     "month: \"numeric\"",
