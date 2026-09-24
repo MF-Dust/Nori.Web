@@ -45,10 +45,7 @@ import {
   signalThreadReadState,
   type SignalLocalReadFactsStore,
 } from "../apps/messenger-interactions";
-import {
-  parseSignalTimestamp,
-  signalStoryDate,
-} from "../apps/signal-story-clock";
+import { parseSignalTimestamp } from "../apps/signal-story-clock";
 import { MarkdownBody } from "../components/markdown-body";
 
 const DESKTOP_BREAKPOINT = 640;
