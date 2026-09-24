@@ -53,6 +53,10 @@ async function main() {
     ],
     ["thread row transition timing", /transition-colors duration-150/],
     [
+      "manual thread open cue and pending-focus silent path",
+      /g !== c && D\("comms-signal-open-thread"\)[\s\S]{0,520}j && \(h\(j\), y\(null\)\)/,
+    ],
+    [
       "thread row keyboard focus",
       /outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring\/60/,
     ],
@@ -233,6 +237,8 @@ async function main() {
     'message.sender !== "我"',
     "signalThreadReadState",
     "compareSignalConversationRecency",
+    'runtime.playCue?.("comms-signal-open-thread")',
+    "activateThread(pending)",
     "view.pendingReadFacts.length > 0",
     "localReadFactsStore.mark(pendingFacts)",
     "border-b border-border/50 border-l-2 border-l-transparent",

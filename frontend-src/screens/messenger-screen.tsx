@@ -1124,8 +1124,7 @@ export function MessengerScreen({ runtime, instanceId, setContentKey }: { runtim
   const selected = conversations.find((conversation) => conversation.thread.threadId === selectedThreadId) ?? null;
   const retained = conversations.find((conversation) => conversation.thread.threadId === retainedThreadId) ?? null;
 
-  const selectThread = useCallback((threadId: string) => {
-    if (threadId !== selectedThreadId) runtime.playCue?.("comms-signal-open-thread");
+  const activateThread = useCallback((threadId: string) => {
     const view = views.find((candidate) => candidate.conversation.thread.threadId === threadId);
     setSelectedThreadId(threadId);
     setRetainedThreadId(threadId);
@@ -1139,14 +1138,19 @@ export function MessengerScreen({ runtime, instanceId, setContentKey }: { runtim
         })
         .catch((error) => console.warn("[Signal] Failed to mark thread as read", error));
     }
-  }, [runtime, selectedThreadId, views, localReadFactsStore]);
+  }, [runtime.model, views, localReadFactsStore]);
+
+  const selectThread = useCallback((threadId: string) => {
+    if (threadId !== selectedThreadId) runtime.playCue?.("comms-signal-open-thread");
+    activateThread(threadId);
+  }, [activateThread, runtime.playCue, selectedThreadId]);
 
   useEffect(() => {
     const pending = runtime.getPendingFocusThreadId?.();
     if (!pending || loading) return;
-    selectThread(pending);
+    activateThread(pending);
     runtime.consumePendingFocusThreadId?.();
-  }, [loading, runtime, selectThread]);
+  }, [activateThread, loading, runtime]);
 
   const back = useCallback(() => setSelectedThreadId(null), []);
   const viewImage = useCallback((src: string) => {
