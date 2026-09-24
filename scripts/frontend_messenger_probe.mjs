@@ -47,9 +47,12 @@ export async function verifyMessenger(browser, output) {
       (node) => Math.abs(Number.parseFloat(getComputedStyle(node).opacity) - 0.9) < 0.001,
       await avatarButton.elementHandle(),
     );
-    assert.equal(
-      await avatarButton.evaluate((node) => getComputedStyle(node).opacity),
-      "0.9",
+    assert.ok(
+      Math.abs(
+        Number.parseFloat(
+          await avatarButton.evaluate((node) => getComputedStyle(node).opacity),
+        ) - 0.9,
+      ) < 0.001,
       "photo avatar hover opacity must match the shipped Messenger surface",
     );
 
