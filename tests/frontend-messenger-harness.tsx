@@ -164,6 +164,23 @@ const messengerRuntime = {
   },
 };
 
+const pendingCues: string[] = [];
+let pendingFocusThreadId: string | null = "quiet";
+let pendingFocusConsumed = false;
+const pendingMessengerRuntime = {
+  ...messengerRuntime,
+  playCue(cue: string) {
+    pendingCues.push(cue);
+  },
+  getPendingFocusThreadId() {
+    return pendingFocusThreadId;
+  },
+  consumePendingFocusThreadId() {
+    pendingFocusThreadId = null;
+    pendingFocusConsumed = true;
+  },
+};
+
 
 const danielFacts = new Set<string>([SIGNAL_DANIEL_DEADMAN_FACT]);
 const danielCues: string[] = [];
@@ -290,6 +307,8 @@ declare global {
       jumpDanielWorld(): void;
       readThreads: string[];
       triggerQuietReread(): void;
+      pendingCues: string[];
+      pendingFocusConsumed(): boolean;
     };
   }
 }
@@ -301,6 +320,10 @@ window.messengerProbe = {
   danielCues,
   danielCommands,
   readThreads,
+  pendingCues,
+  pendingFocusConsumed() {
+    return pendingFocusConsumed;
+  },
   triggerQuietReread() {
     facts.add("quiet.reread.when");
     conversations = [...conversations];
@@ -349,6 +372,8 @@ createRoot(document.getElementById("root")!).render(
     <ConversationPanel frontend={floatingFrontend} locale="en" />
   ) : mode === "daniel" ? (
     <MessengerScreen runtime={danielMessengerRuntime as never} />
+  ) : mode === "pending" ? (
+    <MessengerScreen runtime={pendingMessengerRuntime as never} />
   ) : (
     <MessengerScreen runtime={messengerRuntime as never} />
   ),

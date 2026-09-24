@@ -263,6 +263,24 @@ export async function verifyMessenger(browser, output) {
     });
     await backButton.waitFor({ state: "detached" });
 
+    await page.goto("http://127.0.0.1:47174/messenger-harness?mode=pending");
+    await page.getByText("Searchable final body", { exact: true }).waitFor();
+    assert.deepEqual(
+      await page.evaluate(() => window.messengerProbe.readThreads),
+      ["quiet"],
+      "pending focus must still persist the target thread read state",
+    );
+    assert.deepEqual(
+      await page.evaluate(() => window.messengerProbe.pendingCues),
+      [],
+      "pending-focus activation must not play the manual open-thread cue",
+    );
+    assert.equal(
+      await page.evaluate(() => window.messengerProbe.pendingFocusConsumed()),
+      true,
+      "pending-focus target must be consumed after activation",
+    );
+
     await page.goto("http://127.0.0.1:47174/messenger-harness?mode=daniel");
     await page.getByRole("button", { name: /Daniel Fixture/ }).click();
     await page.getByText("Resume fixture", { exact: false }).waitFor();
