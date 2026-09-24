@@ -49,6 +49,7 @@ import {
 } from "../apps/messenger-interactions";
 import { parseSignalTimestamp } from "../apps/signal-story-clock";
 import { MarkdownBody } from "../components/markdown-body";
+import { ProductionStaticAppIcon } from "../apps/production-icons";
 
 const DESKTOP_BREAKPOINT = 640;
 const THREAD_LIST_WIDTH = 320;
@@ -999,8 +1000,8 @@ function EmptyConversation({ t }: { t: MessengerTranslate }) {
       className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center text-foreground"
       style={{ backgroundImage: "radial-gradient(320px 240px at 50% 38%, color-mix(in oklab, var(--primary) 13%, transparent), transparent 72%)" }}
     >
-      <div className="size-16">
-        <img src="/app-icons/signal/icon-a.png" alt="" className="size-full object-contain" />
+      <div className="size-16" data-signal-empty-icon>
+        <ProductionStaticAppIcon appId="signal" />
       </div>
       <div>
         <div className="text-base font-medium">{t("signal.empty.title")}</div>

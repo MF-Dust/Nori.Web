@@ -27,6 +27,18 @@ export async function verifyMessenger(browser, output) {
   try {
     await page.goto("http://127.0.0.1:47174/messenger-harness");
     await page.getByLabel("1 unread", { exact: true }).waitFor();
+    const emptyIcon = page.locator("[data-signal-empty-icon] .dock-ic");
+    await emptyIcon.waitFor();
+    const emptyIconMetrics = await emptyIcon.evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      const parent = node.parentElement?.getBoundingClientRect();
+      return { width: rect.width, parentWidth: parent?.width ?? 0 };
+    });
+    assert.ok(
+      Math.abs(emptyIconMetrics.width / emptyIconMetrics.parentWidth - 0.88) < 0.01,
+      "Signal empty-state icon must use the shipped static AppIcon 88% fill",
+    );
+
     const search = page.getByRole("textbox", { name: "Search", exact: true });
     await search.fill("searchable final");
     await page.getByRole("button", { name: /Quiet Thread/ }).waitFor();

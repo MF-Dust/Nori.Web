@@ -41,6 +41,29 @@ export function getProductionDockIconPair(appId: string): ProductionDockIconPair
   };
 }
 
+export function ProductionStaticAppIcon({
+  appId,
+  className = "",
+}: {
+  appId: string;
+  className?: string;
+}) {
+  const icon = getProductionDockIconPair(appId);
+  if (!icon) return null;
+  return (
+    <div className={`flex h-full w-full items-center justify-center ${className}`.trim()}>
+      <div className="dock-ic">
+        <img
+          src={icon.a}
+          alt=""
+          draggable={false}
+          className="dock-ic__layer"
+        />
+      </div>
+    </div>
+  );
+}
+
 export interface ProductionDockIconProps {
   app: DockAppModel;
   state: DesktopDockIconState;

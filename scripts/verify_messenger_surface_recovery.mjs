@@ -33,6 +33,7 @@ async function main() {
   const binding = await read("frontend-src/apps/signal-presentation.tsx");
   const model = await read("frontend-src/apps/messenger.ts");
   const interactions = await read("frontend-src/apps/messenger-interactions.ts");
+  const productionIcons = await read("frontend-src/apps/production-icons.tsx");
   const storyClock = await read("frontend-src/apps/signal-story-clock.ts");
   const backend = await read("backend/services/event_dispatcher.py");
   const sourceApp = await read("frontend-src/source-app.tsx");
@@ -168,6 +169,10 @@ async function main() {
       "fallback avatar initial",
       /trim\(\)\.slice\(0, 1\)\.toUpperCase\(\) \|\| "\?"/,
     ],
+    [
+      "static app icon single-layer renderer",
+      /static: i = !1[\s\S]{0,480}i[\s\S]{0,420}className: "dock-ic"[\s\S]{0,260}src: e\.a[\s\S]{0,180}className: "dock-ic__layer"/,
+    ],
   ]) {
     assertPattern(
       normalApp,
@@ -225,6 +230,8 @@ async function main() {
   }
 
   for (const marker of [
+    '<ProductionStaticAppIcon appId="signal" />',
+    "data-signal-empty-icon",
     "signalAvatarColor(seed ?? title)",
     "signalAvatarInitial(title)",
     'aria-current={selected ? "true" : undefined}',
@@ -260,6 +267,14 @@ async function main() {
       `Messenger structure changed under shipped-surface recovery: ${marker}`,
     );
   }
+
+  assert(
+    productionIcons.includes("ProductionStaticAppIcon") &&
+      productionIcons.includes('className="dock-ic"') &&
+      productionIcons.includes('className="dock-ic__layer"') &&
+      productionIcons.includes("src={icon.a}"),
+    "source static app icon does not preserve shipped single-layer AppIcon structure",
+  );
 
   assert(
     binding.includes('from "../screens/messenger-shipped-surfaces"'),
