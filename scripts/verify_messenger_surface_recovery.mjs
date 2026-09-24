@@ -31,6 +31,10 @@ async function main() {
   const source = await read("frontend-src/screens/messenger-shipped-surfaces.tsx");
   const baseSource = await read("frontend-src/screens/messenger-screen.tsx");
   const binding = await read("frontend-src/apps/signal-presentation.tsx");
+  const model = await read("frontend-src/apps/messenger.ts");
+  const interactions = await read("frontend-src/apps/messenger-interactions.ts");
+  const storyClock = await read("frontend-src/apps/signal-story-clock.ts");
+  const backend = await read("backend/services/event_dispatcher.py");
 
   const normalAppImport = messengerChunk.source.match(/from "\.\/(NormalApp-[^"]+\.js)"/);
   assert(normalAppImport, "shipped Messenger no longer imports NormalApp runtime contracts");
@@ -110,6 +114,31 @@ async function main() {
     "shipped Messenger input-surface palette changed",
   );
 
+  for (const [label, pattern] of [
+    [
+      "thread unread/reread metadata",
+      /unread_from[\s\S]{0,120}read_fact[\s\S]{0,120}reread/,
+    ],
+    [
+      "thread reread trigger",
+      /reread !== void 0[\s\S]{0,120}\.has\(t\.reread\.when\)[\s\S]{0,160}reread\.readFact/,
+    ],
+    [
+      "thread recency ordering",
+      /\.sort\(\(s, o\) => \(s\.last && o\.last \? SY\(o\.last, s\.last\)/,
+    ],
+    [
+      "story calendar clock",
+      /oY = 2026,[\s\S]{0,80}aY = 7,[\s\S]{0,80}lY = 31;[\s\S]{0,120}function Ga\(\)/,
+    ],
+  ]) {
+    assertPattern(
+      normalApp,
+      pattern,
+      `shipped Signal runtime contract changed: ${label}`,
+    );
+  }
+
   for (const marker of [
     "data-messenger-shipped-surfaces",
     "color-mix(in oklab, var(--secondary-foreground) 10%, var(--secondary))",
@@ -160,6 +189,13 @@ async function main() {
 
   for (const marker of [
     'aria-current={selected ? "true" : undefined}',
+    "active:bg-primary/[0.24]",
+    "active:bg-muted/60",
+    "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/60",
+    "hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring/60",
+    "signalThreadReadState",
+    "compareSignalConversationRecency",
+    "signalStoryDate()",
     "border-b border-l-2",
     "min-w-0 flex-1",
     "flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-shadow focus-within:ring-1 focus-within:ring-ring/40",
@@ -185,8 +221,39 @@ async function main() {
     "production Signal binding does not use the source-owned shipped-surface wrapper",
   );
 
+  for (const marker of [
+    "unreadFrom?: string",
+    "readFact?: string",
+    "reread?: SignalThreadReread",
+    "normalizeThreadReread",
+  ]) {
+    assert(model.includes(marker), `Signal model is missing shipped thread metadata: ${marker}`);
+  }
+  for (const marker of [
+    "signalThreadReadState",
+    "pendingReadFacts",
+    "rereadEligibleCount",
+    "compareSignalConversationRecency",
+  ]) {
+    assert(interactions.includes(marker), `Signal read-state recovery missing marker: ${marker}`);
+  }
+  for (const marker of [
+    "STORY_YEAR = 2026",
+    "STORY_MONTH_INDEX = 7",
+    "STORY_DAY = 31",
+    "parseSignalTimestamp",
+  ]) {
+    assert(storyClock.includes(marker), `Signal story-clock recovery missing marker: ${marker}`);
+  }
+  assert(
+    backend.includes('if command == "signal.read":') &&
+      backend.includes('"source": "signal.read"') &&
+      backend.includes('reread.get("read_fact")'),
+    "local backend does not persist shipped Signal read/reread facts",
+  );
+
   console.log(
-    `[ok] Messenger bubbles, typing palette, photo focus, thread rows, mobile slide completion, translucent inputs and sealed-composer choreography match shipped ${messengerChunk.file}`,
+    `[ok] Messenger read/reread state, story clock, bubbles, photo focus, thread rows, mobile slide completion, translucent inputs and sealed-composer choreography match shipped ${messengerChunk.file}`,
   );
 }
 
