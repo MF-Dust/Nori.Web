@@ -31,6 +31,28 @@ test("Head strokes require sustained horizontal motion and complete once per ges
   assert.equal(gesture.move(3100, 0.5, 0), false);
 });
 
+test("Head pat pointer telemetry preserves gate and model-space evidence", () => {
+  const gesture = new HeadPat();
+  gesture.observePointer("start", true, true, false, -0.2, 1.1);
+  assert.equal(gesture.armed, false);
+  assert.equal(gesture.lastPhase, "start");
+  assert.equal(gesture.lastOnSurface, true);
+  assert.equal(gesture.lastInZone, false);
+  assert.equal(gesture.lastModelX, -0.2);
+  gesture.observePointer("move", true, false, true, 0.15, 0.85);
+  assert.equal(gesture.armed, true);
+  assert.equal(
+    gesture.lastOnSurface,
+    true,
+    "desktop-surface telemetry belongs to the initial press",
+  );
+  assert.equal(gesture.lastInZone, true);
+  assert.equal(gesture.lastModelY, 0.85);
+  gesture.end();
+  assert.equal(gesture.armed, false);
+  assert.equal(gesture.lastPhase, "move");
+});
+
 test("Head pat debug tuning clamps values and changes the production recognizer", () => {
   const gesture = new HeadPat();
   gesture.setTuning({ requiredMs: 500, minSpeedX: 0.9, maxYawDeg: 99 });

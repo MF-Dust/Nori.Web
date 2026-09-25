@@ -103,12 +103,37 @@ export function PatDebugTab({ frontend }: { frontend: NoriFrontendRuntime }) {
       {blocked && <p role="status">Production story active; audition disabled.</p>}
       <h3>Live state</h3>
       <dl>
-        <dt>Progress</dt><dd>{frontend.headPat.progress} / {tuning.requiredMs} ms</dd>
-        <dt>Stroking now</dt><dd>{frontend.headPat.pressing ? "yes" : "no"}</dd>
-        <dt>Stroke velocity</dt><dd>{frontend.headPat.velocity.toFixed(2)} head-widths/s</dd>
-        <dt>Completions</dt><dd>{frontend.headPat.completions}</dd>
-        <dt>Pattable</dt><dd>{frontend.headPat.enabled ? "yes" : "no"}</dd>
+        <dt>Progress</dt>
+        <dd>
+          {(frontend.headPat.progress / 1_000).toFixed(1)} /{" "}
+          {(tuning.requiredMs / 1_000).toFixed(1)} s
+        </dd>
+        <dt>Armed (touched head)</dt>
+        <dd>{frontend.headPat.armed ? "yes" : "no"}</dd>
+        <dt>Stroking now</dt>
+        <dd>{frontend.headPat.pressing ? "yes" : "no"}</dd>
+        <dt>Stroke velocity</dt>
+        <dd>{frontend.headPat.velocity.toFixed(2)} head-widths/s</dd>
+        <dt>Completions</dt>
+        <dd>{frontend.headPat.completions}</dd>
+        <dt>Last pointer phase</dt>
+        <dd>{frontend.headPat.lastPhase || "—"}</dd>
+        <dt>Pattable (state gate)</dt>
+        <dd>{frontend.headPat.lastPattable ? "yes" : "no"}</dd>
+        <dt>Drag pressed on desktop</dt>
+        <dd>{frontend.headPat.lastOnSurface ? "yes" : "no"}</dd>
+        <dt>In head-top zone</dt>
+        <dd>{frontend.headPat.lastInZone ? "yes" : "no"}</dd>
+        <dt>Pointer (model)</dt>
+        <dd>
+          {frontend.headPat.lastModelX.toFixed(2)},{" "}
+          {frontend.headPat.lastModelY.toFixed(2)}
+        </dd>
       </dl>
+      <p>
+        Gate rows update on pointer drags. Armed means the active drag has
+        touched the projected head-top zone and remains valid until release.
+      </p>
       {GROUPS.map((group) => (
         <div key={group.title}>
           <h3>{group.title}</h3>
@@ -150,8 +175,8 @@ export function PatDebugTab({ frontend }: { frontend: NoriFrontendRuntime }) {
         </button>
       </div>
       <p>
-        Armed/zone/model-pointer telemetry from the shipped tab remains unavailable;
-        the controls above mutate the production recognizer, spring and friction synth.
+        These controls and telemetry read from the production recognizer, projected
+        model surface, spring and friction synth used by the real pat gesture.
       </p>
     </section>
   );

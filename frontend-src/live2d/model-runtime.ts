@@ -55,7 +55,9 @@ export function bindNoriModel(options: {
     const debugTuning = state.active ? undefined : options.live2dDebug?.tuning();
     const idleState =
       debugTuning?.idleStateOverride ?? noriIdleFromFacts(options.facts());
-    const debugLipEnabled = options.live2dDebug?.snapshot().plugins.lipSync;
+    const debugLipEnabled = state.active
+      ? undefined
+      : options.live2dDebug?.snapshot().plugins.lipSync;
     const nextLipEnabled =
       idleState !== "kneel" &&
       idleState !== "kneelCalm" &&
