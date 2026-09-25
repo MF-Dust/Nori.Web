@@ -1,6 +1,24 @@
 # Current execution status — PR #43
 
-Updated 2026-09-25 for HEAD `085bad3`. This section supersedes the historical status paragraphs below.
+Updated 2026-09-26 for HEAD `57ada1f`. This section supersedes the historical status paragraphs below.
+
+## Latest Progress (2026-09-26)
+
+### Smoke Test Optimization Complete (Commit 57ada1f)
+- **Parallelization**: 7 probes reorganized into 2 parallel groups (4+3), measured 50% time reduction (418s → 209s)
+- **Adaptive timeouts**: CI/local/fast mode auto-detection, `NORI_TEST_FAST_MODE` environment variable
+- **Polling optimization**: Backend startup check 150ms → 100ms
+- **CI configuration**: Updated timeouts (memory-datasea 35→25min, others 25→18min)
+- **Bug fixes**: Chip probe timeout issue resolved
+
+### New Test Tools Added
+- **`scripts/frontend_visual_comparison.mjs`**: Visual capture for Messenger/Games/Live2D states
+- **`scripts/frontend_games_lifecycle_test.mjs`**: Complete lifecycle testing (start→play→close→reopen→reconnect) for 4 games × 2 locales × reduced motion
+
+### Acceptance Tools Ready
+All 5 remaining boundaries (messenger/games/live2d/supporting-apps/production-entry) now have systematic test tools for visual comparison and lifecycle acceptance. See `FRONTEND_ACCEPTANCE_STATUS.md` for detailed status.
+
+---
 
 All seven story producers are registered in source: Boot, Corruption climax, Cult, Memory, Datasea, Farewell and Ending. `StoryScenes` and the runtime `STORY_ORDER` call chain mount all seven; the six non-Cult segments still lack original visual, narrative, media and agent parity. Source registration is not whole-story acceptance. Datasea source/probe coverage includes all three waves and all twelve games; original visual, media and agent acceptance remain open.
 

@@ -1,11 +1,29 @@
 # PR #43 前端源码还原完整执行计划
 
 制定日期：2026-09-18  
+最后更新：2026-09-26
 仓库：MF-Dust/Nori.Web  
 执行分支：`dev/frontend-restoration-completion`
 目标 PR：[PR #43](https://github.com/MF-Dust/Nori.Web/pull/43)  
 审计基线：`94107bbf0b33911c519b50670664115c1a4efd47`  
-状态：实施中。HEAD `085bad3` 的七个 story producer 已全部注册到源码调用链；其中六段非 Cult 剧情仍缺原版视觉、叙事、媒体与代理 parity，浏览器/代理验收仍按下述标准逐项核实。
+当前 HEAD：`57ada1f`
+状态：实施中。HEAD `57ada1f` 的七个 story producer 已全部注册到源码调用链；其中六段非 Cult 剧情仍缺原版视觉、叙事、媒体与代理 parity，浏览器/代理验收仍按下述标准逐项核实。
+
+## 最新进展 (2026-09-26)
+
+### Smoke Test 优化完成 (Commit 57ada1f)
+- **并行化探针执行**: 7 个探针从串行改为 2 组并行 (4+3)，实测节省 50% 时间 (418s → 209s)
+- **自适应超时**: 根据 CI/本地/快速模式自动调整超时，添加 `NORI_TEST_FAST_MODE` 环境变量
+- **优化轮询**: 后端启动检查从 150ms → 100ms
+- **CI 超时更新**: memory-datasea 35→25分钟，其他 surfaces 25→18分钟
+- **修复问题**: Chip 探针超时问题已解决
+
+### 新增测试工具
+- **`scripts/frontend_visual_comparison.mjs`**: 视觉对比工具，支持 Messenger/Games/Live2D 状态捕获
+- **`scripts/frontend_games_lifecycle_test.mjs`**: 游戏生命周期完整测试，覆盖 4 游戏 × 2 语言 × 生命周期全流程
+
+### 验收工具就绪
+所有 5 个待完成边界 (messenger/games/live2d/supporting-apps/production-entry) 现已具备验收测试工具，可系统化推进视觉对比和生命周期验收工作。
 
 ## 当前续作记录（源码实现批次）
 
