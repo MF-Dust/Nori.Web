@@ -49,7 +49,11 @@ def get_browser_page(url: str) -> Dict[str, Any]:
         entry = live_pack.page(url)
         if entry is not None:
             data = dict(entry.get("data") or {})
+            data.setdefault("url", url)
+            data.setdefault("supported_locales", ["zh-CN"])
+            data.setdefault("title", url)
             data.setdefault("body_html", "")
+            data.setdefault("allowed_commands", [])
             return data
 
     clean = url.split("?")[0].rstrip("/") + "/"
@@ -73,8 +77,10 @@ def get_browser_page(url: str) -> Dict[str, Any]:
             }
     # Real frontend renders `body_html`; expose the legacy markup through it too.
     out = dict(page)
+    out.setdefault("url", url)
     out.setdefault("supported_locales", ["zh-CN"])
     out.setdefault("body_html", page.get("html", ""))
+    out.setdefault("allowed_commands", [])
     return out
 
 

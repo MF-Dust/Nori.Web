@@ -294,6 +294,16 @@ try {
     .getByText("After reconnect", { exact: false })
     .waitFor();
 
+  await page.locator('[data-nori-dock] [data-app-id="browser"]').click();
+  await page.getByRole("button", { name: "Doodle", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Doodle", exact: true }).click();
+  const browserFrame = page.frameLocator('[data-browser-page-frame]');
+  await browserFrame
+    .getByRole("heading", { name: "Doodle Search", exact: true })
+    .waitFor();
+  await page.screenshot({ path: resolve(output, "browser-doodle.png") });
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+
   await page.locator('[data-nori-dock] [data-app-id="terminal"]').click();
   await page.locator(".xterm-helper-textarea").pressSequentially("help");
   await page.locator(".xterm-helper-textarea").press("Enter");
