@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 import { FileText, LoaderCircle, Lock, X } from "lucide-react";
+import "../styles/browser-bounty.css";
 import type {
   BrowserAppModel,
   BrowserBountyFile,
@@ -48,14 +49,17 @@ export function BrowserBountyCat({
   mood = "base",
   size = 40,
   tone = "white",
+  bare = false,
 }: {
   mood?: "base" | "happy" | "sad";
   size?: number;
   tone?: "white" | "pink";
+  bare?: boolean;
 }) {
   const fill = tone === "pink" ? "#ff2e88" : "#fff";
   return (
     <svg
+      className={bare ? undefined : "qm-cat"}
       width={size}
       height={size}
       viewBox="0 0 40 40"
@@ -117,6 +121,32 @@ export function BrowserBountyCat({
         </>
       )}
     </svg>
+  );
+}
+
+const BOUNTY_CONFETTI = [
+  { left: "14%", background: "var(--qm-aqua)", delay: "0ms" },
+  { left: "30%", background: "#fff", delay: "80ms" },
+  { left: "48%", background: "var(--qm-pink-soft)", delay: "40ms" },
+  { left: "64%", background: "var(--qm-aqua)", delay: "120ms" },
+  { left: "80%", background: "#fff", delay: "60ms" },
+  { left: "90%", background: "var(--qm-pink-soft)", delay: "100ms" },
+] as const;
+
+function BrowserBountyConfetti() {
+  return (
+    <div className="qm-confetti" aria-hidden="true">
+      {BOUNTY_CONFETTI.map((item, index) => (
+        <i
+          key={index}
+          style={{
+            left: item.left,
+            background: item.background,
+            animationDelay: item.delay,
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -461,101 +491,129 @@ export function BrowserBountyExtension({
     : `已返 ${progress.count}/${BOUNTY_TARGET_COUNT} 单，再返 ${BOUNTY_TARGET_COUNT - progress.count} 单解锁尊享会员`;
 
   const panel = progress.complete && submitState === "rest" ? (
-    <div className="w-80 overflow-hidden rounded-xl border border-pink-300/40 bg-[#ff4f9a] text-white shadow-2xl">
-      <div className="bg-[#d80f68] p-4">
-        <div className="flex items-center gap-3">
+    <div className="qm-pop">
+      <div className="qm-head">
+        <BrowserBountyConfetti />
+        <div className="qm-brand">
           <BrowserBountyCat mood="happy" size={40} />
-          <div>
-            <div className="text-lg font-black">省钱喵</div>
-            <div className="text-xs text-white/80">购物自动找优惠</div>
+          <div className="qm-word">
+            <span className="qm-word__zh">省钱喵</span>
+            <span className="qm-word__tag">购物自动找优惠</span>
           </div>
         </div>
-        <div className="mt-3 text-xs">{progressText}</div>
-        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/25">
-          <div className="h-full w-full rounded-full bg-white" />
+        <div className="qm-prog">
+          <div className="qm-prog__line">
+            已返 <b>{BOUNTY_TARGET_COUNT}/{BOUNTY_TARGET_COUNT}</b> 单
+          </div>
+          <div className="qm-track">
+            <div className="qm-fill" style={{ width: "100%" }} />
+          </div>
         </div>
       </div>
-      <div className="p-4 text-center">
-        <div className="text-base font-bold">恭喜解锁尊享会员！</div>
-        <div className="mt-1 text-xs text-white/80">大额返现已到账</div>
-        <div className="mt-4 text-[11px] text-white/70">
+      <div className="qm-body">
+        <div className="qm-celebrate">
+          <div className="qm-cel-title">恭喜解锁尊享会员！</div>
+          <div className="qm-cel-sub">大额返现已到账</div>
+        </div>
+        <div className="qm-foot">
           匿名 <code>{BOUNTY_ANON_ID}</code>
         </div>
       </div>
     </div>
   ) : (
-    <div
-      className={`w-80 overflow-hidden rounded-xl border border-pink-300/40 bg-[#ff4f9a] text-white shadow-2xl ${
-        submitState === "fail" ? "animate-[shake_.25s_ease-in-out_2]" : ""
-      }`}
-    >
-      <div className="bg-[#d80f68] p-4">
-        <div className="flex items-center gap-3">
+    <div className={`qm-pop ${submitState === "fail" ? "is-shake" : ""}`}>
+      <div className="qm-head">
+        {visibleSubmit && submitState === "success" ? (
+          <BrowserBountyConfetti />
+        ) : null}
+        <div className="qm-brand">
           <BrowserBountyCat
-            mood={submitState === "success" ? "happy" : "base"}
+            mood={visibleSubmit && submitState === "success" ? "happy" : "base"}
             size={40}
           />
-          <div>
-            <div className="text-lg font-black">省钱喵</div>
-            <div className="text-xs text-white/80">购物自动找优惠</div>
+          <div className="qm-word">
+            <span className="qm-word__zh">省钱喵</span>
+            <span className="qm-word__tag">购物自动找优惠</span>
           </div>
         </div>
-        <div className="mt-3 text-xs">{progressText}</div>
-        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/25">
-          <div
-            className="h-full rounded-full bg-white transition-[width]"
-            style={{
-              width: `${(progress.count / BOUNTY_TARGET_COUNT) * 100}%`,
-            }}
-          />
+        <div className="qm-prog">
+          <div className="qm-prog__line">
+            已返 <b>{progress.count}/{BOUNTY_TARGET_COUNT}</b> 单，再返{" "}
+            <b>{BOUNTY_TARGET_COUNT - progress.count}</b> 单解锁尊享会员
+          </div>
+          <div className="qm-track">
+            <div
+              className="qm-fill"
+              style={{
+                width: `${(progress.count / BOUNTY_TARGET_COUNT) * 100}%`,
+              }}
+            />
+          </div>
         </div>
       </div>
-      <div className="space-y-3 p-4">
+      <div className="qm-body">
         {visibleSubmit && submitState === "success" ? (
-          <div className="rounded-lg bg-white/15 p-3 text-center">
+          <div className="qm-panel qm-panel--success">
             <BrowserBountyCat mood="happy" size={34} />
-            <div className="mt-1 font-bold">领取成功！</div>
-            <div className="text-xs text-white/80">返现已到账</div>
+            <div className="qm-big">领取成功！</div>
+            <div className="qm-sub">返现已到账</div>
           </div>
         ) : visibleSubmit && submitState === "fail" && error ? (
-          <div className="rounded-lg bg-white/15 p-3 text-center">
+          <div className="qm-panel qm-panel--fail">
             <BrowserBountyCat mood="sad" size={34} />
-            <div className="font-semibold">{error.title}</div>
-            {error.sub ? (
-              <div className="mt-1 text-xs text-white/80">{error.sub}</div>
-            ) : null}
+            <div className="qm-flag qm-flag--fail">{error.title}</div>
+            {error.sub ? <div className="qm-sub">{error.sub}</div> : null}
           </div>
         ) : pageSeen && pageClaimed ? (
-          <div className="rounded-lg bg-white/15 p-2.5 text-sm font-semibold">
-            ✓ 本页优惠已领取
+          <div className="qm-panel">
+            <div className="qm-flag qm-flag--claimed">
+              ✓ 本页优惠已领取
+            </div>
           </div>
         ) : pageSeen ? (
-          <div className="rounded-lg bg-white/15 p-2.5 text-sm font-semibold">
-            🎟 本页侦测到优惠！
+          <div className="qm-panel">
+            <div className="qm-flag">
+              <span className="qm-flag__tk">🎟</span>
+              本页侦测到优惠！
+            </div>
           </div>
         ) : null}
 
-        <button
-          type="button"
-          disabled={submitState !== "rest"}
-          onClick={() => void submit({ url: pageUrl }, "page")}
-          className="w-full rounded-lg bg-white px-3 py-2 text-sm font-bold text-[#d80f68] disabled:opacity-60"
-        >
-          {submitState === "submitting" && submitKind === "page"
-            ? "领取中…"
-            : "领取本页返现"}
-        </button>
-        <button
-          type="button"
-          disabled={submitState !== "rest"}
-          onClick={() => setPickerOpen(true)}
-          className="w-full rounded-lg border border-white/45 px-3 py-2 text-sm font-semibold disabled:opacity-60"
-        >
-          {submitState === "submitting" && submitKind === "file"
-            ? "领取中…"
-            : "上传小票返现"}
-        </button>
-        <div className="text-center text-[11px] text-white/70">
+        <div className="qm-stack">
+          <button
+            type="button"
+            disabled={submitState !== "rest"}
+            onClick={() => void submit({ url: pageUrl }, "page")}
+            className="qm-btn qm-btn--primary"
+          >
+            <span className="qm-btn__lbl">
+              {submitState === "submitting" && submitKind === "page" ? (
+                <>
+                  <span className="qm-spin" /> 领取中…
+                </>
+              ) : (
+                "领取本页返现"
+              )}
+            </span>
+          </button>
+          <button
+            type="button"
+            disabled={submitState !== "rest"}
+            onClick={() => setPickerOpen(true)}
+            className="qm-btn qm-btn--ghost"
+          >
+            <span className="qm-btn__lbl">
+              {submitState === "submitting" && submitKind === "file" ? (
+                <>
+                  <span className="qm-spin" /> 领取中…
+                </>
+              ) : (
+                "上传小票返现"
+              )}
+            </span>
+          </button>
+        </div>
+        <div className="qm-foot">
           匿名 <code>{BOUNTY_ANON_ID}</code>
         </div>
       </div>
@@ -565,7 +623,7 @@ export function BrowserBountyExtension({
   return (
     <>
       {installed ? (
-        <div ref={root} className="relative flex items-center">
+        <div ref={root} className="qm relative flex items-center">
           <button
             type="button"
             aria-label="省钱喵"
@@ -574,35 +632,33 @@ export function BrowserBountyExtension({
               setOpen((value) => !value);
               dismissToast();
             }}
-            className={`relative flex size-8 items-center justify-center rounded-md transition hover:bg-white/10 ${
-              alert ? "bg-[#d80f68] text-white" : "text-[#ff2e88]"
-            } ${open ? "bg-white/10" : ""}`}
+            className={`qm-icon ${alert ? "qm-icon--alert" : ""} ${
+              pulse ? "qm-icon--pulse" : ""
+            } ${open ? "is-open" : ""}`}
           >
             <BrowserBountyCat
+              bare
               size={20}
               tone={alert ? "white" : "pink"}
             />
-            {pulse ? (
-              <span className="absolute right-0.5 top-0.5 size-2 rounded-full bg-amber-300 ring-2 ring-[#d80f68]" />
-            ) : null}
+            {pulse ? <span className="qm-icon__dot" /> : null}
           </button>
 
           {toast ? (
-            <div
-              className="absolute right-0 top-[calc(100%+6px)] z-20 flex w-56 items-center gap-2 rounded-xl border border-pink-300/40 bg-[#d80f68] p-2.5 text-xs font-medium text-white shadow-xl"
-              role="status"
-            >
-              <BrowserBountyCat size={30} />
-              <button
-                type="button"
-                className="flex-1 text-left"
-                onClick={() => {
-                  setOpen(true);
-                  dismissToast();
-                }}
-              >
-                {toast}
-              </button>
+            <div className="absolute right-0 top-[calc(100%+6px)] z-20">
+              <div className="qm-toast" role="status">
+                <BrowserBountyCat size={30} />
+                <button
+                  type="button"
+                  className="qm-toast__txt"
+                  onClick={() => {
+                    setOpen(true);
+                    dismissToast();
+                  }}
+                >
+                  {toast}
+                </button>
+              </div>
             </div>
           ) : null}
 
