@@ -76,7 +76,36 @@ export function trimCueSilence(context: AudioContext, buffer: AudioBuffer) {
 interface PlayingSource {
   node: AudioBufferSourceNode;
   gain: GainNode;
+  track: Track;
   stop(): void;
+}
+
+type SpatialPoint = { x: number; y: number; z: number };
+
+export interface AudioMixerDebugSnapshot {
+  initialized: boolean;
+  contextState: AudioContextState | "uninitialized";
+  masterVolume: number;
+  muted: boolean;
+  loadedMusic: readonly DesktopMusic[];
+  loadedSfx: readonly string[];
+  musicTrackId: DesktopMusic | null;
+  musicPlaying: boolean;
+  musicPaused: boolean;
+  musicCurrentTime: number;
+  musicDuration: number;
+  sfxActiveCount: number;
+  speechHasPanner: boolean;
+  listenerPos: SpatialPoint | null;
+  speechPos: SpatialPoint | null;
+  distanceParams: {
+    model: DistanceModelType;
+    refDistance: number;
+    maxDistance: number;
+    rolloffFactor: number;
+  } | null;
+  corruptionActive: boolean;
+  corruptionWorkletReady: boolean;
 }
 
 /** One session-owned context and master/music/SFX/voice buses; no module-global audio lifetime. */
@@ -103,6 +132,7 @@ export class AudioMixer {
     spatialVoice: true,
   };
   private buffers = new Map<string, Promise<AudioBuffer>>();
+  private decodedBuffers = new Map<string, AudioBuffer>();
   private effects = new Set<PlayingSource>();
   private musicSources = new Set<PlayingSource>();
   private media = new Map<HTMLMediaElement, MediaElementAudioSourceNode>();
@@ -113,6 +143,12 @@ export class AudioMixer {
   private musicFade = 2.5;
   private music: PlayingSource | null = null;
   private musicStarted: DesktopMusic | null = null;
+  private musicBuffer: AudioBuffer | null = null;
+  private musicStartedAt = 0;
+  private musicOffset = 0;
+  private musicPaused = false;
+  private listenerPosition: SpatialPoint | null = null;
+  private speechPosition: SpatialPoint | null = null;
   private detachUnlock: (() => void) | null = null;
 
   constructor(
@@ -168,7 +204,152 @@ export class AudioMixer {
     await context.resume();
     if (this.disposed || context.state !== "running") return false;
     // Keep gesture listeners available after browser-initiated suspension.
-    void this.startMusic().catch(() => {});
+    if (this.musicPaused) this.debugResumeMusic();
+    else void this.startMusic().catch(() => {});
+    return true;
+  }
+
+  async debugSuspend() {
+    if (!this.context || this.disposed) return false;
+    await this.context.suspend();
+    return this.context.state === "suspended";
+  }
+
+  async debugResume() {
+    return this.unlock();
+  }
+
+  debugSnapshot(): AudioMixerDebugSnapshot {
+    const context = this.context;
+    const panner = this.panner;
+    const loadedMusic = Object.entries(DESKTOP_MUSIC)
+      .filter(([, url]) => this.decodedBuffers.has(`false:${url}`))
+      .map(([id]) => id as DesktopMusic);
+    const loadedSfx = Object.entries(UI_SOUND_CATALOG)
+      .filter(
+        ([, entry]) =>
+          entry !== null &&
+          this.decodedBuffers.has(`true:${entry.url}`),
+      )
+      .map(([id]) => id);
+    return {
+      initialized: context !== null,
+      contextState: context?.state ?? "uninitialized",
+      masterVolume:
+        this.master?.gain.value ??
+        (this.settings.isMuted ? 0 : unit(this.settings.masterVolume / 100)),
+      muted: this.settings.isMuted,
+      loadedMusic,
+      loadedSfx,
+      musicTrackId: this.musicStarted,
+      musicPlaying: this.music !== null && !this.musicPaused,
+      musicPaused: this.musicPaused,
+      musicCurrentTime: this.currentMusicTime(),
+      musicDuration: this.musicBuffer?.duration ?? 0,
+      sfxActiveCount: [...this.effects].filter(
+        (source) => source.track === "sfx",
+      ).length,
+      speechHasPanner: panner !== null,
+      listenerPos: this.listenerPosition
+        ? { ...this.listenerPosition }
+        : null,
+      speechPos: this.speechPosition ? { ...this.speechPosition } : null,
+      distanceParams: panner
+        ? {
+            model: panner.distanceModel,
+            refDistance: panner.refDistance,
+            maxDistance: panner.maxDistance,
+            rolloffFactor: panner.rolloffFactor,
+          }
+        : null,
+      corruptionActive: this.corruption?.active ?? false,
+      corruptionWorkletReady: this.corruption?.workletReady ?? false,
+    };
+  }
+
+  async debugLoadMusic() {
+    if (!(await this.unlock())) return false;
+    await Promise.all(
+      Object.values(DESKTOP_MUSIC).map((url) => this.load(url)),
+    );
+    return true;
+  }
+
+  debugPlayMusic(track: DesktopMusic, fadeIn = 0.5) {
+    if (this.disposed) return false;
+    this.musicTarget = track;
+    this.musicFade = Math.max(0, fadeIn);
+    this.musicVersion++;
+    if (this.context?.state === "running")
+      void this.startMusic().catch(() => {});
+    return true;
+  }
+
+  debugPauseMusic() {
+    if (
+      !this.context ||
+      !this.music ||
+      !this.musicBuffer ||
+      !this.musicStarted ||
+      this.musicPaused
+    )
+      return false;
+    this.musicOffset = this.currentMusicTime();
+    this.musicPaused = true;
+    const source = this.music;
+    this.music = null;
+    source.stop();
+    return true;
+  }
+
+  debugResumeMusic() {
+    if (
+      !this.context ||
+      this.context.state !== "running" ||
+      !this.musicPaused ||
+      !this.musicBuffer ||
+      !this.musicStarted
+    )
+      return false;
+    this.musicPaused = false;
+    this.startMusicSource(
+      this.musicStarted,
+      this.musicBuffer,
+      this.musicOffset,
+      0,
+    );
+    return true;
+  }
+
+  debugStopMusic(fade = 0.5) {
+    if (!this.musicStarted && !this.musicPaused) return false;
+    this.fadeMusic(Math.max(0, fade));
+    return true;
+  }
+
+  debugSeekMusic(seconds: number) {
+    if (!this.musicBuffer || !this.musicStarted || !Number.isFinite(seconds))
+      return false;
+    const duration = this.musicBuffer.duration;
+    const next = Math.min(Math.max(0, seconds), Math.max(0, duration));
+    this.musicOffset = next;
+    if (this.musicPaused || !this.context || this.context.state !== "running")
+      return true;
+    const source = this.music;
+    this.music = null;
+    source?.stop();
+    this.startMusicSource(this.musicStarted, this.musicBuffer, next, 0);
+    return true;
+  }
+
+  debugCrossfadeMusic(track: DesktopMusic, seconds: number) {
+    this.musicFade = Number.isFinite(seconds)
+      ? Math.min(5, Math.max(0, seconds))
+      : 0.5;
+    this.musicTarget = track;
+    this.musicVersion++;
+    if (this.context?.state === "running")
+      void this.startMusic().catch(() => {});
     return true;
   }
 
@@ -220,7 +401,10 @@ export class AudioMixer {
     up: { x: number; y: number; z: number },
     voice: { x: number; y: number; z: number },
   ) {
-    if (!this.context || this.disposed) return;
+    if (this.disposed) return;
+    this.listenerPosition = { x: position.x, y: position.y, z: position.z };
+    this.speechPosition = { x: voice.x, y: voice.y, z: voice.z };
+    if (!this.context) return;
     const listener = this.context.listener;
     for (const [prefix, value] of [
       ["position", position],
@@ -288,7 +472,9 @@ export class AudioMixer {
         await response.arrayBuffer(),
       );
       if (this.disposed) throw new Error("Audio mixer is disposed");
-      return trim ? trimCueSilence(context, decoded) : decoded;
+      const result = trim ? trimCueSilence(context, decoded) : decoded;
+      this.decodedBuffers.set(key, result);
+      return result;
     })();
     this.buffers.set(key, pending);
     void pending.catch(() => {
@@ -324,6 +510,7 @@ export class AudioMixer {
           buffer,
           this.tracks!.sfx,
           this.effects,
+          "sfx",
         );
         source.gain.gain.value = Math.max(
           0,
@@ -379,10 +566,12 @@ export class AudioMixer {
           this.context?.state !== "running"
         )
           return;
+        const track = options.track ?? "music";
         source = this.createSource(
           buffer,
-          this.tracks![options.track ?? "music"],
+          this.tracks![track],
           this.effects,
+          track,
         );
         const gain = options.gain ?? 1,
           now = this.context.currentTime;
@@ -450,7 +639,12 @@ export class AudioMixer {
         if (cancelled || this.disposed || this.context?.state !== "running")
           return;
         if (this.effects.size >= 32) this.effects.values().next().value?.stop();
-        source = this.createSource(buffer, this.tracks!.sfx, this.effects);
+        source = this.createSource(
+          buffer,
+          this.tracks!.sfx,
+          this.effects,
+          "sfx",
+        );
         source.gain.gain.value = entry.gain;
         source.node.loop = true;
         source.node.start();
@@ -463,6 +657,7 @@ export class AudioMixer {
     buffer: AudioBuffer,
     destination: AudioNode,
     owner: Set<PlayingSource>,
+    track: Track,
   ): PlayingSource {
     const context = this.ensureContext();
     const node = context.createBufferSource(),
@@ -474,6 +669,7 @@ export class AudioMixer {
     const source: PlayingSource = {
       node,
       gain,
+      track,
       stop: () => {
         if (stopped) return;
         stopped = true;
@@ -522,29 +718,60 @@ export class AudioMixer {
   private async startMusic() {
     const track = this.musicTarget,
       version = this.musicVersion;
-    if (!track || track === this.musicStarted || this.disposed) return;
+    if (
+      !track ||
+      (track === this.musicStarted && (this.music !== null || this.musicPaused)) ||
+      this.disposed
+    )
+      return;
     const buffer = await this.load(DESKTOP_MUSIC[track]);
     if (
       this.disposed ||
       version !== this.musicVersion ||
-      track === this.musicStarted
+      (track === this.musicStarted && (this.music !== null || this.musicPaused))
     )
       return;
     this.fadeMusic(this.musicFade);
+    this.startMusicSource(track, buffer, 0, this.musicFade);
+  }
+
+  private startMusicSource(
+    track: DesktopMusic,
+    buffer: AudioBuffer,
+    offset: number,
+    fadeIn: number,
+  ) {
+    if (!this.context || !this.musicDuck || buffer.duration <= 0) return;
     const source = this.createSource(
       buffer,
-      this.musicDuck!,
+      this.musicDuck,
       this.musicSources,
+      "music",
     );
     source.node.loop = true;
-    source.gain.gain.setValueAtTime(0, this.context!.currentTime);
-    source.gain.gain.linearRampToValueAtTime(
-      1,
-      this.context!.currentTime + this.musicFade,
-    );
-    source.node.start();
+    const now = this.context.currentTime;
+    const normalized = Math.max(0, offset) % buffer.duration;
+    source.gain.gain.setValueAtTime(fadeIn > 0 ? 0 : 1, now);
+    if (fadeIn > 0)
+      source.gain.gain.linearRampToValueAtTime(1, now + fadeIn);
+    source.node.start(0, normalized);
     this.music = source;
     this.musicStarted = track;
+    this.musicBuffer = buffer;
+    this.musicStartedAt = now;
+    this.musicOffset = normalized;
+    this.musicPaused = false;
+  }
+
+  private currentMusicTime() {
+    const duration = this.musicBuffer?.duration ?? 0;
+    if (!duration || !this.musicStarted) return 0;
+    const elapsed =
+      this.musicPaused || !this.music || !this.context
+        ? this.musicOffset
+        : this.musicOffset +
+          Math.max(0, this.context.currentTime - this.musicStartedAt);
+    return elapsed % duration;
   }
 
   private fadeMusic(seconds: number) {
@@ -561,6 +788,10 @@ export class AudioMixer {
     }
     this.music = null;
     this.musicStarted = null;
+    this.musicBuffer = null;
+    this.musicStartedAt = 0;
+    this.musicOffset = 0;
+    this.musicPaused = false;
   }
 
   /** Shipped BrowserPageView routes podcasts through the SFX bus. */
@@ -589,6 +820,7 @@ export class AudioMixer {
     for (const node of this.media.values()) node.disconnect();
     this.media.clear();
     this.buffers.clear();
+    this.decodedBuffers.clear();
     this.corruption?.dispose();
     this.corruption = null;
     this.voiceInput?.disconnect();

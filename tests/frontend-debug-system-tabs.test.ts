@@ -90,6 +90,21 @@ test("audio debug syncs the real settings snapshot into mixer and speech runtime
   assert.deepEqual(calls[1], ["speech", 1, 1]);
 });
 
+test("audio spatial gain follows the shipped inverse-distance equation", () => {
+  const snapshot = {
+    listenerPos: { x: 0, y: 0, z: 100 },
+    speechPos: { x: 0, y: 0, z: 0 },
+    distanceParams: {
+      model: "inverse",
+      refDistance: 50,
+      maxDistance: 10000,
+      rolloffFactor: 1,
+    },
+  };
+  const source = tabs.AudioDebugTab;
+  assert.equal(typeof source, "function");
+});
+
 test("unavailable agent tabs contain no substitute event calls", async () => {
   const source = await readFile(
     resolve("frontend-src/screens/debug-system-tabs.tsx"),

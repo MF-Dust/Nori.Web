@@ -77,7 +77,12 @@ class Context {
   destination = new Node();
   sources: Node[] = [];
   decoded = 0;
-  async resume() {}
+  async resume() {
+    this.state = "running";
+  }
+  async suspend() {
+    this.state = "suspended";
+  }
   async close() {
     this.state = "closed";
   }
@@ -152,6 +157,76 @@ const settings = {
   voiceMuted: false,
   spatialVoice: false,
 };
+
+test("audio debug snapshot exposes context transport and spatial state", async (t) => {
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () => new Response(new Uint8Array(8)),
+  );
+  const context = new Context() as any;
+  context.listener = {
+    positionX: new Parameter(),
+    positionY: new Parameter(),
+    positionZ: new Parameter(),
+    forwardX: new Parameter(),
+    forwardY: new Parameter(),
+    forwardZ: new Parameter(),
+    upX: new Parameter(),
+    upY: new Parameter(),
+    upZ: new Parameter(),
+  };
+  const mixer = new AudioMixer(() => context);
+  t.after(() => mixer.dispose());
+  assert.equal(mixer.debugSnapshot().contextState, "uninitialized");
+  await mixer.debugResume();
+  assert.equal(mixer.debugSnapshot().contextState, "running");
+  mixer.sync({ ...settings, spatialVoice: true });
+  mixer.setSpatialTransform(
+    { x: 0, y: 1, z: 5 },
+    { x: 0, y: 0, z: -1 },
+    { x: 0, y: 1, z: 0 },
+    { x: 1, y: 0.7, z: 0 },
+  );
+  const spatial = mixer.debugSnapshot();
+  assert.equal(spatial.speechHasPanner, true);
+  assert.deepEqual(spatial.listenerPos, { x: 0, y: 1, z: 5 });
+  assert.deepEqual(spatial.speechPos, { x: 1, y: 0.7, z: 0 });
+  assert.equal(spatial.distanceParams?.model, "inverse");
+  assert.equal(await mixer.debugSuspend(), true);
+  assert.equal(mixer.debugSnapshot().contextState, "suspended");
+  assert.equal(await mixer.debugResume(), true);
+});
+
+test("audio debug music transport loads, pauses, seeks, resumes and stops the production BGM source", async (t) => {
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () => new Response(new Uint8Array(8)),
+  );
+  const context = new Context();
+  t.mock.method(context, "decodeAudioData", async () => buffer(1, 10_000, 1000));
+  const mixer = new AudioMixer(() => context as any);
+  t.after(() => mixer.dispose());
+  await mixer.debugLoadMusic();
+  assert.deepEqual(
+    [...mixer.debugSnapshot().loadedMusic].sort(),
+    ["bgm1", "bgm_manifold", "bgm_void"],
+  );
+  mixer.debugPlayMusic("bgm1", 0);
+  await tick();
+  context.currentTime = 2;
+  assert.equal(mixer.debugSnapshot().musicCurrentTime, 2);
+  assert.equal(mixer.debugPauseMusic(), true);
+  assert.equal(mixer.debugSnapshot().musicPaused, true);
+  assert.equal(mixer.debugSeekMusic(6), true);
+  assert.equal(mixer.debugSnapshot().musicCurrentTime, 6);
+  assert.equal(mixer.debugResumeMusic(), true);
+  context.currentTime = 3;
+  assert.equal(mixer.debugSnapshot().musicCurrentTime, 7);
+  assert.equal(mixer.debugStopMusic(0), true);
+  assert.equal(mixer.debugSnapshot().musicTrackId, null);
+});
 
 test("scene source offsets are independent of fade time and wrap only looping files", async (t) => {
   t.mock.method(

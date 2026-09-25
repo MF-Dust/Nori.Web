@@ -21,7 +21,7 @@ The source shell now owns a session notification queue with the recovered 50-ite
 
 ## Live2D Debug parity pass
 
-The source Debug Live2D tab now drives the mounted production model for the shipped idle-state override, automatic sleep/wake fade values, direct Idle/Sleep transition audition, lip-sync amplitude override, mouth-open gain, amplitude/constant mouth-form modes, and per-expression lip-sync shares. The talking simulator uses the shipped 48 ms amplitude trace and releases its override on stop, story takeover or unmount. The normal fact-derived idle state and production speech amplitude remain the default path when Debug overrides are cleared. Original Debug layout comparison and the remaining audio/reaction internals stay separate acceptance work.
+The source Debug Live2D tab now drives the mounted production model for the shipped idle-state override, automatic sleep/wake fade values, direct Idle/Sleep transition audition, lip-sync amplitude override, mouth-open gain, amplitude/constant mouth-form modes, and per-expression lip-sync shares. The talking simulator uses the shipped 48 ms amplitude trace and releases its override on stop, story takeover or unmount. The normal fact-derived idle state and production speech amplitude remain the default path when Debug overrides are cleared. Original Debug layout comparison and the remaining per-track audio effects/reaction internals stay separate acceptance work.
 
 ---
 
