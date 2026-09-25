@@ -8,6 +8,7 @@ import {
 } from "./expression-controller";
 import { NoriIdleController, noriIdleFromFacts } from "./idle-controller";
 import type { NoriReactionDirector } from "./reaction-director";
+import type { Live2DDebugRuntime } from "./debug-runtime";
 
 export function bindNoriModel(options: {
   model: Live2DModel;
@@ -18,6 +19,7 @@ export function bindNoriModel(options: {
   exclusive(): boolean;
   host: HTMLElement;
   reactions?: NoriReactionDirector;
+  live2dDebug?: Live2DDebugRuntime;
 }) {
   const { model, conversation, speech, scene, host } = options;
   let sleeping = false,
@@ -50,8 +52,14 @@ export function bindNoriModel(options: {
       rest = state.noriRestPose;
       model.setRestPose(rest);
     }
-    const idleState = noriIdleFromFacts(options.facts());
-    const nextLipEnabled = idleState !== "kneel" && idleState !== "kneelCalm";
+    const debugTuning = state.active ? undefined : options.live2dDebug?.tuning();
+    const idleState =
+      debugTuning?.idleStateOverride ?? noriIdleFromFacts(options.facts());
+    const debugLipEnabled = options.live2dDebug?.snapshot().plugins.lipSync;
+    const nextLipEnabled =
+      idleState !== "kneel" &&
+      idleState !== "kneelCalm" &&
+      (debugLipEnabled ?? true);
     if (lipEnabled !== nextLipEnabled) {
       lipEnabled = nextLipEnabled;
       model.setPluginEnabled("lipSync", lipEnabled);
@@ -76,6 +84,12 @@ export function bindNoriModel(options: {
           options.exclusive() ||
           chat.phase === "executing" ||
           !chat.connected,
+        debugTuning
+          ? {
+              sleepFadeIn: debugTuning.sleepFadeIn,
+              idleFadeIn: debugTuning.idleFadeIn,
+            }
+          : undefined,
       );
     host.dataset.noriThinking = String(
       chat.connected && chat.phase === "executing",

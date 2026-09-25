@@ -9,7 +9,10 @@ const idle = createSourceIdleRuntimeEngine();
 const frontend = new NoriFrontendRuntime();
 const scenarios: string[] = [];
 const live2dState = {
-  plugins: new Map<string, boolean>([["physics", true]]),
+  plugins: new Map<string, boolean>([
+    ["physics", true],
+    ["lipSync", true],
+  ]),
   rest: false,
   expressions: new Set<string>(),
   motions: [] as unknown[],
@@ -64,6 +67,7 @@ Object.assign(window, {
       rest: live2dState.rest,
       expressions: [...live2dState.expressions],
       motions: live2dState.motions,
+      tuning: frontend.live2dDebug.tuning(),
     }),
     takeover() {
       frontend.story.sync("debug-world", new Set(["cult.unpacked"]));

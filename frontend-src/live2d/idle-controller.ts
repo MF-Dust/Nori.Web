@@ -1,5 +1,13 @@
 import type { MotionStep } from "./engine.js";
 export type NoriIdleState = "idle" | "glitch" | "kneel" | "kneelCalm";
+export interface NoriIdleFadeTuning {
+  sleepFadeIn: number;
+  idleFadeIn: number;
+}
+export const NORI_IDLE_FADE_DEFAULTS: NoriIdleFadeTuning = {
+  sleepFadeIn: 10,
+  idleFadeIn: 5,
+};
 const motions: Record<NoriIdleState | "sleep", MotionStep> = {
   idle: { group: "Idle", index: 0 },
   sleep: { group: "Idle", index: 1 },
@@ -39,6 +47,7 @@ export class NoriIdleController {
     forcedSleep: boolean,
     amplitude: number,
     blocked: boolean,
+    fades: NoriIdleFadeTuning = NORI_IDLE_FADE_DEFAULTS,
   ) {
     if (state !== "idle" || amplitude > 0.01 || blocked) this.activity();
     const next =
@@ -53,9 +62,9 @@ export class NoriIdleController {
             next === "sleep"
               ? forcedSleep
                 ? 1.5
-                : 10
+                : fades.sleepFadeIn
               : next === "idle"
-                ? 5
+                ? fades.idleFadeIn
                 : undefined,
         },
         next === "sleep",
@@ -69,10 +78,18 @@ const blends: Readonly<Record<string, number>> = {
   "10_Doubt": 0.45,
   "11_Disgust": 0.65,
 };
-export function noriLipExpressionBlend(expressions: readonly string[]) {
+export function noriLipExpressionBlendValue(expression: string) {
+  return blends[expression] ?? 0.5;
+}
+export function noriLipExpressionBlend(
+  expressions: readonly string[],
+  overrides: Readonly<Record<string, number>> = {},
+) {
   return expressions.length
     ? expressions.reduce(
-        (sum, expression) => sum + (blends[expression] ?? 0.5),
+        (sum, expression) =>
+          sum +
+          (overrides[expression] ?? noriLipExpressionBlendValue(expression)),
         0,
       ) / expressions.length
     : 1;

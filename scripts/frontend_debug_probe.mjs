@@ -137,6 +137,87 @@ export async function verifyDebugLabs(browser, output, baseUrl) {
       1,
     );
 
+    const live2dPanel = page.locator('section[aria-label="Live2D debug"]');
+    await live2dPanel
+      .getByRole("button", { name: "Glitch", exact: true })
+      .click();
+    assert.equal(
+      await page.evaluate(
+        () => window.debugLabProbe.live2d().tuning.idleStateOverride,
+      ),
+      "glitch",
+    );
+    await page.getByLabel("Sleep fade-in", { exact: true }).evaluate((element) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      ).set;
+      setter.call(element, "2.5");
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.equal(
+      await page.evaluate(() => window.debugLabProbe.live2d().tuning.sleepFadeIn),
+      2.5,
+    );
+    await page
+      .getByLabel("Intensity (mouth-open gain)", { exact: true })
+      .evaluate((element) => {
+        const setter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          "value",
+        ).set;
+        setter.call(element, "0.85");
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+        element.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    assert.equal(
+      await page.evaluate(() => window.debugLabProbe.live2d().tuning.lipIntensity),
+      0.85,
+    );
+    await page.getByLabel("Mouth form: constant mode", { exact: true }).check();
+    await page.getByLabel("Mouth form (constant)", { exact: true }).evaluate((element) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      ).set;
+      setter.call(element, "-0.4");
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.equal(
+      await page.evaluate(
+        () => window.debugLabProbe.live2d().tuning.lipFormConstant,
+      ),
+      -0.4,
+    );
+    await page
+      .getByLabel("13_Happy lip-sync share", { exact: true })
+      .evaluate((element) => {
+        const setter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          "value",
+        ).set;
+        setter.call(element, "0.8");
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+        element.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    assert.equal(
+      await page.evaluate(
+        () => window.debugLabProbe.live2d().tuning.expressionBlends["13_Happy"],
+      ),
+      0.8,
+    );
+    await live2dPanel
+      .getByRole("button", { name: "▶ Sleep", exact: true })
+      .click();
+    assert.deepEqual(
+      await page.evaluate(() => window.debugLabProbe.live2d().motions.at(-1)),
+      {
+        steps: { group: "Idle", index: 1, loop: true, fadeIn: 2.5 },
+      },
+    );
+
     await page.getByRole("button", { name: "Pat", exact: true }).click();
     await page.getByLabel("Pat Required pat time").evaluate((element) => {
       const setter = Object.getOwnPropertyDescriptor(

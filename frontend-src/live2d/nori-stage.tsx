@@ -111,15 +111,40 @@ export function NoriStage({
           createPhysicsPlugin({ enabled: true }),
           createLipSyncPlugin({
             enabled: true,
-            getAmplitude: () => speech.level(),
-            getIntensity: () => 0.4,
-            getFormIntensity: () =>
-              ["kneel", "kneelCalm"].includes(
-                noriIdleFromFacts(latest.current.facts),
-              )
+            getAmplitude: () =>
+              frontend.scene.snapshot().active
+                ? speech.level()
+                : frontend.live2dDebug.lipAmplitude(speech.level()),
+            getIntensity: () =>
+              frontend.scene.snapshot().active
+                ? 0.4
+                : frontend.live2dDebug.tuning().lipIntensity,
+            getFormIntensity: () => {
+              const tuning = frontend.live2dDebug.tuning();
+              const debugEnabled = !frontend.scene.snapshot().active;
+              const idleState =
+                (debugEnabled ? tuning.idleStateOverride : null) ??
+                noriIdleFromFacts(latest.current.facts);
+              return ["kneel", "kneelCalm"].includes(idleState)
                 ? 0
-                : 1,
-            getExpressionBlend: noriLipExpressionBlend,
+                : debugEnabled
+                  ? tuning.lipFormIntensity
+                  : 1;
+            },
+            getFormConstant: () => {
+              if (frontend.scene.snapshot().active) return null;
+              const tuning = frontend.live2dDebug.tuning();
+              return tuning.lipFormMode === "constant"
+                ? tuning.lipFormConstant
+                : null;
+            },
+            getExpressionBlend: (expressions) =>
+              noriLipExpressionBlend(
+                expressions,
+                frontend.scene.snapshot().active
+                  ? {}
+                  : frontend.live2dDebug.tuning().expressionBlends,
+              ),
           }),
           createThinkingLightPlugin(
             () =>
@@ -160,6 +185,7 @@ export function NoriStage({
           unbindModel = bindNoriModel({
             model,
             reactions: frontend.reactions,
+            live2dDebug: frontend.live2dDebug,
             conversation: frontend.conversation,
             speech,
             scene: frontend.scene,

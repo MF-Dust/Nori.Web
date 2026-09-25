@@ -43,6 +43,33 @@ test("Live2D debug runtime mutates only the attached production model", () => {
   assert.equal(runtime.playMotion("Idle", 0), true);
   assert.equal(motions.length, 1);
   assert.equal(runtime.playMotion("Missing", 0), false);
+
+  runtime.setIdleStateOverride("glitch");
+  runtime.setSleepFadeIn(2.5);
+  runtime.setIdleFadeIn(1.25);
+  runtime.setLipAmplitudeOverride(0.75);
+  runtime.setLipIntensity(99);
+  runtime.setLipFormMode("constant");
+  runtime.setLipFormConstant(-0.4);
+  assert.equal(runtime.setExpressionBlend("Happy", 0.8), true);
+  assert.equal(runtime.tuning().idleStateOverride, "glitch");
+  assert.equal(runtime.tuning().sleepFadeIn, 2.5);
+  assert.equal(runtime.tuning().idleFadeIn, 1.25);
+  assert.equal(runtime.lipAmplitude(0.1), 0.75);
+  assert.equal(runtime.tuning().lipIntensity, 1.5);
+  assert.equal(runtime.tuning().lipFormConstant, -0.4);
+  assert.equal(runtime.expressionBlend("Happy"), 0.8);
+  assert.equal(runtime.playIdle("sleep"), true);
+  assert.deepEqual(motions.at(-1), {
+    steps: { group: "Idle", index: 1, loop: true, fadeIn: 2.5 },
+  });
+  runtime.resetTuning();
+  assert.equal(runtime.tuning().idleStateOverride, null);
+  assert.equal(runtime.tuning().sleepFadeIn, 10);
+  assert.equal(runtime.tuning().idleFadeIn, 5);
+  assert.equal(runtime.tuning().lipIntensity, 0.4);
+  assert.equal(runtime.lipAmplitude(0.1), 0.1);
+  assert.equal(runtime.expressionBlend("Happy"), 0.5);
   detach();
   assert.equal(runtime.snapshot().ready, false);
   assert.equal(runtime.toggleExpression("Happy"), false);
