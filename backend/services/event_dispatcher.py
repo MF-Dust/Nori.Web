@@ -323,9 +323,13 @@ class EventDispatcher:
 
         if matched_fact is None and url:
             pages = live_pack.all_pages_raw()
-            hit = any(url in ((p.get("data") or {}).get("url") or "").lower()
-                      or any(hint in url for hint in self.HONEYPOT_URL_HINTS)
-                      for p in pages)
+            hit = (
+                any(hint in url for hint in self.HONEYPOT_URL_HINTS)
+                or any(
+                    url in ((page.get("data") or {}).get("url") or "").lower()
+                    for page in pages
+                )
+            )
             if hit:
                 matched_fact = "arg.honeypot_access"
 

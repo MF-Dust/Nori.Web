@@ -245,9 +245,11 @@ def test_bounty_submit() -> None:
         res = await dispatcher.handle_event({
             "channel": "manifold.bounty.submit", "cartridgeId": "manifold.web",
             "payload": {"url": "https://futurum-prize.verify-now.com/claim"}})
-        if live_pack.is_available():
-            assert res["payload"]["ok"] is True
-            assert isinstance(res["payload"]["fact"], str) and res["payload"]["fact"]
+        assert res["payload"] == {
+            "ok": True,
+            "fact": "arg.honeypot_access",
+        }
+        assert "arg.honeypot_access" in world.cartridges["manifold.web"].state["facts"]
 
     asyncio.run(_run())
 

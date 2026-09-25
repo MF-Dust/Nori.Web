@@ -323,11 +323,83 @@ try {
   await page.locator('[data-nori-dock] [data-app-id="browser"]').click();
   await page.getByRole("button", { name: "Doodle", exact: true }).waitFor();
   await page.getByRole("button", { name: "Doodle", exact: true }).click();
-  const browserFrame = page.frameLocator('[data-browser-page-frame]');
+  const browserFrame = page.frameLocator(
+    'iframe[data-browser-page-frame]:visible',
+  );
   await browserFrame
     .getByRole("heading", { name: "Doodle Search", exact: true })
     .waitFor();
   await page.screenshot({ path: resolve(output, "browser-doodle.png") });
+
+  // Drive the recovered bounty extension through the real Browser iframe
+  // bridge and local backend without adding a test-only authored page.
+  await page.evaluate(() => {
+    const socket = window.sourceSmoke.sockets.find(
+      (item) =>
+        item.url.includes("/api/arcade/web/v1") && item.readyState === 1,
+    );
+    if (!socket) throw new Error("Arcade socket is not open");
+    socket.send(
+      JSON.stringify({
+        type: "event",
+        channel: "manifold.command.request",
+        requestId: "source-smoke-bounty-install",
+        payload: {
+          command: "client.emitFact",
+          payload: { factId: "bounty.ext_installed" },
+        },
+      }),
+    );
+  });
+  const bounty = page.getByRole("button", { name: "省钱喵", exact: true });
+  await bounty.waitFor();
+  await browserFrame.locator("body").evaluate(() => {
+    window.parent.postMessage(
+      { __arcade: true, type: "submittable", value: true },
+      "*",
+    );
+  });
+  await page.waitForTimeout(3_200);
+  await bounty.click();
+  await page.getByText("本页侦测到优惠！", { exact: true }).waitFor();
+  await bounty.click();
+
+  const browserAddress = page.locator('input[inputmode="url"]').last();
+  await browserAddress.fill("https://verify-now.com/");
+  await browserAddress.press("Enter");
+  await browserFrame
+    .getByText("Simulated web page hosted inside NoriOS network.", {
+      exact: true,
+    })
+    .waitFor();
+  await browserFrame.locator("body").evaluate(() => {
+    window.parent.postMessage(
+      { __arcade: true, type: "submittable", value: true },
+      "*",
+    );
+  });
+  await page.waitForTimeout(3_200);
+  await bounty.click();
+  await page.getByText("本页侦测到优惠！", { exact: true }).waitFor();
+  await page.getByRole("button", {
+    name: "领取本页返现",
+    exact: true,
+  }).click();
+  await page
+    .getByText("恭喜解锁尊享会员！", { exact: true })
+    .waitFor({ timeout: 10_000 });
+  assert.equal(
+    await page.evaluate(() =>
+      window.sourceSmoke.sent.some(
+        (item) => item.channel === "manifold.bounty.submit",
+      ),
+    ),
+    true,
+    "bounty claim must traverse the real manifold.bounty.submit RPC",
+  );
+  await page.screenshot({
+    path: resolve(output, "browser-bounty-complete.png"),
+  });
   await page.getByRole("button", { name: "Close", exact: true }).click();
 
   await page.locator('[data-nori-dock] [data-app-id="terminal"]').click();

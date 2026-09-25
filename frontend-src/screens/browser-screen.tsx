@@ -86,7 +86,10 @@ export interface BrowserScreenProps {
   isMaximized: boolean;
   setTitle(title: string): void;
   translate: (key: string, params?: Record<string, string>) => string;
-  playCue?: (cue: string, options?: { pitch?: number; volume?: number }) => void;
+  playCue?: (
+    cue: string,
+    options?: { pitch?: number; volume?: number; duckMusic?: boolean },
+  ) => void;
   onReady?: () => void;
   setPageContext?: (context: string | null) => void;
 }
