@@ -106,6 +106,7 @@ export type CakeDuelTransientBanner =
 
 export interface CakeDuelControllerSnapshot {
   mounted: boolean;
+  connected: boolean;
   mountPending: boolean;
   actionPending: boolean;
   route: CakeDuelRoute;
@@ -381,6 +382,7 @@ export class CakeDuelRuntimeController {
   private wolfyTauntActive = false;
   private wolfyTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingChallengeReaction: CakeDuelReaction | null = null;
+  private connected: boolean;
   private current: CakeDuelControllerSnapshot;
 
   constructor(
@@ -389,7 +391,24 @@ export class CakeDuelRuntimeController {
     arcade: ArcadeClient,
     private readonly reactions?: NoriReactionDirector,
   ) {
+    this.connected = arcade.connectionState === "open";
     this.current = this.computeSnapshot();
+    this.unsubs.push(arcade.onState((state) => {
+      const connected = state === "open";
+      if (!connected) {
+        const hadPending = this.pendingRequestId !== null || this.mountPending;
+        this.pendingRequestId = null;
+        this.mountPending = false;
+        this.pendingDebugResolve?.(false);
+        this.pendingDebugResolve = null;
+        this.pendingDebugScenarioId = null;
+        if (hadPending) this.error = "Connection interrupted";
+      } else if (this.error === "Connection interrupted") {
+        this.error = null;
+      }
+      this.connected = connected;
+      this.publish();
+    }));
     this.unsubs.push(world.subscribe((_state, message) => {
       if (world.runtime("cakeduel")) this.mountPending = false;
       const events = engineEvents(message);
@@ -414,7 +433,7 @@ export class CakeDuelRuntimeController {
   };
 
   ensureMounted(): void {
-    if (this.world.runtime("cakeduel") || this.mountPending) return;
+    if (!this.connected || this.world.runtime("cakeduel") || this.mountPending) return;
     try {
       this.mountPending = true;
       this.error = null;
@@ -479,7 +498,7 @@ export class CakeDuelRuntimeController {
   }
 
   private dispatch(cmd: { type: string; [key: string]: JsonValue }): void {
-    if (this.pendingRequestId) return;
+    if (!this.connected || this.pendingRequestId) return;
     try {
       this.error = null;
       this.pendingRequestId = this.games.dispatch("cakeduel", cmd);
@@ -724,6 +743,7 @@ export class CakeDuelRuntimeController {
     const route = derivedRoute === "results" && transientRouteHold ? "game" : derivedRoute;
     return {
       mounted: runtime !== undefined,
+      connected: this.connected,
       mountPending: this.mountPending,
       actionPending: this.pendingRequestId !== null,
       route,

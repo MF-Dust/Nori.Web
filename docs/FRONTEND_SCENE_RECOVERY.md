@@ -1,6 +1,6 @@
 # Nori scene and speech recovery
 
-The source conversation now connects to the real ARGNori model, a source-owned Three.js environment and the first recovered story timeline. Full cinematic and gesture parity remains open.
+The source conversation now connects to the real ARGNori model, a source-owned Three.js environment and all seven registered story producers: Boot, Corruption climax, Cult, Memory, Datasea, Farewell and Ending. The six non-Cult segments have source-owned timelines/renderers but still lack original visual, narrative, media and agent parity; gesture parity also remains open.
 
 ## Restored behavior
 
@@ -21,7 +21,11 @@ The behavioral reference is the repository's authorized `public/assets/NormalApp
 
 ## Remaining boundary
 
-Postprocessing, gesture plugins, story reveal and interrupt choreography, the six remaining cinematics, remaining scene audio cues, and live-agent synchronization remain open. The source scene host and director now support the cult timeline; the other producers are not yet restored. The `live2d` and `messenger` cutover flags therefore remain incomplete.
+Postprocessing, gesture plugins, story reveal and interrupt choreography, the six non-Cult segments' original parity, remaining scene audio cues, and live-agent synchronization remain open. All seven producers are registered in `StoryScenes`; registration is not original-parity acceptance. The `live2d` and `messenger` cutover flags therefore remain incomplete.
+
+## Datasea source and probe coverage
+
+`DataseaScene` owns the source timeline and `DataseaWaveGate` owns the three four-game waves. The `frontend_memory_datasea_probe.mjs` path covers all three waves and all twelve games with real input, while `frontend_datasea_games_probe.mjs` retains the standalone twelve-game input probe. This establishes source/runtime coverage, not original visual, media or agent acceptance.
 
 ## Conversation and shell handoff
 
@@ -33,7 +37,7 @@ Between `arg.memory.shown` and `arg.ending.shown`, player messages are shown loc
 
 Chip scanning subscribes directly to the scene store. Takeover or non-normal chat mode cancels the scan and prevents reentry, including after a late RPC result. Scene updates that leave the blocked state unchanged do not repeatedly reset the chip.
 
-The runtime suite now has 46 passing tests. The real-model browser fixture also checks hidden input, focus-shortcut blocking, draft restoration, red bubble styles, stable assistive text, reduced motion and suppressed receive cues. `nori-corrupt-chat.png` is included in the application artifact. These are restored scene consumers and fact-driven conversation behavior; full cinematic timeline producers remain open. The corruption voice DSP is now restored as described below.
+The runtime suite now has 46 passing tests. The real-model browser fixture also checks hidden input, focus-shortcut blocking, draft restoration, red bubble styles, stable assistive text, reduced motion and suppressed receive cues. `nori-corrupt-chat.png` is included in the application artifact. These are restored scene consumers and fact-driven conversation behavior; the six non-Cult producers' original parity remains open. The corruption voice DSP is now restored as described below.
 
 
 ## Corruption voice processing
@@ -44,22 +48,22 @@ The scene store's `corruptVoice` consumer connects to the shared mixer before sp
 
 `tests/frontend-voice-corruption.test.ts` compares all six worklet presets against the authorized shipped processor sample for sample across 102,400 samples per preset. It also covers dry bypass, captured-sample cleanup, concurrent initialization, current scene state, disposal races, retry after synchronous loading failure, room impulse timing and waveshaping. `scripts/frontend_voice_corruption_probe.mjs` renders the full chain in Chromium for each preset, verifies dry output and native fallback, and checks actual scene binding, pre-unlock activation, mixer gain, speech reset and disposal. Numerical results are saved as `voice-corruption.json` in the application smoke artifact.
 
-The behavioral references are `public/assets/NormalApp-Cn6agT0F.js` and `public/assets/corruptionProcessor.worklet-lw-jqXOl.js`. The application build emits its own worklet from `frontend-src/runtime/corruption-processor.worklet.js`; historical JavaScript is only a test oracle. The cinematic producers that drive corruption over time, the other scene cues and the overall scene/audio cutover boundary remain unfinished.
+The behavioral references are `public/assets/NormalApp-Cn6agT0F.js` and `public/assets/corruptionProcessor.worklet-lw-jqXOl.js`. The application build emits its own worklet from `frontend-src/runtime/corruption-processor.worklet.js`; historical JavaScript is only a test oracle. The source Corruption producer is registered, while its original animation/reply/media choreography and the six non-Cult segments' original parity remain unfinished.
 
 
-## Three.js environment and first story timeline
+## Three.js environment and registered story timelines
 
 `live2d/scene-renderer.ts` owns Three.js 0.180.0, matching the shipped renderer revision. `scene-materials.js` recovers the original GLSL background, ground grid, particles, bokeh, model surface, alpha silhouette prepass and blurred ground shadow. The host uploads the real Cubism canvas as its own texture. Desktop/exclusive camera positions, pointer parallax, camera rotation/FOV/far plane, shake, darkness, tint, reveal and fact-selected manifold/void palettes are bound to the shared scene state. Resize follows the graphics budget. Unmount cancels animation, removes pointer listeners and disposes textures, render targets, materials and the WebGL context.
 
 The camera and model position now update the shared spatial listener/panner. Chip scan bounds use the projected model surface instead of the hidden source texture canvas. The browser fixture asserts that moving the camera changes the scan projection and voice listener position, while retaining its real-model expression, pose, corruption and cleanup checks. Test time advances through model transitions without rendering hundreds of unnecessary software-GPU frames.
 
-`story/story-director.ts` restores the seven-scene priority catalogue, completion acknowledgement, two-second retry, 1.5-second completion hold, and world/disposal fences. Only `cult-flash` currently has a registered renderer. An earlier eligible unrecovered scene blocks later scenes; the director never fabricates its completion fact.
+`story/story-director.ts` restores the seven-scene priority catalogue, completion acknowledgement, two-second retry, 1.5-second completion hold, and world/disposal fences. `NoriFrontendRuntime` passes all seven `STORY_ORDER` IDs as supported and `StoryScenes` registers a producer for each one. An earlier scene with unmet parity/acceptance conditions remains a director dependency; the director never fabricates its completion fact.
 
 `story/cult-renderer.ts` uses the original two-pass WebGL2 shaders. `StoryScenes` plays the seven-second cult timeline, the original looping drone and its fade, locks normal scene interaction, and reports `arg.cult_truth` after rendering. Decode latency offsets playback into the current timeline; completion or world replacement stops audio. Reduced motion uses a static frame. Renderer failure exposes Retry and never reports successful completion.
 
 `frontend-story-feedback.test.ts` covers priority, acknowledgement/retry, duplicate completion and stale-world handling, alongside Chess feedback transitions. `frontend_scene_tools_probe.mjs` exercises the real cult shaders/audio, successful completion, cancellation and released scene state. Its screenshots include `cult-flash.png` and `debug-audio.png`.
 
-Still required: boot, corruption climax, memory, datasea, farewell and ending timelines; their interaction, speech and audio choreography; original bloom/SMAA and advanced scene render passes; gesture plugins; full live-agent story verification. The five cutover boundaries remain false.
+The six non-Cult segments (Boot, Corruption climax, Memory, Datasea, Farewell and Ending) now have source timelines/renderers and registered producers. Still required is original frame/audio/interaction/media comparison and full live-agent story verification; registration alone does not close any of the five false cutover boundaries.
 
 
 ## Paused timelines and audio ownership
@@ -70,16 +74,20 @@ The shared `StoryClock` now supports ordered phases, explicit input gates, zero-
 
 Three new runtime tests exercise consecutive gates, waiting time, suspension, backwards timestamps, disposal, audio unlock, offset tracking and cancellation. The scene browser probe also verifies that a hidden cult scene holds its position and does not report completion before playback resumes.
 
-This supplies the time and audio infrastructure required by the six remaining cinematics. It does not register those cinematics or emit their completion facts. Inspection also confirmed that the missing bloom and advanced postprocessing belong to cold-open/datasea renderers; they are not a general desktop filter.
+This supplies the shared time and audio infrastructure used by all seven registered producers. The six non-Cult segments still require original-parity acceptance; the infrastructure does not itself certify their visuals or emit substitute completion facts. Inspection also confirmed that bloom and advanced postprocessing belong to cold-open/datasea renderers; they are not a general desktop filter.
 
 
 ## Head gesture and scene authoring pass
 
 `head-pat.ts` samples movement in head-width units. The projected upper head surface accepts sustained horizontal movement, requires one second of qualifying samples, ignores sampling gaps above 250 ms and completes once per held gesture. A model plugin adds damped yaw/pitch/roll offsets. Input supports pointer capture and holding Space; blur, visibility loss, world epoch changes, non-idle poses and active scenes cancel input. A completed local gesture shows a reduced-motion-aware ring; it leaves speech-owned expressions untouched. Original rubbing synthesis, richer particles and agent reaction events remain separate parity work.
 
-The Debug scene editor validates typed JSON projects and previews camera/model/light targets with smooth interpolation, explicit input gates and local audio intervals. Pause/resume, hidden tabs, stop, world replacement and unmount share the clock/audio ownership rules. Preview does not emit story facts and yields to a production story. The sample is an authored camera/light study; it is not a replacement for any of the six unfinished cinematics.
+The Debug scene editor validates typed JSON projects and previews camera/model/light targets with smooth interpolation, explicit input gates and local audio intervals. Pause/resume, hidden tabs, stop, world replacement and unmount share the clock/audio ownership rules. Preview does not emit story facts and yields to a production story. The sample is an authored camera/light study; it is not a replacement for original parity in the six non-Cult cinematics.
 
 See [the expanded remaining-work ledger](FRONTEND_REMAINING_WORK.md) for individual cinematic acceptance criteria. Browser coverage exercises the real model gesture and scene preview's input gate, restoration and rejected project path.
+
+## Debug and scene-editor boundary
+
+The Debug panel and scene editor are source-owned at HEAD `085bad3`. Production-bound Live2D, Audio, Pat, reaction, scenario, tuner and notification controls are present; the remaining boundary is original layout comparison plus the private Inject Talk/Nori Context handlers, which intentionally show blocker/session state rather than substitute agent actions.
 
 ## Corruption interaction study
 
@@ -87,7 +95,7 @@ The Debug Corruption tab now runs the eleven inspected phases through StoryClock
 
 The source-owned microgames cover four hostile processes with protected system rows, four abnormal nodes among ten nodes, four separate 84 BPM rhythm hits, three-channel tuning with a continuous 600 ms alignment hold, five retryable binary checks, and two steering holds. Foreground pause, hidden-tab suspension and pointer/keyboard cleanup preserve progress. The layout adapts from three columns to one and uses the existing Sarasa font for Chinese glyph coverage.
 
-This is an interaction study, not a production registration. Node/terminal animation, tuning drift/lock presentation, steering impulse/trail effects, original preference dialogue and the warning/heal renderer still need original-parity work. The five binary prompts here are newly authored technical checks. The voice gate does not impersonate the original agent handoff. Boot, corruption climax, memory, datasea, farewell and ending remain unregistered; all five production boundaries stay false.
+This is an interaction study, not a production registration. Node/terminal animation, tuning drift/lock presentation, steering impulse/trail effects, original preference dialogue and the warning/heal renderer still need original-parity work. The five binary prompts here are newly authored technical checks. The voice gate does not impersonate the original agent handoff. The production Corruption producer and the other six producers are registered; the five false cutover boundaries stay false.
 
 Verification includes protected targets, duplicate input, timing and completion fences in unit tests, plus a browser walkthrough of all six microgames and the recovery/wake transition. Screenshots cover the six panels, all-clear state and a 390 px viewport.
 
@@ -103,4 +111,4 @@ Director activations now carry unique instance IDs. Rejoining the same world inv
 
 `cold-open-materials.js`, `cold-open-particles.js` and `cold-open-renderer.ts` supply source-owned ocean, reflection, godray/dust/plankton, bloom, FXAA, tilt, glyph-field/live-silhouette morph and wake-burst stages. `NoriSceneRenderer` creates them only while a cold-open layer exists, and disposes them on exit. The editor accepts the dedicated nested channels; numeric endpoints interpolate without mutating either project endpoint.
 
-`frontend_cold_open_probe.mjs` renders the real Cubism model through the stages, saves ocean/glyph/morph/formed/wake screenshots and verifies resize, failed images, cancellation and late loading. `frontend-cold-open.test.ts` covers resource ownership, missing siblings, single-channel half-float SDF data and project validation/interpolation. Full boot/ending timelines and the other remaining cinematics still require their own production registration and acceptance.
+`frontend_cold_open_probe.mjs` renders the real Cubism model through the stages, saves ocean/glyph/morph/formed/wake screenshots and verifies resize, failed images, cancellation and late loading. `frontend-cold-open.test.ts` covers resource ownership, missing siblings, single-channel half-float SDF data and project validation/interpolation. Boot and Ending producers are already registered; the six non-Cult segments still require original visual/media/agent acceptance.

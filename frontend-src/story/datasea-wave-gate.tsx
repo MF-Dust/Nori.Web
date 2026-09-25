@@ -7,25 +7,13 @@ import {
 } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import {
-  DATASEA_GAME_COMPONENTS,
-  type DataseaGameApi,
-} from "./datasea-games-original.js";
+  DATASEA_GAMES,
+  DATASEA_WAVE_BREAKS,
+} from "./datasea-content";
+import { DATASEA_GAME_COMPONENTS, type DataseaGameApi } from "./datasea-games-original.js";
 import "./datasea-wave-gate.css";
 
-export const DATASEA_GAMES = [
-  ["steady", "稳态", 400, 300],
-  ["resonance", "共振", 400, 420],
-  ["current", "逆流", 380, 380],
-  ["relay", "中继", 460, 420],
-  ["echo", "应答", 360, 360],
-  ["denoise", "降噪", 400, 340],
-  ["discern", "辨认", 500, 400],
-  ["ripple", "波纹", 380, 412],
-  ["sweep", "扫描", 320, 440],
-  ["unknot", "解结", 400, 380],
-  ["lure", "引航", 580, 460],
-  ["balance", "平衡", 420, 400],
-] as const;
+export { DATASEA_GAMES } from "./datasea-content";
 const WAVES = [
   [5, 8, 9, 3],
   [6, 4, 0, 11],
@@ -36,29 +24,6 @@ const POSITIONS = [
   { x: 0.66, y: 0.14 },
   { x: 0.08, y: 0.55 },
   { x: 0.68, y: 0.54 },
-] as const;
-// Only the shipped cadence and line lengths are retained; narrative text is intentionally absent.
-const BREAKS = [
-  [
-    [0.9, 1.2, 4],
-    [0.6, 1.6, 12],
-    [0.8, 1.8, 20],
-    [0.6, 1.8, 18],
-    [1.2, 1.6, 13],
-    [0.8, 1.6, 13],
-  ],
-  [
-    [0.9, 2, 26],
-    [0.7, 2.2, 31],
-    [0.8, 1.8, 18],
-    [1.4, 1.2, 2],
-    [0.8, 1.8, 14],
-    [0.7, 2.4, 41],
-    [1, 1.8, 20],
-    [0.6, 1.8, 20],
-    [0.8, 1.4, 10],
-    [0.6, 1.4, 8],
-  ],
 ] as const;
 let topZ = 1000;
 const clampPosition = (
@@ -234,14 +199,14 @@ export function DataseaWaveGate({
       later(1400, () => wakeRef.current());
       return;
     }
-    const cadence = BREAKS[wave];
+    const cadence = DATASEA_WAVE_BREAKS[wave];
     let elapsed = 900;
-    cadence.forEach(([gap, dots], index) => {
-      elapsed += gap * 1000;
+    cadence.forEach((line, index) => {
+      elapsed += line.gap * 1000;
       later(elapsed, () =>
         setBreakState({ landed: index, typing: true, fading: false }),
       );
-      elapsed += dots * 1000;
+      elapsed += line.dots * 1000;
       later(elapsed, () => {
         frontend.audio.playCue("cutscenes-datasea-message-land");
         setBreakState({ landed: index + 1, typing: false, fading: false });
@@ -275,7 +240,7 @@ export function DataseaWaveGate({
       });
     },
   }));
-  const cadence = wave < BREAKS.length ? BREAKS[wave] : null;
+  const cadence = wave < DATASEA_WAVE_BREAKS.length ? DATASEA_WAVE_BREAKS[wave] : null;
   return (
     <div
       className="datasea-wave-gate datasea-waves"
@@ -302,8 +267,10 @@ export function DataseaWaveGate({
           {cadence.slice(0, breakState.landed).map((line, index) => (
             <span
               key={index}
-              style={{ width: `${Math.min(100, 18 + line[2] * 1.8)}%` }}
-            />
+              style={{ width: `${Math.min(100, 18 + Array.from(line.text).length * 1.8)}%` }}
+            >
+              {line.text}
+            </span>
           ))}
           {breakState.typing && (
             <i>

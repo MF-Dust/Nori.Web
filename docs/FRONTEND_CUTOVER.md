@@ -8,6 +8,10 @@ PR #28 established a maintainable recovered source tree. This migration moves th
 
 `npm run frontend:cutover:check` enforces that rule in CI.
 
+## Current source status — HEAD `085bad3`
+
+All seven story producers are registered in the source call chain (`StoryScenes` plus the runtime `STORY_ORDER` support set). The six non-Cult segments remain source-owned reconstructions without original visual, narrative, media and agent parity. Datasea source/probe coverage includes all three waves and all twelve games; original visual, media and agent acceptance remain open. The Debug panel and scene editor are source-owned; the remaining Debug gaps are original layout comparison and the private Inject Talk/Nori Context handlers. The five false gates remain `messenger`, `games`, `live2d`, `supporting-apps` and `production-entry`; no production entry has been switched.
+
 ## Build contracts
 
 There are now two independent builds:
@@ -74,12 +78,12 @@ The goal is a boring final switch: by the time `public/index.html` changes, all 
 
 ## Games integration progress
 
-Chess and Pictionary now have source-driven game screens, and Codenames is bound to the source cartridge lifecycle alongside Cake Duel. Base English/Chinese translations are also source-owned. [The game recovery ledger](FRONTEND_GAMES_RECOVERY.md) records implemented behavior, automated verification and the visual/runtime gaps that keep Games incomplete. Source application integration and full-production parity remain distinct acceptance steps.
+All four games have source-driven screens and runtime bindings. Codenames has a deterministic 13-step tutorial and results surface, Pictionary has source-owned help/results surfaces, Chess has the complete 22-ply tutorial, and Cake Duel has a source runtime/controller with start/game/results routes. [The game recovery ledger](FRONTEND_GAMES_RECOVERY.md) records the remaining full lifecycle, visual and original-agent/media acceptance. Source application integration and full-production parity remain distinct acceptance steps.
 
 ## Supporting applications
 
-Settings, About, system alerts and Credits now have source components and desktop bindings. [The supporting-app ledger](FRONTEND_SYSTEM_RECOVERY.md) records restored flows, browser verification and the remaining Debug labs/audio/visual gaps. These previously implicit production-entry gaps now have their own incomplete `supporting-apps` boundary.
+Settings, About, system alerts and Credits have source components and desktop bindings. The Debug panel and scene editor are also source-owned, including the production-bound Live2D, Audio, Pat, reaction, scenario, tuner and notification controls. [The supporting-app ledger](FRONTEND_SYSTEM_RECOVERY.md) records the remaining original layout comparison and private Inject Talk/Nori Context handlers under the still-false `supporting-apps` boundary.
 
 ## Nori scene integration
 
-[The scene recovery ledger](FRONTEND_SCENE_RECOVERY.md) records speech cuts, emotion timing, idle/sleep and story-fact poses, thinking light, model face/texture controls, screen effects and the six-mode corruption voice DSP. The source Three.js environment, camera, shadow and scan/audio transforms are now bound. A priority/acknowledgement director plays the recovered cult timeline; six cinematics remain open. Real-model and scene-tool browser fixtures verify these bindings. Live2D and Messenger remain incomplete until their remaining scene and choreography flows are restored.
+[The scene recovery ledger](FRONTEND_SCENE_RECOVERY.md) records speech cuts, emotion timing, idle/sleep and story-fact poses, thinking light, model face/texture controls, screen effects and the six-mode corruption voice DSP. The source Three.js environment, camera, shadow and scan/audio transforms are bound, and all seven story producers are registered. The six non-Cult segments still need original visual, narrative, media and agent parity; real-model and scene-tool fixtures do not close that gap. Live2D and Messenger remain incomplete.

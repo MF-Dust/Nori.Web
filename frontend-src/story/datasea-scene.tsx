@@ -6,6 +6,7 @@ import { StoryClock, type StoryPhase } from "./story-clock";
 import type { StoryInstance } from "./story-director";
 import { createDataseaRenderer } from "./datasea-renderer";
 import { DataseaWaveGate } from "./datasea-wave-gate";
+import { dataseaMessagesAt, dataseaCosmicAt, dataseaWhiteAt, dataseaCgAt } from "./datasea-content";
 import "./datasea-scene.css";
 
 export const DATASEA_PHASES: readonly StoryPhase[] = [
@@ -263,19 +264,40 @@ export function DataseaScene({
           Loading Datasea geometry…
         </div>
       )}
+      {view.phase === "messages" && (
+        <div className="datasea-messages" data-datasea-messages="true" aria-live="polite">
+          {(() => {
+            const line = dataseaMessagesAt(view.time - startOf("messages"));
+            return line ? <p className="datasea-bubble">{line.text}</p> : null;
+          })()}
+        </div>
+      )}
       {view.parkedAt === "waves" && (
         <DataseaWaveGate wake={wake} frontend={frontend} />
       )}
       {(view.phase === "converge" || view.phase === "cosmic") && (
         <div className="datasea-cosmic">
           <div className="datasea-core" />
+          {(() => {
+            const line = dataseaCosmicAt(view.time - startOf("cosmic"));
+            return line ? <p className="datasea-subtitles" data-datasea-subtitles="cosmic">{line.text}</p> : null;
+          })()}
         </div>
       )}
-      <div className="datasea-white" style={{ opacity: whiteProgress }} />
+      <div className="datasea-white" style={{ opacity: whiteProgress }}>
+        {whiteProgress > 0 && (() => {
+          const line = dataseaWhiteAt(view.time - white);
+          return line ? <p className="datasea-subtitles datasea-subtitles-white" data-datasea-subtitles="white">{line.text}</p> : null;
+        })()}
+      </div>
       {view.time >= cg && (
         <div className="datasea-cg">
           <img src="/datasea/cg-touch-her.webp" alt="" />
           <img src="/datasea/cg-touch-hand.webp" alt="" />
+          {(() => {
+            const line = dataseaCgAt(view.time - cg);
+            return line ? <p className="datasea-subtitles datasea-subtitles-cg" data-datasea-subtitles="cg">{line.text}</p> : null;
+          })()}
         </div>
       )}
       {failure && (

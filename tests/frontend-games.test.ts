@@ -8,6 +8,7 @@ import { CHESS_START_FEN, chessCaptures, chessHistory, chessLayout, legalChessMo
 import { ChessFeedback } from "../frontend-src/apps/chess-feedback";
 import { chooseDrawingSample, drawingSampleStrokes, normalizeDrawingStroke, pictionaryElapsed, pictionaryNextRoundAt, pictionaryStateSchema, pictionarySummary } from "../frontend-src/apps/pictionary-model";
 import { GameCartridgeController } from "../frontend-src/apps/game-cartridge-controller";
+import { CakeDuelRuntimeController } from "../frontend-src/apps/cakeduel-runtime";
 import { PictionaryDrawingBridge } from "../frontend-src/apps/pictionary-runtime";
 import { pictionaryReaction } from "../frontend-src/apps/pictionary-reactions";
 import { WorldStore } from "../frontend-src/runtime/world-store";
@@ -129,6 +130,85 @@ function harness() {
     runtimes: [{ visibilityFenceId: "ui", headVersion: 0, visibleVersion: 0, state: value }] });
   return { world, arcade, sent, emit, controller, mount, stateListeners };
 }
+function cakeDuelHarness() {
+  type Connection = "open" | "waiting" | "closed";
+  const world = new WorldStore();
+  const stateListeners = new Set<(state: Connection) => void>();
+  const messageListeners = new Set<(message: any) => void>();
+  let connectionState: Connection = "open";
+  let serial = 0;
+  const sent: any[] = [];
+  const arcade = {
+    get connectionState() { return connectionState; },
+    onState(listener: (state: Connection) => void) {
+      stateListeners.add(listener);
+      listener(connectionState);
+      return () => stateListeners.delete(listener);
+    },
+    onMessage(listener: (message: any) => void) {
+      messageListeners.add(listener);
+      return () => messageListeners.delete(listener);
+    },
+    setState(state: Connection) {
+      connectionState = state;
+      stateListeners.forEach(listener => listener(state));
+    },
+  };
+  const games = {
+    mount(game: string) { const id = "mount-" + ++serial; sent.push({ type: "mount", game, id }); return id; },
+    unmount(game: string) { sent.push({ type: "unmount", game }); return "unmount"; },
+    dispatch(game: string, command: any) { const id = "dispatch-" + ++serial; sent.push({ type: "dispatch", game, command, id }); return id; },
+  };
+  world.consume({ type: "world_joined", world: { worldId: "world", mountedCartridges: [{
+    cartridgeId: "cakeduel", runtimes: [{ visibilityFenceId: "ui", headVersion: 0, visibleVersion: 0, state: {} }],
+  }] } });
+  const controller = new CakeDuelRuntimeController(games as any, world, arcade as any);
+  return { controller, arcade, sent, emit(message: any) { world.consume(message); messageListeners.forEach(listener => listener(message)); } };
+}
+test("Cake Duel clears pending actions while disconnected and resumes after open", () => {
+  const h = cakeDuelHarness(), snapshot = () => h.controller.snapshot();
+  const dispatchCount = () => h.sent.filter(item => item.type === "dispatch").length;
+  assert.equal(snapshot().connected, true);
+  h.controller.play({ type: "pass" });
+  assert.equal(dispatchCount(), 1);
+  assert.equal(snapshot().actionPending, true);
+
+  h.arcade.setState("waiting");
+  assert.equal(snapshot().connected, false);
+  assert.equal(snapshot().actionPending, false);
+  h.controller.play({ type: "pass" });
+  assert.equal(dispatchCount(), 1);
+
+  h.arcade.setState("open");
+  assert.equal(snapshot().connected, true);
+  h.controller.play({ type: "pass" });
+  assert.equal(dispatchCount(), 2);
+
+  h.arcade.setState("closed");
+  assert.equal(snapshot().connected, false);
+  assert.equal(snapshot().actionPending, false);
+  h.controller.play({ type: "pass" });
+  assert.equal(dispatchCount(), 2);
+
+  h.arcade.setState("open");
+  h.controller.play({ type: "pass" });
+  assert.equal(dispatchCount(), 3);
+  h.controller.dispose();
+});
+test("Cake Duel resolves a pending debug load when the connection closes", async () => {
+  const h = cakeDuelHarness();
+  const pending = h.controller.loadDebugScenario("disconnect");
+  assert.equal(h.sent.filter(item => item.type === "dispatch").length, 1);
+  h.arcade.setState("closed");
+  const result = await Promise.race([
+    pending,
+    new Promise<boolean>(resolve => setTimeout(() => resolve(true), 100)),
+  ]);
+  assert.equal(result, false);
+  assert.equal(h.controller.snapshot().connected, false);
+  assert.equal(h.controller.snapshot().actionPending, false);
+  h.controller.dispose();
+});
 test("Controller correlates acks, blocks duplicate commands and cleans up on window release", async () => {
   const h = harness(), release = h.controller.retain();
   h.mount(); assert.equal(h.controller.snapshot().mounted, true);

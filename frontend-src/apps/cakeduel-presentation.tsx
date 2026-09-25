@@ -57,7 +57,9 @@ function useCakeDuelController(runtime: CakeDuelPresentationRuntime) {
 
 function useMountedCakeDuel(runtime: CakeDuelPresentationRuntime) {
   const snapshot = useCakeDuelController(runtime);
-  useEffect(() => runtime.controller.ensureMounted(), [runtime.controller]);
+  useEffect(() => {
+    if (snapshot.connected) runtime.controller.ensureMounted();
+  }, [runtime.controller, snapshot.connected, snapshot.mounted]);
   return snapshot;
 }
 
@@ -153,7 +155,7 @@ export function createCakeDuelProductionWindowBinding(
         <CakeDuelStartScreen
           difficulty={difficulty}
           mounted={snapshot.mounted}
-          pending={snapshot.actionPending || snapshot.mountPending}
+          pending={snapshot.actionPending || snapshot.mountPending || !snapshot.connected}
           backgroundImage={runtime.assets.backgroundImage}
           cardBackImage={runtime.assets.cardBackImage}
           cakeImage={runtime.assets.cakeImage}
@@ -301,6 +303,7 @@ export function createCakeDuelProductionWindowBinding(
             selectedClaim,
             selectedPickIndex,
             actionPending: snapshot.actionPending
+              || !snapshot.connected
               || challengeBannerActive
               || challengePauseActive
               || challengeRevealActive
@@ -344,7 +347,7 @@ export function createCakeDuelProductionWindowBinding(
         playerWins={snapshot.playerWins}
         noriWins={snapshot.noriWins}
         roundsToWin={snapshot.state.settings.roundsToWin}
-        pending={snapshot.actionPending}
+        pending={snapshot.actionPending || !snapshot.connected}
         backgroundImage={runtime.assets.backgroundImage}
         cardBackImage={runtime.assets.cardBackImage}
         cakeImage={runtime.assets.cakeImage}

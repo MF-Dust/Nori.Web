@@ -1,6 +1,6 @@
 # Source scene editor
 
-The Debug **Scene editor** implements a local project workflow: import a JSON file, edit supported channels or the JSON document, inspect the timeline, and export a validated project. It remains an authoring tool. It does not stand in for the six unrecovered cinematics or emit completion facts.
+The Debug **Scene editor** implements a local project workflow: import a JSON file, edit supported channels or the JSON document, inspect the timeline, and export a validated project. It remains an authoring tool. It does not emit completion facts or claim original per-cinematic behavior, visual, media or agent parity.
 
 ## Files and validation
 
@@ -36,7 +36,7 @@ Model, expression, chat and lighting channels now also have form controls. The *
 
 `frontend_scene_editor_probe.mjs` is wired into the end of the scene tools smoke, after the real-time cult test. It is designed to check file round-trip, rejected and oversized imports, form edits, paused scrubbing, exact phase selection, completion fencing, 390px layout, same-world replacement and production-story takeover. The successful browser run produced `scene-editor-roundtrip.json`, `scene-editor-compact.png` and `scene-editor-scrub.png`; these artifacts were generated and inspected when applying the patch.
 
-The production entry and all five incomplete cutover flags are unchanged. Boot, corruption climax, memory, datasea, farewell and ending remain unregistered pending their own reconstruction and original-agent acceptance.
+The production entry and all five incomplete cutover flags are unchanged. Boot, corruption climax, memory, datasea, farewell and ending are registered source producers; each still requires its own original behavior, visual, media and agent acceptance.
 
 ## Original patch verification record
 

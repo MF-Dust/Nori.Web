@@ -1,6 +1,6 @@
 # Supporting application recovery
 
-The source application now binds Settings, About, system alerts and Credits. The previous source entry could launch these windows but rendered an unrecovered notice. This change does not mark full production parity complete.
+The source application now binds Settings, About, system alerts and Credits. At HEAD `085bad3`, the Debug panel and scene editor are source-owned as well. The remaining Debug boundary is limited to original layout comparison and the private Inject Talk/Nori Context handlers; other supporting-app visual parity remains tracked separately, and this does not mark full production parity complete.
 
 ## Recovered behavior
 
@@ -26,9 +26,9 @@ Reset is initiated only by the confirmation action. It waits for `web_world_rese
 
 ## Remaining parity
 
-Settings now drives the shared master/music/SFX/voice mixer, desktop BGM and Browser podcasts. GPU hardware classification and four-second texture downsize hysteresis are implemented while retaining user overrides. About now includes pointer-driven logo tilt, halo and sheen. See [audio/graphics recovery](FRONTEND_AUDIO_GRAPHICS_RECOVERY.md) for evidence and verification. Scene desktop-music overrides and spatial camera/listener transforms are now connected. Most cinematic audio choreography remains open. Credits uses source Lucide symbols for destination icons rather than the original brand paths. Preview PDF pagination, thumbnails, zoom, text selection, literal clue markers, training-log rendering and artifact refresh are now source-owned. The existing Files dialog owns locked-file recovery. Debug now includes source Connection, Scene, Audio and Facts panels. The remaining original diagnostic labs are pending. See [Preview/chip recovery](FRONTEND_PREVIEW_CHIP_RECOVERY.md).
+Settings now drives the shared master/music/SFX/voice mixer, desktop BGM and Browser podcasts. GPU hardware classification and four-second texture downsize hysteresis are implemented while retaining user overrides. About now includes pointer-driven logo tilt, halo and sheen. See [audio/graphics recovery](FRONTEND_AUDIO_GRAPHICS_RECOVERY.md) for evidence and verification. Scene desktop-music overrides and spatial camera/listener transforms are now connected. Most cinematic audio choreography remains open. Credits uses source Lucide symbols for destination icons rather than the original brand paths. Preview PDF pagination, thumbnails, zoom, text selection, literal clue markers, training-log rendering and artifact refresh are now source-owned. The existing Files dialog owns locked-file recovery. The Debug panel and scene editor are source-owned; the remaining Debug gaps are original layout comparison and the private Inject Talk/Nori Context handlers. See [Preview/chip recovery](FRONTEND_PREVIEW_CHIP_RECOVERY.md).
 
-These supporting-app gaps now have an explicit incomplete cutover boundary. The increase from four to five pending boundaries is better accounting of existing work, not a production regression. `public/index.html` remains on the historical entry until these and the chat/game/scene boundaries pass parity review.
+These supporting-app gaps remain behind the `supporting-apps` false cutover gate. The five false gates are `messenger`, `games`, `live2d`, `supporting-apps` and `production-entry`; none is changed by this source ownership update. `public/index.html` remains on the historical entry until the required parity review is complete.
 
 
 ## Supporting resilience pass
@@ -38,13 +38,13 @@ Settings now collapses its section navigation into a horizontally scrollable str
 
 The desktop Debug window now binds live connection/cartridge versions, scoped camera/model/screen controls, audio cue audition, corruption voice and desktop-music selection, and read-only fact filtering. Previously visited panels retain their local state. Scene overrides are acquired only when edited and released by the reset button, world change or window close. The browser probe verifies camera editing, reset, audio unlock and corruption-voice cleanup.
 
-This restores useful production bindings, not the entire shipped Debug application. The original network/compute/gesture/reaction labs, game injection tools and full scene editor remain open. The cult drone has a cancellable timeline player; other story-specific cues still depend on unrecovered timelines.
+This restores the source-owned Debug surface, not the original layout. The network, compute, gesture, reaction, game-scenario, tuner, Live2D, Audio, Pat and notification panels bind the production runtime; the private Inject Talk/Nori Context handlers are intentionally unavailable and only expose blocker/session state. The cult drone has a cancellable timeline player; story-specific cues still require original-parity evidence.
 
 
 ## Scoped scene-project editor
 
-Debug now includes a scene editor for validated JSON phase projects. It projects camera/model/light state and plays local audio intervals through the existing shared runtime, supports explicit gates and pause/resume, and releases overrides/audio on stop, completion, tab exit or world change. It never completes a production story or invents story facts. Invalid configuration produces an error before playback. The original advanced scene tuners and other labs remain listed in [FRONTEND_REMAINING_WORK.md](FRONTEND_REMAINING_WORK.md).
+Debug now includes a source-owned scene editor for validated JSON phase projects. It projects camera/model/light state and plays local audio intervals through the existing shared runtime, supports explicit gates and pause/resume, and releases overrides/audio on stop, completion, tab exit or world change. It never completes a production story or invents story facts. Invalid configuration produces an error before playback. Shatter and Datasea production tuners are also source-owned; original layout and private-agent handler acceptance remain listed in [FRONTEND_REMAINING_WORK.md](FRONTEND_REMAINING_WORK.md).
 
 ## Corruption Debug study
 
-The Corruption tab launches a scoped eleven-phase preview with six antivirus microgames. Its full-screen surface has pause/resume and close controls, foreground-only timing, keyboard/pointer input and small-window scrolling. It cannot emit a story fact. Advanced cinematic rendering and the original live-agent voice handoff remain separate acceptance work.
+The Corruption tab launches a scoped eleven-phase preview with six antivirus microgames. Its full-screen surface has pause/resume and close controls, foreground-only timing, keyboard/pointer input and small-window scrolling. It cannot emit a story fact; the production Corruption producer is separately registered, while original animation, layout, media and live-agent parity remain separate acceptance work.

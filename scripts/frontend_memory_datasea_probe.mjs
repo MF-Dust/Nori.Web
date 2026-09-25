@@ -140,9 +140,14 @@ export async function verifyMemoryDatasea(
     );
     assert.ok(retriedGlbRequests > 0, "retry must issue a fresh GLB request");
     assert.equal((await events()).leases, 1);
-    stage("Datasea loaded; advancing to first wave");
-    await page.clock.fastForward(90500);
+    stage("Datasea narrative messages");
+    await page.clock.fastForward(32500);
     await page.clock.runFor(80);
+    await waitWithClock(page, page.locator('[data-datasea-messages="true"]'));
+    assert.equal(await page.locator(".datasea-bubble").first().textContent(), "……");
+    await page.clock.fastForward(58000);
+    await page.clock.runFor(80);
+    stage("Datasea loaded; advancing to first wave");
     await waitWithClock(page, page.locator(".datasea-waves"));
     await page.screenshot({ path: resolve(output, "datasea-route-gate.png") });
     stage("Verifying parked backdrop convergence and resize invalidation");
@@ -204,12 +209,19 @@ export async function verifyMemoryDatasea(
         drawsBeforeCosmic,
       "cosmic transition must render new production GPU draws",
     );
-    // The debug-labs surface captures the same production renderer in cosmic
-    // on a fresh GPU process. Keeping that visual capture separate avoids
-    // Chromium surface-readback stalls after this 30-minute interaction path.
-    assert.equal(
-      await page.locator('[data-story-scene="datasea"]').getAttribute("data-phase"),
-      "cosmic",
+    assert.ok(
+      (await page.locator('[data-datasea-subtitles="cosmic"]').count()) > 0,
+      "cosmic narrative must be rendered after the wave handoff",
+    );
+    const cosmicText = await page.locator('[data-datasea-subtitles="cosmic"]').textContent();
+    assert.ok(cosmicText?.trim(), "cosmic subtitle must contain shipped text");
+    // The remaining subtitle layers are checked after the production timeline advances.
+    await page.clock.fastForward(70000);
+    await page.clock.runFor(80);
+    assert.ok(
+      (await page.locator('[data-datasea-subtitles="white"]').count()) > 0
+      || (await page.locator('[data-datasea-subtitles="cg"]').count()) > 0,
+      "white/CG narrative must be rendered after cosmic",
     );
     stage("Cosmic captured; completion and resource cleanup");
     await page.clock.fastForward(105000);
