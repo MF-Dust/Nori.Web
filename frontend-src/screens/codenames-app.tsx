@@ -23,8 +23,16 @@ export interface CodenamesAppProps {
   locale?: string;
   playSound?: (cue: string) => void;
   onNoriReaction?: (reaction: NoriReactionMap["codenames"]) => void;
+  onNoriPhaseMood?: (active: boolean) => void;
 }
-export function CodenamesApp({ controller, translate: t, locale = "en", playSound, onNoriReaction }: CodenamesAppProps) {
+export function CodenamesApp({
+  controller,
+  translate: t,
+  locale = "en",
+  playSound,
+  onNoriReaction,
+  onNoriPhaseMood,
+}: CodenamesAppProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
   const feedback = useRef(new CodenamesFeedback());
   const reaction = useRef(onNoriReaction); reaction.current = onNoriReaction;
@@ -43,6 +51,13 @@ export function CodenamesApp({ controller, translate: t, locale = "en", playSoun
   const [validation, setValidation] = useState<string | null>(null);
   const [overlay, setOverlay] = useState<CodenamesBoardOverlayType | null>(null);
   const state = snapshot.state, game = state?.gameState ?? null, player = state?.counterpartSide ?? "A";
+  const phaseMood = useRef(onNoriPhaseMood);
+  phaseMood.current = onNoriPhaseMood;
+  const gamePhase = game?.phase ?? null;
+  useEffect(() => {
+    phaseMood.current?.(gamePhase === "SUDDEN_DEATH");
+    return () => phaseMood.current?.(false);
+  }, [gamePhase]);
   const tutorialStep = state?.tutorial?.step;
   const gate = useMemo(() => codenamesTutorialGate(tutorialStep), [tutorialStep]);
   const tutorialInstruction = useMemo(() => codenamesTutorialInstruction(tutorialStep, locale), [tutorialStep, locale]);

@@ -11,20 +11,32 @@ export type CodenamesReaction =
   | "win"
   | "loss";
 
+export type CakeDuelReaction =
+  | "challenged"
+  | "bluffCaught"
+  | "vindicated"
+  | "challengeWins"
+  | "challengeFails"
+  | "losesCake"
+  | "wolfyTaunt"
+  | "wins"
+  | "loses";
+
 export interface NoriReactionMap {
   pictionary: PictionaryReaction;
   chess: ChessReaction;
   codenames: CodenamesReaction;
+  cakeduel: CakeDuelReaction;
 }
 
-type ReactionPriority = "minor" | "major" | "critical";
-interface ReactionVariant {
+export type ReactionPriority = "minor" | "major" | "critical";
+export interface ReactionVariant {
   motion?: MotionStep;
   expression?: string;
   expressionSeconds?: number;
   weight?: number;
 }
-interface ReactionSpec {
+export interface ReactionSpec {
   priority: ReactionPriority;
   chance?: number;
   variants: readonly ReactionVariant[];
@@ -48,6 +60,7 @@ const expression = {
   TEARS: "08_Tears",
   TROUBLED: "09_Troubled",
   DOUBT: "10_Doubt",
+  DISGUST: "11_Disgust",
   SERIOUS: "12_Serious",
   HAPPY: "13_Happy",
   SURPRISED: "14_Surprised",
@@ -377,13 +390,171 @@ export const NORI_REACTIONS: {
       ],
     },
   },
+  cakeduel: {
+    challenged: {
+      priority: "minor",
+      chance: 0.67,
+      variants: [
+        { expression: expression.SURPRISED, expressionSeconds: 2 },
+        { expression: expression.DOUBT, expressionSeconds: 2 },
+      ],
+    },
+    bluffCaught: {
+      priority: "major",
+      chance: 0.85,
+      variants: [
+        {
+          motion: motion.TROUBLED,
+          expression: expression.SHY,
+          expressionSeconds: 4,
+        },
+        { motion: motion.DIZZY },
+        { expression: expression.SHY, expressionSeconds: 4 },
+      ],
+    },
+    vindicated: {
+      priority: "major",
+      chance: 0.85,
+      variants: [
+        {
+          motion: motion.NOD,
+          expression: expression.KIRAKIRA,
+          expressionSeconds: 3,
+        },
+        { expression: expression.SMILE, expressionSeconds: 3 },
+      ],
+    },
+    challengeWins: {
+      priority: "major",
+      chance: 0.75,
+      variants: [
+        {
+          motion: motion.WAKUWAKU,
+          expression: expression.HAPPY,
+          expressionSeconds: 3,
+        },
+        {
+          motion: motion.NOD,
+          expression: expression.KIRAKIRA,
+          expressionSeconds: 3,
+        },
+      ],
+    },
+    challengeFails: {
+      priority: "major",
+      chance: 0.75,
+      variants: [
+        { motion: motion.DIZZY },
+        {
+          motion: motion.TROUBLED,
+          expression: expression.SHY,
+          expressionSeconds: 3,
+        },
+      ],
+    },
+    losesCake: {
+      priority: "minor",
+      chance: 0.5,
+      variants: [
+        { motion: motion.TROUBLED },
+        { expression: expression.TEARS, expressionSeconds: 3 },
+      ],
+    },
+    wolfyTaunt: {
+      priority: "minor",
+      chance: 0.67,
+      variants: [
+        { expression: expression.ANGRY, expressionSeconds: 3 },
+        { expression: expression.DISGUST, expressionSeconds: 3 },
+      ],
+    },
+    wins: {
+      priority: "critical",
+      variants: [
+        {
+          motion: motion.WAKUWAKU,
+          expression: expression.KIRAKIRA,
+          expressionSeconds: 5,
+        },
+        {
+          motion: motion.WAKUWAKU,
+          expression: expression.HAPPY,
+          expressionSeconds: 5,
+        },
+      ],
+    },
+    loses: {
+      priority: "critical",
+      chance: 0.8,
+      variants: [
+        {
+          motion: motion.TROUBLED,
+          expression: expression.TEARS,
+          expressionSeconds: 5,
+        },
+        { motion: motion.DIZZY },
+      ],
+    },
+  },
 };
 
-const COOLDOWN: Readonly<Record<ReactionPriority, number>> = {
+export const NORI_REACTION_COOLDOWNS: Readonly<
+  Record<ReactionPriority, number>
+> = {
   minor: 7_000,
   major: 2_500,
   critical: 0,
 };
+
+export const NORI_PHASE_MOODS = [
+  {
+    id: "codenames.sudden_death",
+    label: "Codenames: sudden death",
+    game: "codenames",
+    expression: expression.SERIOUS,
+  },
+  {
+    id: "cakeduel.last_cake",
+    label: "Cake Duel: her last cake",
+    game: "cakeduel",
+    expression: expression.TEARS,
+  },
+] as const;
+
+export type CakeDuelClaimKind = "bluff" | "honest";
+export type CakeDuelTell = "none" | "confident" | "nervous";
+
+export const CAKE_DUEL_TELL_WEIGHTS: Readonly<
+  Record<CakeDuelClaimKind, { confident: number; nervous: number }>
+> = {
+  bluff: { confident: 0.15, nervous: 0.25 },
+  honest: { confident: 0.25, nervous: 0.15 },
+};
+
+export const CAKE_DUEL_TELL_REACTIONS: Readonly<
+  Record<Exclude<CakeDuelTell, "none">, ReactionSpec>
+> = {
+  confident: {
+    priority: "minor",
+    variants: [{ expression: expression.SMILE, expressionSeconds: 2.5 }],
+  },
+  nervous: {
+    priority: "minor",
+    variants: [{ expression: expression.TROUBLED, expressionSeconds: 2.5 }],
+  },
+};
+
+export function sampleCakeDuelTell(
+  kind: CakeDuelClaimKind,
+  roll = Math.random(),
+): CakeDuelTell {
+  const weights = CAKE_DUEL_TELL_WEIGHTS[kind];
+  return roll < weights.confident
+    ? "confident"
+    : roll < weights.confident + weights.nervous
+      ? "nervous"
+      : "none";
+}
 
 export type NoriReactionOutcome =
   | "played"
@@ -398,6 +569,17 @@ export interface NoriReactionResult {
   variant: ReactionVariant | null;
 }
 
+export interface NoriReactionPlayOptions {
+  ignoreChance?: boolean;
+  ignoreCooldown?: boolean;
+  variantIndex?: number;
+}
+
+export interface CakeDuelTellResult {
+  tell: CakeDuelTell;
+  reaction: NoriReactionResult | null;
+}
+
 /** Source-owned form of the shipped semantic reaction director. */
 export class NoriReactionDirector {
   private model: Live2DModel | null = null;
@@ -408,6 +590,7 @@ export class NoriReactionDirector {
     name: string;
     timer: ReturnType<typeof setTimeout>;
   } | null = null;
+  private moodExpression: { model: Live2DModel; name: string } | null = null;
 
   constructor(
     private readonly clock: () => number = () => performance.now(),
@@ -416,13 +599,19 @@ export class NoriReactionDirector {
 
   bindModel(model: Live2DModel) {
     this.interrupt();
+    this.clearMood();
     this.model = model;
     return () => {
       if (this.model === model) {
         this.interrupt();
+        this.clearMood();
         this.model = null;
       }
     };
+  }
+
+  hasModel() {
+    return this.model !== null;
   }
 
   setBlocked(blocked: boolean) {
@@ -430,22 +619,62 @@ export class NoriReactionDirector {
     if (blocked) this.interrupt();
   }
 
-  /** Cancels only the expression currently owned by this director. */
+  /** Cancels only the temporary expression currently owned by this director. */
   interrupt() {
     const active = this.activeExpression;
     if (!active) return;
     this.activeExpression = null;
     clearTimeout(active.timer);
-    active.model.removeExpression(active.name);
+    if (
+      !this.moodExpression ||
+      this.moodExpression.model !== active.model ||
+      this.moodExpression.name !== active.name
+    )
+      active.model.removeExpression(active.name);
+  }
+
+  setMood(name: string) {
+    const model = this.model;
+    if (!model || this.moodExpression?.name === name) return false;
+    this.clearMood();
+    model.addExpression(name);
+    this.moodExpression = { model, name };
+    return true;
+  }
+
+  clearMood() {
+    const mood = this.moodExpression;
+    if (!mood) return false;
+    this.moodExpression = null;
+    mood.model.removeExpression(mood.name);
+    if (
+      this.activeExpression?.model === mood.model &&
+      this.activeExpression.name === mood.name
+    )
+      mood.model.addExpression(mood.name);
+    return true;
+  }
+
+  mood() {
+    return this.moodExpression?.name ?? null;
+  }
+
+  cooldownRemaining(priority: ReactionPriority = "minor") {
+    return Math.max(
+      0,
+      NORI_REACTION_COOLDOWNS[priority] - (this.clock() - this.lastMotionAt),
+    );
   }
 
   reset() {
     this.interrupt();
+    this.clearMood();
     this.lastMotionAt = Number.NEGATIVE_INFINITY;
   }
 
   dispose() {
     this.interrupt();
+    this.clearMood();
     this.model = null;
     this.blocked = true;
     this.lastMotionAt = Number.NEGATIVE_INFINITY;
@@ -454,35 +683,56 @@ export class NoriReactionDirector {
   play<Game extends keyof NoriReactionMap>(
     game: Game,
     reaction: NoriReactionMap[Game],
+    options: NoriReactionPlayOptions = {},
   ): NoriReactionResult {
-    const model = this.model;
-    if (!model) return { outcome: "no_model", variant: null };
-    if (this.blocked) return { outcome: "blocked", variant: null };
     const library = NORI_REACTIONS[game] as Readonly<
       Record<string, ReactionSpec>
     >;
     const spec = library?.[reaction];
     if (!spec) return { outcome: "unknown_reaction", variant: null };
-    if ((spec.chance ?? 1) < 1 && this.random() >= (spec.chance ?? 1))
+    return this.playSpec(spec, options);
+  }
+
+  playSpec(
+    spec: ReactionSpec,
+    options: NoriReactionPlayOptions = {},
+  ): NoriReactionResult {
+    const model = this.model;
+    if (!model) return { outcome: "no_model", variant: null };
+    if (this.blocked) return { outcome: "blocked", variant: null };
+    if (
+      !options.ignoreChance &&
+      (spec.chance ?? 1) < 1 &&
+      this.random() >= (spec.chance ?? 1)
+    )
       return { outcome: "skipped_chance", variant: null };
 
-    const total = spec.variants.reduce(
-      (sum, variant) => sum + (variant.weight ?? 1),
-      0,
-    );
-    let pick = this.random() * total;
-    let variant = spec.variants[0];
-    for (const candidate of spec.variants) {
-      variant = candidate;
-      pick -= candidate.weight ?? 1;
-      if (pick < 0) break;
+    let variant: ReactionVariant | undefined;
+    if (options.variantIndex !== undefined) {
+      variant = spec.variants[options.variantIndex];
+      if (!variant) return { outcome: "unknown_reaction", variant: null };
+    } else {
+      const total = spec.variants.reduce(
+        (sum, candidate) => sum + (candidate.weight ?? 1),
+        0,
+      );
+      let pick = this.random() * total;
+      variant = spec.variants[0];
+      for (const candidate of spec.variants) {
+        variant = candidate;
+        pick -= candidate.weight ?? 1;
+        if (pick < 0) break;
+      }
     }
+
     const now = this.clock();
     if (
+      !options.ignoreCooldown &&
       variant.motion &&
-      now - this.lastMotionAt < COOLDOWN[spec.priority]
+      now - this.lastMotionAt < NORI_REACTION_COOLDOWNS[spec.priority]
     )
       return { outcome: "skipped_cooldown", variant: null };
+
     if (variant.motion) {
       model.startMotion({ steps: variant.motion });
       this.lastMotionAt = now;
@@ -494,14 +744,37 @@ export class NoriReactionDirector {
         name: variant.expression,
         timer: undefined as unknown as ReturnType<typeof setTimeout>,
       };
-      model.addExpression(active.name);
+      if (
+        !this.moodExpression ||
+        this.moodExpression.model !== model ||
+        this.moodExpression.name !== active.name
+      )
+        model.addExpression(active.name);
       active.timer = setTimeout(() => {
         if (this.activeExpression !== active) return;
         this.activeExpression = null;
-        active.model.removeExpression(active.name);
+        if (
+          !this.moodExpression ||
+          this.moodExpression.model !== active.model ||
+          this.moodExpression.name !== active.name
+        )
+          active.model.removeExpression(active.name);
       }, (variant.expressionSeconds ?? 3) * 1_000);
       this.activeExpression = active;
     }
     return { outcome: "played", variant };
+  }
+
+  playCakeDuelTell(kind: CakeDuelClaimKind): CakeDuelTellResult {
+    const tell = sampleCakeDuelTell(kind, this.random());
+    return {
+      tell,
+      reaction:
+        tell === "none"
+          ? null
+          : this.playSpec(CAKE_DUEL_TELL_REACTIONS[tell], {
+              ignoreCooldown: true,
+            }),
+    };
   }
 }

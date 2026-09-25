@@ -2,6 +2,11 @@ import type { ArcadeClient } from "../runtime/arcade-client";
 import type { ArcadeServerMessage, JsonValue } from "../runtime/protocol";
 import type { WorldStore } from "../runtime/world-store";
 import type { GameService } from "../services/games";
+import {
+  NORI_PHASE_MOODS,
+  type CakeDuelReaction,
+  type NoriReactionDirector,
+} from "../live2d/reaction-director";
 import type {
   CakeDuelClaimPresentation,
   CakeDuelLegalAction,
@@ -375,12 +380,14 @@ export class CakeDuelRuntimeController {
   private challengeTimer: ReturnType<typeof setTimeout> | null = null;
   private wolfyTauntActive = false;
   private wolfyTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingChallengeReaction: CakeDuelReaction | null = null;
   private current: CakeDuelControllerSnapshot;
 
   constructor(
     private readonly games: GameService,
     private readonly world: WorldStore,
     arcade: ArcadeClient,
+    private readonly reactions?: NoriReactionDirector,
   ) {
     this.current = this.computeSnapshot();
     this.unsubs.push(world.subscribe((_state, message) => {
@@ -389,6 +396,7 @@ export class CakeDuelRuntimeController {
       if (events.length > 0) {
         const previousState = this.current.state;
         const nextState = parseCakeDuelRuntimeState(world.runtime("cakeduel")?.state);
+        this.consumeReactionEvents(events, previousState, nextState);
         this.consumeTransientEvents(events, previousState, nextState);
       }
       this.publish();
@@ -464,6 +472,9 @@ export class CakeDuelRuntimeController {
     this.bannerTimer = null;
     this.challengeTimer = null;
     this.wolfyTimer = null;
+    if (this.reactions?.mood() === NORI_PHASE_MOODS[1].expression)
+      this.reactions.clearMood();
+    this.pendingChallengeReaction = null;
     this.listeners.clear();
   }
 
@@ -493,6 +504,75 @@ export class CakeDuelRuntimeController {
       this.pendingDebugResolve = null;
       this.pendingDebugScenarioId = null;
       resolve?.(false);
+    }
+  }
+
+  private consumeReactionEvents(
+    events: readonly Record<string, unknown>[],
+    previousState: CakeDuelRuntimeState,
+    _nextState: CakeDuelRuntimeState,
+  ): void {
+    const reactions = this.reactions;
+    if (!reactions) return;
+    const lastCakeMood = NORI_PHASE_MOODS[1].expression;
+
+    if (events.some((event) => event.type === "game_started")) {
+      if (reactions.mood() === lastCakeMood) reactions.clearMood();
+      this.pendingChallengeReaction = null;
+    }
+
+    for (const event of events) {
+      if (event.type === "challenge_made") {
+        const challenger = event.challenger === 1 ? 1 : 0;
+        const success = event.success === true;
+        if (challenger === 0) {
+          reactions.play("cakeduel", "challenged");
+          this.pendingChallengeReaction = success
+            ? "bluffCaught"
+            : "vindicated";
+        } else {
+          this.pendingChallengeReaction = success
+            ? "challengeWins"
+            : "challengeFails";
+        }
+        continue;
+      }
+
+      if (
+        event.type === "claim_made" &&
+        event.player === 1 &&
+        typeof event.claim === "string"
+      ) {
+        const cardList = previousState.game?.cardList ?? [];
+        const cards = numberArray(event.cardIds);
+        const claim = event.claim;
+        const bluff = cards.some(
+          (entityId) => cardList[entityId] !== claim,
+        );
+        reactions.playCakeDuelTell(bluff ? "bluff" : "honest");
+        continue;
+      }
+
+      if (event.type === "wolfy_taunt" && event.player === 0) {
+        reactions.play("cakeduel", "wolfyTaunt");
+        continue;
+      }
+
+      if (event.type === "cakes_transferred") {
+        if (event.from === 1) reactions.play("cakeduel", "losesCake");
+        const cakesAfter = numberArray(event.cakesAfter);
+        if (cakesAfter[1] === 1) reactions.setMood(lastCakeMood);
+        else if (reactions.mood() === lastCakeMood) reactions.clearMood();
+        continue;
+      }
+
+      if (event.type === "game_ended") {
+        if (reactions.mood() === lastCakeMood) reactions.clearMood();
+        reactions.play(
+          "cakeduel",
+          event.winner === 1 ? "wins" : "loses",
+        );
+      }
     }
   }
 
@@ -579,6 +659,9 @@ export class CakeDuelRuntimeController {
     this.challengeTimer = setTimeout(() => {
       this.challengeTimer = null;
       this.challengeRevealStage = "revealed";
+      const reaction = this.pendingChallengeReaction;
+      this.pendingChallengeReaction = null;
+      if (reaction) this.reactions?.play("cakeduel", reaction);
       this.publish();
       this.challengeTimer = setTimeout(() => {
         this.challengeTimer = null;
@@ -613,6 +696,7 @@ export class CakeDuelRuntimeController {
     this.bannerQueue.length = 0;
     this.challengeRevealStage = "idle";
     this.pendingChallengeBanners.length = 0;
+    this.pendingChallengeReaction = null;
     this.wolfyTauntActive = false;
   }
 

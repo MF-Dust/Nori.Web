@@ -61,6 +61,7 @@ import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
 import { createNetworkFaultWebSocketFactory, readNetworkFaultProfile } from "./runtime/debug-tools";
 import { createSourceIdleRuntimeEngine } from "./state/idle-runtime-engine";
 import { NotificationLayer } from "./components/notification-layer";
+import { NORI_PHASE_MOODS } from "./live2d/reaction-director";
 import { notificationInputFromMessage } from "./state/notification-store";
 
 /** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
@@ -145,6 +146,7 @@ function createSourceSession() {
     frontend.games,
     frontend.world,
     frontend.arcade,
+    frontend.reactions,
   );
   const idle = createSourceIdleRuntimeEngine({
     getFacts: () => worldFacts(frontend),
@@ -313,6 +315,11 @@ function createSourceSession() {
     codenames: {
       controller: codenames,
       onNoriReaction: (reaction) => { frontend.reactions.play("codenames", reaction); },
+      onNoriPhaseMood: (active) => {
+        const mood = NORI_PHASE_MOODS[0].expression;
+        if (active) frontend.reactions.setMood(mood);
+        else if (frontend.reactions.mood() === mood) frontend.reactions.clearMood();
+      },
       translate: sourceTranslate,
       locale,
       playSound: frontend.audio.playCue,

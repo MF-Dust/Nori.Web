@@ -107,7 +107,6 @@ export function bindNoriModel(options: {
         state.noriSleep ||
         sleeping ||
         state.noriIdleMotion !== null ||
-        options.exclusive() ||
         chat.phase === "executing" ||
         !chat.connected ||
         speech.level() > 0,

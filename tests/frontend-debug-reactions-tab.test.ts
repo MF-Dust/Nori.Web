@@ -14,6 +14,7 @@ test("reaction debug groups expose every production-bound reaction", () => {
       ["pictionary", 10],
       ["chess", 11],
       ["codenames", 7],
+      ["cakeduel", 9],
     ],
   );
   assert.equal(debugReactionLabel("skipNoriDrawing"), "Skip Nori Drawing");
@@ -27,7 +28,7 @@ test("reaction debug groups expose every production-bound reaction", () => {
         entries.map(({ game, id }) => `${game}:${id}`),
       ),
     ).size,
-    28,
+    37,
   );
 });
 
@@ -41,4 +42,10 @@ test("reaction debug dispatch uses the mounted production director", () => {
     DEBUG_REACTION_GROUPS[0].entries[0],
   );
   assert.equal(result.outcome, "no_model");
+  const forced = playDebugReaction(
+    { reactions },
+    DEBUG_REACTION_GROUPS[3].entries[0],
+    { ignoreChance: true, ignoreCooldown: true, variantIndex: 1 },
+  );
+  assert.equal(forced.outcome, "no_model");
 });
