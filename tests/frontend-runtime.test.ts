@@ -9,6 +9,7 @@ import "./frontend-audio.test";
 import "./frontend-chip.test";
 import "./frontend-signal-story.test";
 import "./frontend-messenger-interactions.test";
+import "./frontend-messenger-model.test";
 import "./frontend-reaction-director.test";
 import "./frontend-debug-tools.test";
 import "./frontend-window-localization.test";

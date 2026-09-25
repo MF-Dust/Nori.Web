@@ -133,6 +133,56 @@ class EventDispatcher:
 
         cartridge = self._mantridge = self._manifold()
 
+        if command == "signal.read":
+            thread_id = str(sub_payload.get("threadId") or "").strip()
+            if not thread_id:
+                return False, "missing threadId"
+
+            thread_data: Dict[str, Any] = {}
+            for artifact in get_signal_thread_artifacts():
+                data = artifact.get("data") or {}
+                if str(data.get("thread_id") or "") == thread_id:
+                    thread_data = data
+                    break
+
+            read_facts: List[str] = []
+            read_fact = thread_data.get("read_fact")
+            if isinstance(read_fact, str) and read_fact:
+                read_facts.append(read_fact)
+
+            reread = thread_data.get("reread")
+            manifold = self._manifold()
+            facts = (
+                manifold.state.get("facts", {})
+                if manifold is not None and hasattr(manifold, "state")
+                else {}
+            )
+            if isinstance(reread, dict):
+                when = reread.get("when")
+                reread_fact = reread.get("read_fact")
+                if (
+                    isinstance(when, str)
+                    and when
+                    and bool(facts.get(when))
+                    and isinstance(reread_fact, str)
+                    and reread_fact
+                ):
+                    read_facts.append(reread_fact)
+
+            emitted: List[str] = []
+            for fact_id in dict.fromkeys(read_facts):
+                commit = self._dispatch_manifold(
+                    {
+                        "type": "client.emitFact",
+                        "factId": fact_id,
+                        "source": "signal.read",
+                    }
+                )
+                if commit is not None:
+                    emitted.append(fact_id)
+
+            return True, {"ok": True, "readFacts": emitted}
+
         if command in ("browser.bookmarks.list",):
             return True, {"bookmarks": self._variables().get("browserBookmarks", [])}
 

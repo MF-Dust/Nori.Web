@@ -1,9 +1,16 @@
 import type { JsonValue } from "../runtime/protocol";
 import type { ArtifactService } from "../services/artifacts";
 import type { ManifoldService } from "../services/manifold";
-import { signalStoryTimestampFromEpoch } from "./signal-story-clock";
+import { parseSignalTimestamp, signalStoryTimestampFromEpoch } from "./signal-story-clock";
 
 const SIGNAL_SELF_SENDER = "我";
+const SIGNAL_MESSAGE_KINDS = new Set(["text", "image", "deleted", "file"]);
+
+export interface SignalThreadReread {
+  when: string;
+  readFact: string;
+  unreadFrom?: string;
+}
 
 export interface SignalThread {
   threadId: string;
@@ -12,6 +19,9 @@ export interface SignalThread {
   avatarPath?: string;
   service: boolean;
   status?: string;
+  unreadFrom?: string;
+  readFact?: string;
+  reread?: SignalThreadReread;
   raw: Readonly<Record<string, JsonValue>>;
 }
 
@@ -69,59 +79,91 @@ function firstString(
   return "";
 }
 
+function normalizeThreadReread(
+  value: JsonValue | undefined,
+): SignalThreadReread | undefined {
+  const raw = objectValue(value);
+  if (!raw) return undefined;
+  const when = firstString(raw, "when");
+  const readFact = firstString(raw, "readFact", "read_fact");
+  if (!when || !readFact) return undefined;
+  const unreadFrom = firstString(raw, "unreadFrom", "unread_from");
+  return {
+    when,
+    readFact,
+    unreadFrom: unreadFrom || undefined,
+  };
+}
+
 function normalizeThread(
-  fallbackId: string,
   raw: Record<string, JsonValue>,
-): SignalThread {
-  const threadId = firstString(raw, "threadId", "thread_id") || fallbackId;
+): SignalThread | undefined {
+  const threadId = firstString(raw, "threadId", "thread_id");
+  const title = firstString(raw, "title", "name");
+  if (!threadId || !title) return undefined;
   const avatarPath = firstString(raw, "avatarPath", "avatar_path");
+  const unreadFrom = firstString(raw, "unreadFrom", "unread_from");
+  const readFact = firstString(raw, "readFact", "read_fact");
   return {
     threadId,
-    title: firstString(raw, "title", "name") || threadId,
+    title,
     participants: stringArray(raw.participants),
     avatarPath: avatarPath || undefined,
     service: raw.service === true,
     status: firstString(raw, "status") || undefined,
+    unreadFrom: unreadFrom || undefined,
+    readFact: readFact || undefined,
+    reread: normalizeThreadReread(raw.reread),
     raw,
   };
 }
 
 function normalizeMessage(
-  fallbackId: string,
   raw: Record<string, JsonValue>,
   surfacedAt?: number,
-): SignalMessage {
-  const dimensions = objectValue(raw.dimensions);
+): SignalMessage | undefined {
+  const threadId = firstString(raw, "threadId", "thread_id");
+  const messageId = firstString(raw, "messageId", "message_id");
+  const sender = firstString(raw, "sender", "from");
+  if (!threadId || !messageId || !sender) return undefined;
+
+  const rawKind = firstString(raw, "kind", "type");
+  const kind = SIGNAL_MESSAGE_KINDS.has(rawKind) ? rawKind : "text";
+  const rawDimensions = objectValue(raw.dimensions);
+  const width = rawDimensions ? numberValue(rawDimensions.width) : undefined;
+  const height = rawDimensions ? numberValue(rawDimensions.height) : undefined;
+  const dimensions =
+    width !== undefined && height !== undefined ? { width, height } : undefined;
   const readFact = firstString(raw, "readFact", "read_fact");
   const assetPath = firstString(raw, "assetPath", "asset_path", "src");
   const downloadFact = firstString(raw, "downloadFact", "download_fact");
   const fileName = firstString(raw, "fileName", "file_name", "filename");
-  const sender = firstString(raw, "sender", "from");
   const explicitTimestamp = firstString(raw, "timestamp", "date");
-  const hasSurfacedAt = typeof surfacedAt === "number" && Number.isFinite(surfacedAt) && surfacedAt > 0;
+  const hasSurfacedAt =
+    typeof surfacedAt === "number" &&
+    Number.isFinite(surfacedAt) &&
+    surfacedAt > 0;
+  const rawSize =
+    numberValue(raw.sizeBytes) ??
+    numberValue(raw.size_bytes) ??
+    numberValue(raw.size);
 
   return {
-    threadId: firstString(raw, "threadId", "thread_id"),
-    messageId: firstString(raw, "messageId", "message_id") || fallbackId,
+    threadId,
+    messageId,
     sender,
-    kind: firstString(raw, "kind", "type") || "text",
+    kind,
     body: firstString(raw, "body", "body_md", "text"),
-    timestamp: explicitTimestamp || (hasSurfacedAt ? signalStoryTimestampFromEpoch(surfacedAt) : ""),
+    timestamp:
+      explicitTimestamp ||
+      (hasSurfacedAt ? signalStoryTimestampFromEpoch(surfacedAt) : ""),
     readFact: readFact || undefined,
-    self: raw.self === true || sender === SIGNAL_SELF_SENDER,
+    self: sender === SIGNAL_SELF_SENDER,
     assetPath: assetPath || undefined,
     alt: firstString(raw, "alt") || undefined,
-    dimensions: dimensions
-      ? {
-          width: numberValue(dimensions.width),
-          height: numberValue(dimensions.height),
-        }
-      : undefined,
+    dimensions,
     fileName: fileName || undefined,
-    sizeBytes:
-      numberValue(raw.sizeBytes) ??
-      numberValue(raw.size_bytes) ??
-      numberValue(raw.size),
+    sizeBytes: rawSize !== undefined && rawSize > 0 ? rawSize : undefined,
     downloadFact: downloadFact || undefined,
     sortMs: !explicitTimestamp && hasSurfacedAt ? surfacedAt : undefined,
     raw,
@@ -129,7 +171,7 @@ function normalizeMessage(
 }
 
 function parsedTimestamp(timestamp: string): number {
-  const parsed = Date.parse(timestamp);
+  const parsed = parseSignalTimestamp(timestamp).getTime();
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
@@ -160,11 +202,13 @@ export class MessengerAppModel {
 
     const normalizedMessages = messages
       .filter((item) => item.type === "signal_message")
-      .map((item) => normalizeMessage(item.id, item.data, item.surfacedAt));
+      .map((item) => normalizeMessage(item.data, item.surfacedAt))
+      .filter((message): message is SignalMessage => message !== undefined);
 
     return threads
       .filter((item) => item.type === "signal_thread")
-      .map((item) => normalizeThread(item.id, item.data))
+      .map((item) => normalizeThread(item.data))
+      .filter((thread): thread is SignalThread => thread !== undefined)
       .map((thread) => ({
         thread,
         messages: normalizedMessages

@@ -2,6 +2,10 @@ import { StoryScenes } from "./story/story-scenes";
 import { DebugScreen } from "./screens/debug-screen";
 import { subscribeManifoldChanges } from "./runtime/manifold-subscription";
 import { SignalDanielConversationRuntime } from "./apps/signal-daniel";
+import {
+  createSignalLocalReadFactsStore,
+  signalConversationUnreadCount,
+} from "./apps/messenger-interactions";
 import { ChipController } from "./runtime/chip-controller";
 import {
   ChipButton,
@@ -79,6 +83,7 @@ function createSourceSession() {
   const frontend = new NoriFrontendRuntime({
     createWebSocket: createNetworkFaultWebSocketFactory(readNetworkFaultProfile(localStorage)),
   });
+  const signalLocalReadFacts = createSignalLocalReadFactsStore();
   const daniel = new SignalDanielConversationRuntime({
     manifold: frontend.manifold,
     hasFact: (factId) => hasWorldFact(frontend, factId),
@@ -281,6 +286,7 @@ function createSourceSession() {
         playCue: frontend.audio.playCue,
         translate: sourceTranslate,
         openUrl,
+        localReadFacts: signalLocalReadFacts,
       },
     },
     idle: idlePresentation,
@@ -368,6 +374,7 @@ function createSourceSession() {
   });
   return {
     frontend,
+    signalLocalReadFacts,
     chip,
     daniel,
     idle,
@@ -421,8 +428,49 @@ function SourceSessionView({ source }: { source: SourceSession }) {
   const graphicsMode = useGraphicsSettings((state) => state.mode);
   const [auth, setAuth] = useState<AuthState>(source.frontend.auth.snapshot());
   const [facts, setFacts] = useState(() => worldFacts(source.frontend));
+  const [signalUnreadCount, setSignalUnreadCount] = useState(0);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let disposed = false;
+    let revision = 0;
+    const syncSignalUnread = async () => {
+      const currentRevision = ++revision;
+      if (!source.frontend.world.snapshot().worldId) {
+        if (!disposed) setSignalUnreadCount(0);
+        return;
+      }
+      try {
+        const conversations = await source.frontend.messenger.conversations();
+        if (disposed || currentRevision !== revision) return;
+        const currentFacts = worldFacts(source.frontend);
+        setSignalUnreadCount(
+          signalConversationUnreadCount(
+            conversations,
+            (factId) => currentFacts.has(factId),
+            source.signalLocalReadFacts.snapshot(),
+          ),
+        );
+      } catch (error) {
+        if (!disposed && currentRevision === revision)
+          console.warn("[Signal] Failed to refresh Dock unread count", error);
+      }
+    };
+    void syncSignalUnread();
+    const unsubscribe = subscribeManifoldChanges(
+      source.frontend.world,
+      () => void syncSignalUnread(),
+    );
+    const unsubscribeLocalReads = source.signalLocalReadFacts.subscribe(
+      () => void syncSignalUnread(),
+    );
+    return () => {
+      disposed = true;
+      revision++;
+      unsubscribe();
+      unsubscribeLocalReads();
+    };
+  }, [source]);
   useEffect(() => {
     document.documentElement.classList.toggle(
       "gfx-performance",
@@ -517,6 +565,9 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       bootstrapStartupApps
       translate={sourceTranslate}
       locale={locale}
+      getDockBadgeCount={(appId) =>
+        appId === "signal" ? signalUnreadCount : 0
+      }
       className="source-frontend-root"
       onSignOut={() => {
         void source.frontend.auth

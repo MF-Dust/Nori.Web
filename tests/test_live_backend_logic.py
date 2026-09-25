@@ -252,6 +252,63 @@ def test_bounty_submit() -> None:
     asyncio.run(_run())
 
 
+def test_signal_read_command() -> None:
+    """Signal reads persist the archived thread read/reread facts."""
+    async def _run():
+        world = WorldSession("signal-read-owner")
+        dispatcher = EventDispatcher(world)
+        manifold = world.cartridges["manifold.web"]
+        facts = manifold.state["facts"]
+
+        if live_pack.is_available():
+            facts.pop("signal.daniel.read", None)
+            facts.pop("signal.daniel.dm1.read", None)
+            facts.setdefault(
+                "daniel.deadman.delivered",
+                {
+                    "id": "daniel.deadman.delivered",
+                    "emittedAt": int(time.time() * 1000),
+                    "actor": "system",
+                    "source": "system.tick",
+                },
+            )
+
+        res = await dispatcher.handle_event({
+            "channel": "manifold.command.request",
+            "cartridgeId": "manifold.web",
+            "payload": {
+                "command": "signal.read",
+                "payload": {"threadId": "daniel"},
+            },
+        })
+        assert res["payload"]["ok"] is True
+        result = res["payload"]["result"]
+        assert result["ok"] is True
+
+        if live_pack.is_available():
+            assert result["readFacts"] == [
+                "signal.daniel.read",
+                "signal.daniel.dm1.read",
+            ]
+            assert facts["signal.daniel.read"]["source"] == "signal.read"
+            assert facts["signal.daniel.dm1.read"]["source"] == "signal.read"
+        else:
+            assert result["readFacts"] == []
+
+        missing = await dispatcher.handle_event({
+            "channel": "manifold.command.request",
+            "cartridgeId": "manifold.web",
+            "payload": {
+                "command": "signal.read",
+                "payload": {"threadId": "unknown-thread"},
+            },
+        })
+        assert missing["payload"]["ok"] is True
+        assert missing["payload"]["result"]["readFacts"] == []
+
+    asyncio.run(_run())
+
+
 def test_idle_sync_channel() -> None:
     async def _run():
         world = WorldSession("idle-owner")
@@ -336,6 +393,8 @@ if __name__ == "__main__":
     print("[ok] desktop shell channels verified")
     test_bounty_submit()
     print("[ok] bounty submission verified")
+    test_signal_read_command()
+    print("[ok] Signal read/reread persistence verified")
     test_idle_sync_channel()
     print("[ok] idle sync channel verified")
     test_terminal_archive_fs()

@@ -1,6 +1,8 @@
 const STORY_YEAR = 2026;
 const STORY_MONTH_INDEX = 7;
 const STORY_DAY = 31;
+const SIGNAL_TIMESTAMP_PATTERN =
+  /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/;
 
 function pad2(value: number): string {
   return String(value).padStart(2, "0");
@@ -32,4 +34,20 @@ export function signalStoryTimestamp(source = new Date()): string {
 
 export function signalStoryTimestampFromEpoch(milliseconds: number): string {
   return signalStoryTimestamp(new Date(milliseconds));
+}
+
+
+/** Shipped Signal parses the calendar fields as local story time, ignoring suffixes. */
+export function parseSignalTimestamp(value: string): Date {
+  const match = SIGNAL_TIMESTAMP_PATTERN.exec(value);
+  return match
+    ? new Date(
+        Number(match[1]),
+        Number(match[2]) - 1,
+        Number(match[3]),
+        Number(match[4] ?? 0),
+        Number(match[5] ?? 0),
+        Number(match[6] ?? 0),
+      )
+    : new Date(value);
 }

@@ -23,6 +23,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -34,11 +35,21 @@ import type {
 } from "../apps/messenger";
 import { SIGNAL_DANIEL_EVIDENCE_FACT } from "../apps/signal-daniel";
 import {
+  compareSignalConversationRecency,
+  createSignalLocalReadFactsStore,
   draftAfterSuccessfulSend,
+  formatSignalThreadTimestamp,
+  groupSignalMessages,
   isConversationNearBottom,
   shouldSubmitMessageKey,
+  signalAvatarColor,
+  signalAvatarInitial,
+  signalThreadReadState,
+  type SignalLocalReadFactsStore,
 } from "../apps/messenger-interactions";
+import { parseSignalTimestamp } from "../apps/signal-story-clock";
 import { MarkdownBody } from "../components/markdown-body";
+import { ProductionStaticAppIcon } from "../apps/production-icons";
 
 const DESKTOP_BREAKPOINT = 640;
 const THREAD_LIST_WIDTH = 320;
@@ -80,6 +91,7 @@ export interface MessengerScreenRuntime {
   isOwnMessage?: (message: SignalMessage) => boolean;
   getPendingFocusThreadId?: () => string | null;
   consumePendingFocusThreadId?: () => void;
+  localReadFacts?: SignalLocalReadFactsStore;
   serviceConversation?: SignalServiceConversationRuntime;
 }
 
@@ -150,19 +162,6 @@ function useContainerWidth(): [RefObject<HTMLDivElement | null>, number] {
   return [ref, width];
 }
 
-function avatarInitials(title: string): string {
-  const parts = title.trim().split(/\s+/).filter(Boolean);
-  return parts.length
-    ? parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("")
-    : "?";
-}
-
-function avatarColor(seed: string): string {
-  let hash = 0;
-  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) | 0;
-  return `hsl(${Math.abs(hash) % 360} 58% 46%)`;
-}
-
 function Avatar({
   title,
   seed,
@@ -198,7 +197,7 @@ function Avatar({
         type="button"
         onClick={onZoom}
         aria-label={t("signal.conversation.viewPhoto")}
-        className="shrink-0 rounded-full outline-none transition-opacity hover:opacity-90"
+        className="shrink-0 rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/60"
       >
         {image}
       </button>
@@ -211,27 +210,18 @@ function Avatar({
         width: size,
         height: size,
         fontSize: Math.round(size * 0.42),
-        background: avatarColor(seed ?? title),
+        background: signalAvatarColor(seed ?? title),
       }}
       aria-hidden
     >
-      {avatarInitials(title)}
+      {signalAvatarInitial(title)}
     </div>
   );
 }
 
 function validDate(timestamp: string): Date | undefined {
-  const date = new Date(timestamp);
+  const date = parseSignalTimestamp(timestamp);
   return Number.isFinite(date.getTime()) ? date : undefined;
-}
-
-function formatThreadTime(timestamp: string): string {
-  const date = validDate(timestamp);
-  if (!date) return "";
-  if (date.toDateString() === new Date().toDateString()) {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
 function formatMessageTime(timestamp: string): string {
@@ -261,21 +251,25 @@ function buildThreadViews(
   localReadFacts: ReadonlySet<string>,
   hasFact?: (factId: string) => boolean,
 ): ThreadView[] {
-  return conversations.map((conversation) => {
-    const pendingReadFacts = conversation.messages
-      .map((message) => message.readFact)
-      .filter((fact): fact is string => Boolean(fact))
-      .filter((fact) => !localReadFacts.has(fact) && !hasFact?.(fact));
-    const last = conversation.messages.at(-1);
-    return {
-      conversation,
-      unreadCount: pendingReadFacts.length,
-      pendingReadFacts,
-      lastKind: last?.kind ?? "text",
-      lastBody: last?.body ?? "",
-      lastTimestamp: last?.timestamp ?? "",
-    };
-  });
+  return [...conversations]
+    .sort(compareSignalConversationRecency)
+    .map((conversation) => {
+      const readState = signalThreadReadState(
+        conversation.thread,
+        conversation.messages,
+        localReadFacts,
+        hasFact,
+      );
+      const last = conversation.messages.at(-1);
+      return {
+        conversation,
+        unreadCount: readState.unreadCount,
+        pendingReadFacts: readState.pendingReadFacts,
+        lastKind: last?.kind ?? "text",
+        lastBody: last?.body ?? "",
+        lastTimestamp: last?.timestamp ?? "",
+      };
+    });
 }
 
 function ThreadRow({
@@ -305,10 +299,10 @@ function ThreadRow({
       type="button"
       onClick={onSelect}
       aria-current={selected ? "true" : undefined}
-      className={`flex w-full items-center gap-3 border-b border-l-2 px-3 py-2.5 text-left transition-colors ${
+      className={`flex w-full items-center gap-3 border-b border-border/50 border-l-2 border-l-transparent px-3 py-2.5 text-left outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/60 ${
         selected
-          ? "border-l-primary bg-primary/[0.12]"
-          : "border-l-transparent border-border/50 hover:bg-muted/40"
+          ? "border-l-primary bg-primary/[0.12] hover:bg-primary/[0.18] active:bg-primary/[0.24]"
+          : "hover:bg-muted/40 active:bg-muted/60"
       }`}
     >
       <Avatar
@@ -323,12 +317,12 @@ function ThreadRow({
           <span className={`truncate text-sm text-foreground ${unread ? "font-semibold" : "font-medium"}`}>
             {thread.title}
           </span>
-          <span className={`shrink-0 text-[11px] ${unread ? "font-medium text-primary" : "text-muted-foreground"}`}>
-            {formatThreadTime(view.lastTimestamp)}
+          <span className={`shrink-0 text-[11px] ${unread ? "font-medium text-primary" : selected ? "text-foreground/70" : "text-muted-foreground"}`}>
+            {formatSignalThreadTimestamp(view.lastTimestamp)}
           </span>
         </div>
         <div className="mt-0.5 flex items-center gap-2">
-          <span className={`min-w-0 flex-1 truncate text-[13px] ${unread ? "font-medium text-foreground/90" : "text-muted-foreground"}`}>
+          <span className={`min-w-0 flex-1 truncate text-[13px] ${unread ? "font-medium text-foreground/90" : selected ? "text-foreground/80" : "text-muted-foreground"}`}>
             {preview}
           </span>
           {unread ? (
@@ -577,7 +571,7 @@ function MessagePhoto({
       type="button"
       onClick={() => onViewImage(src)}
       aria-label={t("signal.conversation.viewPhoto")}
-      className="block w-full cursor-zoom-in outline-none transition-opacity hover:opacity-95"
+      className="block w-full cursor-zoom-in outline-none transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring/60"
     >
       <img
         src={src}
@@ -607,9 +601,10 @@ function MessageBubble({
   const own = runtime.isOwnMessage?.(message) ?? message.self;
   const timestamp = message.timestamp ? formatMessageTime(message.timestamp) : "";
   const stamp = timestamp ? (
-    <span className="flex items-center gap-1">
-      {timestamp}{own ? <CheckCheck className="size-3" /> : null}
-    </span>
+    <>
+      <span>{timestamp}</span>
+      {own ? <CheckCheck className="size-3" /> : null}
+    </>
   ) : null;
 
   if (message.kind === "deleted") {
@@ -629,7 +624,7 @@ function MessageBubble({
         <div className={`relative max-w-[min(78%,20rem)] overflow-hidden rounded-2xl p-0.5 ${own ? "rounded-br-sm bg-primary" : "rounded-bl-sm border"}`}>
           <MessagePhoto message={message} onViewImage={onViewImage} t={t} />
           {stamp ? (
-            <span className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
+            <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
               {stamp}
             </span>
           ) : null}
@@ -643,7 +638,13 @@ function MessageBubble({
       <div className="flex justify-start">
         <div className="max-w-[min(78%,18rem)]">
           <FileAttachment message={message} runtime={runtime} t={t} />
-          {timestamp ? <div className="mt-1 text-right text-[10px] text-muted-foreground">{timestamp}</div> : null}
+          {stamp ? (
+            <div className="mt-1 flex justify-end">
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                {stamp}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -654,7 +655,13 @@ function MessageBubble({
       <div className="flex justify-start">
         <div className="relative max-w-[78%] rounded-2xl rounded-bl-sm border px-3.5 py-2 text-sm text-secondary-foreground shadow-sm">
           <MarkdownBody markdown={`🤖 ${message.body}`} className="select-text break-words italic leading-relaxed" />
-          {timestamp ? <div className="mt-1 text-right text-[10px] not-italic text-muted-foreground">{timestamp}</div> : null}
+          {stamp ? (
+            <div className="mt-1 flex justify-end">
+              <span className="flex items-center gap-1 text-[10px] not-italic text-muted-foreground">
+                {stamp}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -665,45 +672,20 @@ function MessageBubble({
       <div className={`relative max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${own ? "rounded-br-sm bg-primary text-primary-foreground" : "rounded-bl-sm border text-secondary-foreground"}`}>
         <div className="select-text whitespace-pre-wrap break-words leading-relaxed">
           {linkedText(message.body, own ? "text-primary-foreground" : "text-primary", runtime.openUrl)}
-          {timestamp ? <span aria-hidden className="invisible ml-2 inline-flex text-[10px]">{timestamp}</span> : null}
+          {stamp ? (
+            <span aria-hidden className="invisible ml-2 inline-flex select-none items-center gap-1 text-[10px]">
+              {stamp}
+            </span>
+          ) : null}
         </div>
         {stamp ? (
-          <span className={`pointer-events-none absolute bottom-2 right-3.5 text-[10px] ${own ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+          <span className={`pointer-events-none absolute bottom-2 right-3.5 flex items-center gap-1 text-[10px] ${own ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
             {stamp}
           </span>
         ) : null}
       </div>
     </div>
   );
-}
-
-interface MessageGroup {
-  key: string;
-  label: "today" | "yesterday" | string;
-  messages: SignalMessage[];
-}
-
-function groupMessages(messages: readonly SignalMessage[]): MessageGroup[] {
-  const groups: MessageGroup[] = [];
-  const now = new Date();
-  const today = now.toDateString();
-  const yesterdayDate = new Date(now);
-  yesterdayDate.setDate(now.getDate() - 1);
-  const yesterday = yesterdayDate.toDateString();
-
-  for (const message of messages) {
-    const date = validDate(message.timestamp);
-    const key = date?.toDateString() ?? "unknown";
-    const label = key === today
-      ? "today"
-      : key === yesterday
-        ? "yesterday"
-        : date?.toLocaleDateString() ?? "";
-    const previous = groups.at(-1);
-    if (previous?.key === key) previous.messages.push(message);
-    else groups.push({ key, label, messages: [message] });
-  }
-  return groups;
 }
 
 function SealedComposer({ runtime, t }: { runtime: MessengerScreenRuntime; t: MessengerTranslate }) {
@@ -904,7 +886,7 @@ function ConversationView({
     evidenceWasUnlocked.current = evidenceUnlocked;
   }, [evidenceUnlocked, runtime]);
   const resolvedMessages = serviceConversation?.resolveMessages?.(thread, messages) ?? messages;
-  const grouped = useMemo(() => groupMessages(resolvedMessages), [resolvedMessages]);
+  const grouped = useMemo(() => groupSignalMessages(resolvedMessages), [resolvedMessages]);
   const serviceBadge = serviceConversation?.getServiceBadge?.(thread);
   const showServiceBadge = serviceBadge === undefined ? thread.service : serviceBadge !== null;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -979,15 +961,17 @@ function ConversationView({
         <div className="space-y-2">
           {grouped.map((group) => (
             <div key={group.key} className="space-y-2">
-              <div className="flex justify-center py-1">
-                <span className="rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground">
-                  {group.label === "today"
-                    ? t("signal.day.today")
-                    : group.label === "yesterday"
-                      ? t("signal.day.yesterday")
-                      : group.label}
-                </span>
-              </div>
+              {group.separator ? (
+                <div className="flex justify-center py-1">
+                  <span className="rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                    {group.separator.kind === "today"
+                      ? t("signal.day.today")
+                      : group.separator.kind === "yesterday"
+                        ? t("signal.day.yesterday")
+                        : group.separator.label}
+                  </span>
+                </div>
+              ) : null}
               {group.messages.map((message) => (
                 <MessageBubble
                   key={message.messageId}
@@ -1016,8 +1000,8 @@ function EmptyConversation({ t }: { t: MessengerTranslate }) {
       className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center text-foreground"
       style={{ backgroundImage: "radial-gradient(320px 240px at 50% 38%, color-mix(in oklab, var(--primary) 13%, transparent), transparent 72%)" }}
     >
-      <div className="size-16">
-        <img src="/app-icons/signal/icon-a.png" alt="" className="size-full object-contain" />
+      <div className="size-16" data-signal-empty-icon>
+        <ProductionStaticAppIcon appId="signal" />
       </div>
       <div>
         <div className="text-base font-medium">{t("signal.empty.title")}</div>
@@ -1100,7 +1084,13 @@ export function MessengerScreen({ runtime, instanceId, setContentKey }: { runtim
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [retainedThreadId, setRetainedThreadId] = useState<string | null>(null);
   const [image, setImage] = useState<{ src: string; returnFocus: HTMLElement | null } | null>(null);
-  const [localReadFacts, setLocalReadFacts] = useState<Set<string>>(() => new Set());
+  const [ownedLocalReadFacts] = useState(() => createSignalLocalReadFactsStore());
+  const localReadFactsStore = runtime.localReadFacts ?? ownedLocalReadFacts;
+  const localReadFacts = useSyncExternalStore(
+    localReadFactsStore.subscribe,
+    localReadFactsStore.snapshot,
+    localReadFactsStore.snapshot,
+  );
 
   useEffect(() => {
     if (!instanceId) return;
@@ -1135,33 +1125,33 @@ export function MessengerScreen({ runtime, instanceId, setContentKey }: { runtim
   const selected = conversations.find((conversation) => conversation.thread.threadId === selectedThreadId) ?? null;
   const retained = conversations.find((conversation) => conversation.thread.threadId === retainedThreadId) ?? null;
 
-  const selectThread = useCallback((threadId: string) => {
-    if (threadId !== selectedThreadId) runtime.playCue?.("comms-signal-open-thread");
+  const activateThread = useCallback((threadId: string) => {
     const view = views.find((candidate) => candidate.conversation.thread.threadId === threadId);
     setSelectedThreadId(threadId);
     setRetainedThreadId(threadId);
     setImage(null);
 
-    if (view && view.unreadCount > 0) {
+    if (view && view.pendingReadFacts.length > 0) {
       const pendingFacts = view.pendingReadFacts;
       void runtime.model.markThreadRead(threadId)
         .then(() => {
-          setLocalReadFacts((current) => {
-            const next = new Set(current);
-            for (const fact of pendingFacts) next.add(fact);
-            return next;
-          });
+          localReadFactsStore.mark(pendingFacts);
         })
         .catch((error) => console.warn("[Signal] Failed to mark thread as read", error));
     }
-  }, [runtime, selectedThreadId, views]);
+  }, [runtime.model, views, localReadFactsStore]);
+
+  const selectThread = useCallback((threadId: string) => {
+    if (threadId !== selectedThreadId) runtime.playCue?.("comms-signal-open-thread");
+    activateThread(threadId);
+  }, [activateThread, runtime.playCue, selectedThreadId]);
 
   useEffect(() => {
     const pending = runtime.getPendingFocusThreadId?.();
     if (!pending || loading) return;
-    selectThread(pending);
+    activateThread(pending);
     runtime.consumePendingFocusThreadId?.();
-  }, [loading, runtime, selectThread]);
+  }, [activateThread, loading, runtime]);
 
   const back = useCallback(() => setSelectedThreadId(null), []);
   const viewImage = useCallback((src: string) => {
