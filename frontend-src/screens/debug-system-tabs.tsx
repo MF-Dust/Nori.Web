@@ -4,9 +4,14 @@ import type { ArcadeServerMessage, JsonValue } from "../runtime/protocol";
 import { UI_SOUND_CATALOG } from "../runtime/ui-sound-catalog";
 import {
   DESKTOP_MUSIC,
+  type AudioDebugTrack,
   type AudioMixerDebugSnapshot,
   type DesktopMusic,
 } from "../runtime/audio-mixer";
+import type {
+  AudioFilterType,
+  AudioReverbPreset,
+} from "../runtime/audio-track-effects";
 import { useAudioSettings } from "../state/audio-store";
 import type { NoriSceneState } from "../state/nori-scene";
 import { notificationInputFromMessage } from "../state/notification-store";
@@ -341,7 +346,10 @@ function AudioSlider({
   );
 }
 
-function spatialGain(snapshot: AudioMixerDebugSnapshot) {
+export function spatialGain(snapshot: Pick<
+  AudioMixerDebugSnapshot,
+  "listenerPos" | "speechPos" | "distanceParams"
+>) {
   const listener = snapshot.listenerPos;
   const source = snapshot.speechPos;
   const params = snapshot.distanceParams;
@@ -358,6 +366,128 @@ function spatialGain(snapshot: AudioMixerDebugSnapshot) {
     (params.refDistance +
       params.rolloffFactor * (normalized - params.refDistance));
   return { distance, gain };
+}
+
+function TrackEffectsDebug({
+  frontend,
+  track,
+  label,
+  snapshot,
+}: {
+  frontend: NoriFrontendRuntime;
+  track: AudioDebugTrack;
+  label: string;
+  snapshot: AudioMixerDebugSnapshot["effects"][AudioDebugTrack];
+}) {
+  const reverbs: AudioReverbPreset[] = ["none", "room", "hall", "cave"];
+  const filters: AudioFilterType[] = [
+    "none",
+    "lowpass",
+    "highpass",
+    "bandpass",
+  ];
+  return (
+    <div>
+      <h4>{label}</h4>
+      <label>
+        Reverb
+        <select
+          aria-label={`${label} reverb`}
+          value={snapshot.reverb}
+          onChange={(event) =>
+            void frontend.audio.debugSetReverb(
+              track,
+              event.target.value as AudioReverbPreset,
+              snapshot.wetness || 0.3,
+            )
+          }
+        >
+          {reverbs.map((preset) => (
+            <option key={preset}>{preset}</option>
+          ))}
+        </select>
+      </label>
+      {snapshot.reverb !== "none" && (
+        <label>
+          Wet
+          <input
+            aria-label={`${label} wet`}
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value={snapshot.wetness * 100}
+            onChange={(event) =>
+              frontend.audio.debugSetWetness(
+                track,
+                event.target.valueAsNumber / 100,
+              )
+            }
+          />
+          <output>{Math.round(snapshot.wetness * 100)}%</output>
+        </label>
+      )}
+      <label>
+        Filter
+        <select
+          aria-label={`${label} filter`}
+          value={snapshot.filter}
+          onChange={(event) =>
+            frontend.audio.debugSetFilter(
+              track,
+              event.target.value as AudioFilterType,
+              snapshot.frequency,
+              snapshot.q,
+            )
+          }
+        >
+          {filters.map((filter) => (
+            <option key={filter}>{filter}</option>
+          ))}
+        </select>
+      </label>
+      {snapshot.filter !== "none" && (
+        <>
+          <label>
+            Freq
+            <input
+              aria-label={`${label} filter frequency`}
+              type="range"
+              min="20"
+              max="20000"
+              step="1"
+              value={snapshot.frequency}
+              onChange={(event) =>
+                frontend.audio.debugSetFilterFrequency(
+                  track,
+                  event.target.valueAsNumber,
+                )
+              }
+            />
+            <output>{snapshot.frequency.toFixed(0)} Hz</output>
+          </label>
+          <label>
+            Q
+            <input
+              aria-label={`${label} filter Q`}
+              type="range"
+              min="0.1"
+              max="20"
+              step="0.1"
+              value={snapshot.q}
+              onChange={(event) =>
+                frontend.audio.debugSetFilterQ(
+                  track,
+                  event.target.valueAsNumber,
+                )
+              }
+            />
+            <output>{snapshot.q.toFixed(1)}</output>
+          </label>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function AudioDebugTab({
@@ -691,10 +821,25 @@ export function AudioDebugTab({
         <dt>Active Sounds</dt>
         <dd>{mixer.sfxActiveCount}</dd>
       </dl>
-      <p>
-        Track effects remain the one shipped Audio Debug family that still
-        needs a source-owned processing chain.
-      </p>
+      <h3>Effects</h3>
+      <TrackEffectsDebug
+        frontend={frontend}
+        track="speech"
+        label="Speech"
+        snapshot={mixer.effects.speech}
+      />
+      <TrackEffectsDebug
+        frontend={frontend}
+        track="music"
+        label="Music"
+        snapshot={mixer.effects.music}
+      />
+      <TrackEffectsDebug
+        frontend={frontend}
+        track="sfx"
+        label="SFX"
+        snapshot={mixer.effects.sfx}
+      />
     </section>
   );
 }

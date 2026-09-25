@@ -35,7 +35,16 @@ class Node {
   output: Node | null = null;
   gain = new Parameter();
   playbackRate = new Parameter();
+  positionX = new Parameter();
   positionY = new Parameter();
+  positionZ = new Parameter();
+  frequency = new Parameter(1000);
+  Q = new Parameter(1);
+  type = "";
+  distanceModel = "inverse";
+  refDistance = 50;
+  maxDistance = 10000;
+  rolloffFactor = 1;
   buffer: any;
   loop = false;
   started = false;
@@ -74,6 +83,7 @@ function buffer(channels = 1, length = 1000, sampleRate = 1000) {
 class Context {
   currentTime = 0;
   state = "running";
+  sampleRate = 1000;
   destination = new Node();
   sources: Node[] = [];
   decoded = 0;
@@ -90,6 +100,12 @@ class Context {
     return new Node();
   }
   createPanner() {
+    return new Node();
+  }
+  createBiquadFilter() {
+    return new Node();
+  }
+  createConvolver() {
     return new Node();
   }
   createAnalyser() {
@@ -226,6 +242,39 @@ test("audio debug music transport loads, pauses, seeks, resumes and stops the pr
   assert.equal(mixer.debugSnapshot().musicCurrentTime, 7);
   assert.equal(mixer.debugStopMusic(0), true);
   assert.equal(mixer.debugSnapshot().musicTrackId, null);
+});
+
+test("per-track audio effects mirror shipped reverb and filter controls", async (t) => {
+  const context = new Context();
+  const mixer = new AudioMixer(() => context as any);
+  t.after(() => mixer.dispose());
+  await mixer.debugResume();
+  assert.equal(
+    await mixer.debugSetReverb("music", "room", 0.4),
+    true,
+  );
+  assert.equal(
+    mixer.debugSetFilter("music", "lowpass", 1200, 2),
+    true,
+  );
+  let effects = mixer.debugSnapshot().effects.music;
+  assert.equal(effects.reverb, "room");
+  assert.ok(Math.abs(effects.wetness - 0.4) < 1e-8);
+  assert.equal(effects.filter, "lowpass");
+  assert.equal(effects.frequency, 500);
+  assert.equal(effects.q, 2);
+  mixer.debugSetWetness("music", 0.6);
+  mixer.debugSetFilterFrequency("music", 250);
+  mixer.debugSetFilterQ("music", 3.5);
+  effects = mixer.debugSnapshot().effects.music;
+  assert.ok(Math.abs(effects.wetness - 0.6) < 1e-8);
+  assert.equal(effects.frequency, 250);
+  assert.equal(effects.q, 3.5);
+  await mixer.debugSetReverb("music", "none");
+  mixer.debugSetFilter("music", "none");
+  effects = mixer.debugSnapshot().effects.music;
+  assert.equal(effects.reverb, "none");
+  assert.equal(effects.filter, "none");
 });
 
 test("scene source offsets are independent of fade time and wrap only looping files", async (t) => {

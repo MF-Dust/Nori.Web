@@ -19,9 +19,13 @@ Window content callbacks now keep stable identities while Zustand title/status u
 
 The source shell now owns a session notification queue with the recovered 50-item/5-visible limits, story-time deferral, hover-paused auto-dismiss, overflow/clear actions, shipped notification styling, localized labels, and audio cue de-duplication. `notification.pushed` is decoded through one strict source parser and is mounted over the real desktop shell; the Debug Notifications tab reports the same queue instead of claiming it is unavailable. Signal artifact deltas now establish a silent first-history baseline, emit one arrival notification per unseen incoming message, and hand a pending thread focus to Messenger. Unit and browser coverage pins queue, parser, arrival, pending-focus, and shell behavior. Original visual comparison and private-agent/media acceptance remain separate Messenger work.
 
+## Audio Debug parity pass
+
+The source session mixer now exposes the shipped Debug transport/state surface without creating a second audio lifetime: context resume/suspend, loaded BGM/SFX buffers, BGM play/pause/resume/stop/seek/crossfade, active SFX count, HRTF listener/source/distance telemetry, and per-track Speech/Music/SFX reverb + wetness + filter controls. The effect graph mirrors the shipped equal-power dry/wet chain and room/hall/cave impulse parameters, while normal settings still own track volume/mute and production audio routing.
+
 ## Live2D Debug parity pass
 
-The source Debug Live2D tab now drives the mounted production model for the shipped idle-state override, automatic sleep/wake fade values, direct Idle/Sleep transition audition, lip-sync amplitude override, mouth-open gain, amplitude/constant mouth-form modes, and per-expression lip-sync shares. The talking simulator uses the shipped 48 ms amplitude trace and releases its override on stop, story takeover or unmount. The normal fact-derived idle state and production speech amplitude remain the default path when Debug overrides are cleared. Original Debug layout comparison and the remaining per-track audio effects/reaction internals stay separate acceptance work.
+The source Debug Live2D tab now drives the mounted production model for the shipped idle-state override, automatic sleep/wake fade values, direct Idle/Sleep transition audition, lip-sync amplitude override, mouth-open gain, amplitude/constant mouth-form modes, and per-expression lip-sync shares. The talking simulator uses the shipped 48 ms amplitude trace and releases its override on stop, story takeover or unmount. The normal fact-derived idle state and production speech amplitude remain the default path when Debug overrides are cleared. Original Debug layout comparison and the remaining reaction internals stay separate acceptance work.
 
 ---
 

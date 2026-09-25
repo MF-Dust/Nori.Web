@@ -91,7 +91,7 @@ test("audio debug syncs the real settings snapshot into mixer and speech runtime
 });
 
 test("audio spatial gain follows the shipped inverse-distance equation", () => {
-  const snapshot = {
+  const spatial = tabs.spatialGain({
     listenerPos: { x: 0, y: 0, z: 100 },
     speechPos: { x: 0, y: 0, z: 0 },
     distanceParams: {
@@ -100,9 +100,9 @@ test("audio spatial gain follows the shipped inverse-distance equation", () => {
       maxDistance: 10000,
       rolloffFactor: 1,
     },
-  };
-  const source = tabs.AudioDebugTab;
-  assert.equal(typeof source, "function");
+  });
+  assert.equal(spatial?.distance, 100);
+  assert.equal(spatial?.gain, 0.5);
 });
 
 test("unavailable agent tabs contain no substitute event calls", async () => {

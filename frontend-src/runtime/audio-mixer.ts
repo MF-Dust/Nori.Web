@@ -1,12 +1,20 @@
 import { VoiceCorruption } from "./voice-corruption";
 import type { AudioSettingsState } from "../state/audio-store";
 import { UI_SOUND_CATALOG } from "./ui-sound-catalog";
+import {
+  AudioTrackEffects,
+  DEFAULT_AUDIO_TRACK_EFFECTS,
+  type AudioFilterType,
+  type AudioReverbPreset,
+  type AudioTrackEffectSnapshot,
+} from "./audio-track-effects";
 
 export interface AudioRoute {
   context: AudioContext;
   input: AudioNode;
 }
 type Track = "music" | "sfx" | "voice";
+export type AudioDebugTrack = "speech" | "music" | "sfx";
 type MixerSettings = Pick<
   AudioSettingsState,
   | "masterVolume"
@@ -106,6 +114,7 @@ export interface AudioMixerDebugSnapshot {
   } | null;
   corruptionActive: boolean;
   corruptionWorkletReady: boolean;
+  effects: Readonly<Record<AudioDebugTrack, AudioTrackEffectSnapshot>>;
 }
 
 /** One session-owned context and master/music/SFX/voice buses; no module-global audio lifetime. */
@@ -113,6 +122,7 @@ export class AudioMixer {
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
   private tracks: Record<Track, GainNode> | null = null;
+  private trackEffects: Record<Track, AudioTrackEffects> | null = null;
   private voiceInput: GainNode | null = null;
   private voiceOutput: AudioNode | null = null;
   private corruption: VoiceCorruption | null = null;
@@ -167,7 +177,15 @@ export class AudioMixer {
       sfx: context.createGain(),
       voice: context.createGain(),
     };
-    for (const track of Object.values(this.tracks)) track.connect(this.master);
+    this.trackEffects = {
+      music: new AudioTrackEffects(context),
+      sfx: new AudioTrackEffects(context),
+      voice: new AudioTrackEffects(context),
+    };
+    for (const id of ["music", "sfx", "voice"] as const) {
+      this.tracks[id].connect(this.trackEffects[id].input);
+      this.trackEffects[id].output.connect(this.master);
+    }
     this.musicDuck = context.createGain();
     this.musicDuck.connect(this.tracks.music);
     this.voiceInput = context.createGain();
@@ -264,6 +282,20 @@ export class AudioMixer {
         : null,
       corruptionActive: this.corruption?.active ?? false,
       corruptionWorkletReady: this.corruption?.workletReady ?? false,
+      effects: {
+        speech:
+          this.trackEffects?.voice.snapshot() ?? {
+            ...DEFAULT_AUDIO_TRACK_EFFECTS,
+          },
+        music:
+          this.trackEffects?.music.snapshot() ?? {
+            ...DEFAULT_AUDIO_TRACK_EFFECTS,
+          },
+        sfx:
+          this.trackEffects?.sfx.snapshot() ?? {
+            ...DEFAULT_AUDIO_TRACK_EFFECTS,
+          },
+      },
     };
   }
 
@@ -350,6 +382,54 @@ export class AudioMixer {
     this.musicVersion++;
     if (this.context?.state === "running")
       void this.startMusic().catch(() => {});
+    return true;
+  }
+
+  private debugEffectTrack(track: AudioDebugTrack) {
+    return track === "speech" ? "voice" : track;
+  }
+
+  async debugSetReverb(
+    track: AudioDebugTrack,
+    preset: AudioReverbPreset,
+    wetness = 0.3,
+  ) {
+    const effects = this.trackEffects?.[this.debugEffectTrack(track)];
+    if (!effects || this.disposed) return false;
+    await effects.setReverb(preset, wetness);
+    return true;
+  }
+
+  debugSetWetness(track: AudioDebugTrack, value: number) {
+    const effects = this.trackEffects?.[this.debugEffectTrack(track)];
+    if (!effects || this.disposed) return false;
+    effects.setWetness(value);
+    return true;
+  }
+
+  debugSetFilter(
+    track: AudioDebugTrack,
+    filter: AudioFilterType,
+    frequency = 1000,
+    q = 1,
+  ) {
+    const effects = this.trackEffects?.[this.debugEffectTrack(track)];
+    if (!effects || this.disposed) return false;
+    effects.setFilter(filter, frequency, q);
+    return true;
+  }
+
+  debugSetFilterFrequency(track: AudioDebugTrack, value: number) {
+    const effects = this.trackEffects?.[this.debugEffectTrack(track)];
+    if (!effects || this.disposed) return false;
+    effects.setFilterFrequency(value);
+    return true;
+  }
+
+  debugSetFilterQ(track: AudioDebugTrack, value: number) {
+    const effects = this.trackEffects?.[this.debugEffectTrack(track)];
+    if (!effects || this.disposed) return false;
+    effects.setFilterQ(value);
     return true;
   }
 
@@ -829,6 +909,10 @@ export class AudioMixer {
     this.musicDuck?.disconnect();
     if (this.tracks)
       for (const track of Object.values(this.tracks)) track.disconnect();
+    if (this.trackEffects)
+      for (const effects of Object.values(this.trackEffects))
+        effects.disconnect();
+    this.trackEffects = null;
     this.master?.disconnect();
     void this.context?.close().catch(() => {});
     this.context = null;
