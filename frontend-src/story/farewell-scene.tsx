@@ -64,6 +64,8 @@ export function FarewellScene({
       clock.dispose();
       activeActor.dispose();
       renderer.dispose();
+      activeActor.canvas.remove();
+      renderer.canvas.remove();
       lease.release();
     };
     const offStory = frontend.story.subscribe(() => {

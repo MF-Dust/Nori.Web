@@ -22,6 +22,7 @@ The source tree now includes:
 - window chrome, controls, overlays, screen routing and managed window hosts;
 - `DesktopRoot`, `DesktopSurface`, production-style `DesktopDock` and `DesktopTopBar`;
 - recovered Dock magnification, download/damaged/open/active states and window context actions;
+- session-scoped notification queue/viewport with story deferral, Signal arrival focus and server `notification.pushed` decoding;
 - recovered system menu, Terminal Shell/Edit/View menus and production app-menu fallback semantics;
 - recovered `audio-store` plus the TopBar volume menu and slider;
 - recovered QFR compute drain/formatting presentation;

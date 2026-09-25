@@ -73,13 +73,17 @@ export class ArcadeClient {
 
   onMessage(listener: ArcadeMessageListener): () => void {
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   onState(listener: ArcadeStateListener): () => void {
     this.stateListeners.add(listener);
     listener(this.state);
-    return () => this.stateListeners.delete(listener);
+    return () => {
+      this.stateListeners.delete(listener);
+    };
   }
 
   private setState(state: ArcadeConnectionState): void {

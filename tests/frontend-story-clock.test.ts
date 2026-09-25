@@ -22,6 +22,13 @@ test("story clock parks at each interactive gate without consuming waiting time"
   assert.equal(clock.advance(92999).complete, false);
   assert.equal(clock.advance(93000).complete, true);
 });
+test("first nonzero timestamp establishes an anchor without skipping the scene", () => {
+  const clock = new StoryClock([{ id: "scene", duration: 5 }]);
+  clock.advance(987654);
+  assert.equal(clock.snapshot().time, 0);
+  assert.equal(clock.advance(988654).time, 1);
+});
+
 test("suspension preserves a pending gate and disposal prevents later playback", () => {
   const clock = new StoryClock([
     { id: "ready", duration: 0, pauseAtStart: true },

@@ -91,6 +91,7 @@ export interface MessengerScreenRuntime {
   isOwnMessage?: (message: SignalMessage) => boolean;
   getPendingFocusThreadId?: () => string | null;
   consumePendingFocusThreadId?: () => void;
+  subscribePendingFocus?: (listener: () => void) => () => void;
   localReadFacts?: SignalLocalReadFactsStore;
   serviceConversation?: SignalServiceConversationRuntime;
 }
@@ -1146,12 +1147,16 @@ export function MessengerScreen({ runtime, instanceId, setContentKey }: { runtim
     activateThread(threadId);
   }, [activateThread, runtime.playCue, selectedThreadId]);
 
-  useEffect(() => {
+  const consumePendingFocus = useCallback(() => {
     const pending = runtime.getPendingFocusThreadId?.();
     if (!pending || loading) return;
     activateThread(pending);
     runtime.consumePendingFocusThreadId?.();
   }, [activateThread, loading, runtime]);
+  useEffect(() => {
+    consumePendingFocus();
+    return runtime.subscribePendingFocus?.(consumePendingFocus);
+  }, [consumePendingFocus, runtime]);
 
   const back = useCallback(() => setSelectedThreadId(null), []);
   const viewImage = useCallback((src: string) => {

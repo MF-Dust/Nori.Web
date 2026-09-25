@@ -25,6 +25,10 @@ import { SignalService, type CommandTransport } from "../services/signal";
 
 import { HeadPat } from "../live2d/head-pat";
 import { Live2DDebugRuntime } from "../live2d/debug-runtime";
+import {
+  createNotificationStore,
+  type NotificationStore,
+} from "../state/notification-store";
 
 export class NoriFrontendRuntime {
   readonly headPat = new HeadPat();
@@ -46,6 +50,7 @@ export class NoriFrontendRuntime {
   readonly mail: MailAppModel;
   readonly messenger: MessengerAppModel;
   readonly terminal: TerminalAppModel;
+  readonly notifications: NotificationStore;
 
   readonly conversation: ChatRuntimeController;
   readonly speech: SpeechPlayer;
@@ -152,6 +157,9 @@ export class NoriFrontendRuntime {
     this.story = new StoryDirector(new Set(STORY_ORDER.map((story) => story.id)), (factId) =>
       this.manifold.commandResult("client.emitFact", { factId }),
     );
+    this.notifications = createNotificationStore({
+      playCue: (cue) => this.audio.playCue(cue),
+    });
     this.desktop = new DesktopService(this.rpc);
     this.chat = new ChatService(this.arcade, this.world);
     this.games = new GameService(this.arcade, this.world);
@@ -325,6 +333,7 @@ export class NoriFrontendRuntime {
     this.scene.reset();
     this.reactions.dispose();
     this.conversation.dispose();
+    this.notifications.dispose();
     this.speech.dispose();
     this.audio.dispose();
     this.rpc.dispose();

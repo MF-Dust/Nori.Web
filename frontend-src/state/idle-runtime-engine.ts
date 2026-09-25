@@ -866,7 +866,9 @@ export function createSourceIdleRuntimeEngine(
 
     subscribe(listener) {
       listeners.add(listener);
-      return () => listeners.delete(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
 
     quoteGenerator(generatorId, mode): IdleGeneratorQuote | null {

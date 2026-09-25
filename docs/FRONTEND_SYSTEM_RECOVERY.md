@@ -31,6 +31,9 @@ Settings now drives the shared master/music/SFX/voice mixer, desktop BGM and Bro
 These supporting-app gaps now have an explicit incomplete cutover boundary. The increase from four to five pending boundaries is better accounting of existing work, not a production regression. `public/index.html` remains on the historical entry until these and the chat/game/scene boundaries pass parity review.
 
 
+## Supporting resilience pass
+
+Settings now collapses its section navigation into a horizontally scrollable strip at narrow widths and exposes the content region to keyboard users. Preview rejects empty/invalid PDFs with the localized error state and safely handles late worker destruction. Audio unlock listeners re-arm on the default window focus path and are removed on disposal. These are source-owned fixes; private agent controls remain explicitly unavailable.
 ## Debug controls
 
 The desktop Debug window now binds live connection/cartridge versions, scoped camera/model/screen controls, audio cue audition, corruption voice and desktop-music selection, and read-only fact filtering. Previously visited panels retain their local state. Scene overrides are acquired only when edited and released by the reset button, world change or window close. The browser probe verifies camera editing, reset, audio unlock and corruption-voice cleanup.

@@ -13,10 +13,17 @@ function assert(condition, message) {
 
 async function main() {
   const assets = await fs.readdir(path.join(ROOT, "public", "assets"));
-  const gameScreenFile = assets.find((file) => file.startsWith("GameScreen-") && file.endsWith(".js"));
-  assert(gameScreenFile, "missing shipped Codenames GameScreen chunk");
+  const gameScreenFiles = assets.filter((file) => file.startsWith("GameScreen-") && file.endsWith(".js"));
+  assert(gameScreenFiles.length, "missing shipped Codenames GameScreen chunk");
 
-  const shipped = await fs.readFile(path.join(ROOT, "public", "assets", gameScreenFile), "utf8");
+  const shippedCandidates = await Promise.all(
+    gameScreenFiles.map((file) => fs.readFile(path.join(ROOT, "public", "assets", file), "utf8")),
+  );
+  const shipped = shippedCandidates.find(
+    (content) =>
+      content.includes('a.type === "HUMAN_GIVING_CLUE"') &&
+      content.includes('"data-codenames-board"'),
+  ) ?? shippedCandidates[0];
   const source = await fs.readFile(
     path.join(ROOT, "frontend-src", "apps", "codenames-board-presentation.ts"),
     "utf8",

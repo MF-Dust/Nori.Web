@@ -374,6 +374,36 @@ export async function verifyMessenger(browser, output) {
       "a world jump must clear the interrupted local Daniel turn",
     );
 
+    await page.goto("http://127.0.0.1:47174/messenger-harness?mode=notifications");
+    await page.evaluate(() => window.messengerProbe.pushNotification("Notification one"));
+    const notification = page.locator(".nori-notification-card").first();
+    await notification.waitFor();
+    assert.equal(
+      await notification.getByText("Notification one", { exact: true }).count(),
+      1,
+    );
+    const notificationBox = await notification.boundingBox();
+    assert.ok(
+      notificationBox && Math.abs(notificationBox.width - 360) < 0.5,
+      "notification card width must match shipped 360px",
+    );
+    await notification.hover();
+    await notification.getByRole("button", { name: "Clear", exact: true }).click();
+    await notification.waitFor({ state: "detached" });
+    for (let index = 0; index < 6; index += 1) {
+      await page.evaluate((value) => window.messengerProbe.pushNotification(value), `Notification ${index}`);
+    }
+    await page.getByText("+1 more", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "Clear All", exact: true }).click();
+    await page.getByText("+1 more", { exact: true }).waitFor({ state: "detached" });
+    await page.evaluate(() => window.messengerProbe.pushNotification("Clickable"));
+    await page.locator(".nori-notification-card").first().click();
+    await page.locator(".nori-notification-card").first().waitFor({ state: "detached" });
+    assert.deepEqual(
+      await page.evaluate(() => window.messengerProbe.notificationOpened),
+      ["mail"],
+    );
+
     await page.goto("http://127.0.0.1:47174/messenger-harness?mode=floating");
     const input = page.getByRole("textbox", { name: "Message", exact: true });
     await input.fill("composing");
@@ -407,7 +437,7 @@ export async function verifyMessenger(browser, output) {
 
     assert.deepEqual(errors, []);
     console.log(
-      "Messenger probe passed: search, scroll hold, media failure, preview focus, avatar shipped states, IME, failed-send retry, attachment retry, sealed-composer choreography, mobile pane fencing, thread read/reread windows, Daniel reply/media/interrupt choreography and short floating layout.",
+      "Messenger probe passed: notifications, search, scroll hold, media failure, preview focus, avatar shipped states, IME, failed-send retry, attachment retry, sealed-composer choreography, mobile pane fencing, thread read/reread windows, Daniel reply/media/interrupt choreography and short floating layout.",
     );
   } catch (error) {
     console.error(

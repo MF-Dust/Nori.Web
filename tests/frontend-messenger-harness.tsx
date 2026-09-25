@@ -2,6 +2,8 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { MessengerScreen } from "../frontend-src/screens/messenger-shipped-surfaces";
 import { ConversationPanel } from "../frontend-src/components/conversation-panel";
+import { NotificationLayer } from "../frontend-src/components/notification-layer";
+import { createNotificationStore } from "../frontend-src/state/notification-store";
 import type { SignalConversation } from "../frontend-src/apps/messenger";
 import {
   SignalDanielConversationRuntime,
@@ -10,6 +12,7 @@ import {
 import type { NoriFrontendRuntime } from "../frontend-src/runtime/frontend-runtime";
 import type { ChatSnapshot } from "../frontend-src/apps/chat-runtime";
 import "../frontend-src/styles/app.css";
+import "../frontend-src/styles/desktop-shell.css";
 
 const threadMessages = Array.from({ length: 32 }, (_, index) => ({
   threadId: "service",
@@ -274,6 +277,17 @@ const sceneSnapshot = {
   chatMode: "normal" as const,
   noriTexture: "default" as const,
 };
+const notificationStore = createNotificationStore();
+const notificationOpened: string[] = [];
+const notificationTranslate = (key: string, values?: Record<string, string | number>) => {
+  const labels: Record<string, string> = {
+    "os.notifications.clear": "Clear",
+    "os.notifications.clearAll": "Clear All",
+    "os.notifications.more": `+${values?.count ?? 0} more`,
+  };
+  return labels[key] ?? key;
+};
+
 const floatingFrontend = {
   conversation: {
     snapshot: () => chat,
@@ -309,6 +323,8 @@ declare global {
       triggerQuietReread(): void;
       pendingCues: string[];
       pendingFocusConsumed(): boolean;
+      pushNotification(title?: string): void;
+      notificationOpened: string[];
     };
   }
 }
@@ -321,6 +337,16 @@ window.messengerProbe = {
   danielCommands,
   readThreads,
   pendingCues,
+  notificationOpened,
+  pushNotification(title = "Fixture notification") {
+    notificationStore.push({
+      appId: "mail",
+      title,
+      subtitle: "Fixture subtitle",
+      body: "Fixture body",
+      action: { type: "open-app", appId: "mail" },
+    });
+  },
   pendingFocusConsumed() {
     return pendingFocusConsumed;
   },
@@ -370,6 +396,12 @@ const mode = new URLSearchParams(location.search).get("mode") ?? "messenger";
 createRoot(document.getElementById("root")!).render(
   mode === "floating" ? (
     <ConversationPanel frontend={floatingFrontend} locale="en" />
+  ) : mode === "notifications" ? (
+    <NotificationLayer
+      store={notificationStore}
+      translate={notificationTranslate}
+      onOpenApp={(appId) => notificationOpened.push(appId)}
+    />
   ) : mode === "daniel" ? (
     <MessengerScreen runtime={danielMessengerRuntime as never} />
   ) : mode === "pending" ? (

@@ -4,6 +4,7 @@ import type { ArcadeServerMessage, JsonValue } from "../runtime/protocol";
 import { UI_SOUND_CATALOG } from "../runtime/ui-sound-catalog";
 import { useAudioSettings } from "../state/audio-store";
 import type { NoriSceneState } from "../state/nori-scene";
+import { notificationInputFromMessage } from "../state/notification-store";
 
 export interface DebugNotification {
   id: string;
@@ -19,43 +20,25 @@ type NotificationPushResponse = {
   pushed?: string;
 };
 
-function record(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
-
 /** Decode only notifications that actually arrived on the production event stream. */
 export function notificationFromMessage(
   message: ArcadeServerMessage,
 ): DebugNotification | null {
-  const raw = message as unknown as Record<string, unknown>;
-  if (raw.type !== "event" || raw.channel !== "notification.pushed")
-    return null;
-  const payload = record(raw.payload);
-  if (
-    !payload ||
-    typeof payload.id !== "string" ||
-    typeof payload.title !== "string"
-  )
-    return null;
-  const click = record(payload.onClick);
+  const parsed = notificationInputFromMessage(message);
+  if (!parsed) return null;
+  const input = parsed.input;
+  const action = input.action;
   return {
-    id: payload.id,
-    title: payload.title,
-    ...(typeof payload.subtitle === "string"
-      ? { subtitle: payload.subtitle }
-      : {}),
-    ...(typeof payload.body === "string" ? { body: payload.body } : {}),
-    ...(typeof payload.durationMs === "number" &&
-    Number.isFinite(payload.durationMs)
-      ? { durationMs: payload.durationMs }
-      : {}),
-    ...(click && typeof click.type === "string"
+    id: parsed.id,
+    title: input.title,
+    ...(input.subtitle !== undefined ? { subtitle: input.subtitle } : {}),
+    ...(input.body !== undefined ? { body: input.body } : {}),
+    ...(input.durationMs !== undefined ? { durationMs: input.durationMs } : {}),
+    ...(action
       ? {
           onClick: {
-            type: click.type,
-            ...(typeof click.appId === "string" ? { appId: click.appId } : {}),
+            type: action.type,
+            ...(action.type === "open-app" ? { appId: action.appId } : {}),
           },
         }
       : {}),
@@ -108,6 +91,11 @@ export function NotificationsDebugTab({
   const [openAppId, setOpenAppId] = useState("");
   const [status, setStatus] = useState("idle");
   const [received, setReceived] = useState<DebugNotification[]>([]);
+  const queueSize = useSyncExternalStore(
+    frontend.notifications.subscribe,
+    () => frontend.notifications.snapshot().queue.length,
+    () => frontend.notifications.snapshot().queue.length,
+  );
 
   useEffect(
     () =>
@@ -156,7 +144,7 @@ export function NotificationsDebugTab({
         <dt>Arcade connection</dt>
         <dd>{connection}</dd>
         <dt>Source shell queue</dt>
-        <dd>Unavailable; received events are observed below.</dd>
+        <dd>{queueSize} visible notification(s)</dd>
       </dl>
       <label>
         Title

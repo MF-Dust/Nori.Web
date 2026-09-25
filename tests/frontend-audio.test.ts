@@ -101,6 +101,46 @@ class Context {
     return node;
   }
 }
+test("window focus re-arms audio unlock and disposal removes the listener", () => {
+  const documentTarget = new EventTarget();
+  const windowTarget = new EventTarget();
+  const documentDescriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "document",
+  );
+  const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: documentTarget,
+  });
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: windowTarget,
+  });
+  const context = new Context();
+  let resumes = 0;
+  context.resume = async () => {
+    resumes++;
+  };
+  const mixer = new AudioMixer(() => context as any);
+  try {
+    mixer.installUnlock();
+    windowTarget.dispatchEvent(new Event("focus"));
+    assert.equal(resumes, 1);
+    mixer.dispose();
+    windowTarget.dispatchEvent(new Event("focus"));
+    assert.equal(resumes, 1);
+  } finally {
+    mixer.dispose();
+    if (documentDescriptor)
+      Object.defineProperty(globalThis, "document", documentDescriptor);
+    else delete (globalThis as any).document;
+    if (windowDescriptor)
+      Object.defineProperty(globalThis, "window", windowDescriptor);
+    else delete (globalThis as any).window;
+  }
+});
+
 const settings = {
   masterVolume: 80,
   musicVolume: 10,

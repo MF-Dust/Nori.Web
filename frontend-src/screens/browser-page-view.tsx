@@ -348,11 +348,31 @@ export function BrowserPageView({
 
   const currentTitle = displayed?.data.title ?? "";
   const currentFavicon = displayed?.data.favicon ?? null;
-  useEffect(() => onTitleChange(currentTitle), [currentTitle, onTitleChange]);
-  useEffect(() => onFaviconChange?.(currentFavicon), [currentFavicon, onFaviconChange]);
-  useEffect(() => onEnvelopeChange(displayed?.artifactId ?? null), [displayed?.artifactId, onEnvelopeChange]);
-  useEffect(() => onStatusChange?.(status), [onStatusChange, status]);
-  useEffect(() => onScrollChange?.(0), [displayed?.generation, onScrollChange]);
+  const titleChangeRef = useRef(onTitleChange);
+  const faviconChangeRef = useRef(onFaviconChange);
+  const envelopeChangeRef = useRef(onEnvelopeChange);
+  const statusChangeRef = useRef(onStatusChange);
+  const scrollChangeRef = useRef(onScrollChange);
+  titleChangeRef.current = onTitleChange;
+  faviconChangeRef.current = onFaviconChange;
+  envelopeChangeRef.current = onEnvelopeChange;
+  statusChangeRef.current = onStatusChange;
+  scrollChangeRef.current = onScrollChange;
+  useEffect(() => {
+    titleChangeRef.current(currentTitle);
+  }, [currentTitle]);
+  useEffect(() => {
+    faviconChangeRef.current?.(currentFavicon);
+  }, [currentFavicon]);
+  useEffect(() => {
+    envelopeChangeRef.current(displayed?.artifactId ?? null);
+  }, [displayed?.artifactId]);
+  useEffect(() => {
+    statusChangeRef.current?.(status);
+  }, [status]);
+  useEffect(() => {
+    scrollChangeRef.current?.(0);
+  }, [displayed?.generation]);
 
   const errorSrcDoc = useMemo(() => errorBody
     ? buildBrowserIframeSrcDoc({ locale: runtime.locale?.() ?? "en", facts: {}, bodyHtml: errorBody, url, isMaximized })

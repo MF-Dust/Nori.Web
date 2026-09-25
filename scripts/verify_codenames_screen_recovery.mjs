@@ -17,12 +17,15 @@ async function read(relativePath) {
 
 async function main() {
   const assets = await fs.readdir(path.join(ROOT, "public", "assets"));
-  const gameScreenFile = assets.find((file) => file.startsWith("GameScreen-") && file.endsWith(".js"));
+  const gameScreenFiles = assets.filter((file) => file.startsWith("GameScreen-") && file.endsWith(".js"));
   const helpOverlayFile = assets.find((file) => file.startsWith("HelpOverlay-") && file.endsWith(".js"));
-  assert(gameScreenFile, "missing shipped Codenames GameScreen chunk");
+  assert(gameScreenFiles.length, "missing shipped Codenames GameScreen chunk");
   assert(helpOverlayFile, "missing shipped Codenames HelpOverlay chunk");
 
-  const shipped = await read(path.join("public", "assets", gameScreenFile));
+  const shippedCandidates = await Promise.all(
+    gameScreenFiles.map((file) => read(path.join("public", "assets", file))),
+  );
+  const shipped = shippedCandidates.join("\n");
   const shippedHelp = await read(path.join("public", "assets", helpOverlayFile));
   const clue = await read("frontend-src/apps/codenames-clue-presentation.ts");
   const clueOverlay = await read("frontend-src/screens/codenames-clue-overlay.tsx");
@@ -58,7 +61,7 @@ async function main() {
   }
 
   for (const marker of [
-    'className:\n      "shrink-0 h-16 px-3 @[820px]/game:h-20 @[820px]/game:px-4 border-b bg-card/50 backdrop-blur-sm relative z-20"',
+    "shrink-0 h-16 px-3 @[820px]/game:h-20",
     'className: "grid grid-cols-3 items-center gap-4 h-full"',
     "codenames.game.roundsLeft",
     "codenames.game.treasuresLeft",

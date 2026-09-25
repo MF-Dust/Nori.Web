@@ -7,6 +7,10 @@
 审计基线：`94107bbf0b33911c519b50670664115c1a4efd47`  
 状态：实施中。六段正式剧情已接入源码；浏览器、视觉和原版代理验收仍按下述标准逐项核实。
 
+## 当前续作记录（源码实现批次）
+
+在 `dev/frontend-restoration-completion` 上继续实施了共享通知、Signal artifact 到达观察、Messenger pending-focus、窗口/Browser 生命周期、订阅清理、窄 Settings、损坏 PDF 和音频焦点解锁等修复。通知与 Messenger surface 已有单元/Chromium 证据；Farewell/Ending 资源重试和隐藏页 readiness 也有 focused probe 证据。五项 cutover gate 仍按实际证据保持 `false`，本批次没有提前切换 `public/index.html`。`frontend:recover:check` 仍需在最终合并前重复，任何 shipped marker 失败都按证据修正而不是放宽检查。
+
 ## 1. 目标、范围与完成口径
 
 目标是将当前发布客户端的前端行为恢复为 `frontend-src/` 中可维护、可构建、可验证的源码，完成视觉和交互对照，最终具备替换历史生产入口的条件。恢复依据为仓库中的 shipped bundle、静态资源、协议、源码和可复现运行证据；不声称找回开发者最初的源文件。

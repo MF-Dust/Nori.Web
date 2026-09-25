@@ -144,6 +144,32 @@ try {
     "auto",
   );
   await page.locator('[data-live2d-fps="30"]').waitFor();
+  await page.evaluate(() => {
+    const socket = window.sourceSmoke.sockets.find(
+      (item) => item.url.includes("/api/arcade/web/v1") && item.readyState === 1,
+    );
+    if (!socket) throw new Error("Arcade socket is not open");
+    socket.send(
+      JSON.stringify({
+        type: "event",
+        channel: "notification.debug.push",
+        requestId: "source-smoke-notification",
+        payload: {
+          title: "Source notification",
+          subtitle: "Recovery smoke",
+          body: "The source shell owns this toast.",
+          durationMs: 5000,
+          onClick: { type: "open-app", appId: "mail" },
+        },
+      }),
+    );
+  });
+  const notification = page.locator(".nori-notification-card").first();
+  await notification.waitFor();
+  await notification.getByText("Source notification", { exact: true }).waitFor();
+  await notification.hover();
+  await notification.getByRole("button", { name: "Clear", exact: true }).click();
+  await notification.waitFor({ state: "detached" });
   const input = page.getByRole("textbox", { name: "Message", exact: true });
   await input.fill("Source recovery smoke");
   await page.getByRole("button", { name: "Send", exact: true }).click();

@@ -27,7 +27,7 @@ export function EndingScene({
     clockRef.current = clock;
     let stopped = false,
       waking = false;
-    const readyDeadline = performance.now() + 30000;
+    let readyDeadline = performance.now() + 30000;
     const stop = () => {
       stopped = true;
       cancelAnimationFrame(frameRef.current);
@@ -43,7 +43,11 @@ export function EndingScene({
     });
     const visibility = () => {
       if (document.hidden) clock.suspend(performance.now());
-      else clock.resume(performance.now());
+      else {
+        clock.resume(performance.now());
+        // Hidden tabs do not consume the visible cold-open readiness window.
+        readyDeadline = performance.now() + 30000;
+      }
       audio.sync(clock.snapshot());
     };
     document.addEventListener("visibilitychange", visibility);

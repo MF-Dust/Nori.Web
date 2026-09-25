@@ -1,4 +1,4 @@
-import { Suspense, useMemo, type ReactNode } from "react";
+import { Suspense, useCallback, useMemo, type ReactNode } from "react";
 import type {
   WindowAppDefinition,
   WindowComponentProps,
@@ -69,20 +69,31 @@ export function WindowContentHost({
   const app = managedWindow ? lookupApp(managedWindow.appId) : undefined;
   const definition = managedWindow ? app?.windows[managedWindow.windowType] : undefined;
 
+  const focusWindow = useCallback(
+    () => store.getState().focusWindow(instanceId),
+    [instanceId, store],
+  );
+  const closeWindow = useCallback(
+    () => store.getState().closeWindow(instanceId),
+    [instanceId, store],
+  );
+  const setWindowTitle = useCallback(
+    (title: string) => store.getState().setWindowTitle(instanceId, title),
+    [instanceId, store],
+  );
   const runtimeProps = useMemo<WindowRuntimeProps | null>(() => {
     if (!managedWindow) return null;
     return {
-      instanceId: managedWindow.instanceId,
+      instanceId,
       appId: managedWindow.appId,
       windowType: managedWindow.windowType,
       focused,
       snap: managedWindow.snap,
-      focus: () => store.getState().focusWindow(managedWindow.instanceId),
-      close: () => store.getState().closeWindow(managedWindow.instanceId),
-      setTitle: (title: string) =>
-        store.getState().setWindowTitle(managedWindow.instanceId, title),
+      focus: focusWindow,
+      close: closeWindow,
+      setTitle: setWindowTitle,
     };
-  }, [focused, managedWindow, store]);
+  }, [closeWindow, focused, focusWindow, instanceId, managedWindow, setWindowTitle, store]);
 
   const componentProps = useMemo<WindowComponentProps | null>(() => {
     if (!runtimeProps || !managedWindow) return null;

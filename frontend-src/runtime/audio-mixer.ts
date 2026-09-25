@@ -149,8 +149,16 @@ export class AudioMixer {
     };
     for (const name of events)
       target.addEventListener(name, unlock, { capture: true, passive: true });
+    const focusTarget =
+      typeof document !== "undefined" &&
+      target === document &&
+      typeof window !== "undefined"
+        ? window
+        : null;
+    focusTarget?.addEventListener("focus", unlock, true);
     this.detachUnlock = () => {
       for (const name of events) target.removeEventListener(name, unlock, true);
+      focusTarget?.removeEventListener("focus", unlock, true);
       this.detachUnlock = null;
     };
   }

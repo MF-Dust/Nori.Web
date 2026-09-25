@@ -292,7 +292,50 @@ export function createSignalLocalReadFactsStore(
     },
     subscribe(listener) {
       listeners.add(listener);
-      return () => listeners.delete(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+
+export interface SignalPendingFocusStore {
+  get(): string | null;
+  set(threadId: string): void;
+  consume(): string | null;
+  clear(): void;
+  subscribe(listener: () => void): () => void;
+}
+
+export function createSignalPendingFocusStore(): SignalPendingFocusStore {
+  let threadId: string | null = null;
+  const listeners = new Set<() => void>();
+  const publish = () => {
+    for (const listener of listeners) listener();
+  };
+  return {
+    get: () => threadId,
+    set(next) {
+      if (!next || next === threadId) return;
+      threadId = next;
+      publish();
+    },
+    consume() {
+      const next = threadId;
+      threadId = null;
+      if (next) publish();
+      return next;
+    },
+    clear() {
+      if (!threadId) return;
+      threadId = null;
+      publish();
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
   };
 }

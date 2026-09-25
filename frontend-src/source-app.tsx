@@ -4,8 +4,13 @@ import { subscribeManifoldChanges } from "./runtime/manifold-subscription";
 import { SignalDanielConversationRuntime } from "./apps/signal-daniel";
 import {
   createSignalLocalReadFactsStore,
+  createSignalPendingFocusStore,
   signalConversationUnreadCount,
 } from "./apps/messenger-interactions";
+import {
+  SignalArrivalTracker,
+  signalArrivalPreview,
+} from "./apps/messenger";
 import { ChipController } from "./runtime/chip-controller";
 import {
   ChipButton,
@@ -44,6 +49,7 @@ import { DesktopSurface } from "./components/desktop-surface";
 import { useAudioSettings } from "./state/audio-store";
 import { useGraphicsSettings } from "./state/graphics-store";
 import type { AuthState } from "./runtime/auth";
+import type { JsonValue } from "./runtime/protocol";
 import { createCakeDuelPresentationAssets } from "./apps/cakeduel-assets";
 import { CakeDuelRuntimeController } from "./apps/cakeduel-runtime";
 import {
@@ -54,6 +60,8 @@ import { RecoveredDesktopShell } from "./components/recovered-desktop-shell";
 import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
 import { createNetworkFaultWebSocketFactory, readNetworkFaultProfile } from "./runtime/debug-tools";
 import { createSourceIdleRuntimeEngine } from "./state/idle-runtime-engine";
+import { NotificationLayer } from "./components/notification-layer";
+import { notificationInputFromMessage } from "./state/notification-store";
 
 /** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
 const MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS = 1800;
@@ -69,6 +77,11 @@ const locale = sourceLocale(preferredLocale());
 // Shared compatibility panels and assistive technology read the document locale.
 document.documentElement.lang = locale;
 const sourceTranslate = createSourceTranslate(locale);
+const signalArrivalLabels = {
+  recalled: sourceTranslate("signal.message.recalled"),
+  image: sourceTranslate("signal.message.imagePreview"),
+  file: sourceTranslate("signal.message.filePreview"),
+};
 
 function worldFacts(frontend: NoriFrontendRuntime): Set<string> {
   return frontend.world.facts();
@@ -84,6 +97,8 @@ function createSourceSession() {
     createWebSocket: createNetworkFaultWebSocketFactory(readNetworkFaultProfile(localStorage)),
   });
   const signalLocalReadFacts = createSignalLocalReadFactsStore();
+  const signalPendingFocus = createSignalPendingFocusStore();
+  const signalArrivalTracker = new SignalArrivalTracker();
   const daniel = new SignalDanielConversationRuntime({
     manifold: frontend.manifold,
     hasFact: (factId) => hasWorldFact(frontend, factId),
@@ -287,6 +302,11 @@ function createSourceSession() {
         translate: sourceTranslate,
         openUrl,
         localReadFacts: signalLocalReadFacts,
+        getPendingFocusThreadId: () => signalPendingFocus.get(),
+        consumePendingFocusThreadId: () => {
+          signalPendingFocus.consume();
+        },
+        subscribePendingFocus: signalPendingFocus.subscribe,
       },
     },
     idle: idlePresentation,
@@ -375,6 +395,8 @@ function createSourceSession() {
   return {
     frontend,
     signalLocalReadFacts,
+    signalPendingFocus,
+    signalArrivalTracker,
     chip,
     daniel,
     idle,
@@ -397,6 +419,8 @@ export function SourceApp() {
     const session = createSourceSession();
     setSource(session);
     return () => {
+      session.signalArrivalTracker.reset();
+      session.signalPendingFocus.clear();
       session.chip.dispose();
       session.daniel.dispose();
       session.cakeduel.dispose();
@@ -434,15 +458,38 @@ function SourceSessionView({ source }: { source: SourceSession }) {
   useEffect(() => {
     let disposed = false;
     let revision = 0;
-    const syncSignalUnread = async () => {
+    let emptyBaselineTimer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleEmptyBaseline = (worldId: string) => {
+      if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
+      emptyBaselineTimer = setTimeout(() => {
+        emptyBaselineTimer = undefined;
+        if (disposed || source.frontend.world.snapshot().worldId !== worldId) return;
+        void source.frontend.messenger.conversations()
+          .then((latest) => {
+            if (!disposed && source.frontend.world.snapshot().worldId === worldId)
+              source.signalArrivalTracker.seed(worldId, latest);
+          })
+          .catch((error) => console.warn("[Signal] Failed to settle empty artifact snapshot", error));
+      }, 400);
+    };
+    const syncSignal = async () => {
       const currentRevision = ++revision;
-      if (!source.frontend.world.snapshot().worldId) {
+      const requestWorldId = source.frontend.world.snapshot().worldId;
+      if (!requestWorldId) {
+        if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
+        emptyBaselineTimer = undefined;
+        source.signalArrivalTracker.reset();
         if (!disposed) setSignalUnreadCount(0);
         return;
       }
       try {
         const conversations = await source.frontend.messenger.conversations();
-        if (disposed || currentRevision !== revision) return;
+        if (
+          disposed ||
+          currentRevision !== revision ||
+          source.frontend.world.snapshot().worldId !== requestWorldId
+        )
+          return;
         const currentFacts = worldFacts(source.frontend);
         setSignalUnreadCount(
           signalConversationUnreadCount(
@@ -451,25 +498,76 @@ function SourceSessionView({ source }: { source: SourceSession }) {
             source.signalLocalReadFacts.snapshot(),
           ),
         );
+        if (conversations.length) {
+          if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
+          emptyBaselineTimer = undefined;
+        } else {
+          scheduleEmptyBaseline(requestWorldId);
+        }
+        for (const arrival of source.signalArrivalTracker.update(
+          requestWorldId,
+          conversations,
+        )) {
+          const threadId = arrival.conversation.thread.threadId;
+          source.frontend.notifications.push({
+            appId: "signal",
+            title: arrival.conversation.thread.title,
+            body: signalArrivalPreview(arrival.message, signalArrivalLabels),
+            sfx: "comms-signal-arrival",
+            onClick: () => {
+              source.signalPendingFocus.set(threadId);
+              void source.bundle.runtime.store.getState().launchApp({
+                appId: "signal",
+                mode: "activate",
+              });
+            },
+          });
+        }
       } catch (error) {
         if (!disposed && currentRevision === revision)
-          console.warn("[Signal] Failed to refresh Dock unread count", error);
+          console.warn("[Signal] Failed to refresh Messenger state", error);
       }
     };
-    void syncSignalUnread();
-    const unsubscribe = subscribeManifoldChanges(
+    void syncSignal();
+    const unsubscribeWorld = subscribeManifoldChanges(
       source.frontend.world,
-      () => void syncSignalUnread(),
+      () => void syncSignal(),
     );
     const unsubscribeLocalReads = source.signalLocalReadFacts.subscribe(
-      () => void syncSignalUnread(),
+      () => void syncSignal(),
     );
+    const unsubscribeArtifacts = source.frontend.arcade.onMessage((message) => {
+      const raw = message as unknown as { type?: string; channel?: string };
+      if (
+        raw.type === "event" &&
+        (raw.channel === "manifold.artifacts.invalidated" ||
+          raw.channel === "manifold.facts.changed")
+      )
+        void syncSignal();
+    });
     return () => {
       disposed = true;
       revision++;
-      unsubscribe();
+      if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
+      unsubscribeWorld();
       unsubscribeLocalReads();
+      unsubscribeArtifacts();
     };
+  }, [source]);
+  useEffect(() => {
+    const unsubscribe = source.frontend.arcade.onMessage((message) => {
+      const parsed = notificationInputFromMessage(message);
+      if (parsed) source.frontend.notifications.push(parsed.input);
+    });
+    return unsubscribe;
+  }, [source]);
+  useEffect(() => {
+    const sync = () =>
+      source.frontend.notifications.setSuppressed(
+        source.frontend.story.snapshot() !== null,
+      );
+    sync();
+    return source.frontend.story.subscribe(sync);
   }, [source]);
   useEffect(() => {
     document.documentElement.classList.toggle(
@@ -536,6 +634,20 @@ function SourceSessionView({ source }: { source: SourceSession }) {
   }, [source, auth.status, ready, facts, sceneMusic]);
   const chipOffline =
     facts.has("arg.memory.shown") && !facts.has("arg.ending.shown");
+  const openNotificationApp = (
+    appId: string,
+    args?: Record<string, JsonValue>,
+  ) => {
+    if (!source.bundle.runtime.registry.lookupApp(appId)) {
+      console.warn(`[Notify] server-push onClick references unknown appId: ${appId}`);
+      return;
+    }
+    void source.bundle.runtime.store.getState().launchApp({
+      appId,
+      mode: "launch",
+      args,
+    });
+  };
   useEffect(() => {
     source.chip.configure(
       source.frontend.world.snapshot().worldId,
@@ -592,6 +704,11 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       }
       overlay={
         <>
+          <NotificationLayer
+            store={source.frontend.notifications}
+            translate={sourceTranslate}
+            onOpenApp={openNotificationApp}
+          />
           <StoryScenes frontend={source.frontend} minimizeWindows={source.bundle.runtime.store.getState().minimizeAllWindows} />
           <NoriSceneEffects scene={source.frontend.scene} />
           <ConversationPanel

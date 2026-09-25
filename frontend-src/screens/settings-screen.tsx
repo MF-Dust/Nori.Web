@@ -86,7 +86,10 @@ function VolumeRow({
     <div
       className={`flex items-center gap-4 py-2 ${disabled ? "opacity-50" : ""}`}
     >
-      <Icon className="size-4 shrink-0 text-muted-foreground" />
+      <Icon
+        aria-hidden="true"
+        className="size-4 shrink-0 text-muted-foreground"
+      />
       <label
         className={`flex min-w-0 flex-1 flex-col gap-2 ${mute?.muted ? "opacity-50" : ""}`}
       >
@@ -450,13 +453,19 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
               onClick={() => navigate(section)}
               className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors ${selected === section ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
             >
-              <Icon className="size-4" />
+              <Icon aria-hidden="true" className="size-4" />
               {t(`settings.sections.${section}`)}
             </button>
           );
         })}
       </nav>
-      <div ref={scroll} className="min-w-0 flex-1 overflow-y-auto">
+      <div
+        ref={scroll}
+        role="region"
+        aria-label={t("apps.settings")}
+        tabIndex={0}
+        className="min-w-0 flex-1 overflow-y-auto"
+      >
         <div className="mx-auto max-w-md space-y-8 p-5">
           {sections.map((section, index) => (
             <div key={section}>
