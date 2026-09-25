@@ -12,6 +12,10 @@ All five incomplete cutover gates stay false. Shatter and Datasea have productio
 
 See `FRONTEND_RECOVERY_EXECUTION_PLAN.md` for task IDs and the scene-specific recovery documents for exact boundaries.
 
+## Browser extension-install pass
+
+The Browser host now owns the shipped `bounty.installExtension` confirmation lifecycle. Page commands open the recovered “省钱喵” permission dialog; concurrent requests reject the older waiter, Escape/cancel resolves false, and acceptance performs the shipped best-effort `client.emitFact` for `bounty.ext_installed` before resolving true to the iframe. The extension prompt no longer depends on an absent host callback.
+
 ## Shared window/browser lifecycle pass
 
 Window content callbacks now keep stable identities while Zustand title/status updates remain idempotent, and all source subscription unsubscribe callbacks return `void` rather than `Set.delete()` booleans. Browser title/favicon/envelope/status/scroll notifications are guarded from effect re-entry. This removes the source-entry maximum-update-depth/white-screen failure seen when opening Browser and Doodle; the real application smoke now reaches the in-game page and continues through the remaining desktop probes.

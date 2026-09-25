@@ -10,6 +10,7 @@ try {
     "tests/frontend-runtime.test.ts",
     "tests/frontend-notifications.test.ts",
     "tests/frontend-subscriptions.test.ts",
+    "tests/frontend-browser-extension.test.ts",
   ];
   for (const [index, entry] of entries.entries()) {
     const outfile = join(directory, `runtime-${index}.test.mjs`);

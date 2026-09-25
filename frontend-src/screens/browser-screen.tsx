@@ -34,6 +34,7 @@ import {
   type BrowserBookmark as BrowserBookmarkData,
 } from "../apps/browser-page-runtime";
 import type { BrowserIntentStore } from "../intents/browser-intent";
+import { settleBountyExtensionInstall } from "../apps/browser-extension-install";
 import {
   useManagedWindowRuntime,
   useWindowAppRuntime,
@@ -127,6 +128,35 @@ function faviconFallback(url: string, title = ""): string {
   } catch {
     return source[0]?.toUpperCase() ?? "?";
   }
+}
+
+function BrowserBountyCat({ size = 40 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 40 40"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M9 8 L15 16 Q20 13 25 16 L31 8 L29 19 Q33 24 29 30 Q20 36 11 30 Q7 24 11 19 Z"
+        fill="#fff"
+        stroke="#d80f68"
+        strokeWidth="1.5"
+      />
+      <circle cx="16" cy="22" r="2.1" fill="#d80f68" />
+      <circle cx="24" cy="22" r="2.1" fill="#d80f68" />
+      <circle cx="13" cy="25" r="1.6" fill="#ffc2db" />
+      <circle cx="27" cy="25" r="1.6" fill="#ffc2db" />
+      <path
+        d="M18 27 Q20 29.5 22 27"
+        stroke="#d80f68"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
 }
 
 function BrowserFavicon({ src, url, title, className = "size-4" }: { src?: string; url: string; title?: string; className?: string }) {
@@ -265,6 +295,50 @@ export function BrowserScreen({
   const reloadTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const addressInput = useRef<HTMLInputElement | null>(null);
   const draggingTab = useRef<string | null>(null);
+  const extensionInstallResolver = useRef<((accepted: boolean) => void) | null>(
+    null,
+  );
+  const [extensionInstallOpen, setExtensionInstallOpen] = useState(false);
+
+  const requestExtensionInstall = useCallback(
+    () =>
+      new Promise<boolean>((resolve) => {
+        extensionInstallResolver.current?.(false);
+        extensionInstallResolver.current = resolve;
+        setExtensionInstallOpen(true);
+      }),
+    [],
+  );
+
+  const resolveExtensionInstall = useCallback(
+    async (accepted: boolean) => {
+      setExtensionInstallOpen(false);
+      await settleBountyExtensionInstall(runtime.model, accepted);
+      const resolve = extensionInstallResolver.current;
+      extensionInstallResolver.current = null;
+      resolve?.(accepted);
+    },
+    [runtime],
+  );
+
+  useEffect(
+    () => () => {
+      extensionInstallResolver.current?.(false);
+      extensionInstallResolver.current = null;
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!extensionInstallOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      void resolveExtensionInstall(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [extensionInstallOpen, resolveExtensionInstall]);
 
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0];
   const facts = runtime.getFacts?.() ?? new Set<string>();
@@ -638,6 +712,7 @@ export function BrowserScreen({
                     onLinkHover={isActive ? setHoverUrl : undefined}
                     onReady={isActive ? () => onReady?.() : () => {}}
                     onContentReady={() => patchTab(tab.id, (value) => value.homeOverlay ? { ...value, homeOverlay: false } : value)}
+                    onRequestExtensionInstall={requestExtensionInstall}
                     onScrollChange={(y) => scroll.current.set(tab.id, y)}
                     onContextMenu={pageContextMenu}
                   />
@@ -653,6 +728,52 @@ export function BrowserScreen({
           </div>
         ) : null}
       </div>
+
+      {extensionInstallOpen ? (
+        <div
+          className="absolute inset-0 z-[10000] flex items-center justify-center bg-black/35 p-2"
+          role="presentation"
+        >
+          <div
+            className="w-[min(23rem,calc(100%-1rem))] rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-2xl"
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="省钱喵"
+          >
+            <div className="flex gap-4">
+              <BrowserBountyCat />
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-semibold leading-snug">
+                  将“省钱喵”添加到浏览器？
+                </h2>
+                <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+                  它会在你购物时自动找优惠券、上传小票返现。需要这些权限：
+                </p>
+                <ul className="mt-1.5 space-y-1 text-[12px] leading-relaxed text-muted-foreground">
+                  <li>· 查看你访问的页面</li>
+                  <li>· 读取本机文件（用于小票返现）</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-md px-3 py-1.5 text-sm hover:bg-muted"
+                onClick={() => void resolveExtensionInstall(false)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"
+                onClick={() => void resolveExtensionInstall(true)}
+              >
+                添加
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {menu ? (
         <div className="fixed z-[9999] min-w-44 rounded-md border border-border bg-popover p-1 text-sm text-popover-foreground shadow-lg" style={menuStyle} onPointerDown={(event) => event.stopPropagation()} onClick={() => setMenu(null)}>
