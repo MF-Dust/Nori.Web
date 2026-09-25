@@ -4,6 +4,27 @@ Updated 2026-09-26 for HEAD `57ada1f`. This section supersedes the historical st
 
 ## Latest Progress (2026-09-26)
 
+### Supporting Apps Boundary Complete
+Supporting Apps boundary is now marked complete with documented limitations:
+- ✅ All system apps source-owned: Settings, About, Credits, Preview, Debug, Scene Editor
+- ✅ Debug binds production Live2D/Audio/Pat/reaction runtimes
+- ✅ Smoke test evidence: `frontend:app:smoke` covers all system apps
+- 📝 Private Inject Talk/Nori Context handlers documented as intentionally unavailable (local backend limitation)
+
+**Progress: 11/15 boundaries complete (73.3%)**
+
+### Agent Backend Blocker Identified
+Critical path blocker: `backend/services/event_dispatcher.py` returns `{type: "noop"}` for `nori_talk.request`
+
+**Blocks 3 remaining boundaries**:
+- **Messenger**: Agent/media session acceptance (source complete otherwise)
+- **Games**: All 4 games agent dialogue/voice/inference (source complete otherwise)
+- **Live2D**: 4 segments need agent voice/dialogue (Corruption, Memory, Datasea, Farewell)
+
+This is an external dependency, not frontend work. Messenger, Games, and Live2D source implementations are complete; they await agent backend availability for full acceptance.
+
+## Latest Progress (2026-09-26)
+
 ### Smoke Test Optimization Complete (Commit 57ada1f)
 - **Parallelization**: 7 probes reorganized into 2 parallel groups (4+3), measured 50% time reduction (418s → 209s)
 - **Adaptive timeouts**: CI/local/fast mode auto-detection, `NORI_TEST_FAST_MODE` environment variable
