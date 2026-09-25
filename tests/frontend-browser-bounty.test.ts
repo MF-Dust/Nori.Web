@@ -102,3 +102,40 @@ test("bounty file picker keeps recovered files and marks unavailable recovery ar
     },
   ]);
 });
+
+
+test("Browser bounty presentation reuses the Files source model", async () => {
+  const model = new BrowserAppModel(
+    {
+      files: async () => [
+        {
+          id: "receipt",
+          type: "file",
+          data: {
+            display_path: "下载/receipt.txt",
+            mime: "text/plain",
+            body_md: "receipt",
+          },
+        },
+      ],
+      apps: async () => [
+        {
+          id: "vault",
+          type: "app",
+          data: {
+            app_kind: "password_prompt",
+            command: "vault.verify",
+            puzzle_id: "cold",
+            vault_path: "文稿/locked",
+          },
+        },
+      ],
+    } as never,
+    { submitBounty: async () => ({ ok: false }) } as never,
+  );
+  const presentation = await model.bountyPresentation();
+  assert.equal(presentation.files.length, 1);
+  assert.equal(presentation.files[0]?.name, "receipt.txt");
+  assert.equal(presentation.vaults.length, 1);
+  assert.equal(presentation.vaults[0]?.vaultPath, "文稿/locked");
+});

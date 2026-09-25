@@ -3,14 +3,44 @@ import {
   useEffect,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
-import { FileText, LoaderCircle, Lock, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronRight,
+  FileArchive,
+  FileText,
+  Folder,
+  HardDrive,
+  Home,
+  Image as ImageIcon,
+  LoaderCircle,
+  Lock,
+  LockOpen,
+  X,
+} from "lucide-react";
 import "../styles/browser-bounty.css";
 import type {
   BrowserAppModel,
-  BrowserBountyFile,
   BrowserBountySubmitResult,
 } from "../apps/browser";
+import {
+  FILES_COLD_VOLUME_PATH,
+  fileRecoveryThreshold,
+  isRecoverableFile,
+  isRecoveredFile,
+  type FilesRecoveredFile,
+  type FilesPresentationSnapshot,
+} from "../apps/files";
+import {
+  buildFilesTree,
+  filesBreadcrumbs,
+  findFilesTreeNode,
+  sortedFilesFolders,
+  type FilesTreeNode,
+  type FilesTreeVault,
+} from "../apps/files-tree";
 
 export const BOUNTY_PROGRESS_FACTS = [
   "dirt.jack",
@@ -169,27 +199,292 @@ interface BrowserBountyExtensionProps {
   ) => void;
 }
 
+type PickerEntry =
+  | { kind: "folder"; key: string; node: FilesTreeNode }
+  | { kind: "device"; key: string; sealed: boolean }
+  | { kind: "vault"; key: string; vault: FilesTreeVault }
+  | { kind: "file"; key: string; file: FilesRecoveredFile };
+
+function usePickerHistory(initialPath = "") {
+  const [state, setState] = useState({ stack: [initialPath], index: 0 });
+  const go = useCallback((path: string) => {
+    setState((current) => {
+      if (current.stack[current.index] === path) return current;
+      const prefix = current.stack.slice(0, current.index + 1);
+      return { stack: [...prefix, path], index: prefix.length };
+    });
+  }, []);
+  const back = useCallback(
+    () =>
+      setState((current) =>
+        current.index > 0
+          ? { ...current, index: current.index - 1 }
+          : current,
+      ),
+    [],
+  );
+  const forward = useCallback(
+    () =>
+      setState((current) =>
+        current.index < current.stack.length - 1
+          ? { ...current, index: current.index + 1 }
+          : current,
+      ),
+    [],
+  );
+  return {
+    path: state.stack[state.index] ?? "",
+    canBack: state.index > 0,
+    canForward: state.index < state.stack.length - 1,
+    go,
+    back,
+    forward,
+  };
+}
+
+function pickerEntries(node: FilesTreeNode): PickerEntry[] {
+  const folders = sortedFilesFolders(node).map((child) => ({
+    kind: "folder" as const,
+    key: `folder:${child.path}`,
+    node: child,
+  }));
+  const vaults = node.vaults.map((vault) => ({
+    kind: "vault" as const,
+    key: `vault:${vault.id}`,
+    vault,
+  }));
+  const files = [...node.files]
+    .sort((left, right) => {
+      const leftTier = fileRecoveryThreshold(left);
+      const rightTier = fileRecoveryThreshold(right);
+      if (leftTier !== rightTier) return leftTier - rightTier;
+      return (
+        new Date(right.modifiedAt).getTime() -
+        new Date(left.modifiedAt).getTime()
+      );
+    })
+    .map((file) => ({
+      kind: "file" as const,
+      key: `file:${file.id}`,
+      file,
+    }));
+  return [...folders, ...vaults, ...files];
+}
+
+function pickerFormatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  return `${value.toFixed(unit === 0 ? 0 : value >= 10 ? 1 : 2)} ${units[unit]}`;
+}
+
+function pickerFormatDate(value: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  const now = new Date();
+  const days = Math.floor((now.getTime() - date.getTime()) / 86_400_000);
+  return days === 0
+    ? date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+    : days < 7
+      ? date.toLocaleDateString(undefined, { weekday: "short" })
+      : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function PickerNotice({
+  kind,
+  onClose,
+}: {
+  kind: "sealed" | "cannot-upload";
+  onClose(): void;
+}) {
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" && event.key !== "Enter") return;
+      event.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [onClose]);
+
+  const sealed = kind === "sealed";
+  return (
+    <div
+      className="fixed inset-0 z-[10040] grid place-items-center bg-black/45 p-4"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="w-[min(24rem,100%)] rounded-2xl border border-border bg-popover p-5 text-popover-foreground shadow-2xl"
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={sealed ? "Volume sealed" : "无法上传此处的文件"}
+      >
+        {sealed ? (
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground">
+              <Lock className="size-[18px]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold">Volume sealed</h2>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+                The cold research volume is unavailable until QFR is installed.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <h2 className="text-sm font-semibold leading-snug">
+              无法上传此处的文件
+            </h2>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+              「归档区」中的文件已被加密，无法直接访问。
+            </p>
+          </>
+        )}
+        <div className="mt-5 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg bg-muted/60 px-4 py-1.5 text-[13px] font-medium hover:bg-muted"
+          >
+            {sealed ? "OK" : "知道了"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PickerRow({
+  selected,
+  muted = false,
+  icon,
+  name,
+  date,
+  size,
+  onSelect,
+  onOpen,
+}: {
+  selected: boolean;
+  muted?: boolean;
+  icon: ReactNode;
+  name: string;
+  date?: string;
+  size?: string;
+  onSelect(): void;
+  onOpen(): void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      onDoubleClick={onOpen}
+      className={`relative flex w-full items-center gap-2.5 border-b border-border/40 px-4 py-2 text-left transition-colors before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-r-full before:bg-primary before:opacity-0 before:content-[''] hover:bg-muted/40 focus:bg-muted/40 focus:outline-none ${
+        selected
+          ? "bg-primary/10 before:opacity-100 hover:bg-primary/15"
+          : ""
+      }`}
+    >
+      <span className="flex size-4 shrink-0 items-center justify-center">
+        {icon}
+      </span>
+      <span
+        className={`min-w-0 flex-1 truncate text-sm ${
+          muted ? "text-muted-foreground" : "text-foreground"
+        }`}
+      >
+        {name}
+      </span>
+      {date || size ? (
+        <span className="hidden shrink-0 items-center gap-4 text-xs tabular-nums text-muted-foreground sm:flex">
+          <span className="w-24 text-right">{date ?? ""}</span>
+          <span className="w-16 text-right">{size ?? ""}</span>
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function PickerBreadcrumbs({
+  path,
+  onNavigate,
+}: {
+  path: string;
+  onNavigate(path: string): void;
+}) {
+  const crumbs = filesBreadcrumbs(path);
+  return (
+    <div className="flex min-w-0 items-center gap-1 overflow-hidden text-sm">
+      <button
+        type="button"
+        onClick={() => onNavigate("")}
+        className={`shrink-0 rounded px-1.5 py-0.5 hover:bg-muted ${
+          crumbs.length === 0
+            ? "font-medium text-foreground"
+            : "text-muted-foreground"
+        }`}
+      >
+        Files
+      </button>
+      {crumbs.map((crumb, index) => (
+        <span key={crumb.path} className="contents">
+          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/60" />
+          <button
+            type="button"
+            onClick={() => onNavigate(crumb.path)}
+            className={`truncate rounded px-1.5 py-0.5 hover:bg-muted ${
+              index === crumbs.length - 1
+                ? "font-medium text-foreground"
+                : "text-muted-foreground"
+            }`}
+          >
+            {crumb.name}
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function FilePicker({
   model,
+  facts,
   onCancel,
   onPick,
 }: {
   model: BrowserAppModel;
+  facts: ReadonlySet<string>;
   onCancel(): void;
   onPick(fileId: string): void;
 }) {
-  const [files, setFiles] = useState<BrowserBountyFile[] | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [snapshot, setSnapshot] = useState<FilesPresentationSnapshot | null>(
+    null,
+  );
+  const [selected, setSelected] = useState<{
+    key: string;
+    file: FilesRecoveredFile;
+  } | null>(null);
+  const [notice, setNotice] = useState<"sealed" | "cannot-upload" | null>(null);
+  const history = usePickerHistory();
+  const qfrInstalled = facts.has("qfr.installed");
 
   useEffect(() => {
     let alive = true;
     void model
-      .bountyFiles()
+      .bountyPresentation()
       .then((next) => {
-        if (alive) setFiles(next);
+        if (alive) setSnapshot(next);
       })
       .catch(() => {
-        if (alive) setFiles([]);
+        if (alive) setSnapshot({ files: [], vaults: [] });
       });
     return () => {
       alive = false;
@@ -197,6 +492,7 @@ function FilePicker({
   }, [model]);
 
   useEffect(() => {
+    if (notice) return;
     const key = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
@@ -204,103 +500,332 @@ function FilePicker({
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [onCancel]);
+  }, [notice, onCancel]);
 
-  const selectedFile = files?.find((file) => file.id === selected) ?? null;
-  return (
-    <div
-      className="fixed inset-0 z-[10020] grid place-items-center bg-black/45 p-3"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onCancel();
-      }}
-    >
-      <div
-        className="flex h-[min(32rem,calc(100%-1rem))] w-[min(44rem,calc(100%-1rem))] flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl"
-        role="dialog"
-        aria-modal="true"
-        aria-label="选择要上传的文件"
-      >
-        <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-5 py-3">
-          <h2 className="text-sm font-semibold">选择要上传的文件</h2>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-md p-1 text-muted-foreground hover:bg-muted"
-            aria-label="关闭"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-        <div className="grid grid-cols-[minmax(0,1fr)_9rem] border-b border-border/50 bg-muted/10 px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
-          <span>名称</span>
-          <span className="text-right">位置</span>
-        </div>
-        <div className="min-h-0 flex-1 overflow-auto">
-          {files === null ? (
-            <div className="grid h-full place-items-center">
-              <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : files.length === 0 ? (
-            <div className="grid h-full place-items-center text-sm text-muted-foreground">
-              没有可用文件
-            </div>
+  const tree = snapshot
+    ? buildFilesTree(snapshot.files, snapshot.vaults, facts)
+    : null;
+  const node = tree ? findFilesTreeNode(tree, history.path) : null;
+  let entries = node ? pickerEntries(node) : [];
+  if (history.path === "") {
+    entries = [
+      {
+        kind: "device",
+        key: "device:cold-volume",
+        sealed: !qfrInstalled,
+      },
+      ...entries.filter(
+        (entry) =>
+          entry.kind !== "folder" ||
+          entry.node.path !== FILES_COLD_VOLUME_PATH,
+      ),
+    ];
+  }
+
+  const navigate = useCallback(
+    (path: string) => {
+      if (
+        path === FILES_COLD_VOLUME_PATH ||
+        path.startsWith(`${FILES_COLD_VOLUME_PATH}/`)
+      ) {
+        setNotice(qfrInstalled ? "cannot-upload" : "sealed");
+        return;
+      }
+      history.go(path);
+      setSelected(null);
+    },
+    [history.go, qfrInstalled],
+  );
+
+  const uploadable = useCallback(
+    (file: FilesRecoveredFile) =>
+      !isRecoverableFile(file) || isRecoveredFile(file),
+    [],
+  );
+
+  const openEntry = useCallback(
+    (entry: PickerEntry) => {
+      if (entry.kind === "folder") navigate(entry.node.path);
+      else if (entry.kind === "device")
+        setNotice(entry.sealed ? "sealed" : "cannot-upload");
+      else if (
+        entry.kind === "file" &&
+        uploadable(entry.file)
+      )
+        onPick(entry.file.id);
+    },
+    [navigate, onPick, uploadable],
+  );
+
+  const selectEntry = useCallback(
+    (entry: PickerEntry) => {
+      setSelected(
+        entry.kind === "file" && uploadable(entry.file)
+          ? { key: entry.key, file: entry.file }
+          : null,
+      );
+    },
+    [uploadable],
+  );
+
+  const row = (entry: PickerEntry) => {
+    const isSelected = selected?.key === entry.key;
+    if (entry.kind === "folder")
+      return (
+        <PickerRow
+          key={entry.key}
+          selected={isSelected}
+          onSelect={() => selectEntry(entry)}
+          onOpen={() => openEntry(entry)}
+          icon={<Folder className="size-4 fill-sky-400/10 text-sky-400/90" />}
+          name={entry.node.name}
+        />
+      );
+    if (entry.kind === "device")
+      return (
+        <PickerRow
+          key={entry.key}
+          selected={isSelected}
+          onSelect={() => selectEntry(entry)}
+          onOpen={() => openEntry(entry)}
+          icon={
+            <span className="relative inline-flex size-4">
+              <HardDrive className="size-full" />
+              {entry.sealed ? (
+                <Lock className="absolute bottom-0 right-0 size-[48%] text-amber-500" />
+              ) : (
+                <LockOpen className="absolute bottom-0 right-0 size-[48%] text-[var(--nori-teal,#5eead4)]" />
+              )}
+            </span>
+          }
+          name="归档区"
+        />
+      );
+    if (entry.kind === "vault") {
+      const Icon = entry.vault.vaultKind === "file" ? FileArchive : Folder;
+      return (
+        <PickerRow
+          key={entry.key}
+          selected={false}
+          muted
+          onSelect={() => selectEntry(entry)}
+          onOpen={() => openEntry(entry)}
+          icon={
+            <span className="relative">
+              <Icon className="size-4 text-muted-foreground" />
+              {!entry.vault.unlocked ? (
+                <Lock className="absolute -bottom-0.5 -right-0.5 size-2.5 text-amber-500" />
+              ) : null}
+            </span>
+          }
+          name={entry.vault.title}
+        />
+      );
+    }
+    const locked = !uploadable(entry.file);
+    const Icon =
+      entry.file.kind === "image"
+        ? ImageIcon
+        : entry.file.kind === "training-log"
+          ? FileArchive
+          : FileText;
+    return (
+      <PickerRow
+        key={entry.key}
+        selected={isSelected}
+        muted={locked}
+        onSelect={() => selectEntry(entry)}
+        onOpen={() => openEntry(entry)}
+        icon={
+          locked ? (
+            <span className="relative">
+              <FileText className="size-4 text-muted-foreground" />
+              <Lock className="absolute -bottom-0.5 -right-0.5 size-2.5 text-amber-500" />
+            </span>
           ) : (
-            files.map((file) => (
-              <button
-                key={file.id}
-                type="button"
-                disabled={file.locked}
-                onClick={() => setSelected(file.id)}
-                onDoubleClick={() => {
-                  if (!file.locked) onPick(file.id);
-                }}
-                className={`grid w-full grid-cols-[minmax(0,1fr)_9rem] items-center border-b border-border/40 px-4 py-2 text-left transition-colors ${
-                  selected === file.id
-                    ? "bg-primary/10"
-                    : "hover:bg-muted/40"
-                } disabled:opacity-45`}
-              >
-                <span className="flex min-w-0 items-center gap-2.5">
-                  <span className="relative shrink-0">
-                    <FileText className="size-4 text-muted-foreground" />
-                    {file.locked ? (
-                      <Lock className="absolute -bottom-1 -right-1 size-2.5 text-amber-500" />
-                    ) : null}
-                  </span>
-                  <span className="truncate text-sm">{file.name}</span>
-                </span>
-                <span className="truncate text-right text-xs text-muted-foreground">
-                  {file.path}
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-        <div className="flex shrink-0 items-center gap-3 border-t border-border/50 px-5 py-3">
-          <div className="min-w-0 flex-1 truncate text-[13px]">
-            {selectedFile ? selectedFile.name : (
-              <span className="text-muted-foreground">未选择文件</span>
-            )}
+            <Icon
+              className={`size-4 ${
+                entry.file.launch === "qfr"
+                  ? "text-[#4ee0c8]"
+                  : "text-muted-foreground"
+              }`}
+            />
+          )
+        }
+        name={entry.file.name}
+        date={pickerFormatDate(entry.file.modifiedAt)}
+        size={pickerFormatBytes(entry.file.sizeBytes)}
+      />
+    );
+  };
+
+  const favorites = [
+    { path: "下载", label: "Downloads" },
+    { path: "文稿", label: "Documents" },
+    { path: "图片", label: "Pictures" },
+  ];
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-[10020] grid place-items-center bg-black/45 p-3"
+        role="presentation"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) onCancel();
+        }}
+      >
+        <div
+          className="flex h-[min(32rem,calc(100%-1rem))] w-[min(44rem,calc(100%-1rem))] flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl"
+          role="dialog"
+          aria-modal="true"
+          aria-label="选择要上传的文件"
+        >
+          <div className="shrink-0 border-b border-border/50 px-5 py-3">
+            <h2 className="text-sm font-semibold leading-snug">
+              选择要上传的文件
+            </h2>
           </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-md px-3 py-1.5 text-sm hover:bg-muted"
-          >
-            取消
-          </button>
-          <button
-            type="button"
-            disabled={!selectedFile || selectedFile.locked}
-            onClick={() => selectedFile && onPick(selectedFile.id)}
-            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-45"
-          >
-            上传
-          </button>
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <aside className="hidden w-48 shrink-0 overflow-y-auto border-r border-border/50 bg-muted/15 sm:block">
+              <nav className="px-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => navigate("")}
+                  className={`w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/60 ${
+                    history.path === "" ? "bg-muted/60" : ""
+                  }`}
+                >
+                  Files
+                </button>
+              </nav>
+              <div className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                Favorites
+              </div>
+              <nav className="px-2 pb-3">
+                {favorites.map((favorite) => (
+                  <button
+                    type="button"
+                    key={favorite.path}
+                    onClick={() => navigate(favorite.path)}
+                    className={`w-full rounded-lg px-3 py-1.5 text-left text-sm hover:bg-muted/60 ${
+                      history.path === favorite.path ? "bg-muted/60" : ""
+                    }`}
+                  >
+                    {favorite.label}
+                  </button>
+                ))}
+              </nav>
+              <div className="px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                Devices
+              </div>
+              <nav className="px-2 pb-3">
+                <button
+                  type="button"
+                  onClick={() => navigate(FILES_COLD_VOLUME_PATH)}
+                  className="w-full rounded-lg px-3 py-1.5 text-left text-sm hover:bg-muted/60"
+                >
+                  Cold Volume
+                </button>
+              </nav>
+            </aside>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex shrink-0 items-center gap-2 border-b border-border/50 bg-muted/15 px-3 py-2">
+                <div className="inline-flex items-center rounded-lg bg-muted/40 p-0.5 ring-1 ring-inset ring-border/60">
+                  <button
+                    type="button"
+                    disabled={!history.canBack}
+                    onClick={history.back}
+                    className="flex size-7 items-center justify-center rounded-[7px] text-muted-foreground hover:bg-background/50 disabled:opacity-40"
+                    aria-label="后退"
+                    title="后退"
+                  >
+                    <ArrowLeft className="size-4" />
+                  </button>
+                  <span className="mx-px h-4 w-px bg-border/60" />
+                  <button
+                    type="button"
+                    disabled={!history.canForward}
+                    onClick={history.forward}
+                    className="flex size-7 items-center justify-center rounded-[7px] text-muted-foreground hover:bg-background/50 disabled:opacity-40"
+                    aria-label="前进"
+                    title="前进"
+                  >
+                    <ArrowRight className="size-4" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate("")}
+                  disabled={history.path === ""}
+                  className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 disabled:opacity-40"
+                  aria-label="主目录"
+                  title="主目录"
+                >
+                  <Home className="size-4" />
+                </button>
+                <div className="min-w-0 flex-1">
+                  <PickerBreadcrumbs
+                    path={history.path}
+                    onNavigate={navigate}
+                  />
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-2.5 border-b border-border/50 bg-muted/10 px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                <span className="size-4 shrink-0" />
+                <span className="min-w-0 flex-1">名称</span>
+                <span className="hidden shrink-0 items-center gap-4 sm:flex">
+                  <span className="w-24 text-right">修改日期</span>
+                  <span className="w-16 text-right">大小</span>
+                </span>
+              </div>
+              <div className="min-h-0 flex-1 overflow-auto">
+                {snapshot === null ? (
+                  <div className="flex h-full items-center justify-center py-10">
+                    <LoaderCircle className="size-5 animate-spin text-muted-foreground/70" />
+                  </div>
+                ) : !node || entries.length === 0 ? (
+                  <div className="flex h-full flex-col items-center justify-center gap-3 py-10 text-center">
+                    <Folder className="size-10 text-muted-foreground/40" />
+                    <div className="text-sm text-muted-foreground">
+                      此文件夹为空
+                    </div>
+                  </div>
+                ) : (
+                  entries.map(row)
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-3 border-t border-border/50 px-5 py-3">
+            <div className="min-w-0 flex-1 truncate text-[13px]">
+              {selected ? (
+                <span className="text-foreground">{selected.file.name}</span>
+              ) : (
+                <span className="text-muted-foreground">未选择文件</span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-md px-3 py-1.5 text-sm hover:bg-muted"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              disabled={!selected}
+              onClick={() => selected && onPick(selected.file.id)}
+              className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-45"
+            >
+              上传
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+      {notice ? (
+        <PickerNotice kind={notice} onClose={() => setNotice(null)} />
+      ) : null}
+    </>
   );
 }
 
@@ -673,6 +1198,7 @@ export function BrowserBountyExtension({
       {pickerOpen ? (
         <FilePicker
           model={model}
+          facts={facts}
           onCancel={() => setPickerOpen(false)}
           onPick={(fileId) => {
             setPickerOpen(false);

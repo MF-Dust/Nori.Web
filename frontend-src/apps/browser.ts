@@ -1,6 +1,10 @@
 import type { Artifact, ArtifactService } from "../services/artifacts";
 import type { ManifoldService } from "../services/manifold";
 import type { JsonValue } from "../runtime/protocol";
+import {
+  FilesAppModel,
+  type FilesPresentationSnapshot,
+} from "./files";
 import type {
   BrowserBookmark,
   BrowserPageData,
@@ -112,6 +116,10 @@ export class BrowserAppModel {
       ok: result.ok === true,
       ...(typeof result.fact === "string" ? { fact: result.fact } : {}),
     };
+  }
+
+  bountyPresentation(): Promise<FilesPresentationSnapshot> {
+    return new FilesAppModel(this.artifacts, this.manifold).presentation();
   }
 
   async bountyFiles(): Promise<BrowserBountyFile[]> {
