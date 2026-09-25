@@ -27,6 +27,8 @@ export function BootScene({
     [loading, setLoading] = useState(true),
     [parked, setParked] = useState(false);
   useEffect(() => {
+    const hostElement = host.current;
+    if (!hostElement) return;
     setFailed(false);
     setLoading(true);
     setParked(false);
@@ -42,7 +44,7 @@ export function BootScene({
     });
     const canvas = document.createElement("canvas");
     canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%";
-    host.current?.prepend(canvas);
+    hostElement.prepend(canvas);
     let renderer: ShatterRenderer | undefined,
       frame = 0,
       stopped = false,
@@ -86,10 +88,10 @@ export function BootScene({
     };
     document.addEventListener("visibilitychange", visibility);
     const resize = new ResizeObserver(() => {
-      if (renderer && host.current)
-        renderer.resize(host.current.clientWidth, host.current.clientHeight);
+      if (renderer)
+        renderer.resize(hostElement.clientWidth, hostElement.clientHeight);
     });
-    if (host.current) resize.observe(host.current);
+    resize.observe(hostElement);
     const render = (now: number) => {
       if (stopped) return;
       try {
@@ -135,8 +137,8 @@ export function BootScene({
           renderer.render(state.time / 16, params);
         }
         canvas.style.visibility = state.time < 16 ? "visible" : "hidden";
-        host.current!.dataset.phase = state.phase ?? "";
-        host.current!.dataset.time = String(state.time);
+        hostElement.dataset.phase = state.phase ?? "";
+        hostElement.dataset.time = String(state.time);
         if (state.complete) {
           audio.dispose();
           frontend.story.complete(story);

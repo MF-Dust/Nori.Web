@@ -353,15 +353,21 @@ try {
   });
   const bounty = page.getByRole("button", { name: "省钱喵", exact: true });
   await bounty.waitFor();
-  await browserFrame.locator("body").evaluate(() => {
-    window.parent.postMessage(
-      { __arcade: true, type: "submittable", value: true },
-      "*",
-    );
-  });
+  const detected = page.locator(".qm-flag").filter({ hasText: "本页侦测到" });
+  const completed = page.getByText("恭喜解锁尊享会员！", { exact: true });
+  const waitForBountyState = () =>
+    Promise.race([detected.waitFor(), completed.waitFor()]);
+  const postSubmittable = () =>
+    browserFrame.locator("body").evaluate(() => {
+      window.parent.postMessage(
+        { __arcade: true, type: "submittable", value: true },
+        "*",
+      );
+    });
+  await postSubmittable();
   await page.waitForTimeout(3_200);
   await bounty.click();
-  await page.getByText("本页侦测到优惠！", { exact: true }).waitFor();
+  await waitForBountyState();
   await bounty.click();
 
   const browserAddress = page.locator('input[inputmode="url"]').last();
@@ -372,31 +378,28 @@ try {
       exact: true,
     })
     .waitFor();
-  await browserFrame.locator("body").evaluate(() => {
-    window.parent.postMessage(
-      { __arcade: true, type: "submittable", value: true },
-      "*",
-    );
-  });
+  await postSubmittable();
   await page.waitForTimeout(3_200);
   await bounty.click();
-  await page.getByText("本页侦测到优惠！", { exact: true }).waitFor();
-  await page.getByRole("button", {
-    name: "领取本页返现",
-    exact: true,
-  }).click();
-  await page
-    .getByText("恭喜解锁尊享会员！", { exact: true })
-    .waitFor({ timeout: 10_000 });
-  assert.equal(
-    await page.evaluate(() =>
-      window.sourceSmoke.sent.some(
-        (item) => item.channel === "manifold.bounty.submit",
+  await waitForBountyState();
+  // A live archive may already have all evidence; its terminal panel has no
+  // claim button, while an incomplete world exercises the real submit RPC.
+  if (!(await completed.isVisible().catch(() => false))) {
+    await page.getByRole("button", {
+      name: "领取本页返现",
+      exact: true,
+    }).click();
+    await completed.waitFor({ timeout: 10_000 });
+    assert.equal(
+      await page.evaluate(() =>
+        window.sourceSmoke.sent.some(
+          (item) => item.channel === "manifold.bounty.submit",
+        ),
       ),
-    ),
-    true,
-    "bounty claim must traverse the real manifold.bounty.submit RPC",
-  );
+      true,
+      "bounty claim must traverse the real manifold.bounty.submit RPC",
+    );
+  }
   await page.screenshot({
     path: resolve(output, "browser-bounty-complete.png"),
   });

@@ -46,6 +46,7 @@ export function NoriStage({
   const [status, setStatus] = useState("loading");
   useEffect(() => {
     if (!host.current) return;
+    const hostElement = host.current;
     // A fresh canvas for each effect lifetime also survives StrictMode's setup/cleanup probe.
     const canvas = document.createElement("canvas");
     canvas.setAttribute("aria-label", "Nori model texture");
@@ -59,7 +60,7 @@ export function NoriStage({
     const pointer = { x: 0, y: 0 };
     const move = (event: PointerEvent) => { pointer.x = event.clientX / window.innerWidth * 2 - 1; pointer.y = 1 - event.clientY / window.innerHeight * 2; };
     window.addEventListener("pointermove", move, { passive: true });
-    host.current.append(canvas, sceneCanvas);
+    hostElement.append(canvas, sceneCanvas);
     let unregisterScan: (() => void) | undefined;
     let unbindModel: (() => void) | undefined;
     let unbindDebug: (() => void) | undefined;
@@ -71,7 +72,7 @@ export function NoriStage({
     let budgetTimer: ReturnType<typeof setTimeout> | undefined;
     let graphicsMode = useGraphicsSettings.getState().mode;
     const updateBudget = () => {
-      if (!session || !host.current) return;
+      if (!session) return;
       clearTimeout(budgetTimer);
       const nextMode = useGraphicsSettings.getState().mode;
       if (nextMode !== graphicsMode) {
@@ -80,22 +81,22 @@ export function NoriStage({
       }
       const budget = live2DRenderBudget(
         useGraphicsSettings.getState().mode,
-        Math.max(host.current.clientHeight, host.current.clientWidth),
+        Math.max(hostElement.clientHeight, hostElement.clientWidth),
         window.devicePixelRatio,
         detectGpu().tier === "low",
       );
       const stable = resolution.update(budget.resolution, performance.now());
       session.setMaxFps(budget.fps);
-      renderer?.resize(host.current.clientWidth, host.current.clientHeight, Math.min(window.devicePixelRatio || 1, graphicsMode === "quality" ? 2 : 1));
+      renderer?.resize(hostElement.clientWidth, hostElement.clientHeight, Math.min(window.devicePixelRatio || 1, graphicsMode === "quality" ? 2 : 1));
       session.setResolution(stable.resolution);
-      host.current.dataset.live2dFps = String(budget.fps);
-      host.current.dataset.live2dResolution = String(stable.resolution);
+      hostElement.dataset.live2dFps = String(budget.fps);
+      hostElement.dataset.live2dResolution = String(stable.resolution);
       if (stable.delay !== null)
         budgetTimer = setTimeout(updateBudget, stable.delay);
     };
     const unsubscribeGraphics = useGraphicsSettings.subscribe(updateBudget);
     const resize = new ResizeObserver(updateBudget);
-    resize.observe(host.current);
+    resize.observe(hostElement);
     setStatus("loading");
     try {
       engine = Live2DEngine.create({ baseUrl: "/", logging: "error" });
@@ -169,16 +170,16 @@ export function NoriStage({
           unbindDebug = attachLive2DDebug(frontend.live2dDebug, model);
           try {
             renderer = new NoriSceneRenderer(sceneCanvas, canvas, frontend.audio);
-            host.current!.dataset.sceneRenderer = "three";
+            hostElement.dataset.sceneRenderer = "three";
             updateBudget();
           } catch (error) {
             console.warn("[NoriScene] renderer unavailable", error);
-            host.current!.dataset.sceneRenderer = "fallback";
+            hostElement.dataset.sceneRenderer = "fallback";
             sceneCanvas.remove();
           }
           unregisterScan = registerScanModel(canvas, model, () => {
             if (!renderer) return canvas.getBoundingClientRect();
-            const rect = host.current!.getBoundingClientRect();
+            const rect = hostElement.getBoundingClientRect();
             return { x: rect.x + projected.x - projected.width / 2, y: rect.y + projected.y - projected.height / 2, width: projected.width, height: projected.height };
           });
           model.setIdleSequence({ group: "Idle", index: 0, loop: true });
@@ -191,20 +192,20 @@ export function NoriStage({
             scene: frontend.scene,
             facts: () => latest.current.facts,
             exclusive: () => latest.current.exclusive(),
-            host: host.current!,
+            host: hostElement,
           });
           session!.start();
-          patInput = bindHeadPatInput(host.current!, model, frontend);
+          patInput = bindHeadPatInput(hostElement, model, frontend);
           const renderScene = (now: number) => {
             if (disposed) return;
             patInput?.update(renderer
               ? { x: projected.x - projected.width / 2, y: projected.y - projected.height / 2, width: projected.width, height: projected.height }
-              : { x: 0, y: 0, width: host.current!.clientWidth, height: host.current!.clientHeight });
+              : { x: 0, y: 0, width: hostElement.clientWidth, height: hostElement.clientHeight });
             sceneFrame = requestAnimationFrame(renderScene);
             if (!renderer || now - lastFrame < 1000 / (graphicsMode === "ultra-performance" ? 30 : 60)) return;
             lastFrame = now;
             projected = renderer.render(now / 1000, frontend.scene.snapshot(), { exclusive: latest.current.exclusive(), facts: latest.current.facts, pointer, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches }) ?? projected;
-            host.current!.dataset.coldOpen = renderer.coldOpenStatus;
+            hostElement.dataset.coldOpen = renderer.coldOpenStatus;
           };
           sceneFrame = requestAnimationFrame(renderScene);
           setStatus("ready");

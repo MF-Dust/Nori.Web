@@ -29,7 +29,23 @@ vite.stdout.on("data", (b) => {
 vite.stderr.on("data", (b) => {
   log += b;
 });
-let browser;
+const launchOptions = {
+  headless: true,
+  executablePath: process.env.NORI_TEST_CHROMIUM || undefined,
+  args: [
+    "--use-gl=angle",
+    "--use-angle=swiftshader",
+    "--enable-unsafe-swiftshader",
+  ],
+};
+const runProbe = async (verify) => {
+  const browser = await chromium.launch(launchOptions);
+  try {
+    await verify(browser, output, origin);
+  } finally {
+    await browser.close();
+  }
+};
 try {
   const deadline = Date.now() + 60000;
   let ready = false;
@@ -41,19 +57,9 @@ try {
     await new Promise((r) => setTimeout(r, 150));
   }
   if (!ready) throw Error("Story Vite server did not start: " + log);
-  browser = await chromium.launch({
-    headless: true,
-    executablePath: process.env.NORI_TEST_CHROMIUM || undefined,
-    args: [
-      "--use-gl=angle",
-      "--use-angle=swiftshader",
-      "--enable-unsafe-swiftshader",
-    ],
-  });
-  await verifyBootCorruption(browser, output, origin);
-  await verifyMemoryDatasea(browser, output, origin);
-  await verifyFarewellEnding(browser, output, origin);
+  await runProbe(verifyBootCorruption);
+  await runProbe(verifyMemoryDatasea);
+  await runProbe(verifyFarewellEnding);
 } finally {
-  await browser?.close();
   vite.kill("SIGTERM");
 }

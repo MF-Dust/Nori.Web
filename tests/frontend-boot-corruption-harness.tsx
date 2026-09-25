@@ -7,6 +7,7 @@ import { NoriStage } from "../frontend-src/live2d/nori-stage";
 import { NoriSceneEffects } from "../frontend-src/components/nori-scene-effects";
 import { NoriSceneStore } from "../frontend-src/state/nori-scene";
 import { SpeechPlayer } from "../frontend-src/runtime/speech-player";
+import { Live2DDebugRuntime } from "../frontend-src/live2d/debug-runtime";
 import {
   StoryDirector,
   STORY_ORDER,
@@ -49,6 +50,7 @@ const frontend = {
   story,
   speech,
   audio,
+  live2dDebug: new Live2DDebugRuntime(),
   headPat: new HeadPat(),
   requestPatReaction: () => false,
   arcade: {

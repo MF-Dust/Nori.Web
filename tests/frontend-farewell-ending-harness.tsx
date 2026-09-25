@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { AudioMixer } from "../frontend-src/runtime/audio-mixer";
 import { SpeechPlayer } from "../frontend-src/runtime/speech-player";
 import { HeadPat } from "../frontend-src/live2d/head-pat";
+import { Live2DDebugRuntime } from "../frontend-src/live2d/debug-runtime";
 import { NoriStage } from "../frontend-src/live2d/nori-stage";
 import { NoriSceneStore } from "../frontend-src/state/nori-scene";
 import { WorldStore } from "../frontend-src/runtime/world-store";
@@ -44,6 +45,7 @@ const chat = {
 const frontend = {
   scene,
   speech,
+  live2dDebug: new Live2DDebugRuntime(),
   headPat: new HeadPat(),
   audio: new AudioMixer(),
   story: storyController,

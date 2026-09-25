@@ -292,6 +292,7 @@ def test_signal_read_command() -> None:
                 "signal.daniel.read",
                 "signal.daniel.dm1.read",
             ]
+            facts = manifold.state["facts"]
             assert facts["signal.daniel.read"]["source"] == "signal.read"
             assert facts["signal.daniel.dm1.read"]["source"] == "signal.read"
         else:

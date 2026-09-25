@@ -23,9 +23,11 @@ function CultFlash({
   const [attempt, setAttempt] = useState(0),
     [failed, setFailed] = useState(false);
   useEffect(() => {
+    const hostElement = host.current;
+    if (!hostElement) return;
     const canvas = document.createElement("canvas");
     canvas.style.cssText = "width:100%;height:100%;display:block";
-    host.current!.append(canvas);
+    hostElement.append(canvas);
     const lease = frontend.scene.acquire();
     lease.set({ active: true, darkness: 1 });
     let renderer: ReturnType<typeof createCultRenderer> | undefined;
@@ -73,7 +75,7 @@ function CultFlash({
           audio.sync(state);
           const progress = state.time / state.duration;
           renderer!.render(reduced ? 0.95 : progress);
-          host.current!.dataset.progress = String(progress);
+          hostElement.dataset.progress = String(progress);
           if (progress >= 1) {
             audio.dispose();
             frontend.story.complete(story);
