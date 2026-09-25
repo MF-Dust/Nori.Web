@@ -36,6 +36,10 @@ import {
 import type { BrowserIntentStore } from "../intents/browser-intent";
 import { settleBountyExtensionInstall } from "../apps/browser-extension-install";
 import {
+  BrowserBountyCat,
+  BrowserBountyExtension,
+} from "./browser-bounty-extension";
+import {
   useManagedWindowRuntime,
   useWindowAppRuntime,
   useWindowPresentationRuntime,
@@ -128,35 +132,6 @@ function faviconFallback(url: string, title = ""): string {
   } catch {
     return source[0]?.toUpperCase() ?? "?";
   }
-}
-
-function BrowserBountyCat({ size = 40 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 40 40"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M9 8 L15 16 Q20 13 25 16 L31 8 L29 19 Q33 24 29 30 Q20 36 11 30 Q7 24 11 19 Z"
-        fill="#fff"
-        stroke="#d80f68"
-        strokeWidth="1.5"
-      />
-      <circle cx="16" cy="22" r="2.1" fill="#d80f68" />
-      <circle cx="24" cy="22" r="2.1" fill="#d80f68" />
-      <circle cx="13" cy="25" r="1.6" fill="#ffc2db" />
-      <circle cx="27" cy="25" r="1.6" fill="#ffc2db" />
-      <path
-        d="M18 27 Q20 29.5 22 27"
-        stroke="#d80f68"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
 }
 
 function BrowserFavicon({ src, url, title, className = "size-4" }: { src?: string; url: string; title?: string; className?: string }) {
@@ -290,6 +265,9 @@ export function BrowserScreen({
   const [bookmarks, setBookmarks] = useState<BrowserBookmarkData[]>(() => loadBrowserBookmarks());
   const [hoverUrl, setHoverUrl] = useState<string | null>(null);
   const [factsVersion, setFactsVersion] = useState(0);
+  const [submittableByTab, setSubmittableByTab] = useState<
+    Record<string, boolean>
+  >({});
   const [menu, setMenu] = useState<MenuState | null>(null);
   const scroll = useRef(new Map<string, number>());
   const reloadTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -312,10 +290,10 @@ export function BrowserScreen({
 
   const resolveExtensionInstall = useCallback(
     async (accepted: boolean) => {
-      setExtensionInstallOpen(false);
-      await settleBountyExtensionInstall(runtime.model, accepted);
       const resolve = extensionInstallResolver.current;
       extensionInstallResolver.current = null;
+      setExtensionInstallOpen(false);
+      await settleBountyExtensionInstall(runtime.model, accepted);
       resolve?.(accepted);
     },
     [runtime],
@@ -684,6 +662,13 @@ export function BrowserScreen({
             </button>
           </div>
         </form>
+        <BrowserBountyExtension
+          model={runtime.model}
+          facts={facts}
+          pageUrl={active.url}
+          submittable={submittableByTab[active.id] ?? false}
+          playCue={playCue}
+        />
       </div>
 
       <div className="relative min-h-0 flex-1 bg-background">
@@ -713,6 +698,13 @@ export function BrowserScreen({
                     onReady={isActive ? () => onReady?.() : () => {}}
                     onContentReady={() => patchTab(tab.id, (value) => value.homeOverlay ? { ...value, homeOverlay: false } : value)}
                     onRequestExtensionInstall={requestExtensionInstall}
+                    onSubmittableChange={(value) =>
+                      setSubmittableByTab((current) =>
+                        current[tab.id] === value
+                          ? current
+                          : { ...current, [tab.id]: value },
+                      )
+                    }
                     onScrollChange={(y) => scroll.current.set(tab.id, y)}
                     onContextMenu={pageContextMenu}
                   />

@@ -335,8 +335,9 @@ class EventDispatcher:
         manifold = self._manifold()
         if manifold is not None:
             try:
-                manifold.dispatch("player",
-                                  {"type": "client.emitFact", "factId": matched_fact})
+                self._dispatch_manifold(
+                    {"type": "client.emitFact", "factId": matched_fact}
+                )
             except Exception:
                 return None
         return matched_fact
