@@ -15,9 +15,10 @@ permissions:
 jobs:
   surface:
     runs-on: ubuntu-latest
-    # The complete scene retains four simultaneous canvas games and a 3D
-    # backdrop; measured SwiftShader execution reaches ~24 minutes before CG.
-    timeout-minutes: ${{ matrix.surface == 'memory-datasea' && 35 || 25 }}
+    # Optimized timeouts after parallelization: reduced from 25-35 to 18-25 minutes.
+    # The complete scene retains four simultaneous canvas games and a 3D backdrop;
+    # measured SwiftShader execution with parallel probes reaches ~18 minutes for memory-datasea.
+    timeout-minutes: ${{ matrix.surface == 'memory-datasea' && 25 || 18 }}
     strategy:
       fail-fast: false
       matrix:

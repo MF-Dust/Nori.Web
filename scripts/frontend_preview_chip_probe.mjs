@@ -170,7 +170,7 @@ export async function verifyChip(page, output) {
       "false",
   );
   await button.click();
-  await page.locator('[data-phase="picking"]').waitFor();
+  await page.locator('[data-phase="picking"]').waitFor({ timeout: 30000 });
   await page.keyboard.press("Escape");
   await page.locator(".chip-overlay").waitFor({ state: "detached" });
   await button.click();

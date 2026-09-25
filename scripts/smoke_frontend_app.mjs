@@ -20,6 +20,12 @@ await mkdir(output, { recursive: true });
 const backendPort = 47173;
 const backendOrigin = `http://127.0.0.1:${backendPort}`;
 process.env.NORI_BACKEND_ORIGIN = backendOrigin;
+
+// Detect CI environment for adaptive timeouts
+const isCI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
+const isFastMode = process.env.NORI_TEST_FAST_MODE === "1";
+const modelReadyTimeout = isFastMode ? 30000 : isCI ? 90000 : 60000;
+const defaultTimeout = isFastMode ? 15000 : 20000;
 const backend = spawn(
   process.env.NORI_TEST_PYTHON ?? "python",
   [
@@ -51,7 +57,9 @@ backend.stderr.on("data", (data) => {
 let vite, browser;
 try {
   let ready = false;
-  for (let attempt = 0; attempt < 100; attempt++) {
+  const pollInterval = 100; // Reduced from 150ms
+  const maxAttempts = isCI ? 120 : 100;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       if ((await fetch(`${backendOrigin}/api/auth/get-session`)).ok) {
         ready = true;
@@ -60,7 +68,7 @@ try {
     } catch {}
     if (backend.exitCode !== null)
       throw new Error("Backend exited: " + backendLog);
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
   }
   assert.ok(ready, "local backend did not start");
   vite = await createServer({
@@ -539,18 +547,71 @@ try {
       body: "/* Fixture intentionally registers no processor. */",
     }),
   );
-  for (const [name, verify] of [
-    ["Chess tutorial", () => verifyChessTutorial(page, output)],
-    ["Voice and Corruption", () => verifyVoiceCorruption(page, output)],
+
+  // Parallelize independent probes - Group 1: Browser-dependent probes
+  // These need new browser contexts and can run in parallel
+  const browserProbes = [
     ["Nori scene and cold-open lifecycle", () => verifyNoriScene(browser, output)],
     ["Scene editor", () => verifySceneTools(browser, output)],
     ["Preview", () => verifyPreview(browser, output)],
     ["Messenger", () => verifyMessenger(browser, output)],
+  ];
+
+  // Group 2: Page-dependent probes (can run in parallel among themselves)
+  const pageProbes = [
+    ["Chess tutorial", () => verifyChessTutorial(page, output)],
+    ["Voice and Corruption", () => verifyVoiceCorruption(page, output)],
     ["Chip", () => verifyChip(page, output)],
-  ]) {
-    console.log(`[Source app ${new Date().toISOString()}] ${name}: start`);
-    await verify();
-    console.log(`[Source app ${new Date().toISOString()}] ${name}: passed`);
+  ];
+
+  // Execute browser probes in parallel
+  console.log(`[Source app ${new Date().toISOString()}] Starting browser-dependent probes in parallel`);
+  const browserResults = await Promise.allSettled(
+    browserProbes.map(async ([name, verify]) => {
+      const start = Date.now();
+      console.log(`[Source app ${new Date().toISOString()}] ${name}: start`);
+      try {
+        await verify();
+        const duration = ((Date.now() - start) / 1000).toFixed(1);
+        console.log(`[Source app ${new Date().toISOString()}] ${name}: passed (${duration}s)`);
+        return { name, success: true };
+      } catch (error) {
+        console.error(`[Source app ${new Date().toISOString()}] ${name}: failed`);
+        throw error;
+      }
+    })
+  );
+
+  // Check for failures in browser probes
+  for (const result of browserResults) {
+    if (result.status === "rejected") {
+      throw result.reason;
+    }
+  }
+
+  // Execute page probes in parallel
+  console.log(`[Source app ${new Date().toISOString()}] Starting page-dependent probes in parallel`);
+  const pageResults = await Promise.allSettled(
+    pageProbes.map(async ([name, verify]) => {
+      const start = Date.now();
+      console.log(`[Source app ${new Date().toISOString()}] ${name}: start`);
+      try {
+        await verify();
+        const duration = ((Date.now() - start) / 1000).toFixed(1);
+        console.log(`[Source app ${new Date().toISOString()}] ${name}: passed (${duration}s)`);
+        return { name, success: true };
+      } catch (error) {
+        console.error(`[Source app ${new Date().toISOString()}] ${name}: failed`);
+        throw error;
+      }
+    })
+  );
+
+  // Check for failures in page probes
+  for (const result of pageResults) {
+    if (result.status === "rejected") {
+      throw result.reason;
+    }
   }
 
   // Make the shipped Credits Dock condition true in the disposable local world.

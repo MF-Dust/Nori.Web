@@ -7,6 +7,11 @@ import { resolve, join } from "node:path";
 
 const tutorialSteps = JSON.parse(await readFile("shared/chess-tutorial.json", "utf8"));
 
+// Detect CI environment for adaptive timeouts
+const isCI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
+const isFastMode = process.env.NORI_TEST_FAST_MODE === "1";
+const defaultTimeout = isFastMode ? 15000 : 20000;
+
 const output = resolve("frontend-games-smoke");
 const appHtml = await readFile(".frontend-app-build/index.html", "utf8");
 const appStyles = [...appHtml.matchAll(/href="(\/assets\/[^" ]+\.css)"/g)].map(match => match[1]);
