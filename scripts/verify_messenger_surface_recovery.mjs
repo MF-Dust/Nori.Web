@@ -267,6 +267,34 @@ async function main() {
     );
   }
 
+  for (const marker of [
+    "MESSENGER_INCOMING_SURFACE_STYLE",
+    "color-mix(in oklab, var(--secondary-foreground) 10%, var(--secondary))",
+    "color-mix(in oklab, var(--secondary-foreground) 16%, transparent)",
+    "MESSENGER_INPUT_SURFACE_STYLE",
+    "color-mix(in oklab, var(--background) 60%, transparent)",
+    "color-mix(in oklab, var(--secondary-foreground) 12%, transparent)",
+    "shadow-[0_1px_2px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.18)]",
+    "style={own ? undefined : MESSENGER_INCOMING_SURFACE_STYLE}",
+    "style={MESSENGER_INCOMING_SURFACE_STYLE}",
+    "style={MESSENGER_INPUT_SURFACE_STYLE}",
+  ]) {
+    assert(
+      baseSource.includes(marker),
+      `Messenger base component missing shipped direct surface binding: ${marker}`,
+    );
+  }
+
+  assert(
+    (baseSource.match(/style=\{MESSENGER_INPUT_SURFACE_STYLE\}/g) ?? [])
+      .length >= 3,
+    "Messenger input palette is not directly bound to search and both composers",
+  );
+  assert(
+    (baseSource.match(/MESSENGER_INCOMING_SURFACE_STYLE/g) ?? []).length >= 5,
+    "Messenger incoming palette is not directly bound to message and typing surfaces",
+  );
+
   assert(
     productionIcons.includes("ProductionStaticAppIcon") &&
       productionIcons.includes('className="dock-ic"') &&

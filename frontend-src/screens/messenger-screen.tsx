@@ -62,6 +62,19 @@ const SEALED_ERROR_DETAILS = [
   "  account +1 555 0•• ••••  status 451 (restricted: risk-review)",
 ];
 
+const MESSENGER_INCOMING_SURFACE_STYLE = {
+  background:
+    "color-mix(in oklab, var(--secondary-foreground) 10%, var(--secondary))",
+  borderColor:
+    "color-mix(in oklab, var(--secondary-foreground) 16%, transparent)",
+} as const;
+
+const MESSENGER_INPUT_SURFACE_STYLE = {
+  background: "color-mix(in oklab, var(--background) 60%, transparent)",
+  borderColor:
+    "color-mix(in oklab, var(--secondary-foreground) 12%, transparent)",
+} as const;
+
 export type MessengerTranslate = (
   key: string,
   params?: Readonly<Record<string, string | number>>,
@@ -377,7 +390,10 @@ function ThreadList({
         </button>
       </header>
       <div className="px-3 py-2.5">
-        <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-shadow focus-within:ring-1 focus-within:ring-ring/40">
+        <div
+          className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-shadow focus-within:ring-1 focus-within:ring-ring/40"
+          style={MESSENGER_INPUT_SURFACE_STYLE}
+        >
           <Search className="size-4 shrink-0 text-muted-foreground" />
           <input
             value={query}
@@ -622,7 +638,14 @@ function MessageBubble({
   if (message.kind === "image" && message.assetPath) {
     return (
       <div className={`flex ${own ? "justify-end" : "justify-start"}`}>
-        <div className={`relative max-w-[min(78%,20rem)] overflow-hidden rounded-2xl p-0.5 ${own ? "rounded-br-sm bg-primary" : "rounded-bl-sm border"}`}>
+        <div
+          className={`relative max-w-[min(78%,20rem)] overflow-hidden rounded-2xl p-0.5 ${
+            own
+              ? "rounded-br-sm bg-primary shadow-[0_1px_2px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.18)]"
+              : "rounded-bl-sm border shadow-sm"
+          }`}
+          style={own ? undefined : MESSENGER_INCOMING_SURFACE_STYLE}
+        >
           <MessagePhoto message={message} onViewImage={onViewImage} t={t} />
           {stamp ? (
             <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
@@ -654,7 +677,10 @@ function MessageBubble({
   if (!own && thread.service && message.kind === "text") {
     return (
       <div className="flex justify-start">
-        <div className="relative max-w-[78%] rounded-2xl rounded-bl-sm border px-3.5 py-2 text-sm text-secondary-foreground shadow-sm">
+        <div
+          className="relative max-w-[78%] rounded-2xl rounded-bl-sm border px-3.5 py-2 text-sm text-secondary-foreground shadow-sm"
+          style={MESSENGER_INCOMING_SURFACE_STYLE}
+        >
           <MarkdownBody markdown={`🤖 ${message.body}`} className="select-text break-words italic leading-relaxed" />
           {stamp ? (
             <div className="mt-1 flex justify-end">
@@ -670,7 +696,14 @@ function MessageBubble({
 
   return (
     <div className={`flex ${own ? "justify-end" : "justify-start"}`}>
-      <div className={`relative max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${own ? "rounded-br-sm bg-primary text-primary-foreground" : "rounded-bl-sm border text-secondary-foreground"}`}>
+      <div
+        className={`relative max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${
+          own
+            ? "rounded-br-sm bg-primary text-primary-foreground shadow-[0_1px_2px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.18)]"
+            : "rounded-bl-sm border text-secondary-foreground shadow-sm"
+        }`}
+        style={own ? undefined : MESSENGER_INCOMING_SURFACE_STYLE}
+      >
         <div className="select-text whitespace-pre-wrap break-words leading-relaxed">
           {linkedText(message.body, own ? "text-primary-foreground" : "text-primary", runtime.openUrl)}
           {stamp ? (
@@ -736,7 +769,10 @@ function SealedComposer({ runtime, t }: { runtime: MessengerScreenRuntime; t: Me
         <button type="button" onClick={reject} aria-label={t("signal.composer.attach")} title={t("signal.composer.disabledHint")} className="mb-0.5 flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-muted-foreground">
           <Plus className="size-5" />
         </button>
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2">
+        <div
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2"
+          style={MESSENGER_INPUT_SURFACE_STYLE}
+        >
           <Lock className="size-3.5 shrink-0 text-muted-foreground" />
           <input
             type="text"
@@ -797,7 +833,10 @@ function ServiceComposer({
   return (
     <div className="relative shrink-0 border-t border-border/50">
       <div className="flex items-end gap-2 px-3 py-2.5">
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2 transition-shadow focus-within:ring-1 focus-within:ring-ring/40">
+        <div
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2 transition-shadow focus-within:ring-1 focus-within:ring-ring/40"
+          style={MESSENGER_INPUT_SURFACE_STYLE}
+        >
           <input
             ref={inputRef}
             type="text"
@@ -832,7 +871,10 @@ function ServiceComposer({
 function TypingBubble({ t }: { t: MessengerTranslate }) {
   return (
     <div className="flex justify-start">
-      <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm border px-3.5 py-2.5 text-secondary-foreground shadow-sm">
+      <div
+        className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm border px-3.5 py-2.5 text-secondary-foreground shadow-sm"
+        style={MESSENGER_INCOMING_SURFACE_STYLE}
+      >
         <span className="sr-only">{t("signal.conversation.typing")}</span>
         {[0, 1, 2].map((index) => (
           <span key={index} className="size-1.5 animate-bounce rounded-full bg-current opacity-50" style={{ animationDelay: `${index * 140}ms` }} />
