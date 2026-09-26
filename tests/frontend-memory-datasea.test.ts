@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  DATASEA_AUDIO,
   DATASEA_PHASES,
   dataseaCamera,
+  dataseaWhiteout,
 } from "../frontend-src/story/datasea-scene";
 import {
   MEMORY_ALERT_OFFSETS,
@@ -114,4 +116,125 @@ test("datasea parks only for route alignment and descends to evidence camera tar
   assert.deepEqual(dataseaCamera(0).camera, { x: 0, y: 0, z: 7.4 });
   assert.equal(dataseaCamera(27).camera.y, -190);
   assert.ok(Math.abs(dataseaCamera(13).cameraRot.x + Math.PI / 2) < 1e-9);
+});
+
+test("datasea audio is the live shipped table with phase-derived times", () => {
+  // NormalApp-Cn6agT0F.js (the chunk public/index.html loads through
+  // index-CyHAbkO5) is the only place in public/assets that carries this
+  // table. Times are 99.3 cosmic / 159.115 white / 187.415 cg / 198.415 end.
+  assert.deepEqual(
+    DATASEA_AUDIO.map(
+      ({ id, at, until, gain, fadeIn, fadeOut, loop }) => ({
+        id,
+        at,
+        until,
+        gain,
+        fadeIn,
+        fadeOut,
+        loop: loop === true,
+      }),
+    ),
+    [
+      {
+        id: "descendBubbles",
+        at: 0,
+        until: 198.4151785714286,
+        gain: undefined,
+        fadeIn: undefined,
+        fadeOut: undefined,
+        loop: false,
+      },
+      {
+        id: "deepSpace",
+        at: 99.3,
+        until: 159.1151785714286,
+        gain: 0.7,
+        fadeIn: undefined,
+        fadeOut: 6,
+        loop: false,
+      },
+      {
+        id: "cosmicAccelWhoosh",
+        at: 153.4,
+        until: 198.4151785714286,
+        gain: 0.7,
+        fadeIn: undefined,
+        fadeOut: undefined,
+        loop: false,
+      },
+      {
+        id: "whiteWave1",
+        at: 159.1151785714286,
+        until: 198.4151785714286,
+        gain: undefined,
+        fadeIn: undefined,
+        fadeOut: undefined,
+        loop: false,
+      },
+      {
+        id: "whiteWave2",
+        at: 165.1151785714286,
+        until: 198.4151785714286,
+        gain: undefined,
+        fadeIn: undefined,
+        fadeOut: undefined,
+        loop: false,
+      },
+      {
+        id: "seasideWaves",
+        at: 159.1151785714286,
+        until: 193.71517857142862,
+        gain: 0.25,
+        fadeIn: 3,
+        fadeOut: 2.5,
+        loop: true,
+      },
+      {
+        id: "dropletTouch",
+        at: 191.21517857142862,
+        until: 198.4151785714286,
+        gain: undefined,
+        fadeIn: undefined,
+        fadeOut: undefined,
+        loop: false,
+      },
+      {
+        id: "cgRiser",
+        at: 192.4151785714286,
+        until: 198.4151785714286,
+        gain: undefined,
+        fadeIn: undefined,
+        fadeOut: 0.5,
+        loop: false,
+      },
+    ],
+  );
+  // Every cue the table names has to exist under public/audio/datasea.
+  assert.deepEqual(
+    [...new Set(DATASEA_AUDIO.map((track) => track.src))].sort(),
+    [
+      "/audio/datasea/cg-riser.m4a",
+      "/audio/datasea/cosmic-accel-whoosh.m4a",
+      "/audio/datasea/deep-space.m4a",
+      "/audio/datasea/descend-bubbles.m4a",
+      "/audio/datasea/droplet-touch.m4a",
+      "/audio/datasea/seaside-waves-loop.m4a",
+      "/audio/datasea/white-wave-1.m4a",
+      "/audio/datasea/white-wave-2.m4a",
+    ],
+  );
+  assert.deepEqual(
+    DATASEA_AUDIO.every((track) => track.until > track.at),
+    true,
+  );
+});
+
+test("datasea whiteout is the shipped 1.2s handoff ramp, not a 5s phase ramp", () => {
+  // Smoothstep over [white + 3.2, white + 4.4]; the source used to climb
+  // linearly over [white, white + 5].
+  assert.equal(dataseaWhiteout(159.1151785714286), 0);
+  assert.equal(dataseaWhiteout(162.3151785714286), 0);
+  assert.ok(Math.abs(dataseaWhiteout(162.9151785714286) - 0.5) < 1e-9);
+  assert.equal(dataseaWhiteout(163.5151785714286), 1);
+  assert.equal(dataseaWhiteout(187.4151785714286), 1);
 });

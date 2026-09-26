@@ -60,6 +60,8 @@ function useMountedCakeDuel(runtime: CakeDuelPresentationRuntime) {
   useEffect(() => {
     if (snapshot.connected) runtime.controller.ensureMounted();
   }, [runtime.controller, snapshot.connected, snapshot.mounted]);
+  // Window-scoped ownership: the last Cake Duel window to close unmounts.
+  useEffect(() => runtime.controller.retain(), [runtime.controller]);
   return snapshot;
 }
 

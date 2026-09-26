@@ -109,23 +109,23 @@ function installTransportProbe() {
   };
 }
 
-const frames = (page, type, cartridgeId) =>
+const frames = (page, type, cartridgeId, source = "sent") =>
   page.evaluate(
-    ({ type, cartridgeId }) =>
-      window.lifecycle.sent.filter(
+    ({ type, cartridgeId, source }) =>
+      window.lifecycle[source].filter(
         (frame) => frame.type === type && (!cartridgeId || frame.cartridgeId === cartridgeId),
       ).length,
-    { type, cartridgeId },
+    { type, cartridgeId, source },
   );
 
 /** Wait until at least `count` matching frames have been written. */
-async function waitForFrames(page, type, cartridgeId, count, timeout = 30000) {
+async function waitForFrames(page, type, cartridgeId, count, timeout = 30000, source = "sent") {
   await page.waitForFunction(
-    ({ type, cartridgeId, count }) =>
-      window.lifecycle.sent.filter(
+    ({ type, cartridgeId, count, source }) =>
+      window.lifecycle[source].filter(
         (frame) => frame.type === type && (!cartridgeId || frame.cartridgeId === cartridgeId),
       ).length >= count,
-    { type, cartridgeId, count },
+    { type, cartridgeId, count, source },
     { timeout },
   );
 }
@@ -175,8 +175,6 @@ async function dropArcade(page) {
 const GAMES = [
   {
     id: "chess",
-    // GameCartridgeController.retain() releases and unmounts on close.
-    releasesCartridge: true,
     root: '[data-chess-board]',
     playing: page => page.locator('[aria-label="Move history"]'),
     async start(page, locale) {
@@ -198,7 +196,6 @@ const GAMES = [
   },
   {
     id: "codenames",
-    releasesCartridge: true,
     root: ".source-codenames-app",
     playing: page => page.locator("[data-codenames-board]"),
     async start(page, locale) {
@@ -222,7 +219,6 @@ const GAMES = [
   },
   {
     id: "pictionary",
-    releasesCartridge: true,
     root: ".source-pictionary",
     // The cover literals are inline in frontend-src/screens/pictionary-cover.tsx.
     coverPlay: { "en-US": "Play", "zh-CN": "开始" },
@@ -248,9 +244,6 @@ const GAMES = [
   },
   {
     id: "cakeduel",
-    // CakeDuelRuntimeController has no retain/release, so closing its window
-    // never unmounts the cartridge. Reported, not asserted away.
-    releasesCartridge: false,
     root: "[data-cakeduel-screen]",
     playing: page => page.locator("[data-cakeduel-action-panel]"),
     async start(page, locale) {
@@ -277,40 +270,6 @@ const GAMES = [
       await action.click();
       return `played ${label}`;
     },
-    /**
-     * This controller never releases its cartridge, so a live bout outlives the
-     * window and leaks into the next run. Put the cartridge back on its start
-     * route with the app's own `reset` command, over the real transport.
-     */
-    async teardown(page) {
-      const before = await page.evaluate(() => window.lifecycle.received.length);
-      const sent = await page.evaluate(() => {
-        const socket = window.lifecycle.sockets.find(
-          (item) => item.url.includes("/api/arcade/web/v1") && item.readyState === 1,
-        );
-        const head = window.lifecycle.received
-          .filter((frame) => frame.cartridgeId === "cakeduel" && typeof frame.version === "number")
-          .at(-1)?.version;
-        if (!socket || head === undefined) return false;
-        socket.send(
-          JSON.stringify({
-            type: "dispatch",
-            actor: "player",
-            cartridgeId: "cakeduel",
-            requestId: "lifecycle-reset",
-            expectedHeadVersion: head,
-            cmd: { type: "reset" },
-          }),
-        );
-        return true;
-      });
-      assert.equal(sent, true, "the Arcade socket must be open to reset Cake Duel");
-      await page.waitForFunction(
-        (count) => window.lifecycle.received.length > count,
-        before,
-        { timeout: 30000 },
-      );
-    },
   },
 ];
 
@@ -326,7 +285,7 @@ async function runLifecycle(page, game, locale) {
   const startDispatches = await frames(page, "dispatch", game.id);
   await game.start(page, locale);
   await game.playing(page).waitFor();
-  if (game.releasesCartridge) await waitForFrames(page, "mount_cartridge", game.id, mountsBefore + 1);
+  await waitForFrames(page, "mount_cartridge", game.id, mountsBefore + 1);
   await waitForFrames(page, "dispatch", game.id, startDispatches + 1);
   step(`playing surface up (${await game.playing(page).count()} marker(s))`);
   await page.screenshot({ path: join(output, `${game.id}-${locale}-play.png`) });
@@ -339,36 +298,22 @@ async function runLifecycle(page, game, locale) {
 
   // --- close -----------------------------------------------------------------
   const beforeClose = await frames(page, "unmount_cartridge", game.id);
+  const beforeDrop = await frames(page, "cartridge_unmounted", game.id, "received");
   await closeWindow(page, game.id);
   assert.equal(await page.locator(game.root).count(), 0, `${label}: surface survived close`);
-  if (game.releasesCartridge) {
-    await waitForFrames(page, "unmount_cartridge", game.id, beforeClose + 1);
-    step("surface detached and the cartridge was released");
-  } else {
-    assert.equal(
-      await frames(page, "unmount_cartridge", game.id),
-      beforeClose,
-      `${label}: the cartridge left without being unmounted`,
-    );
-    step("surface detached (this app never unmounts its cartridge — reported, see report)");
-  }
+  // Every game must release its cartridge: the window's unmount frame is on the
+  // wire and the world really dropped the cartridge behind it.
+  await waitForFrames(page, "unmount_cartridge", game.id, beforeClose + 1);
+  await waitForFrames(page, "cartridge_unmounted", game.id, beforeDrop + 1, 30000, "received");
+  step("surface detached and the cartridge was released");
   await page.screenshot({ path: join(output, `${game.id}-${locale}-closed.png`) });
 
   // --- reopen ----------------------------------------------------------------
   const mountsAfterClose = await frames(page, "mount_cartridge", game.id);
   await openFromDock(page, game.id);
   await page.locator(game.root).waitFor();
-  if (game.releasesCartridge) {
-    await waitForFrames(page, "mount_cartridge", game.id, mountsAfterClose + 1);
-    await game.start(page, locale);
-  } else {
-    // Never unmounted, so the cartridge — and its route — were still there.
-    assert.equal(
-      await frames(page, "mount_cartridge", game.id),
-      mountsAfterClose,
-      `${label}: reopening remounted a cartridge that was never unmounted`,
-    );
-  }
+  await waitForFrames(page, "mount_cartridge", game.id, mountsAfterClose + 1);
+  await game.start(page, locale);
   await game.playing(page).waitFor();
   step("reopened and the playing surface is back");
   await page.screenshot({ path: join(output, `${game.id}-${locale}-reopened.png`) });
@@ -386,10 +331,6 @@ async function runLifecycle(page, game, locale) {
 
   await closeWindow(page, game.id);
   step("closed cleanly");
-  if (game.teardown) {
-    await game.teardown(page);
-    step("cartridge reset for the next run (it is never unmounted)");
-  }
 }
 
 async function runReducedMotion(browser) {
@@ -418,7 +359,6 @@ async function runReducedMotion(browser) {
       console.log(`    · ${game.id}: start -> play under prefers-reduced-motion`);
       await page.screenshot({ path: join(output, `reduced-motion-${game.id}.png`) });
       await closeWindow(page, game.id);
-      if (game.teardown) await game.teardown(page);
     }
     await page.close();
   } finally {

@@ -383,6 +383,7 @@ export class CakeDuelRuntimeController {
   private wolfyTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingChallengeReaction: CakeDuelReaction | null = null;
   private connected: boolean;
+  private users = 0;
   private current: CakeDuelControllerSnapshot;
 
   constructor(
@@ -396,13 +397,7 @@ export class CakeDuelRuntimeController {
     this.unsubs.push(arcade.onState((state) => {
       const connected = state === "open";
       if (!connected) {
-        const hadPending = this.pendingRequestId !== null || this.mountPending;
-        this.pendingRequestId = null;
-        this.mountPending = false;
-        this.pendingDebugResolve?.(false);
-        this.pendingDebugResolve = null;
-        this.pendingDebugScenarioId = null;
-        if (hadPending) this.error = "Connection interrupted";
+        if (this.clearPendingRequests()) this.error = "Connection interrupted";
       } else if (this.error === "Connection interrupted") {
         this.error = null;
       }
@@ -445,6 +440,34 @@ export class CakeDuelRuntimeController {
       this.publish();
     }
   }
+
+  /**
+   * Window-scoped cartridge ownership, the Cake Duel twin of
+   * `GameCartridgeController.retain()`: the first window mounts, the last one to
+   * close unmounts. A mount still in flight counts as mounted, so closing
+   * during the mount round-trip cannot orphan the cartridge.
+   */
+  retain = (): (() => void) => {
+    this.users++;
+    this.ensureMounted();
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.users = Math.max(0, this.users - 1);
+      // Route transitions may unmount/remount synchronously.
+      queueMicrotask(() => {
+        if (this.users) return;
+        const mounted = this.mountPending || this.world.runtime("cakeduel") !== undefined;
+        this.clearPendingRequests();
+        this.clearTransientPresentation();
+        this.publish();
+        if (mounted && this.connected) {
+          try { this.games.unmount("cakeduel"); } catch { /* Connection may have closed. */ }
+        }
+      });
+    };
+  };
 
   startNormal(difficulty: CakeDuelDifficulty): void {
     this.dispatch({ type: "startGame", mode: "normal", difficulty });
@@ -495,6 +518,17 @@ export class CakeDuelRuntimeController {
       this.reactions.clearMood();
     this.pendingChallengeReaction = null;
     this.listeners.clear();
+  }
+
+  /** Drops in-flight mount/action state; reports whether anything was pending. */
+  private clearPendingRequests(): boolean {
+    const pending = this.pendingRequestId !== null || this.mountPending;
+    this.pendingRequestId = null;
+    this.mountPending = false;
+    this.pendingDebugResolve?.(false);
+    this.pendingDebugResolve = null;
+    this.pendingDebugScenarioId = null;
+    return pending;
   }
 
   private dispatch(cmd: { type: string; [key: string]: JsonValue }): void {

@@ -36,9 +36,11 @@ export interface DesktopRootProps {
 }
 
 /**
- * Source-driven desktop composition boundary. It deliberately keeps topbar,
- * dock, wallpaper and feature presentation injectable while the corresponding
- * NormalApp presentation modules are still being recovered.
+ * Source-driven desktop composition boundary. Topbar, dock, wallpaper and
+ * feature presentation stay injectable so hosts and harnesses can substitute
+ * them, but every one of those slots has a source-owned default
+ * (`recovered-desktop-shell.tsx`), so no NormalApp presentation module is
+ * required for the `desktop-shell` boundary.
  *
  * `runtimeOptions` are treated as construction-time options. Pass a prebuilt
  * `runtime` when a caller needs to own runtime replacement explicitly.

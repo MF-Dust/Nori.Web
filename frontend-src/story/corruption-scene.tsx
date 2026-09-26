@@ -14,6 +14,7 @@ import {
 import { AntivirusGames } from "./antivirus-games";
 import { CorruptionEntry, CorruptionHeal } from "./corruption-overlays.js";
 import { createCorruptionGlitch } from "./corruption-glitch.js";
+import { power1InOut, power2InOut, power2Out, ramp } from "./story-ease";
 
 /** Production scene keeps the reference's 12s voice fallback, unlike a simulated reply. */
 export function CorruptionScene({
@@ -178,9 +179,21 @@ export function CorruptionScene({
         projected.fov = null;
       }
       if (next.phase === "entry") {
+        // Shipped `wJ` entry-console, entryDur 3.4 split by the same fractions:
+        // vVignette -> entryVignette 0.7 across 0.28 (`power2.out`), then down
+        // to entryVignette * 0.55 = 0.385 across 0.72 (`power1.inOut`);
+        // vReveal -> 1 - entryShroud 0.78 across 0.3 (`power2.out`), held
+        // 0.25 (`none`), then back to 1 across 0.45 (`power2.inOut`).
+        // The sine hump this replaces returned both channels to 0 at p = 1.
         const p = (next.time - m.entry) / 3.4;
-        projected.vignette = 0.7 * Math.sin(Math.PI * p);
-        projected.noriReveal = 1 - 0.22 * Math.sin(Math.PI * p);
+        projected.vignette =
+          p < 0.28
+            ? ramp(p, 0, 0.28, 0, 0.7, power2Out)
+            : ramp(p, 0.28, 0.72, 0.7, 0.385, power1InOut);
+        projected.noriReveal =
+          p < 0.3
+            ? ramp(p, 0, 0.3, 1, 0.78, power2Out)
+            : ramp(p, 0.55, 0.45, 0.78, 1, power2InOut);
       }
       lease.set(projected);
       audio.sync(next);

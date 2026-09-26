@@ -211,4 +211,38 @@
       animation: none;
     }
   }
+  /* Shipped ChatPanel composer error shake (ChatPanel-*.js, framer-motion
+     useAnimation): tween of x through [0,-6,6,-4,4,0] over 300ms with
+     easeOut. framer resolves easeOut to cubic-bezier(0,0,.58,1) and applies it
+     to each of the keyframes.length-1 segments over evenly split offsets, which
+     is exactly what a CSS keyframe animation with a per-segment timing function
+     does. */
+  .chat-composer-shake {
+    animation: source-chat-shake 300ms cubic-bezier(0, 0, 0.58, 1) both;
+  }
+  @keyframes source-chat-shake {
+    0% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-6px);
+    }
+    40% {
+      transform: translateX(6px);
+    }
+    60% {
+      transform: translateX(-4px);
+    }
+    80% {
+      transform: translateX(4px);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chat-composer-shake {
+      animation: none;
+    }
+  }
 }

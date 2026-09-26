@@ -4,6 +4,7 @@ import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import { StoryAudio } from "./story-audio";
 import { StoryClock, type StoryPhase } from "./story-clock";
 import type { StoryInstance } from "./story-director";
+import { power2InOut, power2Out, ramp } from "./story-ease";
 import "./memory-scene.css";
 
 export const MEMORY_PHASES: readonly StoryPhase[] = [
@@ -143,10 +144,17 @@ export function memoryProjection(time: number) {
     drain: time >= drain && time < voidAt,
     drainProgress: clamp01((time - drain) / 10),
     // Shipped: Math.min(1, voidDur 2.4 * 0.45) = 1s, not the raw 1.08 product.
-    voidProgress: clamp01((time - voidAt) / 1),
+    // Shipped `DJ` tweens voidEnv 0 -> 1 across that 1s with `power2.inOut`.
+    voidProgress: ramp(time, voidAt, 1, 0, 1, power2InOut),
     // Shipped quakePeak 0.7 decaying to 0 over 2s (power2.out), then quiet for
     // the rest of the attack — not a flat 0.35 held across the whole phase.
-    quake: 0.7 * (1 - clamp01((time - attack) / 2)) ** 2,
+    quake: 0.7 * (1 - ramp(time, attack, 2, 0, 1, power2Out)),
+    // Shipped `DJ` also rides alert and tint up with `power2.in` over
+    // alarmRise 1.2s and back down with `power2.out` over
+    // voidDur - 1 = 1.4s from voidStart + 1. This source still drops both
+    // linearly over 1s from voidStart; the window is a duration finding, not
+    // converted here.
+    alertFall: clamp01((time - voidAt) / 1),
   };
 }
 
@@ -370,10 +378,10 @@ export function MemoryScene({
           // 1 at phaseStart("drain") = 28.7, so the desktop takes over there.
           active: state.time < phaseStart("drain"),
           shake: projection.quake,
-          alertLoop: projection.attack ? 1 - projection.voidProgress : 0,
+          alertLoop: projection.attack ? 1 - projection.alertFall : 0,
           alertClock: Math.max(0, state.time - phaseStart("attack")),
           noriTint: projection.attack
-            ? 0.55 * (1 - projection.voidProgress)
+            ? 0.55 * (1 - projection.alertFall)
             : 0,
           chatMode: projection.sweep ? "bubbles" : "normal",
           bgm: projection.attack

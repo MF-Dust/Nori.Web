@@ -21,6 +21,12 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function assertDeepEqual(actual, expected, message) {
+  const a = JSON.stringify(actual);
+  const e = JSON.stringify(expected);
+  if (a !== e) throw new Error(`${message}\n  actual:   ${a}\n  expected: ${e}`);
+}
+
 async function main() {
   await fs.rm(OUTPUT, { recursive: true, force: true });
   try {
@@ -85,6 +91,40 @@ async function main() {
     assert(
       sourceChatPanel.includes("return String(content);"),
       "source ChatPanel must stringify unsupported message content like the shipped chunk",
+    );
+
+    // Shipped composer error shake: a framer-motion useAnimation tween, not a
+    // spring. Pinned here because the source reproduces it as CSS keyframes and
+    // that port is only equivalent while the offsets, distances and curve match.
+    assert(
+      shippedChatPanel.includes("x: [0, -6, 6, -4, 4, 0]") &&
+        shippedChatPanel.includes('transition: { duration: 0.3, ease: "easeOut" }'),
+      "shipped ChatPanel composer shake keyframes or transition changed; re-check the CSS port",
+    );
+    const sourceComponentsCss = await fs.readFile(
+      path.join(ROOT, "frontend-src", "styles", "components.css"),
+      "utf8",
+    );
+    assert(
+      sourceComponentsCss.includes("animation: source-chat-shake 300ms cubic-bezier(0, 0, 0.58, 1) both;"),
+      "source ChatPanel shake must keep the shipped 300ms duration and easeOut curve",
+    );
+    const shakeFrames = [...sourceComponentsCss.matchAll(/(\d+)%\s*\{\s*transform:\s*translateX\(([^)]+)\)/g)];
+    assertDeepEqual(
+      shakeFrames.map((frame) => [frame[1], frame[2]]),
+      [
+        ["0", "0"],
+        ["20", "-6px"],
+        ["40", "6px"],
+        ["60", "-4px"],
+        ["80", "4px"],
+        ["100", "0"],
+      ],
+      "source ChatPanel shake must keep the six evenly split shipped keyframes",
+    );
+    assert(
+      sourceChatPanel.includes("chat-composer-shake"),
+      "source ChatPanel must drive the shake keyframes on a rejected guess",
     );
 
     const scrollAreaChunk = manifest.chunks.find((chunk) => chunk.file.startsWith("scroll-area-"));

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
-import { StoryAudio } from "./story-audio";
+import { StoryAudio, type StoryAudioTrack } from "./story-audio";
 import { StoryClock, type StoryPhase } from "./story-clock";
 import type { StoryInstance } from "./story-director";
 import { createDataseaRenderer } from "./datasea-renderer";
 import { DataseaWaveGate } from "./datasea-wave-gate";
 import { dataseaMessagesAt, dataseaCosmicAt, dataseaWhiteAt, dataseaCgAt } from "./datasea-content";
+import { power2InOut } from "./story-ease";
 import "./datasea-scene.css";
 
 export const DATASEA_PHASES: readonly StoryPhase[] = [
@@ -24,6 +25,96 @@ const startOf = (id: string) =>
     0,
     DATASEA_PHASES.findIndex((phase) => phase.id === id),
   ).reduce((sum, phase) => sum + phase.duration, 0);
+
+/** Story end. A shipped cue with no `until` is bounded by exactly this. */
+const DATASEA_END = DATASEA_PHASES.reduce(
+  (sum, phase) => sum + phase.duration,
+  0,
+);
+/** Shipped `pass`: the accel whoosh rides the last cosmic line (t0 + 1.5,
+ *  52.6 + 1.5). The shipped float carries one extra ulp (54.10000000000002 →
+ *  153.40000000000003); phase-derived 153.4 is 2.8e-14s away, ~1e-9 of a sample. */
+const DATASEA_PASS = 54.1;
+/** Shipped `cosmicTail`: the cosmic phase outlasts the nebula handoff by this. */
+const DATASEA_COSMIC_TAIL = 2;
+/** Shipped CG contact beat: the hand lands 3.8s into the CG. */
+const DATASEA_CONTACT = 3.8;
+
+/**
+ * The shipped audio table (the one revision of it in public/assets, in
+ * NormalApp-Cn6agT0F.js, which public/index.html loads through index-CyHAbkO5).
+ * Every time is an offset from DATASEA_PHASES so the algebra stays checkable.
+ */
+export const DATASEA_AUDIO: readonly StoryAudioTrack[] = [
+  {
+    id: "descendBubbles",
+    src: "/audio/datasea/descend-bubbles.m4a",
+    at: 0,
+    until: DATASEA_END,
+  },
+  {
+    id: "deepSpace",
+    src: "/audio/datasea/deep-space.m4a",
+    at: startOf("cosmic"),
+    until: startOf("white"),
+    gain: 0.7,
+    fadeOut: 6,
+  },
+  {
+    id: "cosmicAccelWhoosh",
+    src: "/audio/datasea/cosmic-accel-whoosh.m4a",
+    at: startOf("cosmic") + DATASEA_PASS,
+    until: DATASEA_END,
+    gain: 0.7,
+  },
+  {
+    id: "whiteWave1",
+    src: "/audio/datasea/white-wave-1.m4a",
+    at: startOf("white"),
+    until: DATASEA_END,
+  },
+  {
+    id: "whiteWave2",
+    src: "/audio/datasea/white-wave-2.m4a",
+    at: startOf("white") + 6,
+    until: DATASEA_END,
+  },
+  {
+    id: "seasideWaves",
+    src: "/audio/datasea/seaside-waves-loop.m4a",
+    at: startOf("white"),
+    until: startOf("cg") + DATASEA_CONTACT + 2.5,
+    loop: true,
+    gain: 0.25,
+    fadeIn: 3,
+    fadeOut: 2.5,
+  },
+  {
+    id: "dropletTouch",
+    src: "/audio/datasea/droplet-touch.m4a",
+    at: startOf("cg") + DATASEA_CONTACT,
+    until: DATASEA_END,
+  },
+  {
+    id: "cgRiser",
+    src: "/audio/datasea/cg-riser.m4a",
+    at: startOf("cg") + 5,
+    until: DATASEA_END,
+    fadeOut: 0.5,
+  },
+];
+
+/**
+ * Shipped whiteout: smoothstep over [handoff + 5.2, handoff + 6.4] with the
+ * handoff at `cosmic + (cosmicDur - cosmicTail)`, i.e. 1.2s long starting
+ * 3.2s into the white phase.
+ */
+const whiteOutAt = startOf("white") - DATASEA_COSMIC_TAIL + 5.2;
+const whiteOutSpan = 6.4 - 5.2;
+export const dataseaWhiteout = (time: number) => {
+  const mix = Math.max(0, Math.min(1, (time - whiteOutAt) / whiteOutSpan));
+  return mix * mix * (3 - 2 * mix);
+};
 
 export function dataseaCamera(time: number) {
   const points = [
@@ -54,7 +145,10 @@ export function dataseaCamera(time: number) {
   return {
     camera: { x: 0, y, z: 7.4 },
     cameraRot: {
-      x: -(Math.PI / 2) * (tilt * tilt * (3 - 2 * tilt)),
+      // Shipped `sUe`: `-(PI / 2) * Sg(fl(t, 5, 13))`. That bundle's `Sg` is the
+      // cubic half/half ramp `t < 0.5 ? 4t^3 : 1 - (2 - 2t)^3 / 2`, i.e. exactly
+      // the vendored GSAP `power2.inOut` — not the smoothstep this used to run.
+      x: -(Math.PI / 2) * power2InOut(tilt),
       y: 0,
       z: 0,
     },
@@ -86,66 +180,7 @@ export function DataseaScene({
     let renderer: ReturnType<typeof createDataseaRenderer> | undefined;
     setFailure(null);
     setView((state) => ({ ...state, ready: false }));
-    const cosmic = startOf("cosmic"),
-      white = startOf("white"),
-      cg = startOf("cg");
-    const audio = new StoryAudio(frontend.audio, [
-      {
-        id: "descent",
-        src: "/audio/datasea/descend-bubbles.m4a",
-        at: 0,
-        until: 8,
-      },
-      {
-        id: "deep",
-        src: "/audio/datasea/deep-space.m4a",
-        at: 8,
-        until: cosmic,
-        loop: true,
-        fadeIn: 2,
-        fadeOut: 2,
-        gain: 0.8,
-      },
-      {
-        id: "accelerate",
-        src: "/audio/datasea/cosmic-accel-whoosh.m4a",
-        at: cosmic,
-        until: cosmic + 8,
-      },
-      {
-        id: "white-1",
-        src: "/audio/datasea/white-wave-1.m4a",
-        at: white,
-        until: white + 6,
-      },
-      {
-        id: "white-2",
-        src: "/audio/datasea/white-wave-2.m4a",
-        at: white + 6,
-        until: cg,
-      },
-      {
-        id: "shore",
-        src: "/audio/datasea/seaside-waves-loop.m4a",
-        at: white,
-        until: cg + 11,
-        loop: true,
-        fadeIn: 2,
-        gain: 0.65,
-      },
-      {
-        id: "touch",
-        src: "/audio/datasea/droplet-touch.m4a",
-        at: cg,
-        until: cg + 4,
-      },
-      {
-        id: "riser",
-        src: "/audio/datasea/cg-riser.m4a",
-        at: cg + 3,
-        until: cg + 11,
-      },
-    ]);
+    const audio = new StoryAudio(frontend.audio, DATASEA_AUDIO);
     let frame = 0,
       stopped = false,
       released = false,
@@ -186,7 +221,7 @@ export function DataseaScene({
       try {
         const state = clock.advance(now),
           camera = dataseaCamera(state.time),
-          whiteProgress = Math.max(0, Math.min(1, (state.time - white) / 5));
+          whiteProgress = dataseaWhiteout(state.time);
         audio.sync(state);
         renderer!.render({
           time: state.time,
@@ -243,7 +278,7 @@ export function DataseaScene({
   }, [frontend, story, attempt]);
   const white = startOf("white"),
     cg = startOf("cg"),
-    whiteProgress = Math.max(0, Math.min(1, (view.time - white) / 5));
+    whiteProgress = dataseaWhiteout(view.time);
   const wake = () =>
     view.parkedAt && clockRef.current?.wake(view.parkedAt, performance.now());
   return (

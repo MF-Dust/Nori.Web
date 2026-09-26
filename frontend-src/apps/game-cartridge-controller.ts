@@ -157,7 +157,13 @@ export class GameCartridgeController<T> {
         if (!this.users && !this.disposed) {
           this.resetPresentation();
           this.finish(false);
-          if (this.world.runtime(this.game) && this.arcade.connectionState === "open") {
+          // `pending` covers a mount still in flight: `world.runtime()` is the local
+          // view, so a close inside the mount round-trip would skip the unmount and
+          // orphan a cartridge that lands a moment later. The backend handles one
+          // socket's frames in order and `unmount_cartridge` is an idempotent
+          // `cartridges.pop(id, None)`, so sending it early is safe.
+          const inFlight = this.value.pending || this.world.runtime(this.game);
+          if (inFlight && this.arcade.connectionState === "open") {
             try { this.games.unmount(this.game); } catch { /* Connection may have closed. */ }
           }
         }

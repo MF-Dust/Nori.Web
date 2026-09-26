@@ -7,9 +7,10 @@ export interface CommandEnvelope<T = JsonValue> {
 }
 
 /**
- * Narrow adapter for the command executor still owned by the large NormalApp
- * bundle. The adapter keeps recovered Signal behavior usable without guessing
- * how that executor is internally wired.
+ * Narrow adapter over the source-owned command executor. `NoriFrontendRuntime`
+ * builds the one implementation (runtime/frontend-runtime.ts), which forwards to
+ * the source `ManifoldService`; keeping it behind this interface leaves Signal's
+ * call shape independent of how commands reach the host.
  */
 export interface CommandTransport {
   execute<T = JsonValue>(

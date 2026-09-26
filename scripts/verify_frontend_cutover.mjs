@@ -58,4 +58,23 @@ if (cssBoundaryMatch[1] === "true" && sourceHtml.includes("index-FU-0vwSE.css"))
   throw new Error("css-ownership is complete but the source frontend still imports legacy CSS");
 }
 
+// Self-policing: the marginal-growth ribbon is the one shipped capability the ledger
+// records as unported, and a stub that merely references the baked topology assets must
+// not pass silently. Passes today (nothing in frontend-src fetches them) and starts
+// failing the moment a real or fake port appears.
+const idleBoundaryMatch = statusSource.match(
+  /id:\s*"idle-qfr"[\s\S]*?complete:\s*(true|false)/,
+);
+if (!idleBoundaryMatch) throw new Error("idle-qfr cutover boundary is missing");
+if (idleBoundaryMatch[1] === "true") {
+  for (const path of await collectSourceFiles("frontend-src")) {
+    const content = await readFile(path, "utf8");
+    if (/marginal-growth-cache-[a-z]+\.bin/.test(content)) {
+      throw new Error(
+        `idle-qfr is marked complete but ${path} references a marginal-growth cache; the shipped ribbon world must be ported before the boundary can close`,
+      );
+    }
+  }
+}
+
 console.log(`Frontend cutover gate: ${incompleteBoundaries} pending boundary/boundaries.`);

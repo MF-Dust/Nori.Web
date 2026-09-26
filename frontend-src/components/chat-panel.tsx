@@ -305,10 +305,12 @@ function ChatComposer({
 }: ChatComposerProps) {
   const [value, setValue] = useState("");
   const [invalid, setInvalid] = useState(false);
+  const [shake, setShake] = useState(false);
   const textarea = useRef<HTMLTextAreaElement | null>(null);
   const wasEnabled = useRef(false);
   const composing = useRef(false);
   const focusTimer = useRef<number | undefined>(undefined);
+  const shakeTimer = useRef<number | undefined>(undefined);
   const lastTypingSound = useRef(0);
   const enabled = isPlayerGuesser && active;
 
@@ -319,8 +321,18 @@ function ChatComposer({
     wasEnabled.current = enabled;
     return () => {
       if (focusTimer.current !== undefined) window.clearTimeout(focusTimer.current);
+      if (shakeTimer.current !== undefined) window.clearTimeout(shakeTimer.current);
     };
   }, [enabled]);
+
+  /** Replay the shake keyframes. Dropping the class and restoring it in a later
+   * task is what restarts a CSS animation; React has flushed the removal by
+   * then, so repeated rejections shake again instead of going inert. */
+  const replayShake = useCallback(() => {
+    setShake(false);
+    if (shakeTimer.current !== undefined) window.clearTimeout(shakeTimer.current);
+    shakeTimer.current = window.setTimeout(() => setShake(true), 0);
+  }, []);
 
   const submit = useCallback(() => {
     const guess = value.trim();
@@ -335,8 +347,9 @@ function ChatComposer({
 
     playSound?.("primitives-error-shake");
     setInvalid(true);
+    replayShake();
     textarea.current?.focus();
-  }, [active, onSubmitGuess, playSound, value]);
+  }, [active, onSubmitGuess, playSound, replayShake, value]);
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -355,6 +368,7 @@ function ChatComposer({
           "group/input-group border-input dark:bg-input/30 relative flex w-full items-center rounded-md border shadow-xs transition-[color,box-shadow] outline-none",
           "h-auto min-w-0 flex-col",
           invalid && "border-destructive ring-destructive/20 ring-[3px]",
+          shake && "chat-composer-shake",
         )}
       >
         <textarea
@@ -403,9 +417,17 @@ function ChatComposer({
 /**
  * Recovered shared chat panel used by game/chat presentation chunks.
  *
- * Message/input behavior and layout follow the shipped chunk. The original
- * motion-controller animations remain a presentation-only migration detail;
- * no extra animation dependency is introduced here just to emulate them.
+ * Message/input behavior, layout and the composer error shake follow the
+ * shipped chunk. The shake is the shipped framer-motion `useAnimation` tween
+ * (`x: [0,-6,6,-4,4,0]`, 300ms, easeOut) reproduced as the
+ * `chat-composer-shake` keyframes in styles/components.css; no animation
+ * dependency is introduced for it.
+ *
+ * The per-message enter/exit and `layout` animations the shipped chunk also
+ * carries are not reproduced. Their enter halves are plain 300ms tweens, but
+ * the exit halves and the shared-element layout projection need
+ * `AnimatePresence`/`layout` from a motion library, so porting only the enter
+ * halves would ship a look-alike that drops messages instead of animating them.
  */
 export const ChatPanel = memo(function ChatPanel({
   messages,

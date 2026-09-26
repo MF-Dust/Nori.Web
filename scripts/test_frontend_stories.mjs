@@ -10,6 +10,7 @@ try {
     "frontend-production-stories",
     "frontend-memory-datasea",
     "frontend-story-clock",
+    "frontend-story-ease",
     "farewell-ending",
     "frontend-cult",
   ]) {
