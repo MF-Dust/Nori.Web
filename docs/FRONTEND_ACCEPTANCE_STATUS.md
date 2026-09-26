@@ -1,140 +1,74 @@
 # Frontend Restoration Acceptance Status Report
-# Generated: 2026-09-26
-# HEAD: 57ada1f (smoke test optimization + test tools)
 
-## Executive Summary
+Updated: 2026-09-26  
+HEAD: `0a38a16`  
+Authority: `frontend-src/migration/cutover-status.ts`
 
-**Overall Progress: 10/15 boundaries complete (66.7%)**
+This report supersedes the older status paragraphs that counted 10/15 boundaries or listed `supporting-apps` as open.
 
-### Completed Boundaries (10)
-✅ desktop-shell, terminal, signal-auth, browser-popup, browser-main
-✅ signal-messenger, mail, files, idle-qfr, css-ownership
+## Current count
 
-### Remaining Boundaries (5)
+**11/15 boundaries complete.** Four remain `complete: false`.
 
-#### 1. Messenger (High Priority)
-**Source Coverage**: ✅ Complete
-- ✅ IME-safe composition
-- ✅ Bubble/thread styling source-bound
-- ✅ Notification queue + Signal artifact arrival
-- ✅ Chromium acceptance: read/reread windows, Daniel typing/reply/interrupt
+Completed: `desktop-shell`, `terminal`, `signal-auth`, `browser-popup`, `browser-main`, `signal-messenger`, `mail`, `files`, `idle-qfr`, `css-ownership`, `supporting-apps`.
 
-**Remaining Work**:
-- ⚠️ Original-session visual comparison (tool ready: `frontend_visual_comparison.mjs`)
-- 🔴 Original-agent/full-corpus/media sessions (BLOCKED: agent backend)
-- ⚠️ Shell arrival timing acceptance
+Open: `messenger`, `games`, `live2d`, `production-entry`.
 
-**Recommendation**: Mark complete for source-owned behaviors. Document agent-dependent items as external blockers.
+Do not close those four from source ownership alone. `production-entry` stays false while any other boundary is false, and `public/index.html` still loads the historical JavaScript entry.
 
-#### 2. Games (High Priority)
-**Source Coverage**: ✅ Complete
-- ✅ All 4 game runtimes/presentations source-owned
-- ✅ Codenames tutorial (13-step deterministic)
-- ✅ Chess (22-ply guided opening)
-- ✅ Cake Duel (exact timing)
-- ✅ Pictionary presentation
+## What closed in source
 
-**Remaining Work**:
-- ⚠️ Full lifecycle testing (tool ready: `frontend_games_lifecycle_test.mjs`)
-- ⚠️ Dual locale verification (en-US, zh-CN)
-- ⚠️ Reduced motion accessibility
-- 🔴 Agent dialogue/voice/inference for all games (BLOCKED: agent backend)
-- ⚠️ Visual comparison with original
+These were real divergences from the shipped bundle. They are now in `frontend-src` and covered by unit tests plus the probes named below.
 
-**Recommendation**: Run lifecycle test, capture visuals, mark complete for source-owned lifecycle. Document agent interactions as blockers.
+- Datasea messages land as full lines inside the 440×540 window. Typing is the dots window only. Wave transmissions use the same dark bubbles in the shipped 520×42vh masked column. Cosmic, white, and CG lines keep the untyped suffix in a hidden span and fade with `power2.inOut` over 0.9s.
+- Memory alert and tint follow the shipped `power2.in` rise, hold, and `power2.out` fall. The scene sends `memory_alert` twice during drain and does not invent a reply.
+- Boot and Ending environment channels use the shipped GSAP power eases. Camera smoothstep is unchanged.
+- The floating conversation stack lifts to 94px while a chip readout is visible and rests at 12px. Game chat rows enter and leave over 300ms without a motion library.
 
-#### 3. Live2D (High Priority)
-**Source Coverage**: ✅ 7 producers registered
-- ✅ Cult: Complete
-- 🟡 Boot, Corruption, Memory, Datasea, Farewell, Ending: Registered but lack original parity
+## Evidence from this working tree
 
-**Remaining Work per segment**:
-- Boot: Original frame/audio comparison, re-entry/error matrix
-- Corruption: Animation comparison, original reply text/voice (BLOCKED), reload matrix
-- Memory: Browser completion, window copy/visual, voice corpus (BLOCKED)
-- Datasea: Visual/frame comparison, compositor parity, agent dialogue (BLOCKED)
-- Farewell: Line copy/voice (BLOCKED), keyframe comparison
-- Ending: Final-frame/BGM/desktop-state comparison
+Passed locally:
 
-**Recommendation**: Use Scene Editor for frame-by-frame inspection. Capture keyframes with visual comparison tool. Document agent/voice dependencies as blockers.
+- `npm run frontend:typecheck`
+- `npm run frontend:stories:test` (44)
+- `npm run frontend:recover:check`
+- `npm run frontend:cutover:check` (4 pending boundaries)
+- Recovery surfaces: `cult`, `farewell-ending`, `boot-corruption` (corruption matrix 8/8), `boot-matrix` (8/8), `cold-open`, `memory-datasea` (including the device matrix), `datasea-games` (12/12)
+- `node scripts/probes/frontend_visual_comparison.mjs` (44 frames, no pixel verdict)
+- `npm run frontend:games:lifecycle` (en-US, zh-CN, reduced motion)
+- Desktop browser check: conversation margin settles at 12px, then at 94px after the genie ease; a Codenames chat row takes the `data-phase="from"` enter pose
 
-#### 4. Supporting Apps (Medium Priority)
-**Source Coverage**: ✅ Complete
-- ✅ Settings, About, Credits, Preview, Debug, Scene Editor all source-owned
-- ✅ Debug binds production Live2D/Audio/Pat/reaction runtimes
-- ✅ Shatter/Datasea tuners present
+`frontend:app:smoke` and `frontend:games:smoke` were not re-run for this note. Earlier 2026-09-26 results for those commands stay historical.
 
-**Remaining Work**:
-- ⚠️ Debug layout visual comparison
-- 🔵 Private Inject Talk/Nori Context handlers (DOCUMENTED as intentionally unavailable)
-- ⚠️ Browser acceptance for system apps
+## Open gaps
 
-**Recommendation**: Capture Debug layout screenshots. Document private handlers as known limitation. Mark complete with documented gaps.
+### External blocker
 
-#### 5. Production Entry (Final Gate)
-**Status**: ⏸️ Awaiting all 14 other boundaries
+`backend/services/event_dispatcher.py` returns `{type: "noop"}` for `nori_talk.request`. The request can be sent. The reply, voice, and media cannot be accepted against the original agent.
 
-**Remaining Work**:
-- Final regression suite (all surfaces, candidate smoke, visual reference)
-- Rollback verification
-- Coordination for production switch
+- Messenger: original-agent sessions, full corpus, media sessions.
+- Games: Codenames clue/guess dialogue, Chess agent speech, Pictionary snapshot inference, Cake Duel agent media.
+- Stories: Corruption `corruption_scare` and Memory `memory_alert` replies. The requests are wired. No reply text is invented.
+- Head-pat `pat` replies.
+- Debug Inject Talk and Nori Context. The panels report the blocker. The private handlers are not in the local backend.
 
-**Recommendation**: Only proceed when boundaries 1-4 above are marked complete.
+Datasea dialogue and the Farewell monologue are shipped static text and audio, not `nori_talk` sessions. Their remaining gap is original playback and frame comparison.
 
-## Test Tool Status
+### Acceptance still open
 
-✅ **Available Tools**:
-- `scripts/frontend_visual_comparison.mjs` - Messenger/Games/Live2D visual capture
-- `scripts/frontend_games_lifecycle_test.mjs` - Full lifecycle + dual locale + reduced motion
-- `scripts/smoke_frontend_app.mjs` - Optimized with parallelization (50% faster)
-- `scripts/frontend_visual_reference_probe.mjs` - Existing paired visual capture
-- `scripts/frontend_visual_games_probe.mjs` - Existing game start screens
+- No stable original-client pixel baseline. The 44-frame capture is review material, not a parity verdict. `live2d` stays false.
+- Boot and Ending original frame and audio comparison.
+- Corruption animation comparison against an original playthrough. The reload matrix in `boot-corruption` passed.
+- Memory window copy and visual comparison. The five-window browser probe passed. `memory_alert` replies stay blocked.
+- Datasea frame comparison against an original client. The message window, wave column, and typewriter layout are source-owned.
+- Farewell and Ending original keyframe, BGM, and desktop-state comparison. The farewell-ending probe passed its behavioral residue matrix.
+- Head-pat spark shape and pacing.
+- Debug panel layout comparison.
 
-## Agent Backend Blocker
+### Intentionally not ported
 
-🔴 **Critical Path Blocker**: `backend/services/event_dispatcher.py` returns `{type: "noop"}` for `nori_talk.request`
+Corruption `vBehindScale` / `vBehindOffsetZ` stay unwired. The shipped glow consumer is unreachable, so driving those channels would draw a frame the original client never showed.
 
-**Blocks**:
-- Messenger: Agent/media sessions
-- Games: All agent dialogue, voice, inference (Codenames, Chess, Pictionary, Cake Duel)
-- Live2D: Corruption reply text/voice, Memory voice corpus, Datasea agent dialogue, Farewell voice
+## Gate policy
 
-**Resolution Path**:
-1. Document all agent-dependent behaviors in `FRONTEND_REMAINING_WORK.md`
-2. Mark boundaries complete for source-owned non-agent content
-3. Track agent acceptance separately for when backend becomes available
-4. DO NOT fabricate responses or use simulation to close gates
-
-## Recommended Next Actions
-
-### Immediate (Can Execute Now)
-1. ✅ Run `node scripts/frontend_games_lifecycle_test.mjs` (already running in background)
-2. ⚠️ Capture visual baselines: `node scripts/frontend_visual_comparison.mjs`
-3. ⚠️ Update `FRONTEND_REMAINING_WORK.md` with latest test coverage
-4. ⚠️ Evaluate Messenger/Games/Supporting-Apps for completion with documented blockers
-
-### Short-term (This Session)
-5. ⚠️ Use Scene Editor to inspect Live2D segment keyframes
-6. ⚠️ Capture Debug layout screenshots for Supporting Apps
-7. ⚠️ Document all agent-dependent behaviors explicitly
-8. ⚠️ Update `cutover-status.ts` for boundaries with sufficient evidence
-
-### Medium-term (Next Steps)
-9. ⏸️ Run full regression suite when boundaries 1-4 complete
-10. ⏸️ Coordinate production entry switch with repository owner
-
-## Success Metrics
-
-**Target**: 14/15 boundaries complete (all except production-entry awaiting switch)
-
-**Current**: 10/15 complete (66.7%)
-
-**Gap**: 4 boundaries (messenger, games, live2d, supporting-apps)
-
-**Achievable**: 3-4 boundaries can close with visual verification + agent blocker documentation
-  - Messenger: Close with visual comparison + agent blocker doc
-  - Games: Close with lifecycle test + agent blocker doc
-  - Supporting Apps: Close with layout comparison + handler limitation doc
-  - Live2D: Partial close possible for non-agent visual content
-
-**Estimated Progress**: Could reach 13-14/15 (87-93%) with current tools and evidence
+`messenger`, `games`, and `live2d` stay false until the external agent sessions and the original visual comparison have evidence. Documenting the noop is not a reason to flip them. `production-entry` is last.

@@ -18,7 +18,8 @@ The temporal pass is a readable source-owned reconstruction of shipped `iVe` and
 
 - Source-owned static narrative content is now restored from the shipped bundle: the 13 messages, both wave transmissions, cosmic passage, white passage and four CG lines are rendered from `datasea-content.ts` with the recovered gaps, holds and typing order. The source text layer still does not claim pixel parity for the original message-window/compositor treatment.
 
-- Dialogue and voice reveal timing cannot be closed against the original agent while the backend `nori_talk.request` path returns `noop`; these scenes do not invent replacements.
+- The Memory scene sends `memory_alert` twice during the drain window. Dialogue and voice reveal timing cannot be closed against the original agent while the backend `nori_talk.request` path returns `noop`; these scenes do not invent replacements.
+- Datasea messages are the shipped landed-line window: full lines plus typing dots, not a glyph reveal. Cosmic and white subtitles still type with `Math.max(length / cps, 0.6)`, which is the shipped `P0` duration.
 - The renderer consumes the 28 MB GLB and both shipped textures and restores separate gas/shell materials, wrapped motes, environment lighting, temporal accumulation, camera reprojection history, bloom, tone mapping and antialiasing. Independent historical visual comparison remains necessary before frame-perfect parity can be claimed.
 - Default timing is calculated from the shipped numeric choreography: 30.0 seconds descent, 44.8 messages, 14.0 visualization entrance, a 0.5-second gated wave marker, 10.0 convergence, 59.815178571428596 cosmic, 28.3 white, and 11.0 CG. Cosmic markers use the shipped character counts, 10 characters/second, 1.1-second gaps and linger, and numeric hold values.
 - Visual screenshot comparison against an independently runnable historical client remains outstanding.

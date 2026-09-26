@@ -992,9 +992,17 @@ export async function verifyFarewellEnding(
           held.scene.camera.y > 0 && held.scene.camera.y < 1.75,
           "the cancel must land while the camera is still returning",
         );
+        // Shipped sJ holds noriDim at the formed 2.8 and sets it to 0 only when
+        // the shroud finishes (wake + 0.25 + 1.9 = 2.15s). 1.2s after the gate
+        // is age 0.9s, so the dim has not cleared; the lift in progress is noriReveal.
+        assert.equal(
+          held.scene.noriDim,
+          2.8,
+          "the shroud must still be holding the formed dim",
+        );
         assert.ok(
-          held.scene.noriDim > 0 && held.scene.noriDim < 2.8,
-          "the cancel must land while Nori is still being brought back up",
+          held.scene.noriReveal > 0 && held.scene.noriReveal < 1,
+          "the cancel must land while the shroud is still lifting",
         );
         assert.ok(held.scene.burst > 0, "the wake burst must still be running");
       },

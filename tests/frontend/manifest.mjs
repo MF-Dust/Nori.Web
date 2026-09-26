@@ -19,6 +19,7 @@ export const groups = {
   stories: [
     "tests/frontend/frontend-production-stories.test.ts",
     "tests/frontend/frontend-memory-datasea.test.ts",
+    "tests/frontend/frontend-memory-alert.test.ts",
     "tests/frontend/frontend-monotone-spline.test.ts",
     "tests/frontend/frontend-story-clock.test.ts",
     "tests/frontend/frontend-story-ease.test.ts",
@@ -29,6 +30,7 @@ export const groups = {
     "tests/frontend/frontend-antivirus.test.ts",
     "tests/frontend/frontend-audio.test.ts",
     "tests/frontend/frontend-chip.test.ts",
+    "tests/frontend/frontend-chat-motion.test.ts",
     "tests/frontend/frontend-cold-open.test.ts",
     "tests/frontend/frontend-debug-reactions-tab.test.ts",
     "tests/frontend/frontend-debug-system-tabs.test.ts",

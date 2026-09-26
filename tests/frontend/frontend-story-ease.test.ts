@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  power1In,
   power1InOut,
+  power1Out,
   power2In,
   power2InOut,
   power2Out,
@@ -33,11 +35,19 @@ test("gsap power eases are the shipped fd formulas, not smoothstep", () => {
   assert.equal(power2InOut(0.75), 0.9375);
   assert.equal(power3Out(0.25), 0.68359375);
   assert.equal(power3Out(0.5), 0.9375);
+  assert.equal(power1In(0), 0);
+  assert.equal(power1In(0.25), 0.0625);
+  assert.equal(power1In(0.5), 0.25);
+  assert.equal(power1In(1), 1);
+  assert.equal(power1Out(0), 0);
+  assert.equal(power1Out(0.25), 0.4375);
+  assert.equal(power1Out(0.5), 0.75);
+  assert.equal(power1Out(1), 1);
   assert.equal(power1InOut(0.25), 0.125);
   assert.equal(power1InOut(0.5), 0.5);
   assert.equal(power1InOut(0.75), 0.875);
   // The smoothstep these replace agrees at 0, 0.5 and 1 and nowhere else.
-  for (const ease of [power2In, power2Out, power2InOut, power3Out]) {
+  for (const ease of [power1In, power1Out, power1InOut, power2In, power2Out, power2InOut, power3Out]) {
     assert.notEqual(ease(0.25), 0.25 * 0.25 * (3 - 2 * 0.25));
   }
 });

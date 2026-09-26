@@ -2,7 +2,7 @@ import { PerspectiveCamera, Vector3 } from "three";
 import { NoriSceneStore, type NoriSceneState } from "../state/nori-scene";
 import type { StoryPhase, StoryClockState } from "./story-clock";
 import type { StoryAudioTrack } from "./story-audio";
-import { power2In, power2Out } from "./story-ease";
+import { power1InOut, power2In, power2InOut, power2Out, ramp } from "./story-ease";
 
 /** Default phase boundaries recovered from l$e/LZ/L1/sJ in the shipped client. */
 export const BOOT_PHASES: readonly StoryPhase[] = [
@@ -164,15 +164,15 @@ export function bootScene(state: StoryClockState): NoriSceneState {
     cold.oceanGodray = mix(0.1, 0.08, p);
     out.fogFar = mix(78, 210, 1 - (1 - p) ** 3);
   }
-  cold.glyphDraw = smooth(progress(t, m.draw, 4.5));
+  cold.glyphDraw = ramp(t, m.draw, 4.5, 0, 1, power1InOut);
   cold.glyphGlow = 0.5 * progress(t, m.draw + 0.45, 4.05) ** 2;
   if (t >= m.morph) {
     cold.glyphGlow = mix(0.5, 1, progress(t, m.morph, 3.36) ** 3);
-    cold.morph = smooth(progress(t, m.morph, 4.8));
+    cold.morph = ramp(t, m.morph, 4.8, 0, 1, power1InOut);
     cold.noriWash = 1 - (1 - progress(t, m.morph, 1.68)) ** 2;
   }
   if (t >= m.reveal) {
-    cold.noriWash = 1 - smooth(progress(t, m.reveal, 2.4));
+    cold.noriWash = ramp(t, m.reveal, 2.4, 1, 0, power2InOut);
     cold.noriForm = progress(t, m.reveal, 0.96) ** 2;
     out.noriDim = 2.8 * progress(t, m.reveal, 1.2) ** 2;
     out.noriReveal = 0;
@@ -232,7 +232,8 @@ export function bootScene(state: StoryClockState): NoriSceneState {
   out.fov = fov;
   out.cameraFar = mix(19, 170, smooth((t - m.surface - 1) / 14.1));
   if (t > m.ready) {
-    const age = t - m.ready - 0.3,
+    const wakeAt = m.ready + 0.3,
+      age = t - wakeAt,
       p = progress(age, 0, 2.1);
     out.noriSleep = age < 0;
     out.eyeOpen = 1 - (1 - progress(age, 0, 1.3)) ** 3;
@@ -241,9 +242,16 @@ export function bootScene(state: StoryClockState): NoriSceneState {
     cold.oceanGodray = 0.08 * (1 - p) ** 3;
     out.fogNear = mix(16, 20, 1 - (1 - p) ** 3);
     out.fogFar = mix(210, 220, 1 - (1 - p) ** 3);
-    out.noriReveal = smooth(progress(age, 0.25, 1.9));
-    out.plankton = 0.95 * (1 - smooth(progress(t, m.ready + 0.4, 2.6)));
-    cold.oceanFade = 1 - smooth(progress(age, 0, 2.5));
+    out.noriReveal = ramp(t, wakeAt + 0.25, 1.9, 0, 1, power1InOut);
+    out.plankton = ramp(t, m.ready + 0.4, 2.6, 0.95, 0, power1InOut);
+    cold.oceanFade = ramp(
+      t,
+      wakeAt,
+      Math.max(0.5, m.ready + 2.8 - wakeAt),
+      1,
+      0,
+      power2InOut,
+    );
     // Shipped iJ keyframes: rise power2.out over min(0.18, window*0.1), hold
     // `none` over window - rise - fall, then fall power2.in over
     // min(0.5, window*0.4). The rise leg was a linear ramp.

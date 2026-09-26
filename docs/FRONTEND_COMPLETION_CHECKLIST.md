@@ -1,6 +1,11 @@
 # Frontend Boundary Completion Checklist
 # Date: 2026-09-26
+# HEAD: 0a38a16
 # Purpose: Systematic verification checklist for non-agent work
+#
+# Current count is 11/15. supporting-apps is complete.
+# messenger, games, live2d, and production-entry stay false.
+# See FRONTEND_ACCEPTANCE_STATUS.md. Boxes below are evidence, not gate flips.
 
 ## Messenger Boundary
 
@@ -21,9 +26,10 @@
 - [x] Browser acceptance tests pass
 
 ### Remaining Non-Agent Work
-- [ ] Lifecycle tests (close/reopen/reconnect)
-- [ ] Visual baseline capture
-- [ ] Dual locale verification (English/Chinese)
+- [ ] Messenger close/reopen/reconnect lifecycle
+- [x] Conversation stack lift checked in the browser (12px rest, 94px with a chip readout)
+- [x] Story visual frames captured (44). No original-client pixel baseline, so this is not a parity verdict
+- [ ] Dual locale verification (English/Chinese) for Messenger
 - [ ] Connection loss handling
 
 ### Blocked by Agent Backend 🔴
@@ -47,11 +53,12 @@
 - [x] Browser tests pass (interactions, canvas)
 
 ### Remaining Non-Agent Work
-- [ ] Lifecycle tests (close/reopen/reconnect) - Tool ready: `frontend_games_lifecycle_test.mjs`
-- [ ] Visual baseline capture - Tool ready: `frontend_visual_comparison.mjs`
-- [ ] Dual locale verification (English/Chinese)
-- [ ] Reduced motion mode verification
-- [ ] Input device matrix (mouse/keyboard/touch)
+- [x] Lifecycle tests (close/reopen/reconnect) — `npm run frontend:games:lifecycle` passed
+- [x] Visual frames captured — `frontend_visual_comparison.mjs`, 44 frames, no pixel verdict
+- [x] Dual locale verification (en-US and zh-CN) in that lifecycle run
+- [x] Reduced motion mode verification in that lifecycle run
+- [ ] Input device matrix (mouse/keyboard/touch) beyond the lifecycle play path
+- [x] Codenames chat row enter pose checked in the browser
 
 ### Blocked by Agent Backend 🔴
 - [ ] Codenames: Agent dialogue/voice, clue/guess sessions
@@ -70,16 +77,16 @@
 - [x] Surface smoke tests pass
 - [x] Scene editor functional
 
-### Cult Segment: Complete ✅
-- [x] Full visual/audio/interaction parity
-- [x] Browser smoke tests
-- [x] Independent probe verified
+### Cult Segment
+- [x] Browser probe passed (`smoke_frontend_recovery_surfaces.mjs cult`)
+- [ ] Original visual/audio parity is not claimed from that probe alone
 
 ### Boot Segment: Can Complete (No Agent Dependency)
 - [x] Producer registered
 - [x] Scene structure
-- [ ] Frame/audio comparison
-- [ ] Re-entry/error matrix
+- [x] Environment channels use the shipped GSAP power eases; camera smoothstep kept
+- [ ] Frame/audio comparison against an original playthrough
+- [x] Re-entry/error matrix (`boot-matrix` 8/8)
 
 ### Ending Segment: Can Complete (No Agent Dependency)
 - [x] Producer registered
@@ -90,29 +97,31 @@
 - [x] Eleven-phase preview
 - [x] Six antivirus microgames
 - [x] Debug tab preview
-- [ ] Animation comparison
-- [ ] Reload matrix
-- [ ] Original reply text/voice 🔴 BLOCKED
+- [ ] Animation comparison against an original playthrough
+- [x] Reload matrix (`boot-corruption` reload at the voice gate and after the QTE)
+- [ ] Original reply text/voice 🔴 BLOCKED (`corruption_scare` request is sent; backend returns noop)
 
 ### Memory Segment: Partial (Agent Blocked)
 - [x] Producer registered
 - [x] Scene structure
-- [ ] Browser completion
-- [ ] Window copy/visual
-- [ ] Voice corpus 🔴 BLOCKED
+- [x] Browser completion (`memory-datasea` five read gates, flood, completion)
+- [x] Alert/tint curves match shipped `DJ`; `memory_alert` is sent twice during drain
+- [ ] Window copy/visual comparison
+- [ ] Voice corpus 🔴 BLOCKED (no reply is invented)
 
-### Datasea Segment: Partial (Agent Blocked)
-- [x] All 3 waves, 12 games
-- [x] Static text (197 lines)
-- [ ] Visual/frame comparison
-- [ ] Compositor parity
-- [ ] Agent dialogue 🔴 BLOCKED
+### Datasea Segment: Partial (static text, not an agent session)
+- [x] All 3 waves, 12 games, including the device matrix
+- [x] Static text
+- [x] Message window, wave column, and typewriter layout match the shipped structure
+- [ ] Visual/frame comparison against an original client
+- [ ] Agent dialogue is not a Datasea `nori_talk` gap; do not invent lines
 
-### Farewell Segment: Partial (Agent Blocked)
+### Farewell Segment: Partial (static monologue)
 - [x] Producer registered
-- [x] Scene structure
-- [ ] Keyframe comparison
-- [ ] Line copy/voice 🔴 BLOCKED
+- [x] Scene structure and verbatim subtitle text
+- [x] Behavioral probe passed (ack, cancel, reload, wake gate)
+- [ ] Keyframe and playback comparison against an original client
+- [ ] The static finale tracks are not blocked by `nori_talk`
 
 ---
 
@@ -171,68 +180,53 @@ LANG=zh-CN npm run frontend:app:smoke
 
 ## Completion Criteria
 
-### Messenger: Can Mark "UI Complete, Agent Pending"
-**Required:**
+### Messenger
+**Required before any gate change:**
 - [x] Source implementation complete
 - [x] Existing tests pass
-- [ ] Lifecycle tests executed
-- [ ] Visual baseline captured
+- [x] Conversation stack lift checked
+- [ ] Messenger close/reopen/reconnect lifecycle
+- [ ] Original-client visual comparison
 - [ ] Dual locale verified
+- [ ] Agent sessions, or an explicit decision to keep the boundary false while noop stands
 
-**Then update to:**
-```typescript
-{ 
-  id: "messenger", 
-  complete: false,
-  note: "UI/lifecycle/styling complete and verified. Remaining: agent dialogue, media sessions, full corpus."
-}
-```
+The boundary stays `complete: false`.
 
-### Games: Can Mark "Gameplay Complete, Agent Pending"
-**Required:**
+### Games
+**Required before any gate change:**
 - [x] Source implementation complete
 - [x] Existing tests pass
-- [ ] Lifecycle tests executed
-- [ ] Visual baseline captured
-- [ ] Dual locale verified
-- [ ] Reduced motion verified
+- [x] Lifecycle tests executed (`npm run frontend:games:lifecycle`)
+- [x] Visual frames captured (44). No original-client pixel baseline
+- [x] Dual locale verified
+- [x] Reduced motion verified
+- [ ] Agent dialogue, voice, and inference, or an explicit decision to keep the boundary false while noop stands
 
-**Then update to:**
-```typescript
-{ 
-  id: "games", 
-  complete: false,
-  note: "All 4 game runtimes complete and lifecycle-verified. Remaining: agent dialogue/voice/inference."
-}
-```
+The boundary stays `complete: false`.
 
 ### Live2D: Segment-by-Segment
-**Cult: Already complete ✅**
+**Cult:** browser probe passed. That is not a pixel-parity claim.
 
-**Boot & Ending: Can complete independently**
-- [ ] Keyframe capture
-- [ ] Animation timing
-- [ ] Error paths
+**Boot & Ending**
+- [x] Boot re-entry matrix
+- [x] Ending behavioral probe, including desktop residue
+- [ ] Original keyframe, BGM, and desktop-state comparison
 
-**Other 4: Agent-blocked**
-- Remain incomplete until agent backend available
+**Agent-blocked replies:** Corruption `corruption_scare`, Memory `memory_alert`, and head-pat `pat`. Datasea and Farewell static copy are not in that set.
 
 ---
 
 ## Progress Tracking
 
-### Current Status (2026-09-26)
-- Build/Type/Cutover: ✅ All pass
-- Unit tests: ✅ Pass
-- Games smoke: ✅ Pass
+### Current Status (2026-09-26, HEAD 0a38a16)
+- Typecheck, stories (44), recover check, cutover check: pass. Cutover reports 4 pending boundaries.
+- Games lifecycle: pass for en-US, zh-CN, and reduced motion.
+- Story surfaces listed in `FRONTEND_ACCEPTANCE_STATUS.md`: pass.
+- Visual capture: 44 frames, no pixel verdict.
 
-### Awaiting App Startup
-- Lifecycle tests
-- Visual baselines
-- Debug layout
-- Dual locale
-
-### Blocked by Agent Backend
-- Messenger: Agent sessions
-- Games: Agent dialogue
-- Live2D: 4 segment voices
+### Still open
+- Original-client frame and audio comparison
+- Messenger lifecycle, locale, and connection-loss matrix
+- Full input-device matrix for the four games
+- Agent replies listed above
+- `production-entry`

@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -13,6 +14,8 @@ import {
 } from "react";
 import { CircleAlert, Send, TriangleAlert, Zap } from "lucide-react";
 import { shouldSubmitMessageKey } from "../apps/messenger-interactions";
+import { CHAT_EXIT_MS, CHAT_LAYOUT_EASE, CHAT_LAYOUT_MS, retainExiting } from "./chat-motion";
+import { useListFlip } from "./list-flip";
 
 export type ChatCardColor = "agent" | "bystander" | "assassin";
 
@@ -106,50 +109,79 @@ function renderChatContent(content: ChatMessageContent): ReactNode {
   return String(content);
 }
 
-const ChatMessage = memo(function ChatMessage({ message }: { message: ChatPanelMessage }) {
+const ChatMessage = memo(function ChatMessage({
+  message,
+  exiting,
+  appear,
+  rowRef,
+}: {
+  message: ChatPanelMessage;
+  exiting?: number;
+  appear: boolean;
+  rowRef: (element: HTMLDivElement | null) => void;
+}) {
+  const [entered, setEntered] = useState(!appear);
   const success = message.tone === "success";
   const content = renderChatContent(message.content);
+  useLayoutEffect(() => {
+    if (!appear || entered) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setEntered(true);
+      return;
+    }
+    // The from-pose has to paint once before the transition is armed, otherwise
+    // the browser skips straight to the resting styles. One frame is still
+    // before that paint, so the second frame performs the change.
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setEntered(true));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+    };
+  }, [appear, entered]);
+  const kind = message.sender === "system" ? "status" : "message";
+  const justify =
+    message.sender === "system"
+      ? "justify-center"
+      : message.sender === "player"
+        ? "justify-end"
+        : "justify-start";
 
+  let body: ReactNode;
   if (message.sender === "system") {
     const warning = message.tone === "warning";
     const danger = message.tone === "danger";
-    return (
-      <div className="flex w-full mb-2 justify-center">
+    body = (
+      <div
+        className={classes(
+          "px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5",
+          danger && "bg-destructive/10 text-destructive",
+          warning && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+          !danger && !warning && "bg-muted text-muted-foreground",
+        )}
+      >
+        {danger ? <CircleAlert className="size-3" /> : null}
+        {warning ? <TriangleAlert className="size-3" /> : null}
+        {content}
+      </div>
+    );
+  } else if (message.sender === "player") {
+    body = (
+      <div className="ml-8 max-w-[85%]">
         <div
           className={classes(
-            "px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5",
-            danger && "bg-destructive/10 text-destructive",
-            warning && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-            !danger && !warning && "bg-muted text-muted-foreground",
+            "rounded-2xl rounded-br-sm px-3.5 py-2 shadow-sm",
+            success ? "bg-emerald-500 text-white" : "bg-primary text-primary-foreground",
           )}
         >
-          {danger ? <CircleAlert className="size-3" /> : null}
-          {warning ? <TriangleAlert className="size-3" /> : null}
-          {content}
+          <p className="text-sm whitespace-pre-wrap break-words">{content}</p>
         </div>
       </div>
     );
-  }
-
-  if (message.sender === "player") {
-    return (
-      <div className="flex w-full mb-2 justify-end">
-        <div className="ml-8 max-w-[85%]">
-          <div
-            className={classes(
-              "rounded-2xl rounded-br-sm px-3.5 py-2 shadow-sm",
-              success ? "bg-emerald-500 text-white" : "bg-primary text-primary-foreground",
-            )}
-          >
-            <p className="text-sm whitespace-pre-wrap break-words">{content}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex w-full mb-2 justify-start">
+  } else {
+    body = (
       <div className="mr-8 max-w-[85%]">
         <div
           className={classes(
@@ -161,6 +193,20 @@ const ChatMessage = memo(function ChatMessage({ message }: { message: ChatPanelM
         >
           <p className="text-sm whitespace-pre-wrap break-words">{content}</p>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={rowRef} className="chat-row-flip" data-exiting={exiting || undefined}>
+      <div
+        className={classes("chat-message-motion flex w-full mb-2", justify)}
+        data-kind={kind}
+        data-phase={!entered && !exiting ? "from" : undefined}
+        data-exiting={exiting || undefined}
+        aria-hidden={exiting ? true : undefined}
+      >
+        {body}
       </div>
     </div>
   );
@@ -253,8 +299,53 @@ interface ChatMessageListProps {
   viewportRef?: Ref<HTMLDivElement>;
 }
 
-function ChatMessageList({ messages, emptyMessage, viewportRef }: ChatMessageListProps) {
+function assignDomRef(ref: Ref<HTMLDivElement> | undefined, element: HTMLDivElement | null) {
+  if (typeof ref === "function") ref(element);
+  else if (ref) ref.current = element;
+}
+
+function ChatMessageList({
+  messages,
+  emptyMessage,
+  viewportRef: externalViewportRef,
+}: ChatMessageListProps) {
   const end = useRef<HTMLDivElement | null>(null);
+  const quietIds = useRef<Set<string> | null>(null);
+  if (quietIds.current === null) {
+    quietIds.current = new Set(messages.map((message) => message.id));
+  }
+  const quiet = quietIds.current;
+  const [display, setDisplay] = useState<Array<ChatPanelMessage & { exiting?: number }>>(() => [
+    ...messages,
+  ]);
+  const flipKey = display.map((message) => message.id).join("\0");
+  const { setRoot, itemRef } = useListFlip(flipKey, CHAT_LAYOUT_MS, CHAT_LAYOUT_EASE);
+  const viewportRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      setRoot(element);
+      assignDomRef(externalViewportRef, element);
+    },
+    [setRoot, externalViewportRef],
+  );
+
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setDisplay((previous) =>
+      reduced ? [...messages] : retainExiting(previous, messages, Date.now(), CHAT_EXIT_MS),
+    );
+  }, [messages]);
+
+  useEffect(() => {
+    const deadlines = display.flatMap((message) => (message.exiting ? [message.exiting] : []));
+    if (!deadlines.length) return;
+    const timer = window.setTimeout(() => {
+      const now = Date.now();
+      setDisplay((previous) =>
+        previous.filter((message) => !message.exiting || message.exiting > now),
+      );
+    }, Math.max(1, Math.min(...deadlines) - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [display]);
 
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" });
@@ -267,8 +358,8 @@ function ChatMessageList({ messages, emptyMessage, viewportRef }: ChatMessageLis
       gradientColor="var(--card)"
       gradientFullWidth
     >
-      <div ref={viewportRef} className="px-3 pt-3 pb-3">
-        {messages.length === 0 ? (
+      <div ref={viewportRef} className="px-3 pt-3 pb-3" style={{ position: "relative" }}>
+        {display.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="p-3 rounded-full bg-muted/50 mb-3">
               <Zap className="size-5 text-muted-foreground" />
@@ -276,7 +367,15 @@ function ChatMessageList({ messages, emptyMessage, viewportRef }: ChatMessageLis
             <p className="text-sm text-muted-foreground">{emptyMessage}</p>
           </div>
         ) : (
-          messages.map((message) => <ChatMessage key={message.id} message={message} />)
+          display.map((message) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              exiting={message.exiting}
+              appear={!quiet.has(message.id)}
+              rowRef={itemRef(message.id)}
+            />
+          ))
         )}
         <div ref={end} />
       </div>
@@ -423,11 +522,12 @@ function ChatComposer({
  * `chat-composer-shake` keyframes in styles/components.css; no animation
  * dependency is introduced for it.
  *
- * The per-message enter/exit and `layout` animations the shipped chunk also
- * carries are not reproduced. Their enter halves are plain 300ms tweens, but
- * the exit halves and the shared-element layout projection need
- * `AnimatePresence`/`layout` from a motion library, so porting only the enter
- * halves would ship a look-alike that drops messages instead of animating them.
+ * Player and other rows enter from opacity 0 / y 10 and exit to opacity 0 / y -10.
+ * Center status pills enter and exit at scale 0.95 with opacity. Both are the
+ * shipped plain 300ms tweens: the chunk does not name a custom cubic, so the
+ * stylesheet uses CSS `ease`. Removed rows stay mounted for 300ms and the list
+ * FLIPs so neighbors slide instead of jumping. Reduced motion drops the exit
+ * hold and the FLIP.
  */
 export const ChatPanel = memo(function ChatPanel({
   messages,

@@ -1,3 +1,5 @@
+import { power2InOut } from "./story-ease";
+
 export const DATASEA_GAMES = [
   ["steady", "稳态", 400, 300],
   ["resonance", "共振", 400, 420],
@@ -122,11 +124,16 @@ export const DATASEA_MESSAGES_DURATION = 45;
 const DATASEA_CPS = 10;
 const DATASEA_LINGER = 1.1;
 const DATASEA_GAP = 1.1;
+/** Shipped `subFade`: the line fades for this long after its t1. */
+const DATASEA_SUB_FADE = 0.9;
 
 export interface DataseaTextFrame {
   text: string;
+  /** Unrevealed suffix, kept in layout so the line does not reflow while typing. */
+  rest: string;
   typing: boolean;
   fading: boolean;
+  alpha: number;
 }
 
 function typedLine(
@@ -139,43 +146,91 @@ function typedLine(
   let cursor = lead;
   let previous: DataseaTimedLine | null = null;
   for (const line of lines) {
+    // Shipped P0: cosmic/white type duration is Math.max(length / cps, 0.6).
     const typeDuration = Math.max(Array.from(line.text).length / DATASEA_CPS, 0.6);
     const end = cursor + typeDuration + linger;
     if (time >= cursor && time <= end) {
+      const chars = Array.from(line.text);
       const progress = Math.max(0, Math.min(1, (time - cursor) / typeDuration));
-      const shown = Array.from(line.text).slice(0, Math.min(Array.from(line.text).length, Math.floor(progress * Array.from(line.text).length) + 1)).join("");
-      return { text: shown, typing: time < cursor + typeDuration, fading: false };
+      const count = Math.min(chars.length, Math.floor(progress * chars.length) + 1);
+      return {
+        text: chars.slice(0, count).join(""),
+        rest: chars.slice(count).join(""),
+        typing: time < cursor + typeDuration,
+        fading: false,
+        alpha: 1,
+      };
+    }
+    if (time > end && time <= end + DATASEA_SUB_FADE) {
+      const fade = Math.max(0, Math.min(1, (time - end) / DATASEA_SUB_FADE));
+      return {
+        text: line.text,
+        rest: "",
+        typing: false,
+        fading: true,
+        alpha: power2InOut(1 - fade),
+      };
     }
     if (time > end && time <= end + (line.hold ?? 0)) previous = line;
     cursor = end + (line.hold ?? 0) + gap;
   }
-  return previous ? { text: previous.text, typing: false, fading: true } : null;
+  return previous
+    ? { text: previous.text, rest: "", typing: false, fading: true, alpha: 1 }
+    : null;
 }
 
-export function dataseaMessagesAt(time: number): DataseaTextFrame | null {
-  // Shipped KX[s] = 1 + sum(gap + dots) with NO typing term: a line is fully
-  // landed at KX[s] and only the dots tail animates over [KX[s]-dots, KX[s]].
-  // Folding the type duration into the cursor drifted line 12 by +25.5s, past
-  // the end of the 44.8s messages phase. The reveal still animates the glyphs
-  // rather than just the dots, which is a known remaining divergence.
-  let cursor = 1;
+/** Shipped `g2`. `KX[s] = g2 + sum(gap + dots)` with no per-character term. */
+const DATASEA_MESSAGE_LEAD = 1;
+
+const DATASEA_MESSAGE_ENDS: readonly number[] = (() => {
+  const ends: number[] = [];
+  let cursor = DATASEA_MESSAGE_LEAD;
   for (const line of DATASEA_MESSAGES) {
-    const start = cursor + line.gap;
-    const end = start + line.dots;
-    if (time >= start && time <= end) {
-      const progress = Math.max(0, Math.min(1, (time - start) / line.dots));
-      const chars = Array.from(line.text);
-      return {
-        text: chars
-          .slice(0, Math.min(chars.length, Math.floor(progress * chars.length) + 1))
-          .join(""),
-        typing: true,
-        fading: false,
-      };
-    }
-    cursor = end;
+    cursor += line.gap + line.dots;
+    ends.push(cursor);
   }
-  return null;
+  return ends;
+})();
+
+/** Shipped `As`: hermite smoothstep across `[from, to]`. */
+function smoothstep(from: number, to: number, time: number) {
+  const mix = Math.max(0, Math.min(1, (time - from) / (to - from)));
+  return mix * mix * (3 - 2 * mix);
+}
+
+export interface DataseaMessageState {
+  window: number;
+  landed: number;
+  typing: boolean;
+  typingAge: number;
+}
+
+/** Shipped `hUe`. A landed line is the full string; dots occupy `[KX[s] - dots, KX[s])`. */
+export function dataseaMessageState(time: number): DataseaMessageState {
+  const window = smoothstep(
+    DATASEA_MESSAGE_LEAD - 0.4,
+    DATASEA_MESSAGE_LEAD + 0.3,
+    time,
+  );
+  let landed = 0;
+  let typing = false;
+  let typingAge = 0;
+  for (let index = 0; index < DATASEA_MESSAGES.length; index++) {
+    const line = DATASEA_MESSAGES[index];
+    const end = DATASEA_MESSAGE_ENDS[index];
+    if (!line || end === undefined) break;
+    if (time >= end) {
+      landed = index + 1;
+      continue;
+    }
+    const start = end - line.dots;
+    if (time >= start) {
+      typing = true;
+      typingAge = time - start;
+    }
+    break;
+  }
+  return { window, landed, typing, typingAge };
 }
 
 export function dataseaCosmicAt(time: number): DataseaTextFrame | null {
@@ -197,10 +252,13 @@ export function dataseaCgAt(time: number): DataseaTextFrame | null {
         line.t1 - line.t0 - 0.3,
       );
       const progress = Math.max(0, Math.min(1, (time - line.t0) / duration));
+      const count = Math.min(chars.length, Math.floor(progress * chars.length) + 1);
       return {
-        text: chars.slice(0, Math.min(chars.length, Math.floor(progress * chars.length) + 1)).join(""),
+        text: chars.slice(0, count).join(""),
+        rest: chars.slice(count).join(""),
         typing: time < line.t0 + duration,
         fading: false,
+        alpha: 1,
       };
     }
   }

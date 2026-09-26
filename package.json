@@ -30,6 +30,7 @@
     "frontend:test": "node scripts/test/run_node_tests.mjs all",
     "frontend:games:test": "node scripts/test/run_node_tests.mjs games",
     "frontend:games:smoke": "node scripts/smoke/smoke_frontend_games.mjs",
+    "frontend:games:lifecycle": "node scripts/probes/frontend_games_lifecycle_test.mjs",
     "frontend:runtime:test": "node scripts/test/run_node_tests.mjs runtime",
     "frontend:app:smoke": "node scripts/smoke/smoke_frontend_app.mjs",
     "frontend:stories:test": "node scripts/test/run_node_tests.mjs stories",

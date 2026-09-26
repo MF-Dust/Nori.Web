@@ -6,10 +6,14 @@
 执行分支：`dev/frontend-restoration-completion`
 目标 PR：[PR #43](https://github.com/MF-Dust/Nori.Web/pull/43)  
 审计基线：`94107bbf0b33911c519b50670664115c1a4efd47`  
-当前 HEAD：`57ada1f`
-状态：实施中。HEAD `57ada1f` 的七个 story producer 已全部注册到源码调用链；其中六段非 Cult 剧情仍缺原版视觉、叙事、媒体与代理 parity，浏览器/代理验收仍按下述标准逐项核实。
+当前 HEAD：`0a38a16`
+状态：实施中。11/15 个 cutover 边界已完成。仍为 false 的是 `messenger`、`games`、`live2d`、`production-entry`。进度以 [验收状态](FRONTEND_ACCEPTANCE_STATUS.md) 和 [剩余工作](FRONTEND_REMAINING_WORK.md) 的当前节为准，不以本文更早的「10/15、supporting-apps 未完成、生命周期未跑」段落为准。
 
-## 最新进展 (2026-09-26)
+本轮已从 shipped bundle 补上的源码差异：Datasea 整行落地消息窗、波次转场深色气泡列、宇宙/白场/CG 打字机占位、Memory `DJ` alert/tint 与 `memory_alert` 请求、Boot/Ending 的 GSAP 环境曲线、对话栈 `stackLift` 94、游戏 ChatPanel 300ms 进出。原版代理会话仍被本地 `nori_talk.request` noop 挡住。六段非 Cult 剧情没有原版逐帧对照。`public/index.html` 未切换。
+
+## 历史进展 (2026-09-26，早于 `0a38a16`)
+
+以下小节保留当时的记录。当前进度以上文状态段为准。生命周期脚本现为 `npm run frontend:games:lifecycle`（`scripts/probes/frontend_games_lifecycle_test.mjs`），视觉抓帧为 `scripts/probes/frontend_visual_comparison.mjs`。
 
 ### Smoke Test 优化完成 (Commit 57ada1f)
 - **并行化探针执行**: 7 个探针从串行改为 2 组并行 (4+3)，实测节省 50% 时间 (418s → 209s)
@@ -23,7 +27,7 @@
 - **`scripts/frontend_games_lifecycle_test.mjs`**: 游戏生命周期完整测试，覆盖 4 游戏 × 2 语言 × 生命周期全流程
 
 ### 验收工具就绪
-所有 5 个待完成边界 (messenger/games/live2d/supporting-apps/production-entry) 现已具备验收测试工具，可系统化推进视觉对比和生命周期验收工作。
+当时把五个边界都写成未完成。`supporting-apps` 后来已标完成。当前未完成的是 `messenger`、`games`、`live2d`、`production-entry`。
 
 ## 当前续作记录（源码实现批次）
 

@@ -34,9 +34,9 @@ This matrix records observable contracts recovered from the shipped assets. “B
 
 | Game | English open/close/reopen | Chinese open/close/reopen | Decision |
 |---|---|---|---|
-| Chess | Covered through the full source desktop and local backend by `frontend_chess_tutorial_probe.mjs`. | Isolated Chinese tutorial is covered; full-desktop reopen is missing. | Keep the existing substantive English case. Add Chinese only with a real desktop locale boot, not another translation-unit assertion. |
-| Codenames | Menu/game/results are covered in the browser harness, but desktop Exit/reopen is missing. | Tutorial instructions have unit coverage; no Chinese full-desktop lifecycle. | Directly addable once the full-app probe gains a controlled locale boot and stable dock selectors. |
-| Pictionary | Cover/help/game/results are covered in the browser harness, but desktop Exit/reopen is missing. | Chinese hints are covered; cover/help/results lifecycle is not. | Directly addable with the same full-app locale fixture; do not duplicate hint-only assertions. |
-| Cake Duel | Backend and source routes have unit/static regressions, including the four shipped Debug client mocks; no browser/full-desktop lifecycle case. | No browser/full-desktop lifecycle case. | Highest-value missing lifecycle acceptance: open start route, help open/close, Exit, reopen, then one real normal-game action. Locale must be selected by the desktop runtime rather than by injecting translated strings. |
+| Chess | `npm run frontend:games:lifecycle` opens, plays, closes, reopens and reconnects on the source desktop. | Same lifecycle in zh-CN. | Agent speech remains external. |
+| Codenames | Same lifecycle, including a submitted clue. | Same lifecycle in zh-CN. | Agent clue/guess dialogue remains external. |
+| Pictionary | Same lifecycle, including a stroke. | Same lifecycle in zh-CN. | Live snapshot inference remains external. |
+| Cake Duel | Same lifecycle, and `retain()` unmounts the cartridge on close. | Same lifecycle in zh-CN. | Agent media sessions remain external. |
 
 The local cartridges prove playable deterministic behavior. They do not stand in for private agent models: Codenames dialogue/voice, Chess speech, and Pictionary image inference remain external acceptance boundaries.

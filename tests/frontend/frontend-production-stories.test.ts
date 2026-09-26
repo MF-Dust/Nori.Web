@@ -46,6 +46,34 @@ test("boot traverses source camera and formation channels but cannot complete be
   assert.equal(bootScene(complete).noriSleep, false);
   assert.equal(bootScene(complete).camera, null);
 });
+
+test("boot glyph and wake channels use the shipped power eases", () => {
+  const at = (time: number) =>
+    bootScene({
+      time,
+      duration: 0,
+      phase: null,
+      parkedAt: null,
+      playing: true,
+      complete: false,
+    });
+  assert.ok(
+    Math.abs(at(BOOT_MARKERS.draw + 4.5 * 0.25).coldOpen!.glyphDraw - 0.125) < 1e-9,
+  );
+  assert.ok(
+    Math.abs(at(BOOT_MARKERS.morph + 4.8 * 0.25).coldOpen!.morph - 0.125) < 1e-9,
+  );
+  assert.ok(
+    Math.abs(at(BOOT_MARKERS.reveal + 2.4 * 0.25).coldOpen!.noriWash - 0.9375) < 1e-9,
+  );
+  const wake = BOOT_MARKERS.ready + 0.3;
+  const oceanDur = Math.max(0.5, BOOT_MARKERS.ready + 2.8 - wake);
+  assert.ok(Math.abs(at(wake + 0.25 + 1.9 * 0.25).noriReveal - 0.125) < 1e-9);
+  assert.ok(Math.abs(at(wake + oceanDur * 0.25).coldOpen!.oceanFade - 0.9375) < 1e-9);
+  assert.ok(
+    Math.abs(at(BOOT_MARKERS.ready + 0.4 + 2.6 * 0.25).plankton - 0.95 * 0.875) < 1e-9,
+  );
+});
 test("recovered fracture graph has reproducible bodies, connected cracks and impact events", () => {
   const a = createFractureGraph(shatterDefaults({})) as any,
     b = createFractureGraph(shatterDefaults({})) as any;

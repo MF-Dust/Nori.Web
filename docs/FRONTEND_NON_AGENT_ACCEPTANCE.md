@@ -1,6 +1,8 @@
 # Frontend Non-Agent Acceptance Report
 # Date: 2026-09-26
-# HEAD: 705a2e7
+# HEAD: 0a38a16
+
+Current status supersedes the body where they disagree. Games lifecycle, both locales, and reduced motion have passed (`npm run frontend:games:lifecycle`). Story surface probes listed in `FRONTEND_ACCEPTANCE_STATUS.md` have passed. Visual capture is 44 frames with no pixel verdict. Cult's probe pass is not a 100% parity claim. `supporting-apps` is already complete. `messenger`, `games`, and `live2d` stay false. Datasea dialogue and the Farewell monologue are static shipped copy, not agent sessions.
 
 ## Purpose
 

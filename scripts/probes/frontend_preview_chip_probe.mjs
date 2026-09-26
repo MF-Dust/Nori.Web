@@ -164,6 +164,11 @@ export async function verifyChip(page, output) {
   });
   const button = page.locator(".chip-button");
   await button.waitFor();
+  assert.equal(
+    await page.locator(".conversation-lines").evaluate((element) => getComputedStyle(element).marginBottom),
+    "12px",
+    "the conversation stack rests at 12px until a chip readout is visible",
+  );
   await page.waitForFunction(
     () =>
       document.querySelector(".chip-button")?.getAttribute("aria-disabled") ===
@@ -184,6 +189,13 @@ export async function verifyChip(page, output) {
   await page.screenshot({ path: resolve(output, "chip-scanning.png") });
   await page.locator(".chip-readout").waitFor();
   await page.locator(".chip-overlay").waitFor({ state: "detached" });
+  await page.waitForFunction(() => {
+    const element = document.querySelector(".conversation-lines");
+    return (
+      element?.style.marginBottom === "94px" &&
+      getComputedStyle(element).marginBottom === "94px"
+    );
+  });
   assert.ok(
     (await page.locator(".chip-readout").getAttribute("aria-label")).length > 0,
   );

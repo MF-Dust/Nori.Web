@@ -15,6 +15,7 @@ import {
   farewellSubtitleStack,
 } from "../../frontend-src/story/farewell-timeline";
 import { FAREWELL_FRAGMENT } from "../../frontend-src/story/farewell-renderer";
+import { power1Out } from "../../frontend-src/story/story-ease";
 import {
   ENDING_PHASES,
   endingCamera,
@@ -287,6 +288,17 @@ test("ending wake projection closes the ocean and emits a burst", () => {
   assert.equal(before.coldOpen.oceanFade, 1);
   assert.ok(after.coldOpen.oceanFade < before.coldOpen.oceanFade);
   assert.ok(after.burst > 0);
+  // power2.inOut at a quarter of the 2.5s ocean fade (wake = ready + 0.3).
+  const quarter = endingFrame(32.9 + 0.625, true);
+  assert.ok(Math.abs(quarter.coldOpen.oceanFade - 0.9375) < 1e-9);
+});
+
+test("ending rise midpoint follows shipped power1.out", () => {
+  const eased = power1Out(0.5);
+  assert.equal(eased, 0.75);
+  const frame = endingFrame(8.4, false);
+  assert.ok(Math.abs(frame.darkness - (1 + (0.45 - 1) * eased)) < 1e-9);
+  assert.ok(Math.abs(frame.coldOpen.oceanDepth - (1 + (0.9 - 1) * eased)) < 1e-9);
 });
 
 test("ending camera interiors follow the shipped smoothstep, not a power ease", () => {

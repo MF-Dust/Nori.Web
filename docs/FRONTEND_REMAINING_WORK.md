@@ -1,6 +1,42 @@
 # Current execution status — PR #43
 
-Updated 2026-09-26 for HEAD `0ac8b49` + this pass. This section supersedes the historical status paragraphs below.
+Updated 2026-09-26 after the remaining-source pass. This section supersedes the historical status paragraphs below.
+
+## Source gaps closed in this pass
+
+Shipped behavior that was still diverging is now in `frontend-src`:
+
+- Datasea messages land as full lines. Only the dots window animates, inside the 440×540 window, with the two existing cues. Wave transmissions use the same dark bubbles in the shipped 520×42vh masked column. Cosmic, white and CG lines keep the untyped suffix in a hidden span so the line does not reflow, and fade with `power2.inOut` over the shipped 0.9s. Cosmic/white typing stays on shipped `Math.max(len/cps, 0.6)`.
+- Memory alert and tint rise with `power2.in`, hold, then fall with `power2.out`. The scene sends `memory_alert` twice during drain. It does not invent a reply.
+- Boot and Ending environment channels use the shipped GSAP power eases. Camera smoothstep is unchanged.
+- The floating conversation stack lifts to 94px while a chip readout is visible. Game chat rows enter and leave over 300ms without a motion library.
+
+`frontend:typecheck`, `frontend:stories:test` and `frontend:recover:check` passed. Browser probes passed for cult, farewell-ending, boot-corruption, boot-matrix, cold-open, memory-datasea (including the device matrix) and datasea-games. Visual capture wrote 44 frames. `npm run frontend:games:lifecycle` passed en-US, zh-CN and reduced motion. A desktop browser check settled the conversation margin at 12px, then at 94px, and saw a Codenames chat row take the enter pose.
+
+`messenger`, `games` and `live2d` stay `complete: false`. Original agent sessions are still blocked because `nori_talk.request` returns `{type:"noop"}`. `production-entry` stays false and `public/index.html` is unchanged.
+
+## Remaining gaps
+
+11 of 15 cutover boundaries are complete. The four open ones are `messenger`, `games`, `live2d`, and `production-entry`.
+
+External blocker, same noop:
+
+- Messenger original-agent sessions, full corpus, and media sessions.
+- Codenames clue/guess dialogue, Chess agent speech, Pictionary snapshot inference, and Cake Duel agent media.
+- Corruption `corruption_scare`, Memory `memory_alert`, and head-pat `pat` replies. The requests are sent. No reply is invented.
+- Debug Inject Talk and Nori Context.
+
+Acceptance still open, with source already in place:
+
+- Original-client frame and audio comparison for Boot, Corruption, Memory, Datasea, Farewell, and Ending. The 44-frame capture has no pixel baseline.
+- Head-pat spark shape and pacing.
+- Debug panel layout comparison.
+- Messenger close/reopen/reconnect, locale, and connection-loss matrix.
+- A fuller input-device matrix for the four games than the lifecycle play path.
+
+Datasea lines and the Farewell monologue are shipped static copy, not `nori_talk` sessions. Corruption `vBehindScale` stays unwired because the shipped glow consumer is unreachable.
+
+`production-entry` waits until the other three open boundaries have evidence. `public/index.html` is unchanged.
 
 ## This pass: baseline repair, Boot/Ending static parity, readiness fix
 
@@ -273,12 +309,11 @@ correctly — the corruption track had missed it. Each fix was re-derived from t
 checked algebraically before being applied; `boot-corruption` and `memory-datasea` probes and
 the visual capture all re-run green afterwards.
 
-Still open from that comparison, and deliberately not touched: the Datasea audio table (six of
-eight tracks differ and the source set is internally coherent — needs a call), the Datasea
-whiteout beat, the Memory `active` handover window and siren `until`/`fadeOut`, the Memory flood
-layout and fifth-window height, the Farewell shader's second shadow lobe, the missing Farewell
-subtitle text, and the systematic GSAP-easing → `smoothstep` substitution, whose endpoints match
-but whose interiors never do.
+Those items were closed in later source passes. Datasea whiteout, Memory siren `until`/`fadeOut`
+and the `active` handover, Farewell subtitles and the second shadow lobe, and the GSAP power
+eases named by the shipped layers are in the source. Camera blends that the bundle implements
+as smoothstep stay smoothstep. Cosmic/white typing still uses shipped `Math.max(len/cps, 0.6)`.
+What this comparison left, and a later pass closed, is recorded in the 2026-09-26 section above.
 
 ### Games lifecycle harness now real
 
@@ -291,12 +326,9 @@ be selected with a pointer, because `setPointerCapture` on pointerdown retargete
 real reorders. The game was unplayable with a mouse. Fixed in `screens/cakeduel-hand.tsx`;
 drag-to-reorder still verified working.
 
-**Reported, not fixed:** Cake Duel never releases its cartridge on close —
-`CakeDuelRuntimeController` has no window-scoped `retain`/release unlike
-`GameCartridgeController`, so a closed window leaves the cartridge mounted and the bout alive
-into the next window and the next browser session. Fixing it means touching the runtime bridge,
-so it needs a decision rather than a drive-by patch. The test asserts the real behaviour and logs
-it instead of asserting behaviour the source does not have.
+Cake Duel now releases its cartridge through `CakeDuelRuntimeController.retain()`, the same
+window-scoped ownership as `GameCartridgeController`. `npm run frontend:games:lifecycle` asserts
+`unmount_cartridge` on close. The earlier “never releases” note is obsolete.
 
 ### Test coverage: 125 assertions that never ran
 

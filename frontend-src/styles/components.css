@@ -245,4 +245,42 @@
       animation: none;
     }
   }
+  /* Shipped ChatPanel message enter/exit (Y/Q rows and X status pills).
+     The tween does not name a custom cubic — it is a plain 300ms tween — so
+     the timing function is CSS `ease`. data-phase="from" is the enter pose;
+     data-exiting is the exit pose while the row is still mounted. */
+  .chat-message-motion {
+    opacity: 1;
+    transform: none;
+    transition: opacity 300ms ease, transform 300ms ease;
+  }
+  .chat-message-motion[data-phase="from"] {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: none;
+  }
+  .chat-message-motion[data-kind="status"][data-phase="from"] {
+    transform: scale(0.95);
+  }
+  .chat-message-motion[data-exiting] {
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  .chat-message-motion[data-kind="status"][data-exiting] {
+    transform: scale(0.95);
+  }
+  .chat-row-flip {
+    display: flow-root;
+  }
+  .chat-row-flip[data-exiting] {
+    pointer-events: none;
+    z-index: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chat-message-motion,
+    .chat-row-flip {
+      transition: none;
+    }
+  }
 }

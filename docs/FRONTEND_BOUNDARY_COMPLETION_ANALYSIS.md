@@ -1,6 +1,8 @@
 # Frontend Restoration: Boundary Completion Analysis
 # Date: 2026-09-26
-# HEAD: f1e2c8d
+# HEAD: 0a38a16
+
+The sections below this header are a historical analysis. Current count is 11/15. `supporting-apps` is `complete: true`. The open boundaries are `messenger`, `games`, `live2d`, and `production-entry`. Lifecycle for the four games has passed. Datasea and Farewell static copy are not `nori_talk` gaps. Do not close a boundary from the recommendations further down. See `FRONTEND_ACCEPTANCE_STATUS.md`.
 
 ## Analysis Basis
 
@@ -140,10 +142,10 @@ This analysis is based on:
   - Update note to explicitly mention private handler limitation
 
 ### Keep False (Legitimate Gaps)
-- **Messenger**: Source complete, missing visual/agent evidence
-- **Games**: Source complete, missing lifecycle/visual/agent evidence  
-- **Live2D**: 6/7 segments missing visual/agent parity
-- **Production Entry**: Gated on other boundaries
+- **Messenger**: Source complete. Stack lift is checked. Agent sessions and original visual comparison remain.
+- **Games**: Lifecycle, both locales, and reduced motion have passed. Agent dialogue remains.
+- **Live2D**: Behavioral probes have passed. Original frame comparison remains. Only Corruption, Memory, and head-pat replies are agent-blocked.
+- **Production Entry**: Gated on the three boundaries above. `supporting-apps` is already complete.
 
 ### Critical Path Blocker
 
@@ -181,9 +183,7 @@ This analysis is based on:
 
 ## Progress Metrics
 
-**Before This Analysis**: 10/15 complete (66.7%)
-
-**After Supporting Apps Update**: 11/15 complete (73.3%)
+**Current**: 11/15 complete. `supporting-apps` is already in the completed set. Open: `messenger`, `games`, `live2d`, `production-entry`.
 
 **Achievable Without Agent Backend**: 11/15 (73.3%)
 

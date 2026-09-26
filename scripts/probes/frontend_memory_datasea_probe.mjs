@@ -142,10 +142,15 @@ export async function verifyMemoryDatasea(
     assert.ok(retriedGlbRequests > 0, "retry must issue a fresh GLB request");
     assert.equal((await events()).leases, 1);
     stage("Datasea narrative messages");
-    await page.clock.fastForward(32500);
+    // Descent is 30s. Local 3.0s is past KX[0] = 2.9, so the first line has
+    // landed as a full bubble. 2.5s is still the typing-dots window.
+    await page.clock.fastForward(33000);
     await page.clock.runFor(80);
     await waitWithClock(page, page.locator('[data-datasea-messages="true"]'));
-    assert.equal(await page.locator(".datasea-bubble").first().textContent(), "……");
+    assert.equal(
+      await page.locator(".datasea-message-bubble").first().textContent(),
+      "……",
+    );
     await page.clock.fastForward(58000);
     await page.clock.runFor(80);
     stage("Datasea loaded; advancing to first wave");

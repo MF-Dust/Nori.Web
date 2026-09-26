@@ -4,7 +4,7 @@ import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import { StoryAudio } from "./story-audio";
 import { StoryClock, type StoryPhase } from "./story-clock";
 import type { StoryInstance } from "./story-director";
-import { power2InOut, power2Out, ramp } from "./story-ease";
+import { power2In, power2InOut, power2Out, ramp } from "./story-ease";
 import { drainBurstPlays } from "../live2d/particles/drain-burst";
 import "./memory-scene.css";
 
@@ -142,12 +142,32 @@ export const MEMORY_ALERT_OFFSETS = memoryAlertOffsets(
   phaseStart("sweep") - phaseStart("attack") - 0.6,
   phaseStart("void") - phaseStart("attack") - 0.6,
 );
+/** Shipped `qXe` / `KXe`: two `memory_alert` talks, 5s of story time apart. */
+const MEMORY_ALERT_TALKS = 2;
+const MEMORY_ALERT_GAP = 5;
 
 export function memoryProjection(time: number) {
   const attack = phaseStart("attack"),
     sweep = phaseStart("sweep"),
     drain = phaseStart("drain"),
-    voidAt = phaseStart("void");
+    voidAt = phaseStart("void"),
+    voidDur =
+      MEMORY_PHASES.find((phase) => phase.id === "void")?.duration ?? 0,
+    // Shipped `DJ`: f = min(1, voidDur * 0.45). Alert/tint hold through it,
+    // then fall across the rest of the void phase.
+    fallDelay = Math.min(1, voidDur * 0.45),
+    alarmRise = 1.2,
+    riseEnd = attack + alarmRise,
+    fallStart = voidAt + fallDelay,
+    // Once story time reaches the tween end, hold the peak. Comparing the
+    // clock against `attack + alarmRise` lands on 1 exactly; dividing the
+    // same instant by 1.2 is a hair under 1.
+    alertLevel =
+      time >= fallStart
+        ? ramp(time, fallStart, voidDur - fallDelay, 1, 0, power2Out)
+        : time >= riseEnd
+          ? 1
+          : ramp(time, attack, alarmRise, 0, 1, power2In);
   return {
     attack: time >= attack,
     sweep: time >= sweep,
@@ -159,12 +179,12 @@ export function memoryProjection(time: number) {
     // Shipped quakePeak 0.7 decaying to 0 over 2s (power2.out), then quiet for
     // the rest of the attack — not a flat 0.35 held across the whole phase.
     quake: 0.7 * (1 - ramp(time, attack, 2, 0, 1, power2Out)),
-    // Shipped `DJ` also rides alert and tint up with `power2.in` over
-    // alarmRise 1.2s and back down with `power2.out` over
-    // voidDur - 1 = 1.4s from voidStart + 1. This source still drops both
-    // linearly over 1s from voidStart; the window is a duration finding, not
-    // converted here.
-    alertFall: clamp01((time - voidAt) / 1),
+    // Shipped `DJ`: both channels share one eased t. Rise to alertPeak 1 and
+    // tintPeak 0.55 over alarmRise 1.2s (`power2.in`) from the attack start,
+    // hold, then fall to 0 over voidDur - f (`power2.out`) from void + f,
+    // where f = min(1, voidDur * 0.45).
+    alert: alertLevel,
+    tint: 0.55 * alertLevel,
   };
 }
 
@@ -348,7 +368,9 @@ export function MemoryScene({
     let frame = 0,
       stopped = false,
       released = false,
-      drainBursts = 0;
+      drainBursts = 0,
+      memoryAlertTalks = 0;
+    const drainAt = phaseStart("drain");
     const release = () => {
       if (released) return;
       released = true;
@@ -392,16 +414,35 @@ export function MemoryScene({
             drainBursts,
             drainBurstPlays(state.time - phaseStart("drain")),
           );
+        // Shipped `QXe`: inside [drain, void) publish `memory_alert` at most
+        // twice (`qXe`), the second `KXe` (5s) of story time after the first.
+        // `state.playing` is the visibility suspend, so a hidden tab cannot
+        // keep firing on a wall-clock timeout.
+        while (
+          projection.drain &&
+          state.playing &&
+          memoryAlertTalks < MEMORY_ALERT_TALKS &&
+          state.time >= drainAt + memoryAlertTalks * MEMORY_ALERT_GAP
+        ) {
+          memoryAlertTalks += 1;
+          try {
+            frontend.arcade.sendEvent(
+              "nori_talk.request",
+              { talkId: "memory_alert" },
+              { cartridgeId: "manifold.web" },
+            );
+          } catch (error) {
+            console.warn("[MemoryScene] alert request", error);
+          }
+        }
         lease.set({
           // Shipped: project() returns active = chrome < 0.5, and chrome is set to
           // 1 at phaseStart("drain") = 28.7, so the desktop takes over there.
           active: state.time < phaseStart("drain"),
           shake: projection.quake,
-          alertLoop: projection.attack ? 1 - projection.alertFall : 0,
+          alertLoop: projection.alert,
           alertClock: Math.max(0, state.time - phaseStart("attack")),
-          noriTint: projection.attack
-            ? 0.55 * (1 - projection.alertFall)
-            : 0,
+          noriTint: projection.tint,
           chatMode: projection.sweep ? "bubbles" : "normal",
           bgm: projection.attack
             ? projection.voidProgress > 0

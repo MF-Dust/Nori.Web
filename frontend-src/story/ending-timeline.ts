@@ -1,4 +1,13 @@
 import type { StoryAudioTrack } from "./story-audio";
+import {
+  power1In,
+  power1InOut,
+  power1Out,
+  power2In,
+  power2InOut,
+  power2Out,
+  ramp,
+} from "./story-ease";
 
 export const ENDING_PHASES = [
   { id: "void", duration: 2.4 },
@@ -13,6 +22,18 @@ export const ENDING_PHASES = [
   { id: "ready", duration: 0, pauseAtStart: true },
   { id: "settle", duration: 3.3 },
 ] as const;
+
+const ENDING_AT = (() => {
+  let at = 0;
+  const marks = {} as Record<(typeof ENDING_PHASES)[number]["id"], number>;
+  for (const phase of ENDING_PHASES) {
+    marks[phase.id] = at;
+    at += phase.duration;
+  }
+  return marks;
+})();
+const endingDur = (id: (typeof ENDING_PHASES)[number]["id"]) =>
+  ENDING_PHASES.find((phase) => phase.id === id)!.duration;
 
 export const ENDING_AUDIO: readonly StoryAudioTrack[] = [
   {
@@ -53,6 +74,7 @@ const span = (time: number, start: number, duration: number) =>
  */
 const smooth = (value: number) => value * value * (3 - 2 * value);
 const mix = (a: number, b: number, value: number) => a + (b - a) * value;
+const linear = (value: number) => value;
 type Point = { x: number; y: number; z: number };
 const presets = {
   arrive: {
@@ -125,32 +147,98 @@ export function endingCamera(time: number) {
 }
 
 export function endingFrame(time: number, waking = false) {
-  const rise = span(time, 2.4, 15.2);
-  const draw = span(time, 17.6, 4.5);
-  const morph = span(time, 22.1, 4.8);
-  const reveal = span(time, 28, 2.4);
-  const settle = waking ? span(time, 32.6, 2.8) : 0;
+  const rise = ENDING_AT.rise;
+  const push = ENDING_AT.push;
+  const draw = ENDING_AT.draw;
+  const morph = ENDING_AT.morph;
+  const reveal = ENDING_AT.reveal;
+  const ready = ENDING_AT.ready;
+  const riseDur = endingDur("rise");
+  const pushDur = endingDur("push");
+  const drawDur = endingDur("draw");
+  const morphDur = endingDur("morph");
+  const revealDur = endingDur("reveal");
+  let darkness = ramp(time, rise, riseDur, 1, 0.45, power1Out);
+  let plankton = ramp(time, rise, riseDur, 0.1, 1.35, power2Out);
+  let fogFar = ramp(time, rise, riseDur, 40, 78, linear);
+  let oceanDepth = ramp(time, rise, riseDur, 1, 0.9, power1Out);
+  let oceanGodray = 0;
+  let fogNear = 6;
+  if (time >= push) {
+    darkness = ramp(time, push, pushDur, 0.45, 0.24, power1Out);
+    oceanDepth = ramp(time, push, pushDur, 0.9, 0.74, power1Out);
+    plankton = ramp(time, push, pushDur, 1.35, 0.95, power1Out);
+    oceanGodray = ramp(time, push, pushDur, 0, 0.08, linear);
+    fogNear = ramp(time, push, pushDur, 6, 16, power2Out);
+    fogFar = ramp(time, push, pushDur, 78, 210, power2Out);
+  }
+  let glyphGlow = ramp(time, draw + drawDur * 0.1, drawDur * 0.9, 0, 0.5, power1In);
+  let noriWash = 0;
+  if (time >= morph) {
+    glyphGlow = ramp(time, morph, morphDur * 0.7, 0.5, 1, power2In);
+    noriWash = ramp(time, morph, morphDur * 0.35, 0, 1, power1Out);
+  }
+  let noriForm = 0;
+  let noriDim = 0;
+  let noriReveal = 1;
+  if (time >= reveal) {
+    noriWash = ramp(time, reveal, revealDur, 1, 0, power2InOut);
+    noriForm = ramp(time, reveal, revealDur * 0.4, 0, 1, power1In);
+    noriDim = ramp(time, reveal, revealDur * 0.5, 0, 2.8, power1In);
+    noriReveal = 0;
+  }
+  let eyeOpen = 0;
+  let burst = 0;
+  let burstAge = 0;
+  let oceanFade = 1;
+  let noriSleep = true;
+  if (waking) {
+    const wake = ready + 0.3;
+    const age = time - wake;
+    noriSleep = age < 0;
+    eyeOpen = ramp(time, wake, 1.3, 0, 1, power2Out);
+    darkness = ramp(time, wake, 2.1, 0.24, 0, power2Out);
+    oceanDepth = ramp(time, wake, 2.1, 0.74, 0.42, power2Out);
+    oceanGodray = ramp(time, wake, 2.1, 0.08, 0, power2Out);
+    fogNear = ramp(time, wake, 2.1, 16, 20, power2Out);
+    fogFar = ramp(time, wake, 2.1, 210, 220, power2Out);
+    noriReveal = ramp(time, wake + 0.25, 1.9, 0, 1, power1InOut);
+    plankton = ramp(time, ready + 0.4, 2.6, 0.95, 0, power1InOut);
+    oceanFade = ramp(time, wake, Math.max(0.5, ready + 2.8 - wake), 1, 0, power2InOut);
+    burst =
+      age < 0
+        ? 0
+        : age < 0.18
+          ? ramp(time, wake, 0.18, 0, 1, power2Out)
+          : age < 3.1
+            ? 1
+            : ramp(time, wake + 3.1, 0.5, 1, 0, power2In);
+    burstAge = Math.min(3.6, Math.max(0, age));
+    if (age >= 2.15) noriDim = 0;
+  }
   return {
     ...endingCamera(time),
     coldOpen: {
       ocean: true,
-      oceanFade: 1 - settle,
-      oceanDepth: 1 - rise * 0.26 - settle * 0.32,
-      oceanGodray: rise * 0.08,
-      oceanEdge: rise * 2.4,
-      glyphDraw: draw,
-      glyphGlow: draw * (1 - morph * 0.35),
-      morph,
-      noriForm: reveal,
-      noriWash: 1 - reveal,
+      oceanFade,
+      oceanDepth,
+      oceanGodray,
+      oceanEdge: span(time, 2.4, 15.2) * 2.4,
+      glyphDraw: ramp(time, draw, drawDur, 0, 1, power1InOut),
+      glyphGlow,
+      morph: ramp(time, morph, morphDur, 0, 1, power1InOut),
+      noriForm,
+      noriWash,
     },
-    plankton: (0.1 + rise * 1.25) * (1 - settle),
-    darkness: (1 - rise * 0.76) * (1 - settle),
-    noriReveal: waking ? settle : Math.max(0, 1 - reveal),
-    noriDim: waking ? (1 - settle) * 2.8 : reveal * 2.8,
-    eyeOpen: waking ? settle : 0,
-    noriSleep: !waking,
-    burst: waking ? 1 - span(time, 32.9, 3.6) : 0,
-    burstAge: waking ? Math.max(0, time - 32.9) : 0,
+    plankton,
+    darkness,
+    fogNear,
+    fogFar,
+    noriReveal,
+    noriDim,
+    eyeOpen,
+    noriSleep,
+    burst,
+    burstAge,
   };
 }

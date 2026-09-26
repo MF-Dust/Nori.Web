@@ -1,6 +1,25 @@
 # Frontend Test Evidence Summary
 # Date: 2026-09-26
-# Purpose: Consolidated test results demonstrating non-agent work completion
+# HEAD: 0a38a16
+# Purpose: Consolidated test results for the frontend restoration
+
+## Latest local evidence
+
+Recorded against the working tree at `0a38a16`. These commands passed:
+
+- `npm run frontend:typecheck`
+- `npm run frontend:stories:test` (44)
+- `npm run frontend:recover:check`
+- `npm run frontend:cutover:check` (4 pending boundaries)
+- `node scripts/smoke/smoke_frontend_recovery_surfaces.mjs` for `cult`, `farewell-ending`, `boot-corruption`, `boot-matrix`, `cold-open`, `memory-datasea`, and `datasea-games`
+- `node scripts/probes/frontend_visual_comparison.mjs` (44 frames, no pixel diff)
+- `npm run frontend:games:lifecycle` (en-US, zh-CN, reduced motion)
+
+A desktop browser check settled the conversation stack at 12px, then at 94px with a chip readout visible, and observed a Codenames chat row enter pose.
+
+`frontend:app:smoke`, `frontend:games:smoke`, and `npm test` were not re-run for this note. Results for those commands further down are earlier 2026-09-26 evidence, not a new claim.
+
+Passing these checks does not close `messenger`, `games`, `live2d`, or `production-entry`.
 
 ## Overview
 

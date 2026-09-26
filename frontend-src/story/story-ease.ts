@@ -11,16 +11,19 @@
  * Quad = Power1 (n=2), Cubic = Power2 (n=3), Quart = Power3 (n=4),
  * Quint = Power4 (n=5).
  *
- * Only the eases the shipped Corruption/Memory/Datasea/Farewell layers actually
- * name in a `build()` body are exported. `none` is the identity and stays
- * inline as a plain linear ramp.
+ * Only the eases the shipped story layers name in a `build()` body are
+ * exported. `none` is the identity and stays inline as a plain linear ramp.
  */
 const easeIn = (n: number, t: number) => Math.pow(t, n);
 const easeOut = (n: number, t: number) => 1 - Math.pow(1 - t, n);
 const easeInOut = (n: number, t: number) =>
   t < 0.5 ? Math.pow(t * 2, n) / 2 : 1 - Math.pow((1 - t) * 2, n) / 2;
 
-/** `power1.inOut` -- Corruption `wJ` second vVignette keyframe. */
+/** `power1.in` -- Boot/Ending `L1` glyphGlow, noriForm, and noriDim (`t^2`). */
+export const power1In = (t: number) => easeIn(2, t);
+/** `power1.out` -- Boot `LZ` push and Ending `TQ` (`1 - (1 - t)^2`). */
+export const power1Out = (t: number) => easeOut(2, t);
+/** `power1.inOut` -- Corruption `wJ` second vVignette keyframe; Boot/Ending `L1`. */
 export const power1InOut = (t: number) => easeInOut(2, t);
 /** `power2.in` -- Corruption `cXe` redLight/tint rise. */
 export const power2In = (t: number) => easeIn(3, t);

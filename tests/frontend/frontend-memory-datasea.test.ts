@@ -25,7 +25,7 @@ import {
   DATASEA_WHITE_LINES,
   dataseaCgAt,
   dataseaCosmicAt,
-  dataseaMessagesAt,
+  dataseaMessageState,
   dataseaWhiteAt,
 } from "../../frontend-src/story/datasea-content";
 import { StoryClock } from "../../frontend-src/story/story-clock";
@@ -96,8 +96,20 @@ test("datasea restores shipped narrative text and timed subtitle layers", () => 
   assert.equal(DATASEA_COSMIC_LINES[0].text, "全通道同步恢复确认");
   assert.equal(DATASEA_WHITE_LINES.at(-1)?.text, "我就要让自己的坐标和它重叠了");
   assert.equal(DATASEA_CG_LINES.at(-1)?.text, "啊，原来是这样啊，这是——");
-  assert.equal(dataseaMessagesAt(2.5)?.text, "……");
-  assert.equal(dataseaCosmicAt(2.1)?.text.length! > 0, true);
+  // hUe: KX[0] = 1 + 1 + 0.9 = 2.9, so t=2.5 is still the dots window.
+  const typingLine = dataseaMessageState(2.5);
+  assert.equal(typingLine.landed, 0);
+  assert.equal(typingLine.typing, true);
+  assert.equal(typingLine.typingAge, 0.5);
+  const landedLine = dataseaMessageState(2.9);
+  assert.equal(landedLine.landed, 1);
+  assert.equal(landedLine.typing, false);
+  assert.equal(dataseaMessageState(0.5).window, 0);
+  assert.equal(dataseaMessageState(1.3).window, 1);
+  assert.equal(dataseaMessageState(2).window, 1);
+  const cosmic = dataseaCosmicAt(2.1);
+  assert.equal((cosmic?.text.length ?? 0) > 0, true);
+  assert.equal(`${cosmic?.text ?? ""}${cosmic?.rest ?? ""}`, DATASEA_COSMIC_LINES[0].text);
   assert.equal(dataseaWhiteAt(3.1)?.text.length! > 0, true);
   assert.equal(dataseaCgAt(1.1)?.text.length! > 0, true);
 });

@@ -49,7 +49,14 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: relative;
+  /* Resting 12px. A visible chip readout sets 94px inline via
+     conversationStackOffset. Show duration/ease are GENIE_APPEAR_*; hide is
+     CLOSE_DURATION with CSS ease-in (the shipped easeIn). */
   margin-bottom: 12px;
+  transition-property: margin-bottom;
+  transition-duration: var(--stack-lift-duration, 0.18s);
+  transition-timing-function: var(--stack-lift-ease, ease-in);
 }
 .conversation-lines::-webkit-scrollbar {
   display: none;
@@ -101,6 +108,7 @@
 }
 .conversation-bubble[data-exiting] {
   pointer-events: none;
+  z-index: 1;
   animation: conversation-exit 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 .conversation-panel form {
@@ -267,7 +275,8 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .conversation-panel *,
-  .conversation-bubble {
+  .conversation-bubble,
+  .conversation-lines {
     animation: none;
     transition: none;
   }

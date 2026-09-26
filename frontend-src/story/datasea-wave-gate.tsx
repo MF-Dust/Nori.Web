@@ -264,21 +264,24 @@ export function DataseaWaveGate({
           role="status"
           aria-label={`Transmission ${breakState.landed} of ${cadence.length}`}
         >
-          {cadence.slice(0, breakState.landed).map((line, index) => (
-            <span
-              key={index}
-              style={{ width: `${Math.min(100, 18 + Array.from(line.text).length * 1.8)}%` }}
-            >
-              {line.text}
-            </span>
-          ))}
-          {breakState.typing && (
-            <i>
-              <b />
-              <b />
-              <b />
-            </i>
-          )}
+          <div className="datasea-wave-stack">
+            {cadence.slice(0, breakState.landed).map((line, index) => (
+              <div key={index} className="datasea-message-line">
+                <div className="datasea-message-bubble">
+                  <span>{line.text}</span>
+                </div>
+              </div>
+            ))}
+            {breakState.typing && (
+              <div className="datasea-message-dots" aria-hidden="true">
+                <div>
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

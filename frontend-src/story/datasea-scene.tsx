@@ -6,7 +6,14 @@ import { StoryClock, type StoryPhase } from "./story-clock";
 import type { StoryInstance } from "./story-director";
 import { createDataseaRenderer } from "./datasea-renderer";
 import { DataseaWaveGate } from "./datasea-wave-gate";
-import { dataseaMessagesAt, dataseaCosmicAt, dataseaWhiteAt, dataseaCgAt } from "./datasea-content";
+import {
+  DATASEA_MESSAGES,
+  dataseaCgAt,
+  dataseaCosmicAt,
+  dataseaMessageState,
+  dataseaWhiteAt,
+  type DataseaTextFrame,
+} from "./datasea-content";
 import { power2InOut } from "./story-ease";
 import { monotoneCubicSpline } from "./story-monotone-spline";
 import "./datasea-scene.css";
@@ -137,6 +144,129 @@ const cameraY = monotoneCubicSpline([
   [24, -188],
   [27, -190],
 ]);
+
+/** Shipped `fC`: the message window fades across the first 3s of vizIn. */
+const DATASEA_MESSAGE_FADE = 3;
+/** Shipped QJe keeps the window mounted until `vizIn + fC + 0.5`. */
+const DATASEA_MESSAGE_HOLD = DATASEA_MESSAGE_FADE + 0.5;
+/** Shipped `gKe`: typing-dots cue waits this long after a land cue. */
+const DATASEA_TYPING_CUE_GAP = 400;
+
+/** Shipped `As`: hermite smoothstep across `[from, to]`. */
+const smoothstep = (from: number, to: number, time: number) => {
+  const mix = Math.max(0, Math.min(1, (time - from) / (to - from)));
+  return mix * mix * (3 - 2 * mix);
+};
+
+function DataseaTypewriter({
+  line,
+  variant,
+}: {
+  line: DataseaTextFrame;
+  variant: "cosmic" | "white" | "cg";
+}) {
+  return (
+    <p
+      className={
+        variant === "cosmic"
+          ? "datasea-typewriter"
+          : "datasea-typewriter datasea-typewriter-ink"
+      }
+      data-datasea-subtitles={variant}
+      style={{ opacity: line.alpha }}
+    >
+      {line.text}
+      {line.rest ? (
+        <span className="datasea-typewriter-rest">{line.rest}</span>
+      ) : null}
+    </p>
+  );
+}
+
+function DataseaMessageWindow({
+  localTime,
+  absoluteTime,
+  vizIn,
+  playCue,
+}: {
+  localTime: number;
+  absoluteTime: number;
+  vizIn: number;
+  playCue: (cue: string) => void;
+}) {
+  const state = dataseaMessageState(localTime);
+  const landedRef = useRef(state.landed);
+  const typingRef = useRef(state.typing);
+  const landCueAt = useRef(0);
+  useEffect(() => {
+    const previousLanded = landedRef.current;
+    const previousTyping = typingRef.current;
+    landedRef.current = state.landed;
+    typingRef.current = state.typing;
+    // Refs start on the first frame, so a mid-conversation mount keeps its history quiet.
+    if (state.landed > previousLanded) {
+      landCueAt.current = performance.now();
+      playCue("cutscenes-datasea-message-land");
+      return;
+    }
+    if (state.landed < previousLanded) return;
+    if (
+      state.typing &&
+      !previousTyping &&
+      performance.now() - landCueAt.current >= DATASEA_TYPING_CUE_GAP
+    ) {
+      playCue("cutscenes-datasea-typing-dots");
+    }
+  }, [state.landed, state.typing, playCue]);
+  const opacity =
+    state.window *
+    (1 - smoothstep(vizIn, vizIn + DATASEA_MESSAGE_FADE, absoluteTime));
+  if (opacity <= 0.001) return null;
+  const scale =
+    (0.96 + 0.04 * state.window) *
+    (1 -
+      0.03 *
+        Math.max(
+          0,
+          Math.min(1, (absoluteTime - vizIn) / DATASEA_MESSAGE_FADE),
+        ));
+  return (
+    <div
+      className="datasea-messages"
+      data-datasea-messages="true"
+      aria-live="polite"
+    >
+      <div
+        className="datasea-message-panel"
+        style={{ opacity, transform: `scale(${scale.toFixed(4)})` }}
+      >
+        <div className="datasea-message-header" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+        <div className="datasea-message-body">
+          {DATASEA_MESSAGES.slice(0, state.landed).map((line) => (
+            <div key={line.text} className="datasea-message-line">
+              <div className="datasea-message-bubble">
+                <span>{line.text}</span>
+              </div>
+            </div>
+          ))}
+          {state.typing && (
+            <div className="datasea-message-dots" aria-hidden="true">
+              <div>
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function dataseaCamera(time: number) {
   const y = cameraY(time);
@@ -277,6 +407,8 @@ export function DataseaScene({
   }, [frontend, story, attempt]);
   const white = startOf("white"),
     cg = startOf("cg"),
+    messagesAt = startOf("messages"),
+    vizIn = startOf("vizIn"),
     whiteProgress = dataseaWhiteout(view.time);
   const wake = () =>
     view.parkedAt && clockRef.current?.wake(view.parkedAt, performance.now());
@@ -298,13 +430,15 @@ export function DataseaScene({
           Loading Datasea geometry…
         </div>
       )}
-      {view.phase === "messages" && (
-        <div className="datasea-messages" data-datasea-messages="true" aria-live="polite">
-          {(() => {
-            const line = dataseaMessagesAt(view.time - startOf("messages"));
-            return line ? <p className="datasea-bubble">{line.text}</p> : null;
-          })()}
-        </div>
+      {(view.phase === "messages" ||
+        (view.phase === "vizIn" &&
+          view.time <= vizIn + DATASEA_MESSAGE_HOLD)) && (
+        <DataseaMessageWindow
+          localTime={view.time - messagesAt}
+          absoluteTime={view.time}
+          vizIn={vizIn}
+          playCue={frontend.audio.playCue}
+        />
       )}
       {view.parkedAt === "waves" && (
         <DataseaWaveGate wake={wake} frontend={frontend} />
@@ -314,14 +448,14 @@ export function DataseaScene({
           <div className="datasea-core" />
           {(() => {
             const line = dataseaCosmicAt(view.time - startOf("cosmic"));
-            return line ? <p className="datasea-subtitles" data-datasea-subtitles="cosmic">{line.text}</p> : null;
+            return line ? <DataseaTypewriter line={line} variant="cosmic" /> : null;
           })()}
         </div>
       )}
       <div className="datasea-white" style={{ opacity: whiteProgress }}>
         {whiteProgress > 0 && (() => {
           const line = dataseaWhiteAt(view.time - white);
-          return line ? <p className="datasea-subtitles datasea-subtitles-white" data-datasea-subtitles="white">{line.text}</p> : null;
+          return line ? <DataseaTypewriter line={line} variant="white" /> : null;
         })()}
       </div>
       {view.time >= cg && (
@@ -330,7 +464,7 @@ export function DataseaScene({
           <img src="/datasea/cg-touch-hand.webp" alt="" />
           {(() => {
             const line = dataseaCgAt(view.time - cg);
-            return line ? <p className="datasea-subtitles datasea-subtitles-cg" data-datasea-subtitles="cg">{line.text}</p> : null;
+            return line ? <DataseaTypewriter line={line} variant="cg" /> : null;
           })()}
         </div>
       )}

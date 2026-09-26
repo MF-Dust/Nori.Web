@@ -736,6 +736,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
           <ConversationPanel
             frontend={source.frontend}
             locale={locale}
+            chip={source.chip}
             chipButton={
               facts.has("system.repaired") && (
                 <ChipButton
