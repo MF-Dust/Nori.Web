@@ -57,6 +57,7 @@ import {
   type RecoveredDesktopRuntimeBundle,
 } from "./apps/recovered-presentation";
 import { RecoveredDesktopShell } from "./components/recovered-desktop-shell";
+import { SourceAssetBootGate } from "./components/source-asset-boot-gate";
 import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
 import { createNetworkFaultWebSocketFactory, readNetworkFaultProfile } from "./runtime/debug-tools";
 import { createSourceIdleRuntimeEngine } from "./state/idle-runtime-engine";
@@ -690,6 +691,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       />
     );
   return (
+    <SourceAssetBootGate firstBoot={!facts.has("boot.completed")} locale={locale}>
     <RecoveredDesktopShell
       playCue={source.frontend.audio.playCue}
       bundle={source.bundle}
@@ -779,5 +781,6 @@ function SourceSessionView({ source }: { source: SourceSession }) {
         </>
       }
     />
+    </SourceAssetBootGate>
   );
 }
