@@ -5,6 +5,7 @@ type Progress = { status: "loading" | "error" | "ready"; done: number; total: nu
 type Manifest = { packs: Record<string, string[]>; files: Record<string, { size: number; rev: string }> };
 const CACHE_NAME = "arcade-assets-v1";
 const CACHE_META = "/__asset-cache-meta__";
+const MARK_PATH = "M85.29 40.03q0 1.7-.47 4.09t-1.02 4.06t-.79 1.67q-.53 0-1.2-1.14t-1.64-2.34t-2.19-1.32q-6.49 8.48-6.49 15.09q0 3.04 1.52 5.79l7.83 8.48q4.56 5.26 4.56 10.76q0 3.22-1.49 6.02t-4.12 2.81q-.35-4.39-3.16-7.54L45.6 52.11q-2.46 1.7-3.6 5.03t-1.14 6.37q0 1.99 1.23 4.3t2.98 4.47l3.51 4.21q1.7 2.16 2.92 4.5t1.23 4.33q0 2.87-1.87 5.15t-4.03 2.28H34.79q-.29-.58-.29-.7q0-.88.88-1.11q1.46-.18 2.69-1.29t1.23-2.51q0-1.58-2.19-7.63t-2.19-8.8q0-5.38 2.28-11.11t7.07-8.95l-3.63-3.98q-4.56-5.26-4.56-10.82q0-5.03 4.09-9.47h1.52q.18 5.09 3.04 8.3l22.22 24.67.18.12q2.05-9.18 6.9-15.32q-8.6-2.16-8.6-9.12q0-2.28.41-4.09t.99-2.75t1.14-1.52t.96-.7l.41-.18q.64.47.82 1.08t.26 1.14t.56 1.17t2.1 1.43t4.44 1.67q1.52.41 2.57.82t2.37 1.26t2.02 2.22t.7 3.25z";
 
 async function loadBootAssets(report: (done: number, total: number) => void, signal: AbortSignal) {
   const response = await fetch("/asset-manifest.json", { cache: "no-cache", signal });
@@ -121,7 +122,12 @@ export function SourceAssetBootGate({ children, firstBoot, locale }: {
     <header><strong>FUTURUM</strong><span><i aria-hidden="true" />{zh ? "访客通道" : "GUEST"} <small>GUEST</small></span></header>
     <div className="source-asset-stack">
       <div className="source-asset-mark" aria-hidden="true">
-        <svg viewBox="0 0 120 120"><path d="M85.29 40.03q0 1.7-.47 4.09t-1.02 4.06t-.79 1.67q-.53 0-1.2-1.14t-1.64-2.34t-2.19-1.32q-6.49 8.48-6.49 15.09q0 3.04 1.52 5.79l7.83 8.48q4.56 5.26 4.56 10.76q0 3.22-1.49 6.02t-4.12 2.81q-.35-4.39-3.16-7.54L45.6 52.11q-2.46 1.7-3.6 5.03t-1.14 6.37q0 1.99 1.23 4.3t2.98 4.47l3.51 4.21q1.7 2.16 2.92 4.5t1.23 4.33q0 2.87-1.87 5.15t-4.03 2.28H34.79q-.29-.58-.29-.7q0-.88.88-1.11q1.46-.18 2.69-1.29t1.23-2.51q0-1.58-2.19-7.63t-2.19-8.8q0-5.38 2.28-11.11t7.07-8.95l-3.63-3.98q-4.56-5.26-4.56-10.82q0-5.03 4.09-9.47h1.52q.18 5.09 3.04 8.3l22.22 24.67.18.12q2.05-9.18 6.9-15.32q-8.6-2.16-8.6-9.12q0-2.28.41-4.09t.99-2.75t1.14-1.52t.96-.7l.41-.18q.64.47.82 1.08t.26 1.14t.56 1.17t2.1 1.43t4.44 1.67q1.52.41 2.57.82t2.37 1.26t2.02 2.22t.7 3.25z" fill="#dcecf4" /></svg>
+        <svg viewBox="0 0 120 120">
+          <path d={MARK_PATH} className="source-asset-halo" fill="#6ef0dc" />
+          <path d={MARK_PATH} className="source-asset-ghost left" fill="none" stroke="#9fd8e6" strokeWidth="1" />
+          <path d={MARK_PATH} className="source-asset-ghost right" fill="none" stroke="#9fd8e6" strokeWidth="1" />
+          <path d={MARK_PATH} className="source-asset-core" fill="#dcecf4" />
+        </svg>
       </div>
       <div className="source-asset-panel">
         {progress.status === "error" ? <>
