@@ -99,9 +99,25 @@ async function main() {
     assert(presentation.includes(marker), `source Cake Duel transient presentation missing marker: ${marker}`);
   }
 
-  assert(cutover.includes('{ id: "games", complete: false'), "Games cutover boundary must remain incomplete");
-  assert(cutover.includes("Cake Duel is source-owned end to end"), "Cake Duel cutover note must record complete source ownership");
-  assert(cutover.includes("exact shipped challenge banner/pause/reveal timing"), "Cake Duel cutover note must record exact challenge timing ownership");
+  // Gate the CODE, not the ledger prose. The two claims the cutover note made
+  // about Cake Duel are already backed by the presentation marker assertions
+  // above (including the exact challenge banner/pause/reveal timing constants),
+  // so asserting the sentence only meant a note rewrite turned the gate red.
+  // Asserting the wiring is strictly stronger than the prose check.
+  const sourceApp = await read("frontend-src/source-app.tsx");
+  assert(
+    cutover.includes('{ id: "games", complete: false'),
+    "Games cutover boundary must remain incomplete while agent behaviour is pending",
+  );
+  for (const marker of [
+    'import { CakeDuelRuntimeController } from "./apps/cakeduel-runtime"',
+    'new CakeDuelRuntimeController(',
+  ]) {
+    assert(
+      sourceApp.includes(marker),
+      `source app must bind the Cake Duel runtime: ${marker}`,
+    );
+  }
 
   console.log("[ok] Cake Duel transition events and exact shipped challenge timing drive source-owned transient presentation");
 }

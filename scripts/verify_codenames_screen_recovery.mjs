@@ -259,11 +259,33 @@ async function main() {
     assert(screen.includes(marker), `source Codenames GameScreen missing marker: ${marker}`);
   }
 
+  // Gate the CODE, not the ledger prose. The two claims the cutover note used to
+  // make about Codenames are already backed by the marker assertions above (the
+  // screen list, and the flying-card transition block at the `flyingCard`
+  // read); asserting a sentence in a note only meant a note rewrite turned the
+  // gate red. String matching also cannot show the modules are actually bound,
+  // so assert the wiring too — strictly stronger than the prose check.
+  const sourceApp = await read("frontend-src/source-app.tsx");
+  const codenamesScreen = await read("frontend-src/screens/codenames-screen.tsx");
   assert(
-    cutover.includes('{ id: "games", complete: false') &&
-      cutover.includes('Codenames presentation is source-owned') &&
-      cutover.includes('flying-card transition behavior'),
-    "cutover status must record Codenames complete while keeping Games incomplete",
+    cutover.includes('{ id: "games", complete: false'),
+    "Games cutover boundary must remain incomplete while agent behaviour is pending",
+  );
+  for (const marker of [
+    'new GameCartridgeController(',
+    '"codenames",',
+    "codenamesStateSchema.parse(raw)",
+  ]) {
+    assert(
+      sourceApp.includes(marker),
+      `source app must bind the Codenames cartridge: ${marker}`,
+    );
+  }
+  assert(
+    codenamesScreen.includes(
+      'import { CodenamesFlyingCard, type CodenamesFlyingCardState } from "./codenames-flying-card"',
+    ),
+    "Codenames screen must mount the recovered flying-card transition component",
   );
 
   console.log("[ok] Codenames GameScreen presentation is source-owned against shipped contracts");

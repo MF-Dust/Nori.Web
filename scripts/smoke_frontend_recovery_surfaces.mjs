@@ -21,6 +21,7 @@ const groups = {
     "./frontend_farewell_ending_probe.mjs",
     "verifyFarewellEnding",
   ],
+  cult: ["./frontend_cult_probe.mjs", "verifyCultFlash"],
 };
 const selected = process.argv[2];
 if (!Object.hasOwn(groups, selected))

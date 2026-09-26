@@ -108,6 +108,7 @@ Object.assign(window, {
       acknowledge?.();
     },
     state: () => scene.snapshot(),
+    audio: () => frontend.audio,
     unmount() {
       root.unmount();
       speech.dispose();

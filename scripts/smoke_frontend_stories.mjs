@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { verifyBootCorruption } from "./frontend_boot_corruption_probe.mjs";
 import { verifyMemoryDatasea } from "./frontend_memory_datasea_probe.mjs";
 import { verifyFarewellEnding } from "./frontend_farewell_ending_probe.mjs";
+import { verifyCultFlash } from "./frontend_cult_probe.mjs";
 import { probeLaunchOptions } from "./probe_launch.mjs";
 const output = resolve("frontend-stories-smoke"),
   origin = "http://127.0.0.1:47175";
@@ -53,6 +54,7 @@ try {
   await runProbe(verifyBootCorruption);
   await runProbe(verifyMemoryDatasea);
   await runProbe(verifyFarewellEnding);
+  await runProbe(verifyCultFlash);
 } finally {
   vite.kill("SIGTERM");
 }

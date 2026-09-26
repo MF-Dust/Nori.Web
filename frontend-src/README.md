@@ -72,14 +72,22 @@ Missing presentation modules are intentionally rendered through explicit migrati
 
 The large `NormalApp-*` desktop shell is no longer a general migration boundary. Mail, Signal Messenger, Files, Browser main/popup and Idle/QFR are source-owned. Remaining work includes:
 
-- broader Messenger/chat-media presentation outside the recovered Signal Messenger boundary;
-- Cake Duel, Codenames, Chess and Pictionary presentation;
-- Live2D/Nori scene presentation;
-- remaining source-owned CSS/visual-system migration;
+- the shipped Idle marginal-growth ribbon world (a pixi renderer plus roughly thirty store
+  parameters, `public/assets/marginalGrowthStore-aMgk69c4.js` driving
+  `IdleScreen-DCDB640k.js`). Not ported. `state/marginal-growth-store.ts` exists but is never
+  instantiated, so the Idle boundary is complete on its smoke evidence with this one recorded
+  exception;
+- original-agent behaviour only: Messenger dialogue and media sessions, the four games' agent
+  dialogue/voice/inference, and the Corruption, Memory, Datasea and Farewell voice tracks.
+  `nori_talk.request` is a local no-op, so none of this is frontend source work;
+- original visual, audio and cinematic comparison against a reference run, plus the Cult,
+  Datasea-compositor, Memory-alert and Debug-layout comparisons that have no baseline yet;
 - Cloudflare deploy-stage frontend staging and the final production entry switch;
 - final cross-boundary behavior/smoke comparison and historical JavaScript retirement after rollback validation.
 
-Generated beautified bundles under `.frontend-recovery/pretty/` remain evidence, not project source.
+Cake Duel, Codenames, Chess, Pictionary and the Live2D/Nori scene stack are all bound in
+`source-app.tsx` today; what remains for them is agent behaviour and original comparison, not
+presentation wiring. Generated beautified bundles under `.frontend-recovery/pretty/` remain evidence, not project source.
 
 ## Recovery commands
 

@@ -11,6 +11,7 @@ try {
     "frontend-memory-datasea",
     "frontend-story-clock",
     "farewell-ending",
+    "frontend-cult",
   ]) {
     const outfile = join(directory, entry + ".test.mjs");
     await build({

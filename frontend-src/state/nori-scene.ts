@@ -37,6 +37,13 @@ export interface NoriSceneState {
   fogFar: number;
   corruptVoice: boolean;
   chatMode: "normal" | "bubbles" | "hidden";
+  /**
+   * `"auto"` is the shipped `"fact"` channel value, not a synonym for "nothing".
+   * The shipped music host resolves it as `n === "silent" ? null : n === "fact" ?
+   * factTrack : ...`, i.e. "use the track the facts imply". `source-app` therefore
+   * skips the override for `"auto"` and lets `desktopMusicTarget(facts)` pick.
+   * Do not add a literal `"fact"` track id: there is no such asset.
+   */
   bgm: "auto" | "silent" | "bgm1" | "bgm_manifold" | "bgm_void";
   noriSleep: boolean;
   noriTexture: "corrupt" | null;

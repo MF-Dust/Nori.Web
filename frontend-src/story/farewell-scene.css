@@ -1,0 +1,5 @@
+/* Shipped `HQe` stack: the three most recently landed lines, bottom right. */
+.farewell-subtitles{position:fixed;right:20px;bottom:11%;width:min(340px,34vw);display:flex;flex-direction:column;justify-content:flex-end;gap:8px;pointer-events:none}
+.farewell-line{align-self:flex-start;max-width:100%;margin:0;padding:10px 16px;border:1px solid rgba(126,168,172,.38);border-radius:16px 16px 16px 4px;background:linear-gradient(135deg,#d2e8e9f2 0%,#caf5f1f6 50%,#d2e8e9f2 100%);box-shadow:0 6px 24px rgba(88,118,138,.16),0 2px 8px rgba(88,118,138,.08),inset 0 1px 0 #fefefec0;color:#56565f;font:600 14px/1.625 Nunito,system-ui,sans-serif;animation:farewell-line-in .4s cubic-bezier(.32,.72,0,1) both}
+@keyframes farewell-line-in{from{opacity:0;transform:translateY(40px) scale(.9)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.farewell-line{animation:none}}

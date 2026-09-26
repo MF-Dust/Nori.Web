@@ -12,6 +12,7 @@ import {
 } from "./farewell-timeline";
 import { FarewellRenderer } from "./farewell-renderer";
 import { FarewellActor } from "./farewell-actor";
+import "./farewell-scene.css";
 
 const reloadPage = () => window.location.reload();
 
@@ -180,6 +181,15 @@ export function FarewellScene({
           >
             Retry
           </button>
+        </div>
+      )}
+      {!failed && !view.black && view.subtitle.length > 0 && (
+        <div className="farewell-subtitles">
+          {view.subtitle.map((cue) => (
+            <p key={cue.id} className="farewell-line">
+              {cue.text}
+            </p>
+          ))}
         </div>
       )}
       {!failed && !view.black && (

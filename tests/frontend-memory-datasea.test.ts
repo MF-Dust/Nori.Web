@@ -5,7 +5,11 @@ import {
   dataseaCamera,
 } from "../frontend-src/story/datasea-scene";
 import {
+  MEMORY_ALERT_OFFSETS,
   MEMORY_PHASES,
+  memoryAlertOffsets,
+  memoryFloodBoxes,
+  memoryFloodOffsets,
   memoryProjection,
 } from "../frontend-src/story/memory-scene";
 import {
@@ -39,6 +43,33 @@ test("memory projection orders attack, sweep, drain, and void", () => {
   assert.equal(memoryProjection(28).sweep, true);
   assert.equal(memoryProjection(30).drain, true);
   assert.equal(memoryProjection(40).voidProgress > 0, true);
+});
+
+test("memory flood geometry is the shipped kXe box table and LXe cadence", () => {
+  // kXe(3) from mulberry32(1852797545), four draws per record in w,h,fx,fy order.
+  assert.deepEqual(memoryFloodBoxes(3), [
+    { w: 324, h: 368, fx: 0.17994714868254957, fy: 0.5014762649359181 },
+    { w: 353, h: 342, fx: 0.5272060519969091, fy: 0.4411865321174264 },
+    { w: 366, h: 352, fx: 0.1548386956285685, fy: 0.05039728644303977 },
+  ]);
+  // LXe(12, 16.5): gaps 11, ratio (0.25/2)^(1/10), run scaled to floodDur-0.25.
+  const offsets = memoryFloodOffsets(12, 16.5);
+  assert.equal(offsets.length, 12);
+  assert.equal(offsets[0], 0);
+  assert.equal(offsets.at(-1), 16.25);
+  assert.ok(Math.abs(offsets[1]! - 3.3956657661875025) < 1e-12);
+  assert.deepEqual(
+    offsets.every((at, index) => index === 0 || at > offsets[index - 1]!),
+    true,
+  );
+  // OXe(sweep - attack - 0.6, void - attack - 0.6) = OXe(6.4, 17.6).
+  assert.equal(MEMORY_ALERT_OFFSETS.length, 56);
+  assert.deepEqual(
+    MEMORY_ALERT_OFFSETS,
+    memoryAlertOffsets(6.4, 17.6),
+  );
+  assert.equal(MEMORY_ALERT_OFFSETS[0], 1.4472361809045227);
+  assert.ok(MEMORY_ALERT_OFFSETS.at(-1)! < 17.6);
 });
 
 test("datasea restores shipped narrative text and timed subtitle layers", () => {
