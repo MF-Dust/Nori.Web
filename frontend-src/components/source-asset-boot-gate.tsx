@@ -109,7 +109,7 @@ export function SourceAssetBootGate({ children, firstBoot, locale }: {
   if (!initialBoot) return <main className="source-asset-gate compact" role="status">
     <div className="source-asset-compact-panel">
       <span className="source-asset-compact-mark" aria-hidden="true">✦</span>
-      <strong>{progress.status === "error" ? (zh ? "下载失败" : "Download failed") : (zh ? "正在下载资源" : "Downloading assets")}</strong>
+      <strong>{progress.status === "error" ? (zh ? "下载失败" : "Download failed") : (zh ? "正在下载资源..." : "Downloading resources...")}</strong>
       {progress.status === "error" ? <button type="button" onClick={() => setRetry(value => value + 1)}>{zh ? "重试" : "Retry"}</button> : <>
         <div className="source-asset-compact-track"><div style={{ width: (ratio * 100) + "%" }} /></div>
         <small>{count(progress.done)} / {count(progress.total)} MB</small>
@@ -125,12 +125,12 @@ export function SourceAssetBootGate({ children, firstBoot, locale }: {
       </div>
       <div className="source-asset-panel">
         {progress.status === "error" ? <>
-          <span className="source-asset-status">{zh ? "下载失败" : "Download failed"}</span>
+          <span className="source-asset-status">{zh ? "资源同步失败" : "Resource sync failed"}</span>
           <span className="source-asset-count">{zh ? "请检查网络连接后重试。" : "Check your connection and try again."}</span>
           <button type="button" onClick={() => setRetry(value => value + 1)}>{zh ? "重试" : "Retry"}</button>
         </> : <>
           <div className="source-asset-track"><div className="source-asset-fill" style={{ width: (ratio * 100) + "%" }} /></div>
-          <span className="source-asset-status">{zh ? "正在加载游戏资源…" : "Loading game assets…"}</span>
+          <span className="source-asset-status">{zh ? "正在同步资源" : "Syncing resources"}</span>
           <span className="source-asset-count">{count(progress.done)} / {count(progress.total)} MB</span>
         </>}
       </div>
