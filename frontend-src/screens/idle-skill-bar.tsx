@@ -6,6 +6,7 @@ import {
   type IdleSkillDefinition,
 } from "../apps/idle";
 import { formatDesktopCompute } from "../state/compute-runtime";
+import { IdleIcon } from "./idle-icon";
 
 const UNIVERSAL_SKILL_TINT = "#67e8f9";
 
@@ -100,7 +101,7 @@ function SkillButton({
         aria-label={skill.name ?? skill.id}
       >
         <span className="absolute inset-0 grid place-items-center text-[12px] font-semibold">
-          {skill.icon ? skill.icon.slice(0, 2).toUpperCase() : <Zap className="size-4" />}
+          {skill.icon ? <IdleIcon name={skill.icon} className="size-6" /> : <Zap className="size-4" />}
         </span>
         {cooldownRatio > 0 ? (
           <span

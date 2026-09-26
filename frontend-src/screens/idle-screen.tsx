@@ -9,7 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { RotateCcw, Zap } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import type { StoreApi, UseBoundStore } from "zustand";
 import { IDLE_ALIGNMENT_RIBBON } from "../apps/marginal-growth/alignment";
 import { MarginalGrowthRibbonView } from "../apps/marginal-growth/ribbon-view";
@@ -328,6 +328,19 @@ export function IdleScreen({
     };
   }, [alignmentRibbon.growth, growth.params]);
   const ribbonOwned = growth.source === "owned" ? snapshot.state.owned : null;
+  const productionRate = useMemo(
+    () =>
+      snapshot.generators.reduce(
+        (total, generator) => total + (runtime.quoteGenerator(generator.id, 1)?.totalRate ?? 0),
+        0,
+      ),
+    [runtime, snapshot],
+  );
+  const cap = effective.cap;
+  const capFinite = Number.isFinite(cap);
+  const capReached = capFinite && effective.compute >= cap;
+  const showCap = !capFinite || (capFinite && effective.compute >= cap * 0.5);
+  const showMeta = snapshot.state.currentAlignment !== "equilibrium";
 
   useEffect(() => {
     if (!marginalGrowth || growth.source !== "autoplay") return;
@@ -349,7 +362,7 @@ export function IdleScreen({
 
   return (
     <div
-      className="pixel-idle relative h-full w-full select-none overflow-hidden font-mono"
+      className="pixel-idle pixel-scanlines relative h-full w-full select-none overflow-hidden"
       style={{
         background: theme.background,
         color: theme.bright,
@@ -385,30 +398,49 @@ export function IdleScreen({
       {interactive ? <IdleProgressionRail runtime={runtime} snapshot={snapshot} /> : null}
       {interactive ? <IdleGeneratorShop runtime={runtime} snapshot={snapshot} /> : null}
       {interactive ? (
-        <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2">
+        <div
+          className="pointer-events-none absolute left-1/2 top-4 z-20 flex -translate-x-1/2 flex-col items-center gap-1.5"
+          style={{ filter: "var(--px-ui-glow, none)" }}
+        >
+          <div
+            className="pixel-num"
+            style={{
+              fontSize: 40,
+              lineHeight: 1,
+              color: "#ecfeff",
+              letterSpacing: "0.02em",
+              textShadow: "2px 2px 0 #0e7490, 4px 4px 0 #062c3d",
+            }}
+          >
+            {formatDesktopCompute(effective.compute)}
+          </div>
+          <div className="pixel-num pixel-fs-md pixel-tsh-1 pointer-events-auto flex items-center gap-3">
+            <span style={{ color: "var(--px-cyan)" }}>
+              +{formatDesktopCompute(productionRate)}
+              <span className="pixel-fs-sm text-[var(--px-cyan)]/55">/s</span>
+            </span>
+            {showCap ? (
+              <span
+                className="pixel-fs-sm"
+                style={{ color: capReached ? "var(--px-amber)" : capFinite ? "var(--px-white)" : "var(--px-cyan)" }}
+              >
+                {capFinite ? (capReached ? "已达上限 " : "上限 ") + formatDesktopCompute(cap) : "上限 ♾️"}
+              </span>
+            ) : null}
+            {showMeta ? (
+              <>
+                <span className="text-[var(--px-white)]">线程 {formatDesktopCompute(snapshot.state.threads ?? 0)}</span>
+                <span className="text-[var(--px-magenta)]">共鸣 {formatDesktopCompute(snapshot.state.shards)}</span>
+              </>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+      {interactive ? (
+        <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 -translate-x-1/2">
           <IdleSkillBar runtime={runtime} snapshot={snapshot} />
         </div>
       ) : null}
-
-      <div
-        className="pointer-events-auto absolute top-3 min-w-52 border bg-black/55 p-3 backdrop-blur-sm"
-        style={{
-          right: hasShop ? 240 : 12,
-          borderColor: `${theme.dim}99`,
-        }}
-      >
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] opacity-70">
-          <Zap className="size-3.5" />
-          COMPUTE
-        </div>
-        <div className="mt-1 text-2xl tabular-nums" style={{ filter: theme.glow }}>
-          {formatDesktopCompute(effective.compute)}
-        </div>
-        <div className="mt-1 flex justify-between text-[10px] opacity-65">
-          <span>CAP {formatDesktopCompute(effective.cap)}</span>
-          <span>{effective.draining ? "DRAIN" : "STABLE"}</span>
-        </div>
-      </div>
 
       {!initialized && !introCompleted ? (
         <IdleInitializationSequence onComplete={finishInitialization} />

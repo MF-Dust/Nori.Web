@@ -93,15 +93,27 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
   return <section className="source-pictionary">
     {!game ? <PictionaryCover locale={locale} open={bookOpen} durationSec={durationSec}
       disabled={!snapshot.mounted || snapshot.pending} onDuration={setDurationSec} onToggle={() => setBookOpen(value => !value)}
-      onStart={start} onHelp={() => setHelp(true)} /> : summary ? <PictionaryResults game={game!} locale={locale} pending={snapshot.pending} onRestart={start} /> : round && <div className="source-pictionary-game">
-      <div className="source-pictionary-tools" aria-label={text("Drawing tools", "画图工具")}>
-        {PICTIONARY_COLORS.map(value => <button type="button" key={value} aria-label={value} aria-pressed={color === value && !eraser}
-          disabled={!active || !isDrawer} onClick={() => { playSound?.("partygames-pictionary-tools"); setColor(value); setEraser(false); }}>
-          <svg viewBox="0 0 100 20" aria-hidden="true"><rect x="0" y="2" width="76" height="16" rx="2" fill="#E8DCC8" /><rect x="6" y="2" width="10" height="16" fill={value} /><path d="M76 2 L100 10 L76 18Z" fill="#E8DCC8" /><path d="M88 7 L100 10 L88 13Z" fill={value} /></svg>
-        </button>)}
-        <button type="button" disabled={!active || !isDrawer} aria-pressed={eraser} onClick={() => { playSound?.("partygames-pictionary-tools"); setEraser(!eraser); }}>{text("Eraser", "橡皮")}</button>
-        <button type="button" disabled={!active || !isDrawer} onClick={() => { playSound?.("partygames-pictionary-tools"); canvas.current?.undo(); }}>{text("Undo", "撤销")}</button>
-        <button type="button" disabled={!active || !isDrawer} onClick={() => { playSound?.("partygames-pictionary-tools"); canvas.current?.clear(); }}>{text("Clear", "清空")}</button>
+      onStart={start} onHelp={() => setHelp(true)} /> : summary ? <PictionaryResults game={game!} locale={locale} pending={snapshot.pending} onRestart={start} />       : round && <div className="source-pictionary-game">
+      <div className="source-pictionary-felt" aria-hidden="true" />
+      <div className="source-pictionary-vignette" aria-hidden="true" />
+      <div className="source-pictionary-tools" aria-label={text("Drawing tools", "画图工具")} data-dimmed={!isDrawer || undefined}>
+        <div className="source-pictionary-pencils">
+          {PICTIONARY_COLORS.map(value => <button type="button" key={value} className="source-pictionary-pencil" aria-label={value} aria-pressed={color === value && !eraser}
+            disabled={!active || !isDrawer} data-pressed={color === value && !eraser ? "" : undefined}
+            onClick={() => { playSound?.("partygames-pictionary-tools"); setColor(value); setEraser(false); }}>
+            <svg viewBox="0 0 100 20" aria-hidden="true"><rect x="0" y="2" width="6" height="16" rx="2" fill="#E8DCC8" /><rect x="6" y="2" width="10" height="16" rx="1" fill={value} /><rect x="16" y="2" width="60" height="16" fill="#E8DCC8" /><path d="M76 2 L100 10 L76 18Z" fill="#E8DCC8" /><path d="M88 7 L100 10 L88 13Z" fill={value} /></svg>
+          </button>)}
+          <button type="button" className="source-pictionary-eraser" aria-label={text("Eraser", "橡皮")} aria-pressed={eraser}
+            disabled={!active || !isDrawer} data-pressed={eraser ? "" : undefined}
+            onClick={() => { playSound?.("partygames-pictionary-tools"); setEraser(!eraser); }}>
+            <svg viewBox="0 0 84 33" aria-hidden="true"><rect width="84" height="33" rx="2.5" fill="#F4E7D4" /><rect width="22" height="33" fill="#E7B7C4" /><rect x="22" width="4" height="33" fill="#C98B9A" /></svg>
+          </button>
+        </div>
+        <div className="source-pictionary-tools-spacer" />
+        <div className="source-pictionary-tool-actions">
+          {isDrawer ? <button type="button" className="source-pictionary-action" data-danger="" disabled={!active} onClick={() => { playSound?.("partygames-pictionary-tools"); canvas.current?.clear(); }}>{text("Clear", "清空")}</button> : null}
+          <button type="button" className="source-pictionary-action" disabled={!active || snapshot.pending} onClick={() => void controller.dispatch({ type: "skipRound", atMs: Date.now() })}>{text("Skip", "跳过")}</button>
+        </div>
       </div>
       <div className="source-pictionary-paper">
         <header><span className={remaining < 30000 ? "low" : ""}>{Math.floor(Math.ceil(remaining / 1000) / 60)}:{String(Math.ceil(remaining / 1000) % 60).padStart(2, "0")}</span>
@@ -128,7 +140,6 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
           <input aria-label={text("Your guess", "你的答案")} maxLength={50} disabled={!active || isDrawer || snapshot.pending} value={guess} onChange={event => setGuess(event.target.value)} />
           <button type="submit" disabled={!active || isDrawer || snapshot.pending || !guess.trim()}>{text("Send", "发送")}</button>
         </form>
-        <button type="button" disabled={!active || snapshot.pending} onClick={() => void controller.dispatch({ type: "skipRound", atMs: Date.now() })}>{text("Skip round", "跳过本轮")}</button>
       </aside>
     </div>}
     {!snapshot.mounted && <button type="button" disabled={snapshot.pending} onClick={() => void controller.ensureMounted()}>{text("Connect game", "连接游戏")}</button>}

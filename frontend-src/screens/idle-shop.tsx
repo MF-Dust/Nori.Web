@@ -1,5 +1,6 @@
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
+import { IdleIcon } from "./idle-icon";
 import {
   IDLE_BUY_COUNTS,
   IDLE_BUY_COUNT_LABELS,
@@ -30,13 +31,11 @@ function GeneratorCard({
   generator,
   quote,
   totalProduction,
-  mode,
   onBuy,
 }: {
   generator: IdleGeneratorDefinition;
   quote: IdleGeneratorQuote;
   totalProduction: number;
-  mode: IdleBuyCount;
   onBuy: () => void;
 }) {
   const tone = generatorTone(generator);
@@ -44,56 +43,58 @@ function GeneratorCard({
   const share = totalProduction > 0 ? (quote.totalRate / totalProduction) * 100 : 0;
   const unitLabel = generator.measure ?? "个";
 
+  const owned = quote.owned > 0;
+  const inset =
+    "inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 rgba(255,255,255,.04)";
   return (
     <button
       type="button"
       onClick={affordable ? onBuy : undefined}
       aria-disabled={!affordable}
-      className={`group w-full border-2 bg-black/60 p-1.5 text-left transition-colors duration-100 ${
-        affordable
-          ? "hover:bg-white/5 active:translate-y-px"
-          : "cursor-not-allowed opacity-45"
+      className={`group flex w-full items-center gap-2 border-2 bg-[var(--px-panel)] p-1.5 text-left transition-colors duration-100 hover:bg-[var(--px-panel-2)] ${
+        affordable ? "active:translate-y-px" : "cursor-not-allowed opacity-45"
       }`}
       style={{
-        borderColor: `${tone}88`,
-        boxShadow:
-          quote.owned > 0
-            ? `inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 ${tone}33`
-            : "inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 rgba(255,255,255,.04)",
+        borderColor: owned ? tone : "var(--px-stroke)",
+        boxShadow: owned
+          ? `inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 ${tone}33`
+          : inset,
       }}
-      title={`${generator.name} · 每${unitLabel}每秒产出 ${formatDesktopCompute(quote.perUnitRate)} 算力；当前总产出 ${formatDesktopCompute(quote.totalRate)} 算力/秒`}
+      title={`每${unitLabel}${generator.name}每秒产出 ${formatDesktopCompute(quote.perUnitRate)} 算力。所有${generator.name}目前每秒共生成 ${formatDesktopCompute(quote.totalRate)} 算力。`}
     >
-      <div className="flex items-start gap-2">
-        <div
-          className="grid size-8 shrink-0 place-items-center border font-semibold"
-          style={{ borderColor: `${tone}99`, color: tone }}
-          aria-hidden="true"
-        >
-          {generator.name.slice(0, 1)}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-1">
-            <span className="min-w-0 flex-1 truncate text-[11px] font-semibold" style={{ color: tone }}>
-              {generator.name}
-            </span>
-            <span className="shrink-0 text-[10px] tabular-nums text-white/70">
-              {quote.owned}
-            </span>
-          </div>
-          <div className="mt-0.5 flex items-center justify-between gap-1 text-[9px] tabular-nums text-white/55">
-            <span>{formatDesktopCompute(quote.totalRate)}/s</span>
-            <span>{share.toFixed(1)}%</span>
-          </div>
-        </div>
+      <div className="relative size-8 shrink-0" style={{ color: tone }} aria-hidden="true">
+        {generator.icon ? (
+          <IdleIcon name={generator.icon} className="size-full" />
+        ) : (
+          <span className="grid size-full place-items-center pixel-fs-sm">{generator.name.slice(0, 1)}</span>
+        )}
       </div>
-
-      <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-white/10 pt-1 text-[10px]">
-        <span className="tabular-nums text-white/75">
-          {formatDesktopCompute(quote.totalCost)} 算力
-        </span>
-        <span style={{ color: affordable ? tone : undefined }}>
-          {quote.willBuy > 0 ? `+${quote.willBuy}` : IDLE_BUY_COUNT_LABELS[mode]}
-        </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1 leading-none">
+        <div className="pixel-cjk pixel-fs-md pixel-tsh-1 leading-tight break-words text-[var(--px-white)]">
+          {generator.name}
+        </div>
+        <div className="flex items-stretch gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <div className="pixel-num pixel-fs-md" style={{ color: tone }}>
+              LV {quote.owned}
+            </div>
+            <div className="pixel-num pixel-fs-md" style={{ color: tone }}>
+              {share.toPrecision(3)}%
+            </div>
+          </div>
+          <div
+            className={`flex shrink-0 items-center justify-center gap-1 self-stretch border-2 px-1.5 ${
+              affordable
+                ? "border-[var(--px-cyan)] bg-[var(--px-cyan-deep)] text-[var(--px-cyan)]"
+                : "border-[var(--px-dim)] bg-[var(--px-void)] text-[var(--px-dim)]"
+            }`}
+          >
+            <Zap className="size-2.5 shrink-0" strokeWidth={2.5} />
+            <span className="pixel-num pixel-fs-lg pixel-tsh-1">
+              {formatDesktopCompute(Math.ceil(quote.totalCost))}
+            </span>
+          </div>
+        </div>
       </div>
     </button>
   );
@@ -158,7 +159,7 @@ export function IdleGeneratorShop({
 
   return (
     <div
-      className="pointer-events-none absolute bottom-3 right-3 top-3 z-10 flex w-[220px] flex-col gap-2 font-mono"
+      className="pointer-events-none absolute bottom-3 right-3 top-3 z-10 flex w-[220px] flex-col gap-2"
       style={{ filter: "var(--px-ui-glow, none)" }}
     >
       <div className="flex shrink-0 items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-cyan-200/80">
@@ -172,7 +173,6 @@ export function IdleGeneratorShop({
             generator={generator}
             quote={quote}
             totalProduction={totalProduction}
-            mode={mode}
             onBuy={() => runtime.buy(generator.id, mode)}
           />
         ))}
