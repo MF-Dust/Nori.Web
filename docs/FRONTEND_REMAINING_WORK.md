@@ -13,6 +13,28 @@ Supporting Apps boundary is now marked complete with documented limitations:
 
 **Progress: 11/15 boundaries complete (73.3%)**
 
+### Non-Agent Acceptance Analysis Complete
+Comprehensive evaluation of what can be completed without agent backend:
+
+**Messenger**: ~85% complete
+- ✅ All UI components source-owned and tested
+- ✅ Deterministic Chromium tests pass
+- ⏸️ Lifecycle tests ready (tool available)
+- 🔴 Agent dialogue/media sessions blocked
+
+**Games**: ~90% complete
+- ✅ All 4 game runtimes complete, smoke tests pass
+- ✅ Runtime and browser tests pass
+- ⏸️ Lifecycle tests ready (tool available)
+- 🔴 Agent dialogue/voice/inference blocked
+
+**Live2D**: ~50% complete
+- ✅ Cult: 100% complete
+- ✅ Boot/Ending: Can complete independently (no agent dependency)
+- 🔴 Corruption/Memory/Datasea/Farewell: Agent voice/dialogue blocked
+
+See `FRONTEND_NON_AGENT_ACCEPTANCE.md` for detailed breakdown.
+
 ### Agent Backend Blocker Identified
 Critical path blocker: `backend/services/event_dispatcher.py` returns `{type: "noop"}` for `nori_talk.request`
 
