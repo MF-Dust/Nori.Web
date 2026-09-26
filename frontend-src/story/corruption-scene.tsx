@@ -233,6 +233,11 @@ export function CorruptionScene({
       style={{
         position: "fixed",
         inset: 0,
+        // The six antivirus panels are a responsive DOM grid ~2000px tall. Without
+        // this the lower panels fall below the fold of a fixed-inset container with
+        // no scroll and become unreachable — the antivirus preview overlay has
+        // always scrolled, this production root did not.
+        overflow: "auto",
         zIndex: NORI_SHELL_LAYERS.CUTSCENE,
       }}
     >

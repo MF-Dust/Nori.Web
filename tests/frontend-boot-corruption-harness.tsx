@@ -101,6 +101,10 @@ Object.assign(window, {
     cues,
     state: scene.snapshot,
     minimized: () => minimized,
+    /** Live mixer handles, so a teardown that must dispose audio is observable. */
+    audioSources: () => (audio as any).effects.size,
+    audioState: () => (audio as any).context?.state ?? "uninitialized",
+    unlockAudio: () => audio.unlock(),
     actorCapture(hidden: boolean | null) {
       if (hidden === null) {
         actorCaptureLease?.release();

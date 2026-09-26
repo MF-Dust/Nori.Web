@@ -15,7 +15,8 @@ const scene = new NoriSceneStore();
 const speech = new SpeechPlayer({ started() {}, done() {}, error() {} });
 const listeners = new Set<() => void>();
 let current: StoryInstance | null = null,
-  acknowledge: (() => void) | null = null;
+  acknowledge: (() => void) | null = null,
+  releaseTimer: ReturnType<typeof setTimeout> | undefined;
 const events: string[] = [];
 const storyController = {
   snapshot: () => current,
@@ -30,6 +31,17 @@ const storyController = {
       if (expected !== current) return;
       events.push("acknowledged");
       callback?.();
+      // The same post-acknowledgement release the real director owns: the story
+      // clears itself 1500 ms after the server accepted the sentinel, never when
+      // the scene happened to finish rendering.
+      clearTimeout(releaseTimer);
+      releaseTimer = setTimeout(() => {
+        releaseTimer = undefined;
+        if (expected !== current) return;
+        events.push("released");
+        publish(null);
+        render(null);
+      }, 1500);
     };
   },
 };
@@ -74,8 +86,14 @@ function render(instance: StoryInstance | null) {
     </>,
   );
 }
+// The app mounts NoriStage on the idle desktop before any story exists, and a
+// reload has to come back to exactly that: the stage is the desktop baseline.
+render(null);
 function mount(kind: "farewell" | "ending") {
   acknowledge = null;
+  // A fresh story instance supersedes whatever the previous one still owed.
+  clearTimeout(releaseTimer);
+  releaseTimer = undefined;
   events.length = 0;
   scene.reset();
   const instance: StoryInstance =

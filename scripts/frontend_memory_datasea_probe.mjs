@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { writeFile } from "node:fs/promises";
 import { solveDataseaCoreGame } from "./frontend_datasea_core_game_inputs.mjs";
 import { solveDataseaGame } from "./frontend_datasea_game_inputs.mjs";
+import { verifyDataseaDeviceMatrix } from "./frontend_datasea_device_matrix_probe.mjs";
 
 async function waitWithClock(page, locator, timeout = 60000) {
   for (let elapsed = 0; elapsed < timeout; elapsed += 40) {
@@ -279,4 +280,7 @@ export async function verifyMemoryDatasea(
   } finally {
     await page.close();
   }
+  // The device/quality matrix runs on its own pages, after this story released
+  // everything it acquired. It only adds cases; the assertions above stand.
+  await verifyDataseaDeviceMatrix(browser, output, origin);
 }

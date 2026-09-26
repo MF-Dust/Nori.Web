@@ -95,7 +95,12 @@ export function corruptionScene(state: StoryClockState): NoriSceneState {
   // Shipped `TJ` exit-base: redLight and tint 1 -> 0 over exitDarkDur 0.9
   // (`power2.out`); darkness -> darkPeak 0.85 and noriDim -> noriDarkPeak 3 on
   // the same window with `power2.inOut`.
+  // vVignette is NOT written between the end of `wJ` and the start of `SJ`: the
+  // shipped entry layer parks it at entryVignette * 0.55 and the heal layer then
+  // takes over. Without this the channel is undefined for the whole exitDark
+  // window, which drops the vignette effect element entirely.
   Object.assign(result, {
+    vignette: 0.385,
     noriTexture: null,
     corruptVoice: false,
     noriRestPose: false,

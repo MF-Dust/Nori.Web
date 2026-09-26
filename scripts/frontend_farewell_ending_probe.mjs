@@ -173,7 +173,8 @@ export async function verifyFarewellEnding(
     // Residue instrumentation, installed on the idle desktop before the Ending
     // takes anything. The harness only renders the stage from mount()/cancel(),
     // so the desktop baseline itself is captured after the first handoff.
-    await page.evaluate(() => {
+    // Re-runnable: a reload replaces the document the instrumentation lived in.
+    const instrumentResidue = () => {
       // Timer/RAF ownership: tag every registration with the module that made
       // it, so residue checks can name the owner instead of guessing.
       const native = {
@@ -331,7 +332,9 @@ export async function verifyFarewellEnding(
               .map((source) => source.url),
         },
       });
-    });
+    };
+    const installResidueInstrumentation = () => page.evaluate(instrumentResidue);
+    await installResidueInstrumentation();
 
     // A failed cold-open resource exposes Retry; retry reconstructs a fresh renderer.
     const cdp = await page.context().newCDPSession(page);
@@ -701,9 +704,541 @@ export async function verifyFarewellEnding(
       await page.evaluate(() => window.farewellEndingProbe.events),
       ["cancel"],
     );
+
+    // ---- interruption: the same residue contract, mid-flight ----------------
+    // The clean handoff above asserts the seven residue classes inline. Every
+    // interruption below is held to that same contract through one helper, so a
+    // cancel can never land on a greener desktop than a completion does.
+    const assertIdleDesktop = (snapshot, label) => {
+      const because = (message) => `${label}: ${message}`;
+      // 1. Scene override released.
+      assert.equal(
+        snapshot.scene.active,
+        false,
+        because("the Ending lease must be released"),
+      );
+      assert.equal(
+        snapshot.scene.camera,
+        null,
+        because("the cinematic camera must be released"),
+      );
+      assert.equal(
+        snapshot.scene.cameraRot,
+        null,
+        because("the cinematic camera rotation must be released"),
+      );
+      assert.equal(
+        snapshot.scene.fov,
+        null,
+        because("the cinematic fov must be released"),
+      );
+      assert.equal(
+        snapshot.scene.cameraFar,
+        null,
+        because("the cinematic far plane must be released"),
+      );
+      assert.equal(
+        snapshot.scene.darkness,
+        0,
+        because("the cinematic darkness must be released"),
+      );
+      assert.equal(
+        snapshot.scene.noriDim,
+        0,
+        because("the Nori dim must be released"),
+      );
+      assert.equal(
+        snapshot.scene.coldOpen,
+        null,
+        because("the cold-open override must be released"),
+      );
+      assert.equal(
+        snapshot.scene.chatMode,
+        "normal",
+        because("chat mode must be back to normal"),
+      );
+      assert.equal(
+        snapshot.scene.bgm,
+        "auto",
+        because("bgm must be back to auto"),
+      );
+      // 3. Model override released: fact-derived idle, no scene-forced face.
+      assert.equal(
+        snapshot.scene.noriSleep,
+        false,
+        because("the forced sleep pose must be released"),
+      );
+      assert.equal(
+        snapshot.scene.eyeOpen,
+        null,
+        because("the forced eye override must be released"),
+      );
+      assert.equal(
+        snapshot.scene.mouthOpen,
+        null,
+        because("the forced mouth override must be released"),
+      );
+      assert.equal(
+        snapshot.scene.noriSmile,
+        null,
+        because("the forced smile must be released"),
+      );
+      assert.equal(
+        snapshot.scene.noriExpression,
+        null,
+        because("the forced expression must be released"),
+      );
+      assert.equal(
+        snapshot.scene.noriIdleMotion,
+        null,
+        because("the forced idle motion must be released"),
+      );
+      // 4. Graphics budget is the auto mode again, not a scene-chosen one.
+      assert.equal(
+        snapshot.stage.coldOpen,
+        "inactive",
+        because("the cold-open renderer must be released"),
+      );
+      assert.equal(
+        snapshot.stage.noriIdle,
+        "idle",
+        because("Nori must be back to the fact-derived idle"),
+      );
+      assert.equal(
+        snapshot.stage.live2dFps,
+        "60",
+        because("an ultra-performance budget must not survive the Ending"),
+      );
+      assert.equal(
+        snapshot.graphics === null
+          ? "auto"
+          : JSON.parse(snapshot.graphics).state.source,
+        "auto",
+        because("graphics mode must still be auto-selected"),
+      );
+      // 5/6. No Ending-owned timer or frame callback is still alive.
+      assert.deepEqual(
+        snapshot.liveOwners,
+        [],
+        because("no Ending-owned timer or frame callback may stay alive"),
+      );
+    };
+    const assertNoDrift = async (held, label, span = 5000) => {
+      await run(span);
+      const idled = await residue();
+      assert.equal(
+        idled.registrations,
+        held.registrations,
+        `${label}: the Ending must not register new timers after the handoff`,
+      );
+      assert.deepEqual(
+        idled.scene,
+        held.scene,
+        `${label}: an idle desktop must not mutate scene state`,
+      );
+      assert.deepEqual(
+        idled.stage,
+        held.stage,
+        `${label}: no .nori-stage attribute may drift while the desktop idles`,
+      );
+      return idled;
+    };
+    const startEnding = async () => {
+      await page.evaluate(() => window.farewellEndingProbe.mount("ending"));
+      await waitForCold("ready");
+    };
+    const toWakeGate = async () => {
+      await page.clock.fastForward(32650);
+      await run(40);
+      const control = page.getByRole("button", { name: "Wake Nori" });
+      await advanceUntil("Ending wake gate", () =>
+        control.count().then((count) => count === 1),
+      );
+      return control;
+    };
+    // One cancel path, three distinct interruption points.
+    const interrupt = async (label, at, expected) => {
+      await startEnding();
+      await at();
+      // Non-vacuity: the Ending really owned the desktop at the cancel point.
+      const held = await residue();
+      assert.equal(
+        held.scene.active,
+        true,
+        `${label}: the Ending must own the desktop before the cancel`,
+      );
+      assert.equal(
+        held.scene.chatMode,
+        "hidden",
+        `${label}: the Ending must hide chat before the cancel`,
+      );
+      assert.equal(
+        held.scene.bgm,
+        "silent",
+        `${label}: the Ending must silence bgm before the cancel`,
+      );
+      assert.ok(
+        held.liveOwners.length >= 1,
+        `${label}: the Ending must own a live frame callback before the cancel`,
+      );
+      expected(held);
+      await page.evaluate(() => window.farewellEndingProbe.cancel());
+      await run(40);
+      assert.equal(
+        await page.locator('[data-story-scene="ending"]').count(),
+        0,
+        `${label}: the cancel must unmount the Ending scene`,
+      );
+      const after = await residue();
+      assertIdleDesktop(after, label);
+      assert.deepEqual(
+        await page.evaluate(() => window.farewellEndingProbe.events),
+        ["cancel"],
+        `${label}: the sentinel must not have fired before the cancel`,
+      );
+      // 7. No stale story callback and no new Ending registration survive it.
+      await assertNoDrift(after, label);
+      assert.deepEqual(
+        await page.evaluate(() => window.farewellEndingProbe.events),
+        ["cancel"],
+        `${label}: a stale frame callback must not complete the story after the cancel`,
+      );
+    };
+
+    // 1a. During the void ascent, with the camera still down in the dark.
+    await interrupt(
+      "cancel during the void ascent",
+      async () => {
+        await run(1200);
+      },
+      (held) => {
+        assert.equal(held.scene.coldOpen.ocean, true);
+        assert.ok(
+          held.scene.darkness > 0.9,
+          "the void ascent must still be dark when it is cancelled",
+        );
+        assert.ok(
+          held.scene.camera.y < -40,
+          "the void ascent must still be deep when it is cancelled",
+        );
+        assert.equal(
+          held.scene.noriSleep,
+          true,
+          "the void ascent must still hold Nori asleep when it is cancelled",
+        );
+      },
+    );
+
+    // 1b. During the ready wake gate, where the clock is parked and no amount of
+    // elapsed time can move the scene on its own.
+    await interrupt(
+      "cancel at the ready wake gate",
+      async () => {
+        await toWakeGate();
+        assert.equal(
+          await ending.getAttribute("data-parked"),
+          "true",
+          "the gate must be parked before it is cancelled",
+        );
+        const parked = await residue();
+        await page.clock.fastForward(3000);
+        await run(40);
+        assert.equal(await ending.getAttribute("data-parked"), "true");
+        const still = await residue();
+        assert.deepEqual(
+          still.scene.camera,
+          parked.scene.camera,
+          "a parked Ending must not move its camera",
+        );
+        assert.equal(
+          still.scene.fov,
+          parked.scene.fov,
+          "a parked Ending must not change its fov",
+        );
+        assert.ok(
+          parked.liveOwners.length >= 1,
+          "a parked Ending must still own a live frame callback",
+        );
+      },
+      (held) => {
+        assert.ok(
+          Math.abs(held.scene.camera.y - 1.75) < 1e-3 &&
+            Math.abs(held.scene.camera.z - 7.4) < 1e-3 &&
+            Math.abs(held.scene.fov - 15) < 1e-3,
+          "the cancel must land on the parked face camera",
+        );
+      },
+    );
+
+    // 1c. During the final settle, with the wake return still in progress.
+    await interrupt(
+      "cancel during the final settle",
+      async () => {
+        await (await toWakeGate()).click();
+        await page.clock.fastForward(1200);
+        await run(40);
+        assert.equal(
+          await ending.getAttribute("data-parked"),
+          null,
+          "the settle must have released the wake gate",
+        );
+      },
+      (held) => {
+        assert.ok(
+          held.scene.fov > 15 && held.scene.fov < 60,
+          "the cancel must land while the fov is still moving",
+        );
+        assert.ok(
+          held.scene.camera.y > 0 && held.scene.camera.y < 1.75,
+          "the cancel must land while the camera is still returning",
+        );
+        assert.ok(
+          held.scene.noriDim > 0 && held.scene.noriDim < 2.8,
+          "the cancel must land while Nori is still being brought back up",
+        );
+        assert.ok(held.scene.burst > 0, "the wake burst must still be running");
+      },
+    );
+
+    // ---- interruption: reload while the Ending is mid-flight ----------------
+    await startEnding();
+    await (await toWakeGate()).click();
+    await page.clock.fastForward(1200);
+    await run(40);
+    const midFlight = await residue();
+    assert.equal(
+      midFlight.scene.active,
+      true,
+      "the reload must land while the Ending still owns the desktop",
+    );
+    assert.ok(
+      midFlight.scene.fov > 15 && midFlight.scene.fov < 60,
+      "the reload must land mid-settle, not before the gate or after the story",
+    );
+    assert.ok(
+      midFlight.liveOwners.length >= 1,
+      "a mid-flight Ending must still own a live frame callback",
+    );
+    assert.equal(
+      await page.evaluate(() =>
+        window.farewellEndingProbe.events.includes("complete-requested"),
+      ),
+      false,
+      "the Ending must not have completed before the reload",
+    );
+    // sessionStorage is the only witness that outlives the navigation, so the
+    // story state is sampled as the document goes away, not after it.
+    await page.evaluate(() =>
+      addEventListener("pagehide", () => {
+        sessionStorage.setItem(
+          "farewell-ending-unload",
+          JSON.stringify(window.farewellEndingProbe.events),
+        );
+      }),
+    );
+    await page.reload();
+    await advanceUntil("reloaded visible page", () =>
+      page.evaluate(() => document.visibilityState === "visible"),
+    );
+    await advanceUntil("reloaded harness", () =>
+      page.evaluate(() => Boolean(window.farewellEndingProbe)),
+    );
+    await advanceUntil("reloaded idle desktop", () =>
+      page
+        .locator(".nori-stage")
+        .getAttribute("data-cold-open")
+        .then((state) => state === "inactive"),
+    );
+    await installResidueInstrumentation();
+    assert.equal(
+      await page.locator('[data-story-scene="ending"]').count(),
+      0,
+      "no Ending scene element may survive the reload",
+    );
+    const unloaded = JSON.parse(
+      (await page.evaluate(() =>
+        sessionStorage.getItem("farewell-ending-unload"),
+      )) ?? "null",
+    );
+    assert.ok(Array.isArray(unloaded), "the unload witness must have been recorded");
+    assert.equal(
+      unloaded.includes("complete-requested"),
+      false,
+      `the story sentinel must not fire on the way out: ${JSON.stringify(unloaded)}`,
+    );
+    const reloadBaseline = await residue();
+    assertIdleDesktop(reloadBaseline, "reload mid-ending");
+    assert.deepEqual(
+      await page.evaluate(() => window.farewellEndingProbe.events),
+      [],
+      "the reloaded document must start with an unreached story",
+    );
+    // The acknowledged path, on the fresh document: the sentinel is acknowledged,
+    // the story stays up until the director's own 1500 ms release, and that
+    // release is what unmounts the Ending. A wedged director fails every step.
+    await startEnding();
+    await (await toWakeGate()).click();
+    await page.clock.fastForward(3500);
+    await run(40);
+    assert.deepEqual(
+      await page.evaluate(() => window.farewellEndingProbe.events),
+      ["complete-requested"],
+      "the Ending must complete on the fresh page after a mid-flight reload",
+    );
+    await page.evaluate(() => window.farewellEndingProbe.acknowledge());
+    assert.deepEqual(
+      await page.evaluate(() => window.farewellEndingProbe.events),
+      ["complete-requested", "acknowledged"],
+    );
+    await run(1400);
+    assert.deepEqual(
+      await page.evaluate(() => window.farewellEndingProbe.events),
+      ["complete-requested", "acknowledged"],
+      "the story must not be released before the director's post-ack timer",
+    );
+    assert.equal(
+      await page.locator('[data-story-scene="ending"]').count(),
+      1,
+      "the Ending must stay mounted until the director releases the story",
+    );
+    await run(200);
+    assert.deepEqual(
+      await page.evaluate(() => window.farewellEndingProbe.events),
+      ["complete-requested", "acknowledged", "released"],
+      "the director must release the story 1500 ms after the acknowledgement",
+    );
+    assert.equal(
+      await page.locator('[data-story-scene="ending"]').count(),
+      0,
+      "the post-ack release must unmount the Ending",
+    );
+    const afterReload = await residue();
+    assertIdleDesktop(afterReload, "second Ending after a mid-flight reload");
+    assert.deepEqual(
+      afterReload.scene,
+      reloadBaseline.scene,
+      "the reloaded desktop must return to its own scene baseline",
+    );
+    assert.deepEqual(
+      afterReload.stage,
+      reloadBaseline.stage,
+      "every .nori-stage attribute must return to the reloaded baseline",
+    );
+    await assertNoDrift(afterReload, "second Ending after a mid-flight reload");
+    assert.deepEqual(
+      await page.evaluate(() => window.farewellEndingProbe.events),
+      ["complete-requested", "acknowledged", "released"],
+      "a late callback must not re-complete the story after the release",
+    );
+
+    // ---- interruption: resize while the Ending is mid-flight ----------------
+    await startEnding();
+    // Mid-rise: void parks the camera at y=-42.9, so the ascent is the first
+    // place a resize can land on a camera that is genuinely moving.
+    await page.clock.fastForward(6000);
+    await run(40);
+    const drawable = () =>
+      page.evaluate(() => {
+        const stage = document.querySelector(".nori-stage");
+        const canvas = stage.querySelector('canvas[data-scene-canvas="true"]');
+        return {
+          css: [stage.clientWidth, stage.clientHeight],
+          buffer: [canvas.width, canvas.height],
+        };
+      });
+    for (const [width, height] of [
+      [1920, 1080],
+      [390, 740],
+      [1366, 900],
+    ]) {
+      const before = await residue();
+      await page.setViewportSize({ width, height });
+      let seen = null;
+      for (let attempt = 0; attempt < 12; attempt++) {
+        // The cold-open renderer resizes from a ResizeObserver callback, which
+        // the browser delivers on a real frame; the fake clock only carries the
+        // scene clock, so give the compositor a real moment per attempt.
+        await new Promise((done) => setTimeout(done, 50));
+        await run(200);
+        seen = await drawable();
+        if (seen.buffer[0] === seen.css[0] && seen.buffer[1] === seen.css[1])
+          break;
+      }
+      assert.equal(
+        seen.css[0],
+        width,
+        `the stage must lay out at ${width}px wide`,
+      );
+      assert.deepEqual(
+        seen.buffer,
+        seen.css,
+        `the cold-open renderer must resize its backing store to ${width}x${height}`,
+      );
+      assert.ok(
+        seen.buffer[0] > 1 && seen.buffer[1] > 1,
+        `the cold-open renderer must keep a real drawable at ${width}x${height}`,
+      );
+      const after = await residue();
+      assert.equal(
+        after.scene.active,
+        true,
+        `a resize to ${width}x${height} must not end the Ending`,
+      );
+      assert.equal(
+        after.scene.chatMode,
+        "hidden",
+        `a resize to ${width}x${height} must not release chat mode`,
+      );
+      assert.equal(
+        after.scene.bgm,
+        "silent",
+        `a resize to ${width}x${height} must not release bgm`,
+      );
+      assert.ok(
+        after.scene.plankton > before.scene.plankton,
+        `the scene must keep advancing across a resize to ${width}x${height}`,
+      );
+      assert.ok(
+        after.scene.camera.y > before.scene.camera.y,
+        `the camera must keep rising across a resize to ${width}x${height}`,
+      );
+    }
+    const resizeWake = await toWakeGate();
+    assert.equal(
+      await ending.getAttribute("data-parked"),
+      "true",
+      "the wake gate must stay reachable after three viewports",
+    );
+    assert.ok(
+      Math.abs((await residue()).scene.fov - 15) < 1e-3,
+      "the wake gate must still frame the face camera after resizing",
+    );
+    await resizeWake.click();
+    await page.clock.fastForward(3500);
+    await run(40);
+    assert.deepEqual(
+      await page.evaluate(() => window.farewellEndingProbe.events),
+      ["complete-requested"],
+      "the Ending must complete at the resized viewport",
+    );
+    await page.evaluate(() => window.farewellEndingProbe.cancel());
+    await run(40);
+    assert.equal(
+      await page.locator('[data-story-scene="ending"]').count(),
+      0,
+      "the resize handoff must unmount the Ending scene",
+    );
+    const afterResize = await residue();
+    assertIdleDesktop(afterResize, "resize during the Ending");
+    await assertNoDrift(afterResize, "resize during the Ending");
+    assert.deepEqual(
+      await page.evaluate(() => window.farewellEndingProbe.events),
+      ["complete-requested", "cancel"],
+      "a late callback must not re-complete the story after the resize handoff",
+    );
     assert.deepEqual(errors, []);
     console.log(
-      "Farewell/Ending probe passed: Finale actor/WebGL, ack ordering, cancellation, resource retry, wake gate and desktop-state residue (scene/audio/model/graphics/timers/RAF/story callback)",
+      "Farewell/Ending probe passed: Finale actor/WebGL, ack ordering, cancellation, resource retry, wake gate, desktop-state residue (scene/audio/model/graphics/timers/RAF/story callback) and the interruption matrix (cancel at void/wake-gate/settle, mid-ending reload + acknowledged re-entry, mid-ending resize)",
     );
   } finally {
     await page
