@@ -77,6 +77,78 @@ export async function verifyDebugLabs(browser, output, baseUrl) {
       50,
     );
 
+    // Marginal growth reads the same owned counts the economy just granted
+    // (50 of each generator), so the ribbon sits off stepOffset and the
+    // panel's manual-only step slider is locked while the source is Owned.
+    await page
+      .getByRole("button", { name: "Marginal growth", exact: true })
+      .click();
+    const growth = page.getByRole("region", { name: "Marginal growth" });
+    const growthState = () =>
+      page.evaluate(() => {
+        const state = window.debugLabProbe.marginalGrowth();
+        return {
+          source: state.source,
+          phase: state.phase,
+          steps: state.params.steps,
+          kRef: state.kRef,
+        };
+      });
+    const owned = await growthState();
+    assert.equal(owned.source, "owned");
+    assert.equal(owned.kRef, 410);
+    assert.equal(Math.round(owned.phase * 1000), 767, "shipped phase at 50 of each");
+    assert.equal(Math.round(owned.steps), 558, "shipped steps at 50 of each");
+    assert.equal(
+      await growth.getByLabel("n", { exact: true }).isDisabled(),
+      true,
+    );
+    await growth.getByText("0.767", { exact: true }).waitFor();
+
+    // kRef is a live input to the owned curve, not a stored constant.
+    await growth.getByLabel("kRef", { exact: true }).evaluate((element) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      ).set;
+      setter.call(element, "5");
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.equal(
+      (await growthState()).steps,
+      700,
+      "kRef 5 saturates the ribbon at maxSteps",
+    );
+
+    await growth.getByRole("button", { name: "Defaults", exact: true }).click();
+    assert.equal(
+      Math.round((await growthState()).steps),
+      558,
+      "Defaults restores the shipped curve",
+    );
+
+    await growth.getByRole("button", { name: "Manual", exact: true }).click();
+    assert.equal(await growth.getByLabel("n", { exact: true }).isDisabled(), false);
+    await growth.getByLabel("n", { exact: true }).evaluate((element) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      ).set;
+      setter.call(element, "600");
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.equal((await growthState()).steps, 600, "manual owns the step count");
+    await growth.getByRole("button", { name: "Restart", exact: true }).click();
+    assert.equal((await growthState()).steps, 0, "Restart zeroes steps");
+    await growth.getByRole("button", { name: "Owned", exact: true }).click();
+    assert.equal(
+      Math.round((await growthState()).steps),
+      558,
+      "switching back to Owned re-derives steps from the live economy",
+    );
+
     await page
       .getByRole("button", { name: "Gesture lab", exact: true })
       .click();

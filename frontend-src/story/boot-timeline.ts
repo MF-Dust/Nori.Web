@@ -2,6 +2,7 @@ import { PerspectiveCamera, Vector3 } from "three";
 import { NoriSceneStore, type NoriSceneState } from "../state/nori-scene";
 import type { StoryPhase, StoryClockState } from "./story-clock";
 import type { StoryAudioTrack } from "./story-audio";
+import { power2In, power2Out } from "./story-ease";
 
 /** Default phase boundaries recovered from l$e/LZ/L1/sJ in the shipped client. */
 export const BOOT_PHASES: readonly StoryPhase[] = [
@@ -243,15 +244,18 @@ export function bootScene(state: StoryClockState): NoriSceneState {
     out.noriReveal = smooth(progress(age, 0.25, 1.9));
     out.plankton = 0.95 * (1 - smooth(progress(t, m.ready + 0.4, 2.6)));
     cold.oceanFade = 1 - smooth(progress(age, 0, 2.5));
+    // Shipped iJ keyframes: rise power2.out over min(0.18, window*0.1), hold
+    // `none` over window - rise - fall, then fall power2.in over
+    // min(0.5, window*0.4). The rise leg was a linear ramp.
     out.burst =
       age < 0
         ? 0
         : age < 0.18
-          ? age / 0.18
+          ? power2Out(age / 0.18)
           : age < 3.1
             ? 1
-            : 1 - progress(age, 3.1, 0.5);
-    out.burstAge = Math.max(0, age);
+            : 1 - power2In((age - 3.1) / 0.5);
+    out.burstAge = Math.min(3.6, Math.max(0, age));
     if (age >= 2.15) out.noriDim = 0;
     if (t >= m.ready + 2.8) {
       out.camera = null;

@@ -128,6 +128,15 @@ export const memoryAlertOffsets = (head: number, horizon: number) => {
   return offsets;
 };
 const MEMORY_ALERT_START = phaseStart("attack") + 0.6;
+/**
+ * Shipped `QXe`: `p = markers.sweep - 0.5` and `aA(passed ? "kneel" : "idle", editing)`
+ * forces the idle state for the rest of the cutscene. 27.0 == sweep 27.5 - 0.5.
+ * Shipped `du.KNEEL` is `{ group: "Poses", index: 0 }`.
+ */
+export const MEMORY_KNEEL_AT = phaseStart("sweep") - 0.5;
+export const MEMORY_KNEEL_MOTION = { group: "Poses", index: 0 } as const;
+export const memoryIdleMotion = (time: number) =>
+  time >= MEMORY_KNEEL_AT ? MEMORY_KNEEL_MOTION : null;
 export const MEMORY_ALERT_OFFSETS = memoryAlertOffsets(
   phaseStart("sweep") - phaseStart("attack") - 0.6,
   phaseStart("void") - phaseStart("attack") - 0.6,
@@ -391,6 +400,9 @@ export function MemoryScene({
             : "auto",
           voidEnv: projection.voidProgress,
           memoryComputeDrain: projection.drainProgress,
+          // Shipped `aA(L ? "kneel" : "idle", editing)` runs for the whole cutscene
+          // once the clock passes sweep - 0.5; the lease release restores null.
+          noriIdleMotion: memoryIdleMotion(state.time),
         });
         setView({
           time: state.time,
@@ -524,7 +536,6 @@ export function MemoryScene({
       data-phase={view.phase ?? "done"}
       style={{ zIndex: NORI_SHELL_LAYERS.CUTSCENE }}
     >
-      <div className="memory-grid" />
       {Array.from({ length: open }, (_, index) => (
         <button
           type="button"

@@ -60,6 +60,11 @@ import { RecoveredDesktopShell } from "./components/recovered-desktop-shell";
 import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
 import { createNetworkFaultWebSocketFactory, readNetworkFaultProfile } from "./runtime/debug-tools";
 import { createSourceIdleRuntimeEngine } from "./state/idle-runtime-engine";
+import {
+  DEFAULT_MARGINAL_GROWTH,
+  bindMarginalGrowthEconomy,
+  createMarginalGrowthStore,
+} from "./state/marginal-growth-store";
 import { NotificationLayer } from "./components/notification-layer";
 import { NORI_PHASE_MOODS } from "./live2d/reaction-director";
 import { notificationInputFromMessage } from "./state/notification-store";
@@ -158,6 +163,11 @@ function createSourceSession() {
     getWorldId: () => frontend.world.snapshot().worldId,
   });
   idle.start();
+
+  // The shipped Idle screen owns one marginal-growth store and drives its steps
+  // from the live generator economy.
+  const marginalGrowth = createMarginalGrowthStore(DEFAULT_MARGINAL_GROWTH);
+  const releaseMarginalGrowth = bindMarginalGrowthEconomy(marginalGrowth, idle);
 
   const idlePresentation = {
     ...idle,
@@ -349,6 +359,7 @@ function createSourceSession() {
       windows: {
         debug: { main: { component: () => <DebugScreen frontend={frontend} actions={{
           compute: idle.debug,
+          marginalGrowth,
           loadScenario: async (game, scenarioId) => {
             const ok = game === "chess"
               ? await chess.dispatch({ type: "debugLoadScenario", scenarioId })
@@ -407,6 +418,8 @@ function createSourceSession() {
     chip,
     daniel,
     idle,
+    marginalGrowth,
+    releaseMarginalGrowth,
     codenames,
     cakeduel,
     chess,
@@ -436,6 +449,7 @@ export function SourceApp() {
       session.drawing.dispose();
       session.pictionary.dispose();
       session.idle.dispose();
+      session.releaseMarginalGrowth();
       session.podcast.dispose();
       session.bundle.runtime.dispose();
       session.frontend.dispose();

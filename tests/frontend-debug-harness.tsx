@@ -3,9 +3,16 @@ import { NoriFrontendRuntime } from "../frontend-src/runtime/frontend-runtime";
 import { readNetworkFaultProfile } from "../frontend-src/runtime/debug-tools";
 import { DebugScreen } from "../frontend-src/screens/debug-screen";
 import { createSourceIdleRuntimeEngine } from "../frontend-src/state/idle-runtime-engine";
+import {
+  DEFAULT_MARGINAL_GROWTH,
+  bindMarginalGrowthEconomy,
+  createMarginalGrowthStore,
+} from "../frontend-src/state/marginal-growth-store";
 import { useAudioSettings } from "../frontend-src/state/audio-store";
 
 const idle = createSourceIdleRuntimeEngine();
+const marginalGrowth = createMarginalGrowthStore(DEFAULT_MARGINAL_GROWTH);
+bindMarginalGrowthEconomy(marginalGrowth, idle);
 const frontend = new NoriFrontendRuntime();
 const scenarios: string[] = [];
 const live2dState = {
@@ -46,6 +53,7 @@ const render = (visible = true) =>
         frontend={frontend}
         actions={{
           compute: idle.debug,
+          marginalGrowth,
           loadScenario: async (game, scenarioId) => {
             scenarios.push(`${game}:${scenarioId}`);
           },
@@ -59,6 +67,7 @@ Object.assign(window, {
   debugLabProbe: {
     profile: () => readNetworkFaultProfile(localStorage),
     idle: () => idle.snapshot().state,
+    marginalGrowth: () => marginalGrowth.getState(),
     audio: () => useAudioSettings.getState(),
     scene: () => frontend.scene.snapshot(),
     scenarios,

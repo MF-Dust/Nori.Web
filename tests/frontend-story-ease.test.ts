@@ -90,6 +90,31 @@ test("corruption channels run the shipped per-layer eases", () => {
       } as never).eyeOpen! - 0.578125,
     ) < 1e-9,
   );
+  // iJ wake burst from the same instant: rise power2.out over 0.18, hold to
+  // 3.1, fall power2.in over 0.5, burstAge linear to 3.6.
+  const wake = (offset: number) =>
+    corruptionScene({
+      time: CORRUPTION_MARKERS.settle! + 0.3 + offset,
+      phase: "settle",
+      parkedAt: null,
+      paused: false,
+      complete: false,
+    } as never);
+  assert.equal(wake(-0.01).burst, 0);
+  assert.equal(wake(-0.01).burstAge, 0);
+  assert.ok(Math.abs(wake(0.045).burst - 0.578125) < 1e-9);
+  assert.equal(wake(1).burst, 1);
+  assert.equal(wake(2).burstAge, 2);
+  assert.ok(Math.abs(wake(3.1).burst - 1) < 1e-9);
+  // power2.in at a quarter of the 0.5s fall: 1 - 0.015625.
+  assert.ok(Math.abs(wake(3.225).burst - 0.984375) < 1e-9);
+  assert.equal(wake(3.6).burst, 0);
+  assert.equal(wake(3.6).burstAge, 3.6);
+  // SJ parks vVignette at 0.08 and no later tween touches it, so it must still
+  // be 0.08 once the settle is over -- not faded to 0.
+  assert.ok(Math.abs(wake(0).vignette! - 0.08) < 1e-9);
+  assert.ok(Math.abs(wake(2.4).vignette! - 0.08) < 1e-9);
+  assert.ok(Math.abs(wake(20).vignette! - 0.08) < 1e-9);
 });
 
 test("memory quake and voidEnv carry their shipped eases", () => {

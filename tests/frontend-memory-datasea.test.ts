@@ -8,10 +8,13 @@ import {
 } from "../frontend-src/story/datasea-scene";
 import {
   MEMORY_ALERT_OFFSETS,
+  MEMORY_KNEEL_AT,
+  MEMORY_KNEEL_MOTION,
   MEMORY_PHASES,
   memoryAlertOffsets,
   memoryFloodBoxes,
   memoryFloodOffsets,
+  memoryIdleMotion,
   memoryProjection,
 } from "../frontend-src/story/memory-scene";
 import {
@@ -45,6 +48,15 @@ test("memory projection orders attack, sweep, drain, and void", () => {
   assert.equal(memoryProjection(28).sweep, true);
   assert.equal(memoryProjection(30).drain, true);
   assert.equal(memoryProjection(40).voidProgress > 0, true);
+});
+
+test("memory kneels from the shipped sweep - 0.5 marker, not the sweep phase", () => {
+  // QXe: `p = markers.sweep - 0.5`, sweep marker = 27.5 -> 27.0.
+  assert.equal(MEMORY_KNEEL_AT, 27);
+  assert.deepEqual(MEMORY_KNEEL_MOTION, { group: "Poses", index: 0 });
+  assert.equal(memoryIdleMotion(26.9), null);
+  assert.deepEqual(memoryIdleMotion(27), MEMORY_KNEEL_MOTION);
+  assert.deepEqual(memoryIdleMotion(41.1), MEMORY_KNEEL_MOTION);
 });
 
 test("memory flood geometry is the shipped kXe box table and LXe cadence", () => {

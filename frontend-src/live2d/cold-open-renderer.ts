@@ -1,7 +1,7 @@
 import type { PerspectiveCamera, Scene, Texture, WebGLRenderer } from "three";
 import type { NoriSceneState } from "../state/nori-scene";
 import type { SceneMaterialStage } from "./scene-materials.js";
-import { createPlankton, createWakeBurst } from "./cold-open-particles.js";
+import { createPlankton } from "./cold-open-particles.js";
 import {
   createGlyphKit,
   createLiveSilhouette,
@@ -14,7 +14,6 @@ import {
 export class ColdOpenRenderer {
   private ocean;
   private plankton = createPlankton(3000);
-  private wake;
   private silhouette: ReturnType<typeof createLiveSilhouette> | null = null;
   private kit: GlyphKit | null = null;
   private loading = false;
@@ -30,7 +29,6 @@ export class ColdOpenRenderer {
   ) {
     this.ocean = createOceanStage(scene, renderer, camera);
     scene.add(this.plankton.points);
-    this.wake = createWakeBurst(scene);
   }
   get status() {
     if (this.disposed) return "disposed";
@@ -52,10 +50,6 @@ export class ColdOpenRenderer {
     particles.uFogNear.value = state.fogNear;
     particles.uFogFar.value = state.fogFar;
     this.plankton.points.visible = state.plankton > 0.001;
-    this.wake.update({
-      cine: state,
-      billboard: { x: 0, y: -0.6, z: state.noriDolly ?? 0, width: 4 },
-    });
     const fade = Math.min(1, Math.max(0, cold?.oceanFade ?? 0));
     this.background.mesh.visible = fade < 1;
     this.background.uniforms.uReveal.value = 1 - fade;
@@ -111,7 +105,6 @@ export class ColdOpenRenderer {
     this.ocean.dispose();
     this.plankton.points.removeFromParent();
     this.plankton.dispose();
-    this.wake.dispose();
     this.silhouette?.dispose();
     this.kit?.fieldTex.dispose();
     this.kit?.cloverSdfTex.dispose();

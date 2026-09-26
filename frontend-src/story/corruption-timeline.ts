@@ -54,6 +54,11 @@ export const CORRUPTION_AUDIO: readonly StoryAudioTrack[] = [
   },
 ];
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
+/** Shipped `iJ` burst window, `cl_wakeBurstWindow` 3.6, split as in the bundle. */
+const BURST_WINDOW = 3.6,
+  BURST_RISE = Math.min(0.18, BURST_WINDOW * 0.1),
+  BURST_FALL = Math.min(0.5, BURST_WINDOW * 0.4),
+  BURST_HOLD = Math.max(0, BURST_WINDOW - BURST_RISE - BURST_FALL);
 const defaults = new NoriSceneStore().snapshot();
 /** Inspection projection. Production registration waits for the original overlay and agent handoff. */
 export function corruptionScene(state: StoryClockState): NoriSceneState {
@@ -103,6 +108,16 @@ export function corruptionScene(state: StoryClockState): NoriSceneState {
     mouthOpen: 0,
   });
   if (t < m.heal) return result;
+  // `SJ` also tweens `vBehindScale` (healGlow 3.6 -> min(3.6, 3.2) = 3.2 over
+  // 60%, then -> 2.6 over 40%) and `vBehindOffsetZ` (-> 1.6 over the whole heal).
+  // Deliberately not ported: the shipped consumer is unreachable. `JFe`
+  // (NormalApp-Cn6agT0F.js:65030-65076) sizes the glow quad behind Nori from
+  // `behindScale`/`behindOffsetZ`, but only inside `if (s && ...)`, where `s`
+  // is the cached `f.fx?.id`; the store default is `fx: null` (:39279) and no
+  // layer's `project()` ever emits `fx`, so the glow never renders in the
+  // shipped client. Driving it here would invent a frame the original never
+  // showed. The wake burst (`iJ` burst/burstAge) is a different consumer and
+  // is driven below.
   // Shipped `SJ` heal-tide over healDur 17: vReveal 1 -> 1 - healShroud 0.38
   // across the first 0.3 (`power2.in`) then back to 1 across 0.7
   // (`power3.out`); vVignette -> healVignette 0.5 across 0.45 (`power2.out`)
@@ -140,6 +155,11 @@ export function corruptionScene(state: StoryClockState): NoriSceneState {
   // eyeOpen -> 1 is `power2.out` over cl_eyeOpenDuration 1.3s.
   const settle = ramp(t, m.settle + 0.3, 2.1, 0, 1, power2Out);
   const camSettle = ramp(t, m.settle + 0.3, 1.4, 0, 1, power2Out);
+  // Shipped `iJ` also fires the wake burst from the same instant: burst 0 -> 1
+  // over min(0.18, 3.6*0.1), held for max(0, 3.6 - 0.18 - 0.5), then 1 -> 0
+  // over min(0.5, 3.6*0.4); burstAge 0 -> 3.6 over 3.6 (`none`). The source wake
+  // mesh is driven from these two channels, not from `noriDim`.
+  const wake = m.settle + 0.3;
   Object.assign(result, {
     camera: { x: 0, y: 1.75 * (1 - camSettle), z: 7.4 },
     fov: 15 + 45 * camSettle,
@@ -147,7 +167,15 @@ export function corruptionScene(state: StoryClockState): NoriSceneState {
     eyeOpen: ramp(t, m.settle + 0.3, 1.3, 0, 1, power2Out),
     darkness: 0.85 * (1 - settle),
     noriDim: 3 * (1 - settle),
-    vignette: 0.08 * (1 - settle),
+    burst:
+      t < wake + BURST_RISE
+        ? ramp(t, wake, BURST_RISE, 0, 1, power2Out)
+        : t < wake + BURST_RISE + BURST_HOLD
+          ? 1
+          : ramp(t, wake + BURST_RISE + BURST_HOLD, BURST_FALL, 1, 0, power2In),
+    burstAge: Math.min(BURST_WINDOW, Math.max(0, t - wake)),
   });
+  // No shipped tween touches vVignette after `SJ`, which parks it at 0.08, so
+  // the vignette stays at 0.08 through the settle instead of fading to 0.
   return result;
 }

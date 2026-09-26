@@ -22,6 +22,7 @@ const SUITES = [
   "frontend-debug-system-tabs",
   "frontend-debug-tools",
   "frontend-head-pat-audio",
+  "frontend-idle-marginal-growth",
   "frontend-live2d-debug",
   "frontend-messenger-interactions",
   "frontend-messenger-model",

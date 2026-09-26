@@ -9,6 +9,7 @@ try {
   for (const entry of [
     "frontend-production-stories",
     "frontend-memory-datasea",
+    "frontend-monotone-spline",
     "frontend-story-clock",
     "frontend-story-ease",
     "farewell-ending",

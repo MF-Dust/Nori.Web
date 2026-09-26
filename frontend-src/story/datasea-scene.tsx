@@ -8,6 +8,7 @@ import { createDataseaRenderer } from "./datasea-renderer";
 import { DataseaWaveGate } from "./datasea-wave-gate";
 import { dataseaMessagesAt, dataseaCosmicAt, dataseaWhiteAt, dataseaCgAt } from "./datasea-content";
 import { power2InOut } from "./story-ease";
+import { monotoneCubicSpline } from "./story-monotone-spline";
 import "./datasea-scene.css";
 
 export const DATASEA_PHASES: readonly StoryPhase[] = [
@@ -116,31 +117,29 @@ export const dataseaWhiteout = (time: number) => {
   return mix * mix * (3 - 2 * mix);
 };
 
+/**
+ * Shipped `iUe` (NormalApp-Cn6agT0F.js:69225-69237): the camera Y track as 11
+ * knots, interpolated by `ZBe` (a monotone cubic Hermite) once at module load.
+ * The source previously ran per-segment linear + smoothstep over the same
+ * knots, which matched only the knots themselves and drifted up to 5 world
+ * units between them.
+ */
+const cameraY = monotoneCubicSpline([
+  [0, 0],
+  [1, -2],
+  [3, -30],
+  [5, -80],
+  [7, -122],
+  [9, -146],
+  [12, -163],
+  [16, -175],
+  [20, -183],
+  [24, -188],
+  [27, -190],
+]);
+
 export function dataseaCamera(time: number) {
-  const points = [
-    [0, 0],
-    [1, -2],
-    [3, -30],
-    [5, -80],
-    [7, -122],
-    [9, -146],
-    [12, -163],
-    [16, -175],
-    [20, -183],
-    [24, -188],
-    [27, -190],
-  ] as const;
-  const segment = points.findIndex(
-    (point, index) => index > 0 && time <= point[0],
-  );
-  const right = segment < 1 ? points.at(-1)! : points[segment],
-    left = segment < 1 ? right : points[segment - 1];
-  const mix =
-    left === right
-      ? 1
-      : Math.max(0, Math.min(1, (time - left[0]) / (right[0] - left[0])));
-  const eased = mix * mix * (3 - 2 * mix),
-    y = left[1] + (right[1] - left[1]) * eased;
+  const y = cameraY(time);
   const tilt = Math.max(0, Math.min(1, (time - 5) / 8));
   return {
     camera: { x: 0, y, z: 7.4 },

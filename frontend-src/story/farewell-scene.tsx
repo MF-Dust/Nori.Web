@@ -183,10 +183,14 @@ export function FarewellScene({
           </button>
         </div>
       )}
-      {!failed && !view.black && view.subtitle.length > 0 && (
+      {!failed && !view.black && view.stack.length > 0 && (
         <div className="farewell-subtitles">
-          {view.subtitle.map((cue) => (
-            <p key={cue.id} className="farewell-line">
+          {view.stack.map(({ cue, phase }) => (
+            <p
+              key={cue.id}
+              className="farewell-line"
+              data-line={phase === "live" ? undefined : phase}
+            >
               {cue.text}
             </p>
           ))}

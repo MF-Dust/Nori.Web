@@ -38,3 +38,7 @@ frontend-games-lifecycle/
 frontend-visual-games/
 *.log
 tmp/
+
+# esbuild scratch output from ad-hoc verification (see scripts/, which clean up)
+.[a-z]*.mjs
+.[a-z]*.css

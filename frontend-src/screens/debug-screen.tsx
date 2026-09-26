@@ -17,6 +17,7 @@ import { GlitchDebugLab } from "./glitch-debug-lab";
 import { Live2DDebugTab } from "./debug-live2d-tab";
 import { PatDebugTab } from "./debug-pat-tab";
 import { DebugReactionsTab } from "./debug-reactions-tab";
+import { MarginalGrowthDebugTab } from "./debug-marginal-growth-tab";
 import {
   AudioDebugTab,
   InjectTalkDebugTab,
@@ -35,6 +36,7 @@ const tabs = [
   { id: "glitch", label: "Glitch" },
   { id: "network", label: "Network lab" },
   { id: "compute", label: "Compute lab" },
+  { id: "marginal-growth", label: "Marginal growth" },
   { id: "gesture", label: "Gesture lab" },
   { id: "pat", label: "Pat" },
   { id: "reaction", label: "Reaction lab" },
@@ -164,6 +166,9 @@ export function DebugScreen({
         {tab === "live2d" && <Live2DDebugTab frontend={frontend} />}
         {tab === "network" && <NetworkDebugLab />}
         {tab === "compute" && <ComputeDebugLab actions={actions?.compute} />}
+        {tab === "marginal-growth" && (
+          <MarginalGrowthDebugTab store={actions?.marginalGrowth} />
+        )}
         {tab === "gesture" && <GestureDebugLab frontend={frontend} />}
         {tab === "pat" && <PatDebugTab frontend={frontend} />}
         {tab === "reaction" && (

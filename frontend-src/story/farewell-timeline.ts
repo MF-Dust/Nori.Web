@@ -129,6 +129,46 @@ export function farewellSubtitle(time: number): readonly FarewellCue[] {
   );
 }
 
+/** Shipped `jQe` exit: 0.35s, `y -> -60`, `scale -> .85`, ease `[0.32,0.72,0,1]`. */
+export const FAREWELL_LINE_EXIT = 0.35;
+/** Shipped `jQe` `layout`: 0.3s, same ease, as the stack reflows behind it. */
+export const FAREWELL_LINE_SETTLE = 0.3;
+
+export interface FarewellStackLine {
+  cue: FarewellCue;
+  /** Shipped `AnimatePresence`: rising away, then reflowing away. */
+  phase: "live" | "exit" | "settle";
+}
+
+/**
+ * Shipped `HQe` inside `yn` (`AnimatePresence`): the three live lines plus a line
+ * that has left the window and is still mounted. Eviction is index-based, so a
+ * line leaves when cue `index + 3` lands, and `AnimatePresence` holds it for its
+ * exit and then for the settle that closes the slot it vacates. Cue starts never
+ * overlap, so at most one line is ever retained, and it belongs above the live
+ * three — the order it already had in the tree.
+ */
+export function farewellSubtitleStack(
+  time: number,
+): readonly FarewellStackLine[] {
+  const stack: FarewellStackLine[] = [];
+  for (
+    let index = 0;
+    index + FAREWELL_SUBTITLE_LINES < FAREWELL_CUES.length;
+    index++
+  ) {
+    const elapsed = time - FAREWELL_CUES[index + FAREWELL_SUBTITLE_LINES].at;
+    if (elapsed < 0 || elapsed >= FAREWELL_LINE_EXIT + FAREWELL_LINE_SETTLE)
+      continue;
+    stack.push({
+      cue: FAREWELL_CUES[index],
+      phase: elapsed < FAREWELL_LINE_EXIT ? "exit" : "settle",
+    });
+  }
+  for (const cue of farewellSubtitle(time)) stack.push({ cue, phase: "live" });
+  return stack;
+}
+
 export function farewellFrame(time: number) {
   const cueIndex = landedCues(time) - 1;
   const cue = cueIndex < 0 ? null : FAREWELL_CUES[cueIndex];
@@ -147,7 +187,7 @@ export function farewellFrame(time: number) {
     rim: 0.5 + 1.35 * (1 - smoothstep(4.4 + 0.6, 4.4 + 4.2, time)),
     shadow: smoothstep(4.4 + 0.8, 4.4 + 3.4, time),
     cueIndex,
-    subtitle: farewellSubtitle(time),
+    stack: farewellSubtitleStack(time),
     speaking: Boolean(cue && time < cue.until),
     expression: cue?.expression ?? "default",
   };
