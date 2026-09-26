@@ -2,7 +2,7 @@ import { access, readFile, writeFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 import ts from "typescript";
 
-const root = resolve(import.meta.dirname, "..");
+const root = resolve(import.meta.dirname, "../..");
 const sourcePath = resolve(root, "wrangler.jsonc");
 const outputPath = resolve(root, ".wrangler-candidate.json");
 const candidateDirectory = resolve(

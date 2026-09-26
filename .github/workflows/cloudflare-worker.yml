@@ -212,7 +212,7 @@ jobs:
       - name: Upload frontend cutover inspection report
         uses: actions/upload-artifact@v4
         with:
-          name: .artifacts/cutover-inspection-${{ github.sha }}
+          name: cutover-inspection-${{ github.sha }}
           path: .artifacts/cutover-inspection/
           if-no-files-found: error
           retention-days: 2
@@ -264,7 +264,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: .artifacts/app-smoke-${{ github.sha }}
+          name: app-smoke-${{ github.sha }}
           path: .artifacts/app-smoke/
           if-no-files-found: warn
           retention-days: 7
@@ -273,7 +273,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: .artifacts/games-smoke-${{ github.sha }}
+          name: games-smoke-${{ github.sha }}
           path: .artifacts/games-smoke/
           if-no-files-found: warn
           retention-days: 7

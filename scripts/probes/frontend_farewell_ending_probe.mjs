@@ -384,6 +384,9 @@ export async function verifyFarewellEnding(
     failOcean = false;
     await retry.click();
     await waitForCold("ready");
+    // The renderer can report ready on the frame before EndingScene anchors its
+    // story clock. Give the scene one frame before jumping the fake clock.
+    await run(40);
     assert.equal(
       gradientRequests,
       2,
