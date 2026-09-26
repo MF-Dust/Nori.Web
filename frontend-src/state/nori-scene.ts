@@ -25,6 +25,12 @@ export interface NoriSceneState {
   darkness: number;
   noriDolly: number | null;
   memoryComputeDrain: number;
+  /**
+   * Cumulative Memory `drain-burst` plays. Stays 0 until the drain window,
+   * then 1 at the opening frame and one more every 180ms of scene time.
+   * The count holds after the window so sprites already in flight can fade.
+   */
+  drainBurstSeq: number;
   noriTint: number;
   noriDim: number;
   noriReveal: number;
@@ -72,6 +78,7 @@ const defaults = (): NoriSceneState => ({
   darkness: 0,
   noriDolly: null,
   memoryComputeDrain: 0,
+  drainBurstSeq: 0,
   noriTint: 0,
   noriDim: 0,
   noriReveal: 1,

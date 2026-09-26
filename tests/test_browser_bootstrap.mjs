@@ -47,7 +47,11 @@ try {
     undefined,
     { timeout: 15_000 },
   );
-  await page.waitForTimeout(1_500);
+  const opened = (suffix) => sockets.some((url) => url.endsWith(suffix));
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline && !(opened("/api/arcade/web/v1") && opened("/api/arcade/web/v1/media"))) {
+    await page.waitForTimeout(100);
+  }
   await browser.close();
 
   if (!sockets.some((url) => url.endsWith("/api/arcade/web/v1"))) throw new Error("Main Arcade socket did not open");

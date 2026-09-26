@@ -80,13 +80,13 @@ jobs:
 
       - name: Verify frontend recovery tool JavaScript
         run: |
-          node --check scripts/recover_frontend.mjs
-          node --check scripts/inventory_frontend_symbols.mjs
-          node --check scripts/inspect_frontend_chunk.mjs
-          node --check scripts/inspect_frontend_identifier.mjs
-          node --check scripts/run_frontend_recovery.mjs
-          node --check scripts/verify_frontend_recovery.mjs
-          node --check scripts/verify_frontend_cutover.mjs
+          node --check scripts/recovery/recover_frontend.mjs
+          node --check scripts/inspect/inventory_frontend_symbols.mjs
+          node --check scripts/inspect/inspect_frontend_chunk.mjs
+          node --check scripts/inspect/inspect_frontend_identifier.mjs
+          node --check scripts/recovery/run_frontend_recovery.mjs
+          node --check scripts/verify/verify_frontend_recovery.mjs
+          node --check scripts/verify/verify_frontend_cutover.mjs
 
       - name: Compile Python sources
         run: uv run python -m compileall -q backend scripts server.py worker.py
@@ -173,7 +173,7 @@ jobs:
           npm run frontend:inspect:identifier -- NormalApp- vV ZGe VGe YGe KGe > normalapp-inspection/desktop-shell-identifiers.json
           npm run frontend:inspect:identifier -- NormalApp- UGe wGe xGe yGe SGe OGe z4 HS J9e uGe pGe mGe lGe cGe _Ge fGe MOe PGe IGe BGe > normalapp-inspection/dock-identifiers.json
           npm run frontend:inspect:identifier -- NormalApp- H8e '$Ge' qGe XGe '$K' q4 Z9e So '$4' rl eY > normalapp-inspection/shell-presentation-identifiers.json
-          FRONTEND_INSPECT_EXPORTS="co,cp,cq,cr,ct,cu,cv" FRONTEND_INSPECT_DEPTH="2" FRONTEND_INSPECT_SNIPPET="20000" node scripts/inspect_frontend_chunk.mjs index-CyHAbkO5.js > normalapp-inspection/window-layout-exports.json
+          FRONTEND_INSPECT_EXPORTS="co,cp,cq,cr,ct,cu,cv" FRONTEND_INSPECT_DEPTH="2" FRONTEND_INSPECT_SNIPPET="20000" node scripts/inspect/inspect_frontend_chunk.mjs index-CyHAbkO5.js > normalapp-inspection/window-layout-exports.json
 
       - name: Upload NormalApp inspection report
         uses: actions/upload-artifact@v4
@@ -192,28 +192,28 @@ jobs:
           FRONTEND_IDENTIFIER_STATEMENT: "24000"
           FRONTEND_IDENTIFIER_MATCHES: "120"
         run: |
-          mkdir -p frontend-cutover-inspection
-          node scripts/inspect_frontend_chunk.mjs BrowserPageView-drqjbn-z.js > frontend-cutover-inspection/browser-page-view.json
-          node scripts/inspect_frontend_chunk.mjs BrowserApp-BM1_j6Y4.js > frontend-cutover-inspection/browser-app.json
-          node scripts/inspect_frontend_chunk.mjs ChatPanel-BVBzPw5d.js > frontend-cutover-inspection/chat-panel.json
-          node scripts/inspect_frontend_chunk.mjs MailScreen-CHwo7Des.js > frontend-cutover-inspection/mail-screen.json
-          node scripts/inspect_frontend_chunk.mjs FilesScreen-BmorLrPA.js > frontend-cutover-inspection/files-screen.json
-          node scripts/inspect_frontend_chunk.mjs MessengerScreen-BaCtXRiF.js > frontend-cutover-inspection/messenger-screen.json
-          node scripts/inspect_frontend_chunk.mjs ChessScreen-D3ynrc3S.js > frontend-cutover-inspection/chess-screen.json
-          node scripts/inspect_frontend_chunk.mjs GameScreen-BU9F4fB5.js > frontend-cutover-inspection/game-screen-a.json
-          node scripts/inspect_frontend_chunk.mjs GameScreen-BbDAUsf1.js > frontend-cutover-inspection/game-screen-b.json
-          node scripts/inspect_frontend_chunk.mjs GameScreen-CgEXO_XJ.js > frontend-cutover-inspection/game-screen-c.json
-          node scripts/inspect_frontend_chunk.mjs IdleScreen-DCDB640k.js > frontend-cutover-inspection/idle-screen.json
-          node scripts/inspect_frontend_chunk.mjs QfrDock-D2m-2E_A.js > frontend-cutover-inspection/qfr-dock.json
-          node scripts/inspect_frontend_identifier.mjs index-CyHAbkO5.js preloadLive2DModel NoriSceneStage Live2D Cubism > frontend-cutover-inspection/entry-live2d-identifiers.json
-          node scripts/inspect_frontend_identifier.mjs NormalApp- preloadLive2DModel NoriSceneStage Live2D Cubism > frontend-cutover-inspection/normalapp-live2d-identifiers.json
-          FRONTEND_IDENTIFIER_CONTEXT=8000 FRONTEND_IDENTIFIER_STATEMENT=30000 FRONTEND_IDENTIFIER_MATCHES=160 node scripts/inspect_frontend_identifier.mjs NormalApp- KL gV Ktt Xtt cY MY wHe pHe yHe xHe > frontend-cutover-inspection/signal-messenger-runtime.json
+          mkdir -p .artifacts/cutover-inspection
+          node scripts/inspect/inspect_frontend_chunk.mjs BrowserPageView-drqjbn-z.js > .artifacts/cutover-inspection/browser-page-view.json
+          node scripts/inspect/inspect_frontend_chunk.mjs BrowserApp-BM1_j6Y4.js > .artifacts/cutover-inspection/browser-app.json
+          node scripts/inspect/inspect_frontend_chunk.mjs ChatPanel-BVBzPw5d.js > .artifacts/cutover-inspection/chat-panel.json
+          node scripts/inspect/inspect_frontend_chunk.mjs MailScreen-CHwo7Des.js > .artifacts/cutover-inspection/mail-screen.json
+          node scripts/inspect/inspect_frontend_chunk.mjs FilesScreen-BmorLrPA.js > .artifacts/cutover-inspection/files-screen.json
+          node scripts/inspect/inspect_frontend_chunk.mjs MessengerScreen-BaCtXRiF.js > .artifacts/cutover-inspection/messenger-screen.json
+          node scripts/inspect/inspect_frontend_chunk.mjs ChessScreen-D3ynrc3S.js > .artifacts/cutover-inspection/chess-screen.json
+          node scripts/inspect/inspect_frontend_chunk.mjs GameScreen-BU9F4fB5.js > .artifacts/cutover-inspection/game-screen-a.json
+          node scripts/inspect/inspect_frontend_chunk.mjs GameScreen-BbDAUsf1.js > .artifacts/cutover-inspection/game-screen-b.json
+          node scripts/inspect/inspect_frontend_chunk.mjs GameScreen-CgEXO_XJ.js > .artifacts/cutover-inspection/game-screen-c.json
+          node scripts/inspect/inspect_frontend_chunk.mjs IdleScreen-DCDB640k.js > .artifacts/cutover-inspection/idle-screen.json
+          node scripts/inspect/inspect_frontend_chunk.mjs QfrDock-D2m-2E_A.js > .artifacts/cutover-inspection/qfr-dock.json
+          node scripts/inspect/inspect_frontend_identifier.mjs index-CyHAbkO5.js preloadLive2DModel NoriSceneStage Live2D Cubism > .artifacts/cutover-inspection/entry-live2d-identifiers.json
+          node scripts/inspect/inspect_frontend_identifier.mjs NormalApp- preloadLive2DModel NoriSceneStage Live2D Cubism > .artifacts/cutover-inspection/normalapp-live2d-identifiers.json
+          FRONTEND_IDENTIFIER_CONTEXT=8000 FRONTEND_IDENTIFIER_STATEMENT=30000 FRONTEND_IDENTIFIER_MATCHES=160 node scripts/inspect/inspect_frontend_identifier.mjs NormalApp- KL gV Ktt Xtt cY MY wHe pHe yHe xHe > .artifacts/cutover-inspection/signal-messenger-runtime.json
 
       - name: Upload frontend cutover inspection report
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-cutover-inspection-${{ github.sha }}
-          path: frontend-cutover-inspection/
+          name: .artifacts/cutover-inspection-${{ github.sha }}
+          path: .artifacts/cutover-inspection/
           if-no-files-found: error
           retention-days: 2
 
@@ -264,8 +264,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-app-smoke-${{ github.sha }}
-          path: frontend-app-smoke/
+          name: .artifacts/app-smoke-${{ github.sha }}
+          path: .artifacts/app-smoke/
           if-no-files-found: warn
           retention-days: 7
 
@@ -273,7 +273,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-games-smoke-${{ github.sha }}
-          path: frontend-games-smoke/
+          name: .artifacts/games-smoke-${{ github.sha }}
+          path: .artifacts/games-smoke/
           if-no-files-found: warn
           retention-days: 7

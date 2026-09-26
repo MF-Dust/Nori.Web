@@ -322,6 +322,7 @@ function createSourceSession() {
       },
     },
     idle: idlePresentation,
+    marginalGrowth,
     codenames: {
       controller: codenames,
       onNoriReaction: (reaction) => { frontend.reactions.play("codenames", reaction); },

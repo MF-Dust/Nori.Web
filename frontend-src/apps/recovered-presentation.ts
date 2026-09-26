@@ -16,10 +16,12 @@ import {
   type FilesPresentationRuntime,
   type OpenFilesIntent,
 } from "./files-presentation";
+import type { StoreApi, UseBoundStore } from "zustand";
 import {
   createIdleProductionWindowBinding,
   type IdlePresentationRuntime,
 } from "./idle-presentation";
+import type { MarginalGrowthState } from "../state/marginal-growth-store";
 import {
   createMailProductionWindowBinding,
   type MailPresentationRuntime,
@@ -64,6 +66,7 @@ export interface RecoveredProductionPresentationOptions {
   mail?: MailPresentationRuntime;
   files?: FilesPresentationRuntime;
   idle?: IdlePresentationRuntime;
+  marginalGrowth?: UseBoundStore<StoreApi<MarginalGrowthState>>;
   qfr?: QfrDockRuntime;
   cakeduel?: CakeDuelPresentationRuntime;
   chess?: ChessPresentationRuntime;
@@ -117,7 +120,7 @@ export function createRecoveredProductionWindowBindings(
 
   if (options.idle) {
     bindings.idle = {
-      main: createIdleProductionWindowBinding(options.idle),
+      main: createIdleProductionWindowBinding(options.idle, options.marginalGrowth),
     };
   }
 
@@ -186,6 +189,7 @@ export function createRecoveredDesktopRuntime(
       ? { ...options.files, intent: filesIntent }
       : undefined,
     idle: options.idle,
+    marginalGrowth: options.marginalGrowth,
     qfr: options.qfr,
     cakeduel: options.cakeduel,
     chess: options.chess,

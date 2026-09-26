@@ -22,7 +22,7 @@ export default defineConfig({
       formats: ["es"],
       fileName: "nori-web-recovered",
     },
-    outDir: resolve(sourceRoot, "../.frontend-build"),
+    outDir: resolve(sourceRoot, "../.artifacts/build/lib"),
     emptyOutDir: true,
     sourcemap: true,
     rollupOptions: {

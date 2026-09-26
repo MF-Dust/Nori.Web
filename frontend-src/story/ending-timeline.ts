@@ -46,6 +46,11 @@ export const ENDING_AUDIO: readonly StoryAudioTrack[] = [
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const span = (time: number, start: number, duration: number) =>
   clamp((time - start) / duration);
+/**
+ * Shipped `DZ` / `qy` in NormalApp (`t * t * (3 - 2 * t)`). The ending camera
+ * blend is this smoothstep, not a GSAP power ease. The power1/power2 tweens in
+ * the same chunk belong to the dive-editor ocean channels, not this camera.
+ */
 const smooth = (value: number) => value * value * (3 - 2 * value);
 const mix = (a: number, b: number, value: number) => a + (b - a) * value;
 type Point = { x: number; y: number; z: number };

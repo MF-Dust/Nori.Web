@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import {
   CAKE_DUEL_TELL_WEIGHTS,
@@ -194,9 +194,11 @@ export function DebugReactionsTab({
 }) {
   const [respectCooldown, setRespectCooldown] = useState(false);
   const [clock, setClock] = useState(0);
-  // The shipped tab reads the model off a reactive store. The source director
-  // only reports presence, so this refreshes on a tab re-render.
-  const model = frontend.reactions.hasModel();
+  const model = useSyncExternalStore(
+    (listener) => frontend.reactions.subscribeModel(listener),
+    () => frontend.reactions.hasModel(),
+    () => false,
+  );
   const [result, setResult] = useState<{
     label: string;
     outcome: NoriReactionOutcome;

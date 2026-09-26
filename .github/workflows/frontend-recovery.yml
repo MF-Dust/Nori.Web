@@ -45,12 +45,12 @@ jobs:
 
       - name: Show recovery summary
         run: |
-          cat .frontend-recovery/MODULE_MAP.md | head -n 120
+          cat .artifacts/recovery/MODULE_MAP.md | head -n 120
 
       - name: Upload recovery artifact
         uses: actions/upload-artifact@v4
         with:
           name: Nori.Web-frontend-recovery-${{ github.sha }}
-          path: .frontend-recovery/
+          path: .artifacts/recovery/
           if-no-files-found: error
           retention-days: 14

@@ -13,7 +13,7 @@ const publicRoot = resolve(sourceRoot, "../public");
  *
  * Dev mode serves the existing static asset tree so migrated screens can use
  * the real fonts/icons/models immediately. The application build deliberately
- * does not copy that large tree into .frontend-app-build; Cloudflare continues
+ * does not copy that large tree into .artifacts/build/app; Cloudflare continues
  * to own public/ directly.
  */
 export default defineConfig({
@@ -30,7 +30,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: resolve(sourceRoot, "../.frontend-app-build"),
+    outDir: resolve(sourceRoot, "../.artifacts/build/app"),
     emptyOutDir: true,
     copyPublicDir: false,
     sourcemap: true,

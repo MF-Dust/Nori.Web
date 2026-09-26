@@ -5,6 +5,7 @@ import { StoryAudio } from "./story-audio";
 import { StoryClock, type StoryPhase } from "./story-clock";
 import type { StoryInstance } from "./story-director";
 import { power2InOut, power2Out, ramp } from "./story-ease";
+import { drainBurstPlays } from "../live2d/particles/drain-burst";
 import "./memory-scene.css";
 
 export const MEMORY_PHASES: readonly StoryPhase[] = [
@@ -346,7 +347,8 @@ export function MemoryScene({
     ]);
     let frame = 0,
       stopped = false,
-      released = false;
+      released = false,
+      drainBursts = 0;
     const release = () => {
       if (released) return;
       released = true;
@@ -382,6 +384,14 @@ export function MemoryScene({
         const state = clock.advance(now),
           projection = memoryProjection(state.time);
         audio.sync(state);
+        // Shipped: `oe = time >= drain && time < void`, and while that window
+        // is playing, `Wk("drain-burst")` immediately then every `YXe` (180ms).
+        // The count is quantized on this scene clock, not a wall-clock interval.
+        if (projection.drain && state.playing)
+          drainBursts = Math.max(
+            drainBursts,
+            drainBurstPlays(state.time - phaseStart("drain")),
+          );
         lease.set({
           // Shipped: project() returns active = chrome < 0.5, and chrome is set to
           // 1 at phaseStart("drain") = 28.7, so the desktop takes over there.
@@ -400,6 +410,7 @@ export function MemoryScene({
             : "auto",
           voidEnv: projection.voidProgress,
           memoryComputeDrain: projection.drainProgress,
+          drainBurstSeq: drainBursts,
           // Shipped `aA(L ? "kneel" : "idle", editing)` runs for the whole cutscene
           // once the clock passes sweep - 0.5; the lease release restores null.
           noriIdleMotion: memoryIdleMotion(state.time),

@@ -21,6 +21,7 @@ import type { NoriSceneState } from "../state/nori-scene";
 import type { AudioMixer } from "../runtime/audio-mixer";
 import { ColdOpenRenderer } from "./cold-open-renderer";
 import { createWakeBurst } from "./cold-open-particles.js";
+import { ParticleEngine } from "./particles/particle-engine";
 
 export const NORI_BILLBOARD = { x: 0, y: -0.6, z: 0, width: 4, height: 8 };
 export const NORI_CAMERAS = {
@@ -52,6 +53,9 @@ export class NoriSceneRenderer {
   // with no cold-open gate (`GBe` at engine mount, `iBe` in the frame loop), so
   // the Corruption wake burst is visible without a `coldOpen` state.
   private wake = createWakeBurst(this.scene);
+  private effects = new ParticleEngine(this.scene);
+  private drainBurstsPlayed = 0;
+  private effectTime: number | null = null;
   get coldOpenStatus() {
     return this.coldOpen?.status ?? "inactive";
   }
@@ -156,6 +160,7 @@ export class NoriSceneRenderer {
       state.voidEnv ?? this.voidPhase + (voidPhase - this.voidPhase) * 0.04;
     const billboard = { ...NORI_BILLBOARD, z: state.noriDolly ?? 0 };
     this.wake.update({ cine: state, billboard });
+    this.updateSceneEffects(time, state.drainBurstSeq, billboard);
     const frame = {
       cine: state,
       lit: 1 - state.darkness,
@@ -221,12 +226,37 @@ export class NoriSceneRenderer {
       height,
     };
   }
+  /**
+   * Memory publishes `drainBurstSeq` from the scene clock. Each new count
+   * plays one `drain-burst`; the engine then integrates those sprites on this
+   * frame loop until their lifespan ends.
+   */
+  private updateSceneEffects(
+    time: number,
+    drainBurstSeq: number,
+    billboard: { x: number; y: number; z: number; width: number; height: number },
+  ) {
+    if (drainBurstSeq < this.drainBurstsPlayed)
+      this.drainBurstsPlayed = drainBurstSeq;
+    while (this.drainBurstsPlayed < drainBurstSeq) {
+      this.effects.play("drain-burst");
+      this.drainBurstsPlayed += 1;
+    }
+    const dt =
+      this.effectTime === null ? 0 : Math.max(0, time - this.effectTime);
+    this.effectTime = time;
+    this.effects.update(time, dt, {
+      position: { x: billboard.x, y: billboard.y, z: billboard.z },
+      size: { x: billboard.width, y: billboard.height },
+    });
+  }
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
     this.coldOpen?.dispose();
     this.coldOpen = null;
     this.wake.dispose();
+    this.effects.dispose();
     for (const stage of [
       this.bg,
       this.grid,

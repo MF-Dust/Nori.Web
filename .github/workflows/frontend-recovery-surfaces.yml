@@ -5,7 +5,7 @@ on:
     paths:
       - "frontend-src/**"
       - "scripts/**"
-      - "tests/frontend-*.tsx"
+      - "tests/frontend/**"
       - "package*.json"
       - ".github/workflows/frontend-recovery-surfaces.yml"
 
@@ -41,12 +41,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: node scripts/smoke_frontend_recovery_surfaces.mjs '${{ matrix.surface }}'
+      - run: node scripts/smoke/smoke_frontend_recovery_surfaces.mjs '${{ matrix.surface }}'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: frontend-surface-${{ matrix.surface }}-${{ github.sha }}
-          path: frontend-surfaces-smoke/
+          path: .artifacts/surfaces-smoke/
           retention-days: 7
           if-no-files-found: warn
 
@@ -73,11 +73,11 @@ jobs:
         id: stage
       - run: npm run frontend:cutover:smoke
       - name: Capture paired visual reference
-        run: node scripts/frontend_visual_reference_probe.mjs
+        run: node scripts/probes/frontend_visual_reference_probe.mjs
         env:
           NORI_TEST_PYTHON: .venv/bin/python
       - name: Capture paired game start screens
-        run: node scripts/frontend_visual_games_probe.mjs
+        run: node scripts/probes/frontend_visual_games_probe.mjs
         env:
           NORI_TEST_PYTHON: .venv/bin/python
       - name: Dry-run candidate Worker bundle
@@ -90,7 +90,7 @@ jobs:
           log=/tmp/candidate-pywrangler.log
           trap 'rm -f "$config"' EXIT
 
-          node scripts/frontend_candidate_worker_config.mjs
+          node scripts/lib/frontend_candidate_worker_config.mjs
           set +e
           uv run pywrangler deploy --dry-run --config "$config" --outdir "$outdir" > "$log" 2>&1
           code=$?
@@ -112,8 +112,8 @@ jobs:
             exit 1
           fi
 
-          node --test tests/frontend-candidate-worker-assets.test.mjs
-          node scripts/verify_frontend_candidate_worker_assets.mjs .frontend-app-build/cutover-candidate "$outdir"
+          node --test tests/frontend/frontend-candidate-worker-assets.test.mjs
+          node scripts/verify/verify_frontend_candidate_worker_assets.mjs .artifacts/build/app/cutover-candidate "$outdir"
 
           gzip_kib=$(sed -n 's/.*gzip: \([0-9.]*\) KiB.*/\1/p' "$log" | tail -n 1)
           if [ -z "$gzip_kib" ]; then
@@ -130,8 +130,8 @@ jobs:
         with:
           name: frontend-candidate-${{ github.sha }}
           path: |
-            frontend-candidate-smoke/
-            frontend-visual-reference/
-            .frontend-app-build/cutover-rollback/rollback-manifest.json
+            .artifacts/candidate-smoke/
+            .artifacts/visual-reference/
+            .artifacts/build/app/cutover-rollback/rollback-manifest.json
           include-hidden-files: true
           retention-days: 7

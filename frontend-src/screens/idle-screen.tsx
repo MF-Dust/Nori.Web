@@ -4,11 +4,33 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import { RotateCcw, Zap } from "lucide-react";
+import type { StoreApi, UseBoundStore } from "zustand";
+import { IDLE_ALIGNMENT_RIBBON } from "../apps/marginal-growth/alignment";
+import { MarginalGrowthRibbonView } from "../apps/marginal-growth/ribbon-view";
+import {
+  DEFAULT_MARGINAL_GROWTH,
+  DEFAULT_MARGINAL_GROWTH_CAMERA_CLAMP,
+  MARGINAL_GROWTH_AUTOPLAY_STEPS_PER_SECOND,
+  resolveMarginalGrowthCameraClamp,
+  type MarginalGrowthState,
+} from "../state/marginal-growth-store";
+
+function subscribeNothing() {
+  return () => {};
+}
+
+const NO_GROWTH = {
+  params: DEFAULT_MARGINAL_GROWTH.params,
+  source: "owned",
+  cameraClamp: DEFAULT_MARGINAL_GROWTH_CAMERA_CLAMP,
+  phase: 0,
+};
 import {
   type IdleAbdicationQuote,
   type IdleAlignment,
@@ -126,11 +148,20 @@ function ComputeField({
   theme,
   reserveShopSpace,
   onTap,
+  ribbon,
 }: {
   compute: number;
   theme: IdleTheme;
   reserveShopSpace: boolean;
   onTap?: () => void;
+  ribbon?: {
+    shape: "circle" | "chubby" | "spiky" | "nori";
+    params: MarginalGrowthState["params"];
+    owned: Record<string, number> | null;
+    accentColor: number;
+    cameraClamp: ReturnType<typeof resolveMarginalGrowthCameraClamp>;
+    backgroundColor: number;
+  };
 }) {
   const count = Math.max(9, Math.min(180, Math.floor(Math.log10(Math.max(10, compute)) * 18)));
   const nodes = useMemo(() => seededNodes(count), [count]);
@@ -174,6 +205,21 @@ function ComputeField({
     const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
     setView((value) => ({ ...value, scale: Math.max(0.15, Math.min(3, value.scale * factor)) }));
   }, []);
+
+  if (ribbon) {
+    return (
+      <MarginalGrowthRibbonView
+        shape={ribbon.shape}
+        params={ribbon.params}
+        owned={ribbon.owned}
+        accentColor={ribbon.accentColor}
+        cameraClamp={ribbon.cameraClamp}
+        backgroundColor={ribbon.backgroundColor}
+        onTap={onTap}
+        reserveShopSpace={reserveShopSpace}
+      />
+    );
+  }
 
   return (
     <div
@@ -231,7 +277,13 @@ function ComputeField({
   );
 }
 
-export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
+export function IdleScreen({
+  runtime,
+  marginalGrowth,
+}: {
+  runtime: IdleScreenRuntime;
+  marginalGrowth?: UseBoundStore<StoreApi<MarginalGrowthState>>;
+}) {
   const snapshot = useIdleSnapshot(runtime);
   const alignment = snapshot.state.currentAlignment ?? "none";
   const theme = IDLE_THEMES[alignment] ?? IDLE_THEMES.none;
@@ -262,6 +314,38 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
     if (!interactive) return;
     runtime.click();
   }, [interactive, runtime]);
+  const growth = useSyncExternalStore(
+    marginalGrowth ? marginalGrowth.subscribe : subscribeNothing,
+    () => (marginalGrowth ? marginalGrowth.getState() : NO_GROWTH),
+  );
+  const alignmentRibbon = IDLE_ALIGNMENT_RIBBON[alignment] ?? IDLE_ALIGNMENT_RIBBON.none;
+  const ribbonParams = useMemo(() => {
+    if (!alignmentRibbon.growth) return growth.params;
+    return {
+      ...growth.params,
+      fxCircleColor: alignmentRibbon.growth.circle,
+      fxIconColor: alignmentRibbon.growth.icon,
+    };
+  }, [alignmentRibbon.growth, growth.params]);
+  const ribbonOwned = growth.source === "owned" ? snapshot.state.owned : null;
+
+  useEffect(() => {
+    if (!marginalGrowth || growth.source !== "autoplay") return;
+    let frame = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+      last = now;
+      marginalGrowth.getState().setParams((params) => {
+        const limit = Math.max(1, params.maxSteps);
+        const steps = params.steps + MARGINAL_GROWTH_AUTOPLAY_STEPS_PER_SECOND * dt;
+        return { ...params, steps: steps > limit ? steps % limit : steps };
+      });
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [growth.source, marginalGrowth]);
 
   return (
     <div
@@ -281,6 +365,21 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
         theme={theme}
         reserveShopSpace={hasShop}
         onTap={clickCore}
+        ribbon={
+          marginalGrowth
+            ? {
+                shape: alignmentRibbon.shape,
+                params: ribbonParams,
+                owned: ribbonOwned ? { ...ribbonOwned } : null,
+                accentColor: alignmentRibbon.accent,
+                cameraClamp: resolveMarginalGrowthCameraClamp(
+                  growth.cameraClamp,
+                  growth.phase,
+                ),
+                backgroundColor: alignmentRibbon.canvasBg,
+              }
+            : undefined
+        }
       />
 
       {interactive ? <IdleProgressionRail runtime={runtime} snapshot={snapshot} /> : null}

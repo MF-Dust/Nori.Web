@@ -591,6 +591,7 @@ export class NoriReactionDirector {
     timer: ReturnType<typeof setTimeout>;
   } | null = null;
   private moodExpression: { model: Live2DModel; name: string } | null = null;
+  private modelListeners = new Set<() => void>();
 
   constructor(
     private readonly clock: () => number = () => performance.now(),
@@ -601,17 +602,31 @@ export class NoriReactionDirector {
     this.interrupt();
     this.clearMood();
     this.model = model;
+    this.notifyModel();
     return () => {
       if (this.model === model) {
         this.interrupt();
         this.clearMood();
         this.model = null;
+        this.notifyModel();
       }
     };
   }
 
   hasModel() {
     return this.model !== null;
+  }
+
+  /** Fired when a model is bound or released. The debug tab renders from this. */
+  subscribeModel(listener: () => void) {
+    this.modelListeners.add(listener);
+    return () => {
+      this.modelListeners.delete(listener);
+    };
+  }
+
+  private notifyModel() {
+    for (const listener of this.modelListeners) listener();
   }
 
   setBlocked(blocked: boolean) {
