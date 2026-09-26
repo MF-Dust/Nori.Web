@@ -2,6 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createServer } from "vite";
 import { chromium } from "playwright";
+import { probeLaunchOptions } from "./probe_launch.mjs";
 
 const groups = {
   "debug-labs": ["./frontend_debug_probe.mjs", "verifyDebugLabs"],
@@ -33,15 +34,7 @@ const server = await createServer({
 let browser;
 try {
   await server.listen();
-  browser = await chromium.launch({
-    headless: true,
-    executablePath: process.env.NORI_TEST_CHROMIUM || undefined,
-    args: [
-      "--use-gl=angle",
-      "--use-angle=swiftshader",
-      "--enable-unsafe-swiftshader",
-    ],
-  });
+  browser = await chromium.launch(probeLaunchOptions());
   const [path, name] = groups[selected];
   const probe = await import(path);
   await probe[name](browser, output, "http://127.0.0.1:47174");

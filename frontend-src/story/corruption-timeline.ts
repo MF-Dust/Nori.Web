@@ -72,7 +72,7 @@ export function corruptionScene(state: StoryClockState): NoriSceneState {
   if (t < m.panUp) return result;
   const pan = smooth((t - m.panUp) / 0.7);
   Object.assign(result, {
-    camera: { x: 0, y: 0.6 + 1.6 * pan, z: 7.4 },
+    camera: { x: 0, y: 1.6 * pan, z: 7.4 },
     fov: 60,
     noriTexture: "corrupt",
     corruptVoice: true,
@@ -115,15 +115,18 @@ export function corruptionScene(state: StoryClockState): NoriSceneState {
   if (t < m.exitSnap) return result;
   const snap = smooth((t - m.exitSnap) / 2);
   Object.assign(result, {
-    camera: { x: 0, y: 2.2 + 0.15 * snap, z: 7.4 },
+    camera: { x: 0, y: 1.6 + 0.15 * snap, z: 7.4 },
     fov: 60 - 45 * snap,
     noriDolly: 6.3 * (1 - snap),
   });
   if (state.parkedAt === "wake" || t < m.settle + 0.3) return result;
+  // darkness/noriDim run on cl_brightenDuration (2.1s), but the camera and fov
+  // return over min(wakeReturnDur 1.4, cl_brightenDuration) and finish 0.7s early.
   const settle = smooth((t - m.settle - 0.3) / 2.1);
+  const camSettle = smooth((t - m.settle - 0.3) / 1.4);
   Object.assign(result, {
-    camera: { x: 0, y: 0.6 + 1.75 * (1 - settle), z: 7.4 },
-    fov: 15 + 45 * settle,
+    camera: { x: 0, y: 1.75 * (1 - camSettle), z: 7.4 },
+    fov: 15 + 45 * camSettle,
     noriSleep: false,
     eyeOpen: clamp((t - m.settle - 0.3) / 1.3),
     darkness: 0.85 * (1 - settle),

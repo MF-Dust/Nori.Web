@@ -1,6 +1,61 @@
 # Current execution status — PR #43
 
-Updated 2026-09-26 for HEAD `57ada1f`. This section supersedes the historical status paragraphs below.
+Updated 2026-09-26 for HEAD `0ac8b49` + this pass. This section supersedes the historical status paragraphs below.
+
+## This pass: baseline repair, Boot/Ending static parity, readiness fix
+
+### Baseline repairs (all pre-existing failures on `0ac8b49`)
+
+| Failure | Root cause | Fix |
+| --- | --- | --- |
+| `frontend:recover:check` red at `verify_codenames_screen_recovery` | The `games` cutover note was rewritten and dropped the Codenames and Cake Duel ownership facts the gate asserts | Restored both sentences to `frontend-src/migration/cutover-status.ts` |
+| `verify_messenger_avatar_recovery` | Verifier matched an unscoped CSS string; the rule is correctly scoped to `[data-messenger-shipped-surfaces]` | Verifier now matches the rule and additionally asserts the scope |
+| `tests/frontend-browser-bounty.test.ts` | Hardcoded one machine's Han-vs-Latin `localeCompare` answer | Asserts the shipped `localeCompare` rule itself plus an ASCII-keyed content check |
+| `tests/frontend-story-clock.test.ts` | Orphaned — no `package.json` script ran it | Wired into `frontend:stories:test` |
+| `verify_frontend_candidate_worker_assets` | Needs `.candidate-worker-dist`, built by the Cloudflare worker CI step | Not a failure; prerequisite is CI-only |
+
+No gate was weakened. The two verifier edits assert strictly more than before.
+
+### Real source fix: visibility-scoped cold-open readiness
+
+Boot polled cold-open readiness from `requestAnimationFrame` behind a plain 60 s
+`setTimeout`. A Boot entered from a hidden tab therefore failed with "Scene resources
+could not be loaded" after a minute of normal loading. `story-readiness.ts` now owns the
+rule for Boot and Ending together. Details in `FRONTEND_BOOT_CORRUPTION_RECOVERY.md`.
+
+### Boot / Ending original-constant comparison: no gap found
+
+`bootScene` and `endingFrame` were re-derived from the shipped cold-open code in
+`public/assets/NormalApp-*.js`. Phase durations, the `settle = 3.3` formula, the
+`YP = -0.6` world offset folded into all four camera presets, the dive arc, `cameraFar`,
+the wake burst window splits, `noriDim`, `camNull` and the six-row Ending segment table
+all match the shipped implementation exactly. Three suspected mismatches were checked
+algebraically and disproved. **This is recorded as verified parity for the static
+timeline and camera, not as completed original visual/audio acceptance.**
+
+### Test evidence, 2026-09-26
+
+| Command | Result |
+| --- | --- |
+| `npm run frontend:typecheck` | PASS |
+| `npm run frontend:build` / `frontend:app:build` | PASS |
+| `npm run frontend:cutover:check` | PASS, 4 pending boundaries |
+| `npm run frontend:recover:check` | PASS (was failing on arrival) |
+| `npm test` | PASS |
+| `npm run frontend:stories:test` | PASS, 17 cases (was 12) |
+| `npm run frontend:runtime:test` | PASS, 126 + 4 |
+| `npm run frontend:games:test` | PASS |
+| `npm run frontend:ownership:test` | PASS |
+| `npm run frontend:cutover:smoke` | PASS |
+| `smoke_frontend_recovery_surfaces.mjs boot-corruption` | PASS |
+| `smoke_frontend_recovery_surfaces.mjs farewell-ending` | PASS |
+| `smoke_frontend_recovery_surfaces.mjs memory-datasea` | Partial — waves 1 games passed through real input, run stopped for host load |
+| `npm run frontend:games:smoke`, `frontend:app:smoke` | Not re-run this pass; launch four swiftshader browsers and saturated the host |
+| `npm run test:frontend` | No such script exists in `package.json` |
+
+Chromium runs on `--use-angle=swiftshader`, i.e. CPU software rendering. The cold-open
+renderer (bloom, jump-flooded SDF morph, 2 000 dust instances, Cubism) is heavy enough on
+CPU that running several at once starves the host. Prefer one probe at a time.
 
 ## Latest Progress (2026-09-26)
 
@@ -16,13 +71,13 @@ Supporting Apps boundary is now marked complete with documented limitations:
 ### Non-Agent Acceptance Analysis Complete
 Comprehensive evaluation of what can be completed without agent backend:
 
-**Messenger**: ~85% complete
+**Messenger**: all non-agent source complete; no percentage is claimed
 - ✅ All UI components source-owned and tested
 - ✅ Deterministic Chromium tests pass
 - ⏸️ Lifecycle tests ready (tool available)
 - 🔴 Agent dialogue/media sessions blocked
 
-**Games**: ~90% complete
+**Games**: all non-agent source complete; no percentage is claimed
 - ✅ All 4 game runtimes complete, smoke tests pass
 - ✅ Runtime and browser tests pass
 - ⏸️ Lifecycle tests ready (tool available)
@@ -69,7 +124,7 @@ Messenger interaction fixes, real Debug socket/compute controls, Credits SVGs, e
 
 Historical evidence checkpoint: 2026-09-18 16:15 UTC. The run/job IDs below are retained as historical records; no new CI result is asserted for HEAD `085bad3`. The local test baseline is 106 runtime cases, 11 story cases, 20 game cases and 3 historical-asset scanner cases passing. Browser verification runs in GitHub Actions because the execution sandbox denies Chromium socket creation. The cold-open fault probe isolates failed/retried/cancelled image loads in fresh contexts; CI 35354435518 passed the full source application smoke. On historical head `f7a7fa6683adc8c9088d416a2fa6784c94464ac1`, surface run `35364523143` passed Debug, cold-open, Boot/Corruption, Farewell/Ending and Messenger; job `105663601161` also passed all 12 Datasea games through real pointer/keyboard input. Debug job `105663601223` covers the UI-to-facade contract. In the prior Worker job `105661992194`, `Nori scene and cold-open lifecycle` passed against the real NoriStage model, including catalog, physics restoration and HeadPat restoration assertions. The job then failed in Scene editor because the new Audio Debug tab had dropped the real `Corrupt voice` checkbox. Commit `7de88a5` restores that checkbox and the Desktop music selector through the existing DebugScreen scene lease, preserving story/world/unmount cleanup. Worker run `35365741254`, job `105667661060`, then passed the unchanged Scene tools assertions, the complete Scene editor step, the real NoriStage/cold-open probe and every later source-app probe.
 
-All five incomplete cutover gates remain false: `messenger`, `games`, `live2d`, `supporting-apps` and `production-entry`. Shatter and Datasea have production-backed dedicated tuners, and the shipped Debug chunk contains no other per-cinematic tuner tabs. The general tabs now bind the mounted Live2D model, persistent audio settings and mixer/speech runtime, production head-pat recognizer/spring/input/synth, all 37 recovered semantic reaction events including Cake Duel, forced variant/cooldown/mood/tell diagnostics, all recovered Chess/Codenames/Cake Duel scenario IDs, and the real notification RPC/event stream. Live2D idle/lip tuning, Audio transport/effects, Pat telemetry and the reaction internals are source-bound; the shipped Debug chunk exposes no additional per-cinematic tuner family. The remaining Debug gaps are original layout comparison and the private Inject Talk/Nori Context handlers. Those two private-agent tabs report the blocker and observable session state without substitute actions. `nori_talk.request` remains a documented local no-op, so this environment cannot certify original agent replies. Datasea's shipped static text is now source-owned; message-window/compositor parity and private-agent speech remain tracked separately from renderer completion. No production entry has been switched.
+All four incomplete cutover gates remain false: `messenger`, `games`, `live2d` and `production-entry`. `supporting-apps` was flipped to complete in `705a2e7`. Shatter and Datasea have production-backed dedicated tuners, and the shipped Debug chunk contains no other per-cinematic tuner tabs. The general tabs now bind the mounted Live2D model, persistent audio settings and mixer/speech runtime, production head-pat recognizer/spring/input/synth, all 37 recovered semantic reaction events including Cake Duel, forced variant/cooldown/mood/tell diagnostics, all recovered Chess/Codenames/Cake Duel scenario IDs, and the real notification RPC/event stream. Live2D idle/lip tuning, Audio transport/effects, Pat telemetry and the reaction internals are source-bound; the shipped Debug chunk exposes no additional per-cinematic tuner family. The remaining Debug gaps are original layout comparison and the private Inject Talk/Nori Context handlers. Those two private-agent tabs report the blocker and observable session state without substitute actions. `nori_talk.request` remains a documented local no-op, so this environment cannot certify original agent replies. Datasea's shipped static text is now source-owned; message-window/compositor parity and private-agent speech remain tracked separately from renderer completion. No production entry has been switched.
 
 See `FRONTEND_RECOVERY_EXECUTION_PLAN.md` for task IDs and the scene-specific recovery documents for exact boundaries.
 
@@ -155,3 +210,136 @@ The source renderer now owns the ocean group, animated water/reflection, godrays
 The editor exposes ocean/glyph, plankton and wake controls, interpolates nested cold-open values and validates the original motion-blur range through 3.5. Resources load lazily on scene entry. Missing texture requests expose failure, successful siblings are disposed, and late image callbacks cannot revive a released scene. Closing the owner restores the normal background and releases textures, materials, targets and particles.
 
 Chromium verifies real-model ocean, glyph, morph, formed and wake frames, resize, missing assets, cancellation and late loads. Unit coverage checks single-channel SDF layout, signed distances, disposal and nested project interpolation. These graphics stages are now usable source components; the six non-Cult producers are registered, while their original visual/media/agent parity remains separately tracked above.
+
+## Debug reactions tab parity pass
+
+Re-derived the reaction lab from the shipped renderer in `public/assets/Debug-D6AtxpLT.js`
+rather than from the previous prose. The 37 catalog labels already matched exactly; the rest
+did not.
+
+- **9 shipped reaction notes were missing entirely.** The source catalog had no `note` field at
+  all. Restored: `pictionary.player_wrong` and `skip_nori_drawing`; `chess.checked`,
+  `accepts_request`, `declines_request`, `loses`; `codenames.her_clue_missed`, `assassin`;
+  `cakeduel.challenged`, `bluff_caught`, `vindicated`. `scripts/extract_reaction_notes.mjs` is a
+  reproducible extractor over the bundle.
+- **Spec hint** now reads `priority · reacts N% · M outs`. The source had dropped the out count.
+- **Outcome line** restored to the shipped shape: `label → variant` when played,
+  `label → no reaction (lost the roll)`, `label → skipped (motion cooldown)`, and a bare
+  `No Live2D model mounted` with the label dropped. The source used a flat `label: Outcome` table
+  with different wording.
+- **No-model behavior** restored: Roll, forced variants, phase moods, Clear mood and the Cake Duel
+  claim buttons are `disabled` while no model is mounted, with a separate
+  `No Live2D model mounted.` notice. This reuses the existing `NoriReactionDirector.hasModel()`;
+  no new API was added.
+- Remaining copy restored: the engine paragraph, the phase-mood suffix
+  ("— moods hold until cleared and layer with one-shot reactions."), the tell paragraph, and the
+  `Sample 2000` design-line column alignment.
+
+`scripts/frontend_debug_probe.mjs` now asserts the shipped shape. The gate got **stricter**: it
+adds the disabled-state assertion, the `· N outs` assertion and the note assertion. Note that
+the probe previously clicked a button named after the reaction label, which the shipped UI never
+had — the label heads the row and the button says `Roll`.
+
+Known limitation: the tab reads model presence at render time, while the shipped tab subscribes
+to a reactive store. This only shows up if the model mounts while the Reactions tab is already
+open. Flagged in the source.
+
+## Browser probe launch policy
+
+`scripts/probe_launch.mjs` is now the single WebGL launch policy for all ten browser probes.
+Local Windows runs use ANGLE d3d11 on the real adapter; GPU-less CI keeps the software path;
+`NORI_TEST_ANGLE` overrides. This is a correctness matter, not just speed: the previous hardcoded
+`--use-angle=swiftshader` pushed bloom, the jump-flooded SDF morph, 2 000 dust instances and
+Cubism onto the CPU. The Boot/Corruption probe runs in 29.6 s on the GPU.
+
+## Second pass: four scene parity fixes, lifecycle harness, and ledger honesty
+
+### Scene constants verified against the shipped bundle, not the previous prose
+
+The Boot/Ending method was repeated for Corruption, Memory, Datasea and Farewell. Every phase
+duration, every layer default and every absolute marker matched. Five real defects did not:
+
+| Fix | Shipped | Was | File |
+| --- | --- | --- | --- |
+| Corruption camera offset | `0 → 1.6 → 1.75 → 0` (world Y, `YP` folded in) | `0.6 → 2.2 → 2.35 → 0.6` — every keyframe `−YP` too high for the whole 30 s track | `story/corruption-timeline.ts` |
+| Corruption wake return | `min(wakeReturnDur 1.4, cl_brightenDuration 2.1)` = **1.4 s** | 2.1 s, so camera and fov landed 0.7 s late | same |
+| Memory void ramp | `Math.min(1, 2.4 × 0.45)` = **1.0 s** | 1.08 s (the raw product, clamp dropped) | `story/memory-scene.tsx` |
+| Memory quake | `quakePeak 0.7` → 0 over 2 s (`power2.out`) | flat `0.35` held for the whole 7 s attack | same |
+| Datasea message cursor | `KX[s] = 1 + Σ(gap + dots)`, typing window `[KX−dots, KX]` | folded `max(len/cps, 0.6)` into the cursor → line 12 drifted **+25.5 s**, past the end of the 44.8 s phase | `story/datasea-content.ts` |
+| Datasea CG type duration | `Math.min(len/cps, t1−t0−0.3)` | `Math.max(0.3, …)` → first and last lines 2.1 s / 2.5 s instead of 0.4 s / 1.3 s | same |
+
+The Corruption offset is the same `YP = -0.6` class that Boot/Ending already had applied
+correctly — the corruption track had missed it. Each fix was re-derived from the bundle and
+checked algebraically before being applied; `boot-corruption` and `memory-datasea` probes and
+the visual capture all re-run green afterwards.
+
+Still open from that comparison, and deliberately not touched: the Datasea audio table (six of
+eight tracks differ and the source set is internally coherent — needs a call), the Datasea
+whiteout beat, the Memory `active` handover window and siren `until`/`fadeOut`, the Memory flood
+layout and fifth-window height, the Farewell shader's second shadow lobe, the missing Farewell
+subtitle text, and the systematic GSAP-easing → `smoothstep` substitution, whose endpoints match
+but whose interiors never do.
+
+### Games lifecycle harness now real
+
+`scripts/frontend_games_lifecycle_test.mjs` passes end to end: 4 games × (start → play → close →
+reopen → reconnect) in en-US and zh-CN, plus a reduced-motion pass, asserting on the Arcade
+transport (`mount_cartridge`, `unmount_cartridge`, a fresh `open_my_web_world` after a socket
+drop) rather than on paint. It also found a **real gameplay bug**: Cake Duel hand cards could not
+be selected with a pointer, because `setPointerCapture` on pointerdown retargeted the following
+`click` to the wrapper and `finishDrag` armed the click-suppress window on every press, not only
+real reorders. The game was unplayable with a mouse. Fixed in `screens/cakeduel-hand.tsx`;
+drag-to-reorder still verified working.
+
+**Reported, not fixed:** Cake Duel never releases its cartridge on close —
+`CakeDuelRuntimeController` has no window-scoped `retain`/release unlike
+`GameCartridgeController`, so a closed window leaves the cartridge mounted and the bout alive
+into the next window and the next browser session. Fixing it means touching the runtime bridge,
+so it needs a decision rather than a drive-by patch. The test asserts the real behaviour and logs
+it instead of asserting behaviour the source does not have.
+
+### Test coverage: 125 assertions that never ran
+
+Twenty `tests/frontend-*.test.ts` suites were referenced by no `package.json` script and no CI
+job — green, but never executed. They now run in `scripts/test_frontend_suites.mjs`
+(`npm run frontend:suites:test`), wired into `frontend:recover:check` so they cannot silently stop
+running again. `tests/frontend-recovery-gaps.test.ts` deliberately re-runs the scene-transport and
+scene-editor cases; that overlap is intentional.
+
+### Dead code removed
+
+- `story/datasea-games.tsx` — a 17-line fake microgame (three sliders and a tap counter) with
+  **zero importers**, sitting beside the real 6924-line `datasea-games-original.js`. Deleting it
+  removes the risk of mistaking it for the game implementation.
+- `UnrecoveredProductionWindowNoticeProps` — a dead exported type, zero references, and the only
+  consumer of its `ReactNode` import.
+
+### Ledger corrections
+
+- Removed 14 phantom `frontend-src/**.test.ts` paths from the evidence summary. `frontend-src`
+  contains **zero** test files; every real suite lives in `tests/`.
+- Removed the `npm run test:frontend` line: that script does not exist.
+- `Cult` no longer claims 100% completion or an independent probe. `frontend-src/story/cult-producer.ts`
+  and `scripts/frontend_cult_probe.mjs` never existed; Cult is an inline `CultFlash` in
+  `story-scenes.tsx` and is the one producer with no browser gate of its own. It is captured by
+  the visual harness, nothing more.
+- `smoke_frontend_stories.mjs` covers 7 *surfaces*, not 7 producers; the matrix said producers.
+- Dropped the unfalsifiable `~85%` / `~90%` / `~50%` figures — no denominator, no measurement.
+- `games` note no longer claims `frontend:games:smoke` covers "Cake Duel full runtime". That
+  script contains zero Cake Duel references; the real coverage is named instead.
+- "All five incomplete cutover gates" → four. `supporting-apps` was flipped in `705a2e7`.
+- `idle-qfr` note and the coverage matrix now record the unported marginal-growth ribbon world
+  instead of claiming no source gap. The boundary stays `complete: true` on its smoke evidence;
+  downgrading it is a policy call, flagged rather than made unilaterally.
+
+### Deterministic visual capture
+
+`scripts/frontend_visual_comparison.mjs` is now a fake-clock capture harness: 44 frames across all
+seven producers in 260 s, zero skips, with `frontend-visual-comparison/manifest.json` recording
+scene, phase, story time, parked gate and the clock offset for each frame. Story time is read
+from the scene's own `StoryClock` rather than estimated, and cross-checked against the rendered
+`data-time` for Boot and Corruption. Artifact capture only — there is no stable baseline, so no
+pixel-diff verdict is claimed.
+
+Known limitation: Farewell keeps its `StoryClock` as an effect-local, so it publishes no
+progress; those frames are labelled `±1 frame` from the actor-ready signal in the manifest.

@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { verifyBootCorruption } from "./frontend_boot_corruption_probe.mjs";
 import { verifyMemoryDatasea } from "./frontend_memory_datasea_probe.mjs";
 import { verifyFarewellEnding } from "./frontend_farewell_ending_probe.mjs";
+import { probeLaunchOptions } from "./probe_launch.mjs";
 const output = resolve("frontend-stories-smoke"),
   origin = "http://127.0.0.1:47175";
 await mkdir(output, { recursive: true });
@@ -29,15 +30,7 @@ vite.stdout.on("data", (b) => {
 vite.stderr.on("data", (b) => {
   log += b;
 });
-const launchOptions = {
-  headless: true,
-  executablePath: process.env.NORI_TEST_CHROMIUM || undefined,
-  args: [
-    "--use-gl=angle",
-    "--use-angle=swiftshader",
-    "--enable-unsafe-swiftshader",
-  ],
-};
+const launchOptions = probeLaunchOptions();
 const runProbe = async (verify) => {
   const browser = await chromium.launch(launchOptions);
   try {

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { StoryClock } from "../frontend-src/story/story-clock";
 import { StoryAudio } from "../frontend-src/story/story-audio";
+import { visibleReadinessDeadline } from "../frontend-src/story/story-readiness";
 
 test("story clock parks at each interactive gate without consuming waiting time", () => {
   const clock = new StoryClock([
@@ -89,4 +90,33 @@ test("story audio waits for unlock, resumes at the current offset and cancels pe
   audio.dispose();
   audio.sync(clock.snapshot());
   assert.equal(calls.length, 2);
+});
+
+test("cold-open readiness only spends time the tab spent visible", (t) => {
+  let hidden = false;
+  t.after(() => {
+    delete (globalThis as { document?: unknown }).document;
+  });
+  (globalThis as { document?: unknown }).document = {
+    get hidden() {
+      return hidden;
+    },
+  };
+  // A hidden tab never runs requestAnimationFrame, so the 60s asset budget must
+  // not expire for a Boot scene that simply is not being drawn yet.
+  hidden = true;
+  const deadline = visibleReadinessDeadline(1000);
+  // A hidden tab never runs requestAnimationFrame, and its visibilitychange
+  // handler cannot restart the budget, so a scene that is merely not being drawn
+  // would blow a plain setTimeout. Returning to the tab restarts the budget.
+  deadline.refresh();
+  assert.equal(deadline.expired(performance.now() + 600000), true);
+  hidden = false;
+  deadline.refresh();
+  assert.equal(deadline.expired(performance.now() + 500), false);
+  assert.equal(deadline.expired(performance.now() + 2000), true);
+  // Background time must never restart the budget.
+  hidden = true;
+  deadline.refresh();
+  assert.equal(deadline.expired(performance.now() + 600000), true);
 });

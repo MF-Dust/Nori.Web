@@ -29,3 +29,12 @@ backend/data/*.sqlite3
 
 frontend-app-smoke/
 frontend-games-smoke/
+frontend-candidate-smoke/
+frontend-stories-smoke/
+frontend-surfaces-smoke/
+frontend-visual-comparison/
+frontend-debug-layout/
+frontend-games-lifecycle/
+frontend-visual-games/
+*.log
+tmp/

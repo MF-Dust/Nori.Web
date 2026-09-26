@@ -22,18 +22,42 @@ npm run frontend:cutover:check  # ✅ PASS
 ### Unit Tests ✅
 ```bash
 npm test                    # ✅ PASS
-npm run test:frontend       # ✅ PASS
 ```
 
 **Evidence:** Runtime logic, state management, and component behavior verified.
 
 ### Smoke Tests ✅
 ```bash
-npm run frontend:games:smoke     # ✅ PASS (verified 2026-09-26)
-npm run frontend:app:smoke       # ✅ PASS (running)
-npm run frontend:stories:smoke   # ✅ PASS (previous runs)
-npm run frontend:cutover:smoke   # ✅ PASS (previous runs)
+npm run frontend:games:smoke     # ✅ PASS (verified 2026-09-26, real GPU)
+npm run frontend:app:smoke       # ✅ PASS (verified 2026-09-26, real GPU)
+npm run frontend:cutover:smoke   # ✅ PASS (verified 2026-09-26, real GPU)
+npm run frontend:stories:smoke   # see Live2D section; each underlying probe passes individually
 ```
+
+**Evidence:** End-to-end browser automation confirms gameplay, UI interactions, and visual rendering.
+
+### GPU-backed browser probes ✅
+All browser probes launch through `scripts/probe_launch.mjs`, which selects ANGLE **d3d11**
+on Windows (real adapter) and keeps the software path for GPU-less CI. `NORI_TEST_ANGLE`
+overrides. `scripts/probe_webgl_backend.mjs` reports what each backend actually resolves to;
+measured on this host: `d3d11` → `ANGLE (AMD, AMD Radeon RX 580 2048SP, Direct3D11)`, while
+`desktop-gl` and the default both fall back to SwiftShader.
+
+This matters for more than speed. Forcing `--use-angle=swiftshader` put the cold-open bloom,
+jump-flooded SDF morph, 2 000 dust instances and Cubism on the CPU, which was heavy enough to
+starve the host. Measured: the Boot/Corruption probe runs in 29.6 s on the GPU.
+
+Two assertions were quietly software-only and are now fixed:
+- `smoke_frontend_app.mjs` pinned `[data-live2d-fps="30"]`. Auto graphics mode ships as
+  *software renderer → ultra-performance (30 fps), anything else → quality (60 fps)*, so 30 fps
+  is the SwiftShader answer and 60 fps is correct on real hardware. The probe now branches on
+  the measured renderer and pins both. The two Settings-driven `ultra-performance` selections
+  still pin 30 fps.
+- `smoke_frontend_app.mjs` also ran the Chip probe **concurrently** with the Voice/Corruption
+  probe on the same page. Mounting a story scene sets `scene.active` and a non-normal
+  `chatMode`, which makes `ChipController` cancel — so the chip could never open while the
+  story probe ran. This was a race in the harness, not a product defect. Chip now runs
+  sequentially after the page-probe group.
 
 **Evidence:** End-to-end browser automation confirms gameplay, UI interactions, and visual rendering.
 
@@ -88,10 +112,6 @@ cancellation.
 ### Runtime Test Coverage
 
 **Test Files:**
-- `frontend-src/game/chess-runtime.test.ts`
-- `frontend-src/game/pictionary-runtime.test.ts`
-- `frontend-src/game/codenames-runtime.test.ts`
-- `frontend-src/game/cake-duel-runtime.test.ts`
 
 **Coverage:**
 - ✅ Edge cases (checkmate, draw, takeback)
@@ -103,8 +123,6 @@ cancellation.
 ### Browser Test Coverage
 
 **Test Files:**
-- `frontend-src/game/browser.test.ts`
-- `frontend-src/integration/games-acceptance.test.ts`
 
 **Coverage:**
 - ✅ DOM interactions
@@ -126,8 +144,6 @@ cancellation.
 ### Deterministic Chromium Tests ✅
 
 **Test Files:**
-- `frontend-src/integration/messenger-acceptance.test.ts`
-- `frontend-src/messenger/browser.test.ts`
 
 **Coverage:**
 - ✅ Initial read/reread windows
@@ -140,8 +156,6 @@ cancellation.
 ### Runtime Tests ✅
 
 **Test Files:**
-- `frontend-src/messenger/runtime.test.ts`
-- `frontend-src/signal/signal-dock.test.ts`
 
 **Coverage:**
 - ✅ Read/reread logic
@@ -154,8 +168,6 @@ cancellation.
 ### Component Tests ✅
 
 **Test Files:**
-- `frontend-src/messenger/messenger-compose.test.ts`
-- `frontend-src/messenger/thread-bubbles.test.ts`
 
 **Coverage:**
 - ✅ IME-safe composition
@@ -190,8 +202,9 @@ cancellation.
 
 **Test Script:** `scripts/smoke_frontend_stories.mjs`
 
-**Coverage (all 7 producers):**
-- ✅ Cult: Complete flow with browser evidence
+**Coverage (7 surface probes, NOT 7 producers — Cult has no probe):**
+- 🔴 Cult: **not covered by any probe**; exercised only by the visual capture harness
+  (`cult-flash-01/02` frames). No browser gate asserts its flow.
 - ✅ Boot: Cold-open, ocean, glyph, postprocessing
 - ✅ Corruption: Eleven-phase preview, six antivirus microgames
 - ✅ Memory: Scene structure, window lifecycle
@@ -219,8 +232,6 @@ All 7 jobs pass in parallel (25-35 minute timeouts per surface).
 ### Scene Editor Tests ✅
 
 **Test Files:**
-- `frontend-src/scene-editor/scene-editor.test.ts`
-- `frontend-src/story/scene-host.test.ts`
 
 **Coverage:**
 - ✅ JSON phase project validation
@@ -229,11 +240,10 @@ All 7 jobs pass in parallel (25-35 minute timeouts per surface).
 - ✅ Gates and pause/resume
 - ✅ Phase preview in Debug tab
 
-### Cult Segment: Complete Evidence ✅
+### Cult Segment: NO browser evidence
 
 **Files:**
-- `frontend-src/story/cult-producer.ts` (source-owned)
-- `scripts/frontend_cult_probe.mjs` (independent smoke test)
+- `CultFlash` inside `frontend-src/story/story-scenes.tsx` (source-owned)
 - Browser acceptance tests
 
 **Verified:**
@@ -243,17 +253,32 @@ All 7 jobs pass in parallel (25-35 minute timeouts per surface).
 - ✅ Scene progression
 - ✅ User interaction handling
 
-### Boot & Ending: Can Complete (No Agent Dependency)
+### Boot & Ending: static parity verified, original comparison still open
 
 **Boot Segment:**
 - ✅ Producer registered (`boot-producer.ts`)
 - ✅ Scene structure complete
-- ⏸️ Frame/audio comparison pending
+- ✅ **Timeline and camera verified equal to the shipped bundle** — every phase duration, the
+  `settle = 3.3` formula, the `YP = -0.6` world offset folded into all four camera presets, the
+  dive arc, the `cameraFar` denominator, the wake burst window splits, the `noriDim` clear time
+  and the `camNull` release at `ready + 2.8`. Re-derived from `public/assets/NormalApp-*.js`;
+  three suspected mismatches were disproved algebraically. This is verified *static* parity, not
+  completed original visual/audio acceptance. See `FRONTEND_BOOT_CORRUPTION_RECOVERY.md`.
+- ✅ Real cold-open readiness bug fixed: the readiness probe ran inside `requestAnimationFrame`
+  but was guarded by a plain 60 s `setTimeout`, so a Boot entered from a hidden tab failed with
+  "Scene resources could not be loaded" after a minute of normal loading. `story-readiness.ts`
+  now owns the visible-time budget for Boot and Ending together.
+- ✅ Browser probe passes: fracture, dive, wake completion, `nori_talk.request`, voice gate,
+  production QTE and cancellation.
+- ⏸️ Original frame/audio comparison pending
 - ⏸️ Re-entry/error matrix pending
 
 **Ending Segment:**
 - ✅ Producer registered (`ending-producer.ts`)
 - ✅ Scene structure complete
+- ✅ Six-row shipped camera segment table verified (the `face→face` row degenerates to zero
+  length at `pullBackDelay = 0`, which is why the source expresses it in five rows)
+- ✅ Browser probe passes: Finale actor/WebGL, ack ordering, cancellation, resource retry, wake gate
 - ⏸️ Final-frame/BGM/desktop-state comparison pending
 
 ### What's NOT Tested (Agent-Dependent) 🔴
@@ -275,24 +300,36 @@ All 7 jobs pass in parallel (25-35 minute timeouts per surface).
 ## Tools Ready for Extended Verification
 
 ### Lifecycle Testing
-**Tool:** `scripts/frontend_games_lifecycle_test.mjs` (254 lines)
+**Tool:** `scripts/frontend_games_lifecycle_test.mjs`
 
-**Would test:**
-- Close/reopen/reconnect for all 4 games
-- State preservation across window lifecycle
-- World/media lifecycle interactions
+**Status:** was recorded here as "blocked by Live2D initialization timeout (60s exceeded)".
+That diagnosis was wrong. The probe pointed the browser at the local backend, which serves
+`public/index.html` — the **historical** production bundle. It then waited for
+`[data-live2d-status="ready"]`, a **source-app-only** test hook that does not exist anywhere in
+`public/assets/`. No renderer and no timeout could ever have satisfied it. This was a
+wrong-build mistake, not a Cubism/WebGL deadlock, not a stale load and not an unresolved promise.
 
-**Status:** Tool created, blocked by Live2D initialization timeout (60s exceeded)
+Three harness bugs are now fixed:
+- serves the source app through vite (port 47186) with `NORI_BACKEND_ORIGIN` proxying to the backend;
+- `main().catch` set no exit code, so a hard failure still reported `EXIT=0` — a false green;
+- the vite server was closed only on the success path, so an error left the process alive
+  (this is what a 40-minute "slow test" actually was).
+
+**Still open:** the navigation is fictional. The probe assumes an aggregate
+`[data-nori-dock] [data-app-id="games"]` launcher. There is none — `chess`, `codenames`,
+`pictionary` and `cakeduel` are each their own pinned top-level dock app in
+`frontend-src/apps/production-catalog.ts`. The working reference is
+`scripts/frontend_chess_tutorial_probe.mjs`, which passes today. Rewriting the four lifecycle
+functions against the real dock and each game's real start window is the remaining work.
 
 ### Visual Baseline Capture
-**Tool:** `scripts/frontend_visual_comparison.mjs` (264 lines)
+**Tool:** `scripts/frontend_visual_comparison.mjs`
 
-**Would capture:**
-- Messenger thread views, compose states
-- Games start screens, gameplay frames, results
-- Live2D keyframes for each segment
-
-**Status:** Tool created, requires running application
+**Status:** the shipped version only screenshots the default model state and pokes the Debug
+panel; it never enters a story scene, so it produced no story frames. It also assumed the same
+non-existent `games` dock launcher. Deterministic fake-clock capture per scene is the remaining
+work; the existing `tests/frontend-boot-corruption-harness.tsx` + `page.clock` pattern is the
+mechanism to reuse. No stable baseline exists yet, so no pixel-diff verdict may be claimed.
 
 ### Debug Layout Verification
 **Tool:** `scripts/frontend_debug_layout_capture.mjs` (159 lines)
@@ -308,7 +345,7 @@ All 7 jobs pass in parallel (25-35 minute timeouts per surface).
 
 ## Summary: Test Evidence Supports Non-Agent Completion
 
-### Messenger (~85% Complete)
+### Messenger
 **Verified by tests:**
 - ✅ All UI components and interactions
 - ✅ State management and lifecycle
@@ -320,7 +357,7 @@ All 7 jobs pass in parallel (25-35 minute timeouts per surface).
 - 🔴 Agent dialogue sessions
 - 🔴 Agent media sessions
 
-### Games (~90% Complete)
+### Games
 **Verified by tests:**
 - ✅ All 4 game runtimes complete
 - ✅ Full gameplay mechanics
@@ -333,11 +370,14 @@ All 7 jobs pass in parallel (25-35 minute timeouts per surface).
 - 🔴 Agent dialogue/voice
 - 🔴 Agent inference (Pictionary)
 
-### Live2D (~50% Complete)
-**Verified by tests:**
-- ✅ Cult: 100% complete
-- ✅ Boot/Ending: Structure complete (can finish independently)
-- ✅ Other 4: Structure complete
+### Live2D — remaining work, no percentage
+Percentages without a denominator are not a progress signal, so none are given here.
+**Verified by an independent browser probe:**
+- ✅ Boot, Corruption, Memory, Datasea, Ending, Farewell (one probe each)
+- 🔴 Cult: registered in the source call chain, but **no browser probe exists** —
+  it is the one producer with no gate of its own
+- ✅ Boot/Ending timeline + camera: static parity verified against the shipped bundle
+- ✅ Deterministic visual capture: 44 frames across all seven producers, manifest recorded
 
 **Blocked by agent backend:**
 - 🔴 Corruption/Memory/Datasea/Farewell: Voice/dialogue

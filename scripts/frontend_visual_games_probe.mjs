@@ -4,6 +4,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium } from "playwright";
+import { probeLaunchOptions } from "./probe_launch.mjs";
 import { preview } from "vite";
 
 const root = resolve(process.cwd());
@@ -229,11 +230,7 @@ async function captureTarget({ label, outDir, historical, backendPort, previewPo
 
 let browser;
 try {
-  browser = await chromium.launch({
-    headless: true,
-    executablePath: process.env.NORI_TEST_CHROMIUM || undefined,
-    args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
-  });
+  browser = await chromium.launch(probeLaunchOptions());
   const targets = [
     { label: "reference", outDir: publicDir, historical: true, backendPort: 47182, previewPort: 47183 },
     { label: "candidate", outDir: candidateDir, historical: false, backendPort: 47184, previewPort: 47185 },

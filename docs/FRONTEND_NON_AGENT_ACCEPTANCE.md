@@ -425,8 +425,8 @@ Agent-dependent features (dialogue, voice, inference) are blocked by backend imp
 
 **Achievable Progress Without Agent Backend:**
 
-- Messenger: ~85% complete (UI/lifecycle done, agent pending)
-- Games: ~90% complete (gameplay done, agent pending)
+- Messenger: UI/lifecycle source complete (agent pending)
+- Games: gameplay source complete (agent pending)
 - Live2D: ~50% complete (1/7 done, 2/7 can complete, 4/7 agent-blocked)
 
 **Estimated Time to Complete Non-Agent Work:** 1-2 hours with running app

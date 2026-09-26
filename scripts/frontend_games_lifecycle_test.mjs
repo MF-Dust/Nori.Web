@@ -1,15 +1,23 @@
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
 import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
-import { resolve, join } from "node:path";
+import { join, resolve } from "node:path";
+import { chromium } from "playwright";
+import { createServer } from "vite";
+import { probeLaunchOptions } from "./probe_launch.mjs";
+import en from "../frontend-src/i18n/en.ts";
+import zhCN from "../frontend-src/i18n/zh-CN.ts";
 
 /**
- * Comprehensive game lifecycle testing for Games boundary closure.
- * Tests: start → play → pause → close → reopen → resume → reconnect
- * Covers: Chess, Codenames, Pictionary, Cake Duel
- * Locales: en-US, zh-CN
- * Reduced motion: enabled/disabled
+ * Real source-app game lifecycle gate.
+ *
+ * Chess / Codenames / Pictionary / Cake Duel are four independent pinned dock
+ * apps (frontend-src/apps/production-catalog.ts) — there is no aggregate
+ * "games" launcher. Each is driven through
+ * start -> play -> close -> reopen -> reconnect against the source app served by
+ * vite plus the local python backend, in en-US and zh-CN, plus a reduced-motion
+ * pass. Labels are resolved from the real dictionaries so the two locale runs
+ * assert the strings the source actually renders.
  */
 
 const output = resolve("frontend-games-lifecycle");
@@ -17,11 +25,22 @@ await mkdir(output, { recursive: true });
 
 const isCI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
 const modelReadyTimeout = isCI ? 90000 : 60000;
+const backendPort = 47181;
+const sourcePort = 47186;
+const sourceOrigin = `http://127.0.0.1:${sourcePort}`;
 
-async function startBackend(port) {
+const dictionaries = { "en-US": en, "zh-CN": zhCN };
+/** The label the source app renders for `key` in `locale`. */
+const text = (locale, key) => {
+  const value = key.split(".").reduce((table, part) => table?.[part], dictionaries[locale]);
+  assert.equal(typeof value, "string", `missing ${locale} translation for ${key}`);
+  return value;
+};
+
+function startBackend() {
   const backend = spawn(
     process.env.NORI_TEST_PYTHON ?? "python",
-    ["-m", "uvicorn", "server:app", "--host", "127.0.0.1", "--port", String(port)],
+    ["-m", "uvicorn", "server:app", "--host", "127.0.0.1", "--port", String(backendPort)],
     {
       env: {
         ...process.env,
@@ -30,247 +49,444 @@ async function startBackend(port) {
         ANTHROPIC_API_KEY: "",
       },
       stdio: ["ignore", "pipe", "pipe"],
-    }
+    },
   );
 
-  let backendLog = "";
-  backend.stdout.on("data", (data) => backendLog = (backendLog + data).slice(-4000));
-  backend.stderr.on("data", (data) => backendLog = (backendLog + data).slice(-4000));
+  let log = "";
+  for (const stream of [backend.stdout, backend.stderr])
+    stream.on("data", (data) => (log = (log + data).slice(-8000)));
 
-  const backendOrigin = `http://127.0.0.1:${port}`;
-  let ready = false;
-  for (let attempt = 0; attempt < 100; attempt++) {
-    try {
-      if ((await fetch(`${backendOrigin}/api/auth/get-session`)).ok) {
-        ready = true;
-        break;
+  const origin = `http://127.0.0.1:${backendPort}`;
+  return (async () => {
+    for (let attempt = 0; attempt < 150; attempt++) {
+      try {
+        if ((await fetch(`${origin}/api/auth/get-session`)).ok) return { backend, log: () => log };
+      } catch {}
+      if (backend.exitCode !== null) throw new Error(`Backend exited: ${log}`);
+      await new Promise((done) => setTimeout(done, 100));
+    }
+    throw new Error(`Backend did not start: ${log}`);
+  })();
+}
+
+/**
+ * Records every Arcade frame the app reads and writes, so mount/unmount/
+ * dispatch and world (re)open are asserted on the real transport instead of on
+ * paint.
+ */
+function installTransportProbe() {
+  const Native = window.WebSocket;
+  window.lifecycle = { sockets: [], sent: [], received: [] };
+  window.WebSocket = class extends Native {
+    constructor(...args) {
+      super(...args);
+      window.lifecycle.sockets.push(this);
+      this.addEventListener("message", (event) => {
+        if (typeof event.data !== "string") return;
+        try {
+          const frame = JSON.parse(event.data);
+          window.lifecycle.received.push({
+            type: frame.type,
+            cartridgeId: frame.cartridgeId,
+            version: frame.version,
+          });
+        } catch {}
+      });
+    }
+    send(data) {
+      if (typeof data === "string") {
+        try {
+          const frame = JSON.parse(data);
+          window.lifecycle.sent.push({
+            type: frame.type,
+            cartridgeId: frame.cartridgeId,
+            command: frame.cmd?.type,
+          });
+        } catch {}
       }
-    } catch {}
-    if (backend.exitCode !== null) throw new Error("Backend exited: " + backendLog);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  if (!ready) throw new Error("Backend did not start");
-  return { backend, backendOrigin };
+      super.send(data);
+    }
+  };
 }
 
-/**
- * Test Chess lifecycle
- */
-async function testChessLifecycle(page, locale) {
-  console.log(`  Testing Chess (${locale})...`);
+const frames = (page, type, cartridgeId) =>
+  page.evaluate(
+    ({ type, cartridgeId }) =>
+      window.lifecycle.sent.filter(
+        (frame) => frame.type === type && (!cartridgeId || frame.cartridgeId === cartridgeId),
+      ).length,
+    { type, cartridgeId },
+  );
 
-  // Start game
-  await page.locator('[data-nori-dock] [data-app-id="games"]').click();
-  await page.getByRole("button", { name: locale === "zh-CN" ? "国际象棋" : "Chess", exact: true }).click();
-  await page.locator("[data-chess-board]").waitFor();
+/** Wait until at least `count` matching frames have been written. */
+async function waitForFrames(page, type, cartridgeId, count, timeout = 30000) {
+  await page.waitForFunction(
+    ({ type, cartridgeId, count }) =>
+      window.lifecycle.sent.filter(
+        (frame) => frame.type === type && (!cartridgeId || frame.cartridgeId === cartridgeId),
+      ).length >= count,
+    { type, cartridgeId, count },
+    { timeout },
+  );
+}
 
-  // Make a move
-  await page.locator('[data-chess-square="e2"]').click();
-  await page.locator('[data-chess-square="e4"]').click();
-  await page.screenshot({ path: join(output, `chess-${locale}-move1.png`) });
+/** The one exclusive game window, opened from the real dock. */
+const gameWindow = (page) => page.locator(".nori-window-exclusive:visible");
 
-  // Close game
-  await page.getByRole("button", { name: "Close", exact: true }).click();
-  await page.locator("[data-chess-board]").waitFor({ state: "detached" });
+async function openFromDock(page, appId) {
+  await page.locator(`[data-nori-dock] [data-app-id="${appId}"]`).click();
+  const host = gameWindow(page);
+  await host.waitFor();
+  assert.equal(await host.count(), 1, `${appId} must own exactly one exclusive window`);
+  return host;
+}
 
-  // Reopen - should preserve state
-  await page.getByRole("button", { name: locale === "zh-CN" ? "国际象棋" : "Chess", exact: true }).click();
-  await page.locator("[data-chess-board]").waitFor();
-  await page.screenshot({ path: join(output, `chess-${locale}-reopened.png`) });
+/** Exit is the chrome label for closing an exclusive window. */
+async function closeWindow(page, appId) {
+  const host = gameWindow(page);
+  await host.getByRole("button", { name: "Exit", exact: true }).click();
+  await host.waitFor({ state: "detached" });
+  assert.equal(await gameWindow(page).count(), 0, `${appId} window survived close`);
+}
 
-  // Test reconnect scenario
-  await page.evaluate(() => {
-    const socket = window.sourceSmoke?.sockets?.find(
-      (s) => s.url.includes("/api/arcade/web/v1") && s.readyState === 1
+/** Kill the Arcade socket and wait for the app to re-open its world. */
+async function dropArcade(page) {
+  const before = await frames(page, "open_my_web_world");
+  const dropped = await page.evaluate(() => {
+    const socket = window.lifecycle.sockets.find(
+      (item) => item.url.includes("/api/arcade/web/v1") && item.readyState === 1,
     );
-    if (socket) socket.close();
+    if (!socket) return false;
+    socket.close();
+    return true;
   });
-
-  await page.waitForTimeout(1000); // Wait for reconnect
-  await page.screenshot({ path: join(output, `chess-${locale}-reconnected.png`) });
-
-  await page.getByRole("button", { name: "Close", exact: true }).click();
-  console.log(`  ✓ Chess lifecycle (${locale})`);
+  assert.equal(dropped, true, "the Arcade socket must be open before it can be closed");
+  await waitForFrames(page, "open_my_web_world", null, before + 1, 60000);
 }
 
 /**
- * Test Codenames lifecycle
+ * Per-game entry points, all discovered from the source.
+ *
+ *   chess       dock "chess" -> setup rail -> "Start Game" -> [aria-label="Move history"]
+ *   codenames   dock "codenames" -> "Enter Forest" -> "Start Adventure" -> [data-codenames-board]
+ *   pictionary  dock "pictionary" -> cover "Play" -> "Start session" -> [aria-label="Drawing canvas"]
+ *   cakeduel    dock "cakeduel" -> "Start Duel" -> [data-cakeduel-action-panel]
  */
-async function testCodenamesLifecycle(page, locale) {
-  console.log(`  Testing Codenames (${locale})...`);
+const GAMES = [
+  {
+    id: "chess",
+    // GameCartridgeController.retain() releases and unmounts on close.
+    releasesCartridge: true,
+    root: '[data-chess-board]',
+    playing: page => page.locator('[aria-label="Move history"]'),
+    async start(page, locale) {
+      await page.getByRole("button", { name: text(locale, "chess.start.startGame"), exact: true }).click();
+    },
+    async play(page) {
+      await page.locator('[data-chess-square="e2"]').click();
+      await page.locator('[data-chess-square="e4"]').click();
+      // The player move plus the local engine's deterministic reply.
+      const history = page.locator('[aria-label="Move history"] button');
+      await history.first().waitFor();
+      await page.waitForFunction(
+        () => document.querySelectorAll('[aria-label="Move history"] button').length >= 2,
+        undefined,
+        { timeout: 30000 },
+      );
+      return `move history ${await history.count()} plies`;
+    },
+  },
+  {
+    id: "codenames",
+    releasesCartridge: true,
+    root: ".source-codenames-app",
+    playing: page => page.locator("[data-codenames-board]"),
+    async start(page, locale) {
+      await page.getByRole("button", { name: text(locale, "codenames.buttons.newMission"), exact: true }).click();
+      await page.getByRole("button", { name: text(locale, "codenames.buttons.startMission"), exact: true }).click();
+    },
+    async play(page, locale) {
+      const board = page.locator("[data-codenames-board]");
+      await board.waitFor();
+      assert.equal(await page.locator("[data-card-cell] button").count(), 25, "the board is a 5x5 grid");
+      // TEAM_A (the human side) gives the first clue of a normal game.
+      await page
+        .getByRole("combobox", { name: text(locale, "codenames.chat.selectCount"), exact: true })
+        .selectOption("2");
+      const clue = page.getByPlaceholder(text(locale, "codenames.chat.cluePlaceholder"));
+      await clue.waitFor();
+      await clue.fill("lantern");
+      await page.getByRole("button", { name: "Send guess", exact: true }).click();
+      return "clue submitted";
+    },
+  },
+  {
+    id: "pictionary",
+    releasesCartridge: true,
+    root: ".source-pictionary",
+    // The cover literals are inline in frontend-src/screens/pictionary-cover.tsx.
+    coverPlay: { "en-US": "Play", "zh-CN": "开始" },
+    coverStart: { "en-US": "Start session", "zh-CN": "开始游戏" },
+    playing: page => page.getByLabel("Drawing canvas"),
+    async start(page, locale) {
+      const play = page.getByRole("button", { name: this.coverPlay[locale], exact: true });
+      await play.waitFor();
+      await play.click();
+      await page.getByRole("button", { name: this.coverStart[locale], exact: true }).click();
+    },
+    async play(page) {
+      const canvas = page.getByLabel("Drawing canvas");
+      await canvas.waitFor();
+      const box = await canvas.boundingBox();
+      assert.ok(box && box.width > 100 && box.height > 100, "the drawing canvas needs real geometry");
+      await page.mouse.move(box.x + 30, box.y + 30);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 150, box.y + 100, { steps: 12 });
+      await page.mouse.up();
+      return "stroke submitted";
+    },
+  },
+  {
+    id: "cakeduel",
+    // CakeDuelRuntimeController has no retain/release, so closing its window
+    // never unmounts the cartridge. Reported, not asserted away.
+    releasesCartridge: false,
+    root: "[data-cakeduel-screen]",
+    playing: page => page.locator("[data-cakeduel-action-panel]"),
+    async start(page, locale) {
+      await page.getByRole("button", { name: text(locale, "cakeduel.start.startGame"), exact: true }).click();
+    },
+    async play(page, locale) {
+      const panel = page.locator("[data-cakeduel-action-panel]");
+      await panel.waitFor();
+      // A real pointer tap on a hand card; the fanned hand also reorders on drag.
+      const card = page.locator("[data-cakeduel-player-hand] [data-cakeduel-card]").first();
+      await card.waitFor();
+      await card.click();
+      const pill = page.locator("[data-cakeduel-claim-pill]:not([disabled])").first();
+      if (await pill.count()) await pill.click();
+      assert.equal(
+        await card.getAttribute("data-selected"),
+        "true",
+        `${locale}: a pointer tap on a Cake Duel hand card must select it`,
+      );
+      const action = page.locator("[data-cakeduel-action-button]:not([disabled])").first();
+      await action.waitFor();
+      assert.equal(await action.count(), 1, "exactly one Cake Duel action must be legal");
+      const label = (await action.textContent())?.trim();
+      await action.click();
+      return `played ${label}`;
+    },
+    /**
+     * This controller never releases its cartridge, so a live bout outlives the
+     * window and leaks into the next run. Put the cartridge back on its start
+     * route with the app's own `reset` command, over the real transport.
+     */
+    async teardown(page) {
+      const before = await page.evaluate(() => window.lifecycle.received.length);
+      const sent = await page.evaluate(() => {
+        const socket = window.lifecycle.sockets.find(
+          (item) => item.url.includes("/api/arcade/web/v1") && item.readyState === 1,
+        );
+        const head = window.lifecycle.received
+          .filter((frame) => frame.cartridgeId === "cakeduel" && typeof frame.version === "number")
+          .at(-1)?.version;
+        if (!socket || head === undefined) return false;
+        socket.send(
+          JSON.stringify({
+            type: "dispatch",
+            actor: "player",
+            cartridgeId: "cakeduel",
+            requestId: "lifecycle-reset",
+            expectedHeadVersion: head,
+            cmd: { type: "reset" },
+          }),
+        );
+        return true;
+      });
+      assert.equal(sent, true, "the Arcade socket must be open to reset Cake Duel");
+      await page.waitForFunction(
+        (count) => window.lifecycle.received.length > count,
+        before,
+        { timeout: 30000 },
+      );
+    },
+  },
+];
 
-  await page.locator('[data-nori-dock] [data-app-id="games"]').click();
-  await page.getByRole("button", { name: "Codenames", exact: true }).click();
+async function runLifecycle(page, game, locale) {
+  const label = `${game.id} (${locale})`;
+  const step = (what) => console.log(`    · ${label}: ${what}`);
 
-  // Wait for game to load
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: join(output, `codenames-${locale}-initial.png`) });
+  // --- start -----------------------------------------------------------------
+  const mountsBefore = await frames(page, "mount_cartridge", game.id);
+  await openFromDock(page, game.id);
+  step("window opened from the dock");
+  await page.locator(game.root).waitFor();
+  const startDispatches = await frames(page, "dispatch", game.id);
+  await game.start(page, locale);
+  await game.playing(page).waitFor();
+  if (game.releasesCartridge) await waitForFrames(page, "mount_cartridge", game.id, mountsBefore + 1);
+  await waitForFrames(page, "dispatch", game.id, startDispatches + 1);
+  step(`playing surface up (${await game.playing(page).count()} marker(s))`);
+  await page.screenshot({ path: join(output, `${game.id}-${locale}-play.png`) });
 
-  // Close and reopen
-  await page.getByRole("button", { name: "Close", exact: true }).click();
-  await page.getByRole("button", { name: "Codenames", exact: true }).click();
-  await page.screenshot({ path: join(output, `codenames-${locale}-reopened.png`) });
+  // --- play ------------------------------------------------------------------
+  const before = await frames(page, "dispatch", game.id);
+  const played = await game.play(page, locale);
+  await waitForFrames(page, "dispatch", game.id, before + 1);
+  step(`played: ${played}`);
 
-  await page.getByRole("button", { name: "Close", exact: true }).click();
-  console.log(`  ✓ Codenames lifecycle (${locale})`);
-}
-
-/**
- * Test Pictionary lifecycle
- */
-async function testPictionaryLifecycle(page, locale) {
-  console.log(`  Testing Pictionary (${locale})...`);
-
-  await page.locator('[data-nori-dock] [data-app-id="games"]').click();
-  await page.getByRole("button", { name: locale === "zh-CN" ? "你画我猜" : "Pictionary", exact: true }).click();
-
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: join(output, `pictionary-${locale}-initial.png`) });
-
-  // Close and reopen
-  await page.getByRole("button", { name: "Close", exact: true }).click();
-  await page.getByRole("button", { name: locale === "zh-CN" ? "你画我猜" : "Pictionary", exact: true }).click();
-  await page.screenshot({ path: join(output, `pictionary-${locale}-reopened.png`) });
-
-  await page.getByRole("button", { name: "Close", exact: true }).click();
-  console.log(`  ✓ Pictionary lifecycle (${locale})`);
-}
-
-/**
- * Test Cake Duel lifecycle
- */
-async function testCakeDuelLifecycle(page, locale) {
-  console.log(`  Testing Cake Duel (${locale})...`);
-
-  await page.locator('[data-nori-dock] [data-app-id="games"]').click();
-  await page.getByRole("button", { name: "Cake Duel", exact: true }).click();
-
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: join(output, `cake-duel-${locale}-initial.png`) });
-
-  // Close and reopen
-  await page.getByRole("button", { name: "Close", exact: true }).click();
-  await page.getByRole("button", { name: "Cake Duel", exact: true }).click();
-  await page.screenshot({ path: join(output, `cake-duel-${locale}-reopened.png`) });
-
-  await page.getByRole("button", { name: "Close", exact: true }).click();
-  console.log(`  ✓ Cake Duel lifecycle (${locale})`);
-}
-
-/**
- * Test all games with reduced motion
- */
-async function testReducedMotion(page) {
-  console.log("  Testing reduced motion...");
-
-  await page.emulateMedia({ reducedMotion: "reduce" });
-
-  // Test each game briefly
-  const games = ["Chess", "Codenames", "Pictionary", "Cake Duel"];
-  await page.locator('[data-nori-dock] [data-app-id="games"]').click();
-
-  for (const game of games) {
-    await page.getByRole("button", { name: game, exact: true }).click();
-    await page.waitForTimeout(300);
-    await page.screenshot({
-      path: join(output, `reduced-motion-${game.toLowerCase().replace(' ', '-')}.png`)
-    });
-    await page.getByRole("button", { name: "Close", exact: true }).click();
+  // --- close -----------------------------------------------------------------
+  const beforeClose = await frames(page, "unmount_cartridge", game.id);
+  await closeWindow(page, game.id);
+  assert.equal(await page.locator(game.root).count(), 0, `${label}: surface survived close`);
+  if (game.releasesCartridge) {
+    await waitForFrames(page, "unmount_cartridge", game.id, beforeClose + 1);
+    step("surface detached and the cartridge was released");
+  } else {
+    assert.equal(
+      await frames(page, "unmount_cartridge", game.id),
+      beforeClose,
+      `${label}: the cartridge left without being unmounted`,
+    );
+    step("surface detached (this app never unmounts its cartridge — reported, see report)");
   }
+  await page.screenshot({ path: join(output, `${game.id}-${locale}-closed.png`) });
 
-  console.log("  ✓ Reduced motion");
+  // --- reopen ----------------------------------------------------------------
+  const mountsAfterClose = await frames(page, "mount_cartridge", game.id);
+  await openFromDock(page, game.id);
+  await page.locator(game.root).waitFor();
+  if (game.releasesCartridge) {
+    await waitForFrames(page, "mount_cartridge", game.id, mountsAfterClose + 1);
+    await game.start(page, locale);
+  } else {
+    // Never unmounted, so the cartridge — and its route — were still there.
+    assert.equal(
+      await frames(page, "mount_cartridge", game.id),
+      mountsAfterClose,
+      `${label}: reopening remounted a cartridge that was never unmounted`,
+    );
+  }
+  await game.playing(page).waitFor();
+  step("reopened and the playing surface is back");
+  await page.screenshot({ path: join(output, `${game.id}-${locale}-reopened.png`) });
+
+  // --- reconnect -------------------------------------------------------------
+  await dropArcade(page);
+  assert.equal(
+    await page.locator(game.root).count(),
+    1,
+    `${label}: the world came back without its game surface`,
+  );
+  await game.playing(page).waitFor();
+  step("survived an Arcade websocket drop");
+  await page.screenshot({ path: join(output, `${game.id}-${locale}-reconnected.png`) });
+
+  await closeWindow(page, game.id);
+  step("closed cleanly");
+  if (game.teardown) {
+    await game.teardown(page);
+    step("cartridge reset for the next run (it is never unmounted)");
+  }
+}
+
+async function runReducedMotion(browser) {
+  console.log("  reduced-motion pass");
+  const context = await browser.newContext({
+    viewport: { width: 1100, height: 720 },
+    reducedMotion: "reduce",
+  });
+  try {
+    const page = await context.newPage();
+    page.setDefaultTimeout(30000);
+    await page.addInitScript(installTransportProbe);
+    await page.addInitScript((value) => localStorage.setItem("arcade-language", value), "en-US");
+    await page.goto(sourceOrigin, { waitUntil: "domcontentloaded" });
+    await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: modelReadyTimeout });
+    assert.equal(
+      await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches),
+      true,
+      "the reduced-motion pass must actually see the media query",
+    );
+    for (const game of GAMES) {
+      await openFromDock(page, game.id);
+      await page.locator(game.root).waitFor();
+      await game.start(page, "en-US");
+      await game.playing(page).waitFor();
+      console.log(`    · ${game.id}: start -> play under prefers-reduced-motion`);
+      await page.screenshot({ path: join(output, `reduced-motion-${game.id}.png`) });
+      await closeWindow(page, game.id);
+      if (game.teardown) await game.teardown(page);
+    }
+    await page.close();
+  } finally {
+    await context.close();
+  }
+}
+
+async function runLocale(browser, locale) {
+  console.log(`\n  ${locale}`);
+  const context = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  try {
+    page.setDefaultTimeout(30000);
+    await page.addInitScript(installTransportProbe);
+    // The host's navigator.language is not en-US, so pin the source's own
+    // arcade-language switch instead of relying on the browser default.
+    await page.addInitScript((value) => localStorage.setItem("arcade-language", value), locale);
+    await page.goto(sourceOrigin, { waitUntil: "domcontentloaded" });
+    await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: modelReadyTimeout });
+    assert.equal(
+      await page.evaluate(() => document.documentElement.lang),
+      locale === "en-US" ? "en" : "zh-CN",
+      `${locale}: the source app did not boot in the requested locale`,
+    );
+    for (const game of GAMES) await runLifecycle(page, game, locale);
+    assert.deepEqual(errors, [], `${locale}: the source app raised browser errors`);
+  } catch (error) {
+    await page.screenshot({ path: join(output, `failure-${locale}.png`) }).catch(() => {});
+    throw error;
+  } finally {
+    await page.close();
+    await context.close();
+  }
 }
 
 async function main() {
-  const backendPort = 47181;
-  const { backend, backendOrigin } = await startBackend(backendPort);
-  process.env.NORI_BACKEND_ORIGIN = backendOrigin;
+  const { backend } = await startBackend();
+  process.env.NORI_BACKEND_ORIGIN = `http://127.0.0.1:${backendPort}`;
 
   let browser;
+  let vite;
   try {
-    browser = await chromium.launch({
-      headless: true,
-      executablePath: process.env.NORI_TEST_CHROMIUM || undefined,
-      args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+    vite = await createServer({
+      configFile: "frontend-src/app.vite.config.ts",
+      server: { host: "127.0.0.1", port: sourcePort, strictPort: true, hmr: false },
     });
+    await vite.listen();
+    browser = await chromium.launch(probeLaunchOptions());
 
-    console.log("🎮 Testing game lifecycles...\n");
+    console.log("Game lifecycle through the source app and the local backend\n");
+    await runLocale(browser, "en-US");
+    await runLocale(browser, "zh-CN");
+    await runReducedMotion(browser);
 
-    // Test en-US locale
-    console.log("Testing en-US locale:");
-    let page = await browser.newPage({ viewport: { width: 1100, height: 720 }, locale: "en-US" });
-    page.setDefaultTimeout(20000);
-
-    // Add sourceSmoke for reconnect testing
-    await page.addInitScript(() => {
-      const Native = window.WebSocket;
-      window.sourceSmoke = { sockets: [] };
-      window.WebSocket = class extends Native {
-        constructor(...args) {
-          super(...args);
-          window.sourceSmoke.sockets.push(this);
-        }
-      };
-    });
-
-    await page.goto(backendOrigin, { waitUntil: "domcontentloaded" });
-    await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: modelReadyTimeout });
-
-    await testChessLifecycle(page, "en-US");
-    await testCodenamesLifecycle(page, "en-US");
-    await testPictionaryLifecycle(page, "en-US");
-    await testCakeDuelLifecycle(page, "en-US");
-    await page.close();
-
-    // Test zh-CN locale
-    console.log("\nTesting zh-CN locale:");
-    page = await browser.newPage({ viewport: { width: 1100, height: 720 }, locale: "zh-CN" });
-    page.setDefaultTimeout(20000);
-    await page.addInitScript(() => {
-      const Native = window.WebSocket;
-      window.sourceSmoke = { sockets: [] };
-      window.WebSocket = class extends Native {
-        constructor(...args) {
-          super(...args);
-          window.sourceSmoke.sockets.push(this);
-        }
-      };
-    });
-
-    await page.goto(backendOrigin + "/?locale=zh-CN", { waitUntil: "domcontentloaded" });
-    await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: modelReadyTimeout });
-
-    await testChessLifecycle(page, "zh-CN");
-    await testCodenamesLifecycle(page, "zh-CN");
-    await testPictionaryLifecycle(page, "zh-CN");
-    await testCakeDuelLifecycle(page, "zh-CN");
-    await page.close();
-
-    // Test reduced motion
-    console.log("\nTesting accessibility:");
-    page = await browser.newPage({ viewport: { width: 1100, height: 720 } });
-    page.setDefaultTimeout(20000);
-    await page.goto(backendOrigin, { waitUntil: "domcontentloaded" });
-    await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: modelReadyTimeout });
-    await testReducedMotion(page);
-    await page.close();
-
-    console.log(`\n✓ Game lifecycle testing complete: ${output}/`);
-    console.log("\nCoverage:");
-    console.log("  ✓ All 4 games tested");
-    console.log("  ✓ Both locales (en-US, zh-CN)");
-    console.log("  ✓ Close/reopen/reconnect scenarios");
-    console.log("  ✓ Reduced motion accessibility");
-    console.log("\nRemaining work (blocked by agent backend):");
-    console.log("  - Codenames: Original agent dialogue/voice");
-    console.log("  - Chess: Agent speech choreography");
-    console.log("  - Pictionary: Live agent snapshot inference");
-    console.log("  - Cake Duel: Agent interactions");
-
+    console.log(`\nPASS: all four games started, played, closed, reopened and reconnected in en-US and zh-CN, plus a reduced-motion pass. Artifacts in ${output}/`);
   } finally {
     await browser?.close();
+    await vite?.close();
     backend.kill();
   }
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

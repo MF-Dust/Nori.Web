@@ -6,6 +6,7 @@ import { verifyPreview, verifyChip } from "./frontend_preview_chip_probe.mjs";
 import { verifyMessenger } from "./frontend_messenger_probe.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
+import { probeLaunchOptions } from "./probe_launch.mjs";
 import { createServer } from "vite";
 import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
@@ -76,15 +77,7 @@ try {
     server: { host: "127.0.0.1", port: 47174, strictPort: true, hmr: false },
   });
   await vite.listen();
-  browser = await chromium.launch({
-    headless: true,
-    executablePath: process.env.NORI_TEST_CHROMIUM || undefined,
-    args: [
-      "--use-gl=angle",
-      "--use-angle=swiftshader",
-      "--enable-unsafe-swiftshader",
-    ],
-  });
+  browser = await chromium.launch(probeLaunchOptions());
   const page = await browser.newPage({
     viewport: { width: 1366, height: 900 },
     locale: "en-US",
@@ -151,7 +144,25 @@ try {
     ),
     "auto",
   );
-  await page.locator('[data-live2d-fps="30"]').waitFor();
+  // Auto graphics mode ships as: software renderer -> ultra-performance (30 fps),
+  // anything else -> quality (60 fps). Assert the branch the real renderer took
+  // rather than pinning the software-only value. The explicit Settings selection
+  // further down still pins 30 fps.
+  const renderer = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+    if (!gl) return "";
+    const ext = gl.getExtension("WEBGL_debug_renderer_info");
+    return String(
+      gl.getParameter(ext?.UNMASKED_RENDERER_WEBGL ?? gl.RENDERER) ?? "",
+    );
+  });
+  const software = /swiftshader|llvmpipe|software|basic render/i.test(renderer);
+  await page.locator(`[data-live2d-fps="${software ? 30 : 60}"]`).waitFor();
+  assert.ok(
+    renderer.length > 0,
+    "auto graphics mode needs a readable WebGL renderer",
+  );
   await page.evaluate(() => {
     const socket = window.sourceSmoke.sockets.find(
       (item) => item.url.includes("/api/arcade/web/v1") && item.readyState === 1,
@@ -558,10 +569,11 @@ try {
   ];
 
   // Group 2: Page-dependent probes (can run in parallel among themselves)
+  // Chip is excluded: it needs a normal scene, and mounting a story scene on the
+  // same page makes ChipController cancel, so it runs sequentially afterwards.
   const pageProbes = [
     ["Chess tutorial", () => verifyChessTutorial(page, output)],
     ["Voice and Corruption", () => verifyVoiceCorruption(page, output)],
-    ["Chip", () => verifyChip(page, output)],
   ];
 
   // Execute browser probes in parallel
@@ -613,6 +625,9 @@ try {
       throw result.reason;
     }
   }
+
+  console.log(`[Source app ${new Date().toISOString()}] Chip: start`);
+  await verifyChip(page, output);
 
   // Make the shipped Credits Dock condition true in the disposable local world.
   await page.evaluate(() => {

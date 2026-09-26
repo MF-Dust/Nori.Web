@@ -19,21 +19,25 @@ export type DebugReactionEntry =
       game: "pictionary";
       id: keyof typeof NORI_REACTIONS.pictionary;
       label: string;
+      note?: string;
     }
   | {
       game: "chess";
       id: keyof typeof NORI_REACTIONS.chess;
       label: string;
+      note?: string;
     }
   | {
       game: "codenames";
       id: keyof typeof NORI_REACTIONS.codenames;
       label: string;
+      note?: string;
     }
   | {
       game: "cakeduel";
       id: keyof typeof NORI_REACTIONS.cakeduel;
       label: string;
+      note?: string;
     };
 
 export interface DebugReactionGroup {
@@ -51,9 +55,9 @@ export const DEBUG_REACTION_GROUPS: readonly DebugReactionGroup[] = [
       { game: "pictionary", id: "playerCorrect", label: "Player guesses correctly" },
       { game: "pictionary", id: "noriCorrectFast", label: "She solves fast (<30s)" },
       { game: "pictionary", id: "noriCorrectSlow", label: "She solves a hard one (>30s)" },
-      { game: "pictionary", id: "playerWrong", label: "Player guesses wrong" },
+      { game: "pictionary", id: "playerWrong", label: "Player guesses wrong", note: "Low chance replaces the old every-5th counter." },
       { game: "pictionary", id: "noriWrong", label: "Her guess is wrong" },
-      { game: "pictionary", id: "skipNoriDrawing", label: "Player skips HER drawing" },
+      { game: "pictionary", id: "skipNoriDrawing", label: "Player skips HER drawing", note: "She put work into that." },
       { game: "pictionary", id: "skipPlayerDrawing", label: "Round skipped while player drew" },
       { game: "pictionary", id: "sessionGreat", label: "Session done — great score" },
       { game: "pictionary", id: "sessionOk", label: "Session done — decent score" },
@@ -67,13 +71,13 @@ export const DEBUG_REACTION_GROUPS: readonly DebugReactionGroup[] = [
       { game: "chess", id: "captureMinor", label: "She captures (minor piece)" },
       { game: "chess", id: "captureMajor", label: "She captures (queen/rook)" },
       { game: "chess", id: "lostMajorPiece", label: "Player captures her queen/rook" },
-      { game: "chess", id: "checked", label: "Check against her" },
+      { game: "chess", id: "checked", label: "Check against her", note: "Expression only — cheap, no motion." },
       { game: "chess", id: "givesCheck", label: "She gives check" },
       { game: "chess", id: "playerPromotes", label: "Player promotes" },
-      { game: "chess", id: "acceptsRequest", label: "Accepts takeback / draw" },
-      { game: "chess", id: "declinesRequest", label: "Declines takeback / draw" },
+      { game: "chess", id: "acceptsRequest", label: "Accepts takeback / draw", note: "Direct response to the player — always reacts." },
+      { game: "chess", id: "declinesRequest", label: "Declines takeback / draw", note: "Direct response to the player — always reacts." },
       { game: "chess", id: "wins", label: "She wins (checkmate)" },
-      { game: "chess", id: "loses", label: "She loses (checkmated)" },
+      { game: "chess", id: "loses", label: "She loses (checkmated)", note: "Sometimes takes it in silence — stoic is also a read." },
       { game: "chess", id: "draw", label: "Stalemate / draw" },
     ],
   },
@@ -84,8 +88,8 @@ export const DEBUG_REACTION_GROUPS: readonly DebugReactionGroup[] = [
       { game: "codenames", id: "guessAlly", label: "Her guess hits an ally card" },
       { game: "codenames", id: "guessStreak", label: "Her guess streak (2+)" },
       { game: "codenames", id: "guessBystander", label: "Her guess hits a bystander" },
-      { game: "codenames", id: "herClueMissed", label: "Player misses on HER clue" },
-      { game: "codenames", id: "assassin", label: "Assassin revealed" },
+      { game: "codenames", id: "herClueMissed", label: "Player misses on HER clue", note: "She feels responsible for the bad clue." },
+      { game: "codenames", id: "assassin", label: "Assassin revealed", note: "The one moment that always lands." },
       { game: "codenames", id: "win", label: "Team wins" },
       { game: "codenames", id: "loss", label: "Team loses" },
     ],
@@ -94,9 +98,9 @@ export const DEBUG_REACTION_GROUPS: readonly DebugReactionGroup[] = [
     game: "cakeduel",
     label: "Cake Duel",
     entries: [
-      { game: "cakeduel", id: "challenged", label: "Player challenges her (pre-reveal)" },
-      { game: "cakeduel", id: "bluffCaught", label: "Her bluff is caught" },
-      { game: "cakeduel", id: "vindicated", label: "She was honest, challenge fails" },
+      { game: "cakeduel", id: "challenged", label: "Player challenges her (pre-reveal)", note: "Sampled from public info only — must be uninformative about the truth." },
+      { game: "cakeduel", id: "bluffCaught", label: "Her bluff is caught", note: "Embarrassed, not angry." },
+      { game: "cakeduel", id: "vindicated", label: "She was honest, challenge fails", note: "Vindicated smug." },
       { game: "cakeduel", id: "challengeWins", label: "Her challenge succeeds" },
       { game: "cakeduel", id: "challengeFails", label: "Her challenge fails" },
       { game: "cakeduel", id: "losesCake", label: "She loses a cake" },
@@ -138,14 +142,30 @@ function variantText(variant: ReactionVariant) {
   return parts.join(" + ") || "(empty)";
 }
 
-const outcomeCopy: Record<NoriReactionOutcome, string> = {
-  played: "Played",
-  no_model: "No Live2D model mounted",
-  blocked: "Blocked by the current presentation state",
-  unknown_reaction: "Unknown reaction",
-  skipped_chance: "No reaction (lost the roll)",
-  skipped_cooldown: "Skipped by the motion cooldown",
-};
+/** Shipped `dl`: priority, roll chance and how many outs the spec can land on. */
+function specHint(spec: { priority: string; chance?: number; variants: readonly unknown[] }) {
+  return `${spec.priority} · reacts ${Math.round((spec.chance ?? 1) * 100)}% · ${spec.variants.length} outs`;
+}
+
+/** Shipped outcome line: the label is dropped only for the missing-model case. */
+function outcomeLine(
+  label: string,
+  outcome: NoriReactionOutcome,
+  variant: ReactionVariant | null,
+) {
+  switch (outcome) {
+    case "played":
+      return `${label} → ${variantText(variant as ReactionVariant)}`;
+    case "skipped_chance":
+      return `${label} → no reaction (lost the roll)`;
+    case "skipped_cooldown":
+      return `${label} → skipped (motion cooldown)`;
+    case "no_model":
+      return "No Live2D model mounted";
+    default:
+      return outcome;
+  }
+}
 
 function tellSample(count: number) {
   const lines: string[] = [];
@@ -159,10 +179,10 @@ function tellSample(count: number) {
   }
   lines.push("");
   lines.push(
-    `design bluff: confident ${CAKE_DUEL_TELL_WEIGHTS.bluff.confident} nervous ${CAKE_DUEL_TELL_WEIGHTS.bluff.nervous}`,
+    `design  bluff: confident ${CAKE_DUEL_TELL_WEIGHTS.bluff.confident} nervous ${CAKE_DUEL_TELL_WEIGHTS.bluff.nervous}`,
   );
   lines.push(
-    `       honest: confident ${CAKE_DUEL_TELL_WEIGHTS.honest.confident} nervous ${CAKE_DUEL_TELL_WEIGHTS.honest.nervous}`,
+    `        honest: confident ${CAKE_DUEL_TELL_WEIGHTS.honest.confident} nervous ${CAKE_DUEL_TELL_WEIGHTS.honest.nervous}`,
   );
   return lines.join("\n");
 }
@@ -174,6 +194,9 @@ export function DebugReactionsTab({
 }) {
   const [respectCooldown, setRespectCooldown] = useState(false);
   const [clock, setClock] = useState(0);
+  // The shipped tab reads the model off a reactive store. The source director
+  // only reports presence, so this refreshes on a tab re-render.
+  const model = frontend.reactions.hasModel();
   const [result, setResult] = useState<{
     label: string;
     outcome: NoriReactionOutcome;
@@ -224,8 +247,8 @@ export function DebugReactionsTab({
         Respect motion cooldown
       </label>
       <p>
-        Roll keeps production chance and weighted variant selection. Numbered
-        buttons force one exact variant and bypass chance/cooldown.
+        Roll = fire like the game would: no-reaction roll, then a
+        weight-sampled out. Numbered buttons force one exact out.
       </p>
       {respectCooldown && (
         <p>
@@ -234,12 +257,8 @@ export function DebugReactionsTab({
             : "Motion budget ready"}
         </p>
       )}
-      {result && (
-        <p role="status">
-          {result.label}: {outcomeCopy[result.outcome]}
-          {result.variant ? ` → ${variantText(result.variant)}` : ""}
-        </p>
-      )}
+      {result && <p role="status">{outcomeLine(result.label, result.outcome, result.variant)}</p>}
+      {!model && <p role="alert">No Live2D model mounted.</p>}
 
       {DEBUG_REACTION_GROUPS.map((group) => (
         <section key={group.game} aria-label={`${group.label} reactions`}>
@@ -249,12 +268,10 @@ export function DebugReactionsTab({
             return (
               <div key={entry.id}>
                 <div className="source-debug-lab-actions">
-                  <span>
-                    {entry.label} · {spec.priority} · reacts{" "}
-                    {Math.round((spec.chance ?? 1) * 100)}%
-                  </span>
+                  <span>{entry.label}</span>
                   <button
                     type="button"
+                    disabled={!model}
                     onClick={() =>
                       run(entry, { ignoreCooldown: !respectCooldown })
                     }
@@ -262,11 +279,13 @@ export function DebugReactionsTab({
                     Roll
                   </button>
                 </div>
+                <p className="source-debug-hint">{specHint(spec)}</p>
                 <div className="source-debug-lab-actions">
                   {spec.variants.map((variant, index) => (
                     <button
                       type="button"
                       key={index}
+                      disabled={!model}
                       onClick={() =>
                         run(entry, {
                           ignoreChance: true,
@@ -279,6 +298,7 @@ export function DebugReactionsTab({
                     </button>
                   ))}
                 </div>
+                {entry.note && <p className="source-debug-note">{entry.note}</p>}
               </div>
             );
           })}
@@ -293,6 +313,7 @@ export function DebugReactionsTab({
               type="button"
               key={mood.id}
               aria-pressed={frontend.reactions.mood() === mood.expression}
+              disabled={!model}
               onClick={() => {
                 frontend.reactions.setMood(mood.expression);
                 setClock((value) => value + 1);
@@ -303,7 +324,7 @@ export function DebugReactionsTab({
           ))}
           <button
             type="button"
-            disabled={!frontend.reactions.mood()}
+            disabled={!model || !frontend.reactions.mood()}
             onClick={() => {
               frontend.reactions.clearMood();
               setClock((value) => value + 1);
@@ -315,21 +336,30 @@ export function DebugReactionsTab({
         <p>
           {frontend.reactions.mood()
             ? `Active mood: ${frontend.reactions.mood()}`
-            : "No active mood"}
+            : "No active mood"}{" "}
+          — moods hold until cleared and layer with one-shot reactions.
         </p>
       </section>
 
       <section aria-label="Cake Duel tell">
         <h3>Cake Duel acting (tell layer)</h3>
         <p>
-          Claim tells use the shipped soft correlation: nervous weakly signals
-          bluff and confident weakly signals honest.
+          On claim, a micro-expression is sampled with a soft correlation to the
+          truth: nervous weakly signals bluff, confident weakly signals honest.
         </p>
         <div className="source-debug-lab-actions">
-          <button type="button" onClick={() => claim("bluff")}>
+          <button
+            type="button"
+            disabled={!model}
+            onClick={() => claim("bluff")}
+          >
             Claim (bluffing)
           </button>
-          <button type="button" onClick={() => claim("honest")}>
+          <button
+            type="button"
+            disabled={!model}
+            onClick={() => claim("honest")}
+          >
             Claim (honest)
           </button>
           <button type="button" onClick={() => setSample(tellSample(2000))}>

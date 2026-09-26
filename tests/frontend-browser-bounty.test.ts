@@ -87,20 +87,30 @@ test("bounty file picker keeps recovered files and marks unavailable recovery ar
     } as never,
     { submitBounty: async () => ({ ok: false }) } as never,
   );
-  assert.deepEqual(await model.bountyFiles(), [
-    {
-      id: "file-locked",
-      name: "locked.txt",
-      path: "RSRCH-COLD-VOL/locked.txt",
-      locked: true,
-    },
-    {
-      id: "file-receipt",
-      name: "receipt.pdf",
-      path: "下载/receipt.pdf",
-      locked: false,
-    },
-  ]);
+  const files = await model.bountyFiles();
+  // The shipped client orders bounty files with String#localeCompare, so assert the
+  // shipped rule instead of one machine's Han-vs-Latin collation answer.
+  assert.deepEqual(
+    files,
+    [...files].sort((left, right) => left.path.localeCompare(right.path)),
+  );
+  assert.deepEqual(
+    [...files].sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: "file-locked",
+        name: "locked.txt",
+        path: "RSRCH-COLD-VOL/locked.txt",
+        locked: true,
+      },
+      {
+        id: "file-receipt",
+        name: "receipt.pdf",
+        path: "下载/receipt.pdf",
+        locked: false,
+      },
+    ],
+  );
 });
 
 

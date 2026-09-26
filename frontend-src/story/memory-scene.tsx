@@ -59,12 +59,17 @@ export function memoryProjection(time: number) {
     sweep = phaseStart("sweep"),
     drain = phaseStart("drain"),
     voidAt = phaseStart("void");
+  const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
   return {
     attack: time >= attack,
     sweep: time >= sweep,
     drain: time >= drain && time < voidAt,
-    drainProgress: Math.max(0, Math.min(1, (time - drain) / 10)),
-    voidProgress: Math.max(0, Math.min(1, (time - voidAt) / 1.08)),
+    drainProgress: clamp01((time - drain) / 10),
+    // Shipped: Math.min(1, voidDur 2.4 * 0.45) = 1s, not the raw 1.08 product.
+    voidProgress: clamp01((time - voidAt) / 1),
+    // Shipped quakePeak 0.7 decaying to 0 over 2s (power2.out), then quiet for
+    // the rest of the attack — not a flat 0.35 held across the whole phase.
+    quake: 0.7 * (1 - clamp01((time - attack) / 2)) ** 2,
   };
 }
 
@@ -197,7 +202,7 @@ export function MemoryScene({
         audio.sync(state);
         lease.set({
           active: !projection.drain,
-          shake: projection.attack && !projection.sweep ? 0.35 : 0,
+          shake: projection.quake,
           alertLoop: projection.attack ? 1 - projection.voidProgress : 0,
           alertClock: Math.max(0, state.time - phaseStart("attack")),
           noriTint: projection.attack

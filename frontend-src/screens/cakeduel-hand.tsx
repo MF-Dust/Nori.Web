@@ -73,7 +73,12 @@ export const CakeDuelHand = memo(function CakeDuelHand({
       const pointerX = event.clientX - bounds.left;
       const targetIndex = getCakeDuelHandIndex(pointerX, cardStep, displayCards.length);
       const reordered = reorderCakeDuelCards(displayCards, draggingId, targetIndex);
-      if (!sameCakeDuelCardOrder(displayCards, reordered)) setWorkingOrder(reordered);
+      if (!sameCakeDuelCardOrder(displayCards, reordered)) {
+        // Capture only once the pointer really drags. Capturing on pointerdown
+        // retargets the following click to the wrapper, so a tap never selects.
+        event.currentTarget.setPointerCapture(event.pointerId);
+        setWorkingOrder(reordered);
+      }
     },
     [cardStep, displayCards, draggingId],
   );
@@ -83,14 +88,18 @@ export const CakeDuelHand = memo(function CakeDuelHand({
     const finalOrder = workingOrder ?? cards;
     setDraggingId(null);
     setWorkingOrder(null);
-    suppressClickUntil.current = performance.now() + CLICK_SUPPRESS_AFTER_DRAG_MS;
-    if (!sameCakeDuelCardOrder(cards, finalOrder)) onReorder?.(finalOrder);
+    // Every press starts a drag, so a stationary press used to arm the suppress
+    // window too and swallow its own selection click. Only a real reorder
+    // suppresses the click that follows it.
+    if (!sameCakeDuelCardOrder(cards, finalOrder)) {
+      suppressClickUntil.current = performance.now() + CLICK_SUPPRESS_AFTER_DRAG_MS;
+      onReorder?.(finalOrder);
+    }
   }, [cards, draggingId, onReorder, workingOrder]);
 
   const startDrag = useCallback(
-    (cardId: string, event: ReactPointerEvent<HTMLDivElement>) => {
+    (cardId: string, _event: ReactPointerEvent<HTMLDivElement>) => {
       if (!draggable || disabled) return;
-      event.currentTarget.setPointerCapture(event.pointerId);
       setDraggingId(cardId);
       setHoveredId(null);
       setWorkingOrder([...cards]);

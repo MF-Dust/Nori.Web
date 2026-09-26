@@ -62,3 +62,19 @@ and captures two local evidence frames. The browser probe was authored on 2026-0
 not be executed in the current workspace because the Playwright Chromium executable was not
 present; typecheck, production build and the focused Node tests passed. Browser evidence must
 remain pending until that executable is supplied.
+
+## Cold-open readiness is visibility-scoped
+
+Ending's 30 s cold-open readiness budget now comes from
+`frontend-src/story/story-readiness.ts` instead of a local `readyDeadline` variable, so
+Ending and Boot cannot drift apart again. Behaviour is unchanged: the budget restarts on
+`visibilitychange` and never extends while the tab is hidden. Covered by
+`tests/frontend-story-clock.test.ts`.
+
+## Browser evidence status
+
+The browser probe now runs in this workspace. On 2026-09-26 `scripts/smoke_frontend_recovery_surfaces.mjs
+farewell-ending` passed end to end — "Farewell/Ending probe passed: Finale actor/WebGL,
+ack ordering, cancellation, resource retry and wake gate" — superseding the pending
+note above. The original-line copy and voice comparison against the shipped run remains
+open; `nori_talk.request` is still a local no-op.

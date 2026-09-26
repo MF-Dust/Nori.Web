@@ -153,17 +153,23 @@ function typedLine(
 }
 
 export function dataseaMessagesAt(time: number): DataseaTextFrame | null {
+  // Shipped KX[s] = 1 + sum(gap + dots) with NO typing term: a line is fully
+  // landed at KX[s] and only the dots tail animates over [KX[s]-dots, KX[s]].
+  // Folding the type duration into the cursor drifted line 12 by +25.5s, past
+  // the end of the 44.8s messages phase. The reveal still animates the glyphs
+  // rather than just the dots, which is a known remaining divergence.
   let cursor = 1;
   for (const line of DATASEA_MESSAGES) {
     const start = cursor + line.gap;
-    const duration = Math.max(Array.from(line.text).length / DATASEA_CPS, 0.6);
-    const end = start + duration + line.dots;
+    const end = start + line.dots;
     if (time >= start && time <= end) {
-      const progress = Math.max(0, Math.min(1, (time - start) / duration));
+      const progress = Math.max(0, Math.min(1, (time - start) / line.dots));
       const chars = Array.from(line.text);
       return {
-        text: chars.slice(0, Math.min(chars.length, Math.floor(progress * chars.length) + 1)).join(""),
-        typing: time < start + duration,
+        text: chars
+          .slice(0, Math.min(chars.length, Math.floor(progress * chars.length) + 1))
+          .join(""),
+        typing: true,
         fading: false,
       };
     }
@@ -184,7 +190,12 @@ export function dataseaCgAt(time: number): DataseaTextFrame | null {
   for (const line of DATASEA_CG_LINES) {
     if (time >= line.t0 && time <= line.t1) {
       const chars = Array.from(line.text);
-      const duration = Math.max(0.3, line.t1 - line.t0 - 0.3);
+      // Shipped: Math.min(chars.length / cps, t1 - t0 - 0.3). Using max() instead
+      // stretched the first and last lines to 2.1s and 2.5s of typing.
+      const duration = Math.min(
+        chars.length / DATASEA_CPS,
+        line.t1 - line.t0 - 0.3,
+      );
       const progress = Math.max(0, Math.min(1, (time - line.t0) / duration));
       return {
         text: chars.slice(0, Math.min(chars.length, Math.floor(progress * chars.length) + 1)).join(""),

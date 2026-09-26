@@ -6,6 +6,7 @@ import { StoryAudio } from "./story-audio";
 import { useStoryFocus } from "./use-story-focus";
 import type { StoryInstance } from "./story-director";
 import { BOOT_AUDIO, BOOT_PHASES, bootScene } from "./boot-timeline";
+import { visibleReadinessDeadline } from "./story-readiness";
 import {
   ShatterRenderer,
   createFractureGraph,
@@ -50,12 +51,7 @@ export function BootScene({
       stopped = false,
       ready = false,
       resetFrames = 0;
-    const loadTimeout = setTimeout(() => {
-      if (ready || stopped) return;
-      stop();
-      setFailed(true);
-      setLoading(false);
-    }, 60000);
+    const loadDeadline = visibleReadinessDeadline(60000);
     const params = shatterDefaults({});
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -69,7 +65,6 @@ export function BootScene({
       if (stopped) return;
       stopped = true;
       cancelAnimationFrame(frame);
-      clearTimeout(loadTimeout);
       audio.dispose();
       clock.dispose();
       renderer?.dispose();
@@ -84,6 +79,7 @@ export function BootScene({
       if (stopped) return;
       if (document.hidden || !ready) clock.suspend(performance.now());
       else clock.resume(performance.now());
+      loadDeadline.refresh();
       audio.sync(clock.snapshot());
     };
     document.addEventListener("visibilitychange", visibility);
@@ -116,6 +112,12 @@ export function BootScene({
           lease.set(bootScene(clock.snapshot()));
         }
         const stage = document.querySelector<HTMLElement>(".nori-stage");
+        if (!ready && loadDeadline.expired(now)) {
+          stop();
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
         if (
           stage?.dataset.live2dStatus === "error" ||
           stage?.dataset.coldOpen === "error" ||
@@ -124,7 +126,6 @@ export function BootScene({
           throw new Error("Cold-open resources unavailable");
         if (!ready && stage?.dataset.coldOpen === "ready") {
           ready = true;
-          clearTimeout(loadTimeout);
           setLoading(false);
           if (!document.hidden) clock.resume(now);
         }

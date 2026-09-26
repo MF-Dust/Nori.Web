@@ -5,6 +5,7 @@ import { StoryAudio } from "./story-audio";
 import { StoryClock } from "./story-clock";
 import type { StoryInstance } from "./story-director";
 import { ENDING_AUDIO, ENDING_PHASES, endingFrame } from "./ending-timeline";
+import { visibleReadinessDeadline } from "./story-readiness";
 
 export function EndingScene({
   frontend,
@@ -27,7 +28,8 @@ export function EndingScene({
     clockRef.current = clock;
     let stopped = false,
       waking = false;
-    let readyDeadline = performance.now() + 30000;
+    // Hidden tabs do not consume the visible cold-open readiness window.
+    const readyDeadline = visibleReadinessDeadline(30000);
     const stop = () => {
       stopped = true;
       cancelAnimationFrame(frameRef.current);
@@ -43,11 +45,8 @@ export function EndingScene({
     });
     const visibility = () => {
       if (document.hidden) clock.suspend(performance.now());
-      else {
-        clock.resume(performance.now());
-        // Hidden tabs do not consume the visible cold-open readiness window.
-        readyDeadline = performance.now() + 30000;
-      }
+      else clock.resume(performance.now());
+      readyDeadline.refresh();
       audio.sync(clock.snapshot());
     };
     document.addEventListener("visibilitychange", visibility);
@@ -70,7 +69,7 @@ export function EndingScene({
           return;
         }
         if (stage?.dataset.coldOpen !== "ready") {
-          if (now >= readyDeadline) {
+          if (readyDeadline.expired(now)) {
             console.error("[EndingScene] cold-open readiness timed out");
             stop();
             setFailed(true);

@@ -31,11 +31,17 @@ async function main() {
     ),
     `shipped Messenger avatar hover/focus contract changed in ${messenger.file}`,
   );
+  // The rule is scoped to the shipped-surface wrapper so it cannot leak into other trees.
+  const hoverRule = source.match(
+    /([^{}]*button\.rounded-full:has\(> img\.rounded-full\):hover\s*\{\s*opacity:\s*0\.9;?\s*\})/,
+  );
   assert(
-    source.includes(
-      'button.rounded-full:has(> img.rounded-full):hover {\n  opacity: 0.9;\n}',
-    ),
+    hoverRule,
     "source Messenger wrapper does not restore avatar hover opacity 0.9",
+  );
+  assert(
+    /\[data-messenger-shipped-surfaces\]/.test(hoverRule[1]),
+    "shipped Messenger avatar hover rule must stay scoped to the shipped-surface wrapper",
   );
   assert(
     source.includes('button.rounded-full:has(> img.rounded-full):focus-visible'),

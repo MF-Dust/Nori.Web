@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { preview } from "vite";
 import { chromium } from "playwright";
+import { probeLaunchOptions } from "./probe_launch.mjs";
 
 // Exercise emitted files through a static server, without Vite source transforms.
 const output = resolve("frontend-candidate-smoke");
@@ -27,7 +28,7 @@ try {
   server = await preview({ configFile: false, root: process.cwd(), build: { outDir: resolve(".frontend-app-build/cutover-candidate") }, preview: {
     host: "127.0.0.1", port: 47178, strictPort: true, proxy: { "/api": { target: backendOrigin, ws: true } },
   } });
-  browser = await chromium.launch({ headless: true, executablePath: process.env.NORI_TEST_CHROMIUM || undefined, args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+  browser = await chromium.launch(probeLaunchOptions());
   const page = await browser.newPage({ viewport: { width: 1366, height: 900 }, locale: "en-US" });
   page.setDefaultTimeout(30000);
   const errors = [], legacyRequests = [], failedAssets = [];

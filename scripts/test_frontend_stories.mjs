@@ -9,6 +9,7 @@ try {
   for (const entry of [
     "frontend-production-stories",
     "frontend-memory-datasea",
+    "frontend-story-clock",
     "farewell-ending",
   ]) {
     const outfile = join(directory, entry + ".test.mjs");

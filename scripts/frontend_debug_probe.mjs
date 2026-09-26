@@ -231,12 +231,27 @@ export async function verifyDebugLabs(browser, output, baseUrl) {
     assert.equal(await page.getByLabel("Pat Required pat time").inputValue(), "500");
 
     await page.getByRole("button", { name: "Reactions", exact: true }).click();
+    // Shipped shape: the entry label heads the row, the Roll button is a
+    // sibling, and every control is disabled while no model is mounted, so the
+    // no-model path is asserted through the notice rather than a click.
+    const pictionary = page.getByRole("region", { name: "Pictionary reactions" });
+    await page.getByText("No Live2D model mounted.", { exact: true }).waitFor();
+    // The shipped hint carries the out count, and every noted reaction keeps its
+    // shipped annotation.
+    await pictionary.getByText(/minor · reacts 60% · 3 outs/).first().waitFor();
     await page
-      .getByRole("button", { name: "Player guesses correctly", exact: true })
-      .click();
-    await page
-      .getByText("Player guesses correctly: No Live2D model mounted", { exact: true })
+      .getByText("Low chance replaces the old every-5th counter.", { exact: true })
       .waitFor();
+    assert.equal(
+      await pictionary.getByRole("button", { name: "Roll", exact: true }).first().isDisabled(),
+      true,
+      "shipped reactions tab disables its controls without a mounted model",
+    );
+    assert.equal(
+      await page.getByRole("region", { name: "Phase moods" }).getByRole("button", { name: "Clear mood" }).isDisabled(),
+      true,
+      "shipped reactions tab disables phase moods without a mounted model",
+    );
 
     await page.getByRole("button", { name: "Inject Talk", exact: true }).click();
     await page

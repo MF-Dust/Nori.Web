@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { probeLaunchOptions } from "./probe_launch.mjs";
 import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import { resolve, join } from "node:path";
@@ -139,11 +140,7 @@ async function main() {
 
   let browser;
   try {
-    browser = await chromium.launch({
-      headless: true,
-      executablePath: process.env.NORI_TEST_CHROMIUM || undefined,
-      args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
-    });
+    browser = await chromium.launch(probeLaunchOptions());
 
     const page = await browser.newPage({ viewport: { width: 1366, height: 900 } });
     page.setDefaultTimeout(20000);
