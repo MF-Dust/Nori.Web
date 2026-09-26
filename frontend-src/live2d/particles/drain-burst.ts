@@ -4,11 +4,11 @@
  * shader (`position + aVelocity * age` plus the wobble). `integrate` repeats
  * that formula on the CPU so a step can be checked without WebGL.
  *
- * The shader strings keep the shipped template's CRLF so they are substrings
+ * The shader strings keep the shipped template's LF so they are substrings
  * of index-CyHAbkO5.js.
  */
 
-const shippedGlsl = (lines: readonly string[]) => lines.join("\r\n");
+const shippedGlsl = (lines: readonly string[]) => lines.join("\n");
 
 export const DRAIN_BURST_VERTEX_GLSL = shippedGlsl([
   "",
