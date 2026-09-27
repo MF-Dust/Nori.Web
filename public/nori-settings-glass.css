@@ -1,9 +1,42 @@
 /*
- * Compatibility settings panels are injected beside the historical Settings
- * content. Keep them transparent so the parent Nori window glass remains
- * visible instead of covering it with the opaque --background token.
+ * Compatibility settings panels are injected beside the native Settings
+ * content. Keep the page fill transparent so the Nori window glass shows
+ * through. Typography, controls, and spacing live with the panel styles and
+ * match the sound / graphics / network / system sections.
  */
 html.theme-nori .nori-ai-settings-panel,
-html.theme-nori .nori-tts-panel {
+html.theme-nori .nori-tts-panel,
+html.theme-nori .nori-ui-settings-panel {
   background: transparent;
+  color: var(--foreground);
+  min-width: 0;
+  min-height: 0;
+}
+
+html.theme-nori .settings-nav-pane nav > .nori-ai-tab,
+html.theme-nori .settings-nav-pane nav > .nori-tts-tab,
+html.theme-nori .settings-nav-pane nav > .nori-ui-tab {
+  width: auto;
+  text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+html.theme-nori .nori-ai-tab.nori-ai-tab-active,
+html.theme-nori .nori-tts-tab.active,
+html.theme-nori .nori-ui-tab.nori-ui-tab-active {
+  background: color-mix(in oklab, var(--primary) 10%, transparent) !important;
+  color: var(--primary) !important;
+  font-weight: 500 !important;
+}
+
+/* Native section buttons stay highlighted from React state. Clear that
+   highlight while a compatibility panel is the visible section. */
+html.theme-nori .settings-root:has(.nori-ai-tab-active, .nori-tts-tab.active, .nori-ui-tab-active)
+  .settings-nav-pane nav > button:not(.nori-ai-tab):not(.nori-tts-tab):not(.nori-ui-tab) {
+  background: transparent !important;
+  color: var(--muted-foreground) !important;
+  font-weight: 400 !important;
 }

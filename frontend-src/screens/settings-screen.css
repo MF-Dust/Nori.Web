@@ -106,20 +106,26 @@
   .settings-root {
     flex-direction: column;
   }
-  .settings-root > nav {
+  .settings-root > .settings-nav-pane {
     width: 100%;
-    flex-direction: row;
-    overflow-x: auto;
     border-right: 0;
     border-bottom: 1px solid var(--border);
   }
-  .settings-root > nav button {
+  .settings-root > .settings-nav-pane nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .settings-root > .settings-nav-pane nav button {
     flex: 1 0 auto;
     justify-content: center;
     white-space: nowrap;
   }
-  .settings-root > [role="region"] {
+  .settings-root > [role="region"],
+  .settings-root > .nori-ai-settings-panel,
+  .settings-root > .nori-tts-panel,
+  .settings-root > .nori-ui-settings-panel {
     min-height: 0;
+    width: 100%;
   }
 }
 @media (prefers-reduced-motion: reduce) {

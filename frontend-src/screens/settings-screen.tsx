@@ -462,33 +462,36 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
       });
   }
   return (
-    <div className="settings-root relative flex h-full">
-      <nav
-        className="flex w-44 shrink-0 flex-col gap-0.5 border-r bg-muted/30 p-2"
-        aria-label={t("apps.settings")}
-      >
-        {sections.map((section) => {
-          const Icon = icons[section];
-          return (
-            <button
-              type="button"
-              key={section}
-              aria-current={selected === section ? "location" : undefined}
-              onClick={() => navigate(section)}
-              className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors ${selected === section ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-            >
-              <Icon aria-hidden="true" className="size-4" />
-              {t(`settings.sections.${section}`)}
-            </button>
-          );
-        })}
-      </nav>
+    // Compatibility AI / TTS / Interface panels locate this shell by walking
+    // from the settings nav to its parent sidebar and then to this flex row.
+    // Keep that nesting: flattening the nav onto the root mounts those panels
+    // outside the window and leaves the sections blank.
+    <div className="settings-root relative flex h-full min-h-0">
+      <div className="settings-nav-pane flex w-44 shrink-0 flex-col border-r bg-muted/30 p-2">
+        <nav className="flex flex-col gap-0.5" aria-label={t("apps.settings")}>
+          {sections.map((section) => {
+            const Icon = icons[section];
+            return (
+              <button
+                type="button"
+                key={section}
+                aria-current={selected === section ? "location" : undefined}
+                onClick={() => navigate(section)}
+                className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors ${selected === section ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+              >
+                <Icon aria-hidden="true" className="size-4" />
+                {t(`settings.sections.${section}`)}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
       <div
         ref={scroll}
         role="region"
         aria-label={t("apps.settings")}
         tabIndex={0}
-        className="min-w-0 flex-1 overflow-y-auto"
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto scroll-smooth"
       >
         <div className="mx-auto max-w-md space-y-8 p-5">
           {sections.map((section, index) => (

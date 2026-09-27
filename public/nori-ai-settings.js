@@ -308,33 +308,37 @@
     const style = document.createElement("style");
     style.id = "nori-ai-settings-style";
     style.textContent = `
-      .nori-ai-settings-panel{flex:1;min-width:0;overflow:auto;padding:24px 28px;background:var(--background,transparent);color:inherit}
-      .nori-ai-settings-wrap{max-width:820px;margin:0 auto 36px}
-      .nori-ai-settings-head{margin-bottom:22px}
-      .nori-ai-settings-title{font-size:20px;font-weight:650;letter-spacing:-.01em;margin:0 0 5px}
-      .nori-ai-settings-subtitle{font-size:13px;opacity:.62;margin:0}
-      .nori-ai-card{border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:12px;padding:18px;background:color-mix(in srgb,currentColor 3%,transparent);margin-bottom:14px}
-      .nori-ai-row{display:grid;grid-template-columns:minmax(145px,190px) minmax(0,1fr);align-items:start;gap:14px;margin-bottom:15px}
+      .nori-ai-settings-panel{flex:1;min-width:0;min-height:0;overflow:auto;padding:1.25rem;background:transparent;color:inherit;font:inherit}
+      .nori-ai-settings-wrap{max-width:28rem;margin:0 auto 2rem}
+      .nori-ai-settings-head{margin:0 0 1.5rem;padding:0 0 1.5rem;border-bottom:1px solid var(--border)}
+      .nori-ai-settings-title{font-size:.875rem;line-height:1.25rem;font-weight:500;letter-spacing:0;margin:0}
+      .nori-ai-settings-subtitle{font-size:.75rem;line-height:1rem;color:var(--muted-foreground);opacity:1;margin:0}
+      .nori-ai-card{border:0;border-radius:0;padding:0;background:transparent;margin:0}
+      .nori-ai-row{display:flex;flex-direction:column;align-items:stretch;gap:.5rem;margin-bottom:1rem}
       .nori-ai-row:last-child{margin-bottom:0}
-      .nori-ai-label{font-size:13px;font-weight:600;padding-top:8px}
-      .nori-ai-hint{display:block;font-size:11px;line-height:1.5;opacity:.55;font-weight:400;margin-top:4px}
-      .nori-ai-input,.nori-ai-select,.nori-ai-textarea{box-sizing:border-box;width:100%;border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:8px;background:color-mix(in srgb,currentColor 5%,transparent);color:inherit;padding:8px 10px;font:inherit;font-size:13px;outline:none}
-      .nori-ai-input:focus,.nori-ai-select:focus,.nori-ai-textarea:focus{border-color:color-mix(in srgb,#65d9e8 75%,currentColor);box-shadow:0 0 0 2px color-mix(in srgb,#65d9e8 18%,transparent)}
-      .nori-ai-textarea{min-height:116px;resize:vertical;line-height:1.55}
-      .nori-ai-checkbox-line{display:flex;align-items:center;gap:9px;min-height:34px;font-size:13px}
-      .nori-ai-checkbox-line input{width:16px;height:16px;accent-color:#65d9e8}
-      .nori-ai-secret-wrap{display:flex;gap:8px}
-      .nori-ai-secret-wrap .nori-ai-input{flex:1}
-      .nori-ai-small-button,.nori-ai-button{border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:8px;background:color-mix(in srgb,currentColor 7%,transparent);color:inherit;padding:7px 12px;font:inherit;font-size:12px;cursor:pointer}
-      .nori-ai-button.primary{background:color-mix(in srgb,#65d9e8 22%,transparent);border-color:color-mix(in srgb,#65d9e8 48%,transparent)}
-      .nori-ai-button:hover,.nori-ai-small-button:hover{background:color-mix(in srgb,currentColor 11%,transparent)}
-      .nori-ai-warning{font-size:11px;line-height:1.55;color:#e7b65d;margin-top:7px}
-      .nori-ai-actions{display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}
-      .nori-ai-status{font-size:12px;opacity:0;transition:opacity .2s}
-      .nori-ai-status.visible{opacity:.7}.nori-ai-status.error{color:#ef7777;opacity:1}
-      .nori-ai-tab{width:100%;border:0;background:transparent;color:inherit;cursor:pointer}
-      .nori-ai-tab.nori-ai-tab-active{background:color-mix(in srgb,#65d9e8 12%,transparent)!important;color:#65d9e8!important;font-weight:600}
-      @media(max-width:720px){.nori-ai-settings-panel{padding:18px}.nori-ai-row{grid-template-columns:1fr;gap:6px}.nori-ai-label{padding-top:0}}
+      .nori-ai-row:has(input[type="checkbox"]){flex-direction:row;align-items:center;justify-content:space-between;gap:1rem}
+      .nori-ai-label{font-size:.875rem;line-height:1.25rem;font-weight:400;padding-top:0;min-width:0}
+      .nori-ai-hint{display:block;font-size:.75rem;line-height:1rem;color:var(--muted-foreground);opacity:1;font-weight:400;margin-top:.125rem}
+      .nori-ai-input,.nori-ai-select,.nori-ai-textarea{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:6px;background:var(--background);color:var(--foreground);padding:6px 10px;font:inherit;font-size:14px}
+      .nori-ai-textarea{min-height:6rem;resize:vertical;line-height:1.5}
+      .nori-ai-checkbox-line{position:relative;display:inline-flex;flex:0 0 auto;width:32px;height:18px}
+      .nori-ai-checkbox-line input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer}
+      .nori-ai-checkbox-line span{display:block;width:32px;height:18px;border-radius:20px;background:var(--input);font-size:0;color:transparent;overflow:hidden;position:relative}
+      .nori-ai-checkbox-line span::before{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--background);box-shadow:0 1px 2px #0003;transition:transform .15s}
+      .nori-ai-checkbox-line input:checked+span{background:var(--primary)}
+      .nori-ai-checkbox-line input:checked+span::before{transform:translateX(14px)}
+      .nori-ai-secret-wrap{display:flex;gap:.5rem;align-items:center}
+      .nori-ai-secret-wrap .nori-ai-input{flex:1;min-width:0}
+      .nori-ai-small-button,.nori-ai-button{border:1px solid var(--border);border-radius:6px;background:var(--background);color:var(--foreground);padding:6px 10px;font:inherit;font-size:12px;cursor:pointer}
+      .nori-ai-button.primary{background:var(--background);border-color:var(--border)}
+      .nori-ai-button:hover,.nori-ai-small-button:hover{background:var(--muted)}
+      .nori-ai-actions{display:flex;align-items:center;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap}
+      .nori-ai-status{font-size:.75rem;line-height:1rem;color:var(--muted-foreground);opacity:0}
+      .nori-ai-status.visible{opacity:1}
+      .nori-ai-status.error{color:var(--destructive);opacity:1}
+      .nori-ai-tab{width:auto;border:0;background:transparent;color:var(--muted-foreground);cursor:pointer;font-size:.875rem;line-height:1.25rem;font-weight:400;text-align:left}
+      .nori-ai-tab:hover:not(.nori-ai-tab-active){background:var(--muted);color:var(--foreground)}
+      .nori-ai-tab.nori-ai-tab-active{background:color-mix(in oklab,var(--primary) 10%,transparent)!important;color:var(--primary)!important;font-weight:500!important}
     `;
     document.head.appendChild(style);
   }
@@ -429,14 +433,7 @@
     secretWrap.append(apiKey, reveal);
     card.append(row(t.apiKey, secretWrap));
 
-    const remember = checkbox("rememberApiKey", t.rememberKey);
-    const rememberBox = document.createElement("div");
-    rememberBox.append(remember);
-    const warning = document.createElement("div");
-    warning.className = "nori-ai-warning";
-    warning.textContent = t.keyWarning;
-    rememberBox.append(warning);
-    card.append(row(t.rememberKey, rememberBox));
+    card.append(row(t.rememberKey, checkbox("rememberApiKey", t.rememberKey), t.keyWarning));
 
     const systemPrompt = field("textarea", "systemPrompt");
     systemPrompt.spellcheck = false;
@@ -568,14 +565,12 @@
     nav[INSTALLED] = true;
 
     const t = labels();
-    const originalButtons = [...nav.querySelectorAll("button")];
     const aiButton = document.createElement("button");
     aiButton.type = "button";
     aiButton.className =
-      originalButtons[0]?.className ||
-      "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground";
-    aiButton.classList.add("nori-ai-tab");
+      "nori-ai-tab flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground";
     const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
     icon.textContent = "✦";
     icon.style.width = "1rem";
     icon.style.textAlign = "center";
