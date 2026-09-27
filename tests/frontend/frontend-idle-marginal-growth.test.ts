@@ -5,6 +5,7 @@ import {
   getIdleMarginalGrowthSteps,
 } from "../../frontend-src/apps/idle-economy";
 import { DEFAULT_IDLE_GENERATORS } from "../../frontend-src/apps/idle-default-data";
+import { availableIdleMementoIndex } from "../../frontend-src/apps/idle-faction-progression";
 import { createSourceIdleRuntimeEngine } from "../../frontend-src/state/idle-runtime-engine";
 import type { IdleGeneratorDefinition } from "../../frontend-src/apps/idle";
 
@@ -34,6 +35,31 @@ function stepsAtEach(count: number): number {
  * The shipped generator table is the only growth input; a drifted weight would
  * silently move every pinned number below.
  */
+test("the archived manifold world unlocks a purchasable memento after choosing equilibrium", () => {
+  const facts = new Set(["compute.initialized", "arg.manifold_unlocked", "arg.memory.shown", "idle.manifold_complete"]);
+  const runtime = createSourceIdleRuntimeEngine({ getFacts: () => facts });
+  try {
+    runtime.buyProof("equilibrium");
+    const state = runtime.snapshot().state;
+    assert.equal(state.affiliatedFaction, "liuxing");
+    assert.equal(state.everAlliedFactions.liuxing, true);
+    assert.equal(availableIdleMementoIndex(state, Date.now()), 0);
+    runtime.claimMemento();
+    assert.equal(runtime.snapshot().state.upgrades.memento_paper_sailboat, true);
+  } finally {
+    runtime.dispose();
+  }
+
+  const ordinary = createSourceIdleRuntimeEngine();
+  try {
+    ordinary.debug.grant(25_000);
+    ordinary.buyProof("accelerate");
+    assert.equal(ordinary.snapshot().state.affiliatedFaction, null);
+  } finally {
+    ordinary.dispose();
+  }
+});
+
 test("unaffordable generator quotes retain the shipped display price", () => {
   const runtime = createSourceIdleRuntimeEngine();
   try {

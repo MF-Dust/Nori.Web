@@ -16,6 +16,7 @@ else:
 
 from ..cartridges.base import BaseCartridge, CommandRejected
 from ..cartridges.chat import ChatCartridge
+from ..cartridges.manifold import ManifoldWebCartridge
 from ..cartridges.registry import CARTRIDGE_REGISTRY
 from ..core.media import fallback_speech_frames
 from ..core.protocol import (
@@ -35,11 +36,14 @@ Json = Any
 class WorldSession:
     """Manages one Arcade world instance, its active cartridges and connected clients."""
 
-    def __init__(self, owner_id: str, locale: Optional[str] = None) -> None:
+    def __init__(self, owner_id: str, locale: Optional[str] = None, *, full_unlock: bool = True) -> None:
         self.owner_id = owner_id
+        self.full_unlock = full_unlock
         self.world_id = str(uuid.uuid4())
         self.locale = locale or "en"
         self.cartridges: Dict[str, BaseCartridge] = CARTRIDGE_REGISTRY.get_default_cartridges()
+        if not full_unlock:
+            self.cartridges["manifold.web"] = ManifoldWebCartridge(full_unlock=False)
         self.clients: Set[WebSocket] = set()
         self.media_clients: Set[WebSocket] = set()
         self.media_grants: Set[str] = set()
@@ -328,6 +332,19 @@ class WorldSession:
         if message_type == "open_my_web_world":
             if isinstance(message.get("locale"), str):
                 self.locale = message["locale"]
+            requested_full_unlock = message.get("fullUnlock") is not False
+            manifold = self.cartridges.get("manifold.web")
+            if manifold is not None and requested_full_unlock != self.full_unlock:
+                self.full_unlock = requested_full_unlock
+                manifold = ManifoldWebCartridge(full_unlock=self.full_unlock)
+                self.cartridges["manifold.web"] = manifold
+            if not requested_full_unlock and manifold is not None and isinstance(message.get("localProgress"), dict):
+                progress = message["localProgress"]
+                state = manifold.state
+                if isinstance(progress.get("facts"), dict):
+                    state["facts"] = progress["facts"]
+                if isinstance(progress.get("variables"), dict):
+                    state["variables"] = progress["variables"]
             grant = self.issue_media_grant()
             await self.send_direct(
                 websocket,

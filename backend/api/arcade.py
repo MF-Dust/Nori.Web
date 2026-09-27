@@ -64,7 +64,9 @@ async def arcade_websocket(websocket: WebSocket) -> None:
                 continue
             if message.get("type") == "reset_my_web_world":
                 new_world = await manager.reset_world(
-                    user_id, message.get("locale") if isinstance(message.get("locale"), str) else None
+                    user_id,
+                    message.get("locale") if isinstance(message.get("locale"), str) else None,
+                    full_unlock=message.get("fullUnlock") is not False,
                 )
                 await world.remove_client(websocket)
                 world = new_world

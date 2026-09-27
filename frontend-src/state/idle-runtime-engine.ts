@@ -1066,10 +1066,17 @@ export function createSourceIdleRuntimeEngine(
       } else if (state.compute < alignment.cost) {
         return;
       }
+      const matchingFactions = factions.filter((faction) => FACTION_ALIGNMENT[faction.id] === alignment.id);
+      const onlyFaction = matchingFactions.length === 1 ? matchingFactions[0] : null;
+      const autoFaction = state.affiliatedFaction === null && onlyFaction &&
+        !upgrades.some((upgrade) => upgrade.factionId === onlyFaction.id && upgrade.factionTier === 1 && isIdleFactionRelationUpgrade(upgrade))
+        ? onlyFaction.id : null;
       state = {
         ...state,
         compute: finiteCompute(state.compute - (alignment.unlockFact ? 0 : alignment.cost)),
         currentAlignment: alignment.id,
+        affiliatedFaction: autoFaction ?? state.affiliatedFaction,
+        everAlliedFactions: autoFaction ? { ...state.everAlliedFactions, [autoFaction]: true } : state.everAlliedFactions,
         anyActionThisEra: true,
       };
       publish();

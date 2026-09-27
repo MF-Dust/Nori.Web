@@ -260,8 +260,12 @@ export class ArcadeClient {
     this.socket.send(JSON.stringify(message));
   }
 
-  openMyWorld(locale = this.options.locale): void {
-    this.send({ type: "open_my_web_world", locale });
+  openMyWorld(
+    locale = this.options.locale,
+    fullUnlock = true,
+    localProgress?: { facts?: JsonValue; variables?: JsonValue },
+  ): void {
+    this.send({ type: "open_my_web_world", locale, fullUnlock, localProgress });
   }
 
   sendEvent(

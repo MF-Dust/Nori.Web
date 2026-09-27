@@ -29,6 +29,7 @@ import {
   type SettingsRuntime,
 } from "./screens/settings-screen";
 import { SystemService } from "./services/system";
+import { useUnlockSettings } from "./state/unlock-store";
 import {
   createTerminalLocalFileSystem,
   connectTerminalRemote,
@@ -211,7 +212,7 @@ function createSourceSession() {
     speechControl: <SpeechModeControl frontend={frontend} locale={locale} />,
     translate: sourceTranslate,
     onReset: async () => {
-      await system.resetWorld(locale);
+      await system.resetWorld(locale, useUnlockSettings.getState().fullUnlock);
       // Stop autosave before deleting progress so the old run cannot reappear.
       idle.dispose();
       try {

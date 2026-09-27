@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAudioSettings } from "../state/audio-store";
 import { isGraphicsMode, useGraphicsSettings } from "../state/graphics-store";
+import { useUnlockSettings } from "../state/unlock-store";
 import type { ArcadeClient } from "../runtime/arcade-client";
 import type { SystemService } from "../services/system";
 import type { createSourceTranslate } from "../i18n/translate";
@@ -398,6 +399,29 @@ function ResetDialog({
   );
 }
 
+function UnlockSettings({ t }: { t: Translate }) {
+  const fullUnlock = useUnlockSettings((state) => state.fullUnlock);
+  const setFullUnlock = useUnlockSettings((state) => state.setFullUnlock);
+  return (
+    <div className="flex items-center justify-between gap-4 py-2">
+      <div className="min-w-0">
+        <div className="text-sm">{t("settings.system.fullUnlock.title")}</div>
+        <div className="text-xs text-muted-foreground">
+          {t("settings.system.fullUnlock.description")}
+        </div>
+      </div>
+      <Toggle
+        checked={fullUnlock}
+        label={t("settings.system.fullUnlock.title")}
+        onChange={() => {
+          setFullUnlock(!fullUnlock);
+          window.location.reload();
+        }}
+      />
+    </div>
+  );
+}
+
 export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
   const t = runtime.translate;
   const [selected, setSelected] = useState<Section>("sound");
@@ -485,6 +509,7 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
                   <NetworkSettings runtime={runtime} />
                 ) : (
                   <div className="space-y-3">
+                    <UnlockSettings t={t} />
                     <div>
                       <h3 className="text-sm font-medium">
                         {t("settings.system.title")}

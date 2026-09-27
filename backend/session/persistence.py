@@ -51,6 +51,7 @@ def _world_snapshot_view(world: WorldSession) -> Dict[str, Json]:
         "ownerId": world.owner_id,
         "worldId": world.world_id,
         "locale": world.locale,
+        "fullUnlock": world.full_unlock,
         "mediaGrants": sorted(
             grant for grant in world.media_grants if isinstance(grant, str)
         ),
@@ -92,7 +93,11 @@ def world_from_snapshot(payload: Any) -> WorldSession | None:
     ):
         return None
 
-    world = WorldSession(owner_id, locale if isinstance(locale, str) else None)
+    world = WorldSession(
+        owner_id,
+        locale if isinstance(locale, str) else None,
+        full_unlock=payload.get("fullUnlock") is not False,
+    )
     restored = {}
     for cartridge_id, saved in saved_cartridges.items():
         if not isinstance(cartridge_id, str) or not isinstance(saved, dict):
@@ -123,6 +128,7 @@ def world_from_snapshot(payload: Any) -> WorldSession | None:
         return None
 
     world.world_id = world_id
+    world.full_unlock = payload.get("fullUnlock") is not False
     world.cartridges = restored
 
     grants = payload.get("mediaGrants")

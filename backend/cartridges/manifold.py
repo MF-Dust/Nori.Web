@@ -177,9 +177,9 @@ def _sha_row(seed: str) -> str:
 
 
 class ManifoldWebCartridge(BaseCartridge):
-    def __init__(self, initial_facts: Optional[Dict[str, bool]] = None) -> None:
-        pack_facts = live_pack.facts()
-        pack_vars = live_pack.variables()
+    def __init__(self, initial_facts: Optional[Dict[str, bool]] = None, *, full_unlock: bool = True) -> None:
+        pack_facts = live_pack.facts() if full_unlock else {}
+        pack_vars = live_pack.variables() if full_unlock else {}
         if pack_facts:
             # Faithful replay: production fact records (id/emittedAt/actor/source)
             # win over the dev defaults; dev-unlock flags stay True when the
@@ -189,7 +189,7 @@ class ManifoldWebCartridge(BaseCartridge):
                 **pack_facts,
             }
         else:
-            facts = copy.deepcopy(DEFAULT_UNLOCKED_FACTS)
+            facts = copy.deepcopy(DEFAULT_UNLOCKED_FACTS) if full_unlock else {}
         if initial_facts:
             facts.update(initial_facts)
         variables = pack_vars if pack_vars else {}

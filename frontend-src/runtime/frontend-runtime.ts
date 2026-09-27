@@ -22,6 +22,7 @@ import { DesktopService } from "../services/desktop";
 import { GameService } from "../services/games";
 import { ManifoldService } from "../services/manifold";
 import { SignalService, type CommandTransport } from "../services/signal";
+import { useUnlockSettings } from "../state/unlock-store";
 
 import { HeadPat } from "../live2d/head-pat";
 import { Live2DDebugRuntime } from "../live2d/debug-runtime";
@@ -29,6 +30,17 @@ import {
   createNotificationStore,
   type NotificationStore,
 } from "../state/notification-store";
+
+const LOCAL_PROGRESS_KEY = "nori.source-progress.v1";
+
+function readLocalProgress(): { facts?: JsonValue; variables?: JsonValue } | undefined {
+  try {
+    const value = JSON.parse(localStorage.getItem(LOCAL_PROGRESS_KEY) ?? "null");
+    return value && typeof value === "object" ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export class NoriFrontendRuntime {
   readonly headPat = new HeadPat();
@@ -222,14 +234,38 @@ export class NoriFrontendRuntime {
     this.cleanup.push(
       this.arcade.onState((state) => {
         if (this.disposed) return;
-        if (state === "open" && this.started)
-          this.arcade.openMyWorld(this.locale);
+        if (state === "open" && this.started) {
+          const fullUnlock = useUnlockSettings.getState().fullUnlock;
+          this.arcade.openMyWorld(
+            this.locale,
+            fullUnlock,
+            fullUnlock ? undefined : readLocalProgress(),
+          );
+        }
         if (state !== "open") {
           this.story.sync(null, new Set());
           this.scene.reset();
           this.reactions.reset();
           this.speech.reset();
           this.media.close();
+        }
+      }),
+    );
+    this.cleanup.push(
+      this.world.subscribe((state) => {
+        if (useUnlockSettings.getState().fullUnlock) return;
+        const manifold = state.cartridges.get("manifold.web:player");
+        if (!manifold) return;
+        try {
+          localStorage.setItem(
+            LOCAL_PROGRESS_KEY,
+            JSON.stringify({
+              facts: manifold.state.facts ?? {},
+              variables: manifold.state.variables ?? {},
+            }),
+          );
+        } catch (error) {
+          console.warn("[World] local progress could not be saved", error);
         }
       }),
     );
