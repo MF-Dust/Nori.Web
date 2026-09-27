@@ -15,8 +15,10 @@ permissions:
 jobs:
   surface:
     runs-on: ubuntu-latest
-    # SwiftShader scene probes run in separate matrix jobs to keep each case bounded.
-    timeout-minutes: ${{ matrix.surface == 'memory-datasea' && 25 || 18 }}
+    # Full Datasea gameplay uses software-rendered input for all twelve games.
+    # It exceeded 25 minutes during the third wave, even after its device matrix
+    # moved to a separate job. Keep the real input checks with a measured budget.
+    timeout-minutes: ${{ matrix.surface == 'memory-datasea' && 60 || matrix.surface == 'datasea-device' && 35 || 18 }}
     strategy:
       fail-fast: false
       matrix:
