@@ -262,14 +262,12 @@
     nav[INSTALLED] = true;
 
     const t = labels();
-    const originalButtons = [...nav.querySelectorAll("button")];
     const button = document.createElement("button");
     button.type = "button";
     button.className =
-      originalButtons[0]?.className ||
-      "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground";
-    button.classList.add("nori-ui-tab");
+      "nori-ui-tab flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground";
     const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
     icon.textContent = "◫";
     icon.style.width = "1rem";
     icon.style.textAlign = "center";

@@ -618,12 +618,11 @@
     nav[INSTALLED] = true;
 
     const t = labels();
-    const template = nav.querySelector("button");
     const button = document.createElement("button");
     button.type = "button";
-    button.className = template?.className || "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors";
-    button.classList.add("nori-tts-tab");
+    button.className = "nori-tts-tab flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground";
     const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
     icon.textContent = "♫"; icon.style.width = "1rem"; icon.style.textAlign = "center";
     const text = document.createElement("span");
     text.textContent = t.tab;
