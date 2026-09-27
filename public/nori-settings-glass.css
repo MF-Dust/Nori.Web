@@ -1,13 +1,8 @@
 /*
- * Compatibility settings panels are injected beside the historical Settings
- * content. Keep them transparent so the parent Nori window glass remains
- * visible instead of covering it with the opaque --background token.
- *
- * Source and shipped settings both use this flex shell:
- *   .settings-root
- *     .settings-nav-pane > nav
- *     content region
- * AI, TTS, and Interface panels are appended as siblings of the nav pane.
+ * Compatibility settings panels are injected beside the native Settings
+ * content. Keep the page fill transparent so the Nori window glass shows
+ * through. Typography, controls, and spacing live with the panel styles and
+ * match the sound / graphics / network / system sections.
  */
 html.theme-nori .nori-ai-settings-panel,
 html.theme-nori .nori-tts-panel,
@@ -18,60 +13,23 @@ html.theme-nori .nori-ui-settings-panel {
   min-height: 0;
 }
 
-html.theme-nori .nori-ai-card,
-html.theme-nori .nori-tts-card,
-html.theme-nori .nori-ui-card {
-  background: color-mix(in srgb, var(--foreground) 4%, transparent);
-  border-color: color-mix(in srgb, var(--primary) 22%, transparent);
-}
-
-html.theme-nori .nori-ai-input,
-html.theme-nori .nori-ai-select,
-html.theme-nori .nori-ai-textarea,
-html.theme-nori .nori-tts-input,
-html.theme-nori .nori-tts-select,
-html.theme-nori .nori-tts-textarea {
-  background: color-mix(in srgb, var(--background) 42%, transparent);
-  border-color: color-mix(in srgb, var(--primary) 28%, transparent);
-  color: var(--foreground);
-}
-
-html.theme-nori .nori-ai-input:focus,
-html.theme-nori .nori-ai-select:focus,
-html.theme-nori .nori-ai-textarea:focus,
-html.theme-nori .nori-tts-input:focus,
-html.theme-nori .nori-tts-select:focus,
-html.theme-nori .nori-tts-textarea:focus {
-  border-color: color-mix(in srgb, var(--primary) 75%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
-}
-
-html.theme-nori .nori-ai-button,
-html.theme-nori .nori-ai-small-button,
-html.theme-nori .nori-tts-button,
-html.theme-nori .nori-tts-small {
-  color: var(--foreground);
-}
-
-html.theme-nori .nori-ai-button.primary,
-html.theme-nori .nori-tts-button.primary {
-  background: color-mix(in srgb, var(--primary) 22%, transparent);
-  border-color: color-mix(in srgb, var(--primary) 48%, transparent);
-}
-
 html.theme-nori .settings-nav-pane nav > .nori-ai-tab,
 html.theme-nori .settings-nav-pane nav > .nori-tts-tab,
 html.theme-nori .settings-nav-pane nav > .nori-ui-tab {
   width: auto;
-  font: inherit;
   text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
 }
 
 html.theme-nori .nori-ai-tab.nori-ai-tab-active,
 html.theme-nori .nori-tts-tab.active,
 html.theme-nori .nori-ui-tab.nori-ui-tab-active {
-  background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+  background: color-mix(in oklab, var(--primary) 10%, transparent) !important;
   color: var(--primary) !important;
+  font-weight: 500 !important;
 }
 
 /* Native section buttons stay highlighted from React state. Clear that
@@ -81,12 +39,4 @@ html.theme-nori .settings-root:has(.nori-ai-tab-active, .nori-tts-tab.active, .n
   background: transparent !important;
   color: var(--muted-foreground) !important;
   font-weight: 400 !important;
-}
-
-@media (max-width: 720px) {
-  html.theme-nori .nori-ai-settings-wrap,
-  html.theme-nori .nori-tts-wrap,
-  html.theme-nori .nori-ui-settings-wrap {
-    margin-bottom: 24px;
-  }
 }

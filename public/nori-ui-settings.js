@@ -173,20 +173,24 @@
     style.textContent = `
       html.${HIDDEN_CLASS} #root *{visibility:hidden!important}
       html.${HIDDEN_CLASS} #root [${KEEP_ATTRIBUTE}="1"]{visibility:visible!important}
-      .nori-ui-settings-panel{flex:1;min-width:0;overflow:auto;padding:24px 28px;background:var(--background,transparent);color:inherit}
-      .nori-ui-settings-wrap{max-width:820px;margin:0 auto 36px}
-      .nori-ui-settings-head{margin-bottom:22px}
-      .nori-ui-settings-title{font-size:20px;font-weight:650;letter-spacing:-.01em;margin:0 0 5px}
-      .nori-ui-settings-subtitle{font-size:13px;opacity:.62;margin:0}
-      .nori-ui-card{border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:12px;padding:18px;background:color-mix(in srgb,currentColor 3%,transparent);margin-bottom:14px}
-      .nori-ui-row{display:grid;grid-template-columns:minmax(145px,190px) minmax(0,1fr);align-items:start;gap:14px}
-      .nori-ui-label{font-size:13px;font-weight:600;padding-top:4px}
-      .nori-ui-hint{display:block;font-size:11px;line-height:1.5;opacity:.55;font-weight:400;margin-top:4px}
-      .nori-ui-checkbox-line{display:flex;align-items:center;gap:9px;min-height:30px;font-size:13px}
-      .nori-ui-checkbox-line input{width:16px;height:16px;accent-color:#65d9e8}
-      .nori-ui-tab{width:100%;border:0;background:transparent;color:inherit;cursor:pointer}
-      .nori-ui-tab.nori-ui-tab-active{background:color-mix(in srgb,#65d9e8 12%,transparent)!important;color:#65d9e8!important;font-weight:600}
-      @media(max-width:720px){.nori-ui-settings-panel{padding:18px}.nori-ui-row{grid-template-columns:1fr;gap:6px}.nori-ui-label{padding-top:0}}
+      .nori-ui-settings-panel{flex:1;min-width:0;min-height:0;overflow:auto;padding:1.25rem;background:transparent;color:inherit;font:inherit}
+      .nori-ui-settings-wrap{max-width:28rem;margin:0 auto 2rem}
+      .nori-ui-settings-head{margin:0 0 1.5rem;padding:0 0 1.5rem;border-bottom:1px solid var(--border)}
+      .nori-ui-settings-title{font-size:.875rem;line-height:1.25rem;font-weight:500;letter-spacing:0;margin:0}
+      .nori-ui-settings-subtitle{font-size:.75rem;line-height:1rem;color:var(--muted-foreground);opacity:1;margin:0}
+      .nori-ui-card{border:0;border-radius:0;padding:0;background:transparent;margin:0}
+      .nori-ui-row{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:1rem}
+      .nori-ui-label{font-size:.875rem;line-height:1.25rem;font-weight:400;padding-top:0;min-width:0}
+      .nori-ui-hint{display:block;font-size:.75rem;line-height:1rem;color:var(--muted-foreground);opacity:1;font-weight:400;margin-top:.125rem}
+      .nori-ui-checkbox-line{position:relative;display:inline-flex;flex:0 0 auto;width:32px;height:18px}
+      .nori-ui-checkbox-line input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer}
+      .nori-ui-checkbox-line span{display:block;width:32px;height:18px;border-radius:20px;background:var(--input);font-size:0;color:transparent;overflow:hidden;position:relative}
+      .nori-ui-checkbox-line span::before{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--background);box-shadow:0 1px 2px #0003;transition:transform .15s}
+      .nori-ui-checkbox-line input:checked+span{background:var(--primary)}
+      .nori-ui-checkbox-line input:checked+span::before{transform:translateX(14px)}
+      .nori-ui-tab{width:auto;border:0;background:transparent;color:var(--muted-foreground);cursor:pointer;font-size:.875rem;line-height:1.25rem;font-weight:400;text-align:left}
+      .nori-ui-tab:hover:not(.nori-ui-tab-active){background:var(--muted);color:var(--foreground)}
+      .nori-ui-tab.nori-ui-tab-active{background:color-mix(in oklab,var(--primary) 10%,transparent)!important;color:var(--primary)!important;font-weight:500!important}
     `;
     document.head.appendChild(style);
   }

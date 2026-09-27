@@ -369,18 +369,36 @@
     const style = document.createElement("style");
     style.id = "nori-tts-settings-style";
     style.textContent = `
-      .nori-tts-panel{flex:1;min-width:0;overflow:auto;padding:24px 28px;background:var(--background,transparent);color:inherit}
-      .nori-tts-wrap{max-width:820px;margin:0 auto 36px}.nori-tts-head{margin-bottom:22px}
-      .nori-tts-title{font-size:20px;font-weight:650;letter-spacing:-.01em;margin:0 0 5px}.nori-tts-subtitle{font-size:13px;opacity:.62;margin:0}
-      .nori-tts-card{border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:12px;padding:18px;background:color-mix(in srgb,currentColor 3%,transparent);margin-bottom:14px}
-      .nori-tts-row{display:grid;grid-template-columns:minmax(145px,190px) minmax(0,1fr);align-items:start;gap:14px;margin-bottom:15px}.nori-tts-row:last-child{margin-bottom:0}
-      .nori-tts-label{font-size:13px;font-weight:600;padding-top:8px}.nori-tts-hint{display:block;font-size:11px;line-height:1.5;opacity:.55;font-weight:400;margin-top:4px}
-      .nori-tts-input,.nori-tts-select,.nori-tts-textarea{box-sizing:border-box;width:100%;border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:8px;background:color-mix(in srgb,currentColor 5%,transparent);color:inherit;padding:8px 10px;font:inherit;font-size:13px;outline:none}
-      .nori-tts-input:focus,.nori-tts-select:focus,.nori-tts-textarea:focus{border-color:color-mix(in srgb,#65d9e8 75%,currentColor);box-shadow:0 0 0 2px color-mix(in srgb,#65d9e8 18%,transparent)}
-      .nori-tts-textarea{min-height:82px;resize:vertical;line-height:1.5}.nori-tts-checkbox{display:flex;align-items:center;gap:9px;min-height:34px;font-size:13px}.nori-tts-checkbox input{width:16px;height:16px;accent-color:#65d9e8}
-      .nori-tts-secret{display:flex;gap:8px}.nori-tts-secret .nori-tts-input{flex:1}.nori-tts-button,.nori-tts-small{border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:8px;background:color-mix(in srgb,currentColor 7%,transparent);color:inherit;padding:7px 12px;font:inherit;font-size:12px;cursor:pointer}.nori-tts-button.primary{background:color-mix(in srgb,#65d9e8 22%,transparent);border-color:color-mix(in srgb,#65d9e8 48%,transparent)}
-      .nori-tts-actions{display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}.nori-tts-warning{font-size:11px;line-height:1.55;color:#e7b65d;margin-top:7px}.nori-tts-status{font-size:12px;opacity:.7}.nori-tts-status.error{color:#ef7777}.nori-tts-tab{width:100%;border:0;background:transparent;color:inherit;cursor:pointer}.nori-tts-tab.active{background:color-mix(in srgb,#65d9e8 12%,transparent)!important;color:#65d9e8!important;font-weight:600}
-      @media(max-width:720px){.nori-tts-panel{padding:18px}.nori-tts-row{grid-template-columns:1fr;gap:6px}.nori-tts-label{padding-top:0}}
+      .nori-tts-panel{flex:1;min-width:0;min-height:0;overflow:auto;padding:1.25rem;background:transparent;color:inherit;font:inherit}
+      .nori-tts-wrap{max-width:28rem;margin:0 auto 2rem}
+      .nori-tts-head{margin:0 0 1.5rem;padding:0 0 1.5rem;border-bottom:1px solid var(--border)}
+      .nori-tts-title{font-size:.875rem;line-height:1.25rem;font-weight:500;letter-spacing:0;margin:0}
+      .nori-tts-subtitle{font-size:.75rem;line-height:1rem;color:var(--muted-foreground);opacity:1;margin:0}
+      .nori-tts-card{border:0;border-radius:0;padding:0;background:transparent;margin:0}
+      .nori-tts-row{display:flex;flex-direction:column;align-items:stretch;gap:.5rem;margin-bottom:1rem}
+      .nori-tts-row:last-child{margin-bottom:0}
+      .nori-tts-row:has(input[type="checkbox"]){flex-direction:row;align-items:center;justify-content:space-between;gap:1rem}
+      .nori-tts-label{font-size:.875rem;line-height:1.25rem;font-weight:400;padding-top:0;min-width:0}
+      .nori-tts-hint{display:block;font-size:.75rem;line-height:1rem;color:var(--muted-foreground);opacity:1;font-weight:400;margin-top:.125rem}
+      .nori-tts-input,.nori-tts-select,.nori-tts-textarea{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:6px;background:var(--background);color:var(--foreground);padding:6px 10px;font:inherit;font-size:14px}
+      .nori-tts-textarea{min-height:5rem;resize:vertical;line-height:1.5}
+      .nori-tts-checkbox{position:relative;display:inline-flex;flex:0 0 auto;width:32px;height:18px}
+      .nori-tts-checkbox input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer}
+      .nori-tts-checkbox span{display:block;width:32px;height:18px;border-radius:20px;background:var(--input);font-size:0;color:transparent;overflow:hidden;position:relative}
+      .nori-tts-checkbox span::before{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--background);box-shadow:0 1px 2px #0003;transition:transform .15s}
+      .nori-tts-checkbox input:checked+span{background:var(--primary)}
+      .nori-tts-checkbox input:checked+span::before{transform:translateX(14px)}
+      .nori-tts-secret{display:flex;gap:.5rem;align-items:center}
+      .nori-tts-secret .nori-tts-input{flex:1;min-width:0}
+      .nori-tts-button,.nori-tts-small{border:1px solid var(--border);border-radius:6px;background:var(--background);color:var(--foreground);padding:6px 10px;font:inherit;font-size:12px;cursor:pointer}
+      .nori-tts-button.primary{background:var(--background);border-color:var(--border)}
+      .nori-tts-button:hover,.nori-tts-small:hover{background:var(--muted)}
+      .nori-tts-actions{display:flex;align-items:center;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap}
+      .nori-tts-status{font-size:.75rem;line-height:1rem;color:var(--muted-foreground)}
+      .nori-tts-status.error{color:var(--destructive)}
+      .nori-tts-tab{width:auto;border:0;background:transparent;color:var(--muted-foreground);cursor:pointer;font-size:.875rem;line-height:1.25rem;font-weight:400;text-align:left}
+      .nori-tts-tab:hover:not(.active){background:var(--muted);color:var(--foreground)}
+      .nori-tts-tab.active{background:color-mix(in oklab,var(--primary) 10%,transparent)!important;color:var(--primary)!important;font-weight:500!important}
     `;
     document.head.appendChild(style);
   }
@@ -465,13 +483,7 @@
     secret.append(apiKey, reveal);
     card.append(row(t.apiKey, secret));
 
-    const rememberWrap = document.createElement("div");
-    rememberWrap.append(checkbox("rememberApiKey", t.rememberKey));
-    const warning = document.createElement("div");
-    warning.className = "nori-tts-warning";
-    warning.textContent = t.keyWarning;
-    rememberWrap.append(warning);
-    card.append(row(t.rememberKey, rememberWrap));
+    card.append(row(t.rememberKey, checkbox("rememberApiKey", t.rememberKey), t.keyWarning));
 
     const model = field("input", "model", "text");
     const modelRow = row(t.model, model);
