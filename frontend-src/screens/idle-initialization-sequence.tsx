@@ -21,6 +21,12 @@ const colors: Record<string, string> = { C: "#0e7490", b: "#142648", W: "#67e8f9
 const clamp = (v: number) => Math.max(0, Math.min(1, v));
 const span = (t: number, a: number, b: number) => clamp((t - a) / (b - a));
 const ease = (v: number) => 1 - (1 - v) ** 3;
+const quant = (value: number, steps: number) => Math.floor(value * steps) / steps;
+const easeInBack = (value: number) => 2.70158 * value ** 3 - 1.70158 * value ** 2;
+const easeOutBack = (value: number) => {
+  const shifted = value - 1;
+  return 1 + 2.70158 * shifted ** 3 + 1.70158 * shifted ** 2;
+};
 const hash = (v: number) => {
   const n = Math.sin(v * 12.9898) * 43758.5453;
   return n - Math.floor(n);
@@ -80,7 +86,7 @@ export function IdleInitializationSequence({ onComplete, onSoundEvent, random }:
       if (time >= 2.46) cue("shine", "shine");
       if (time >= 2.62) cue("stamp", "stamp");
       if (time >= 3.18) cue("exit", "buildTickStop");
-      if (time >= .06 && time < .38) {
+      if (time >= .06 && time < .38 && quant(time * 6, 6) % (1 / 3) < 1 / 6) {
         ctx.fillStyle = "#67e8f9"; ctx.fillRect(x - 5.5, coreY - 5.5, 11, 11);
       }
       if (time >= .22) {
@@ -93,7 +99,7 @@ export function IdleInitializationSequence({ onComplete, onSoundEvent, random }:
       }
       const charge = span(time, 1.86, 2.28);
       const ignite = span(time, 2.28, 2.70);
-      const scale = 1 - .1 * charge + .16 * ease(ignite);
+      const scale = 1 - .1 * easeInBack(charge) + .16 * (easeOutBack(ignite) - ease(ignite));
       ctx.save(); ctx.translate(x, coreY); ctx.scale(scale, scale);
       for (const pixel of pixels) {
         if (time < pixel.at) continue;
@@ -101,6 +107,7 @@ export function IdleInitializationSequence({ onComplete, onSoundEvent, random }:
         if (time - pixel.at < 1 / 12) color = "#f8fafc";
         else if (time >= 2.28) color = { C: "#22d3ee", b: "#0e7490", W: "#d6fbff" }[pixel.kind] ?? color;
         else if (time >= 1.86 && pixel.kind === "b") color = "#0d1b33";
+        else if (time >= 1.86 && pixel.kind === "M") color = quant(time * 18, 18) % (2 / 18) < 1 / 18 ? "#fcd34d" : "#f8fafc";
         ctx.fillStyle = color;
         ctx.fillRect((pixel.x - 7.5) * 11, (pixel.y - 7.5) * 11, 11, 11);
       }
@@ -119,7 +126,8 @@ export function IdleInitializationSequence({ onComplete, onSoundEvent, random }:
       ctx.textAlign = "left"; ctx.font = "13px " + FONT;
       [.52, 1.02, 1.46].forEach((at, index) => {
         if (time < at) return;
-        const count = Math.max(1, Math.floor((time - at) * (index === 2 ? 26 : 24)));
+        const cps = index === 2 ? 26 : 24;
+        const count = Math.max(1, Math.floor(quant(time - at, 15) * cps * (.85 + .3 * hash(index * 7 + Math.floor(time * 5)))));
         ctx.fillStyle = "rgba(103,232,249,.72)";
         ctx.fillText(strings.lines[index].slice(0, count), x - 150, y + 86 + index * 22);
       });
@@ -144,6 +152,7 @@ export function IdleInitializationSequence({ onComplete, onSoundEvent, random }:
         }
         ctx.globalCompositeOperation = "source-over";
       }
+      if (time >= 3.72) ctx.clearRect(0, 0, width, height);
       if (time < 3.82) frame = requestAnimationFrame(draw);
       else if (!completed.current) { completed.current = true; callback.current(); }
     };
@@ -151,5 +160,5 @@ export function IdleInitializationSequence({ onComplete, onSoundEvent, random }:
     return () => { cancelAnimationFrame(frame); observer.disconnect(); onSoundEvent?.("buildTickStop"); };
   }, [onSoundEvent, random]);
 
-  return <canvas ref={canvasRef} className="pointer-events-auto absolute inset-0 z-40 h-full w-full" aria-label="算力核心初始化" />;
+  return <canvas ref={canvasRef} className="pointer-events-auto absolute inset-0 z-[35] h-full w-full" aria-label="算力核心初始化" />;
 }

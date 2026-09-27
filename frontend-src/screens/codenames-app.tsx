@@ -121,7 +121,7 @@ export function CodenamesApp({
     {!game && <div aria-hidden className="source-codenames-forest"><CodenamesForest /></div>}
     {!game ? <><div aria-hidden className="source-codenames-start-border" /><button type="button" className="source-codenames-menu-help" aria-label={t("codenames.help.button")} onClick={() => setHelp(true)}>?</button><div className="source-codenames-menu">
       <div className="source-codenames-fireflies" aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <i key={index} />)}</div>
-      <div className="source-codenames-compass" aria-hidden="true"><i /><span>N</span></div>
+      <div className="source-codenames-compass" aria-hidden="true"><b /><i /><span>N</span><span className="south">S</span></div>
       <h1>{t("codenames.title")}</h1>
       <div className="source-codenames-title-rule" aria-hidden="true"><i /><span>✦</span><i /></div><p>{t("codenames.subtitle")}</p>
       {missionSetup && <fieldset disabled={!snapshot.mounted || snapshot.pending}><legend>{t("codenames.difficulty.label")}</legend>

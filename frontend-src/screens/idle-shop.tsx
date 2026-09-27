@@ -1,5 +1,6 @@
-import { ShoppingCart, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { useMemo, useState } from "react";
+import { PixelHeading, PixelTooltip } from "./idle-chrome";
 import { IdleIcon } from "./idle-icon";
 import {
   IDLE_BUY_COUNTS,
@@ -47,6 +48,17 @@ function GeneratorCard({
   const inset =
     "inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 rgba(255,255,255,.04)";
   return (
+    <PixelTooltip
+      side="left"
+      content={<div className="flex max-w-[200px] flex-col gap-1">
+        <div className="pixel-cjk pixel-fs-lg leading-tight" style={{ color: tone }}>{generator.name}</div>
+        {generator.description ? <div className="pixel-cjk pixel-fs-sm leading-snug opacity-80">{generator.description}</div> : null}
+        <div className="pixel-cjk pixel-fs-sm leading-snug text-[var(--px-dim)]">
+          <div>每{unitLabel}{generator.name}每秒产出 {formatDesktopCompute(quote.perUnitRate)} 算力。</div>
+          <div>所有{generator.name}目前每秒共生成 {formatDesktopCompute(quote.totalRate)} 算力。</div>
+        </div>
+      </div>}
+    >
     <button
       type="button"
       onClick={affordable ? onBuy : undefined}
@@ -60,7 +72,6 @@ function GeneratorCard({
           ? `inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 ${tone}33`
           : inset,
       }}
-      title={`每${unitLabel}${generator.name}每秒产出 ${formatDesktopCompute(quote.perUnitRate)} 算力。所有${generator.name}目前每秒共生成 ${formatDesktopCompute(quote.totalRate)} 算力。`}
     >
       <div className="relative size-8 shrink-0" style={{ color: tone }} aria-hidden="true">
         {generator.icon ? (
@@ -97,6 +108,7 @@ function GeneratorCard({
         </div>
       </div>
     </button>
+    </PixelTooltip>
   );
 }
 
@@ -108,25 +120,28 @@ function BuyModeSelector({
   onChange: (mode: IdleBuyCount) => void;
 }) {
   return (
-    <div className="shrink-0">
-      <div className="mb-1 text-[9px] uppercase tracking-[0.16em] text-cyan-200/70">
-        购买模式
-      </div>
-      <div className="flex items-stretch gap-[2px] border-2 border-black bg-black p-[2px]">
+    <div className="flex shrink-0 flex-col gap-1.5">
+      <PixelHeading tone="cyan">购买模式</PixelHeading>
+      <div className="flex items-stretch gap-[2px] border-2 border-[var(--px-void)] bg-[var(--px-void)] p-[2px]">
         {IDLE_BUY_COUNTS.map((item) => {
           const selected = item === mode;
+          const label = IDLE_BUY_COUNT_LABELS[item];
+          const cjk = /[\u4e00-\u9fff]/.test(label);
           return (
             <button
               type="button"
               key={item}
               onClick={() => onChange(item)}
-              className={`min-w-0 flex-1 border px-1 py-1 text-[9px] ${
+              className={`relative inline-flex h-6 flex-1 items-center justify-center border-2 leading-none pixel-fs-sm transition-colors duration-75 ${cjk ? "pixel-cjk" : "pixel-ascii"} ${
                 selected
-                  ? "border-cyan-200/80 bg-cyan-300/15 text-cyan-100"
-                  : "border-white/10 bg-white/5 text-white/55 hover:text-white/80"
+                  ? "border-[var(--px-void)] bg-[var(--px-cyan)] text-[var(--px-void)]"
+                  : "border-[var(--px-stroke)] bg-[var(--px-panel)] text-[var(--px-cyan)]/70 hover:bg-[var(--px-panel-2)] hover:text-[var(--px-cyan)]"
               }`}
+              style={selected
+                ? { boxShadow: "inset -1px -1px 0 0 var(--px-cyan-dim), inset 1px 1px 0 0 #d6fbff" }
+                : { boxShadow: "inset -1px -1px 0 0 rgba(0,0,0,0.55), inset 1px 1px 0 0 rgba(255,255,255,0.05)" }}
             >
-              {IDLE_BUY_COUNT_LABELS[item]}
+              {label}
             </button>
           );
         })}
@@ -162,10 +177,7 @@ export function IdleGeneratorShop({
       className="pointer-events-none absolute bottom-3 right-3 top-3 z-10 flex w-[220px] flex-col gap-2"
       style={{ filter: "var(--px-ui-glow, none)" }}
     >
-      <div className="flex shrink-0 items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-cyan-200/80">
-        <ShoppingCart className="size-3.5" />
-        算力源
-      </div>
+      <PixelHeading tone="cyan">算力源</PixelHeading>
       <div className="pointer-events-auto -ml-2 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pl-2">
         {quotes.map(({ generator, quote }) => (
           <GeneratorCard

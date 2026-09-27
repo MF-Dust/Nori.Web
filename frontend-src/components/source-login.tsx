@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import type { LocalAuthController } from "../runtime/auth";
+import { AuthConnecting } from "./source-asset-boot-gate";
 import "./source-login.css";
 
 export function SourceLogin({
@@ -39,6 +40,7 @@ export function SourceLogin({
       setPending(false);
     }
   }
+  if (status === "loading" && !startupError) return <AuthConnecting locale={locale} />;
   return (
     <main className="source-login">
       <form onSubmit={(event) => void submit(event)}>

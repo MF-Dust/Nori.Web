@@ -6,6 +6,7 @@ import {
   type IdleSkillDefinition,
 } from "../apps/idle";
 import { formatDesktopCompute } from "../state/compute-runtime";
+import { PixelTooltip } from "./idle-chrome";
 import { IdleIcon } from "./idle-icon";
 
 const UNIVERSAL_SKILL_TINT = "#67e8f9";
@@ -87,7 +88,11 @@ function SkillButton({
         : 0;
 
   return (
-    <div className="relative flex w-12 flex-col items-center" title={`${skill.name ?? skill.id}\n${describeSkill(skill)}`}>
+    <PixelTooltip
+      side="top"
+      content={<div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm">{skill.name ?? skill.id}</div><div className="pixel-fs-sm opacity-80">{describeSkill(skill)}</div></div>}
+    >
+    <div className="relative flex w-12 flex-col items-center">
       <button
         type="button"
         onClick={fire}
@@ -139,6 +144,7 @@ function SkillButton({
         ))}
       </div>
     </div>
+    </PixelTooltip>
   );
 }
 

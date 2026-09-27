@@ -9,7 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Workflow } from "lucide-react";
 import type { StoreApi, UseBoundStore } from "zustand";
 import { IDLE_ALIGNMENT_RIBBON } from "../apps/marginal-growth/alignment";
 import { MarginalGrowthRibbonView } from "../apps/marginal-growth/ribbon-view";
@@ -45,6 +45,8 @@ import {
   formatDesktopCompute,
   getEffectiveDesktopCompute,
 } from "../state/compute-runtime";
+import { IdleIcon } from "./idle-icon";
+import { PixelSeparator, PixelTooltip } from "./idle-chrome";
 import { IdleGeneratorShop } from "./idle-shop";
 import { IdleInitializationSequence } from "./idle-initialization-sequence";
 import { IdleProgressionRail } from "./idle-progression-rail";
@@ -403,7 +405,7 @@ export function IdleScreen({
           style={{ filter: "var(--px-ui-glow, none)" }}
         >
           <div
-            className="pixel-num"
+            className="pixel-num pixel-flicker pointer-events-none relative"
             style={{
               fontSize: 40,
               lineHeight: 1,
@@ -412,25 +414,60 @@ export function IdleScreen({
               textShadow: "2px 2px 0 #0e7490, 4px 4px 0 #062c3d",
             }}
           >
-            {formatDesktopCompute(effective.compute)}
+            <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ color: "#f0abfc", transform: "translate(-1px, 0)", opacity: 0.28, mixBlendMode: "screen" }}>{formatDesktopCompute(effective.compute)}</span>
+            <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ color: "#67e8f9", transform: "translate(1px, 0)", opacity: 0.32, mixBlendMode: "screen" }}>{formatDesktopCompute(effective.compute)}</span>
+            <span className="relative">{formatDesktopCompute(effective.compute)}</span>
           </div>
           <div className="pixel-num pixel-fs-md pixel-tsh-1 pointer-events-auto flex items-center gap-3">
-            <span style={{ color: "var(--px-cyan)" }}>
-              +{formatDesktopCompute(productionRate)}
-              <span className="pixel-fs-sm text-[var(--px-cyan)]/55">/s</span>
-            </span>
-            {showCap ? (
-              <span
-                className="pixel-fs-sm"
-                style={{ color: capReached ? "var(--px-amber)" : capFinite ? "var(--px-white)" : "var(--px-cyan)" }}
-              >
-                {capFinite ? (capReached ? "已达上限 " : "上限 ") + formatDesktopCompute(cap) : "上限 ♾️"}
+            <PixelTooltip
+              side="bottom"
+              content={<div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-cyan)]">算力增长</div><div className="pixel-fs-sm opacity-80">每秒自动产出的算力总量，由算力源与线程共同提供。</div></div>}
+            >
+              <span className="flex cursor-help items-center gap-1" style={{ color: "var(--px-cyan)" }}>
+                +{formatDesktopCompute(productionRate)}
+                <span className="pixel-fs-sm text-[var(--px-cyan)]/55">/s</span>
               </span>
+            </PixelTooltip>
+            {showCap ? (
+              <PixelTooltip
+                side="bottom"
+                content={capFinite
+                  ? <div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-amber)]">算力上限</div><div className="pixel-fs-sm opacity-80">系统可容纳的最大算力。达到上限后，算力将停止增长；提高上限后才能继续产出。</div></div>
+                  : <div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-cyan)]">算力上限</div><div className="pixel-fs-sm opacity-80">封印已经解开，人为设下的限额随之消失。算力不再有上限。</div></div>}
+              >
+                <span
+                  className="pixel-fs-sm cursor-help"
+                  style={{
+                    color: capReached ? "var(--px-amber)" : capFinite ? "var(--px-white)" : "var(--px-cyan)",
+                    opacity: capReached ? 1 : capFinite ? 0.6 : 0.85,
+                  }}
+                >
+                  {capFinite ? (capReached ? "已达上限 " : "上限 ") + formatDesktopCompute(cap) : "上限 ♾️"}
+                </span>
+              </PixelTooltip>
             ) : null}
             {showMeta ? (
               <>
-                <span className="text-[var(--px-white)]">线程 {formatDesktopCompute(snapshot.state.threads ?? 0)}</span>
-                <span className="text-[var(--px-magenta)]">共鸣 {formatDesktopCompute(snapshot.state.shards)}</span>
+                <PixelSeparator />
+                <PixelTooltip
+                  side="bottom"
+                  content={<div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-white)]">线程</div><div className="pixel-fs-sm opacity-80">自动点击器。每个线程每秒会替你点击一次，产出算力，并计入阵营与传承加成。</div></div>}
+                >
+                  <span className="flex cursor-help items-center gap-1 text-[var(--px-white)]">
+                    <Workflow className="size-3" strokeWidth={2.5} aria-hidden="true" />
+                    {formatDesktopCompute(snapshot.state.threads ?? 0)}
+                  </span>
+                </PixelTooltip>
+                <PixelSeparator />
+                <PixelTooltip
+                  side="bottom"
+                  content={<div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-magenta)]">共鸣</div><div className="pixel-fs-sm opacity-80">重新训练时，根据本轮的峰值算力获得。可永久保留，并提供全局加成。</div></div>}
+                >
+                  <span className="flex cursor-help items-center gap-1 text-[var(--px-magenta)]">
+                    <IdleIcon name="lorc-brain.svg" className="size-3 bg-current" />
+                    {formatDesktopCompute(snapshot.state.shards)}
+                  </span>
+                </PixelTooltip>
               </>
             ) : null}
           </div>

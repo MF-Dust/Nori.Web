@@ -58,6 +58,7 @@ import {
 } from "./apps/recovered-presentation";
 import { RecoveredDesktopShell } from "./components/recovered-desktop-shell";
 import { SourceAssetBootGate } from "./components/source-asset-boot-gate";
+import { SourceConnectionLayer } from "./components/source-connection-layer";
 import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
 import { createNetworkFaultWebSocketFactory, readNetworkFaultProfile } from "./runtime/debug-tools";
 import { createSourceIdleRuntimeEngine } from "./state/idle-runtime-engine";
@@ -478,6 +479,11 @@ function SourceSessionView({ source }: { source: SourceSession }) {
   const [signalUnreadCount, setSignalUnreadCount] = useState(0);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [linkReason, setLinkReason] = useState(source.frontend.arcade.lastClose?.reason ?? "");
+  useEffect(() => source.frontend.arcade.onState(() => {
+    setLinkReason(source.frontend.arcade.lastClose?.reason ?? "");
+  }), [source]);
+  const linkBlocked = linkReason === "session_replaced" || linkReason === "world_reset" || linkReason === "session_invalid" || linkReason === "overloaded" || linkReason === "soft_closed" || linkReason === "closed";
   useEffect(() => {
     let disposed = false;
     let revision = 0;
@@ -691,7 +697,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       />
     );
   return (
-    <SourceAssetBootGate firstBoot={!facts.has("boot.completed")} locale={locale}>
+    <SourceAssetBootGate firstBoot={!facts.has("boot.completed")} locale={locale} booting={!ready && !error && !linkBlocked}>
     <RecoveredDesktopShell
       playCue={source.frontend.audio.playCue}
       bundle={source.bundle}
@@ -773,6 +779,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
             upgraded={facts.has("virus.cleared")}
             playCue={source.frontend.audio.playCue}
           />
+          <SourceConnectionLayer arcade={source.frontend.arcade} locale={locale} />
           {error && (
             <div className="source-connection-error" role="alert">
               {error}

@@ -27,7 +27,9 @@ export function PictionaryCover({ locale, open, durationSec, disabled, onDuratio
       {open && <div className="source-pictionary-duration-note">
         <span>{text("Session duration", "游戏时长")}</span>
         {[120, 180, 300].map(value => <button type="button" key={value} aria-pressed={durationSec === value}
-          onClick={() => onDuration(value)}>{value / 60} {text("min", "分钟")}</button>)}
+          onClick={() => onDuration(value)}>
+          {durationSec === value && <svg viewBox="0 0 80 30" aria-hidden="true"><defs><filter id={"pictionary-wobble-" + value}><feTurbulence baseFrequency="0.02" numOctaves="2" /><feDisplacementMap in="SourceGraphic" scale="2" /></filter></defs><ellipse cx="40" cy="15" rx="36" ry="12" fill="none" stroke="#3d3932" strokeWidth="2" strokeDasharray="2 3" filter={"url(#pictionary-wobble-" + value + ")"} /></svg>}
+          {value / 60} {text("min", "分钟")}</button>)}
       </div>}
       <button type="button" className="source-pictionary-cover-primary" disabled={open && disabled}
         aria-label={open ? text("Start session", "开始游戏") : text("Play", "开始")}
