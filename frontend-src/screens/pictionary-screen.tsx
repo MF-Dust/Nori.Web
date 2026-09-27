@@ -111,8 +111,11 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
         </div>
         <div className="source-pictionary-tools-spacer" />
         <div className="source-pictionary-tool-actions">
+          {isDrawer ? <button type="button" className="source-pictionary-action" disabled={!active}
+            onClick={() => { playSound?.("partygames-pictionary-tools"); canvas.current?.undo(); }}>{text("Undo", "撤销")}</button> : null}
           {isDrawer ? <button type="button" className="source-pictionary-action" data-danger="" disabled={!active} onClick={() => { playSound?.("partygames-pictionary-tools"); canvas.current?.clear(); }}>{text("Clear", "清空")}</button> : null}
-          <button type="button" className="source-pictionary-action" disabled={!active || snapshot.pending} onClick={() => void controller.dispatch({ type: "skipRound", atMs: Date.now() })}>{text("Skip", "跳过")}</button>
+          <button type="button" className="source-pictionary-action" aria-label={text("Skip round", "跳过回合")}
+            disabled={!active || snapshot.pending} onClick={() => void controller.dispatch({ type: "skipRound", atMs: Date.now() })}>{text("Skip", "跳过")}</button>
         </div>
       </div>
       <div className="source-pictionary-paper">
