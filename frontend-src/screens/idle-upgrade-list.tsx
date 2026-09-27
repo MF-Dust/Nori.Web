@@ -281,7 +281,7 @@ export function IdleUpgradeList({
     claimedMementos.length > 0;
 
   return (
-    <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
+    <div className="pointer-events-auto flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pt-2 pr-1">
       <PixelHeading>可购</PixelHeading>
 
       {hasAvailableRows ? (

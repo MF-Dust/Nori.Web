@@ -38,6 +38,7 @@ import {
 } from "../apps/idle-default-data";
 import {
   getIdleGeneratorTotalCost,
+  getIdleSmartBuyCount,
   isIdleGeneratorVisible,
   resolveIdleGeneratorBuyCount,
   type IdleCostMultiplierResolver,
@@ -877,7 +878,8 @@ export function createSourceIdleRuntimeEngine(
       const owned = state.owned[generator.id] ?? 0;
       const resolver = generatorCostResolver(state);
       const willBuy = resolveIdleGeneratorBuyCount(generator, owned, state.compute, mode, state, resolver);
-      const totalCost = getIdleGeneratorTotalCost(generator, owned, willBuy, state, resolver);
+      const displayCount = willBuy || (mode === "max" ? 1 : mode === "smart" ? getIdleSmartBuyCount(owned) : mode);
+      const totalCost = getIdleGeneratorTotalCost(generator, owned, displayCount, state, resolver);
       const perUnitRate = generatorRate(state, generator, generators, upgrades, constants);
       return {
         generatorId,

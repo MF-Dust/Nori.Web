@@ -1,3 +1,4 @@
+import { ArrowUp, MessageSquareText, Zap } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { GameCartridgeController } from "../apps/game-cartridge-controller";
 import { PICTIONARY_COLORS, pictionaryElapsed, pictionaryNextRoundAt, pictionarySummary, type PictionaryState } from "../apps/pictionary-model";
@@ -132,16 +133,30 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
           {nextRoundAt !== null && <span>{Math.max(0, Math.ceil((nextRoundAt - now) / 1000))}</span>}
         </div>}
       </div>
-      <aside className="source-pictionary-chat">
-        <h2>{text("Guesses", "猜词记录")}</h2>
-        <div ref={chat} className="source-pictionary-messages" role="log">{messages.map(item => <p key={item.id} data-correct={item.correct}><small>{item.by === "agent" ? "Nori" : text("You", "你")}</small>{item.text}{item.correct ? " ✓" : ""}</p>)}</div>
+      <aside className="source-pictionary-chat" data-watching={isDrawer || undefined}>
+        <header className="source-pictionary-chat-header">
+          <span className="source-pictionary-chat-lights" aria-hidden="true"><i /><i /></span>
+          <MessageSquareText aria-hidden="true" />
+          <h2>{text("Guessing", "猜词")}</h2>
+          <span className="source-pictionary-chat-live" data-live={snapshot.connected !== false || undefined}>
+            {snapshot.connected === false ? text("OFFLINE", "离线") : "LIVE"}
+          </span>
+        </header>
+        <div ref={chat} className="source-pictionary-messages" role="log">
+          {messages.length ? messages.map(item => <p key={item.id} data-correct={item.correct}><small>{item.by === "agent" ? "Nori" : text("You", "你")}</small>{item.text}{item.correct ? " ✓" : ""}</p>) : (
+            <div className="source-pictionary-chat-empty" role="status">
+              <span><Zap aria-hidden="true" /></span>
+              <strong>{text("Waiting…", "等待中…")}</strong>
+            </div>
+          )}
+        </div>
         <form onSubmit={event => {
           event.preventDefault(); const value = guess.trim().slice(0, 50);
           if (!value || !active || isDrawer || snapshot.pending) return;
           void controller.dispatch({ type: "submitGuess", text: value, atMs: Date.now() }).then(ok => { if (ok) setGuess(""); });
         }}>
-          <input aria-label={text("Your guess", "你的答案")} maxLength={50} disabled={!active || isDrawer || snapshot.pending} value={guess} onChange={event => setGuess(event.target.value)} />
-          <button type="submit" disabled={!active || isDrawer || snapshot.pending || !guess.trim()}>{text("Send", "发送")}</button>
+          <input aria-label={text("Your guess", "你的答案")} placeholder={isDrawer ? text("Watching…", "观看中…") : text("Type a guess…", "输入猜测…")} maxLength={50} disabled={!active || isDrawer || snapshot.pending} value={guess} onChange={event => setGuess(event.target.value)} />
+          <button type="submit" aria-label={text("Send", "发送")} disabled={!active || isDrawer || snapshot.pending || !guess.trim()}><ArrowUp aria-hidden="true" /></button>
         </form>
       </aside>
     </div>}

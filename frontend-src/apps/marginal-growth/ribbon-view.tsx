@@ -7,6 +7,7 @@ import {
   createMarginalGrowthApp,
   type MarginalGrowthApp,
   type MarginalGrowthShape,
+  type RibbonCameraTransform,
 } from "./ribbon-world";
 
 export interface MarginalGrowthRibbonViewProps {
@@ -19,6 +20,7 @@ export interface MarginalGrowthRibbonViewProps {
   /** Shipped world `onTap`: a press that did not drag. */
   onTap?: () => void;
   reserveShopSpace?: boolean;
+  onCameraTransform?: (transform: RibbonCameraTransform) => void;
 }
 
 /**
@@ -37,10 +39,14 @@ export function MarginalGrowthRibbonView({
   backgroundColor = 0,
   onTap,
   reserveShopSpace = false,
+  onCameraTransform,
 }: MarginalGrowthRibbonViewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<MarginalGrowthApp | null>(null);
   const [ready, setReady] = useState(false);
+  const [showRecenter, setShowRecenter] = useState(false);
+  const transformRef = useRef(onCameraTransform);
+  transformRef.current = onCameraTransform;
   const shapeRef = useRef(shape);
   const paramsRef = useRef(params);
   const ownedRef = useRef(owned);
@@ -68,6 +74,10 @@ export function MarginalGrowthRibbonView({
       cameraClamp: clampRef.current,
       backgroundColor: backgroundRef.current,
       onTap: () => tapRef.current?.(),
+      onCameraTransform: (transform) => {
+        transformRef.current?.(transform);
+        setShowRecenter(Math.abs(transform.x - host.clientWidth / 2) > 1 || Math.abs(transform.y - host.clientHeight / 2) > 1 || Math.abs(transform.scale - 1) > 0.01);
+      },
     }).then((created) => {
       if (cancelled) {
         created.destroy();
@@ -118,7 +128,7 @@ export function MarginalGrowthRibbonView({
       className="absolute inset-0"
       style={{ position: "absolute", inset: 0 }}
     >
-      <button
+      {showRecenter ? <button
         type="button"
         className="absolute bottom-3 z-10 flex size-8 items-center justify-center border bg-black/45 text-white"
         style={{ right: reserveShopSpace ? 240 : 12 }}
@@ -127,7 +137,7 @@ export function MarginalGrowthRibbonView({
         aria-label="Recenter compute field"
       >
         <RotateCcw className="size-4" />
-      </button>
+      </button> : null}
     </div>
   );
 }

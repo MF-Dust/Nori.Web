@@ -21,6 +21,35 @@ from backend.virtual_apps import live_pack
 from backend.virtual_apps.terminal import execute_terminal_command
 
 
+def test_signal_login_command() -> None:
+    password = live_pack.variables().get("signalTempPassword")
+    if not isinstance(password, str) or not password:
+        return
+
+    async def _run():
+        world = WorldSession("signal-login-owner")
+        dispatcher = EventDispatcher(world)
+
+        def request(candidate: str):
+            return dispatcher.handle_event({
+                "channel": "manifold.command.request",
+                "cartridgeId": "manifold.web",
+                "payload": {
+                    "command": "signal.login",
+                    "payload": {"username": "operator@nori.local", "password": candidate},
+                },
+            })
+
+        rejected = await request("incorrect")
+        assert rejected["payload"]["ok"] is False
+
+        accepted = await request(password)
+        assert accepted["payload"]["ok"] is True
+        assert accepted["payload"]["result"]["ok"] is True
+
+    asyncio.run(_run())
+
+
 def test_fact_records() -> None:
     cart = ManifoldWebCartridge()
     before = len(cart.state["facts"])
@@ -396,6 +425,8 @@ if __name__ == "__main__":
     print("[ok] desktop shell channels verified")
     test_bounty_submit()
     print("[ok] bounty submission verified")
+    test_signal_login_command()
+    print("[ok] Signal login command verified")
     test_signal_read_command()
     print("[ok] Signal read/reread persistence verified")
     test_idle_sync_channel()

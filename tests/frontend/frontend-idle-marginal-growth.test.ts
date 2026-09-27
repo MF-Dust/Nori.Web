@@ -5,6 +5,7 @@ import {
   getIdleMarginalGrowthSteps,
 } from "../../frontend-src/apps/idle-economy";
 import { DEFAULT_IDLE_GENERATORS } from "../../frontend-src/apps/idle-default-data";
+import { createSourceIdleRuntimeEngine } from "../../frontend-src/state/idle-runtime-engine";
 import type { IdleGeneratorDefinition } from "../../frontend-src/apps/idle";
 
 /** Shipped marginalGrowthStore + NormalApp exports av/aw/ax. */
@@ -33,6 +34,21 @@ function stepsAtEach(count: number): number {
  * The shipped generator table is the only growth input; a drifted weight would
  * silently move every pinned number below.
  */
+test("unaffordable generator quotes retain the shipped display price", () => {
+  const runtime = createSourceIdleRuntimeEngine();
+  try {
+    for (const [id, cost] of [["token", 10], ["server", 125], ["compute_cluster", 600]] as const) {
+      const quote = runtime.quoteGenerator(id, 1);
+      assert.equal(quote?.willBuy, 0);
+      assert.equal(Math.ceil(quote?.totalCost ?? 0), cost);
+    }
+    runtime.debug.grant(10);
+    assert.equal(runtime.quoteGenerator("token", 1)?.willBuy, 1);
+  } finally {
+    runtime.dispose();
+  }
+});
+
 test("shipped generator table is 24 rows totalling 22.5 growthWeight", () => {
   assert.equal(GENERATORS.length, 24);
   assert.ok(

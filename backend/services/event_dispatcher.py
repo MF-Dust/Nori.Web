@@ -133,6 +133,20 @@ class EventDispatcher:
 
         cartridge = self._mantridge = self._manifold()
 
+        if command == "signal.login":
+            username = str(sub_payload.get("username") or "").strip()
+            password = sub_payload.get("password")
+            expected = str(live_pack.variables().get("signalTempPassword") or "")
+            if not username or not isinstance(password, str) or not expected or password != expected:
+                return False, "invalid Signal credentials"
+            fact = "signal_daniel.unlocked"
+            if cartridge is not None and hasattr(cartridge, "state") and not cartridge.state.get("facts", {}).get(fact):
+                self._dispatch_manifold({"type": "client.emitFact", "factId": fact})
+            return True, {"ok": True, "username": username}
+
+        if command == "signal.recover":
+            return True, {"ok": False, "error": "recovery unavailable"}
+
         if command == "signal.read":
             thread_id = str(sub_payload.get("threadId") or "").strip()
             if not thread_id:

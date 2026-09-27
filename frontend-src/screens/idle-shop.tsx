@@ -23,8 +23,8 @@ const ALIGNMENT_TONES = {
 } as const;
 
 function generatorTone(generator: IdleGeneratorDefinition): string {
-  if (generator.accent) return generator.accent;
   if (generator.alignment === "universal") return UNIVERSAL_TONE;
+  if (generator.accent) return generator.accent;
   return ALIGNMENT_TONES[generator.alignment];
 }
 

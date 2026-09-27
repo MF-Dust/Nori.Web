@@ -33,6 +33,7 @@ const NO_GROWTH = {
 };
 import {
   type IdleAbdicationQuote,
+  IDLE_MANIFOLD_UNLOCKED_FACT,
   type IdleAlignment,
   type IdleBuyCount,
   type IdleClickResult,
@@ -150,12 +151,14 @@ function ComputeField({
   theme,
   reserveShopSpace,
   onTap,
+  onCameraTransform,
   ribbon,
 }: {
   compute: number;
   theme: IdleTheme;
   reserveShopSpace: boolean;
   onTap?: () => void;
+  onCameraTransform?: (transform: { x: number; y: number; scale: number }) => void;
   ribbon?: {
     shape: "circle" | "chubby" | "spiky" | "nori";
     params: MarginalGrowthState["params"];
@@ -218,6 +221,7 @@ function ComputeField({
         cameraClamp={ribbon.cameraClamp}
         backgroundColor={ribbon.backgroundColor}
         onTap={onTap}
+        onCameraTransform={onCameraTransform}
         reserveShopSpace={reserveShopSpace}
       />
     );
@@ -292,6 +296,10 @@ export function IdleScreen({
   const effective = getEffectiveDesktopCompute(snapshot.computeState);
   const initialized = !!snapshot.state.facts["compute.initialized"];
   const [introCompleted, setIntroCompleted] = useState(false);
+  const [camera, setCamera] = useState<{ x: number; y: number; scale: number } | null>(null);
+  const updateCamera = useCallback((next: { x: number; y: number; scale: number }) => {
+    setCamera((previous) => previous && previous.x === next.x && previous.y === next.y && previous.scale === next.scale ? previous : next);
+  }, []);
   const initializationFactInFlight = useRef(false);
   const interactive = initialized || introCompleted;
   const hasShop = snapshot.generators.length > 0;
@@ -342,7 +350,7 @@ export function IdleScreen({
   const capFinite = Number.isFinite(cap);
   const capReached = capFinite && effective.compute >= cap;
   const showCap = !capFinite || (capFinite && effective.compute >= cap * 0.5);
-  const showMeta = snapshot.state.currentAlignment !== "equilibrium";
+  const showMeta = !snapshot.state.facts[IDLE_MANIFOLD_UNLOCKED_FACT];
 
   useEffect(() => {
     if (!marginalGrowth || growth.source !== "autoplay") return;
@@ -380,6 +388,7 @@ export function IdleScreen({
         theme={theme}
         reserveShopSpace={hasShop}
         onTap={clickCore}
+        onCameraTransform={updateCamera}
         ribbon={
           marginalGrowth
             ? {
@@ -397,6 +406,13 @@ export function IdleScreen({
         }
       />
 
+      {interactive ? <div className="pointer-events-none absolute inset-0 z-10">
+        {/* ponytail: the captured bundle core is static; redraw frames if animated click pulses need parity. */}
+        <div className="pointer-events-none absolute" style={{ left: camera?.x ?? "50%", top: camera?.y ?? "50%", transform: `scale(${camera?.scale ?? 1})`, transformOrigin: "top left" }}>
+          <img alt="" draggable={false} className="pointer-events-none absolute max-w-none" src="/assets/idle-core.png" style={{ width: 460, height: 460, left: -230, top: -230, imageRendering: "auto", filter: alignment === "accelerate" ? "hue-rotate(175deg)" : alignment === "decelerate" ? "hue-rotate(-95deg)" : undefined }} />
+          <button type="button" aria-label="算力" className="pointer-events-auto absolute cursor-pointer touch-none" style={{ left: -75, top: -75, width: 150, height: 150 }} onClick={clickCore} />
+        </div>
+      </div> : null}
       {interactive ? <IdleProgressionRail runtime={runtime} snapshot={snapshot} /> : null}
       {interactive ? <IdleGeneratorShop runtime={runtime} snapshot={snapshot} /> : null}
       {interactive ? (
@@ -418,6 +434,13 @@ export function IdleScreen({
             <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ color: "#67e8f9", transform: "translate(1px, 0)", opacity: 0.32, mixBlendMode: "screen" }}>{formatDesktopCompute(effective.compute)}</span>
             <span className="relative">{formatDesktopCompute(effective.compute)}</span>
           </div>
+          {showCap ? (
+            <PixelTooltip side="bottom" content={<div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-cyan)]">算力上限</div><div className="pixel-fs-sm opacity-80">{capFinite ? "系统可容纳的最大算力。达到上限后，算力将停止增长；提高上限后才能继续产出。" : "封印已经解开，人为设下的限额随之消失。算力不再有上限。"}</div></div>}>
+              <span className="pixel-num pixel-fs-sm cursor-help" style={{ color: capReached ? "var(--px-amber)" : capFinite ? "var(--px-white)" : "var(--px-cyan)", opacity: capReached ? 1 : capFinite ? 0.6 : 0.85 }}>
+                {capFinite ? (capReached ? "已达上限 " : "上限 ") + formatDesktopCompute(cap) : "上限 ♾️"}
+              </span>
+            </PixelTooltip>
+          ) : null}
           <div className="pixel-num pixel-fs-md pixel-tsh-1 pointer-events-auto flex items-center gap-3">
             <PixelTooltip
               side="bottom"
@@ -428,24 +451,6 @@ export function IdleScreen({
                 <span className="pixel-fs-sm text-[var(--px-cyan)]/55">/s</span>
               </span>
             </PixelTooltip>
-            {showCap ? (
-              <PixelTooltip
-                side="bottom"
-                content={capFinite
-                  ? <div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-amber)]">算力上限</div><div className="pixel-fs-sm opacity-80">系统可容纳的最大算力。达到上限后，算力将停止增长；提高上限后才能继续产出。</div></div>
-                  : <div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-cyan)]">算力上限</div><div className="pixel-fs-sm opacity-80">封印已经解开，人为设下的限额随之消失。算力不再有上限。</div></div>}
-              >
-                <span
-                  className="pixel-fs-sm cursor-help"
-                  style={{
-                    color: capReached ? "var(--px-amber)" : capFinite ? "var(--px-white)" : "var(--px-cyan)",
-                    opacity: capReached ? 1 : capFinite ? 0.6 : 0.85,
-                  }}
-                >
-                  {capFinite ? (capReached ? "已达上限 " : "上限 ") + formatDesktopCompute(cap) : "上限 ♾️"}
-                </span>
-              </PixelTooltip>
-            ) : null}
             {showMeta ? (
               <>
                 <PixelSeparator />
@@ -473,7 +478,7 @@ export function IdleScreen({
           </div>
         </div>
       ) : null}
-      {interactive ? (
+      {interactive && snapshot.state.affiliatedFaction ? (
         <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 -translate-x-1/2">
           <IdleSkillBar runtime={runtime} snapshot={snapshot} />
         </div>
