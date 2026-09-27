@@ -29,3 +29,46 @@ Open acceptance: exact behind-glow channels, all six original/source visual comp
 - `npm run frontend:app:build`: passed for the integrated source components.
 - `scripts/frontend_boot_corruption_probe.mjs` uses real production components/model/renderers with transport-only fixtures. It captures fracture, dive and wake; checks no completion before input, real completion after input, corruption request/voice/QTE entry and cancellation without a completion fact.
 - `scripts/smoke_frontend_stories.mjs` runs all six production scene probes under a dedicated Vite server. Local Chromium process launch is blocked by the environment's socket permission. GitHub Actions run `35355349021`, boot/corruption job `105633237177`, passed the behavior probe and produced screenshots. Visual inspection caught the wake camera defect despite that pass; the updated probe in run `35356495551`, job `105637021426`, passed its actor pixel comparison, and the new screenshot was inspected. This is not a claim of historical visual parity.
+
+## Cold-open readiness is visibility-scoped
+
+Boot polled `.nori-stage` for `coldOpen=ready` from `requestAnimationFrame` behind a
+plain 60 s `setTimeout`. A hidden tab runs neither RAF nor the scene's own work, so a
+Boot entered from a background tab reported "Scene resources could not be loaded" after
+a minute of perfectly normal loading. Ending already restarted its budget on
+`visibilitychange`; Boot had not.
+
+`frontend-src/story/story-readiness.ts` now owns that rule for both scenes:
+`visibleReadinessDeadline(ms)` exposes `expired(now)` and `refresh()`, and `refresh()`
+is a no-op while hidden. `visibilitychange` fires before the next frame on return to
+the tab, so the budget restarts in time and background time can never extend it.
+`tests/frontend-story-clock.test.ts` pins that sequence; that file was previously
+orphaned — no `package.json` script ran it — and is now part of `frontend:stories:test`.
+
+## Original-constant comparison (static, 2026-09-26)
+
+`bootScene`/`endingFrame` were re-derived from the shipped cold-open code in
+`public/assets/NormalApp-*.js` rather than from the previous prose. Verified equal:
+
+- Phase durations resolve from the shipped defaults: `shatterDuration 16 × Sl.BREAK
+  0.85 = 13.6`, `surfaceDur 3.6`, `descendDur 8.5`, `pushDur 3`, `drawDur 4.5`,
+  `morphDur 4.8`, `blobHoldDur 1.1`, `revealDur 2.4`, `approachDur 2.2`.
+- `settle = max(pullBack + zoomOut 2.8, dissipate 0.4 + 2.6, wake 0.3 + shroud
+  0.25 + 1.9) + 0.3 = 3.3`.
+- World offset `YP = -0.6` folds into every preset: `arrive (0,1.1,13.5)`, `formed
+  (0,0.8,9.2)`, `face (0,1.75,7.4)`, `rest (0,0,7.4)`, and their look targets.
+- Dive arc `smooth((t − surface − 1.6) / 13.5)` lands at `arrive = surface + 1.6 +
+  13.5 = 28.7`; `cameraFar` denominator 14.1 is consistent with both the shipped
+  module default and the real push end.
+- Wake burst window splits `min(0.18, 3.6·0.1)`, `max(0, 3.6 − 0.18 − 0.5)`, `min(0.5,
+  3.6·0.4)` → the source's `0.18 / 3.1 / 0.5` boundaries.
+- `noriDim` clears at `age ≥ 2.15`, i.e. `wakeDelay 0.3 + shroudLift 0.25 + 1.9 − 0.3`.
+- `camNull` (camera released to the desktop) at `ready + pullBack + zoomOut = +2.8`.
+- Ending's six-segment table is reproduced by five rows because the shipped
+  `face→face` row degenerates to zero length at `pullBackDelay = 0`; the selection
+  loop skips it at `t = 32.6` and takes `face→rest` over `[32.6, 35.4]`, which is what
+  `endingCamera` does.
+
+No source change resulted from this pass. What remains open for Boot is acceptance
+only: original frame and audio comparison against a real playthrough, and the re-entry
+/ error / cross-scene-handoff matrix.

@@ -1,0 +1,102 @@
+.source-connection-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 6, 12, 0.55);
+  backdrop-filter: blur(12px) saturate(118%);
+}
+.source-connection-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(22, 26, 34, 0.88);
+  border: 1px solid rgba(158, 210, 210, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px) saturate(150%);
+}
+.source-connection-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.12) 30%, rgba(255, 255, 255, 0.12) 70%, transparent 100%);
+}
+.source-connection-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 24rem;
+  padding: 24px;
+  text-align: center;
+}
+.source-connection-card-body h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--foreground, #e8eef2);
+}
+.source-connection-card-body p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted-foreground, rgba(232, 238, 242, 0.62));
+}
+.source-connection-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.source-connection-toast {
+  position: fixed;
+  z-index: 81;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground, #e8eef2);
+}
+.source-connection-toast.corner {
+  right: 16px;
+  bottom: 16px;
+  pointer-events: none;
+}
+.source-connection-toast.recovered {
+  left: 16px;
+  bottom: 16px;
+  z-index: 9999;
+  animation: source-connection-toast-in 200ms ease-out;
+}
+.source-connection-check {
+  width: 16px;
+  height: 16px;
+  color: var(--primary, oklch(78% 0.08 210));
+}
+.source-connection-chibi {
+  width: 160px;
+  height: 160px;
+  user-select: none;
+}
+.source-connection-qq {
+  color: var(--foreground, #e8eef2);
+  font-weight: 600;
+  user-select: text;
+}
+@keyframes source-connection-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 719px), (max-height: 519px) {
+  .source-connection-toast.corner { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .source-connection-toast.recovered { animation: none; }
+}

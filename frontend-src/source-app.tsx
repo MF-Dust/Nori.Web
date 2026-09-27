@@ -4,8 +4,13 @@ import { subscribeManifoldChanges } from "./runtime/manifold-subscription";
 import { SignalDanielConversationRuntime } from "./apps/signal-daniel";
 import {
   createSignalLocalReadFactsStore,
+  createSignalPendingFocusStore,
   signalConversationUnreadCount,
 } from "./apps/messenger-interactions";
+import {
+  SignalArrivalTracker,
+  signalArrivalPreview,
+} from "./apps/messenger";
 import { ChipController } from "./runtime/chip-controller";
 import {
   ChipButton,
@@ -24,6 +29,7 @@ import {
   type SettingsRuntime,
 } from "./screens/settings-screen";
 import { SystemService } from "./services/system";
+import { useUnlockSettings } from "./state/unlock-store";
 import {
   createTerminalLocalFileSystem,
   connectTerminalRemote,
@@ -44,6 +50,7 @@ import { DesktopSurface } from "./components/desktop-surface";
 import { useAudioSettings } from "./state/audio-store";
 import { useGraphicsSettings } from "./state/graphics-store";
 import type { AuthState } from "./runtime/auth";
+import type { JsonValue } from "./runtime/protocol";
 import { createCakeDuelPresentationAssets } from "./apps/cakeduel-assets";
 import { CakeDuelRuntimeController } from "./apps/cakeduel-runtime";
 import {
@@ -51,9 +58,19 @@ import {
   type RecoveredDesktopRuntimeBundle,
 } from "./apps/recovered-presentation";
 import { RecoveredDesktopShell } from "./components/recovered-desktop-shell";
+import { SourceAssetBootGate } from "./components/source-asset-boot-gate";
+import { SourceConnectionLayer } from "./components/source-connection-layer";
 import { NoriFrontendRuntime } from "./runtime/frontend-runtime";
 import { createNetworkFaultWebSocketFactory, readNetworkFaultProfile } from "./runtime/debug-tools";
 import { createSourceIdleRuntimeEngine } from "./state/idle-runtime-engine";
+import {
+  DEFAULT_MARGINAL_GROWTH,
+  bindMarginalGrowthEconomy,
+  createMarginalGrowthStore,
+} from "./state/marginal-growth-store";
+import { NotificationLayer } from "./components/notification-layer";
+import { NORI_PHASE_MOODS } from "./live2d/reaction-director";
+import { notificationInputFromMessage } from "./state/notification-store";
 
 /** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
 const MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS = 1800;
@@ -69,6 +86,11 @@ const locale = sourceLocale(preferredLocale());
 // Shared compatibility panels and assistive technology read the document locale.
 document.documentElement.lang = locale;
 const sourceTranslate = createSourceTranslate(locale);
+const signalArrivalLabels = {
+  recalled: sourceTranslate("signal.message.recalled"),
+  image: sourceTranslate("signal.message.imagePreview"),
+  file: sourceTranslate("signal.message.filePreview"),
+};
 
 function worldFacts(frontend: NoriFrontendRuntime): Set<string> {
   return frontend.world.facts();
@@ -84,6 +106,8 @@ function createSourceSession() {
     createWebSocket: createNetworkFaultWebSocketFactory(readNetworkFaultProfile(localStorage)),
   });
   const signalLocalReadFacts = createSignalLocalReadFactsStore();
+  const signalPendingFocus = createSignalPendingFocusStore();
+  const signalArrivalTracker = new SignalArrivalTracker();
   const daniel = new SignalDanielConversationRuntime({
     manifold: frontend.manifold,
     hasFact: (factId) => hasWorldFact(frontend, factId),
@@ -130,6 +154,7 @@ function createSourceSession() {
     frontend.games,
     frontend.world,
     frontend.arcade,
+    frontend.reactions,
   );
   const idle = createSourceIdleRuntimeEngine({
     getFacts: () => worldFacts(frontend),
@@ -141,6 +166,11 @@ function createSourceSession() {
     getWorldId: () => frontend.world.snapshot().worldId,
   });
   idle.start();
+
+  // The shipped Idle screen owns one marginal-growth store and drives its steps
+  // from the live generator economy.
+  const marginalGrowth = createMarginalGrowthStore(DEFAULT_MARGINAL_GROWTH);
+  const releaseMarginalGrowth = bindMarginalGrowthEconomy(marginalGrowth, idle);
 
   const idlePresentation = {
     ...idle,
@@ -182,7 +212,7 @@ function createSourceSession() {
     speechControl: <SpeechModeControl frontend={frontend} locale={locale} />,
     translate: sourceTranslate,
     onReset: async () => {
-      await system.resetWorld(locale);
+      await system.resetWorld(locale, useUnlockSettings.getState().fullUnlock);
       // Stop autosave before deleting progress so the old run cannot reappear.
       idle.dispose();
       try {
@@ -287,12 +317,23 @@ function createSourceSession() {
         translate: sourceTranslate,
         openUrl,
         localReadFacts: signalLocalReadFacts,
+        getPendingFocusThreadId: () => signalPendingFocus.get(),
+        consumePendingFocusThreadId: () => {
+          signalPendingFocus.consume();
+        },
+        subscribePendingFocus: signalPendingFocus.subscribe,
       },
     },
     idle: idlePresentation,
+    marginalGrowth,
     codenames: {
       controller: codenames,
       onNoriReaction: (reaction) => { frontend.reactions.play("codenames", reaction); },
+      onNoriPhaseMood: (active) => {
+        const mood = NORI_PHASE_MOODS[0].expression;
+        if (active) frontend.reactions.setMood(mood);
+        else if (frontend.reactions.mood() === mood) frontend.reactions.clearMood();
+      },
       translate: sourceTranslate,
       locale,
       playSound: frontend.audio.playCue,
@@ -322,6 +363,7 @@ function createSourceSession() {
       windows: {
         debug: { main: { component: () => <DebugScreen frontend={frontend} actions={{
           compute: idle.debug,
+          marginalGrowth,
           loadScenario: async (game, scenarioId) => {
             const ok = game === "chess"
               ? await chess.dispatch({ type: "debugLoadScenario", scenarioId })
@@ -375,9 +417,13 @@ function createSourceSession() {
   return {
     frontend,
     signalLocalReadFacts,
+    signalPendingFocus,
+    signalArrivalTracker,
     chip,
     daniel,
     idle,
+    marginalGrowth,
+    releaseMarginalGrowth,
     codenames,
     cakeduel,
     chess,
@@ -397,6 +443,8 @@ export function SourceApp() {
     const session = createSourceSession();
     setSource(session);
     return () => {
+      session.signalArrivalTracker.reset();
+      session.signalPendingFocus.clear();
       session.chip.dispose();
       session.daniel.dispose();
       session.cakeduel.dispose();
@@ -405,6 +453,7 @@ export function SourceApp() {
       session.drawing.dispose();
       session.pictionary.dispose();
       session.idle.dispose();
+      session.releaseMarginalGrowth();
       session.podcast.dispose();
       session.bundle.runtime.dispose();
       session.frontend.dispose();
@@ -431,18 +480,46 @@ function SourceSessionView({ source }: { source: SourceSession }) {
   const [signalUnreadCount, setSignalUnreadCount] = useState(0);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [linkReason, setLinkReason] = useState(source.frontend.arcade.lastClose?.reason ?? "");
+  useEffect(() => source.frontend.arcade.onState(() => {
+    setLinkReason(source.frontend.arcade.lastClose?.reason ?? "");
+  }), [source]);
+  const linkBlocked = linkReason === "session_replaced" || linkReason === "world_reset" || linkReason === "session_invalid" || linkReason === "overloaded" || linkReason === "soft_closed" || linkReason === "closed";
   useEffect(() => {
     let disposed = false;
     let revision = 0;
-    const syncSignalUnread = async () => {
+    let emptyBaselineTimer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleEmptyBaseline = (worldId: string) => {
+      if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
+      emptyBaselineTimer = setTimeout(() => {
+        emptyBaselineTimer = undefined;
+        if (disposed || source.frontend.world.snapshot().worldId !== worldId) return;
+        void source.frontend.messenger.conversations()
+          .then((latest) => {
+            if (!disposed && source.frontend.world.snapshot().worldId === worldId)
+              source.signalArrivalTracker.seed(worldId, latest);
+          })
+          .catch((error) => console.warn("[Signal] Failed to settle empty artifact snapshot", error));
+      }, 400);
+    };
+    const syncSignal = async () => {
       const currentRevision = ++revision;
-      if (!source.frontend.world.snapshot().worldId) {
+      const requestWorldId = source.frontend.world.snapshot().worldId;
+      if (!requestWorldId) {
+        if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
+        emptyBaselineTimer = undefined;
+        source.signalArrivalTracker.reset();
         if (!disposed) setSignalUnreadCount(0);
         return;
       }
       try {
         const conversations = await source.frontend.messenger.conversations();
-        if (disposed || currentRevision !== revision) return;
+        if (
+          disposed ||
+          currentRevision !== revision ||
+          source.frontend.world.snapshot().worldId !== requestWorldId
+        )
+          return;
         const currentFacts = worldFacts(source.frontend);
         setSignalUnreadCount(
           signalConversationUnreadCount(
@@ -451,25 +528,76 @@ function SourceSessionView({ source }: { source: SourceSession }) {
             source.signalLocalReadFacts.snapshot(),
           ),
         );
+        if (conversations.length) {
+          if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
+          emptyBaselineTimer = undefined;
+        } else {
+          scheduleEmptyBaseline(requestWorldId);
+        }
+        for (const arrival of source.signalArrivalTracker.update(
+          requestWorldId,
+          conversations,
+        )) {
+          const threadId = arrival.conversation.thread.threadId;
+          source.frontend.notifications.push({
+            appId: "signal",
+            title: arrival.conversation.thread.title,
+            body: signalArrivalPreview(arrival.message, signalArrivalLabels),
+            sfx: "comms-signal-arrival",
+            onClick: () => {
+              source.signalPendingFocus.set(threadId);
+              void source.bundle.runtime.store.getState().launchApp({
+                appId: "signal",
+                mode: "activate",
+              });
+            },
+          });
+        }
       } catch (error) {
         if (!disposed && currentRevision === revision)
-          console.warn("[Signal] Failed to refresh Dock unread count", error);
+          console.warn("[Signal] Failed to refresh Messenger state", error);
       }
     };
-    void syncSignalUnread();
-    const unsubscribe = subscribeManifoldChanges(
+    void syncSignal();
+    const unsubscribeWorld = subscribeManifoldChanges(
       source.frontend.world,
-      () => void syncSignalUnread(),
+      () => void syncSignal(),
     );
     const unsubscribeLocalReads = source.signalLocalReadFacts.subscribe(
-      () => void syncSignalUnread(),
+      () => void syncSignal(),
     );
+    const unsubscribeArtifacts = source.frontend.arcade.onMessage((message) => {
+      const raw = message as unknown as { type?: string; channel?: string };
+      if (
+        raw.type === "event" &&
+        (raw.channel === "manifold.artifacts.invalidated" ||
+          raw.channel === "manifold.facts.changed")
+      )
+        void syncSignal();
+    });
     return () => {
       disposed = true;
       revision++;
-      unsubscribe();
+      if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
+      unsubscribeWorld();
       unsubscribeLocalReads();
+      unsubscribeArtifacts();
     };
+  }, [source]);
+  useEffect(() => {
+    const unsubscribe = source.frontend.arcade.onMessage((message) => {
+      const parsed = notificationInputFromMessage(message);
+      if (parsed) source.frontend.notifications.push(parsed.input);
+    });
+    return unsubscribe;
+  }, [source]);
+  useEffect(() => {
+    const sync = () =>
+      source.frontend.notifications.setSuppressed(
+        source.frontend.story.snapshot() !== null,
+      );
+    sync();
+    return source.frontend.story.subscribe(sync);
   }, [source]);
   useEffect(() => {
     document.documentElement.classList.toggle(
@@ -536,6 +664,20 @@ function SourceSessionView({ source }: { source: SourceSession }) {
   }, [source, auth.status, ready, facts, sceneMusic]);
   const chipOffline =
     facts.has("arg.memory.shown") && !facts.has("arg.ending.shown");
+  const openNotificationApp = (
+    appId: string,
+    args?: Record<string, JsonValue>,
+  ) => {
+    if (!source.bundle.runtime.registry.lookupApp(appId)) {
+      console.warn(`[Notify] server-push onClick references unknown appId: ${appId}`);
+      return;
+    }
+    void source.bundle.runtime.store.getState().launchApp({
+      appId,
+      mode: "launch",
+      args,
+    });
+  };
   useEffect(() => {
     source.chip.configure(
       source.frontend.world.snapshot().worldId,
@@ -556,6 +698,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       />
     );
   return (
+    <SourceAssetBootGate firstBoot={!facts.has("boot.completed")} locale={locale} booting={!ready && !error && !linkBlocked}>
     <RecoveredDesktopShell
       playCue={source.frontend.audio.playCue}
       bundle={source.bundle}
@@ -592,11 +735,17 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       }
       overlay={
         <>
+          <NotificationLayer
+            store={source.frontend.notifications}
+            translate={sourceTranslate}
+            onOpenApp={openNotificationApp}
+          />
           <StoryScenes frontend={source.frontend} minimizeWindows={source.bundle.runtime.store.getState().minimizeAllWindows} />
           <NoriSceneEffects scene={source.frontend.scene} />
           <ConversationPanel
             frontend={source.frontend}
             locale={locale}
+            chip={source.chip}
             chipButton={
               facts.has("system.repaired") && (
                 <ChipButton
@@ -631,6 +780,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
             upgraded={facts.has("virus.cleared")}
             playCue={source.frontend.audio.playCue}
           />
+          <SourceConnectionLayer arcade={source.frontend.arcade} locale={locale} />
           {error && (
             <div className="source-connection-error" role="alert">
               {error}
@@ -639,5 +789,6 @@ function SourceSessionView({ source }: { source: SourceSession }) {
         </>
       }
     />
+    </SourceAssetBootGate>
   );
 }

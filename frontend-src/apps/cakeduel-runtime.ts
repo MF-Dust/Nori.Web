@@ -2,6 +2,11 @@ import type { ArcadeClient } from "../runtime/arcade-client";
 import type { ArcadeServerMessage, JsonValue } from "../runtime/protocol";
 import type { WorldStore } from "../runtime/world-store";
 import type { GameService } from "../services/games";
+import {
+  NORI_PHASE_MOODS,
+  type CakeDuelReaction,
+  type NoriReactionDirector,
+} from "../live2d/reaction-director";
 import type {
   CakeDuelClaimPresentation,
   CakeDuelLegalAction,
@@ -101,6 +106,7 @@ export type CakeDuelTransientBanner =
 
 export interface CakeDuelControllerSnapshot {
   mounted: boolean;
+  connected: boolean;
   mountPending: boolean;
   actionPending: boolean;
   route: CakeDuelRoute;
@@ -375,20 +381,36 @@ export class CakeDuelRuntimeController {
   private challengeTimer: ReturnType<typeof setTimeout> | null = null;
   private wolfyTauntActive = false;
   private wolfyTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingChallengeReaction: CakeDuelReaction | null = null;
+  private connected: boolean;
+  private users = 0;
   private current: CakeDuelControllerSnapshot;
 
   constructor(
     private readonly games: GameService,
     private readonly world: WorldStore,
     arcade: ArcadeClient,
+    private readonly reactions?: NoriReactionDirector,
   ) {
+    this.connected = arcade.connectionState === "open";
     this.current = this.computeSnapshot();
+    this.unsubs.push(arcade.onState((state) => {
+      const connected = state === "open";
+      if (!connected) {
+        if (this.clearPendingRequests()) this.error = "Connection interrupted";
+      } else if (this.error === "Connection interrupted") {
+        this.error = null;
+      }
+      this.connected = connected;
+      this.publish();
+    }));
     this.unsubs.push(world.subscribe((_state, message) => {
       if (world.runtime("cakeduel")) this.mountPending = false;
       const events = engineEvents(message);
       if (events.length > 0) {
         const previousState = this.current.state;
         const nextState = parseCakeDuelRuntimeState(world.runtime("cakeduel")?.state);
+        this.consumeReactionEvents(events, previousState, nextState);
         this.consumeTransientEvents(events, previousState, nextState);
       }
       this.publish();
@@ -400,11 +422,13 @@ export class CakeDuelRuntimeController {
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
   };
 
   ensureMounted(): void {
-    if (this.world.runtime("cakeduel") || this.mountPending) return;
+    if (!this.connected || this.world.runtime("cakeduel") || this.mountPending) return;
     try {
       this.mountPending = true;
       this.error = null;
@@ -416,6 +440,34 @@ export class CakeDuelRuntimeController {
       this.publish();
     }
   }
+
+  /**
+   * Window-scoped cartridge ownership, the Cake Duel twin of
+   * `GameCartridgeController.retain()`: the first window mounts, the last one to
+   * close unmounts. A mount still in flight counts as mounted, so closing
+   * during the mount round-trip cannot orphan the cartridge.
+   */
+  retain = (): (() => void) => {
+    this.users++;
+    this.ensureMounted();
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.users = Math.max(0, this.users - 1);
+      // Route transitions may unmount/remount synchronously.
+      queueMicrotask(() => {
+        if (this.users) return;
+        const mounted = this.mountPending || this.world.runtime("cakeduel") !== undefined;
+        this.clearPendingRequests();
+        this.clearTransientPresentation();
+        this.publish();
+        if (mounted && this.connected) {
+          try { this.games.unmount("cakeduel"); } catch { /* Connection may have closed. */ }
+        }
+      });
+    };
+  };
 
   startNormal(difficulty: CakeDuelDifficulty): void {
     this.dispatch({ type: "startGame", mode: "normal", difficulty });
@@ -462,11 +514,25 @@ export class CakeDuelRuntimeController {
     this.bannerTimer = null;
     this.challengeTimer = null;
     this.wolfyTimer = null;
+    if (this.reactions?.mood() === NORI_PHASE_MOODS[1].expression)
+      this.reactions.clearMood();
+    this.pendingChallengeReaction = null;
     this.listeners.clear();
   }
 
+  /** Drops in-flight mount/action state; reports whether anything was pending. */
+  private clearPendingRequests(): boolean {
+    const pending = this.pendingRequestId !== null || this.mountPending;
+    this.pendingRequestId = null;
+    this.mountPending = false;
+    this.pendingDebugResolve?.(false);
+    this.pendingDebugResolve = null;
+    this.pendingDebugScenarioId = null;
+    return pending;
+  }
+
   private dispatch(cmd: { type: string; [key: string]: JsonValue }): void {
-    if (this.pendingRequestId) return;
+    if (!this.connected || this.pendingRequestId) return;
     try {
       this.error = null;
       this.pendingRequestId = this.games.dispatch("cakeduel", cmd);
@@ -491,6 +557,75 @@ export class CakeDuelRuntimeController {
       this.pendingDebugResolve = null;
       this.pendingDebugScenarioId = null;
       resolve?.(false);
+    }
+  }
+
+  private consumeReactionEvents(
+    events: readonly Record<string, unknown>[],
+    previousState: CakeDuelRuntimeState,
+    _nextState: CakeDuelRuntimeState,
+  ): void {
+    const reactions = this.reactions;
+    if (!reactions) return;
+    const lastCakeMood = NORI_PHASE_MOODS[1].expression;
+
+    if (events.some((event) => event.type === "game_started")) {
+      if (reactions.mood() === lastCakeMood) reactions.clearMood();
+      this.pendingChallengeReaction = null;
+    }
+
+    for (const event of events) {
+      if (event.type === "challenge_made") {
+        const challenger = event.challenger === 1 ? 1 : 0;
+        const success = event.success === true;
+        if (challenger === 0) {
+          reactions.play("cakeduel", "challenged");
+          this.pendingChallengeReaction = success
+            ? "bluffCaught"
+            : "vindicated";
+        } else {
+          this.pendingChallengeReaction = success
+            ? "challengeWins"
+            : "challengeFails";
+        }
+        continue;
+      }
+
+      if (
+        event.type === "claim_made" &&
+        event.player === 1 &&
+        typeof event.claim === "string"
+      ) {
+        const cardList = previousState.game?.cardList ?? [];
+        const cards = numberArray(event.cardIds);
+        const claim = event.claim;
+        const bluff = cards.some(
+          (entityId) => cardList[entityId] !== claim,
+        );
+        reactions.playCakeDuelTell(bluff ? "bluff" : "honest");
+        continue;
+      }
+
+      if (event.type === "wolfy_taunt" && event.player === 0) {
+        reactions.play("cakeduel", "wolfyTaunt");
+        continue;
+      }
+
+      if (event.type === "cakes_transferred") {
+        if (event.from === 1) reactions.play("cakeduel", "losesCake");
+        const cakesAfter = numberArray(event.cakesAfter);
+        if (cakesAfter[1] === 1) reactions.setMood(lastCakeMood);
+        else if (reactions.mood() === lastCakeMood) reactions.clearMood();
+        continue;
+      }
+
+      if (event.type === "game_ended") {
+        if (reactions.mood() === lastCakeMood) reactions.clearMood();
+        reactions.play(
+          "cakeduel",
+          event.winner === 1 ? "wins" : "loses",
+        );
+      }
     }
   }
 
@@ -577,6 +712,9 @@ export class CakeDuelRuntimeController {
     this.challengeTimer = setTimeout(() => {
       this.challengeTimer = null;
       this.challengeRevealStage = "revealed";
+      const reaction = this.pendingChallengeReaction;
+      this.pendingChallengeReaction = null;
+      if (reaction) this.reactions?.play("cakeduel", reaction);
       this.publish();
       this.challengeTimer = setTimeout(() => {
         this.challengeTimer = null;
@@ -611,6 +749,7 @@ export class CakeDuelRuntimeController {
     this.bannerQueue.length = 0;
     this.challengeRevealStage = "idle";
     this.pendingChallengeBanners.length = 0;
+    this.pendingChallengeReaction = null;
     this.wolfyTauntActive = false;
   }
 
@@ -638,6 +777,7 @@ export class CakeDuelRuntimeController {
     const route = derivedRoute === "results" && transientRouteHold ? "game" : derivedRoute;
     return {
       mounted: runtime !== undefined,
+      connected: this.connected,
       mountPending: this.mountPending,
       actionPending: this.pendingRequestId !== null,
       route,

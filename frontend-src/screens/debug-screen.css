@@ -31,10 +31,13 @@
   max-width: 70ch;
 }
 .source-debug nav {
-  flex: 0 0 128px;
+  flex: 0 0 168px;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   border-right: 1px solid var(--border);
-  padding: 4px;
+  padding: 8px;
   background: color-mix(in srgb, var(--muted) 30%, transparent);
 }
 .source-debug button,
@@ -52,8 +55,10 @@
   display: block;
   width: 100%;
   text-align: left;
-  margin-bottom: 2px;
+  margin: 0;
   border: 0;
+  border-radius: 6px;
+  padding: 6px 8px;
 }
 .source-debug nav [aria-pressed="true"] {
   background: color-mix(in srgb, var(--primary) 10%, transparent);
@@ -63,7 +68,10 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
   background: color-mix(in srgb, var(--muted) 10%, transparent);
 }
 .source-debug [hidden] {

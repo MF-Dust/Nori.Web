@@ -23,8 +23,16 @@ export interface CodenamesAppProps {
   locale?: string;
   playSound?: (cue: string) => void;
   onNoriReaction?: (reaction: NoriReactionMap["codenames"]) => void;
+  onNoriPhaseMood?: (active: boolean) => void;
 }
-export function CodenamesApp({ controller, translate: t, locale = "en", playSound, onNoriReaction }: CodenamesAppProps) {
+export function CodenamesApp({
+  controller,
+  translate: t,
+  locale = "en",
+  playSound,
+  onNoriReaction,
+  onNoriPhaseMood,
+}: CodenamesAppProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
   const feedback = useRef(new CodenamesFeedback());
   const reaction = useRef(onNoriReaction); reaction.current = onNoriReaction;
@@ -43,6 +51,13 @@ export function CodenamesApp({ controller, translate: t, locale = "en", playSoun
   const [validation, setValidation] = useState<string | null>(null);
   const [overlay, setOverlay] = useState<CodenamesBoardOverlayType | null>(null);
   const state = snapshot.state, game = state?.gameState ?? null, player = state?.counterpartSide ?? "A";
+  const phaseMood = useRef(onNoriPhaseMood);
+  phaseMood.current = onNoriPhaseMood;
+  const gamePhase = game?.phase ?? null;
+  useEffect(() => {
+    phaseMood.current?.(gamePhase === "SUDDEN_DEATH");
+    return () => phaseMood.current?.(false);
+  }, [gamePhase]);
   const tutorialStep = state?.tutorial?.step;
   const gate = useMemo(() => codenamesTutorialGate(tutorialStep), [tutorialStep]);
   const tutorialInstruction = useMemo(() => codenamesTutorialInstruction(tutorialStep, locale), [tutorialStep, locale]);
@@ -106,7 +121,7 @@ export function CodenamesApp({ controller, translate: t, locale = "en", playSoun
     {!game && <div aria-hidden className="source-codenames-forest"><CodenamesForest /></div>}
     {!game ? <><div aria-hidden className="source-codenames-start-border" /><button type="button" className="source-codenames-menu-help" aria-label={t("codenames.help.button")} onClick={() => setHelp(true)}>?</button><div className="source-codenames-menu">
       <div className="source-codenames-fireflies" aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <i key={index} />)}</div>
-      <div className="source-codenames-compass" aria-hidden="true"><i /><span>N</span></div>
+      <div className="source-codenames-compass" aria-hidden="true"><b /><i /><span>N</span><span className="south">S</span></div>
       <h1>{t("codenames.title")}</h1>
       <div className="source-codenames-title-rule" aria-hidden="true"><i /><span>✦</span><i /></div><p>{t("codenames.subtitle")}</p>
       {missionSetup && <fieldset disabled={!snapshot.mounted || snapshot.pending}><legend>{t("codenames.difficulty.label")}</legend>

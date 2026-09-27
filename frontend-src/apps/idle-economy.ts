@@ -129,6 +129,46 @@ export function isIdleGeneratorVisible(
   return state.currentAlignment !== null || !generator.dynamicRate;
 }
 
+/**
+ * Marginal-growth ribbon phase, ported verbatim from the shipped Idle chunk
+ * (`IdleScreen-DCDB640k.js:3094` phase memo). Logarithmic in owned counts, so
+ * it is already 0.038 at one of each generator and saturates once the weighted
+ * log total passes `kRef`.
+ */
+export function getIdleMarginalGrowthPhase(input: {
+  generators: readonly IdleGeneratorDefinition[];
+  owned: Readonly<Record<string, number>>;
+  kRef: number;
+  exponent: number;
+}): number {
+  if (input.kRef <= 0) return 0;
+  let weighted = 0;
+  for (const generator of input.generators) {
+    weighted +=
+      generator.growthWeight * Math.log(1 + (input.owned[generator.id] ?? 0));
+  }
+  const raw = Math.max(0, Math.min(1, weighted / input.kRef));
+  return input.exponent === 1
+    ? raw
+    : 1 - (1 - raw) ** Math.max(0.01, input.exponent);
+}
+
+/**
+ * Ribbon step count for a phase, ported from the shipped owned-mode effect
+ * (`IdleScreen-DCDB640k.js:3195`): a clamped `stepOffset` floor plus the
+ * remaining span, so the ribbon is never empty.
+ */
+export function getIdleMarginalGrowthSteps(input: {
+  phase: number;
+  stepOffset: number;
+  maxSteps: number;
+}): number {
+  const maxSteps = Math.max(1, input.maxSteps);
+  const stepOffset = Math.max(0, Math.min(input.stepOffset, maxSteps - 1));
+  const phase = Math.max(0, Math.min(1, input.phase));
+  return stepOffset + phase * (maxSteps - stepOffset);
+}
+
 /** Active skill buffs multiply a generator's effective per-unit rate. */
 export function getIdleActiveGeneratorMultiplier(
   generatorId: string,

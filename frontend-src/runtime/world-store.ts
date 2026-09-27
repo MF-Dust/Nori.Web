@@ -73,7 +73,9 @@ export class WorldStore {
 
   subscribe(listener: WorldListener): () => void {
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   private publish(message: ArcadeServerMessage): void {

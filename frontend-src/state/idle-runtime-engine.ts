@@ -38,6 +38,7 @@ import {
 } from "../apps/idle-default-data";
 import {
   getIdleGeneratorTotalCost,
+  getIdleSmartBuyCount,
   isIdleGeneratorVisible,
   resolveIdleGeneratorBuyCount,
   type IdleCostMultiplierResolver,
@@ -866,7 +867,9 @@ export function createSourceIdleRuntimeEngine(
 
     subscribe(listener) {
       listeners.add(listener);
-      return () => listeners.delete(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
 
     quoteGenerator(generatorId, mode): IdleGeneratorQuote | null {
@@ -875,7 +878,8 @@ export function createSourceIdleRuntimeEngine(
       const owned = state.owned[generator.id] ?? 0;
       const resolver = generatorCostResolver(state);
       const willBuy = resolveIdleGeneratorBuyCount(generator, owned, state.compute, mode, state, resolver);
-      const totalCost = getIdleGeneratorTotalCost(generator, owned, willBuy, state, resolver);
+      const displayCount = willBuy || (mode === "max" ? 1 : mode === "smart" ? getIdleSmartBuyCount(owned) : mode);
+      const totalCost = getIdleGeneratorTotalCost(generator, owned, displayCount, state, resolver);
       const perUnitRate = generatorRate(state, generator, generators, upgrades, constants);
       return {
         generatorId,
@@ -1062,10 +1066,17 @@ export function createSourceIdleRuntimeEngine(
       } else if (state.compute < alignment.cost) {
         return;
       }
+      const matchingFactions = factions.filter((faction) => FACTION_ALIGNMENT[faction.id] === alignment.id);
+      const onlyFaction = matchingFactions.length === 1 ? matchingFactions[0] : null;
+      const autoFaction = state.affiliatedFaction === null && onlyFaction &&
+        !upgrades.some((upgrade) => upgrade.factionId === onlyFaction.id && upgrade.factionTier === 1 && isIdleFactionRelationUpgrade(upgrade))
+        ? onlyFaction.id : null;
       state = {
         ...state,
         compute: finiteCompute(state.compute - (alignment.unlockFact ? 0 : alignment.cost)),
         currentAlignment: alignment.id,
+        affiliatedFaction: autoFaction ?? state.affiliatedFaction,
+        everAlliedFactions: autoFaction ? { ...state.everAlliedFactions, [autoFaction]: true } : state.everAlliedFactions,
         anyActionThisEra: true,
       };
       publish();

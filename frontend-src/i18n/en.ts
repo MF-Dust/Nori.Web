@@ -1157,6 +1157,10 @@ export default {
     "system": {
       "button": "Reset system...",
       "description": "Erase all progress and Nori's memory, then start over.",
+      "fullUnlock": {
+        "title": "Full unlock",
+        "description": "Turn off to start fresh; progress stays in this browser. The system restarts when changed."
+      },
       "dialog": {
         "body": "All progress, files, and your conversations with Nori will be erased. This cannot be undone.",
         "cancel": "Cancel",

@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import {
   NORI_PRODUCTION_APPS,
   type ProductionAppDescriptor,
@@ -227,12 +226,3 @@ export function createProductionWindowAppRegistry(
   return createWindowAppRegistry(apps, { warn: options.warn });
 }
 
-/**
- * Helper shape for renderers that want to explain why a production window is
- * still a migration boundary instead of silently rendering an empty surface.
- */
-export interface UnrecoveredProductionWindowNoticeProps {
-  appId: string;
-  windowType: string;
-  fallback?: ReactNode;
-}

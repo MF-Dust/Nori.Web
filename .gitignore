@@ -3,10 +3,22 @@ __pycache__/
 **/__pycache__/
 *.py[cod]
 .research/
-.frontend-recovery/
-.frontend-recovery-ci/
+.artifacts/
+
+# Generated outputs from before the .artifacts/ move.
 .frontend-build/
 .frontend-app-build/
+frontend-app-smoke/
+frontend-candidate-smoke/
+frontend-games-lifecycle/
+frontend-games-smoke/
+frontend-stories-smoke/
+frontend-surfaces-smoke/
+frontend-visual-comparison/
+frontend-debug-layout/
+frontend-visual-games/
+frontend-visual-reference/
+.wrangler-candidate.json
 data/*.sqlite3
 data/*.db
 
@@ -27,5 +39,9 @@ live_archive/
 NoriOS_live_archive_*.zip
 backend/data/*.sqlite3
 
-frontend-app-smoke/
-frontend-games-smoke/
+*.log
+tmp/
+
+# esbuild scratch output from ad-hoc verification (see scripts/, which clean up)
+.[a-z]*.mjs
+.[a-z]*.css

@@ -8,7 +8,7 @@ export interface FarewellRenderFrame {
 
 const VERTEX = `#version 300 es
 void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);gl_Position=vec4(p*2.-1.,0.,1.);}`;
-const FRAGMENT = `#version 300 es
+export const FAREWELL_FRAGMENT = `#version 300 es
 precision highp float;
 uniform sampler2D uModel; uniform vec2 uResolution; uniform vec4 uRect;
 uniform vec4 uShadowRect; uniform float uPresence,uWash,uRim,uShadow,uCut,uHasModel;
@@ -21,7 +21,11 @@ void main(){
  if(uHasModel>.5&&all(greaterThanEqual(uv,vec2(0.)))&&all(lessThanEqual(uv,vec2(1.)))) model=texture(uModel,uv)*uPresence;
  vec2 shadowDelta=(pixel-uShadowRect.xy)/max(uShadowRect.zw,vec2(1.));
  float contact=exp(-dot(shadowDelta,shadowDelta)*2.8)*uShadow;
- vec3 background=mix(vec3(1.),vec3(.78,.815,.87),contact*.5);
+ vec2 wideDelta=shadowDelta*1.9;
+ float wideContact=exp(-dot(wideDelta,wideDelta)*2.8)*uShadow;
+ vec3 shadowTint=vec3(.78,.815,.87);
+ vec3 background=mix(vec3(1.),shadowTint,contact*.5);
+ background=mix(background,shadowTint*.93,wideContact*.3);
  float scale=uResolution.y/1440.;
  float tight=(1.-alphaAt(uv+scale*vec2(0.,-2.5)/uRect.zw))
    +.6*(1.-alphaAt(uv+scale*vec2(-2.,-1.8)/uRect.zw))
@@ -75,7 +79,7 @@ export class FarewellRenderer {
     let vertex: WebGLShader | undefined, fragment: WebGLShader | undefined;
     try {
       vertex = compile(gl.VERTEX_SHADER, VERTEX);
-      fragment = compile(gl.FRAGMENT_SHADER, FRAGMENT);
+      fragment = compile(gl.FRAGMENT_SHADER, FAREWELL_FRAGMENT);
       gl.attachShader(program, vertex);
       gl.attachShader(program, fragment);
       gl.linkProgram(program);

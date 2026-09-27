@@ -81,11 +81,11 @@ export class SystemService {
     return result;
   }
 
-  resetWorld(locale: string): Promise<ArcadeServerMessage> {
+  resetWorld(locale: string, fullUnlock = true): Promise<ArcadeServerMessage> {
     if (this.resetting) return this.resetting;
     const result = requestSystemReply(
       this.arcade,
-      { type: "reset_my_web_world", locale },
+      { type: "reset_my_web_world", locale, fullUnlock },
       "web_world_reset_ack",
       15000,
     );

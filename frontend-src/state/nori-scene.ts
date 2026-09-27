@@ -25,6 +25,12 @@ export interface NoriSceneState {
   darkness: number;
   noriDolly: number | null;
   memoryComputeDrain: number;
+  /**
+   * Cumulative Memory `drain-burst` plays. Stays 0 until the drain window,
+   * then 1 at the opening frame and one more every 180ms of scene time.
+   * The count holds after the window so sprites already in flight can fade.
+   */
+  drainBurstSeq: number;
   noriTint: number;
   noriDim: number;
   noriReveal: number;
@@ -37,6 +43,13 @@ export interface NoriSceneState {
   fogFar: number;
   corruptVoice: boolean;
   chatMode: "normal" | "bubbles" | "hidden";
+  /**
+   * `"auto"` is the shipped `"fact"` channel value, not a synonym for "nothing".
+   * The shipped music host resolves it as `n === "silent" ? null : n === "fact" ?
+   * factTrack : ...`, i.e. "use the track the facts imply". `source-app` therefore
+   * skips the override for `"auto"` and lets `desktopMusicTarget(facts)` pick.
+   * Do not add a literal `"fact"` track id: there is no such asset.
+   */
   bgm: "auto" | "silent" | "bgm1" | "bgm_manifold" | "bgm_void";
   noriSleep: boolean;
   noriTexture: "corrupt" | null;
@@ -65,6 +78,7 @@ const defaults = (): NoriSceneState => ({
   darkness: 0,
   noriDolly: null,
   memoryComputeDrain: 0,
+  drainBurstSeq: 0,
   noriTint: 0,
   noriDim: 0,
   noriReveal: 1,

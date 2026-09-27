@@ -1,5 +1,7 @@
-import { ShoppingCart } from "lucide-react";
+import { Zap } from "lucide-react";
 import { useMemo, useState } from "react";
+import { PixelHeading, PixelTooltip } from "./idle-chrome";
+import { IdleIcon } from "./idle-icon";
 import {
   IDLE_BUY_COUNTS,
   IDLE_BUY_COUNT_LABELS,
@@ -21,8 +23,8 @@ const ALIGNMENT_TONES = {
 } as const;
 
 function generatorTone(generator: IdleGeneratorDefinition): string {
-  if (generator.accent) return generator.accent;
   if (generator.alignment === "universal") return UNIVERSAL_TONE;
+  if (generator.accent) return generator.accent;
   return ALIGNMENT_TONES[generator.alignment];
 }
 
@@ -30,13 +32,11 @@ function GeneratorCard({
   generator,
   quote,
   totalProduction,
-  mode,
   onBuy,
 }: {
   generator: IdleGeneratorDefinition;
   quote: IdleGeneratorQuote;
   totalProduction: number;
-  mode: IdleBuyCount;
   onBuy: () => void;
 }) {
   const tone = generatorTone(generator);
@@ -44,58 +44,71 @@ function GeneratorCard({
   const share = totalProduction > 0 ? (quote.totalRate / totalProduction) * 100 : 0;
   const unitLabel = generator.measure ?? "个";
 
+  const owned = quote.owned > 0;
+  const inset =
+    "inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 rgba(255,255,255,.04)";
   return (
+    <PixelTooltip
+      side="left"
+      content={<div className="flex max-w-[200px] flex-col gap-1">
+        <div className="pixel-cjk pixel-fs-lg leading-tight" style={{ color: tone }}>{generator.name}</div>
+        {generator.description ? <div className="pixel-cjk pixel-fs-sm leading-snug opacity-80">{generator.description}</div> : null}
+        <div className="pixel-cjk pixel-fs-sm leading-snug text-[var(--px-dim)]">
+          <div>每{unitLabel}{generator.name}每秒产出 {formatDesktopCompute(quote.perUnitRate)} 算力。</div>
+          <div>所有{generator.name}目前每秒共生成 {formatDesktopCompute(quote.totalRate)} 算力。</div>
+        </div>
+      </div>}
+    >
     <button
       type="button"
       onClick={affordable ? onBuy : undefined}
       aria-disabled={!affordable}
-      className={`group w-full border-2 bg-black/60 p-1.5 text-left transition-colors duration-100 ${
-        affordable
-          ? "hover:bg-white/5 active:translate-y-px"
-          : "cursor-not-allowed opacity-45"
+      className={`group flex w-full items-center gap-2 border-2 bg-[var(--px-panel)] p-1.5 text-left transition-colors duration-100 hover:bg-[var(--px-panel-2)] ${
+        affordable ? "active:translate-y-px" : "cursor-not-allowed opacity-45"
       }`}
       style={{
-        borderColor: `${tone}88`,
-        boxShadow:
-          quote.owned > 0
-            ? `inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 ${tone}33`
-            : "inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 rgba(255,255,255,.04)",
+        borderColor: owned ? tone : "var(--px-stroke)",
+        boxShadow: owned
+          ? `inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 ${tone}33`
+          : inset,
       }}
-      title={`${generator.name} · 每${unitLabel}每秒产出 ${formatDesktopCompute(quote.perUnitRate)} 算力；当前总产出 ${formatDesktopCompute(quote.totalRate)} 算力/秒`}
     >
-      <div className="flex items-start gap-2">
-        <div
-          className="grid size-8 shrink-0 place-items-center border font-semibold"
-          style={{ borderColor: `${tone}99`, color: tone }}
-          aria-hidden="true"
-        >
-          {generator.name.slice(0, 1)}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-1">
-            <span className="min-w-0 flex-1 truncate text-[11px] font-semibold" style={{ color: tone }}>
-              {generator.name}
-            </span>
-            <span className="shrink-0 text-[10px] tabular-nums text-white/70">
-              {quote.owned}
-            </span>
-          </div>
-          <div className="mt-0.5 flex items-center justify-between gap-1 text-[9px] tabular-nums text-white/55">
-            <span>{formatDesktopCompute(quote.totalRate)}/s</span>
-            <span>{share.toFixed(1)}%</span>
-          </div>
-        </div>
+      <div className="relative size-8 shrink-0" style={{ color: tone }} aria-hidden="true">
+        {generator.icon ? (
+          <IdleIcon name={generator.icon} className="size-full" />
+        ) : (
+          <span className="grid size-full place-items-center pixel-fs-sm">{generator.name.slice(0, 1)}</span>
+        )}
       </div>
-
-      <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-white/10 pt-1 text-[10px]">
-        <span className="tabular-nums text-white/75">
-          {formatDesktopCompute(quote.totalCost)} 算力
-        </span>
-        <span style={{ color: affordable ? tone : undefined }}>
-          {quote.willBuy > 0 ? `+${quote.willBuy}` : IDLE_BUY_COUNT_LABELS[mode]}
-        </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1 leading-none">
+        <div className="pixel-cjk pixel-fs-md pixel-tsh-1 leading-tight break-words text-[var(--px-white)]">
+          {generator.name}
+        </div>
+        <div className="flex items-stretch gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <div className="pixel-num pixel-fs-md" style={{ color: tone }}>
+              LV {quote.owned}
+            </div>
+            <div className="pixel-num pixel-fs-md" style={{ color: tone }}>
+              {share.toPrecision(3)}%
+            </div>
+          </div>
+          <div
+            className={`flex shrink-0 items-center justify-center gap-1 self-stretch border-2 px-1.5 ${
+              affordable
+                ? "border-[var(--px-cyan)] bg-[var(--px-cyan-deep)] text-[var(--px-cyan)]"
+                : "border-[var(--px-dim)] bg-[var(--px-void)] text-[var(--px-dim)]"
+            }`}
+          >
+            <Zap className="size-2.5 shrink-0" strokeWidth={2.5} />
+            <span className="pixel-num pixel-fs-lg pixel-tsh-1">
+              {formatDesktopCompute(Math.ceil(quote.totalCost))}
+            </span>
+          </div>
+        </div>
       </div>
     </button>
+    </PixelTooltip>
   );
 }
 
@@ -107,25 +120,28 @@ function BuyModeSelector({
   onChange: (mode: IdleBuyCount) => void;
 }) {
   return (
-    <div className="shrink-0">
-      <div className="mb-1 text-[9px] uppercase tracking-[0.16em] text-cyan-200/70">
-        购买模式
-      </div>
-      <div className="flex items-stretch gap-[2px] border-2 border-black bg-black p-[2px]">
+    <div className="flex shrink-0 flex-col gap-1.5">
+      <PixelHeading tone="cyan">购买模式</PixelHeading>
+      <div className="flex items-stretch gap-[2px] border-2 border-[var(--px-void)] bg-[var(--px-void)] p-[2px]">
         {IDLE_BUY_COUNTS.map((item) => {
           const selected = item === mode;
+          const label = IDLE_BUY_COUNT_LABELS[item];
+          const cjk = /[\u4e00-\u9fff]/.test(label);
           return (
             <button
               type="button"
               key={item}
               onClick={() => onChange(item)}
-              className={`min-w-0 flex-1 border px-1 py-1 text-[9px] ${
+              className={`relative inline-flex h-6 flex-1 items-center justify-center border-2 leading-none pixel-fs-sm transition-colors duration-75 ${cjk ? "pixel-cjk" : "pixel-ascii"} ${
                 selected
-                  ? "border-cyan-200/80 bg-cyan-300/15 text-cyan-100"
-                  : "border-white/10 bg-white/5 text-white/55 hover:text-white/80"
+                  ? "border-[var(--px-void)] bg-[var(--px-cyan)] text-[var(--px-void)]"
+                  : "border-[var(--px-stroke)] bg-[var(--px-panel)] text-[var(--px-cyan)]/70 hover:bg-[var(--px-panel-2)] hover:text-[var(--px-cyan)]"
               }`}
+              style={selected
+                ? { boxShadow: "inset -1px -1px 0 0 var(--px-cyan-dim), inset 1px 1px 0 0 #d6fbff" }
+                : { boxShadow: "inset -1px -1px 0 0 rgba(0,0,0,0.55), inset 1px 1px 0 0 rgba(255,255,255,0.05)" }}
             >
-              {IDLE_BUY_COUNT_LABELS[item]}
+              {label}
             </button>
           );
         })}
@@ -158,13 +174,10 @@ export function IdleGeneratorShop({
 
   return (
     <div
-      className="pointer-events-none absolute bottom-3 right-3 top-3 z-10 flex w-[220px] flex-col gap-2 font-mono"
+      className="pointer-events-none absolute bottom-3 right-3 top-3 z-10 flex w-[220px] flex-col gap-2"
       style={{ filter: "var(--px-ui-glow, none)" }}
     >
-      <div className="flex shrink-0 items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-cyan-200/80">
-        <ShoppingCart className="size-3.5" />
-        算力源
-      </div>
+      <PixelHeading tone="cyan">算力源</PixelHeading>
       <div className="pointer-events-auto -ml-2 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pl-2">
         {quotes.map(({ generator, quote }) => (
           <GeneratorCard
@@ -172,7 +185,6 @@ export function IdleGeneratorShop({
             generator={generator}
             quote={quote}
             totalProduction={totalProduction}
-            mode={mode}
             onBuy={() => runtime.buy(generator.id, mode)}
           />
         ))}

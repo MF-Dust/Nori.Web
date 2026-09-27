@@ -66,20 +66,28 @@ function fitTerminal(terminal: Terminal, container: HTMLElement): void {
   const terminalElement = terminal.element;
   if (!terminalElement) return;
 
+  // xterm fills this node with the sample glyph repeated 32 times and treats
+  // offsetWidth / 32 as one cell. Measuring the whole run as one cell collapses
+  // the grid to a handful of columns.
   const measure = terminalElement.querySelector<HTMLElement>(
     ".xterm-char-measure-element",
   );
-  const charRect = measure?.getBoundingClientRect();
-  if (!charRect || charRect.width <= 0 || charRect.height <= 0) return;
+  const sampleLength = Math.max(1, measure?.textContent?.length ?? 0);
+  const charWidth = measure ? measure.offsetWidth / sampleLength : 0;
+  const charHeight = measure?.offsetHeight ?? 0;
+  if (charWidth <= 0 || charHeight <= 0) return;
 
+  const style = getComputedStyle(terminalElement);
+  const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+  const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
   const viewport = terminalElement.querySelector<HTMLElement>(".xterm-viewport");
   const scrollbarWidth = viewport
     ? Math.max(0, viewport.offsetWidth - viewport.clientWidth)
     : 0;
-  const availableWidth = Math.max(0, container.clientWidth - scrollbarWidth);
-  const availableHeight = Math.max(0, container.clientHeight);
-  const cols = Math.max(2, Math.floor(availableWidth / charRect.width));
-  const rows = Math.max(1, Math.floor(availableHeight / charRect.height));
+  const availableWidth = Math.max(0, container.clientWidth - padX - scrollbarWidth);
+  const availableHeight = Math.max(0, container.clientHeight - padY);
+  const cols = Math.max(2, Math.floor(availableWidth / charWidth));
+  const rows = Math.max(1, Math.floor(availableHeight / charHeight));
 
   if (cols !== terminal.cols || rows !== terminal.rows) terminal.resize(cols, rows);
 }

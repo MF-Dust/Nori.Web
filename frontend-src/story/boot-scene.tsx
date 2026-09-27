@@ -6,6 +6,7 @@ import { StoryAudio } from "./story-audio";
 import { useStoryFocus } from "./use-story-focus";
 import type { StoryInstance } from "./story-director";
 import { BOOT_AUDIO, BOOT_PHASES, bootScene } from "./boot-timeline";
+import { visibleReadinessDeadline } from "./story-readiness";
 import {
   ShatterRenderer,
   createFractureGraph,
@@ -27,6 +28,8 @@ export function BootScene({
     [loading, setLoading] = useState(true),
     [parked, setParked] = useState(false);
   useEffect(() => {
+    const hostElement = host.current;
+    if (!hostElement) return;
     setFailed(false);
     setLoading(true);
     setParked(false);
@@ -42,18 +45,13 @@ export function BootScene({
     });
     const canvas = document.createElement("canvas");
     canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%";
-    host.current?.prepend(canvas);
+    hostElement.prepend(canvas);
     let renderer: ShatterRenderer | undefined,
       frame = 0,
       stopped = false,
       ready = false,
       resetFrames = 0;
-    const loadTimeout = setTimeout(() => {
-      if (ready || stopped) return;
-      stop();
-      setFailed(true);
-      setLoading(false);
-    }, 60000);
+    const loadDeadline = visibleReadinessDeadline(60000);
     const params = shatterDefaults({});
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -67,7 +65,6 @@ export function BootScene({
       if (stopped) return;
       stopped = true;
       cancelAnimationFrame(frame);
-      clearTimeout(loadTimeout);
       audio.dispose();
       clock.dispose();
       renderer?.dispose();
@@ -82,14 +79,15 @@ export function BootScene({
       if (stopped) return;
       if (document.hidden || !ready) clock.suspend(performance.now());
       else clock.resume(performance.now());
+      loadDeadline.refresh();
       audio.sync(clock.snapshot());
     };
     document.addEventListener("visibilitychange", visibility);
     const resize = new ResizeObserver(() => {
-      if (renderer && host.current)
-        renderer.resize(host.current.clientWidth, host.current.clientHeight);
+      if (renderer)
+        renderer.resize(hostElement.clientWidth, hostElement.clientHeight);
     });
-    if (host.current) resize.observe(host.current);
+    resize.observe(hostElement);
     const render = (now: number) => {
       if (stopped) return;
       try {
@@ -114,6 +112,12 @@ export function BootScene({
           lease.set(bootScene(clock.snapshot()));
         }
         const stage = document.querySelector<HTMLElement>(".nori-stage");
+        if (!ready && loadDeadline.expired(now)) {
+          stop();
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
         if (
           stage?.dataset.live2dStatus === "error" ||
           stage?.dataset.coldOpen === "error" ||
@@ -122,7 +126,6 @@ export function BootScene({
           throw new Error("Cold-open resources unavailable");
         if (!ready && stage?.dataset.coldOpen === "ready") {
           ready = true;
-          clearTimeout(loadTimeout);
           setLoading(false);
           if (!document.hidden) clock.resume(now);
         }
@@ -135,8 +138,8 @@ export function BootScene({
           renderer.render(state.time / 16, params);
         }
         canvas.style.visibility = state.time < 16 ? "visible" : "hidden";
-        host.current!.dataset.phase = state.phase ?? "";
-        host.current!.dataset.time = String(state.time);
+        hostElement.dataset.phase = state.phase ?? "";
+        hostElement.dataset.time = String(state.time);
         if (state.complete) {
           audio.dispose();
           frontend.story.complete(story);

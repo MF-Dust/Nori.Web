@@ -64,13 +64,15 @@ export function bindHeadPatInput(
   let pointer: number | null = null,
     keyboard = false,
     keyTime = 0;
+  let projected: WindowRect = { x: 0, y: 0, width: 0, height: 0 };
   let epoch = frontend.conversation.snapshot().presentationEpoch;
   let previous = performance.now(),
     idleAt = previous;
   const stop = () => {
-    if (pointer !== null && surface.hasPointerCapture(pointer))
-      surface.releasePointerCapture(pointer);
+    const captured = pointer;
     pointer = null;
+    if (captured !== null && surface.hasPointerCapture(captured))
+      surface.releasePointerCapture(captured);
     keyboard = false;
     gesture.end();
     rubbing.stop();
@@ -98,6 +100,45 @@ export function bindHeadPatInput(
       y: (event.clientY - bounds.top) / Math.max(1, bounds.width),
     };
   };
+  const pointerTelemetry = (event: PointerEvent) => {
+    const u = (event.clientX - projected.x) / Math.max(1, projected.width);
+    const v = (event.clientY - projected.y) / Math.max(1, projected.height);
+    const point = model.canvasUVToModel(u, v);
+    const bounds = model.getPartsBounds(["Part9"]);
+    const tuning = gesture.tuning();
+    const bandBottom =
+      bounds &&
+      bounds.top - (bounds.top - bounds.bottom) * tuning.skullTopBand;
+    const inZone = Boolean(
+      point &&
+        bounds &&
+        bandBottom !== null &&
+        point.x >= Math.min(bounds.left, bounds.right) &&
+        point.x <= Math.max(bounds.left, bounds.right) &&
+        point.y <= Math.max(bounds.top, bandBottom) &&
+        point.y >= Math.min(bounds.top, bandBottom),
+    );
+    return {
+      modelX: point?.x ?? 0,
+      modelY: point?.y ?? 0,
+      inZone,
+    };
+  };
+  const observePointer = (
+    phase: "start" | "move" | "end" | "cancel" | "lost",
+    event: PointerEvent,
+    onSurface: boolean,
+  ) => {
+    const telemetry = pointerTelemetry(event);
+    gesture.observePointer(
+      phase,
+      gesture.enabled,
+      onSurface,
+      telemetry.inZone,
+      telemetry.modelX,
+      telemetry.modelY,
+    );
+  };
   surface.onpointerdown = (event) => {
     if (event.button !== 0 || pointer !== null || surface.disabled) return;
     const point = sample(event);
@@ -105,6 +146,7 @@ export function bindHeadPatInput(
     keyboard = false;
     void frontend.audio.unlock().catch(() => {});
     gesture.start(performance.now(), point.x, point.y);
+    observePointer("start", event, true);
     idleAt = performance.now();
     surface.setPointerCapture(event.pointerId);
     event.preventDefault();
@@ -112,10 +154,12 @@ export function bindHeadPatInput(
   surface.onpointermove = (event) => {
     if (pointer !== event.pointerId) return;
     if (!event.buttons) {
+      observePointer("end", event, gesture.lastOnSurface);
       stop();
       return;
     }
     const point = sample(event);
+    observePointer("move", event, gesture.lastOnSurface);
     const tuning = gesture.tuning();
     if (
       point.x < -tuning.leashHeadWidths ||
@@ -130,10 +174,21 @@ export function bindHeadPatInput(
     if (gesture.move(idleAt, point.x, point.y)) complete();
     surface.dataset.patting = String(gesture.pressing);
   };
-  surface.onpointerup =
-    surface.onpointercancel =
-    surface.onlostpointercapture =
-      stop;
+  surface.onpointerup = (event) => {
+    if (pointer !== event.pointerId) return;
+    observePointer("end", event, gesture.lastOnSurface);
+    stop();
+  };
+  surface.onpointercancel = (event) => {
+    if (pointer !== event.pointerId) return;
+    observePointer("cancel", event, gesture.lastOnSurface);
+    stop();
+  };
+  surface.onlostpointercapture = (event) => {
+    if (pointer !== event.pointerId) return;
+    observePointer("lost", event, gesture.lastOnSurface);
+    stop();
+  };
   surface.onkeydown = (event) => {
     if (event.code !== "Space" || event.repeat || surface.disabled) return;
     event.preventDefault();
@@ -169,6 +224,7 @@ export function bindHeadPatInput(
   });
   return {
     update(rect: WindowRect) {
+      projected = rect;
       const now = performance.now(),
         scene = frontend.scene.snapshot(),
         chat = frontend.conversation.snapshot();

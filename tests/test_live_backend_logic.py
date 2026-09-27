@@ -21,6 +21,35 @@ from backend.virtual_apps import live_pack
 from backend.virtual_apps.terminal import execute_terminal_command
 
 
+def test_signal_login_command() -> None:
+    password = live_pack.variables().get("signalTempPassword")
+    if not isinstance(password, str) or not password:
+        return
+
+    async def _run():
+        world = WorldSession("signal-login-owner")
+        dispatcher = EventDispatcher(world)
+
+        def request(candidate: str):
+            return dispatcher.handle_event({
+                "channel": "manifold.command.request",
+                "cartridgeId": "manifold.web",
+                "payload": {
+                    "command": "signal.login",
+                    "payload": {"username": "operator@nori.local", "password": candidate},
+                },
+            })
+
+        rejected = await request("incorrect")
+        assert rejected["payload"]["ok"] is False
+
+        accepted = await request(password)
+        assert accepted["payload"]["ok"] is True
+        assert accepted["payload"]["result"]["ok"] is True
+
+    asyncio.run(_run())
+
+
 def test_fact_records() -> None:
     cart = ManifoldWebCartridge()
     before = len(cart.state["facts"])
@@ -245,9 +274,11 @@ def test_bounty_submit() -> None:
         res = await dispatcher.handle_event({
             "channel": "manifold.bounty.submit", "cartridgeId": "manifold.web",
             "payload": {"url": "https://futurum-prize.verify-now.com/claim"}})
-        if live_pack.is_available():
-            assert res["payload"]["ok"] is True
-            assert isinstance(res["payload"]["fact"], str) and res["payload"]["fact"]
+        assert res["payload"] == {
+            "ok": True,
+            "fact": "arg.honeypot_access",
+        }
+        assert "arg.honeypot_access" in world.cartridges["manifold.web"].state["facts"]
 
     asyncio.run(_run())
 
@@ -290,6 +321,7 @@ def test_signal_read_command() -> None:
                 "signal.daniel.read",
                 "signal.daniel.dm1.read",
             ]
+            facts = manifold.state["facts"]
             assert facts["signal.daniel.read"]["source"] == "signal.read"
             assert facts["signal.daniel.dm1.read"]["source"] == "signal.read"
         else:
@@ -393,6 +425,8 @@ if __name__ == "__main__":
     print("[ok] desktop shell channels verified")
     test_bounty_submit()
     print("[ok] bounty submission verified")
+    test_signal_login_command()
+    print("[ok] Signal login command verified")
     test_signal_read_command()
     print("[ok] Signal read/reread persistence verified")
     test_idle_sync_channel()

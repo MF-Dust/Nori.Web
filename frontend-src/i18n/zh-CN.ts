@@ -1157,6 +1157,10 @@ export default {
     "system": {
       "button": "重置系统...",
       "description": "抹除全部进度和 Nori 的记忆，从头开始。",
+      "fullUnlock": {
+        "title": "完整解锁",
+        "description": "关闭后从头体验，进度只保存在此浏览器；切换后系统将重启。"
+      },
       "dialog": {
         "body": "全部进度、文件和与 Nori 的对话都会被抹除，无法恢复。",
         "cancel": "取消",

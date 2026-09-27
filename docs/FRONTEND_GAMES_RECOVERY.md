@@ -1,6 +1,6 @@
 # Remaining game recovery
 
-This change makes Chess, Pictionary and the existing Codenames presentation reachable from the source application. Cake Duel retains its existing controller. These source modules do not import historical JavaScript chunks.
+At HEAD `085bad3`, all four games have source-owned screens and runtime bindings. Codenames has a deterministic 13-step tutorial and results surface; Pictionary has source-owned help/results surfaces; Chess has the complete 22-ply tutorial; Cake Duel has a source runtime/controller and start/game/results binding. These are source/runtime coverage, not original parity. The remaining Games work is full lifecycle, visual comparison and original-agent/media acceptance. The five false gates remain `messenger`, `games`, `live2d`, `supporting-apps` and `production-entry`; this ledger does not change them. These source modules do not import historical JavaScript chunks.
 
 ## Recovered in this PR
 
@@ -8,12 +8,13 @@ This change makes Chess, Pictionary and the existing Codenames presentation reac
 | --- | --- | --- |
 | Shared cartridge lifecycle | Retain/release, mount, request-ID acknowledgements, 15-second failure timeout, visibility advancement, disposal; commands are not replayed automatically | Arcade protocol, GameService and WorldStore |
 | Chess | Board and original SVG pieces; legal click/drag moves; castling, en passant and promotion; history replay, captures, side/difficulty selection, tutorial move restrictions, draw/takeback responses, resign and result review | ChessScreen-D3ynrc3S.js; backend/cartridges/chess.py; chess.js 1.4.0 |
-| Pictionary | 2/3/5-minute setup, round role routing, normalized 128-point strokes, pencil palette, eraser, undo/clear, resized PNG snapshots, sample playback and redraw, guesses, five-second intermission, session results | StartScreen-DVcRTtZt.js; GameScreen-CgEXO_XJ.js; moleskineComponents-DxZW-ZrL.js; drawings.json; backend/cartridges/pictionary.py |
+| Pictionary | 2/3/5-minute setup, round role routing, normalized 128-point strokes, pencil palette, eraser, undo/clear, resized PNG snapshots, sample playback and redraw, guesses, five-second intermission, source-owned help/results surfaces and session results | StartScreen-DVcRTtZt.js; GameScreen-CgEXO_XJ.js; moleskineComponents-DxZW-ZrL.js; drawings.json; backend/cartridges/pictionary.py |
 | Drawing transport | Bounded stroke queue, round/epoch fencing, revision events, snapshot request correlation, pending-request serialization | Shipped pictionary.revision / pictionary.snapshot.request / pictionary.snapshot channels |
-| Codenames | Existing board/header/chat/key/help presentation bound to cartridge state; start/reset/rematch, clue validation, selected cards, tap-to-confirm, end-turn eligibility, durable turn transcript, timed turn/outcome overlays | NormalApp gPe, j$, UIController; GameScreen-BU9F4fB5.js; backend/cartridges/codenames.py |
+| Codenames | Deterministic 13-step tutorial/gates, board/header/chat/key/help presentation bound to cartridge state; start/reset/rematch, clue validation, selected cards, tap-to-confirm, end-turn eligibility, durable turn transcript, sudden-death scenarios, timed turn/outcome overlays and expanded results | NormalApp gPe, j$, UIController; GameScreen-BU9F4fB5.js; backend/cartridges/codenames.py |
+| Cake Duel | Source runtime/controller with connection and request fencing, start/game/results routes, challenge/Wolfy timing, claim/reaction events and replay/reset handling | Source runtime, presentation binding and lifecycle tests; full desktop lifecycle/visual/agent parity remains open |
 | Base locale | Shipped English and Simplified Chinese base tables, fallback/interpolation/plural selection; source app respects stored language | i18n-DtIC1LRi.js Gu / Id |
 
-The Codenames start/results wrappers retain simplified decoration. Pictionary now uses Pixi.js 8.17.1 for the drawing surface. Remaining decoration and scene behavior are not claimed to be pixel-identical.
+The Codenames start/results and Pictionary help/results surfaces are source-owned, but their remaining decoration and scene behavior are not claimed to be pixel-identical. Pictionary now uses Pixi.js 8.17.1 for the drawing surface.
 
 ## Hint, reveal and audio completion pass
 
@@ -45,22 +46,23 @@ The Chromium suite mounts the actual React game screens with a test transport an
 
 ## Remaining work before the Games gate can be completed
 
-- Codenames still needs remaining start/results decoration, narrative/tutorial dialogue and event-based sudden-death chat. The local backend currently starts tutorial mode at `free_play`; the frontend gates also support scripted states from a compatible backend. Validate the full scripted tutorial with its agent.
-- Chess guided-opening interaction is complete in this pass. Remaining result/overlay timing, original-agent speech choreography and visual comparison are still open.
-- Pictionary still needs remaining animation comparison, original help/results decoration and scene-expression choreography. Progressive hints and SFX are connected. Check snapshot inference against a live agent.
+- Codenames' deterministic tutorial and results are source-owned. Remaining work is the original scripted-agent dialogue/voice, sudden-death event chat, start/results visual comparison and full lifecycle acceptance. The local backend currently starts tutorial mode at `free_play`; the frontend gates also support scripted states from a compatible backend, but that is not original-agent evidence.
+- Chess' 22-ply guided opening is source-owned and interaction-tested. Remaining work is result/overlay timing, original-agent speech choreography, visual comparison and full lifecycle acceptance.
+- Pictionary help/results are source-owned. Remaining work is original animation/decoration and model-expression choreography, full lifecycle acceptance and live-agent snapshot inference; progressive hints and SFX are connected.
+- Cake Duel's source runtime/controller and start/game/results binding are present. Remaining work is full desktop lifecycle, visual comparison and original-agent/media acceptance, including challenge/Wolfy/resource and close/reopen evidence.
 - Verify closing/reopening games and reconnecting through the real world/media lifecycle. Current tests cover the transport contract with controlled events.
 - Verify both locales, original window sizes, input devices and reduced motion in full desktop composition.
 
 ## Remaining full frontend boundaries
 
-Games is only part of the final cutover. The remaining boundaries are Messenger story/corruption/reveal choreography, game fidelity and live-agent verification, remaining Live2D postprocessing/gestures/story runtime, remaining Debug labs and scene audio, and production entry. Auth/bootstrap, source CSS ownership, shared audio, Preview, chips and Daniel integration have separate completed recovery records. A recovered module alone does not establish whole-app parity.
+Games is only part of the final cutover. The remaining boundaries are Messenger story/corruption/reveal choreography, full game lifecycle/fidelity and live-agent/media verification, the six non-Cult story segments' original Live2D parity, Debug original layout/private handlers, scene audio and production entry. Auth/bootstrap, source CSS ownership, shared audio, Preview, chips and Daniel integration have separate completed recovery records. A recovered module alone does not establish whole-app parity.
 
 The authoritative gate remains frontend-src/migration/cutover-status.ts. Keep Games and the other pending boundaries false until their production behavior is restored and verified. This PR does not switch public/index.html or remove historical assets.
 
 
 ## Original card art and Chess transition feedback
 
-Codenames board reveals, flying cards and the help sheet now share the recovered original treasure, monster and berry SVG artwork. The start menu includes the original layered forest backdrop. The assets live under `frontend-src/screens/` and do not import historical JavaScript. Remaining Start/Results decorations and tutorial narrative are still tracked above.
+Codenames board reveals, flying cards and the help sheet now share the recovered original treasure, monster and berry SVG artwork. The start menu includes the original layered forest backdrop. The assets live under `frontend-src/screens/` and do not import historical JavaScript. The deterministic tutorial is source-owned; remaining original start/results decoration and tutorial-agent narrative are still tracked above.
 
 Chess now routes transition-only move, check, capture, castle and promotion cues. Checkmate delays the end cue by 200 ms. Draw/takeback responses show the original three-second notices and response cue; cancelling one's own request does not look like an opponent refusal. Presentation epochs and reconnect resets suppress historical feedback and clear delayed effects. Unit coverage includes checkmate timing, acknowledgement transitions, cancelled requests and world/reconnect fences. The browser game suite still covers all three playable screens, including the new Codenames SVGs in the existing reveal/flight path.
 
@@ -71,7 +73,7 @@ Chess now routes transition-only move, check, capture, castle and promotion cues
 
 Each effect lifetime owns a fresh canvas and renderer. Input waits for initialization; a cancelled import never creates a renderer, and an initialization that finishes after unmount is disposed. Resizing redraws the stored strokes, and unmount releases the scene and renderer. Existing browser tests now require a ready Pixi canvas before drawing and still verify normalized transport, distinct drawn/undone snapshots, eraser width and round-change cancellation. `pictionary-pixi-strokes.png` shows a stroke before undo.
 
-This closes the Canvas2D substitute in the drawing path. Help/results decoration, expression choreography and live-agent snapshot inference remain pending.
+This closes the Canvas2D substitute in the drawing path. Original help/results decoration, expression choreography and live-agent snapshot inference remain pending.
 
 
 ## Chess guided opening: completed interaction gap

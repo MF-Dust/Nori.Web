@@ -7,12 +7,20 @@ production deploy entrypoint.
 
 ## Why a deploy wrapper exists
 
-The wrapper synchronizes the private R2 live-world layout and then invokes
-`pywrangler deploy`. Normal production deploys intentionally do **not** call
+The wrapper first installs the locked Node dependencies, builds the recovered
+source frontend, materializes its verified candidate/rollback trees, and writes
+an ignored temporary Wrangler configuration whose Assets directory points at
+the candidate. It then synchronizes the private R2 live-world layout and invokes
+`pywrangler deploy --config .wrangler-candidate.json`. The generated source
+entry is therefore the default production entry even though `public/index.html`
+is retained as the historical rollback source.
+
+Normal production deploys intentionally do **not** call
 `scripts/prepare_cloudflare_runtime.py` first: pywrangler invokes Wrangler, and
 Wrangler executes the repository's Custom Build hook itself. This keeps runtime
-staging to one pass instead of two. The explicit `--prepare-only` mode remains
-available for diagnostics.
+staging to one pass instead of two. The explicit `--prepare-only` mode builds
+both deployment trees without accessing Cloudflare and remains available for
+diagnostics.
 
 The wrapper forces `CI=true` for the final Worker deployment. Wrangler uses its
 non-interactive fallback for confirmation prompts in CI, including harmless
@@ -56,7 +64,9 @@ install another Python before every production build. Nori.Web itself supports
 Python `>=3.11`, so the bundled Workers Builds interpreter is sufficient.
 
 `SKIP_DEPENDENCY_INSTALL` avoids an unnecessary automatic pip install because
-`uv run` manages the project environment itself.
+`uv run` manages the Python project environment itself. The deploy wrapper runs
+`npm ci --no-audit --no-fund` explicitly so the source frontend is always built
+from `package-lock.json` on the Node.js runtime included in Workers Builds.
 
 The deploy command deliberately keeps `pipx run --spec uv==0.12.7` even when a
 particular Cloudflare image happens to have `uv` on PATH. `pipx` is part of the
@@ -97,16 +107,18 @@ Python compilation, JavaScript checks, and the Free-plan bundle-size guard.
 
 ## Manual deployment remains available
 
-For an emergency/manual deployment, the existing local command still works:
-
-```text
-uv run pywrangler deploy
-```
-
-To run the same CI wrapper locally:
+For an emergency/manual deployment of the source frontend, use the same wrapper
+as CI:
 
 ```text
 uv run python scripts/cloudflare_builds_deploy.py
+```
+
+The direct Wrangler command continues to use `public/` and is reserved for an
+intentional legacy rollback:
+
+```text
+uv run pywrangler deploy
 ```
 
 Useful emergency switches:
@@ -115,4 +127,10 @@ Useful emergency switches:
 uv run python scripts/cloudflare_builds_deploy.py --skip-live-pack
 uv run python scripts/cloudflare_builds_deploy.py --force-live-pack
 uv run python scripts/cloudflare_builds_deploy.py --prepare-only
+uv run python scripts/cloudflare_builds_deploy.py --legacy-frontend
 ```
+
+For an emergency Cloudflare Dashboard rollback, temporarily add the build
+variable `NORI_DEPLOY_LEGACY_FRONTEND=1` and retry the production deployment.
+Remove the variable after recovery so later deployments return to the source
+frontend.

@@ -12,6 +12,7 @@ import {
 } from "./farewell-timeline";
 import { FarewellRenderer } from "./farewell-renderer";
 import { FarewellActor } from "./farewell-actor";
+import "./farewell-scene.css";
 
 const reloadPage = () => window.location.reload();
 
@@ -64,6 +65,8 @@ export function FarewellScene({
       clock.dispose();
       activeActor.dispose();
       renderer.dispose();
+      activeActor.canvas.remove();
+      renderer.canvas.remove();
       lease.release();
     };
     const offStory = frontend.story.subscribe(() => {
@@ -178,6 +181,19 @@ export function FarewellScene({
           >
             Retry
           </button>
+        </div>
+      )}
+      {!failed && !view.black && view.stack.length > 0 && (
+        <div className="farewell-subtitles">
+          {view.stack.map(({ cue, phase }) => (
+            <p
+              key={cue.id}
+              className="farewell-line"
+              data-line={phase === "live" ? undefined : phase}
+            >
+              {cue.text}
+            </p>
+          ))}
         </div>
       )}
       {!failed && !view.black && (

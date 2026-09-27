@@ -243,6 +243,24 @@ html.theme-nori {
   display: grid;
   position: relative;
 }
+@keyframes nori-notification-enter {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.nori-notification-card[data-notification-entering="true"] {
+  animation: nori-notification-enter 280ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nori-notification-card[data-notification-entering="true"] {
+    animation: none;
+  }
+}
 @supports (color: color-mix(in lab, red, red)) {
   .nori-notification-card {
     background:
@@ -333,6 +351,16 @@ html.theme-nori {
   position: absolute;
   top: 8px;
   right: 10px;
+}
+.nori-notification-clear {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+.nori-notification-card:hover .nori-notification-clear,
+.nori-notification-card:focus-within .nori-notification-clear {
+  opacity: 1;
+  pointer-events: auto;
 }
 .nori-notification-clear:hover {
   color: #ebf4f4;

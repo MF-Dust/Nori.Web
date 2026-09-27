@@ -2,8 +2,19 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import type { ArcadeServerMessage, JsonValue } from "../runtime/protocol";
 import { UI_SOUND_CATALOG } from "../runtime/ui-sound-catalog";
+import {
+  DESKTOP_MUSIC,
+  type AudioDebugTrack,
+  type AudioMixerDebugSnapshot,
+  type DesktopMusic,
+} from "../runtime/audio-mixer";
+import type {
+  AudioFilterType,
+  AudioReverbPreset,
+} from "../runtime/audio-track-effects";
 import { useAudioSettings } from "../state/audio-store";
 import type { NoriSceneState } from "../state/nori-scene";
+import { notificationInputFromMessage } from "../state/notification-store";
 
 export interface DebugNotification {
   id: string;
@@ -19,43 +30,25 @@ type NotificationPushResponse = {
   pushed?: string;
 };
 
-function record(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
-
 /** Decode only notifications that actually arrived on the production event stream. */
 export function notificationFromMessage(
   message: ArcadeServerMessage,
 ): DebugNotification | null {
-  const raw = message as unknown as Record<string, unknown>;
-  if (raw.type !== "event" || raw.channel !== "notification.pushed")
-    return null;
-  const payload = record(raw.payload);
-  if (
-    !payload ||
-    typeof payload.id !== "string" ||
-    typeof payload.title !== "string"
-  )
-    return null;
-  const click = record(payload.onClick);
+  const parsed = notificationInputFromMessage(message);
+  if (!parsed) return null;
+  const input = parsed.input;
+  const action = input.action;
   return {
-    id: payload.id,
-    title: payload.title,
-    ...(typeof payload.subtitle === "string"
-      ? { subtitle: payload.subtitle }
-      : {}),
-    ...(typeof payload.body === "string" ? { body: payload.body } : {}),
-    ...(typeof payload.durationMs === "number" &&
-    Number.isFinite(payload.durationMs)
-      ? { durationMs: payload.durationMs }
-      : {}),
-    ...(click && typeof click.type === "string"
+    id: parsed.id,
+    title: input.title,
+    ...(input.subtitle !== undefined ? { subtitle: input.subtitle } : {}),
+    ...(input.body !== undefined ? { body: input.body } : {}),
+    ...(input.durationMs !== undefined ? { durationMs: input.durationMs } : {}),
+    ...(action
       ? {
           onClick: {
-            type: click.type,
-            ...(typeof click.appId === "string" ? { appId: click.appId } : {}),
+            type: action.type,
+            ...(action.type === "open-app" ? { appId: action.appId } : {}),
           },
         }
       : {}),
@@ -108,6 +101,11 @@ export function NotificationsDebugTab({
   const [openAppId, setOpenAppId] = useState("");
   const [status, setStatus] = useState("idle");
   const [received, setReceived] = useState<DebugNotification[]>([]);
+  const queueSize = useSyncExternalStore(
+    frontend.notifications.subscribe,
+    () => frontend.notifications.snapshot().queue.length,
+    () => frontend.notifications.snapshot().queue.length,
+  );
 
   useEffect(
     () =>
@@ -156,7 +154,7 @@ export function NotificationsDebugTab({
         <dt>Arcade connection</dt>
         <dd>{connection}</dd>
         <dt>Source shell queue</dt>
-        <dd>Unavailable; received events are observed below.</dd>
+        <dd>{queueSize} visible notification(s)</dd>
       </dl>
       <label>
         Title
@@ -348,6 +346,150 @@ function AudioSlider({
   );
 }
 
+export function spatialGain(snapshot: Pick<
+  AudioMixerDebugSnapshot,
+  "listenerPos" | "speechPos" | "distanceParams"
+>) {
+  const listener = snapshot.listenerPos;
+  const source = snapshot.speechPos;
+  const params = snapshot.distanceParams;
+  if (!listener || !source || !params) return null;
+  const distance = Math.hypot(
+    listener.x - source.x,
+    listener.y - source.y,
+    listener.z - source.z,
+  );
+  if (params.model !== "inverse") return { distance, gain: null };
+  const normalized = Math.max(distance, params.refDistance);
+  const gain =
+    params.refDistance /
+    (params.refDistance +
+      params.rolloffFactor * (normalized - params.refDistance));
+  return { distance, gain };
+}
+
+function TrackEffectsDebug({
+  frontend,
+  track,
+  label,
+  snapshot,
+}: {
+  frontend: NoriFrontendRuntime;
+  track: AudioDebugTrack;
+  label: string;
+  snapshot: AudioMixerDebugSnapshot["effects"][AudioDebugTrack];
+}) {
+  const reverbs: AudioReverbPreset[] = ["none", "room", "hall", "cave"];
+  const filters: AudioFilterType[] = [
+    "none",
+    "lowpass",
+    "highpass",
+    "bandpass",
+  ];
+  return (
+    <div>
+      <h4>{label}</h4>
+      <label>
+        Reverb
+        <select
+          aria-label={`${label} reverb`}
+          value={snapshot.reverb}
+          onChange={(event) =>
+            void frontend.audio.debugSetReverb(
+              track,
+              event.target.value as AudioReverbPreset,
+              snapshot.wetness || 0.3,
+            )
+          }
+        >
+          {reverbs.map((preset) => (
+            <option key={preset}>{preset}</option>
+          ))}
+        </select>
+      </label>
+      {snapshot.reverb !== "none" && (
+        <label>
+          Wet
+          <input
+            aria-label={`${label} wet`}
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value={snapshot.wetness * 100}
+            onChange={(event) =>
+              frontend.audio.debugSetWetness(
+                track,
+                event.target.valueAsNumber / 100,
+              )
+            }
+          />
+          <output>{Math.round(snapshot.wetness * 100)}%</output>
+        </label>
+      )}
+      <label>
+        Filter
+        <select
+          aria-label={`${label} filter`}
+          value={snapshot.filter}
+          onChange={(event) =>
+            frontend.audio.debugSetFilter(
+              track,
+              event.target.value as AudioFilterType,
+              snapshot.frequency,
+              snapshot.q,
+            )
+          }
+        >
+          {filters.map((filter) => (
+            <option key={filter}>{filter}</option>
+          ))}
+        </select>
+      </label>
+      {snapshot.filter !== "none" && (
+        <>
+          <label>
+            Freq
+            <input
+              aria-label={`${label} filter frequency`}
+              type="range"
+              min="20"
+              max="20000"
+              step="1"
+              value={snapshot.frequency}
+              onChange={(event) =>
+                frontend.audio.debugSetFilterFrequency(
+                  track,
+                  event.target.valueAsNumber,
+                )
+              }
+            />
+            <output>{snapshot.frequency.toFixed(0)} Hz</output>
+          </label>
+          <label>
+            Q
+            <input
+              aria-label={`${label} filter Q`}
+              type="range"
+              min="0.1"
+              max="20"
+              step="0.1"
+              value={snapshot.q}
+              onChange={(event) =>
+                frontend.audio.debugSetFilterQ(
+                  track,
+                  event.target.valueAsNumber,
+                )
+              }
+            />
+            <output>{snapshot.q.toFixed(1)}</output>
+          </label>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function AudioDebugTab({
   frontend,
   setScene,
@@ -361,10 +503,9 @@ export function AudioDebugTab({
     frontend.scene.snapshot,
   );
   const [cue, setCue] = useState("chess.moveSelf");
-  const [status, setStatus] = useState(() =>
-    frontend.audio.canPlay() ? "running" : "locked",
-  );
+  const [mixer, setMixer] = useState(() => frontend.audio.debugSnapshot());
   const [speechLevel, setSpeechLevel] = useState(0);
+  const [crossfade, setCrossfade] = useState(1);
   const cues = useMemo(
     () =>
       Object.entries(UI_SOUND_CATALOG)
@@ -372,36 +513,37 @@ export function AudioDebugTab({
         .map((entry) => entry[0]),
     [],
   );
+  const spatial = spatialGain(mixer);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setStatus(frontend.audio.canPlay() ? "running" : "locked");
+    const refresh = () => {
+      setMixer(frontend.audio.debugSnapshot());
       setSpeechLevel(frontend.speech.level());
-    }, 200);
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 100);
     return () => window.clearInterval(timer);
   }, [frontend]);
 
-  async function unlock() {
-    try {
-      const running = await frontend.audio.unlock();
-      setStatus(running ? "running" : "suspended");
-    } catch (error) {
-      setStatus(
-        `error: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+  async function resume() {
+    await frontend.audio.debugResume();
+    setMixer(frontend.audio.debugSnapshot());
+  }
+
+  async function suspend() {
+    await frontend.audio.debugSuspend();
+    setMixer(frontend.audio.debugSnapshot());
+  }
+
+  async function loadMusic() {
+    await frontend.audio.debugLoadMusic();
+    setMixer(frontend.audio.debugSnapshot());
   }
 
   async function playCue() {
-    try {
-      await frontend.audio.unlock();
-      frontend.audio.playCue(cue);
-      setStatus("running");
-    } catch (error) {
-      setStatus(
-        `error: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+    await frontend.audio.unlock();
+    frontend.audio.playCue(cue);
+    setMixer(frontend.audio.debugSnapshot());
   }
 
   const update = (action: () => void) =>
@@ -409,10 +551,14 @@ export function AudioDebugTab({
   return (
     <section aria-label="Audio debug">
       <h2>Audio</h2>
-      <h3>Runtime status</h3>
+      <h3>Status</h3>
       <dl>
-        <dt>Audio output</dt>
-        <dd>{status}</dd>
+        <dt>Initialized</dt>
+        <dd>{mixer.initialized ? "Yes" : "No"}</dd>
+        <dt>Context State</dt>
+        <dd>{mixer.contextState}</dd>
+        <dt>Speech Spatial</dt>
+        <dd>{mixer.speechHasPanner ? "3D (HRTF)" : "2D (Stereo)"}</dd>
         <dt>Speech level</dt>
         <dd>{speechLevel.toFixed(2)}</dd>
         <dt>Scene music</dt>
@@ -420,9 +566,56 @@ export function AudioDebugTab({
         <dt>Corrupt voice</dt>
         <dd>{scene.corruptVoice ? "active" : "inactive"}</dd>
       </dl>
-      <button type="button" onClick={() => void unlock()}>
-        Resume / unlock audio
-      </button>
+      <div className="source-debug-lab-actions">
+        <button
+          type="button"
+          disabled={mixer.contextState === "running"}
+          onClick={() => void resume()}
+        >
+          Resume
+        </button>
+        <button
+          type="button"
+          disabled={mixer.contextState !== "running"}
+          onClick={() => void suspend()}
+        >
+          Suspend
+        </button>
+      </div>
+
+      {mixer.speechHasPanner && (
+        <>
+          <h3>3D Spatial (Speech)</h3>
+          <dl>
+            <dt>Listener (Camera)</dt>
+            <dd>
+              {mixer.listenerPos
+                ? `(${mixer.listenerPos.x.toFixed(1)}, ${mixer.listenerPos.y.toFixed(1)}, ${mixer.listenerPos.z.toFixed(1)})`
+                : "N/A"}
+            </dd>
+            <dt>Source (Nori)</dt>
+            <dd>
+              {mixer.speechPos
+                ? `(${mixer.speechPos.x.toFixed(1)}, ${mixer.speechPos.y.toFixed(1)}, ${mixer.speechPos.z.toFixed(1)})`
+                : "N/A"}
+            </dd>
+            <dt>Distance</dt>
+            <dd>{spatial ? spatial.distance.toFixed(2) : "N/A"}</dd>
+            <dt>Model</dt>
+            <dd>
+              {mixer.distanceParams
+                ? `${mixer.distanceParams.model} (ref=${mixer.distanceParams.refDistance}, roll=${mixer.distanceParams.rolloffFactor})`
+                : "N/A"}
+            </dd>
+            <dt>Calculated Gain</dt>
+            <dd>
+              {spatial?.gain === null || spatial?.gain === undefined
+                ? "N/A"
+                : `${(spatial.gain * 100).toFixed(1)}%`}
+            </dd>
+          </dl>
+        </>
+      )}
 
       <h3>Scene audio</h3>
       <label>
@@ -519,7 +712,100 @@ export function AudioDebugTab({
         <output>{audio.voiceRate.toFixed(2)}×</output>
       </label>
 
-      <h3>Sound effect</h3>
+      <h3>Music</h3>
+      <p>Loaded: {mixer.loadedMusic.join(", ") || "none"}</p>
+      <button type="button" onClick={() => void loadMusic()}>
+        Load test music
+      </button>
+      <div className="source-debug-lab-actions">
+        {(Object.keys(DESKTOP_MUSIC) as DesktopMusic[]).map((track) => (
+          <button
+            type="button"
+            key={track}
+            aria-pressed={mixer.musicTrackId === track}
+            disabled={!mixer.loadedMusic.includes(track)}
+            onClick={() => frontend.audio.debugPlayMusic(track)}
+          >
+            Play {track}
+          </button>
+        ))}
+      </div>
+      <div className="source-debug-lab-actions">
+        <button
+          type="button"
+          disabled={!mixer.musicPlaying}
+          onClick={() => frontend.audio.debugPauseMusic()}
+        >
+          Pause
+        </button>
+        <button
+          type="button"
+          disabled={!mixer.musicPaused}
+          onClick={() => frontend.audio.debugResumeMusic()}
+        >
+          Resume music
+        </button>
+        <button
+          type="button"
+          disabled={!mixer.musicPlaying && !mixer.musicPaused}
+          onClick={() => frontend.audio.debugStopMusic()}
+        >
+          Stop
+        </button>
+      </div>
+      {mixer.musicDuration > 0 && (
+        <label>
+          Music position
+          <input
+            aria-label="Music position"
+            type="range"
+            min="0"
+            max={mixer.musicDuration}
+            step="0.1"
+            value={mixer.musicCurrentTime}
+            onChange={(event) =>
+              frontend.audio.debugSeekMusic(event.target.valueAsNumber)
+            }
+          />
+          <output>
+            {mixer.musicCurrentTime.toFixed(1)} / {mixer.musicDuration.toFixed(1)} s
+          </output>
+        </label>
+      )}
+      <label>
+        Crossfade
+        <input
+          aria-label="Crossfade"
+          type="range"
+          min="0.5"
+          max="5"
+          step="0.5"
+          value={crossfade}
+          onChange={(event) => setCrossfade(event.target.valueAsNumber)}
+        />
+        <output>{crossfade.toFixed(1)} s</output>
+      </label>
+      <div className="source-debug-lab-actions">
+        {(Object.keys(DESKTOP_MUSIC) as DesktopMusic[]).map((track) => (
+          <button
+            type="button"
+            key={`fade-${track}`}
+            disabled={
+              !mixer.loadedMusic.includes(track) ||
+              mixer.musicTrackId === track ||
+              !mixer.musicPlaying
+            }
+            onClick={() =>
+              frontend.audio.debugCrossfadeMusic(track, crossfade)
+            }
+          >
+            Fade to {track}
+          </button>
+        ))}
+      </div>
+
+      <h3>Sound Effects</h3>
+      <p>Loaded buffers: {mixer.loadedSfx.length}</p>
       <label>
         Cue
         <select value={cue} onChange={(event) => setCue(event.target.value)}>
@@ -531,10 +817,29 @@ export function AudioDebugTab({
       <button type="button" onClick={() => void playCue()}>
         Play cue
       </button>
-      <p>
-        Source AudioMixer does not expose the shipped manager's suspend, seek,
-        loaded-track, panner, or effects internals.
-      </p>
+      <dl>
+        <dt>Active Sounds</dt>
+        <dd>{mixer.sfxActiveCount}</dd>
+      </dl>
+      <h3>Effects</h3>
+      <TrackEffectsDebug
+        frontend={frontend}
+        track="speech"
+        label="Speech"
+        snapshot={mixer.effects.speech}
+      />
+      <TrackEffectsDebug
+        frontend={frontend}
+        track="music"
+        label="Music"
+        snapshot={mixer.effects.music}
+      />
+      <TrackEffectsDebug
+        frontend={frontend}
+        track="sfx"
+        label="SFX"
+        snapshot={mixer.effects.sfx}
+      />
     </section>
   );
 }

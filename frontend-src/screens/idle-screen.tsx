@@ -4,13 +4,36 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { RotateCcw, Zap } from "lucide-react";
+import { RotateCcw, Workflow } from "lucide-react";
+import type { StoreApi, UseBoundStore } from "zustand";
+import { IDLE_ALIGNMENT_RIBBON } from "../apps/marginal-growth/alignment";
+import { MarginalGrowthRibbonView } from "../apps/marginal-growth/ribbon-view";
+import {
+  DEFAULT_MARGINAL_GROWTH,
+  DEFAULT_MARGINAL_GROWTH_CAMERA_CLAMP,
+  MARGINAL_GROWTH_AUTOPLAY_STEPS_PER_SECOND,
+  resolveMarginalGrowthCameraClamp,
+  type MarginalGrowthState,
+} from "../state/marginal-growth-store";
+
+function subscribeNothing() {
+  return () => {};
+}
+
+const NO_GROWTH = {
+  params: DEFAULT_MARGINAL_GROWTH.params,
+  source: "owned",
+  cameraClamp: DEFAULT_MARGINAL_GROWTH_CAMERA_CLAMP,
+  phase: 0,
+};
 import {
   type IdleAbdicationQuote,
+  IDLE_MANIFOLD_UNLOCKED_FACT,
   type IdleAlignment,
   type IdleBuyCount,
   type IdleClickResult,
@@ -23,6 +46,8 @@ import {
   formatDesktopCompute,
   getEffectiveDesktopCompute,
 } from "../state/compute-runtime";
+import { IdleIcon } from "./idle-icon";
+import { PixelSeparator, PixelTooltip } from "./idle-chrome";
 import { IdleGeneratorShop } from "./idle-shop";
 import { IdleInitializationSequence } from "./idle-initialization-sequence";
 import { IdleProgressionRail } from "./idle-progression-rail";
@@ -126,11 +151,22 @@ function ComputeField({
   theme,
   reserveShopSpace,
   onTap,
+  onCameraTransform,
+  ribbon,
 }: {
   compute: number;
   theme: IdleTheme;
   reserveShopSpace: boolean;
   onTap?: () => void;
+  onCameraTransform?: (transform: { x: number; y: number; scale: number }) => void;
+  ribbon?: {
+    shape: "circle" | "chubby" | "spiky" | "nori";
+    params: MarginalGrowthState["params"];
+    owned: Record<string, number> | null;
+    accentColor: number;
+    cameraClamp: ReturnType<typeof resolveMarginalGrowthCameraClamp>;
+    backgroundColor: number;
+  };
 }) {
   const count = Math.max(9, Math.min(180, Math.floor(Math.log10(Math.max(10, compute)) * 18)));
   const nodes = useMemo(() => seededNodes(count), [count]);
@@ -174,6 +210,22 @@ function ComputeField({
     const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
     setView((value) => ({ ...value, scale: Math.max(0.15, Math.min(3, value.scale * factor)) }));
   }, []);
+
+  if (ribbon) {
+    return (
+      <MarginalGrowthRibbonView
+        shape={ribbon.shape}
+        params={ribbon.params}
+        owned={ribbon.owned}
+        accentColor={ribbon.accentColor}
+        cameraClamp={ribbon.cameraClamp}
+        backgroundColor={ribbon.backgroundColor}
+        onTap={onTap}
+        onCameraTransform={onCameraTransform}
+        reserveShopSpace={reserveShopSpace}
+      />
+    );
+  }
 
   return (
     <div
@@ -231,13 +283,23 @@ function ComputeField({
   );
 }
 
-export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
+export function IdleScreen({
+  runtime,
+  marginalGrowth,
+}: {
+  runtime: IdleScreenRuntime;
+  marginalGrowth?: UseBoundStore<StoreApi<MarginalGrowthState>>;
+}) {
   const snapshot = useIdleSnapshot(runtime);
   const alignment = snapshot.state.currentAlignment ?? "none";
   const theme = IDLE_THEMES[alignment] ?? IDLE_THEMES.none;
   const effective = getEffectiveDesktopCompute(snapshot.computeState);
   const initialized = !!snapshot.state.facts["compute.initialized"];
   const [introCompleted, setIntroCompleted] = useState(false);
+  const [camera, setCamera] = useState<{ x: number; y: number; scale: number } | null>(null);
+  const updateCamera = useCallback((next: { x: number; y: number; scale: number }) => {
+    setCamera((previous) => previous && previous.x === next.x && previous.y === next.y && previous.scale === next.scale ? previous : next);
+  }, []);
   const initializationFactInFlight = useRef(false);
   const interactive = initialized || introCompleted;
   const hasShop = snapshot.generators.length > 0;
@@ -262,10 +324,55 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
     if (!interactive) return;
     runtime.click();
   }, [interactive, runtime]);
+  const growth = useSyncExternalStore(
+    marginalGrowth ? marginalGrowth.subscribe : subscribeNothing,
+    () => (marginalGrowth ? marginalGrowth.getState() : NO_GROWTH),
+  );
+  const alignmentRibbon = IDLE_ALIGNMENT_RIBBON[alignment] ?? IDLE_ALIGNMENT_RIBBON.none;
+  const ribbonParams = useMemo(() => {
+    if (!alignmentRibbon.growth) return growth.params;
+    return {
+      ...growth.params,
+      fxCircleColor: alignmentRibbon.growth.circle,
+      fxIconColor: alignmentRibbon.growth.icon,
+    };
+  }, [alignmentRibbon.growth, growth.params]);
+  const ribbonOwned = growth.source === "owned" ? snapshot.state.owned : null;
+  const productionRate = useMemo(
+    () =>
+      snapshot.generators.reduce(
+        (total, generator) => total + (runtime.quoteGenerator(generator.id, 1)?.totalRate ?? 0),
+        0,
+      ),
+    [runtime, snapshot],
+  );
+  const cap = effective.cap;
+  const capFinite = Number.isFinite(cap);
+  const capReached = capFinite && effective.compute >= cap;
+  const showCap = !capFinite || (capFinite && effective.compute >= cap * 0.5);
+  const showMeta = !snapshot.state.facts[IDLE_MANIFOLD_UNLOCKED_FACT];
+
+  useEffect(() => {
+    if (!marginalGrowth || growth.source !== "autoplay") return;
+    let frame = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+      last = now;
+      marginalGrowth.getState().setParams((params) => {
+        const limit = Math.max(1, params.maxSteps);
+        const steps = params.steps + MARGINAL_GROWTH_AUTOPLAY_STEPS_PER_SECOND * dt;
+        return { ...params, steps: steps > limit ? steps % limit : steps };
+      });
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [growth.source, marginalGrowth]);
 
   return (
     <div
-      className="pixel-idle relative h-full w-full select-none overflow-hidden font-mono"
+      className="pixel-idle pixel-scanlines relative h-full w-full select-none overflow-hidden"
       style={{
         background: theme.background,
         color: theme.bright,
@@ -281,35 +388,101 @@ export function IdleScreen({ runtime }: { runtime: IdleScreenRuntime }) {
         theme={theme}
         reserveShopSpace={hasShop}
         onTap={clickCore}
+        onCameraTransform={updateCamera}
+        ribbon={
+          marginalGrowth
+            ? {
+                shape: alignmentRibbon.shape,
+                params: ribbonParams,
+                owned: ribbonOwned ? { ...ribbonOwned } : null,
+                accentColor: alignmentRibbon.accent,
+                cameraClamp: resolveMarginalGrowthCameraClamp(
+                  growth.cameraClamp,
+                  growth.phase,
+                ),
+                backgroundColor: alignmentRibbon.canvasBg,
+              }
+            : undefined
+        }
       />
 
+      {interactive ? <div className="pointer-events-none absolute inset-0 z-10">
+        {/* ponytail: the captured bundle core is static; redraw frames if animated click pulses need parity. */}
+        <div className="pointer-events-none absolute" style={{ left: camera?.x ?? "50%", top: camera?.y ?? "50%", transform: `scale(${camera?.scale ?? 1})`, transformOrigin: "top left" }}>
+          <img alt="" draggable={false} className="pointer-events-none absolute max-w-none" src="/assets/idle-core.png" style={{ width: 460, height: 460, left: -230, top: -230, imageRendering: "auto", filter: alignment === "accelerate" ? "hue-rotate(175deg)" : alignment === "decelerate" ? "hue-rotate(-95deg)" : undefined }} />
+          <button type="button" aria-label="算力" className="pointer-events-auto absolute cursor-pointer touch-none" style={{ left: -75, top: -75, width: 150, height: 150 }} onClick={clickCore} />
+        </div>
+      </div> : null}
       {interactive ? <IdleProgressionRail runtime={runtime} snapshot={snapshot} /> : null}
       {interactive ? <IdleGeneratorShop runtime={runtime} snapshot={snapshot} /> : null}
       {interactive ? (
-        <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2">
+        <div
+          className="pointer-events-none absolute left-1/2 top-4 z-20 flex -translate-x-1/2 flex-col items-center gap-1.5"
+          style={{ filter: "var(--px-ui-glow, none)" }}
+        >
+          <div
+            className="pixel-num pixel-flicker pointer-events-none relative"
+            style={{
+              fontSize: 40,
+              lineHeight: 1,
+              color: "#ecfeff",
+              letterSpacing: "0.02em",
+              textShadow: "2px 2px 0 #0e7490, 4px 4px 0 #062c3d",
+            }}
+          >
+            <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ color: "#f0abfc", transform: "translate(-1px, 0)", opacity: 0.28, mixBlendMode: "screen" }}>{formatDesktopCompute(effective.compute)}</span>
+            <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ color: "#67e8f9", transform: "translate(1px, 0)", opacity: 0.32, mixBlendMode: "screen" }}>{formatDesktopCompute(effective.compute)}</span>
+            <span className="relative">{formatDesktopCompute(effective.compute)}</span>
+          </div>
+          {showCap ? (
+            <PixelTooltip side="bottom" content={<div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-cyan)]">算力上限</div><div className="pixel-fs-sm opacity-80">{capFinite ? "系统可容纳的最大算力。达到上限后，算力将停止增长；提高上限后才能继续产出。" : "封印已经解开，人为设下的限额随之消失。算力不再有上限。"}</div></div>}>
+              <span className="pixel-num pixel-fs-sm cursor-help" style={{ color: capReached ? "var(--px-amber)" : capFinite ? "var(--px-white)" : "var(--px-cyan)", opacity: capReached ? 1 : capFinite ? 0.6 : 0.85 }}>
+                {capFinite ? (capReached ? "已达上限 " : "上限 ") + formatDesktopCompute(cap) : "上限 ♾️"}
+              </span>
+            </PixelTooltip>
+          ) : null}
+          <div className="pixel-num pixel-fs-md pixel-tsh-1 pointer-events-auto flex items-center gap-3">
+            <PixelTooltip
+              side="bottom"
+              content={<div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-cyan)]">算力增长</div><div className="pixel-fs-sm opacity-80">每秒自动产出的算力总量，由算力源与线程共同提供。</div></div>}
+            >
+              <span className="flex cursor-help items-center gap-1" style={{ color: "var(--px-cyan)" }}>
+                +{formatDesktopCompute(productionRate)}
+                <span className="pixel-fs-sm text-[var(--px-cyan)]/55">/s</span>
+              </span>
+            </PixelTooltip>
+            {showMeta ? (
+              <>
+                <PixelSeparator />
+                <PixelTooltip
+                  side="bottom"
+                  content={<div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-white)]">线程</div><div className="pixel-fs-sm opacity-80">自动点击器。每个线程每秒会替你点击一次，产出算力，并计入阵营与传承加成。</div></div>}
+                >
+                  <span className="flex cursor-help items-center gap-1 text-[var(--px-white)]">
+                    <Workflow className="size-3" strokeWidth={2.5} aria-hidden="true" />
+                    {formatDesktopCompute(snapshot.state.threads ?? 0)}
+                  </span>
+                </PixelTooltip>
+                <PixelSeparator />
+                <PixelTooltip
+                  side="bottom"
+                  content={<div className="flex flex-col gap-1"><div className="pixel-cjk pixel-fs-sm text-[var(--px-magenta)]">共鸣</div><div className="pixel-fs-sm opacity-80">重新训练时，根据本轮的峰值算力获得。可永久保留，并提供全局加成。</div></div>}
+                >
+                  <span className="flex cursor-help items-center gap-1 text-[var(--px-magenta)]">
+                    <IdleIcon name="lorc-brain.svg" className="size-3 bg-current" />
+                    {formatDesktopCompute(snapshot.state.shards)}
+                  </span>
+                </PixelTooltip>
+              </>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+      {interactive && snapshot.state.affiliatedFaction ? (
+        <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 -translate-x-1/2">
           <IdleSkillBar runtime={runtime} snapshot={snapshot} />
         </div>
       ) : null}
-
-      <div
-        className="pointer-events-auto absolute top-3 min-w-52 border bg-black/55 p-3 backdrop-blur-sm"
-        style={{
-          right: hasShop ? 240 : 12,
-          borderColor: `${theme.dim}99`,
-        }}
-      >
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] opacity-70">
-          <Zap className="size-3.5" />
-          COMPUTE
-        </div>
-        <div className="mt-1 text-2xl tabular-nums" style={{ filter: theme.glow }}>
-          {formatDesktopCompute(effective.compute)}
-        </div>
-        <div className="mt-1 flex justify-between text-[10px] opacity-65">
-          <span>CAP {formatDesktopCompute(effective.cap)}</span>
-          <span>{effective.draining ? "DRAIN" : "STABLE"}</span>
-        </div>
-      </div>
 
       {!initialized && !introCompleted ? (
         <IdleInitializationSequence onComplete={finishInitialization} />

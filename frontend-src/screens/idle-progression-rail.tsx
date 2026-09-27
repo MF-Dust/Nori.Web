@@ -35,8 +35,8 @@ function TriggerButton({
       type="button"
       data-test={testId}
       onClick={onClick}
-      className={`flex h-8 w-full items-center gap-1.5 border-2 bg-black/70 px-2 text-[10px] font-semibold ${
-        pulse ? "animate-pulse" : ""
+      className={`pixel-cjk pixel-fs-md flex h-8 w-full items-center gap-2 border-2 bg-[var(--px-panel)] px-2 transition-colors duration-100 hover:-translate-y-px active:translate-y-px ${
+        pulse ? "pixel-ready-pulse-violet" : ""
       }`}
       style={{
         color: accent,
@@ -90,14 +90,14 @@ export function IdleProgressionRail({
 
   return (
     <div
-      className="pointer-events-none absolute bottom-3 left-3 top-3 z-30 flex w-[208px] flex-col gap-2 font-mono [&_button]:pointer-events-auto"
+      className="pointer-events-none absolute bottom-3 left-3 top-3 z-30 flex w-[208px] flex-col gap-2 pixel-cjk [&_button]:pointer-events-auto"
       style={{ filter: "var(--px-ui-glow, none)" }}
     >
-      <div className="pointer-events-auto flex shrink-0 flex-col gap-1.5">
+      <div className="pointer-events-auto flex shrink-0 flex-col gap-2">
         <TriggerButton
           open={popup === "abdicate"}
           label="重新训练"
-          accent="#c084fc"
+          accent={abdication.canAbdicate || popup === "abdicate" ? "#c084fc" : "#475569"}
           pulse={abdication.canAbdicate && abdication.firstAbdication && popup !== "abdicate"}
           icon={<RefreshCcw className="size-3.5 shrink-0" strokeWidth={2.5} />}
           onClick={() => toggle("abdicate")}
@@ -106,7 +106,7 @@ export function IdleProgressionRail({
         <TriggerButton
           open={popup === "alignment"}
           label="选择立场"
-          accent="#67e8f9"
+          accent="#fcd34d"
           icon={<Compass className="size-3.5 shrink-0" strokeWidth={2.5} />}
           onClick={() => toggle("alignment")}
         />

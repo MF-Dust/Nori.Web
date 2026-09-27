@@ -1,5 +1,7 @@
 import { useState } from "react";
+import type { StoreApi, UseBoundStore } from "zustand";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
+import type { MarginalGrowthState } from "../state/marginal-growth-store";
 import {
   COMPUTE_TARGETS,
   COMPUTE_TIME_STEPS,
@@ -28,6 +30,7 @@ export interface ComputeDebugActions {
 
 export interface DebugLabActions {
   compute?: ComputeDebugActions;
+  marginalGrowth?: UseBoundStore<StoreApi<MarginalGrowthState>>;
   previewReaction?(reaction: (typeof DEBUG_REACTIONS)[number]): void;
   loadScenario?(game: DebugGame, scenarioId: string): Promise<void>;
 }

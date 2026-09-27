@@ -86,7 +86,9 @@ export function createFilesIntentStore(): FilesIntentStore {
     },
     subscribe(listener) {
       listeners.add(listener);
-      return () => listeners.delete(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
   };
 }

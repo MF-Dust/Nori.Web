@@ -102,6 +102,26 @@
 .settings-reset-dialog::backdrop {
   background: #0006;
 }
+@media (max-width: 480px) {
+  .settings-root {
+    flex-direction: column;
+  }
+  .settings-root > nav {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .settings-root > nav button {
+    flex: 1 0 auto;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .settings-root > [role="region"] {
+    min-height: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .settings-root *,
   .settings-reset-dialog * {

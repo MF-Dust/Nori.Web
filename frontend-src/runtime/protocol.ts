@@ -22,11 +22,14 @@ export interface LeaveWorldMessage {
 export interface OpenMyWebWorldMessage {
   type: "open_my_web_world";
   locale?: string;
+  fullUnlock?: boolean;
+  localProgress?: { facts?: JsonValue; variables?: JsonValue };
 }
 
 export interface ResetMyWebWorldMessage {
   type: "reset_my_web_world";
   locale?: string;
+  fullUnlock?: boolean;
 }
 
 export interface MountCartridgeMessage {

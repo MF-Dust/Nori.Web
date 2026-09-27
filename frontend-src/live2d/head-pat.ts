@@ -27,6 +27,14 @@ export const HEAD_PAT_DEFAULT_TUNING: Readonly<HeadPatTuning> = Object.freeze({
   soundBodyGain: 0.5,
 });
 
+export type HeadPatPointerPhase =
+  | ""
+  | "start"
+  | "move"
+  | "end"
+  | "cancel"
+  | "lost";
+
 export const HEAD_PAT_TUNING_RANGES: Readonly<Record<keyof HeadPatTuning, { min: number; max: number; step: number }>> = Object.freeze({
   requiredMs: { min: 500, max: 8_000, step: 100 },
   horizontalDominance: { min: 0, max: 3, step: 0.1 },
@@ -56,6 +64,13 @@ export class HeadPat {
   pressing = false;
   completions = 0;
   enabled = true;
+  armed = false;
+  lastPhase: HeadPatPointerPhase = "";
+  lastPattable = false;
+  lastOnSurface = false;
+  lastInZone = false;
+  lastModelX = 0;
+  lastModelY = 0;
   private tuningValue: HeadPatTuning = { ...HEAD_PAT_DEFAULT_TUNING };
   tuning() { return { ...this.tuningValue }; }
   setTuning(patch: Partial<HeadPatTuning>) {
@@ -66,6 +81,27 @@ export class HeadPat {
     }
   }
   resetTuning() { this.tuningValue = { ...HEAD_PAT_DEFAULT_TUNING }; }
+  observePointer(
+    phase: HeadPatPointerPhase,
+    pattable: boolean,
+    onSurface: boolean,
+    inZone: boolean,
+    modelX: number,
+    modelY: number,
+  ) {
+    this.lastPhase = phase;
+    this.lastPattable = pattable;
+    if (phase === "start") this.lastOnSurface = onSurface;
+    this.lastInZone = inZone;
+    if (Number.isFinite(modelX)) this.lastModelX = modelX;
+    if (Number.isFinite(modelY)) this.lastModelY = modelY;
+    if (
+      pattable &&
+      inZone &&
+      (phase === "start" || phase === "move")
+    )
+      this.armed = true;
+  }
   start(time: number, x: number, y: number) {
     this.end();
     if (!this.enabled || ![time, x, y].every(Number.isFinite)) return;
@@ -88,5 +124,12 @@ export class HeadPat {
     this.completions += 1;
     return true;
   }
-  end() { this.sample = null; this.pressing = false; this.progress = 0; this.fired = false; this.velocity = 0; }
+  end() {
+    this.sample = null;
+    this.pressing = false;
+    this.progress = 0;
+    this.fired = false;
+    this.velocity = 0;
+    this.armed = false;
+  }
 }

@@ -125,10 +125,18 @@ export function PdfPreview({ src, locale }: { src: string; locale: string }) {
     });
     void (async () => {
       const pdf = await task.promise;
+      if (!pdf.numPages) throw new Error("PDF has no pages");
       const dimensions: PageSize[] = [];
       for (let number = 1; number <= pdf.numPages; number++) {
         if (cancelled) return;
         const viewport = (await pdf.getPage(number)).getViewport({ scale: 1 });
+        if (
+          !Number.isFinite(viewport.width) ||
+          !Number.isFinite(viewport.height) ||
+          viewport.width <= 0 ||
+          viewport.height <= 0
+        )
+          throw new Error("PDF page has invalid dimensions");
         dimensions.push({ width: viewport.width, height: viewport.height });
       }
       if (!cancelled) {
@@ -136,14 +144,14 @@ export function PdfPreview({ src, locale }: { src: string; locale: string }) {
         setPages(dimensions);
         scroller.current?.scrollTo(0, 0);
       }
-    })().catch((error: unknown) => {
-      if (!cancelled) setError(String(error));
+    })().catch(() => {
+      if (!cancelled) setError(t("preview.pdf.error"));
     });
     return () => {
       cancelled = true;
-      void task.destroy();
+      void task.destroy().catch(() => {});
     };
-  }, [src]);
+  }, [src, t]);
   useLayoutEffect(() => {
     const element = scroller.current!;
     const resize = () =>
@@ -296,9 +304,7 @@ export function PdfPreview({ src, locale }: { src: string; locale: string }) {
           }}
         >
           {error ? (
-            <p role="alert">
-              {t("preview.pdf.error")} {error}
-            </p>
+            <p role="alert">{error}</p>
           ) : !document ? (
             <p role="status">
               {locale.startsWith("zh") ? "载入中…" : "Loading…"}

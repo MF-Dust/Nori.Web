@@ -86,10 +86,16 @@ class WorldManager:
                 world.locale = locale
             return world
 
-    async def reset_world(self, user_id: str, locale: Optional[str] = None) -> WorldSession:
+    async def reset_world(
+        self, user_id: str, locale: Optional[str] = None, *, full_unlock: bool = True
+    ) -> WorldSession:
         async with self._lock:
             old = self.worlds_by_user.get(user_id)
-            world = WorldSession(user_id, locale or (old.locale if old else None))
+            world = WorldSession(
+                user_id,
+                locale or (old.locale if old else None),
+                full_unlock=full_unlock,
+            )
             self.worlds_by_user[user_id] = world
             return world
 

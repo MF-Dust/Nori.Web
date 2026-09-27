@@ -1,4 +1,3 @@
-import { ArrowUpRight, Brain, Handshake, Sparkles } from "lucide-react";
 import { useMemo } from "react";
 import {
   IDLE_MANIFOLD_UNLOCKED_FACT,
@@ -28,6 +27,7 @@ import {
 } from "../apps/idle-generic-upgrades";
 import { isIdleGeneratorUpgradeAvailable } from "../apps/idle-upgrades";
 import { formatDesktopCompute } from "../state/compute-runtime";
+import { FactionMarks, IdleSlot, MementoGlass, PixelHeading, ThresholdBadge } from "./idle-chrome";
 import { IdleIcon } from "./idle-icon";
 
 const FACTION_ALIGNMENT: Readonly<Record<string, string>> = {
@@ -97,6 +97,9 @@ function ProgressionCard({
   icon,
   purchased = false,
   enabled = false,
+  glass = false,
+  threshold,
+  tier,
   testId,
   onClick,
 }: {
@@ -107,43 +110,35 @@ function ProgressionCard({
   icon?: string;
   purchased?: boolean;
   enabled?: boolean;
+  glass?: boolean;
+  threshold?: number;
+  tier?: number;
   testId?: string;
   onClick?: () => void;
 }) {
   return (
-    <button
-      type="button"
-      data-test={testId}
-      disabled={purchased || !enabled || !onClick}
+    <IdleSlot
+      tooltip={<div className="flex flex-col gap-1">
+        <div className="pixel-fs-lg font-semibold">{name}</div>
+        {detail ? <div className="pixel-fs-sm opacity-80">{detail}</div> : null}
+        {!purchased && cost ? <div className="pixel-fs-sm font-mono tabular-nums">{cost}</div> : null}
+        {purchased ? <div className="pixel-fs-sm italic opacity-70">已拥有</div> : null}
+      </div>}
+      tooltipClassName={glass ? "pixel-tooltip-glass" : undefined}
+      purchased={purchased}
+      affordable={enabled}
+      bloom={glass}
+      borderColor={tone}
+      testId={testId}
+      label={name}
       onClick={onClick}
-      className="relative flex min-h-12 w-full items-center gap-2 border-2 bg-black/65 p-1.5 text-left disabled:cursor-default"
-      style={{
-        borderColor: purchased ? "rgba(255,255,255,.16)" : `${tone}88`,
-        color: purchased ? "rgba(255,255,255,.48)" : tone,
-        opacity: !purchased && !enabled ? 0.55 : 1,
-        boxShadow: purchased
-          ? "inset -2px -2px 0 rgba(0,0,0,.5), inset 2px 2px 0 rgba(255,255,255,.04)"
-          : `inset -2px -2px 0 rgba(0,0,0,.55), inset 2px 2px 0 ${tone}22`,
-      }}
-      title={[name, detail, purchased ? "已拥有" : cost].filter(Boolean).join(" · ")}
     >
-      <div
-        className="grid size-8 shrink-0 place-items-center border"
-        style={{ borderColor: purchased ? "rgba(255,255,255,.12)" : `${tone}77` }}
-      >
-        {icon ? <IdleIcon name={icon} className="size-6" /> : <ArrowUpRight className="size-4" />}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1 text-[10px] font-semibold">
-          <span className="min-w-0 flex-1 truncate">{name}</span>
-          {!purchased && enabled ? <ArrowUpRight className="size-3 shrink-0" /> : null}
-        </div>
-        {detail ? <div className="mt-0.5 truncate text-[9px] text-white/60">{detail}</div> : null}
-        <div className="truncate text-[9px] tabular-nums text-white/50">
-          {purchased ? "已拥有" : cost ?? ""}
-        </div>
-      </div>
-    </button>
+      {glass && icon ? <MementoGlass name={icon} claimed={purchased} /> : <>
+        {icon ? <IdleIcon name={icon} className="size-full" /> : <span className="pixel-fs-sm">{name.slice(0, 1)}</span>}
+        {typeof threshold === "number" ? <ThresholdBadge threshold={threshold} /> : null}
+        {typeof tier === "number" ? <FactionMarks tier={tier} color={tone} /> : null}
+      </>}
+    </IdleSlot>
   );
 }
 
@@ -168,6 +163,8 @@ function GeneratorUpgradeCard({
       detail={`${threshold} 个 · 产出 ×${multiplier}`}
       cost={`成本 ${formatDesktopCompute(upgrade.cost)}`}
       tone={tone}
+      icon={generator?.icon}
+      threshold={threshold}
       purchased={purchased}
       enabled={affordable}
       testId={`upgrade-${upgrade.id}`}
@@ -284,13 +281,11 @@ export function IdleUpgradeList({
     claimedMementos.length > 0;
 
   return (
-    <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
-      <div className="mb-1 flex items-center gap-1 text-[9px] uppercase tracking-[0.16em] text-amber-200/65">
-        <Sparkles className="size-3" /> 可购
-      </div>
+    <div className="pointer-events-auto flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pt-2 pr-1">
+      {hasAvailableRows ? <PixelHeading>可购</PixelHeading> : null}
 
       {hasAvailableRows ? (
-        <div className="flex flex-col gap-1">
+        <div className="grid grid-cols-5 gap-1">
           {nextMemento ? (
             <ProgressionCard
               name={nextMemento.name ?? nextMemento.id}
@@ -298,6 +293,7 @@ export function IdleUpgradeList({
               cost={`算力门槛 ${formatDesktopCompute(idleMementoComputeFloor(nextMementoIndex!))}`}
               tone="#67e8f9"
               icon={nextMemento.icon}
+              glass
               enabled
               testId={`memento-${nextMemento.id}`}
               onClick={() => runtime.claimMemento()}
@@ -308,6 +304,7 @@ export function IdleUpgradeList({
             <ProgressionCard
               name="共鸣之力"
               detail="每点共鸣提高总产量与 GPU 发现率"
+              icon="lorc-brain.svg"
               cost="花费 1 算力 · 需要 1 共鸣"
               tone="#e879f9"
               purchased={snapshot.state.gemPowerUnlocked}
@@ -364,7 +361,8 @@ export function IdleUpgradeList({
                 detail={`${faction?.name ?? upgrade.factionId} · T${upgrade.factionTier}`}
                 cost={relation ? gpuCostLabel(gpuCosts, snapshot) : `成本 ${formatDesktopCompute(upgrade.cost)}`}
                 tone={faction?.accent ?? "#fbbf24"}
-                icon={upgrade.icon}
+                icon={upgrade.icon ?? faction?.icon}
+                tier={upgrade.factionTier}
                 enabled={affordable}
                 testId={`faction-upgrade-${upgrade.id}`}
                 onClick={() => runtime.buyFactionUpgrade(upgrade.id)}
@@ -382,16 +380,18 @@ export function IdleUpgradeList({
           ))}
         </div>
       ) : (
-        <div className="flex items-center gap-1.5 py-1 text-[10px] text-white/60">
-          {snapshot.state.affiliatedFaction === "liuxing" ? <Brain className="size-3" /> : <Handshake className="size-3" />}
-          尚未浮现，继续推进算力。
-        </div>
+        <p className="pixel-cjk pixel-fs-md flex items-center gap-2 text-[var(--px-white)]">
+          <span aria-hidden="true" className="inline-block size-1.5 bg-[var(--px-white)] pixel-pulse" />
+          {snapshot.state.affiliatedFaction === "liuxing" && claimedMementos.length >= DEFAULT_IDLE_MEMENTO_UPGRADES.length
+            ? "已全部部署完成。"
+            : "尚未浮现，继续点击。"}
+        </p>
       )}
 
       {hasOwnedRows ? (
         <>
-          <div className="mb-1 mt-2 text-[9px] uppercase tracking-[0.16em] text-white/35">已拥有</div>
-          <div className="grid grid-cols-2 gap-1">
+          <PixelHeading tone="muted">已拥有</PixelHeading>
+          <div className="grid grid-cols-5 gap-1">
             {heritageRows.owned.map((heritage) => {
               const faction = snapshot.factions.find((candidate) => candidate.id === heritage.factionId);
               return (
@@ -411,6 +411,7 @@ export function IdleUpgradeList({
                 detail="流形记忆"
                 tone="#67e8f9"
                 icon={memento.icon}
+                glass
                 purchased
               />
             ))}

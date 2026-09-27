@@ -226,3 +226,85 @@ export class MessengerAppModel {
     await this.manifold.command("client.emitFact", { factId });
   }
 }
+
+export interface SignalArrival {
+  conversation: SignalConversation;
+  message: SignalMessage;
+}
+
+export interface SignalArrivalPreviewLabels {
+  recalled: string;
+  image: string;
+  file: string;
+}
+
+export function signalArrivalPreview(
+  message: SignalMessage,
+  labels: SignalArrivalPreviewLabels = {
+    recalled: "Message recalled",
+    image: "Photo",
+    file: "File",
+  },
+): string {
+  if (message.kind === "deleted") return labels.recalled;
+  if (message.kind === "image") return labels.image;
+  if (message.kind === "file") return labels.file;
+  return message.body.replace(/\n/g, " ").slice(0, 120);
+}
+
+/** Tracks artifact deltas after the initial history baseline for one world. */
+export class SignalArrivalTracker {
+  private worldId: string | null = null;
+  private readonly seen = new Set<string>();
+  private initialized = false;
+
+  reset(worldId: string | null = null): void {
+    this.worldId = worldId;
+    this.seen.clear();
+    this.initialized = worldId !== null;
+  }
+
+  /** Mark a known-complete snapshot as history without emitting arrivals. */
+  seed(worldId: string, conversations: readonly SignalConversation[]): void {
+    if (worldId !== this.worldId) {
+      this.worldId = worldId;
+      this.seen.clear();
+    }
+    for (const conversation of conversations)
+      for (const message of conversation.messages) this.seen.add(message.messageId);
+    this.initialized = true;
+  }
+
+  update(worldId: string | null, conversations: readonly SignalConversation[]): SignalArrival[] {
+    if (!worldId) {
+      this.reset();
+      return [];
+    }
+    if (worldId !== this.worldId) {
+      this.worldId = worldId;
+      this.seen.clear();
+      this.initialized = false;
+    }
+
+    const all = conversations
+      .flatMap((conversation) =>
+        conversation.messages.map((message) => ({ conversation, message })),
+      )
+      .sort((left, right) =>
+        compareSignalMessages(left.message, right.message),
+      );
+    if (!this.initialized) {
+      // An empty first response can be the artifact source's loading state. Do
+      // not claim a baseline until a non-empty snapshot or an explicit seed.
+      if (!all.length) return [];
+      this.seed(worldId, conversations);
+      return [];
+    }
+
+    const fresh = all.filter(({ message }) => !this.seen.has(message.messageId));
+    for (const { message } of all) this.seen.add(message.messageId);
+    return fresh.filter(
+      ({ message }) => !message.self && message.sender !== "我",
+    );
+  }
+}

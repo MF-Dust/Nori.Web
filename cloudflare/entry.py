@@ -444,7 +444,8 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
 
         if message.get("type") == "reset_my_web_world":
             locale = message.get("locale") if isinstance(message.get("locale"), str) else None
-            world = await self.manager.reset_world(user_id, locale)
+            full_unlock = message.get("fullUnlock") is not False
+            world = await self.manager.reset_world(user_id, locale, full_unlock=full_unlock)
             self._persisted_world_snapshot = None
             self._refresh_world_clients(world)
             await self._persist_world(world, force=True)

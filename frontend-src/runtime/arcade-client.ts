@@ -10,6 +10,10 @@ import {
 
 export type ArcadeConnectionState =
   "idle" | "connecting" | "open" | "waiting" | "closed";
+export interface ArcadeCloseInfo {
+  code: number;
+  reason: string;
+}
 export type ArcadeMessageListener = (message: ArcadeServerMessage) => void;
 export type ArcadeStateListener = (state: ArcadeConnectionState) => void;
 
@@ -45,6 +49,7 @@ export class ArcadeClient {
   private epoch = 0;
   private opening: Promise<void> | null = null;
   private cancelOpening: (() => void) | null = null;
+  private lastCloseInfo: ArcadeCloseInfo | null = null;
   private readonly listeners = new Set<ArcadeMessageListener>();
   private readonly stateListeners = new Set<ArcadeStateListener>();
   private readonly options: Required<ArcadeClientOptions>;
@@ -71,15 +76,23 @@ export class ArcadeClient {
     return this.state;
   }
 
+  get lastClose(): ArcadeCloseInfo | null {
+    return this.lastCloseInfo;
+  }
+
   onMessage(listener: ArcadeMessageListener): () => void {
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   onState(listener: ArcadeStateListener): () => void {
     this.stateListeners.add(listener);
     listener(this.state);
-    return () => this.stateListeners.delete(listener);
+    return () => {
+      this.stateListeners.delete(listener);
+    };
   }
 
   private setState(state: ArcadeConnectionState): void {
@@ -147,9 +160,9 @@ export class ArcadeClient {
           },
           { once: true },
         );
-        socket.addEventListener("close", () => {
+        socket.addEventListener("close", (event) => {
           finish(new Error("Arcade connection closed before opening"));
-          if (epoch === this.epoch) this.handleClose(socket);
+          if (epoch === this.epoch) this.handleClose(socket, event);
         });
         socket.addEventListener("error", () => {
           finish(new Error("Arcade connection failed"));
@@ -182,14 +195,28 @@ export class ArcadeClient {
     for (const listener of this.listeners) listener(message);
   }
 
-  private handleClose(socket: WebSocket): void {
+  private handleClose(socket: WebSocket, event?: CloseEvent): void {
     if (this.socket !== socket) return;
     this.socket = null;
     this.clearKeepAlive();
+    const reason = event?.reason ?? "";
+    this.lastCloseInfo = { code: event?.code ?? 0, reason };
     if (this.manualClose || !this.options.reconnect) {
       this.setState("closed");
       return;
     }
+    if (
+      reason === "session_replaced" ||
+      reason === "world_reset" ||
+      reason === "session_invalid" ||
+      reason === "overloaded" ||
+      reason === "soft_closed" ||
+      reason === "closed"
+    ) {
+      this.setState("closed");
+      return;
+    }
+    if (reason === "deploy_restart") this.reconnectAttempt = 0;
     this.scheduleReconnect();
   }
 
@@ -233,8 +260,12 @@ export class ArcadeClient {
     this.socket.send(JSON.stringify(message));
   }
 
-  openMyWorld(locale = this.options.locale): void {
-    this.send({ type: "open_my_web_world", locale });
+  openMyWorld(
+    locale = this.options.locale,
+    fullUnlock = true,
+    localProgress?: { facts?: JsonValue; variables?: JsonValue },
+  ): void {
+    this.send({ type: "open_my_web_world", locale, fullUnlock, localProgress });
   }
 
   sendEvent(

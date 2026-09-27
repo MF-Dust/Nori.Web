@@ -334,6 +334,7 @@ export const DEFAULT_IDLE_SKILLS: readonly IdleSkillDefinition[] = [
   {
     id: "surge",
     name: "算力激增",
+    icon: "set4-07",
     scope: "universal",
     cooldownSec: 60,
     durationSec: 12,
@@ -342,6 +343,7 @@ export const DEFAULT_IDLE_SKILLS: readonly IdleSkillDefinition[] = [
   {
     id: "burst",
     name: "即时结算",
+    icon: "set1-21",
     scope: "universal",
     cooldownSec: 45,
     durationSec: 0,
@@ -350,6 +352,7 @@ export const DEFAULT_IDLE_SKILLS: readonly IdleSkillDefinition[] = [
   {
     id: "click_frenzy",
     name: "狂点",
+    icon: "set4-12",
     scope: "elf",
     cooldownSec: 40,
     durationSec: 12,
@@ -358,6 +361,7 @@ export const DEFAULT_IDLE_SKILLS: readonly IdleSkillDefinition[] = [
   {
     id: "overclock",
     name: "超频",
+    icon: "set4-03",
     scope: "angel",
     cooldownSec: 90,
     durationSec: 8,
@@ -366,6 +370,7 @@ export const DEFAULT_IDLE_SKILLS: readonly IdleSkillDefinition[] = [
   {
     id: "resonance",
     name: "共振",
+    icon: "set4-22",
     scope: "angel",
     cooldownSec: 1,
     durationSec: 0,
@@ -374,6 +379,7 @@ export const DEFAULT_IDLE_SKILLS: readonly IdleSkillDefinition[] = [
   {
     id: "payday",
     name: "发薪日",
+    icon: "set1-21",
     scope: "goblin",
     cooldownSec: 40,
     durationSec: 0,
@@ -382,6 +388,7 @@ export const DEFAULT_IDLE_SKILLS: readonly IdleSkillDefinition[] = [
   {
     id: "lightning_strike",
     name: "天降金体",
+    icon: "set4-15",
     scope: "demon",
     cooldownSec: 10,
     durationSec: 40,
@@ -396,6 +403,7 @@ export const DEFAULT_IDLE_SKILLS: readonly IdleSkillDefinition[] = [
   {
     id: "brimstone",
     name: "硫火",
+    icon: "set4-05",
     scope: "demon",
     cooldownSec: 65,
     durationSec: 12,

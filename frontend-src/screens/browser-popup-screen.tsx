@@ -25,9 +25,10 @@ export interface BrowserPopupScreenProps {
 }
 
 /**
- * Recovered shell around the shipped BrowserPageView. The large page renderer
- * remains a separate migration boundary so its DOM/sandbox behavior can be
- * verified independently before replacement.
+ * Recovered shell around the shipped BrowserPageView. `PageView` stays a prop
+ * so the DOM/sandbox renderer can be swapped and verified independently, but it
+ * is a composition seam, not a migration boundary: the production renderer is
+ * the source-owned `screens/browser-page-view.tsx`.
  */
 export function BrowserPopupScreen({
   instanceId,
