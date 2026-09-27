@@ -18,6 +18,7 @@ frontend-visual-comparison/
 frontend-debug-layout/
 frontend-visual-games/
 frontend-visual-reference/
+.wrangler-candidate.json
 data/*.sqlite3
 data/*.db
 
