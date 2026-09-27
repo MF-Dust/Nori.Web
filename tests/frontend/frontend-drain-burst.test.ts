@@ -9,7 +9,7 @@ import {
   stepDrainBurst,
 } from "../../frontend-src/live2d/particles/drain-burst";
 
-const shipped = readFileSync("public/assets/index-CyHAbkO5.js", "utf8");
+const shipped = readFileSync("public/assets/index-CyHAbkO5.js", "utf8").replaceAll("\r\n", "\n");
 
 test("drain-burst GLSL occurs verbatim in the shipped particle bundle", () => {
   assert.equal(typeof DRAIN_BURST_VERTEX_GLSL, "string");

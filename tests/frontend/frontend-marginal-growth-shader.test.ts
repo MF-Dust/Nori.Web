@@ -7,7 +7,7 @@ import {
   RIBBON_VERTEX_GLSL,
 } from "../../frontend-src/apps/marginal-growth/shaders";
 
-const shipped = readFileSync("public/assets/IdleScreen-DCDB640k.js", "utf8");
+const shipped = readFileSync("public/assets/IdleScreen-DCDB640k.js", "utf8").replaceAll("\r\n", "\n");
 
 test("exported marginal-growth GLSL occurs verbatim in the shipped Idle screen", () => {
   const glsl = {
