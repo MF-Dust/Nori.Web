@@ -10,6 +10,12 @@ const groups = {
   "boot-corruption": [
     "../probes/frontend_boot_corruption_probe.mjs",
     "verifyBootCorruption",
+    "first",
+  ],
+  "boot-corruption-reentry": [
+    "../probes/frontend_boot_corruption_probe.mjs",
+    "verifyBootCorruption",
+    "second",
   ],
   "boot-matrix": [
     "../probes/frontend_boot_corruption_probe.mjs",
@@ -61,9 +67,9 @@ let browser;
 try {
   await server.listen();
   browser = await chromium.launch(probeLaunchOptions());
-  const [path, name] = groups[selected];
+  const [path, name, matrixGroup] = groups[selected];
   const probe = await import(path);
-  await probe[name](browser, output, `http://127.0.0.1:${port}`);
+  await probe[name](browser, output, `http://127.0.0.1:${port}`, matrixGroup);
 } finally {
   await browser?.close();
   await server.close();

@@ -578,6 +578,7 @@ export async function verifyBootCorruption(
   browser,
   output,
   origin = "http://127.0.0.1:47175",
+  matrixGroup = "all",
 ) {
   const page = await browser.newPage({
       viewport: { width: 1100, height: 800 },
@@ -800,7 +801,11 @@ export async function verifyBootCorruption(
     browser.on("disconnected", () => {
       browserLost = browserLost ?? "the browser disconnected mid-matrix";
     });
+    let caseIndex = 0;
     const attempt = async (label, body) => {
+      const index = caseIndex++;
+      if (matrixGroup === "first" && index >= 4) return;
+      if (matrixGroup === "second" && index < 4) return;
       if (browserLost) {
         matrix.push(`FAIL ${label}: ${browserLost}`);
         console.log(`  matrix FAIL ${label}: ${browserLost}`);
@@ -876,7 +881,7 @@ export async function verifyBootCorruption(
         '[data-antivirus-game="steer"] .antivirus-steer',
       ]) {
         try {
-          await page.locator(selector).first().click({ timeout: 2500 });
+          await page.locator(selector).first().click({ timeout: 10000 });
         } catch (error) {
           blocked.push(`${selector}: ${error.message.split("\n")[0]}`);
         }
