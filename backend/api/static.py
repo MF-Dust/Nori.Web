@@ -44,7 +44,9 @@ def get_cache_control(file_path: Path) -> str:
     suffix = file_path.suffix.lower()
     if name in {"index.html", "sw.js", "asset-manifest.json"} or suffix == ".html":
         return "no-cache, no-transform"
-    return "public, max-age=31536000, immutable"
+    if file_path.is_relative_to(PUBLIC_DIR / "assets"):
+        return "public, max-age=31536000, immutable"
+    return "public, max-age=0, must-revalidate"
 
 
 def file_range_iterator(file_path: Path, start: int, end: int, chunk_size: int = 64 * 1024) -> Generator[bytes, None, None]:
@@ -74,7 +76,7 @@ async def serve_static_or_spa(full_path: str, request: Request):
 
     stat_res = file_path.stat()
     file_size = stat_res.st_size
-    etag = f'"{int(stat_res.st_mtime):x}-{file_size:x}"'
+    etag = f'"{stat_res.st_mtime_ns:x}-{file_size:x}"'
     cache_control = get_cache_control(file_path)
 
     # 1. Handle Conditional GET (If-None-Match -> 304)
@@ -140,6 +142,7 @@ async def serve_static_or_spa(full_path: str, request: Request):
     # 3. Standard File Response
     return FileResponse(
         file_path,
+        stat_result=stat_res,
         media_type=media_type,
         headers={
             "ETag": etag,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -102,12 +103,63 @@ def _test_cloudflare_hot_path_source() -> None:
     assert "cartridge.transitions.clear()" in ENTRY
 
 
+async def _test_world_hot_paths() -> None:
+    class Socket:
+        def __init__(self, *, fail=False):
+            self.frames = []
+            self.fail = fail
+
+        async def send_text(self, text):
+            if self.fail:
+                raise RuntimeError("disconnected")
+            self.frames.append(text)
+
+    world = WorldSession("broadcast-test")
+    clients = [Socket() for _ in range(8)]
+    dead = Socket(fail=True)
+    world.clients.update([*clients, dead])
+    world.media_clients.add(dead)
+    messages = [{"type": "event", "payload": {"text": "中文同步"}}, {"type": "pong", "now": 123}]
+    original_dumps = json.dumps
+    calls = 0
+
+    def counting_dumps(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original_dumps(*args, **kwargs)
+
+    json.dumps = counting_dumps
+    try:
+        await world.broadcast(messages)
+        assert calls == len(messages), "broadcast must encode once per message, not per socket"
+        assert all([json.loads(frame) for frame in client.frames] == messages for client in clients)
+        assert dead not in world.clients and dead not in world.media_clients
+        world.clients.clear()
+        await world.broadcast(messages)
+        await world.broadcast([])
+        assert calls == len(messages), "a broadcast without recipients must not encode"
+    finally:
+        json.dumps = original_dumps
+
+    # A world never replays retained transitions: reconnect sends a snapshot.
+    # Keep the emitted Commit envelope intact while releasing archived copies.
+    chat = world.cartridges["chat"]
+    for index in range(200):
+        commit = await world._dispatch_internal("chat", "player", {"type": "playerMessage", "text": f"probe {index}"})
+        assert commit.committed and commit.version == index + 1
+        assert commit.transition["patches"] and commit.transition["events"]
+        assert not chat.transitions, "world commits must not accumulate copied patch history"
+    assert chat.head_version == 200
+    assert world.world_payload()["mountedCartridges"][0]["runtimes"][0]["headVersion"] == 200
+
+
 def main() -> None:
+    asyncio.run(_test_world_hot_paths())
     _test_snapshot_hot_path()
     _test_live_pack_single_resident_graph()
     _test_cloudflare_hot_path_source()
     print(
-        "[ok] Cloudflare persistence, archive reads, JSON parsing, and transition history avoid redundant object graphs"
+        "[ok] broadcasts encode once; local transition history, Cloudflare persistence, and archive reads avoid redundant object graphs"
     )
 
 

@@ -9,3 +9,24 @@
 
 /nori-runtime-shims.js
   Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/nori-ai-provider-switch.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/nori-tts-settings.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/nori-ui-settings.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/nori-wallpaper-mode.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/nori-settings-glass.css
+  Cache-Control: public, max-age=0, must-revalidate
+
+/fonts.css
+  Cache-Control: public, max-age=0, must-revalidate

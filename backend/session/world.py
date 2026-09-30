@@ -90,13 +90,15 @@ class WorldSession:
             await self.remove_client(websocket)
 
     async def broadcast(self, messages: List[Dict[str, Json]]) -> None:
-        if not messages:
+        if not messages or not self.clients:
             return
+        # The payload is identical for every recipient; encode it only once.
+        frames = [json.dumps(message, ensure_ascii=False, separators=(",", ":")) for message in messages]
         dead: List[WebSocket] = []
         for websocket in list(self.clients):
             try:
-                for message in messages:
-                    await self._send(websocket, message)
+                for frame in frames:
+                    await websocket.send_text(frame)
             except Exception:
                 dead.append(websocket)
         for websocket in dead:
@@ -116,6 +118,8 @@ class WorldSession:
         if not commit.committed or commit.transition is None:
             return []
         fence_id = "player" if cartridge.cartridge_id == "manifold.web" else "ui"
+        # Commit owns the wire transition; reconnects use snapshots, not history.
+        cartridge.transitions.clear()
         return [
             runtime_transition_message(
                 world_id=self.world_id,

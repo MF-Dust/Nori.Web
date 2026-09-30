@@ -442,6 +442,12 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
             )
             return
 
+        # Heartbeats cannot change durable state. Avoid settings work and full
+        # world serialization on every ping while keeping the shared pong shape.
+        if message.get("type") == "ping":
+            await world.handle_client_message(adapter, message)
+            return
+
         await _prefetch_parsed_arcade_message(self.env, message)
         attachment = await self._capture_ai_settings(websocket, attachment, message)
         attachment = await self._capture_tts_settings(websocket, attachment, message)
