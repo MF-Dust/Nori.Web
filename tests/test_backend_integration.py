@@ -60,7 +60,7 @@ async def test_rest() -> str:
 
         session = await client.get(f"{HTTP}/api/auth/get-session")
         assert session.status_code == 200
-        assert session.json()["session"]["userId"] == "guest-user-001"
+        assert session.json()["session"]["userId"].startswith("guest_")
 
         ticket = await client.post(f"{HTTP}/api/arcade/ws-ticket")
         assert ticket.status_code == 200
@@ -212,9 +212,58 @@ async def test_arcade(ticket: str) -> None:
         assert pong["type"] == "pong" and isinstance(pong["now"], int)
 
 
+async def test_browser_isolation() -> None:
+    async with httpx.AsyncClient() as a, httpx.AsyncClient() as b:
+        user_a = (await a.get(f"{HTTP}/api/auth/get-session")).json()["user"]["id"]
+        user_b = (await b.get(f"{HTTP}/api/auth/get-session")).json()["user"]["id"]
+        assert user_a != user_b
+        ticket_a = (await a.post(f"{HTTP}/api/arcade/ws-ticket")).json()["ticket"]
+        ticket_b = (await b.post(f"{HTTP}/api/arcade/ws-ticket")).json()["ticket"]
+        protocols_a = ["arcade.v1", f"ticket.{ticket_a}"]
+        protocols_b = ["arcade.v1", f"ticket.{ticket_b}"]
+        async with (
+            websockets.connect(WS, subprotocols=protocols_a) as socket_a,
+            websockets.connect(WS, subprotocols=protocols_b) as socket_b,
+        ):
+            await socket_a.send(json.dumps({"type": "open_my_web_world"}))
+            joined_a = await receive_json(socket_a)
+            await socket_b.send(json.dumps({"type": "open_my_web_world"}))
+            joined_b = await receive_json(socket_b)
+            assert joined_a["world"]["worldId"] != joined_b["world"]["worldId"]
+            await socket_a.send(json.dumps({
+                "type": "dispatch", "actor": "player", "cartridgeId": "chat",
+                "expectedHeadVersion": 0, "requestId": "private-message",
+                "cmd": {"type": "playerMessage", "text": "only browser A sees this"},
+            }))
+            while True:
+                response = await receive_json(socket_a)
+                if response["type"] == "dispatch_ack":
+                    assert response["success"]
+                    break
+            # Any leaked transition would arrive before this pong on B's socket.
+            await socket_b.send(json.dumps({"type": "ping"}))
+            assert (await receive_json(socket_b))["type"] == "pong"
+            async with websockets.connect(MEDIA_WS, subprotocols=protocols_b) as media_b:
+                await media_b.send(json.dumps({"type": "open_media", "grant": joined_a["session"]["mediaGrant"]}))
+                try:
+                    await asyncio.wait_for(media_b.recv(), 5)
+                    raise AssertionError("B accepted A's media grant")
+                except websockets.exceptions.ConnectionClosed as exc:
+                    assert exc.code == 4005
+        # New tickets from the same cookie jar reconnect to the same chat/world.
+        reconnect_ticket = (await a.post(f"{HTTP}/api/arcade/ws-ticket")).json()["ticket"]
+        async with websockets.connect(WS, subprotocols=["arcade.v1", f"ticket.{reconnect_ticket}"]) as socket:
+            await socket.send(json.dumps({"type": "open_my_web_world"}))
+            restored = await receive_json(socket)
+            assert restored["world"]["worldId"] == joined_a["world"]["worldId"]
+            chat = next(item for item in restored["world"]["mountedCartridges"] if item["cartridgeId"] == "chat")
+            assert any(line["content"] == "only browser A sees this" for line in chat["runtimes"][0]["state"]["lines"])
+
+
 async def run() -> None:
     ticket = await test_rest()
     await test_arcade(ticket)
+    await test_browser_isolation()
 
 
 if __name__ == "__main__":
@@ -222,4 +271,4 @@ if __name__ == "__main__":
     thread.start()
     time.sleep(0.8)
     asyncio.run(run())
-    print("[ok] REST, ticket, Arcade JSON protocol, and media framing verified")
+    print("[ok] REST, Arcade protocol/media, independent browser chats, and reconnect verified")

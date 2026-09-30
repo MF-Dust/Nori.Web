@@ -33,6 +33,13 @@ except ImportError:  # Local CPython compile/tests; available inside Python Work
     WebSocketPair = None
 
 from backend.core import config
+from backend.core.guest_session import (
+    GUEST_PREFIX,
+    auth_cookie_headers,
+    auto_guest_enabled,
+    cookie_token,
+    guest_session,
+)
 from backend.core.protocol import error_message
 from backend.services.ai_runtime_config import (
     clear_runtime_ai_config,
@@ -50,14 +57,6 @@ from backend.virtual_apps import live_pack
 _FASTAPI_APP = None
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 _EDGE_TICKET_MANAGER = WorldManager()
-_EDGE_GUEST_USER_ID = "guest-user-001"
-_EDGE_GUEST_USER = {
-    "id": _EDGE_GUEST_USER_ID,
-    "name": "Operator",
-    "email": "operator@nori.local",
-    "image": "/icon.png",
-    "createdAt": 0,
-}
 
 _R2_MODEL_PATH = "/datasea/cosmicweb.min.glb"
 _R2_MODEL_KEY = "datasea/cosmicweb.min.glb"
@@ -103,17 +102,20 @@ def _json_response(payload, *, status: int = 200, headers: dict[str, str] | None
     )
 
 
-def _edge_guest_session() -> dict:
-    now_ms = int(time.time() * 1000)
-    return {
-        "session": {
-            "id": "session-local-guest",
-            "userId": _EDGE_GUEST_USER_ID,
-            "token": "local-guest-token",
-            "expiresAt": now_ms + 30 * 24 * 60 * 60 * 1000,
-        },
-        "user": _EDGE_GUEST_USER,
-    }
+def _edge_guest_session(request) -> tuple[dict, dict[str, str]] | None:
+    token = cookie_token(request.headers)
+    # Opaque OTP sessions belong to the existing ASGI auth implementation.
+    if not auto_guest_enabled() or (
+        token and not token.startswith(GUEST_PREFIX) and token != "local-guest-token"
+    ):
+        return None
+    session, created = guest_session(token)
+    headers = {"Cache-Control": "private, no-store"}
+    if created:
+        headers.update(auth_cookie_headers(
+            session["session"]["token"], secure=urlsplit(request.url).scheme == "https"
+        ))
+    return session, headers
 
 
 async def _serve_bootstrap_api(path: str, request):
@@ -134,15 +136,21 @@ async def _serve_bootstrap_api(path: str, request):
             {"version": "2.0.0", "service": "NoriOS local compatibility server"}
         )
 
-    if path == "/api/auth/get-session" and method in {"GET", "POST"}:
-        return _json_response(_edge_guest_session())
-
-    if path == "/api/auth/convex/token" and method in {"GET", "POST"}:
-        return _json_response({"token": f"local-convex.{_EDGE_GUEST_USER_ID}"})
-
-    if path == "/api/arcade/ws-ticket" and method == "POST":
-        ticket = await _EDGE_TICKET_MANAGER.issue_ticket(_EDGE_GUEST_USER_ID)
-        return _json_response({"ticket": ticket})
+    is_session = path == "/api/auth/get-session" and method in {"GET", "POST"}
+    is_convex_token = path == "/api/auth/convex/token" and method in {"GET", "POST"}
+    is_ticket = path == "/api/arcade/ws-ticket" and method == "POST"
+    if is_session or is_convex_token or is_ticket:
+        guest = _edge_guest_session(request)
+        if guest is None:
+            return None
+        session, headers = guest
+        user_id = session["user"]["id"]
+        if is_session:
+            return _json_response(session, headers=headers)
+        if is_convex_token:
+            return _json_response({"token": f"local-convex.{user_id}"}, headers=headers)
+        ticket = await _EDGE_TICKET_MANAGER.issue_ticket(user_id)
+        return _json_response({"ticket": ticket}, headers=headers)
 
     return None
 

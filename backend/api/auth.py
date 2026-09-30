@@ -10,23 +10,20 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Request, Response
 
-from ..core.config import COOKIE_NAME
+from ..core.guest_session import (
+    SESSION_COOKIE,
+    auth_cookie_headers,
+    auto_guest_enabled,
+    cookie_token,
+    guest_session,
+)
 
 auth_router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-SESSION_COOKIE = "arcade-auth.session_token"
-AUTO_GUEST = os.getenv("NORI_AUTO_GUEST", "true").strip().lower() not in {"0", "false", "no"}
+AUTO_GUEST = auto_guest_enabled()
 DEV_OTP = os.getenv("NORI_DEV_OTP", "123456")
 
-USERS: Dict[str, Dict[str, Any]] = {
-    "guest-user-001": {
-        "id": "guest-user-001",
-        "name": "Operator",
-        "email": "operator@nori.local",
-        "image": "/icon.png",
-        "createdAt": int(time.time() * 1000),
-    }
-}
+USERS: Dict[str, Dict[str, Any]] = {}
 SESSIONS: Dict[str, Dict[str, Any]] = {}
 OTP_STORE: Dict[str, Dict[str, Any]] = {}
 
@@ -48,50 +45,35 @@ def _session_for_user(user: Dict[str, Any], token: Optional[str] = None) -> Dict
     }
 
 
-def _cookie_token(request: Request) -> Optional[str]:
-    raw = request.headers.get("better-auth-cookie") or request.headers.get("cookie") or ""
-    for part in raw.split(";"):
-        key, sep, value = part.strip().partition("=")
-        if sep and (key == SESSION_COOKIE or key.endswith("session_token")):
-            return value
-    return None
-
-
-def get_current_session(request: Request) -> Optional[Dict[str, Any]]:
-    token = _cookie_token(request)
+def get_current_session(request: Request, response: Optional[Response] = None) -> Optional[Dict[str, Any]]:
+    if response is not None:
+        response.headers["Cache-Control"] = "private, no-store"
+    token = cookie_token(request.headers)
     if token:
         session = SESSIONS.get(token)
         if session and session["session"]["expiresAt"] > _now_ms():
             return session
     if AUTO_GUEST:
-        guest = USERS["guest-user-001"]
-        return {
-            "session": {
-                "id": "session-local-guest",
-                "userId": guest["id"],
-                "token": "local-guest-token",
-                "expiresAt": _now_ms() + 30 * 24 * 60 * 60 * 1000,
-            },
-            "user": guest,
-        }
+        session, created = guest_session(token)
+        if created and response is not None:
+            _set_auth_cookie(response, session["session"]["token"], request)
+        return session
     return None
 
 
-def get_current_user_id(request: Request) -> Optional[str]:
-    session = get_current_session(request)
+def get_current_user_id(request: Request, response: Optional[Response] = None) -> Optional[str]:
+    session = get_current_session(request, response)
     user = session.get("user") if session else None
     return user.get("id") if isinstance(user, dict) else None
 
 
-def _set_auth_cookie(response: Response, token: str) -> None:
-    cookie = f"{SESSION_COOKIE}={token}; Path=/; Max-Age=2592000; SameSite=Lax"
-    response.headers["set-better-auth-cookie"] = cookie
-    response.set_cookie(SESSION_COOKIE, token, max_age=2_592_000, httponly=True, samesite="lax")
+def _set_auth_cookie(response: Response, token: str, request: Request) -> None:
+    response.headers.update(auth_cookie_headers(token, secure=request.url.scheme == "https"))
 
 
 @auth_router.api_route("/get-session", methods=["GET", "POST"])
-async def get_session(request: Request):
-    return get_current_session(request)
+async def get_session(request: Request, response: Response):
+    return get_current_session(request, response)
 
 
 @auth_router.post("/email-otp/send-verification-otp")
@@ -138,12 +120,13 @@ async def sign_in_email_otp(request: Request, response: Response):
     session = _session_for_user(user, token)
     SESSIONS[token] = session
     OTP_STORE.pop(normalized, None)
-    _set_auth_cookie(response, token)
+    _set_auth_cookie(response, token, request)
     return session
 
 
 @auth_router.post("/sign-out")
 async def sign_out(response: Response):
+    response.headers["Cache-Control"] = "private, no-store"
     response.headers["set-better-auth-cookie"] = f"{SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax"
     response.delete_cookie(SESSION_COOKIE)
     return {"success": True}
@@ -151,8 +134,8 @@ async def sign_out(response: Response):
 
 @auth_router.get("/convex/token")
 @auth_router.post("/convex/token")
-async def convex_token(request: Request):
-    session = get_current_session(request)
+async def convex_token(request: Request, response: Response):
+    session = get_current_session(request, response)
     if session is None:
         return {"token": None}
     return {"token": f"local-convex.{session['user']['id']}"}

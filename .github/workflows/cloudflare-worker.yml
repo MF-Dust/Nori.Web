@@ -36,6 +36,9 @@ jobs:
       - name: Verify HTTP API runtime
         run: uv run python tests/test_http_api_runtime.py
 
+      - name: Verify browser guest isolation
+        run: uv run python tests/test_guest_isolation.py
+
       - name: Verify edge Convex API
         run: uv run python tests/test_edge_convex_api.py
 

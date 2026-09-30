@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 
 from .auth import get_current_user_id
 from ..session.manager import get_world_manager
@@ -12,14 +12,14 @@ from ..session.manager import get_world_manager
 convex_router = APIRouter(tags=["convex"])
 
 
-async def _convex_local_response(request: Request) -> Dict[str, Any]:
+async def _convex_local_response(request: Request, response: Response) -> Dict[str, Any]:
     try:
         body = await request.json()
     except Exception:
         body = {}
     path = body.get("path") if isinstance(body, dict) else None
     if path == "auth/wsTickets:issueWebUserWsTicket":
-        user_id = get_current_user_id(request)
+        user_id = get_current_user_id(request, response)
         if not user_id:
             return {"status": "error", "errorMessage": "Unauthorized", "logLines": []}
         ticket = await get_world_manager().issue_ticket(user_id)
@@ -33,8 +33,8 @@ async def _convex_local_response(request: Request) -> Dict[str, Any]:
 @convex_router.post("/api/query")
 @convex_router.post("/api/action")
 @convex_router.post("/api/function")
-async def convex_function(request: Request):
-    return await _convex_local_response(request)
+async def convex_function(request: Request, response: Response):
+    return await _convex_local_response(request, response)
 
 
 @convex_router.post("/api/query_ts")
@@ -43,5 +43,5 @@ async def convex_timestamp() -> Dict[str, str]:
 
 
 @convex_router.post("/api/query_at_ts")
-async def convex_query_at_timestamp(request: Request):
-    return await _convex_local_response(request)
+async def convex_query_at_timestamp(request: Request, response: Response):
+    return await _convex_local_response(request, response)

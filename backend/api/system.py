@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from typing import Dict
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 
 from .auth import get_current_user_id
@@ -26,8 +26,8 @@ async def version() -> Dict[str, str]:
 
 
 @system_router.post("/api/arcade/ws-ticket")
-async def issue_ws_ticket(request: Request):
-    user_id = get_current_user_id(request)
+async def issue_ws_ticket(request: Request, response: Response):
+    user_id = get_current_user_id(request, response)
     if not user_id:
-        return JSONResponse(status_code=401, content={"error": "Unauthorized"})
+        return JSONResponse(status_code=401, content={"error": "Unauthorized"}, headers={"Cache-Control": "private, no-store"})
     return {"ticket": await get_world_manager().issue_ticket(user_id)}

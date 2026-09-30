@@ -3,13 +3,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SHIM = (ROOT / "public" / "nori-runtime-shims.js").read_text(encoding="utf-8")
 AUTH = (ROOT / "backend" / "api" / "auth.py").read_text(encoding="utf-8")
+GUEST = (ROOT / "backend" / "core" / "guest_session.py").read_text(encoding="utf-8")
 
 
 def main() -> None:
-    # The browser-side access gate is backed by the server's existing guest
-    # semantics; keep the default guest path available on Cloudflare.
-    assert 'os.getenv("NORI_AUTO_GUEST", "true")' in AUTH
-    assert '"guest-user-001"' in AUTH
+    # Guest access remains available, with identity issued by the server.
+    assert 'os.getenv("NORI_AUTO_GUEST", "true")' in GUEST
+    assert 'guest_session(token)' in AUTH
+    assert '"guest-user-001"' not in AUTH
 
     # The shipped LoginPage uses an email field and native email validation.
     # The compatibility shim must turn only the access-gate field into text so
@@ -21,12 +22,13 @@ def main() -> None:
     assert 'const value = input.value.trim()' in SHIM
     assert 'if (!value) return' in SHIM
 
-    # After the one-time gate action, only /api/auth/get-session is substituted
-    # with the existing guest identity. No email/OTP request is fabricated.
-    assert 'pathnameOf(value) === "/api/auth/get-session"' in SHIM
+    # Auth responses must reach the server and persist real same-origin cookies.
+    assert 'url.pathname.startsWith("/api/auth/")' in SHIM
+    assert 'credentials: "same-origin"' in SHIM
+    assert 'guestSessionResponse' not in SHIM
     assert 'sessionStorage.setItem(ACCESS_FLAG, "1")' in SHIM
     assert 'window.location.reload()' in SHIM
-    assert 'guest-user-001' in SHIM
+    assert 'guest-user-001' not in SHIM
     assert '/api/auth/sign-in/email-otp' not in SHIM
     assert '/api/auth/email-otp/send-verification-otp' not in SHIM
 

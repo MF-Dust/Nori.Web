@@ -68,6 +68,8 @@ python server.py
 
 启动成功后，在浏览器中打开：👉 **<http://127.0.0.1:4173>** 即可体验。
 
+访客通过有效期 30 天的签名 Cookie 按浏览器隔离对话；同一浏览器的刷新、多标签页和重连保留身份，不同电脑或浏览器配置文件互不共享。清除 Cookie 或会话过期后会创建新访客。旧版所有访客共用的历史不会迁移给新访客，以免泄露他人的对话。
+
 ---
 
 ## ☁️ Cloudflare Workers 部署
@@ -78,7 +80,7 @@ python server.py
 Browser
   ├─ /assets, Live2D, audio ... → Workers Static Assets
   ├─ /api/*                    → FastAPI / Python Worker
-  └─ Arcade WebSocket          → Durable Object per signed ticket
+  └─ Arcade WebSocket          → Durable Object per authenticated user
 ```
 
 ### 1. 准备 Cloudflare Python Workers 环境
@@ -97,7 +99,7 @@ uv run pywrangler dev
 
 ### 3. 配置部署 Secret
 
-生产部署建议至少设置一个独立的 `SECRET_KEY`，用于签名 Arcade WebSocket ticket：
+生产部署应设置独立、保密的 `SECRET_KEY`，用于签名访客会话 Cookie 和 Arcade WebSocket ticket；更换密钥会使现有会话和 ticket 失效：
 
 ```bash
 uv run pywrangler secret put SECRET_KEY
@@ -119,7 +121,7 @@ uv run pywrangler deploy
 
 Cloudflare 部署默认设置 `NORI_DISABLE_LIVE_PACK=1`，因此不会加载本地账号的 `live_world_pack.json` 内容。若是私有部署并明确希望启用归档，可修改 `wrangler.jsonc` 中对应变量。
 
-> Cloudflare Worker 使用 Durable Object 保持一个 Arcade ticket 对应的实时世界状态。当前世界本身仍是内存状态；代码更新、Durable Object 重启或连接生命周期结束后，不保证跨实例持久化。
+> Cloudflare Worker 按已验证的用户身份选择 Durable Object，主连接、媒体连接和重连进入同一实时世界；世界快照通过 Durable Object SQLite 保存。访客 Cookie 丢失后不能再访问原世界。
 
 ---
 

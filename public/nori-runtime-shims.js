@@ -19,33 +19,26 @@
   // healthy. Keep that optional diagnostic local instead of touching the
   // network. No application API, Arcade request, or asset request is matched.
   const isPerfVitalsUrl = (value) => pathnameOf(value) === "/api/debug/perf-vitals";
-  const isSessionUrl = (value) => pathnameOf(value) === "/api/auth/get-session";
-
-  const guestSessionResponse = () =>
-    new Response(
-      JSON.stringify({
-        session: {
-          id: "session-local-access",
-          userId: "guest-user-001",
-          expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-        },
-        user: {
-          id: "guest-user-001",
-          name: "Operator",
-          email: "operator@nori.local",
-          image: "/icon.png",
-        },
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
-    );
+  const isLocalAuthUrl = (value) => {
+    try {
+      const raw = value instanceof Request ? value.url : String(value || "");
+      const url = new URL(raw, window.location.href);
+      return url.origin === window.location.origin && url.pathname.startsWith("/api/auth/");
+    } catch {
+      return false;
+    }
+  };
 
   const nativeFetch = window.fetch.bind(window);
   window.fetch = function noriFetch(input, init) {
     if (isPerfVitalsUrl(input)) {
       return Promise.resolve(new Response(null, { status: 204 }));
     }
-    if (sessionStorage.getItem(ACCESS_FLAG) === "1" && isSessionUrl(input)) {
-      return Promise.resolve(guestSessionResponse());
+    // The shipped cross-domain auth plugin uses credentials: "omit". Our
+    // same-origin deployment needs real browser cookies for Arcade tickets too.
+    // Identity always comes from the server, never a fabricated guest response.
+    if (isLocalAuthUrl(input)) {
+      return nativeFetch(input, { ...init, credentials: "same-origin" });
     }
     return nativeFetch(input, init);
   };
@@ -60,7 +53,7 @@
 
   // The shipped AlephPro gate uses an email + OTP form. For this local guest
   // deployment the gate is intentionally decorative: any non-empty text should
-  // open the existing guest session. Patch only the first access-gate form;
+  // open the server-issued browser guest session. Patch only the first access-gate form;
   // the OTP form has no `input.field`, so it is left alone.
   const patchAccessGate = () => {
     const gate = document.getElementById("access-gate");

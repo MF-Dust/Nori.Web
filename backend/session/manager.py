@@ -68,7 +68,8 @@ class WorldManager:
             payload = json.loads(_b64decode(encoded).decode("utf-8"))
             user_id = payload.get("u")
             expires_at = payload.get("e")
-            if not isinstance(user_id, str) or not user_id:
+            # Never reopen the legacy world shared by all anonymous browsers.
+            if not isinstance(user_id, str) or not user_id or user_id == "guest-user-001":
                 return None
             if not isinstance(expires_at, int) or expires_at < int(time.time()):
                 return None

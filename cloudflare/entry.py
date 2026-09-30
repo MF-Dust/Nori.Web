@@ -54,6 +54,11 @@ async def _serve_edge_convex_api(path: str, request):
     if path not in _EDGE_CONVEX_PATHS or method != "POST":
         return None
 
+    # Fall back for OTP sessions before consuming the body needed by ASGI.
+    guest = _runtime._edge_guest_session(request)
+    if guest is None:
+        return None
+
     try:
         body = await request.json()
     except Exception:
@@ -61,11 +66,11 @@ async def _serve_edge_convex_api(path: str, request):
     function_path = body.get("path") if isinstance(body, dict) else None
 
     if function_path == "auth/wsTickets:issueWebUserWsTicket":
-        ticket = await _runtime._EDGE_TICKET_MANAGER.issue_ticket(
-            _runtime._EDGE_GUEST_USER_ID
-        )
+        session, headers = guest
+        ticket = await _runtime._EDGE_TICKET_MANAGER.issue_ticket(session["user"]["id"])
         return _runtime._json_response(
-            {"status": "success", "value": {"ticket": ticket}, "logLines": []}
+            {"status": "success", "value": {"ticket": ticket}, "logLines": []},
+            headers=headers,
         )
 
     if function_path == "auth/otpEmail:preflightOtpSend":
