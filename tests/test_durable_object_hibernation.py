@@ -43,6 +43,14 @@ def main() -> None:
     assert 'message.pop("noriAiConfig", None)' in WORKER
     assert 'install_runtime_ai_config(sanitized)' in WORKER
 
+    # TTS credentials follow the same single-dispatch rule and legacy
+    # serialized keys are only removed, never restored into runtime config.
+    assert 'updated["ttsApiKey"]' not in ENTRY
+    assert 'attachment.get("ttsApiKey")' not in ENTRY
+    assert 'message.pop("noriTtsConfig", None)' in ENTRY
+    assert '_install_runtime_tts_config(sanitized)' in ENTRY
+    assert 'updated.pop("ttsApiKey", None)' in ENTRY
+
     print("[ok] Arcade Durable Object uses runtime-compatible hibernating WebSockets")
 
 
