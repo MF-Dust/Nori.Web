@@ -79,16 +79,21 @@
     return normalize({ ...DEFAULTS, ...persisted, apiKey });
   }
 
-  function saveSettings(input) {
-    const previous = loadSettings();
+  function protectCredentialTarget(input, previous = loadSettings()) {
     const settings = normalize(input);
+    const baseline = normalize(previous);
     if (
-      previous.apiKey &&
-      settings.apiKey === previous.apiKey &&
-      credentialTarget(previous) !== credentialTarget(settings)
+      baseline.apiKey &&
+      settings.apiKey === baseline.apiKey &&
+      credentialTarget(baseline) !== credentialTarget(settings)
     ) {
       settings.apiKey = "";
     }
+    return settings;
+  }
+
+  function saveSettings(input) {
+    const settings = protectCredentialTarget(input);
     const persisted = { ...settings };
     if (!settings.rememberApiKey) persisted.apiKey = "";
     safeStorage(localStorage, "setItem", STORAGE_KEY, JSON.stringify(persisted));
@@ -533,7 +538,15 @@
     });
 
     test.addEventListener("click", () => {
-      sendTest(read());
+      const draft = read();
+      const guarded = protectCredentialTarget(draft);
+      if (draft.apiKey && !guarded.apiKey) {
+        fill(guarded);
+        showStatus("error", t.keyClearedTargetChanged);
+        window.setTimeout(() => status.classList.remove("visible"), 4200);
+        return;
+      }
+      sendTest(guarded);
     });
 
     reset.addEventListener("click", () => {
