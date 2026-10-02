@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from backend.api.arcade import _install_dispatch_ai_config
 from backend.services.ai_event_bridge import install_ai_event_bridge
 from backend.services.ai_runtime_config import (
     clear_runtime_ai_config,
@@ -75,8 +76,26 @@ async def main() -> None:
     assert secret not in repr(summary)
     assert summary["hasApiKey"] is True
 
-    # The existing generic Arcade event channel carries the configuration
-    # without putting it in cartridge state or runtime_transition objects.
+    # Browser chat credentials travel with one dispatch only. The compatibility
+    # field is consumed before protocol/cartridge handling and becomes the
+    # current task's runtime config without entering message state.
+    dispatch = {
+        "type": "dispatch",
+        "cartridgeId": "chat",
+        "actor": "player",
+        "requestId": "chat-secret-test",
+        "expectedHeadVersion": 0,
+        "cmd": {"type": "playerMessage", "text": "hello"},
+        "noriAiConfig": raw,
+    }
+    _install_dispatch_ai_config(dispatch)
+    assert "noriAiConfig" not in dispatch
+    assert get_runtime_ai_config()["apiKey"] == secret
+    clear_runtime_ai_config()
+    assert get_runtime_ai_config() == {}
+
+    # The legacy generic Arcade config event remains accepted for compatibility
+    # without putting credentials in cartridge state or runtime transitions.
     install_ai_event_bridge()
     dispatcher = EventDispatcher(DummyWorld())
     response = await dispatcher.handle_event(
