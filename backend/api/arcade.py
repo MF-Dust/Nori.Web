@@ -9,6 +9,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ..core.protocol import error_message
 from ..services.ai_runtime_config import clear_runtime_ai_config, install_runtime_ai_config
+from ..services.tts_runtime_config import clear_runtime_tts_config, install_runtime_tts_config
 from ..session.manager import get_world_manager
 from ..virtual_apps import live_pack
 
@@ -22,17 +23,30 @@ def _ticket_from_protocols(websocket: WebSocket) -> Optional[str]:
     return None
 
 
-def _install_dispatch_ai_config(message: dict) -> None:
-    if (
+def _is_player_chat_dispatch(message: dict) -> bool:
+    return (
         message.get("type") == "dispatch"
         and message.get("cartridgeId") == "chat"
         and message.get("actor") == "player"
         and isinstance(message.get("cmd"), dict)
         and message["cmd"].get("type") == "playerMessage"
-    ):
-        raw_config = message.pop("noriAiConfig", None)
-        if isinstance(raw_config, dict):
-            install_runtime_ai_config(raw_config)
+    )
+
+
+def _install_dispatch_ai_config(message: dict) -> None:
+    if not _is_player_chat_dispatch(message):
+        return
+    raw_config = message.pop("noriAiConfig", None)
+    if isinstance(raw_config, dict):
+        install_runtime_ai_config(raw_config)
+
+
+def _install_dispatch_tts_config(message: dict) -> None:
+    if not _is_player_chat_dispatch(message):
+        return
+    raw_config = message.pop("noriTtsConfig", None)
+    if isinstance(raw_config, dict):
+        install_runtime_tts_config(raw_config)
 
 
 async def _accept_arcade_socket(websocket: WebSocket) -> Optional[str]:
@@ -78,6 +92,7 @@ async def arcade_websocket(websocket: WebSocket) -> None:
                 continue
             try:
                 _install_dispatch_ai_config(message)
+                _install_dispatch_tts_config(message)
                 if message.get("type") == "reset_my_web_world":
                     new_world = await manager.reset_world(
                         user_id,
@@ -99,6 +114,7 @@ async def arcade_websocket(websocket: WebSocket) -> None:
                 # the receive loop itself must not retain a credential for the
                 # next unrelated WebSocket frame.
                 clear_runtime_ai_config()
+                clear_runtime_tts_config()
     except WebSocketDisconnect:
         pass
     finally:

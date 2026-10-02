@@ -10,6 +10,7 @@ import httpx
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from backend.api.arcade import _install_dispatch_tts_config
 from backend.services.ai_event_bridge import install_ai_event_bridge
 from backend.services.event_dispatcher import EventDispatcher
 from backend.services.tts_runtime_config import (
@@ -59,6 +60,21 @@ async def main() -> None:
     assert summary["hasApiKey"] is True
     assert "apiKey" not in summary
     assert secret not in repr(summary)
+
+    dispatch = {
+        "type": "dispatch",
+        "cartridgeId": "chat",
+        "actor": "player",
+        "requestId": "tts-secret-test",
+        "expectedHeadVersion": 0,
+        "cmd": {"type": "playerMessage", "text": "hello"},
+        "noriTtsConfig": raw,
+    }
+    _install_dispatch_tts_config(dispatch)
+    assert "noriTtsConfig" not in dispatch
+    assert get_runtime_tts_config()["apiKey"] == secret
+    clear_runtime_tts_config()
+    assert get_runtime_tts_config() == {}
 
     assert provider_endpoint("https://api.openai.com/v1", "/audio/speech") == "https://api.openai.com/v1/audio/speech"
     assert provider_endpoint("https://api.openai.com/v1/audio/speech/", "/audio/speech") == "https://api.openai.com/v1/audio/speech"
@@ -187,12 +203,16 @@ async def main() -> None:
         "GPT-SoVITS",
         "MiniMax",
         "Gemini TTS",
-        'channel: "nori.tts.config"',
+        "message.noriTtsConfig = runtimePayload()",
         'channel: "nori.tts.test"',
         "localStorage",
         "sessionStorage",
     ):
         assert marker in client_js
+
+    assert 'channel: "nori.tts.config"' not in client_js
+    assert "protectCredentialTargets" in client_js
+    assert "const guarded = protectCredentialTargets(before)" in client_js
 
     clear_runtime_tts_config()
     assert get_runtime_tts_config() == {}

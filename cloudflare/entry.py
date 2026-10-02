@@ -31,7 +31,6 @@ from backend.services.tts_runtime_config import (
 from backend.session.world import WorldSession as _WorldSession
 
 
-_DO_TTS_CONFIG_KEY = "nori:tts-public:v1"
 _EDGE_CONVEX_PATHS = {
     "/api/query",
     "/api/mutation",
@@ -187,10 +186,6 @@ def _prune_transition_history(world) -> None:
         cartridge.transitions.clear()
 
 
-def _public_tts_config(config_value: dict) -> dict:
-    return {key: value for key, value in config_value.items() if key != "apiKey"}
-
-
 async def _cloudflare_run_chat_reply(self, user_text: str) -> None:
     """Generate a reply without billing presentation-only wall-clock delays."""
     chat = self.cartridges.get("chat")
@@ -290,7 +285,6 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
     def __init__(self, ctx, env):
         super().__init__(ctx, env)
         self._persisted_world_snapshot: str | None = None
-        self._public_tts_config_cache: dict | None = None
 
     async def _load_world(self, user_id: str):
         world = self.manager.worlds_by_user.get(user_id)
@@ -333,64 +327,32 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
             self._persisted_world_snapshot = snapshot
         return snapshot
 
-    async def _load_public_tts_config(self) -> dict:
-        if self._public_tts_config_cache is not None:
-            return dict(self._public_tts_config_cache)
-        try:
-            raw = await self.ctx.storage.get(_DO_TTS_CONFIG_KEY)
-        except Exception:
-            raw = None
-        if isinstance(raw, str) and raw:
-            try:
-                parsed = json.loads(raw)
-            except json.JSONDecodeError:
-                parsed = {}
-        else:
-            parsed = {}
-        self._public_tts_config_cache = parsed if isinstance(parsed, dict) else {}
-        return dict(self._public_tts_config_cache)
-
-    async def _persist_public_tts_config(self, config_value: dict) -> None:
-        public = _public_tts_config(config_value)
-        if self._public_tts_config_cache == public:
-            return
-        raw = json.dumps(public, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
-        await self.ctx.storage.put(_DO_TTS_CONFIG_KEY, raw)
-        self._public_tts_config_cache = public
-
     async def _capture_tts_settings(self, websocket, attachment: dict, message: dict) -> dict:
-        if message.get("type") != "event":
-            return attachment
-        channel = message.get("channel")
+        raw_config = None
+        channel = message.get("channel") if message.get("type") == "event" else None
         payload = message.get("payload")
         payload = payload if isinstance(payload, dict) else {}
         if channel == "nori.tts.config":
             raw_config = payload
         elif channel == "nori.tts.test" and isinstance(payload.get("config"), dict):
             raw_config = payload["config"]
-        else:
+        elif (
+            message.get("type") == "dispatch"
+            and message.get("cartridgeId") == "chat"
+            and message.get("actor") == "player"
+            and isinstance(message.get("cmd"), dict)
+            and message["cmd"].get("type") == "playerMessage"
+        ):
+            candidate = message.pop("noriTtsConfig", None)
+            raw_config = candidate if isinstance(candidate, dict) else None
+
+        if raw_config is None:
             return attachment
 
         sanitized = _sanitize_runtime_tts_config(raw_config)
-        await self._persist_public_tts_config(sanitized)
-        updated = dict(attachment)
-        api_key = sanitized.get("apiKey")
-        old_key = updated.get("ttsApiKey")
-        if isinstance(api_key, str) and api_key:
-            updated["ttsApiKey"] = api_key
-        else:
-            updated.pop("ttsApiKey", None)
-        if old_key != updated.get("ttsApiKey"):
-            _runtime._save_socket_attachment(websocket, updated)
-        return updated
-
-    async def _install_tts_for_socket(self, attachment: dict) -> None:
-        public = await self._load_public_tts_config()
-        config_value = dict(public)
-        api_key = attachment.get("ttsApiKey")
-        if isinstance(api_key, str) and api_key:
-            config_value["apiKey"] = api_key
-        _install_runtime_tts_config(config_value)
+        if message.get("type") == "dispatch":
+            _install_runtime_tts_config(sanitized)
+        return attachment
 
     def _refresh_world_clients(self, world) -> None:
         main_clients = set()
@@ -451,7 +413,6 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
         await _prefetch_parsed_arcade_message(self.env, message)
         attachment = await self._capture_ai_settings(websocket, attachment, message)
         attachment = await self._capture_tts_settings(websocket, attachment, message)
-        await self._install_tts_for_socket(attachment)
 
         if message.get("type") == "reset_my_web_world":
             locale = message.get("locale") if isinstance(message.get("locale"), str) else None
@@ -479,6 +440,15 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
         await self._persist_world(world)
 
     async def webSocketMessage(self, websocket, message):
+        # Old deployments serialized browser credentials into hibernation
+        # attachments. Scrub either legacy secret on the very next frame while
+        # leaving normal heartbeat handling on its fast path.
+        attachment = _runtime._socket_attachment(websocket)
+        if "apiKey" in attachment or "ttsApiKey" in attachment:
+            updated = dict(attachment)
+            updated.pop("apiKey", None)
+            updated.pop("ttsApiKey", None)
+            _runtime._save_socket_attachment(websocket, updated)
         try:
             return await super().webSocketMessage(websocket, message)
         finally:

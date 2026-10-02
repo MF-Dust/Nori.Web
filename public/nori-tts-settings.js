@@ -61,6 +61,16 @@
     return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
   }
 
+  function credentialTarget(provider, profile) {
+    const raw = String(profile?.baseUrl || "").trim();
+    try {
+      const url = new URL(raw);
+      return `${provider}|${url.protocol}//${url.host}`;
+    } catch {
+      return `${provider}|${raw.toLowerCase()}`;
+    }
+  }
+
   function normalizeProfile(provider, value) {
     const defaults = PROVIDERS[provider];
     const source = value && typeof value === "object" ? value : {};
@@ -106,8 +116,25 @@
     return settings;
   }
 
-  function saveSettings(value) {
+  function protectCredentialTargets(value, previous = loadSettings()) {
     const settings = normalize(value);
+    const baseline = normalize(previous);
+    for (const name of Object.keys(PROVIDERS)) {
+      const before = baseline.profiles[name];
+      const after = settings.profiles[name];
+      if (
+        before.apiKey &&
+        after.apiKey === before.apiKey &&
+        credentialTarget(name, before) !== credentialTarget(name, after)
+      ) {
+        after.apiKey = "";
+      }
+    }
+    return settings;
+  }
+
+  function saveSettings(value) {
+    const settings = protectCredentialTargets(value);
     const persisted = structuredClone(settings);
     if (settings.rememberApiKey) {
       safeStorage(sessionStorage, "removeItem", SESSION_KEY);
@@ -264,17 +291,8 @@
         if (isChatDispatch(message)) {
           activeSocket = this;
           if (message.worldId) activeWorldId = String(message.worldId);
-          previousSend.call(
-            this,
-            JSON.stringify({
-              type: "event",
-              worldId: message.worldId,
-              cartridgeId: "chat",
-              requestId: `tts-config-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-              channel: "nori.tts.config",
-              payload: runtimePayload(),
-            }),
-          );
+          message.noriTtsConfig = runtimePayload();
+          return previousSend.call(this, JSON.stringify(message));
         }
       } catch {
         // Keep non-JSON WebSocket frames untouched.
@@ -323,6 +341,7 @@
       apiKey: "API Key",
       rememberKey: "Remember API keys in this browser",
       keyWarning: "Saved browser keys can be read by scripts on this origin. Leave this off on shared devices.",
+      keyClearedTargetChanged: "API key cleared because the API host changed. Re-enter the key for the new endpoint.",
       model: "Model",
       voice: "Voice / Voice ID",
       speed: "Speed",
@@ -346,6 +365,7 @@
       apiKey: "API Key",
       rememberKey: "在此浏览器记住 API Key",
       keyWarning: "持久化到浏览器的 Key 可被同源页面脚本读取，公用设备上可保持关闭。",
+      keyClearedTargetChanged: "API 主机已变化，原 API Key 已清除；请为新端点重新输入。",
       model: "模型",
       voice: "音色 / Voice ID",
       speed: "语速",
@@ -589,15 +609,28 @@
     save.addEventListener("click", () => {
       storeVisibleProfile();
       draft.provider = provider.value;
-      fill(saveSettings(draft));
-      status.classList.remove("error");
-      status.textContent = t.saved;
+      const before = normalize(draft);
+      const saved = saveSettings(draft);
+      const keyCleared = Boolean(before.profiles[before.provider].apiKey) &&
+        !saved.profiles[saved.provider].apiKey;
+      fill(saved);
+      status.classList.toggle("error", keyCleared);
+      status.textContent = keyCleared ? t.keyClearedTargetChanged : t.saved;
     });
 
     test.addEventListener("click", () => {
       storeVisibleProfile();
       draft.provider = provider.value;
-      sendTest(normalize(draft));
+      const before = normalize(draft);
+      const guarded = protectCredentialTargets(before);
+      const keyCleared = Boolean(before.profiles[before.provider].apiKey) &&
+        !guarded.profiles[guarded.provider].apiKey;
+      if (keyCleared) {
+        fill(guarded);
+        emitStatus("error", t.keyClearedTargetChanged);
+        return;
+      }
+      sendTest(guarded);
     });
 
     reset.addEventListener("click", () => {

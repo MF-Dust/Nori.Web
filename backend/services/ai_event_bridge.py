@@ -1,8 +1,9 @@
 """Install browser AI/TTS settings bridges onto the verified event dispatcher.
 
-The shipped frontend bundle is treated as a compatibility target. Keeping
-browser configuration on Arcade event channels means secrets never become part
-of cartridge commands, transitions, or persisted world state.
+Chat credentials use private per-dispatch compatibility fields that the
+transport removes before cartridge handling. Connection-test and legacy
+configuration events stay on the Arcade event bridge. Neither path writes
+credentials into transitions or persisted world state.
 """
 
 from __future__ import annotations
