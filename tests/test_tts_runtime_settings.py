@@ -73,9 +73,6 @@ async def main() -> None:
     _install_dispatch_tts_config(dispatch)
     assert "noriTtsConfig" not in dispatch
     assert get_runtime_tts_config()["apiKey"] == secret
-    assert 'channel: "nori.tts.config"' not in client_js
-    assert "protectCredentialTargets" in client_js
-
     clear_runtime_tts_config()
     assert get_runtime_tts_config() == {}
 
@@ -212,6 +209,10 @@ async def main() -> None:
         "sessionStorage",
     ):
         assert marker in client_js
+
+    assert 'channel: "nori.tts.config"' not in client_js
+    assert "protectCredentialTargets" in client_js
+    assert "const guarded = protectCredentialTargets(before)" in client_js
 
     clear_runtime_tts_config()
     assert get_runtime_tts_config() == {}
