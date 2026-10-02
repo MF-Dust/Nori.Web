@@ -172,7 +172,8 @@ async def main() -> None:
     assert "message.noriAiConfig = runtimePayload()" in client_js
     assert 'channel: "nori.ai.config"' not in client_js
     assert 'channel: "nori.ai.test"' in client_js
-    assert "credentialTarget(previous) !== credentialTarget(settings)" in client_js
+    assert "protectCredentialTarget" in client_js
+    assert "const guarded = protectCredentialTarget(draft)" in client_js
     assert "Test connection" in client_js
     assert "测试连接" in client_js
     assert "savedDisabled" in client_js
