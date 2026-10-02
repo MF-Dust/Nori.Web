@@ -207,6 +207,82 @@ test("media captures the very first frame and rejects a socket that closes befor
   await rejected;
 });
 
+test("frontend concurrent starts share authentication through socket opening", async (t) => {
+  environment(t);
+  let release!: () => void;
+  const sessionReady = new Promise<void>((resolve) => { release = resolve; });
+  let sessions = 0;
+  let tickets = 0;
+  t.mock.method(globalThis, "fetch", async (url: any) => {
+    if (String(url).includes("get-session")) {
+      sessions++;
+      await sessionReady;
+      return Response.json({ user: { id: "fixture" }, session: { id: "fixture" } });
+    }
+    tickets++;
+    return Response.json({ ticket: "fixture" });
+  });
+  const frontend = new NoriFrontendRuntime({ reconnect: false });
+  t.after(() => frontend.dispose());
+  const first = frontend.start("zh-CN");
+  const second = frontend.start("zh-CN");
+  await tick();
+  const pendingSessions = sessions;
+  release();
+  await tick();
+  const third = frontend.start("zh-CN");
+  await tick();
+  const socket = Socket.sockets[0]!;
+  socket.open();
+  await Promise.all([first, second, third]);
+  assert.equal(pendingSessions, 1, "pending startup must not mint a second guest session");
+  assert.equal(sessions, 1, "startup stays shared until the socket opens");
+  assert.equal(tickets, 1);
+  assert.equal(Socket.sockets.length, 1);
+  assert.equal(socket.sent.filter((item) => item.type === "open_my_web_world").length, 1);
+});
+
+test("frontend startup can retry after authentication fails", async (t) => {
+  environment(t);
+  let sessions = 0;
+  t.mock.method(globalThis, "fetch", async (url: any) => {
+    if (String(url).includes("get-session")) {
+      if (++sessions === 1) return Response.json({ message: "unavailable" }, { status: 503 });
+      return Response.json({ user: { id: "fixture" }, session: { id: "fixture" } });
+    }
+    return Response.json({ ticket: "fixture" });
+  });
+  const frontend = new NoriFrontendRuntime({ reconnect: false });
+  t.after(() => frontend.dispose());
+  await assert.rejects(frontend.start(), /unavailable/);
+  assert.equal(Socket.sockets.length, 0);
+  const retry = frontend.start();
+  await tick();
+  Socket.sockets[0]!.open();
+  await retry;
+  assert.equal(sessions, 2);
+  assert.equal(frontend.arcade.connectionState, "open");
+});
+
+test("frontend disposal fences pending authentication and later starts", async (t) => {
+  environment(t);
+  let release!: (response: Response) => void;
+  const fetch = t.mock.method(globalThis, "fetch", () => new Promise<Response>((resolve) => { release = resolve; }));
+  const frontend = new NoriFrontendRuntime({ reconnect: false });
+  t.after(() => frontend.dispose());
+  const pending = frontend.start();
+  frontend.dispose();
+  release(Response.json({ user: { id: "fixture" }, session: { id: "fixture" } }));
+  await pending;
+  const later = frontend.start();
+  const requests = fetch.mock.callCount();
+  // Release any unexpected request so a regression fails rather than hanging.
+  release(Response.json(null));
+  await later;
+  assert.equal(requests, 1);
+  assert.equal(Socket.sockets.length, 0);
+});
+
 test("frontend rejoins its world once per socket and disposal fences startup", async (t) => {
   environment(t);
   const frontend = new NoriFrontendRuntime({

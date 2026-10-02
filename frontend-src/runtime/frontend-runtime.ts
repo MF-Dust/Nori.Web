@@ -72,6 +72,7 @@ export class NoriFrontendRuntime {
   private cleanup: Array<() => void> = [];
   private disposed = false;
   private started = false;
+  private starting: Promise<void> | null = null;
   private locale?: string;
   private audioEnabled = false;
   private ignoredSpeechOperations = new Set<string>();
@@ -340,11 +341,18 @@ export class NoriFrontendRuntime {
     );
   }
 
-  async start(locale?: string): Promise<void> {
+  start(locale?: string): Promise<void> {
+    if (this.disposed) return Promise.resolve();
+    if (this.starting) return this.starting;
     this.locale = locale;
-    const auth = await this.auth.refresh();
-    if (this.disposed || auth.status !== "authenticated") return;
-    await this.connectWorld(locale);
+    // StrictMode can start twice before auth returns; share one guest cookie.
+    this.starting = this.auth.refresh().then((auth) => {
+      if (this.disposed || auth.status !== "authenticated") return;
+      return this.connectWorld(locale);
+    }).finally(() => {
+      this.starting = null;
+    });
+    return this.starting;
   }
 
   async connectWorld(locale = this.locale): Promise<void> {
