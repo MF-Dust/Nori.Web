@@ -8,6 +8,7 @@ from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ..core.protocol import error_message
+from ..services.ai_runtime_config import clear_runtime_ai_config, install_runtime_ai_config
 from ..session.manager import get_world_manager
 from ..virtual_apps import live_pack
 
@@ -19,6 +20,19 @@ def _ticket_from_protocols(websocket: WebSocket) -> Optional[str]:
         if protocol.startswith("ticket."):
             return protocol[len("ticket.") :]
     return None
+
+
+def _install_dispatch_ai_config(message: dict) -> None:
+    if (
+        message.get("type") == "dispatch"
+        and message.get("cartridgeId") == "chat"
+        and message.get("actor") == "player"
+        and isinstance(message.get("cmd"), dict)
+        and message["cmd"].get("type") == "playerMessage"
+    ):
+        raw_config = message.pop("noriAiConfig", None)
+        if isinstance(raw_config, dict):
+            install_runtime_ai_config(raw_config)
 
 
 async def _accept_arcade_socket(websocket: WebSocket) -> Optional[str]:
@@ -62,22 +76,29 @@ async def arcade_websocket(websocket: WebSocket) -> None:
             if not isinstance(message, dict):
                 await world.send_direct(websocket, error_message("bad_request", "message must be an object"))
                 continue
-            if message.get("type") == "reset_my_web_world":
-                new_world = await manager.reset_world(
-                    user_id,
-                    message.get("locale") if isinstance(message.get("locale"), str) else None,
-                    full_unlock=message.get("fullUnlock") is not False,
-                )
-                await world.remove_client(websocket)
-                world = new_world
-                await world.add_client(websocket)
-                await world.send_direct(websocket, {"type": "web_world_reset_ack", "worldId": world.world_id})
-                await world.send_direct(
-                    websocket,
-                    {"type": "world_created", "world": world.world_payload(), "session": {"isAdmin": True}},
-                )
-                continue
-            await world.handle_client_message(websocket, message)
+            try:
+                _install_dispatch_ai_config(message)
+                if message.get("type") == "reset_my_web_world":
+                    new_world = await manager.reset_world(
+                        user_id,
+                        message.get("locale") if isinstance(message.get("locale"), str) else None,
+                        full_unlock=message.get("fullUnlock") is not False,
+                    )
+                    await world.remove_client(websocket)
+                    world = new_world
+                    await world.add_client(websocket)
+                    await world.send_direct(websocket, {"type": "web_world_reset_ack", "worldId": world.world_id})
+                    await world.send_direct(
+                        websocket,
+                        {"type": "world_created", "world": world.world_payload(), "session": {"isAdmin": True}},
+                    )
+                    continue
+                await world.handle_client_message(websocket, message)
+            finally:
+                # Child chat tasks capture the current ContextVar when spawned;
+                # the receive loop itself must not retain a credential for the
+                # next unrelated WebSocket frame.
+                clear_runtime_ai_config()
     except WebSocketDisconnect:
         pass
     finally:
