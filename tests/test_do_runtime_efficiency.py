@@ -62,9 +62,6 @@ async def verify_heartbeat_fast_path() -> None:
             calls.append("tts")
             return attachment
 
-        async def _install_tts_for_socket(self, attachment):
-            calls.append("install_tts")
-
         async def _persist_world(self, active_world):
             assert active_world is world
             calls.append("snapshot")
@@ -92,7 +89,7 @@ async def verify_heartbeat_fast_path() -> None:
     assert calls == []
     await handle(session, socket, attachment, '{"type":"open_my_web_world"}')
     assert socket.frames[-1]["type"] == "world_joined"
-    assert calls == ["prefetch", "ai", "tts", "install_tts", "drain", "snapshot"]
+    assert calls == ["prefetch", "ai", "tts", "drain", "snapshot"]
     assert world_snapshot_json(world) != before, "state-changing messages must still persist"
 
 
