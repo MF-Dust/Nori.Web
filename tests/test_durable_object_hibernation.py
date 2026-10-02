@@ -50,6 +50,8 @@ def main() -> None:
     assert 'message.pop("noriTtsConfig", None)' in ENTRY
     assert '_install_runtime_tts_config(sanitized)' in ENTRY
     assert 'updated.pop("ttsApiKey", None)' in ENTRY
+    assert '_DO_TTS_CONFIG_KEY' not in ENTRY
+    assert '_persist_public_tts_config' not in ENTRY
 
     print("[ok] Arcade Durable Object uses runtime-compatible hibernating WebSockets")
 
