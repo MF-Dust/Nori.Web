@@ -1,9 +1,11 @@
 """Ephemeral TTS configuration supplied by the browser Settings app.
 
-The browser keeps provider credentials in browser storage and sends the active
-configuration immediately before a chat dispatch. The server stores it in a
-ContextVar so chat reply tasks inherit the configuration without writing
-credentials into world state, transitions, or Durable Object persistence.
+The browser keeps provider credentials in browser storage and attaches the
+active configuration only to the chat dispatch that needs it. The transport
+layer removes that private field before cartridge handling and installs the
+validated configuration in a ContextVar so spawned reply/TTS tasks inherit it
+without writing credentials into world state, transitions, WebSocket
+attachments, or Durable Object persistence.
 """
 
 from __future__ import annotations
