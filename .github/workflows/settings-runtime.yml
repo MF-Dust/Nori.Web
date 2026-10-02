@@ -87,4 +87,4 @@ jobs:
           grep -q 'interactive' public/nori-wallpaper-mode.js
 
       - name: Compile settings services and Worker entry
-        run: uv run python -m compileall -q backend/services cloudflare
+        run: uv run python -m compileall -q backend/api backend/services worker.py cloudflare
