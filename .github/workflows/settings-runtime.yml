@@ -4,13 +4,11 @@ on:
   pull_request:
     paths:
       - "backend/api/arcade.py"
-      - "backend/api/arcade.py"
       - "backend/services/ai_event_bridge.py"
       - "backend/services/ai_runtime_config.py"
       - "backend/services/llm_service.py"
       - "backend/services/tts_*.py"
       - "cloudflare/entry.py"
-      - "worker.py"
       - "worker.py"
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
@@ -19,7 +17,6 @@ on:
       - "public/wallpaper.html"
       - "public/index.html"
       - "tests/test_ai_*.py"
-      - "tests/test_durable_object_hibernation.py"
       - "tests/test_durable_object_hibernation.py"
       - "tests/test_tts_runtime_settings.py"
       - ".github/workflows/settings-runtime.yml"
@@ -27,11 +24,13 @@ on:
     branches:
       - master
     paths:
+      - "backend/api/arcade.py"
       - "backend/services/ai_event_bridge.py"
       - "backend/services/ai_runtime_config.py"
       - "backend/services/llm_service.py"
       - "backend/services/tts_*.py"
       - "cloudflare/entry.py"
+      - "worker.py"
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
       - "public/nori-ui-settings.js"
@@ -39,6 +38,7 @@ on:
       - "public/wallpaper.html"
       - "public/index.html"
       - "tests/test_ai_*.py"
+      - "tests/test_durable_object_hibernation.py"
       - "tests/test_tts_runtime_settings.py"
       - ".github/workflows/settings-runtime.yml"
 
