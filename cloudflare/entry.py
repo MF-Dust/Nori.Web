@@ -188,7 +188,16 @@ def _prune_transition_history(world) -> None:
 
 
 def _public_tts_config(config_value: dict) -> dict:
-    return {key: value for key, value in config_value.items() if key != "apiKey"}
+    public = {key: value for key, value in config_value.items() if key != "apiKey"}
+    # Query strings and fragments may themselves contain provider credentials.
+    # They are needed only for the current request and must never enter durable
+    # public configuration storage.
+    base_url = public.get("baseUrl")
+    if isinstance(base_url, str) and base_url:
+        parsed = _runtime.urlsplit(base_url)
+        if parsed.query or parsed.fragment:
+            public["baseUrl"] = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+    return public
 
 
 async def _cloudflare_run_chat_reply(self, user_text: str) -> None:
@@ -359,38 +368,39 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
         self._public_tts_config_cache = public
 
     async def _capture_tts_settings(self, websocket, attachment: dict, message: dict) -> dict:
-        if message.get("type") != "event":
-            return attachment
-        channel = message.get("channel")
+        # Purge credentials serialized by older deployments. New code carries
+        # TTS credentials only on the dispatch or test event that needs them.
+        updated = dict(attachment)
+        if "ttsApiKey" in updated:
+            updated.pop("ttsApiKey", None)
+            _runtime._save_socket_attachment(websocket, updated)
+
+        raw_config = None
+        channel = message.get("channel") if message.get("type") == "event" else None
         payload = message.get("payload")
         payload = payload if isinstance(payload, dict) else {}
         if channel == "nori.tts.config":
             raw_config = payload
         elif channel == "nori.tts.test" and isinstance(payload.get("config"), dict):
             raw_config = payload["config"]
-        else:
-            return attachment
+        elif (
+            message.get("type") == "dispatch"
+            and message.get("cartridgeId") == "chat"
+            and message.get("actor") == "player"
+            and isinstance(message.get("cmd"), dict)
+            and message["cmd"].get("type") == "playerMessage"
+        ):
+            candidate = message.pop("noriTtsConfig", None)
+            raw_config = candidate if isinstance(candidate, dict) else None
+
+        if raw_config is None:
+            return updated
 
         sanitized = _sanitize_runtime_tts_config(raw_config)
         await self._persist_public_tts_config(sanitized)
-        updated = dict(attachment)
-        api_key = sanitized.get("apiKey")
-        old_key = updated.get("ttsApiKey")
-        if isinstance(api_key, str) and api_key:
-            updated["ttsApiKey"] = api_key
-        else:
-            updated.pop("ttsApiKey", None)
-        if old_key != updated.get("ttsApiKey"):
-            _runtime._save_socket_attachment(websocket, updated)
+        if message.get("type") == "dispatch":
+            _install_runtime_tts_config(sanitized)
         return updated
-
-    async def _install_tts_for_socket(self, attachment: dict) -> None:
-        public = await self._load_public_tts_config()
-        config_value = dict(public)
-        api_key = attachment.get("ttsApiKey")
-        if isinstance(api_key, str) and api_key:
-            config_value["apiKey"] = api_key
-        _install_runtime_tts_config(config_value)
 
     def _refresh_world_clients(self, world) -> None:
         main_clients = set()
@@ -442,16 +452,17 @@ class NoriArcadeSession(_runtime.NoriArcadeSession):
             )
             return
 
-        # Heartbeats cannot change durable state. Avoid settings work and full
-        # world serialization on every ping while keeping the shared pong shape.
+        # Credential capture also purges legacy secret-bearing attachments, so
+        # run it before the heartbeat fast path.
+        attachment = await self._capture_ai_settings(websocket, attachment, message)
+        attachment = await self._capture_tts_settings(websocket, attachment, message)
+
+        # Heartbeats cannot change durable world state.
         if message.get("type") == "ping":
             await world.handle_client_message(adapter, message)
             return
 
         await _prefetch_parsed_arcade_message(self.env, message)
-        attachment = await self._capture_ai_settings(websocket, attachment, message)
-        attachment = await self._capture_tts_settings(websocket, attachment, message)
-        await self._install_tts_for_socket(attachment)
 
         if message.get("type") == "reset_my_web_world":
             locale = message.get("locale") if isinstance(message.get("locale"), str) else None
