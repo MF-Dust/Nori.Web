@@ -7,6 +7,9 @@ __pycache__/
 .research/
 .artifacts/
 
+# Local Pi LSP commands contain machine-specific paths.
+/.pi/pi-lsp.json
+
 # Generated outputs from before the .artifacts/ move.
 .frontend-build/
 .frontend-app-build/

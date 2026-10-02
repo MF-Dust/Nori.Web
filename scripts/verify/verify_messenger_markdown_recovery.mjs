@@ -82,7 +82,7 @@ async function main() {
   );
 
   assert(
-    sourceMarkdown.includes("const token = /(\\[([^\\]]+)\\]\\(([^)\\s]+)\\)") &&
+    sourceMarkdown.includes("const token = /(\\[([^\\[\\]]+)\\]\\(([^)\\s]+)\\)") &&
       sourceMarkdown.includes('className="underline underline-offset-2" title={href || undefined}'),
     "source Messenger markdown must parse non-HTTP markdown links and keep them inert",
   );
