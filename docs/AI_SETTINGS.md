@@ -32,16 +32,16 @@ The API key is safer by default:
 
 A persisted browser key can be read by JavaScript executing on the same origin. Do not enable persistent-key storage on a shared or untrusted browser profile.
 
+Changing the provider or API host invalidates an unchanged saved key. The UI clears it and requires the user to enter a credential for the new target, preventing a silently modified Base URL from reusing an existing key.
+
 ## Server transport and secret isolation
 
-Before the browser sends a player chat message, `public/nori-ai-settings.js` sends the active configuration over the verified Arcade `event` channel:
+For a player chat message, `public/nori-ai-settings.js` attaches the active browser AI configuration to that **single** Arcade dispatch in the private `noriAiConfig` compatibility field.
 
-```text
-nori.ai.config
-```
+The local server and Cloudflare Durable Object remove `noriAiConfig` before protocol/cartridge handling, validate the configuration, and install it in a Python `ContextVar` only for work spawned by that chat dispatch. API keys are never serialized into WebSocket hibernation attachments and are deliberately **not** stored in cartridge state, runtime transitions, world snapshots, or Durable Object storage.
 
-The backend validates it and stores it in a Python `ContextVar` for the current WebSocket execution context. It is deliberately **not** stored in a cartridge state, runtime transition, world snapshot, or Durable Object storage.
+The legacy `nori.ai.config` event remains accepted by the backend for compatibility, but it no longer persists credentials across messages. The settings connection test continues to send its configuration only for the test request.
 
-The acknowledgement contains only a redacted summary such as `hasApiKey`; it never returns the key itself. Provider errors also avoid logging request headers or configuration values.
+Public configuration acknowledgements contain only redacted metadata such as `hasApiKey`; they never return the key itself. Provider errors also avoid logging request headers or configuration values.
 
 Browser overrides never inherit the server's `OPENAI_API_KEY`. This prevents a user-supplied Base URL from receiving the server's credential.

@@ -3,11 +3,13 @@ name: Settings Runtime
 on:
   pull_request:
     paths:
+      - "backend/api/arcade.py"
       - "backend/services/ai_event_bridge.py"
       - "backend/services/ai_runtime_config.py"
       - "backend/services/llm_service.py"
       - "backend/services/tts_*.py"
       - "cloudflare/entry.py"
+      - "worker.py"
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
       - "public/nori-ui-settings.js"
@@ -15,17 +17,20 @@ on:
       - "public/wallpaper.html"
       - "public/index.html"
       - "tests/test_ai_*.py"
+      - "tests/test_durable_object_hibernation.py"
       - "tests/test_tts_runtime_settings.py"
       - ".github/workflows/settings-runtime.yml"
   push:
     branches:
       - master
     paths:
+      - "backend/api/arcade.py"
       - "backend/services/ai_event_bridge.py"
       - "backend/services/ai_runtime_config.py"
       - "backend/services/llm_service.py"
       - "backend/services/tts_*.py"
       - "cloudflare/entry.py"
+      - "worker.py"
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
       - "public/nori-ui-settings.js"
@@ -33,6 +38,7 @@ on:
       - "public/wallpaper.html"
       - "public/index.html"
       - "tests/test_ai_*.py"
+      - "tests/test_durable_object_hibernation.py"
       - "tests/test_tts_runtime_settings.py"
       - ".github/workflows/settings-runtime.yml"
 
@@ -61,6 +67,7 @@ jobs:
         run: |
           uv run python tests/test_ai_runtime_settings.py
           uv run python tests/test_ai_openai_compat.py
+          uv run python tests/test_durable_object_hibernation.py
 
       - name: Verify browser TTS settings
         run: uv run python tests/test_tts_runtime_settings.py
@@ -80,4 +87,4 @@ jobs:
           grep -q 'interactive' public/nori-wallpaper-mode.js
 
       - name: Compile settings services and Worker entry
-        run: uv run python -m compileall -q backend/services cloudflare
+        run: uv run python -m compileall -q backend/api backend/services worker.py cloudflare

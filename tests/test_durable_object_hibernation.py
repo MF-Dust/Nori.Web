@@ -34,10 +34,14 @@ def main() -> None:
     assert "getByName(_durable_object_name(user_id))" in WORKER
     assert "getByName(_durable_object_name(ticket))" not in WORKER
 
-    # API keys may survive hibernation only as per-connection attachment data;
-    # they must not be copied into the durable public AI config object.
+    # Browser API keys are single-dispatch secrets. They may not be serialized
+    # into hibernation attachments or copied into durable public AI config.
     assert 'if key != "apiKey"' in WORKER
     assert '_DO_AI_CONFIG_KEY = "nori:ai-public:v1"' in WORKER
+    assert 'updated["apiKey"]' not in WORKER
+    assert 'attachment.get("apiKey")' not in WORKER
+    assert 'message.pop("noriAiConfig", None)' in WORKER
+    assert 'install_runtime_ai_config(sanitized)' in WORKER
 
     print("[ok] Arcade Durable Object uses runtime-compatible hibernating WebSockets")
 

@@ -565,28 +565,39 @@ class NoriArcadeSession(DurableObject):
         self._public_ai_config_cache = public
 
     async def _capture_ai_settings(self, websocket, attachment: dict, message: dict) -> dict:
-        if message.get("type") != "event" or message.get("channel") != "nori.ai.config":
-            return attachment
-        payload = message.get("payload")
-        payload = payload if isinstance(payload, dict) else {}
-        sanitized = sanitize_runtime_ai_config(payload)
-        await self._persist_public_ai_config(sanitized)
+        # Remove credentials written by older deployments as soon as this
+        # connection sends another frame. New code never serializes API keys
+        # into hibernation attachments.
         updated = dict(attachment)
-        api_key = sanitized.get("apiKey")
-        if isinstance(api_key, str) and api_key:
-            updated["apiKey"] = api_key
-        else:
+        if "apiKey" in updated:
             updated.pop("apiKey", None)
-        _save_socket_attachment(websocket, updated)
-        return updated
+            _save_socket_attachment(websocket, updated)
 
-    async def _install_ai_for_socket(self, attachment: dict) -> None:
-        public = await self._load_public_ai_config()
-        config_value = dict(public)
-        api_key = attachment.get("apiKey")
-        if isinstance(api_key, str) and api_key:
-            config_value["apiKey"] = api_key
-        install_runtime_ai_config(config_value)
+        raw_config = None
+        if message.get("type") == "event" and message.get("channel") == "nori.ai.config":
+            payload = message.get("payload")
+            raw_config = payload if isinstance(payload, dict) else {}
+        elif (
+            message.get("type") == "dispatch"
+            and message.get("cartridgeId") == "chat"
+            and message.get("actor") == "player"
+            and isinstance(message.get("cmd"), dict)
+            and message["cmd"].get("type") == "playerMessage"
+        ):
+            # Browser credentials are single-message data. Strip the private
+            # compatibility field before protocol/cartridge handling so it can
+            # never enter transitions, snapshots, or persisted world state.
+            candidate = message.pop("noriAiConfig", None)
+            raw_config = candidate if isinstance(candidate, dict) else None
+
+        if raw_config is None:
+            return updated
+
+        sanitized = sanitize_runtime_ai_config(raw_config)
+        await self._persist_public_ai_config(sanitized)
+        if message.get("type") == "dispatch":
+            install_runtime_ai_config(sanitized)
+        return updated
 
     def _refresh_world_clients(self, world) -> None:
         main_clients = set()
@@ -747,7 +758,6 @@ class NoriArcadeSession(DurableObject):
                 websocket.close(1002, "invalid_arcade_message")
                 return
 
-            await self._install_ai_for_socket(attachment)
             await self._handle_main_message(websocket, attachment, message)
         except Exception as exc:
             print(f"[arcade] hibernation message error: {exc}")
