@@ -4,7 +4,6 @@
   const STORAGE_KEY = "nori.ai.settings.v1";
   const SESSION_KEY = "nori.ai.api-key.v1";
   const INSTALLED = Symbol("noriAiSettingsInstalled");
-  const wsFingerprints = new WeakMap();
   const attachedSockets = new WeakSet();
   let activeSocket = null;
   let activeWorldId = "";
@@ -45,6 +44,17 @@
     return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
   }
 
+  function credentialTarget(settings) {
+    const provider = settings?.provider === "anthropic" ? "anthropic" : "openai-compatible";
+    const raw = String(settings?.baseUrl || "").trim();
+    try {
+      const url = new URL(raw);
+      return `${provider}|${url.protocol}//${url.host}`;
+    } catch {
+      return `${provider}|${raw.toLowerCase()}`;
+    }
+  }
+
   function normalize(settings) {
     const source = settings && typeof settings === "object" ? settings : {};
     const provider = source.provider === "anthropic" ? "anthropic" : "openai-compatible";
@@ -70,7 +80,15 @@
   }
 
   function saveSettings(input) {
+    const previous = loadSettings();
     const settings = normalize(input);
+    if (
+      previous.apiKey &&
+      settings.apiKey === previous.apiKey &&
+      credentialTarget(previous) !== credentialTarget(settings)
+    ) {
+      settings.apiKey = "";
+    }
     const persisted = { ...settings };
     if (!settings.rememberApiKey) persisted.apiKey = "";
     safeStorage(localStorage, "setItem", STORAGE_KEY, JSON.stringify(persisted));
@@ -120,12 +138,6 @@
       temperature: settings.temperature,
       maxTokens: settings.maxTokens,
     };
-  }
-
-  function runtimeFingerprint(payload) {
-    // The fingerprint never leaves this page. Including the key prevents a
-    // changed key from reusing an older server-side runtime configuration.
-    return JSON.stringify(payload);
   }
 
   function isChatPlayerDispatch(message) {
@@ -186,10 +198,10 @@
     }, { once: true });
   }
 
-  // The extension loads before the main Vite bundle. Intercept only outbound
-  // chat player dispatches and prepend a standard Arcade event carrying the
-  // ephemeral AI configuration. The config event itself is not a cartridge
-  // command and therefore never appears in runtime_transition payloads.
+  // The extension loads before the main Vite bundle. Attach browser AI
+  // credentials only to the chat dispatch that needs them. The Worker strips
+  // this compatibility field before the message reaches cartridge state, so
+  // the API key never needs to survive in WebSocket attachment storage.
   const nativeSend = WebSocket.prototype.send;
   WebSocket.prototype.send = function patchedNoriSend(data) {
     attachSocket(this);
@@ -199,22 +211,8 @@
         if (isChatPlayerDispatch(message)) {
           activeSocket = this;
           if (message.worldId) activeWorldId = String(message.worldId);
-          const payload = runtimePayload();
-          const fingerprint = runtimeFingerprint(payload);
-          if (wsFingerprints.get(this) !== fingerprint) {
-            nativeSend.call(
-              this,
-              JSON.stringify({
-                type: "event",
-                worldId: message.worldId,
-                cartridgeId: "chat",
-                requestId: `ai-config-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                channel: "nori.ai.config",
-                payload,
-              }),
-            );
-            wsFingerprints.set(this, fingerprint);
-          }
+          message.noriAiConfig = runtimePayload();
+          return nativeSend.call(this, JSON.stringify(message));
         }
       } catch {
         // Preserve the shipped client's behavior for non-JSON frames.
@@ -261,6 +259,7 @@
       apiKey: "API Key",
       rememberKey: "Remember API Key in this browser",
       keyWarning: "Saved browser keys can be read by scripts running on this same origin. Leave this off on shared devices.",
+      keyClearedTargetChanged: "API key cleared because the provider or API host changed. Re-enter the key for the new endpoint.",
       systemPrompt: "System Prompt",
       characterPrompt: "Nori / Character Prompt",
       characterPlaceholder: "Optional additional personality, setting, style, or behavioral instructions…",
@@ -285,6 +284,7 @@
       apiKey: "API Key",
       rememberKey: "在此浏览器记住 API Key",
       keyWarning: "持久化到浏览器的 Key 可被同源页面脚本读取；在公用设备上请不要开启。",
+      keyClearedTargetChanged: "提供商或 API 主机已变化，原 API Key 已清除；请为新端点重新输入。",
       systemPrompt: "System Prompt",
       characterPrompt: "Nori / 角色提示词",
       characterPlaceholder: "可选：补充人格、世界观、语气或行为要求……",
@@ -521,10 +521,15 @@
     });
 
     save.addEventListener("click", () => {
-      const saved = saveSettings(read());
+      const draft = read();
+      const saved = saveSettings(draft);
       fill(saved);
-      showStatus("ok", saved.enabled ? t.saved : t.savedDisabled);
-      window.setTimeout(() => status.classList.remove("visible"), 2600);
+      const keyCleared = Boolean(draft.apiKey) && !saved.apiKey;
+      showStatus(
+        keyCleared ? "error" : "ok",
+        keyCleared ? t.keyClearedTargetChanged : saved.enabled ? t.saved : t.savedDisabled,
+      );
+      window.setTimeout(() => status.classList.remove("visible"), keyCleared ? 4200 : 2600);
     });
 
     test.addEventListener("click", () => {
