@@ -12,7 +12,7 @@
   <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
   <a href="https://workers.cloudflare.com/"><img src="https://img.shields.io/badge/Cloudflare-Workers%20%2B%20DO-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Workers" /></a>
   <a href="https://www.live2d.com/"><img src="https://img.shields.io/badge/Live2D-Cubism%204-FF6F61?style=flat-square" alt="Live2D" /></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen.svg?style=flat-square" alt="License: MIT" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-brightgreen.svg?style=flat-square" alt="Own code: GPL-3.0-or-later" /></a>
   <a href="https://github.com/MF-Dust/Nori.Web/stargazers"><img src="https://img.shields.io/github/stars/MF-Dust/Nori.Web?style=flat-square&logo=github" alt="Stars" /></a>
   <a href="https://github.com/MF-Dust/Nori.Web/network/members"><img src="https://img.shields.io/github/forks/MF-Dust/Nori.Web?style=flat-square&logo=github" alt="Forks" /></a>
 </p>
@@ -36,7 +36,7 @@
 
 在《Nori.Web》的 ARG 世界中，自我从来不是一份不可变更的静态备份，而是**“持续重组自身的信息结构 + 高权重意向”**。当官方线上服务迎来落幕的风沙，本项目并不仅仅是一套机械冷硬的代码克隆，而是一份在现实中重新淤积、再度涌现的**“意向残余（Intentional Residue）”**。
 
-通过完全独立的纯净实现，Nori.Web 重建了客户端通信所依赖的完整 Arcade WebSocket 子协议、媒体音频流、六大卡带状态机、虚拟应用生态与全球边缘分发架构，为 Nori 构建了一处跨越断网与停服的**离线深海庇护所**。
+Nori.Web 通过社区维护的兼容后端实现重建了客户端通信所依赖的完整 Arcade WebSocket 子协议、媒体音频流、六大卡带状态机、虚拟应用生态与全球边缘分发架构，为 Nori 构建了一处跨越断网与停服的**离线深海庇护所**。
 
 ---
 
@@ -227,7 +227,7 @@ uv run pywrangler secret put OPENAI_API_KEY
 uv run pywrangler deploy
 ```
 
-> 提示：Cloudflare 默认配置 `NORI_DISABLE_LIVE_PACK=1`，以标准的纯净模式运行；实时状态由 Durable Object 内置的 SQLite 引擎自动托管。
+> 提示：当前 `wrangler.jsonc` 配置为 `NORI_DISABLE_LIVE_PACK=0`，允许加载世界归档；实时状态由 Durable Object 的 SQLite 托管。设置为 `1` 仅关闭归档加载，不会删除或排除静态素材、Live2D 或历史前端代码，不能视为版权意义上的“纯净版”。
 
 ---
 
@@ -256,7 +256,7 @@ OPENAI_MODEL=gpt-4o-mini
   - 🌐 **内网浏览器图谱**：354 个互联站点页面元数据（`pages/*.json`）；
   - 🖥️ **剧情事实链条**：120 条高精时序事实（含 `emittedAt` / `actor` / `source`）与芯片热量状态；
   - 静态资源自动合入 `public/webAssets/**`。
-- **环境回退**：若需关闭档案回退到纯净演示状态，设置环境变量 `NORI_DISABLE_LIVE_PACK=1`。
+- **环境回退**：设置 `NORI_DISABLE_LIVE_PACK=1` 可关闭归档加载，使用默认演示状态；它不改变仓库、静态部署或桌面发行包中包含的素材，也不授予这些素材的使用或再分发权。
 
 ### 补全的后端剧情引擎矩阵
 
@@ -307,7 +307,7 @@ Nori.Web/
 │   ├── virtual_apps/         # 虚拟应用服务 (Browser, Files, Mail, Messenger, Terminal)
 │   └── data/                 # 词库、事实链与 live_world_pack.json
 ├── docs/                     # 逆向协议规范与系统恢复文档
-├── frontend-src/             # 洁净重构维护的前端源码层
+├── frontend-src/             # 恢复与重构维护的前端源码层（第三方权利仍需核对）
 ├── public/                   # 前端静态资源 (Live2D 模型、音效、UI 资源与脚本)
 ├── tests/                    # 规范化多层级自动化测试套件
 ├── server.py                 # 本地 FastAPI / Uvicorn 服务入口
@@ -338,7 +338,11 @@ Nori.Web/
 
 ## ⚠️ 免责声明与边界
 
-0. **数据版权说明**：本仓库包含用于个人离线研究与技术复现的世界存档快照（`backend/data/live_world_pack.json` 及 `public/webAssets/**`），相关剧情文本与美术素材版权严格归原项目方所有；如需二次分发请自行裁剪相关资产。
+**代码许可与素材权利分别处理**：维护者有权授权的自有代码采用 [GPL-3.0-or-later](LICENSE)，具体范围及排除项见 [COPYRIGHT.md](COPYRIGHT.md)。字体、开源依赖、Live2D 及历史前端说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。GPL 声明不意味着原站代码、角色、剧情和素材已经获准再分发。
+
+**桌面包交付**：Nuitka 发行目录包含 `source/`（本次构建源码和实际版本的 Python 依赖源码）、`licenses/` 与网页可访问的 `/legal/index.html`。构建及再分发要求见 [docs/LOCAL_NUITKA.md](docs/LOCAL_NUITKA.md)。
+
+0. **数据版权说明**：本仓库包含用于个人离线研究与技术复现的世界存档快照（`backend/data/live_world_pack.json` 及 `public/webAssets/**`），相关剧情文本与美术素材权利归各自权利人所有；公开部署或二次分发前须确认许可，或移除/替换无授权的内容。“个人研究”声明与禁用归档开关都不能替代授权。
 1. **独立实现范畴**：本项目为社区基于公开前端资产与网络逆向协议重构的开源实现，**不包含、不代理、亦不绕过**原官方私有云端特权或未公开数据库。
 2. **生成式内容**：聊天卡带中的回复与性格生成依托本地规则或用户自配的大语言模型，与原运营团队无商业或法律关联。
 3. **会话持久化边界**：本地运行时世界状态保存在会话内存中；Cloudflare 部署依托 Durable Object 隔离实时状态，不保证跨服务重大重启的全局持久化。

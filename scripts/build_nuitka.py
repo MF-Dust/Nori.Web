@@ -10,6 +10,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from scripts.release_legal import prepare_legal_bundle
+
 ENTRY = ROOT / "scripts" / "nuitka_entry.py"
 BUILD_ROOT = ROOT / "build" / "nuitka"
 RELEASE_ROOT = ROOT / "build" / "release"
@@ -22,10 +25,8 @@ def _platform_tag() -> str:
 
 
 def _copy_release_metadata(release_dir: Path) -> None:
-    for name in ("README.md", "LICENSE"):
-        source = ROOT / name
-        if source.is_file():
-            shutil.copy2(source, release_dir / name)
+    shutil.copy2(ROOT / "README.md", release_dir / "README.md")
+    shutil.copytree(BUILD_ROOT / "legal", release_dir, dirs_exist_ok=True)
 
     info = release_dir / "BUILD_INFO.txt"
     info.write_text(
@@ -52,6 +53,10 @@ def build(*, clean: bool = True) -> Path:
 
     BUILD_ROOT.mkdir(parents=True, exist_ok=True)
     RELEASE_ROOT.mkdir(parents=True, exist_ok=True)
+
+    legal_dir = BUILD_ROOT / "legal"
+    shutil.rmtree(legal_dir, ignore_errors=True)
+    prepare_legal_bundle(legal_dir)
 
     binary_name = "Nori.Web.exe" if sys.platform == "win32" else "Nori.Web"
     command = [

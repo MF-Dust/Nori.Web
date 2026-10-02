@@ -2,10 +2,13 @@
   "name": "nori-os-local-compatibility",
   "version": "2.0.0",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "description": "Local protocol-compatible backend for the publicly shipped NoriOS web client",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "legal:refresh": "node scripts/refresh_legal_notices.mjs",
+    "test:legal": "python -m unittest tests.test_release_legal",
     "build": "vite build",
     "start": "python server.py",
     "start:py": "python server.py",

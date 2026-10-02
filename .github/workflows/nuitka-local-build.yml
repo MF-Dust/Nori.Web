@@ -35,16 +35,19 @@ jobs:
         run: uv python install 3.13
 
       - name: Sync local + Nuitka build dependencies
-        run: uv sync --extra local --group build --python 3.13
+        run: uv sync --no-dev --extra local --group build --python 3.13
+
+      - name: Test license and source delivery
+        run: uv run --no-dev --extra local --group build python -m unittest tests.test_release_legal
 
       - name: Show Nuitka version
-        run: uv run python -m nuitka --version
+        run: uv run --no-dev --extra local --group build python -m nuitka --version
 
       - name: Build standalone distribution
-        run: uv run python scripts/build_nuitka.py
+        run: uv run --no-dev --extra local --group build python scripts/build_nuitka.py
 
       - name: Smoke test compiled distribution
-        run: uv run python scripts/smoke_nuitka.py
+        run: uv run --no-dev --extra local --group build python scripts/smoke_nuitka.py
 
       - name: Upload local distribution
         uses: actions/upload-artifact@v4

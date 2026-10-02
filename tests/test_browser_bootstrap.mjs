@@ -42,6 +42,16 @@ try {
 
   const response = await page.goto(`${base}/`, { waitUntil: "domcontentloaded", timeout: 30_000 });
   if (!response?.ok()) throw new Error(`Page load returned ${response?.status()}`);
+  const notice = page.locator("#nori-community-notice");
+  assert.equal(await notice.isVisible(), true);
+  assert.equal(await notice.getAttribute("href"), "/legal/index.html");
+  const popupPromise = context.waitForEvent("page");
+  await notice.click();
+  const legalPage = await popupPromise;
+  await legalPage.waitForLoadState("domcontentloaded");
+  assert.match(await legalPage.title(), /非官方/);
+  assert.equal((await legalPage.request.get(`${base}/legal/LICENSE`)).ok(), true);
+  await legalPage.close();
   const bypass = page.getByText("仍要进入");
   if (await bypass.count()) await bypass.click();
   await page.waitForFunction(

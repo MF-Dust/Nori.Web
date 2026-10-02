@@ -1,0 +1,17 @@
+#nori-community-notice {
+  position: fixed;
+  right: max(8px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 2147483647;
+  padding: 4px 8px;
+  border: 1px solid #667085;
+  border-radius: 6px;
+  background: #101828;
+  color: #f9fafb;
+  font: 12px/1.5 system-ui, sans-serif;
+  text-decoration: underline;
+}
+#nori-community-notice:focus-visible {
+  outline: 2px solid #f9fafb;
+  outline-offset: 2px;
+}

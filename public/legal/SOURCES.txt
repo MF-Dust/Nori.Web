@@ -1,0 +1,8 @@
+fonts/Sarasa-OFL.txt: https://raw.githubusercontent.com/be5invis/Sarasa-Gothic/v1.0.40/LICENSE
+fonts/Fusion-Pixel-OFL.txt: https://raw.githubusercontent.com/TakWolf/fusion-pixel-font/master/LICENSE-OFL
+fonts/Press-Start-2P-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/pressstart2p/OFL.txt
+fonts/Silkscreen-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/silkscreen/OFL.txt
+fonts/VT323-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/vt323/OFL.txt
+vendor/colord-LICENSE.txt: https://raw.githubusercontent.com/omgovich/colord/master/LICENSE.md
+vendor/Basis-Universal-LICENSE.txt: https://raw.githubusercontent.com/BinomialLLC/basis_universal/master/LICENSE
+vendor/KTX-LICENSE.txt: https://raw.githubusercontent.com/KhronosGroup/KTX-Software/main/LICENSE.md

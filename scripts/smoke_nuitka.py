@@ -62,7 +62,15 @@ def main() -> None:
         if b"<html" not in index.lower() and b"<!doctype html" not in index.lower():
             raise RuntimeError("Packaged root response does not look like HTML")
 
-        print(f"[ok] compiled local distribution serves API + SPA: {binary}")
+        if b"nori-community-notice" not in index:
+            raise RuntimeError("Packaged page is missing the unofficial project notice")
+        for path in ("legal/index.html", "legal/LICENSE", "legal/npm-NOTICES.txt", "legal/fonts/Sarasa-OFL.txt"):
+            if not _wait_for(f"http://127.0.0.1:4173/{path}"):
+                raise RuntimeError(f"Empty packaged legal file: {path}")
+        for path in ("LICENSE", "COPYRIGHT.md", "THIRD_PARTY_NOTICES.md", "source/project.zip", "source/dependencies.json", "licenses/PYTHON-LICENSE.txt"):
+            if not (binary.parent / path).is_file():
+                raise RuntimeError(f"Missing release legal/source file: {path}")
+        print(f"[ok] compiled local distribution serves API + SPA + legal notices, with source delivery: {binary}")
     finally:
         process.terminate()
         try:

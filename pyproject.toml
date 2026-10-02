@@ -3,6 +3,8 @@ name = "nori-web"
 version = "2.0.0"
 description = "NoriOS local compatibility backend and Cloudflare Workers deployment"
 readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE", "COPYRIGHT.md", "THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
@@ -25,6 +27,7 @@ dev = [
 ]
 build = [
     "nuitka==4.2",
+    "packaging>=24",
 ]
 
 [tool.ruff]

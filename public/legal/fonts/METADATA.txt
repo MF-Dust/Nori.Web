@@ -1,0 +1,40 @@
+public\fonts\fusion-pixel-12px-monospaced-sc.woff2
+  nameID 0: Copyright (c) 2022, TakWolf (https://takwolf.com)
+  nameID 1: Fusion Pixel 12px Mono zh_hans
+  nameID 5: 2026.07.01
+  nameID 13: This Font Software is licensed under the SIL Open Font License, Version 1.1
+  nameID 14: https://github.com/TakWolf/fusion-pixel-font/blob/master/LICENSE-OFL
+public\fonts\fusion-pixel-12px-proportional-sc.woff2
+  nameID 0: Copyright (c) 2022, TakWolf (https://takwolf.com)
+  nameID 1: Fusion Pixel 12px Prop zh_hans
+  nameID 5: 2026.07.01
+  nameID 13: This Font Software is licensed under the SIL Open Font License, Version 1.1
+  nameID 14: https://github.com/TakWolf/fusion-pixel-font/blob/master/LICENSE-OFL
+public\fonts\press-start-2p-latin.woff2
+  nameID 0: Copyright 2012 The Press Start 2P Project Authors (cody@zone38.net), with Reserved Font Name "Press Start 2P"
+  nameID 1: Press Start 2P
+  nameID 5: Version 3.000
+  nameID 14: http://scripts.sil.org/OFL
+public\fonts\sarasa-fixed-sc-bold.woff2
+  nameID 0: Copyright (c) 2015-2025, Renzhi Li (aka. Belleve Invis, belleve@typeof.net). Portions Copyright (c) 2016 The Inter Project Authors. Portions Copyright (c) 2014-2021 Adobe Systems Incorporated (http://www.adobe.com/). Portions Copyright (c) 2012 Google Inc.
+  nameID 1: Sarasa Fixed SC
+  nameID 5: Version 1.0.40
+public\fonts\sarasa-fixed-sc.woff2
+  nameID 0: Copyright (c) 2015-2025, Renzhi Li (aka. Belleve Invis, belleve@typeof.net). Portions Copyright (c) 2016 The Inter Project Authors. Portions Copyright (c) 2014-2021 Adobe Systems Incorporated (http://www.adobe.com/). Portions Copyright (c) 2012 Google Inc.
+  nameID 1: Sarasa Fixed SC
+  nameID 5: Version 1.0.40
+public\fonts\silkscreen-bold-latin.woff2
+  nameID 0: Copyright 2001 The Silkscreen Project Authors (https://github.com/googlefonts/silkscreen)
+  nameID 1: Silkscreen
+  nameID 5: Version 1.001; ttfautohint (v1.8.4.7-5d5b)
+  nameID 14: https://scripts.sil.org/OFL
+public\fonts\silkscreen-latin.woff2
+  nameID 0: Copyright 2001 The Silkscreen Project Authors (https://github.com/googlefonts/silkscreen)
+  nameID 1: Silkscreen
+  nameID 5: Version 1.001; ttfautohint (v1.8.4.7-5d5b)
+  nameID 14: https://scripts.sil.org/OFL
+public\fonts\vt323-latin.woff2
+  nameID 0: Copyright 2011, The VT323 Project Authors (peter.hull@oikoi.com)
+  nameID 1: VT323
+  nameID 5: Version 2.000
+  nameID 14: http://scripts.sil.org/OFL
