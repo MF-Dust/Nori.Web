@@ -7,7 +7,7 @@ import hashlib
 import time
 from typing import Any, Dict, List, Optional
 
-from .base import BaseCartridge, ReducerResult
+from .base import BaseCartridge, CommandRejected, ReducerResult
 from ..virtual_apps import live_pack
 
 # All capability, app-install, gesture, and feature unlock facts enabled by default.
@@ -203,14 +203,23 @@ class ManifoldWebCartridge(BaseCartridge):
 
     def reduce(self, actor: str, cmd: Dict[str, Any]) -> ReducerResult:
         command_type = cmd.get("type", "")
+        fact_ids = [cmd.get("factId")]
+        if command_type == "client.emitFacts":
+            fact_ids = cmd.get("factIds")
+            if (not isinstance(fact_ids, list) or len(fact_ids) > 1024
+                    or any(not isinstance(fact, str) or not fact or len(fact) > 256 for fact in fact_ids)):
+                raise CommandRejected("facts must contain at most 1024 non-empty strings of at most 256 characters")
         state = copy.deepcopy(self.state)
         events: List[Dict[str, Any]] = []
 
-        if command_type == "client.emitFact":
-            fact_id = cmd.get("factId")
-            if isinstance(fact_id, str) and fact_id:
+        if command_type in {"client.emitFact", "client.emitFacts"}:
+            emitted = 0
+            for fact_id in fact_ids:
+                if not isinstance(fact_id, str) or not fact_id:
+                    continue
                 existing = state["facts"].get(fact_id)
                 if not existing:
+                    emitted += 1
                     source = cmd.get("source") or derive_source(fact_id)
                     state["facts"][fact_id] = _fact_record(
                         fact_id,
@@ -234,7 +243,8 @@ class ManifoldWebCartridge(BaseCartridge):
                     if changed:
                         facts_changed["changedArtifactTypes"] = changed
                     events.append(facts_changed)
-            return ReducerResult(state, {"ok": True}, events)
+            result = {"ok": True, "count": emitted} if command_type == "client.emitFacts" else {"ok": True}
+            return ReducerResult(state, result, events)
 
         APP_PREFIX = {"browser": "page", "files": "file", "mail": "mail",
                       "messenger": "signal", "signal": "signal",
@@ -337,36 +347,6 @@ class ManifoldWebCartridge(BaseCartridge):
             for key in ("capacity", "coolEveryMs", "heat", "neverOverheat"):
                 if key in cmd:
                     cfg[key] = cmd[key]
-            return ReducerResult(state, {"ok": True}, events)
-
-        if command_type == "client.emitFact":
-            fact_id = cmd.get("factId")
-            if isinstance(fact_id, str) and fact_id:
-                existing = state["facts"].get(fact_id)
-                if not existing:
-                    source = cmd.get("source") or derive_source(fact_id)
-                    state["facts"][fact_id] = _fact_record(
-                        fact_id,
-                        actor,
-                        source,
-                        int(cmd.get("emittedAt") or time.time() * 1000),
-                    )
-                    events.append({"type": "factEmitted", "factId": fact_id, "source": source})
-                    # The shipped client reads changedArtifactTypes off
-                    # manifold.facts.changed; the payload schema for
-                    # manifold.artifacts.invalidated is {reason} alone. Carrying the
-                    # value on the latter meant it never reached the client, which
-                    # then took its untargeted refresh path on every fact.
-                    facts_changed: Dict[str, Any] = {
-                        "type": "manifold.facts.changed",
-                        "emitted": [fact_id],
-                        "retracted": [],
-                        "snapshot": {fact_id: True},
-                    }
-                    changed = _affected_artifact_types(fact_id)
-                    if changed:
-                        facts_changed["changedArtifactTypes"] = changed
-                    events.append(facts_changed)
             return ReducerResult(state, {"ok": True}, events)
 
         if command_type == "chip.scan":

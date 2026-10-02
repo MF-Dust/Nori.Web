@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import ast
 import asyncio
+import importlib.util
+import json
+import os
+import runpy
 import sys
 import time
 from pathlib import Path
@@ -26,6 +30,91 @@ from backend.session.manager import WorldManager, get_world_manager
 from server import create_app
 
 TICKET_RPC = {"path": "auth/wsTickets:issueWebUserWsTicket"}
+
+
+def check_secret_configuration() -> None:
+    config_path = str(ROOT / "backend/core/config.py")
+    for environment in ({}, {"SECRET_KEY": ""}, {"SECRET_KEY": " \t"}):
+        with patch.dict(os.environ, environment, clear=True):
+            first = runpy.run_path(config_path)["SECRET_KEY"]
+            second = runpy.run_path(config_path)["SECRET_KEY"]
+            assert len(first) >= 32 and first != second
+            assert first != "nori-os-secret-key-2026"
+    with patch.dict(os.environ, {"SECRET_KEY": " explicit-key "}, clear=True):
+        assert runpy.run_path(config_path)["SECRET_KEY"] == " explicit-key "
+
+    with patch.object(config, "SECRET_KEY", "local-random-fallback"), patch.dict(os.environ, {}, clear=True):
+        for env in (SimpleNamespace(), SimpleNamespace(SECRET_KEY=""), SimpleNamespace(SECRET_KEY=" \t")):
+            try:
+                config.apply_runtime_bindings(env)
+            except ValueError as exc:
+                assert "SECRET_KEY" in str(exc)
+            else:
+                raise AssertionError("Cloudflare accepted an unconfigured signing key")
+        config.apply_runtime_bindings(SimpleNamespace(SECRET_KEY=" runtime-key "))
+        assert config.SECRET_KEY == " runtime-key "
+        with patch.dict(os.environ, {"SECRET_KEY": "environment-key"}):
+            config.apply_runtime_bindings(SimpleNamespace())
+            assert config.SECRET_KEY == "environment-key"
+            config.apply_runtime_bindings(SimpleNamespace(SECRET_KEY="runtime-wins"))
+            assert config.SECRET_KEY == "runtime-wins"
+        # A previous request's binding must not substitute for missing config.
+        try:
+            config.apply_runtime_bindings(SimpleNamespace())
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Cloudflare reused a stale runtime key")
+
+
+async def check_otp_security() -> None:
+    send_paths = ("/api/auth/send-email-otp", "/api/auth/email-otp/send-verification-otp")
+    verify_paths = ("/api/auth/sign-in/email-otp", "/api/auth/email-otp/verify-email")
+    email, code = "security@nori.test", "654321"
+    transport = httpx.ASGITransport(app=create_app(include_static=False))
+    with (
+        patch.dict(auth.OTP_STORE, {}, clear=True),
+        patch.dict(auth.SESSIONS, {}, clear=True),
+        patch.dict(auth.USERS, {}, clear=True),
+        patch.object(auth, "AUTO_GUEST", False),
+    ):
+        async with httpx.AsyncClient(transport=transport, base_url="https://nori.test") as client:
+            for environment in ({}, {"NORI_DEV_OTP": ""}, {"NORI_DEV_OTP": " \t"}):
+                with patch.dict(os.environ, environment, clear=True):
+                    spec = importlib.util.spec_from_file_location("backend.api._auth_security_check", auth.__file__)
+                    defaults = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(defaults)
+                assert defaults.DEV_OTP == ""
+                with patch.object(auth, "DEV_OTP", defaults.DEV_OTP):
+                    for path in send_paths:
+                        assert (await client.post(path, json={"email": email})).json()["code"] == "OTP_DISABLED"
+                    for path in verify_paths:
+                        assert (await client.post(path, json={"email": email, "otp": "123456"})).json()["code"] == "INVALID_OTP"
+                    assert not auth.OTP_STORE and not auth.SESSIONS
+
+            with patch.object(auth, "DEV_OTP", code):
+                for path in send_paths + verify_paths:
+                    for body in ([], None, "text", 123):
+                        result = await client.post(path, content=json.dumps(body), headers={"Content-Type": "application/json"})
+                        assert result.status_code == 200 and "code" in result.json()
+                for send_path, verify_path in zip(send_paths, verify_paths):
+                    credentials = {"email": email, "otp": code}
+                    assert (await client.post(verify_path, json=credentials)).json()["code"] == "INVALID_OTP"
+                    assert (await client.post(send_path, json={"email": email})).json()["status"] is True
+                    assert (await client.post(verify_path, json={"email": email, "otp": "123456"})).json()["code"] == "INVALID_OTP"
+                    expiry = auth.OTP_STORE[email]["expiresAt"]
+                    with patch.object(auth.time, "time", return_value=expiry):
+                        assert (await client.post(verify_path, json=credentials)).json()["code"] == "INVALID_OTP"
+                    assert (await client.post(send_path, json={"email": email})).json()["status"] is True
+                    login = (await client.post(verify_path, json=credentials)).json()
+                    token = login["session"]["token"]
+                    assert token in auth.SESSIONS and email not in auth.OTP_STORE
+                    assert (await client.post(verify_path, json=credentials)).json()["code"] == "INVALID_OTP"
+                    assert (await client.post("/api/auth/sign-out")).json()["success"] is True
+                    assert token not in auth.SESSIONS
+                    # Replay the captured cookie, not just the now-cleared browser jar.
+                    result = await client.get("/api/auth/get-session", headers={"cookie": f"{SESSION_COOKIE}={token}"})
+                    assert result.json() is None
 
 
 def check_invalid_cookies() -> None:
@@ -94,8 +183,11 @@ async def check_http() -> None:
         assert (await manager.get_world(user_a)).cartridges["chat"].state["lines"][0]["content"] == "private to A"
         assert await manager.resolve_ticket(await manager.issue_ticket("guest-user-001")) is None
 
-        # Preserve real OTP users instead of replacing them with browser guests.
-        login = await a.post("/api/auth/sign-in/email-otp", json={"email": "isolation@nori.test", "otp": auth.DEV_OTP})
+        # Preserve explicitly enabled development OTP users instead of guests.
+        with patch.object(auth, "DEV_OTP", "654321"):
+            issued = await a.post("/api/auth/send-email-otp", json={"email": "isolation@nori.test"})
+            assert issued.json()["status"] is True
+            login = await a.post("/api/auth/sign-in/email-otp", json={"email": "isolation@nori.test", "otp": "654321"})
         logged_in = login.json()["user"]["id"]
         assert logged_in.startswith("user_")
         assert (await a.get("/api/auth/get-session")).json()["user"]["id"] == logged_in
@@ -184,7 +276,9 @@ async def check_edge() -> None:
 
 
 async def main() -> None:
+    check_secret_configuration()
     check_invalid_cookies()
+    await check_otp_security()
     await check_http()
     await check_edge()
     print("[ok] independent browser guests, private worlds/media, cookie lifecycle, OTP, and both edge ticket paths")

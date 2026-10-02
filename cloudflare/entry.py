@@ -95,6 +95,8 @@ class Default(_runtime.Default):
     async def fetch(self, request):
         path = _runtime.urlsplit(request.url).path
         if path == "/api/query_ts" or path in _EDGE_CONVEX_PATHS:
+            if not _runtime.is_same_origin_request(request.headers.get("origin"), request.url):
+                return _runtime.Response("origin_forbidden", status=403)
             # Ticket signatures must use the runtime-bound SECRET_KEY.
             _runtime._apply_runtime_bindings(self.env)
             response = await _serve_edge_convex_api(path, request)

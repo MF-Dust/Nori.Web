@@ -560,6 +560,15 @@ test("texture downsizing waits for stability and a renewed large viewport cancel
 });
 
 test("podcast pause and owner release cancel playback while mixer connection is pending", async (t) => {
+  const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: { location: { href: "http://localhost/" } },
+  });
+  t.after(() => {
+    if (windowDescriptor) Object.defineProperty(globalThis, "window", windowDescriptor);
+    else delete (globalThis as any).window;
+  });
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, "Audio");
   class Media extends EventTarget {
     dataset: Record<string, string> = {};

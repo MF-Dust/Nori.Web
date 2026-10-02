@@ -41,6 +41,7 @@ from backend.core.guest_session import (
     guest_session,
 )
 from backend.core.protocol import error_message
+from backend.core.request_origin import is_same_origin_request
 from backend.services.ai_runtime_config import (
     clear_runtime_ai_config,
     install_runtime_ai_config,
@@ -619,6 +620,8 @@ class NoriArcadeSession(DurableObject):
         world.media_clients = media_clients
 
     async def fetch(self, request):
+        if not is_same_origin_request(request.headers.get("origin"), request.url):
+            return Response("origin_forbidden", status=403)
         _apply_runtime_bindings(self.env)
         if not _is_websocket(request):
             return Response("WebSocket upgrade required", status=426)
@@ -784,8 +787,10 @@ class Default(WorkerEntrypoint):
     """Route API, R2 assets, and frontend traffic to the correct service."""
 
     async def fetch(self, request):
-        _apply_runtime_bindings(self.env)
         path = urlsplit(request.url).path
+        if path.startswith("/api/") and not is_same_origin_request(request.headers.get("origin"), request.url):
+            return Response("origin_forbidden", status=403)
+        _apply_runtime_bindings(self.env)
 
         if path == _R2_MODEL_PATH:
             return await _serve_r2_model(self.env, request)

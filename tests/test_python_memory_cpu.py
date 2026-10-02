@@ -153,8 +153,42 @@ async def _test_world_hot_paths() -> None:
     assert world.world_payload()["mountedCartridges"][0]["runtimes"][0]["headVersion"] == 200
 
 
+async def _test_fact_batch() -> None:
+    from backend.services.event_dispatcher import EventDispatcher
+
+    world = WorldSession("batch-test")
+    dispatcher = EventDispatcher(world)
+    manifold = world.cartridges["manifold.web"]
+    broadcasts = []
+
+    async def capture(messages):
+        broadcasts.append(messages)
+
+    world.broadcast = capture
+    facts = [f"batch.probe.{index}" for index in range(100)]
+    event = {"channel": "manifold.dev.jump.request", "payload": {"facts": facts + facts[:1]}}
+    response = await dispatcher.handle_event(event)
+    assert response["payload"] == {"ok": True, "count": 100, "committed": True}
+    await asyncio.gather(*world._tasks)
+    assert len(broadcasts) == 1, "a fact batch must enqueue one broadcast, not one full snapshot per fact"
+    assert manifold.head_version == 1 and not manifold.transitions
+    transition = broadcasts[0][0]["transition"]
+    assert [e["factId"] for e in transition["events"] if e["type"] == "factEmitted"] == facts
+    assert len([p for p in transition["patches"] if p["path"] == "/facts"]) == 1
+    assert all(manifold.state["facts"][fact]["id"] == fact for fact in facts)
+    repeated = await dispatcher.handle_event(event)
+    assert repeated["payload"] == {"ok": True, "count": 0, "committed": False}
+    for invalid in (["would.mutate", 1], ["x"] * 1025, ["x" * 257], "not-a-list"):
+        rejected = await dispatcher.handle_event({"channel": "manifold.dev.jump.request", "payload": {"facts": invalid}})
+        assert rejected["payload"]["ok"] is False
+        assert "would.mutate" not in manifold.state["facts"]
+        assert manifold.head_version == 1
+    assert len(broadcasts) == 1
+
+
 def main() -> None:
     asyncio.run(_test_world_hot_paths())
+    asyncio.run(_test_fact_batch())
     _test_snapshot_hot_path()
     _test_live_pack_single_resident_graph()
     _test_cloudflare_hot_path_source()

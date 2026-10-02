@@ -19,7 +19,7 @@
     "frontend:recover:check": "node scripts/verify/verify_frontend_recovery.mjs && node scripts/verify/verify_messenger_markdown_recovery.mjs && node scripts/verify/verify_messenger_surface_recovery.mjs && node scripts/verify/verify_codenames_board_recovery.mjs && node scripts/verify/verify_codenames_footer_recovery.mjs && node scripts/verify/verify_codenames_screen_recovery.mjs && node scripts/verify/verify_codenames_css_ownership.mjs && node scripts/verify/verify_cakeduel_card_recovery.mjs && node scripts/verify/verify_cakeduel_game_recovery.mjs && node scripts/verify/verify_cakeduel_runtime_recovery.mjs && node scripts/verify/verify_cakeduel_transient_recovery.mjs && node scripts/verify/verify_cakeduel_routes_recovery.mjs && npm run frontend:games:test && npm run frontend:suites:test",
     "frontend:typecheck": "tsc -p frontend-src/tsconfig.json --noEmit",
     "test:cartridges": "python tests/test_cartridges.py",
-    "test:backend": "python tests/test_guest_isolation.py && python tests/test_backend_integration.py",
+    "test:backend": "python tests/test_guest_isolation.py && python tests/test_request_origin.py && python tests/test_backend_integration.py",
     "test:virtual_apps": "python tests/test_virtual_apps.py",
     "test:ai": "python tests/test_ai_runtime_settings.py && python tests/test_ai_openai_compat.py",
     "test:tts": "python tests/test_tts_runtime_settings.py",

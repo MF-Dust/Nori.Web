@@ -15,24 +15,18 @@ def create_app(*, include_static: bool = True):
     Worker routing layer, not inside the ASGI application object itself.
     """
     from fastapi import FastAPI
-    from fastapi.middleware.cors import CORSMiddleware
     from fastapi.middleware.gzip import GZipMiddleware
 
     from backend.api import api_router, register_mimetypes, static_router
+    from backend.core.request_origin import SameOriginMiddleware
     from backend.services.ai_event_bridge import install_ai_event_bridge
 
     register_mimetypes()
     install_ai_event_bridge()
 
     application = FastAPI(title="NoriOS Local Compatibility Server", version="2.0.0")
-    application.add_middleware(GZipMiddleware, minimum_size=500)
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=False,
-        allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["*"],
-    )
+    application.add_middleware(GZipMiddleware, minimum_size=500, compresslevel=6)
+    application.add_middleware(SameOriginMiddleware)
     application.include_router(api_router)
     if include_static:
         application.include_router(static_router)

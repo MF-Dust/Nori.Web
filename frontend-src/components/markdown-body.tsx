@@ -53,7 +53,7 @@ function splitAutolinkTrailingPunctuation(value: string): [string, string] {
 
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const token = /(\[([^\]]+)\]\(([^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|(~{1,2})(\S(?:[^~]*?\S)?)\6|\*([^*]+)\*|((?:https?:\/\/|www(?=\.))[-.\w]+[^\s<]*)|(\b[-.\w+]+@[-\w]+(?:\.[-\w]+)+))/gi;
+  const token = /(\[([^\[\]]+)\]\(([^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|(~{1,2})(\S(?:[^~]*?\S)?)\6|\*([^*]+)\*|((?:https?:\/\/|www(?=\.))[-.\w]+[^\s<]*)|(\b[-.\w+]+@[-\w]+(?:\.[-\w]+)+))/gi;
   let cursor = 0;
   let match: RegExpExecArray | null;
   let key = 0;

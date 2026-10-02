@@ -15,6 +15,8 @@ import httpx
 from .tts_runtime_config import get_runtime_tts_config
 
 MAX_AUDIO_BYTES = 8 * 1024 * 1024
+MAX_JSON_BYTES = 2 * MAX_AUDIO_BYTES + 64 * 1024
+MAX_ERROR_BYTES = 64 * 1024
 
 
 class TTSServiceError(RuntimeError):
@@ -124,6 +126,39 @@ class TTSService:
         except Exception as exc:
             raise TTSServiceError(provider, f"语音服务响应无法解析: {type(exc).__name__}") from exc
 
+    async def _bounded_request(
+        self,
+        client: httpx.AsyncClient,
+        method: str,
+        url: str,
+        *,
+        provider: str,
+        max_bytes: int = MAX_AUDIO_BYTES,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        async with client.stream(method, url, **kwargs) as response:
+            limit = max_bytes if response.is_success else MAX_ERROR_BYTES
+            body = bytearray()
+            # aiter_bytes counts decoded bytes (including gzip), not wire bytes.
+            async for chunk in response.aiter_bytes():
+                remaining = limit - len(body)
+                if len(chunk) > remaining:
+                    if response.is_success:
+                        raise TTSServiceError(provider, "语音服务返回的音频过大")
+                    body.extend(chunk[:remaining])
+                    break
+                body.extend(chunk)
+            headers = response.headers.copy()
+            # The body is already decoded; do not decode it a second time.
+            headers.pop("content-encoding", None)
+            headers.pop("content-length", None)
+            return httpx.Response(
+                response.status_code,
+                headers=headers,
+                content=bytes(body),
+                request=response.request,
+            )
+
     async def _post_json(
         self,
         *,
@@ -137,7 +172,11 @@ class TTSService:
         if api_key:
             headers[key_header] = f"Bearer {api_key}" if key_header.lower() == "authorization" else api_key
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=False) as client:
-            response = await client.post(url, headers=headers, json=payload)
+            response = await self._bounded_request(
+                client, "POST", url, provider=provider,
+                max_bytes=MAX_JSON_BYTES if provider in {"minimax", "gemini"} else MAX_AUDIO_BYTES,
+                headers=headers, json=payload,
+            )
         if response.is_success:
             return response
         detail = redact_provider_detail(response.text, api_key)
@@ -201,7 +240,9 @@ class TTSService:
             headers["Authorization"] = f"Bearer {api_key}"
 
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=False) as client:
-            response = await client.post(url, headers=headers, json=payload)
+            response = await self._bounded_request(
+                client, "POST", url, provider=provider, headers=headers, json=payload,
+            )
             if response.is_success and response.content:
                 data = _bounded_audio(response.content, provider)
                 return EncodedSpeech(data, _response_mime(response, "audio/wav"), provider)
@@ -216,7 +257,9 @@ class TTSService:
                     "speed_factor": payload["speed_factor"],
                 }
             )
-            response = await client.get(f"{url}?{query}", headers=headers)
+            response = await self._bounded_request(
+                client, "GET", f"{url}?{query}", provider=provider, headers=headers,
+            )
 
         if not response.is_success:
             raise TTSServiceError(provider, f"GPT-SoVITS 合成失败: HTTP {response.status_code}")

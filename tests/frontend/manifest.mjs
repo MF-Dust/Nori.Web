@@ -15,6 +15,8 @@ export const groups = {
     "tests/frontend/frontend-subscriptions.test.ts",
     "tests/frontend/frontend-browser-extension.test.ts",
     "tests/frontend/frontend-browser-bounty.test.ts",
+    "tests/frontend/frontend-browser-page-runtime.test.ts",
+    "tests/frontend/frontend-markdown-body.test.ts",
   ],
   stories: [
     "tests/frontend/frontend-production-stories.test.ts",

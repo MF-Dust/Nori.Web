@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 from pathlib import Path
 from typing import Any
 
@@ -24,7 +25,9 @@ PORT = int(os.getenv("PORT", "4173"))
 DEBUG = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
 
 # Auth Config
-SECRET_KEY = os.getenv("SECRET_KEY", "nori-os-secret-key-2026")
+SECRET_KEY = os.getenv("SECRET_KEY", "")
+if not SECRET_KEY.strip():
+    SECRET_KEY = secrets.token_urlsafe(32)
 COOKIE_NAME = "arcade-auth_cookie"
 SESSION_COOKIE_NAME = "arcade-auth_session_data"
 
@@ -44,7 +47,6 @@ TTS_ENGINE = os.getenv("TTS_ENGINE", "built-in")  # "built-in", "openai", "edge"
 NORI_DISABLE_LIVE_PACK = os.getenv("NORI_DISABLE_LIVE_PACK", "")
 
 _RUNTIME_BINDINGS = (
-    "SECRET_KEY",
     "OPENAI_API_KEY",
     "OPENAI_BASE_URL",
     "OPENAI_MODEL",
@@ -80,7 +82,13 @@ def apply_runtime_bindings(env: Any) -> None:
     Local Uvicorn behavior is unchanged because this function is only invoked by
     the Cloudflare entrypoint.
     """
+    secret_key = _binding_value(env, "SECRET_KEY")
+    if secret_key is None:
+        secret_key = os.getenv("SECRET_KEY", "")
+    if not secret_key.strip():
+        raise ValueError("Cloudflare requires a nonblank SECRET_KEY binding or environment variable")
     namespace = globals()
+    namespace["SECRET_KEY"] = secret_key
     for name in _RUNTIME_BINDINGS:
         value = _binding_value(env, name)
         if value is not None:

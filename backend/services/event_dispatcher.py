@@ -8,6 +8,7 @@ from pathlib import Path
 import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from ..cartridges.base import CommandRejected
 from ..virtual_apps import live_pack
 from ..virtual_apps.browser import get_browser_page
 from ..virtual_apps.files import get_file_artifacts
@@ -592,17 +593,17 @@ class EventDispatcher:
             )
 
         if channel == "manifold.dev.jump.request":
-            facts = [f for f in (payload.get("facts") or []) if isinstance(f, str)]
-            committed = 0
-            for fact_id in facts:
+            try:
                 commit = self._dispatch_manifold(
-                    {"type": "client.emitFact", "factId": fact_id}
+                    {"type": "client.emitFacts", "factIds": payload.get("facts", [])}
                 )
-                if commit is not None and commit.committed:
-                    committed += 1
+                result = {"ok": True, "count": commit.result["count"] if commit else 0,
+                          "committed": bool(commit and commit.committed)}
+            except CommandRejected as exc:
+                result = {"ok": False, "error": str(exc)}
             return self.build_response(
                 "manifold.dev.jump.response",
-                {"ok": True, "count": committed, "committed": True},
+                result,
                 cartridge_id=cartridge_id,
                 request_id=request_id,
             )

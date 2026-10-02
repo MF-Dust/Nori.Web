@@ -232,7 +232,18 @@ const assetCache = new Map<string, Promise<string | null>>();
 const fontCache = new Map<string, Promise<string | null>>();
 
 function isSafeWebAsset(url: unknown): url is string {
-  return typeof url === "string" && url.startsWith("/webAssets/") && !url.includes("..");
+  if (typeof url !== "string" || !url.startsWith("/webAssets/") || url.includes("..")) return false;
+  try {
+    const base = new URL(window.location.href);
+    const asset = new URL(url, base);
+    // URL normalizes encoded dot segments; reject separators and nested escapes
+    // that a server could decode differently from the browser.
+    return asset.origin === base.origin &&
+      asset.pathname.startsWith("/webAssets/") &&
+      !/\\|%(?:25|2f|5c)/i.test(url.split(/[?#]/, 1)[0]);
+  } catch {
+    return false;
+  }
 }
 
 async function dataUri(url: string, fallbackMime: string): Promise<string | null> {
@@ -255,7 +266,7 @@ export function fetchBrowserAssetData(url: string): Promise<string | null> {
   if (!isSafeWebAsset(url)) return Promise.resolve(null);
   const current = assetCache.get(url);
   if (current) return current;
-  const pending = dataUri(url, "application/octet-stream");
+  const pending = dataUri(new URL(url, window.location.href).href, "application/octet-stream");
   assetCache.set(url, pending);
   void pending.then((value) => {
     if (value === null) assetCache.delete(url);

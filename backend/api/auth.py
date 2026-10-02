@@ -21,7 +21,7 @@ from ..core.guest_session import (
 auth_router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 AUTO_GUEST = auto_guest_enabled()
-DEV_OTP = os.getenv("NORI_DEV_OTP", "123456")
+DEV_OTP = os.getenv("NORI_DEV_OTP", "").strip()
 
 USERS: Dict[str, Dict[str, Any]] = {}
 SESSIONS: Dict[str, Dict[str, Any]] = {}
@@ -79,11 +79,13 @@ async def get_session(request: Request, response: Response):
 @auth_router.post("/email-otp/send-verification-otp")
 @auth_router.post("/send-email-otp")
 async def send_verification_otp(request: Request):
+    if not DEV_OTP:
+        return {"status": False, "code": "OTP_DISABLED", "message": "Development email OTP is disabled"}
     try:
         body = await request.json()
     except Exception:
         body = {}
-    email = body.get("email")
+    email = body.get("email") if isinstance(body, dict) else None
     if not isinstance(email, str) or "@" not in email:
         return {"status": False, "code": "INVALID_EMAIL", "message": "A valid email is required"}
     OTP_STORE[email.strip().lower()] = {"otp": DEV_OTP, "expiresAt": time.time() + 10 * 60}
@@ -97,13 +99,13 @@ async def sign_in_email_otp(request: Request, response: Response):
         body = await request.json()
     except Exception:
         body = {}
-    email = body.get("email")
-    otp = body.get("otp")
+    email = body.get("email") if isinstance(body, dict) else None
+    otp = body.get("otp") if isinstance(body, dict) else None
     if not isinstance(email, str) or "@" not in email or not isinstance(otp, str):
         return {"code": "INVALID_OTP", "message": "Invalid email or OTP"}
     normalized = email.strip().lower()
     stored = OTP_STORE.get(normalized)
-    valid = otp == DEV_OTP or (stored is not None and stored["otp"] == otp and stored["expiresAt"] >= time.time())
+    valid = DEV_OTP and stored is not None and stored["otp"] == otp and stored["expiresAt"] > time.time()
     if not valid:
         return {"code": "INVALID_OTP", "message": "Invalid OTP"}
     user = next((entry for entry in USERS.values() if entry["email"] == normalized), None)
@@ -125,7 +127,8 @@ async def sign_in_email_otp(request: Request, response: Response):
 
 
 @auth_router.post("/sign-out")
-async def sign_out(response: Response):
+async def sign_out(request: Request, response: Response):
+    SESSIONS.pop(cookie_token(request.headers), None)
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["set-better-auth-cookie"] = f"{SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax"
     response.delete_cookie(SESSION_COOKIE)
