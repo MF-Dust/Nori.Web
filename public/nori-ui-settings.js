@@ -279,6 +279,11 @@
       } catch {
         // The next reset still uses the previous value if storage is blocked.
       }
+      document.cookie =
+        "nori_full_unlock=" + (archiveToggle.checked ? "1" : "0") + "; path=/; SameSite=Lax";
+      // The server reads the preference on the arcade handshake, so reconnect
+      // before the user resets the system.
+      window.location.reload();
     });
     panel.refresh = () => {
       toggle.checked = loadSettings().hideGui;

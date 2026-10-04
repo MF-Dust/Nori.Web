@@ -81,6 +81,9 @@ jobs:
       - name: Verify browser runtime shim JavaScript
         run: node --check public/nori-runtime-shims.js
 
+      - name: Verify legacy story-mode cookie
+        run: uv run python tests/test_story_mode_cookie.py
+
       - name: Verify frontend recovery tool JavaScript
         run: |
           node --check scripts/recovery/recover_frontend.mjs

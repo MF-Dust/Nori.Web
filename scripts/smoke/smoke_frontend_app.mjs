@@ -131,6 +131,16 @@ try {
       }
     };
   });
+  // Source worlds default to the fresh story since the story-progression work.
+  // This smoke covers the finished archive desktop, so opt into it unless a
+  // later step already chose a mode in this browser.
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("unlock-settings"))
+      localStorage.setItem(
+        "unlock-settings",
+        JSON.stringify({ state: { fullUnlock: true }, version: 2 }),
+      );
+  });
   await page.addInitScript(installAudioProbe);
   await page.goto("http://127.0.0.1:47174", { waitUntil: "domcontentloaded" });
   console.log("Page loaded");

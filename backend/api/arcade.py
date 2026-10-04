@@ -8,6 +8,7 @@ from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ..core.protocol import error_message
+from ..core.story_mode import apply_story_mode_default, story_mode_preference
 from ..services.ai_runtime_config import clear_runtime_ai_config, install_runtime_ai_config
 from ..services.tts_runtime_config import clear_runtime_tts_config, install_runtime_tts_config
 from ..session.manager import get_world_manager
@@ -77,6 +78,9 @@ async def arcade_websocket(websocket: WebSocket) -> None:
     if not await live_pack.ensure_runtime_pack():
         print("[arcade] live-world archive unavailable; continuing with mock data")
 
+    # The historical client stores its story/archive choice in a cookie
+    # because it cannot send fullUnlock itself.
+    story_preference = story_mode_preference(websocket.headers)
     world = await manager.get_world(user_id)
     await world.add_client(websocket)
     try:
@@ -90,6 +94,7 @@ async def arcade_websocket(websocket: WebSocket) -> None:
             if not isinstance(message, dict):
                 await world.send_direct(websocket, error_message("bad_request", "message must be an object"))
                 continue
+            apply_story_mode_default(message, story_preference)
             try:
                 _install_dispatch_ai_config(message)
                 _install_dispatch_tts_config(message)

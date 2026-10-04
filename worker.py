@@ -42,6 +42,7 @@ from backend.core.guest_session import (
 )
 from backend.core.protocol import error_message
 from backend.core.request_origin import is_same_origin_request
+from backend.core.story_mode import apply_story_mode_default, story_mode_preference
 from backend.services.ai_runtime_config import (
     clear_runtime_ai_config,
     install_runtime_ai_config,
@@ -645,6 +646,9 @@ class NoriArcadeSession(DurableObject):
             "userId": user_id,
             "role": role,
         }
+        story_preference = story_mode_preference(request.headers)
+        if story_preference is not None:
+            attachment["fullUnlock"] = story_preference
         _save_socket_attachment(server, attachment)
         self.ctx.acceptWebSocket(server)
 
@@ -718,10 +722,16 @@ class NoriArcadeSession(DurableObject):
             return
 
         attachment = await self._capture_ai_settings(websocket, attachment, message)
+        stored_preference = attachment.get("fullUnlock")
+        apply_story_mode_default(
+            message, stored_preference if isinstance(stored_preference, bool) else None
+        )
 
         if message.get("type") == "reset_my_web_world":
             locale = message.get("locale") if isinstance(message.get("locale"), str) else None
-            world = await self.manager.reset_world(user_id, locale)
+            world = await self.manager.reset_world(
+                user_id, locale, full_unlock=message.get("fullUnlock") is not False
+            )
             self._refresh_world_clients(world)
             await self._persist_world(world, force=True)
             await world.send_direct(
