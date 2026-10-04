@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import secrets
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +27,10 @@ DEBUG = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
 
 # Auth Config
 SECRET_KEY = os.getenv("SECRET_KEY", "")
-if not SECRET_KEY.strip():
+# Cloudflare Python Workers forbid randomness while the Worker starts, and
+# their SECRET_KEY comes from apply_runtime_bindings() on the first request,
+# which rejects a blank key. Only local servers get an import-time fallback.
+if not SECRET_KEY.strip() and sys.platform != "emscripten":
     SECRET_KEY = secrets.token_urlsafe(32)
 COOKIE_NAME = "arcade-auth_cookie"
 SESSION_COOKIE_NAME = "arcade-auth_session_data"
