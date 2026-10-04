@@ -35,7 +35,7 @@ async function main() {
   const interactions = await read("frontend-src/apps/messenger-interactions.ts");
   const productionIcons = await read("frontend-src/apps/production-icons.tsx");
   const storyClock = await read("frontend-src/apps/signal-story-clock.ts");
-  const backend = await read("backend/services/event_dispatcher.py");
+  const backend = await read("rust/crates/nori-core/src/events.rs");
   const sourceApp = await read("frontend-src/source-app.tsx");
 
   const normalAppImport = messengerChunk.source.match(/from "\.\/(NormalApp-[^"]+\.js)"/);
@@ -350,10 +350,10 @@ async function main() {
     assert(storyClock.includes(marker), `Signal story-clock recovery missing marker: ${marker}`);
   }
   assert(
-    backend.includes('if command == "signal.read":') &&
+    backend.includes('"signal.read" => {') &&
       backend.includes('"source": "signal.read"') &&
-      backend.includes('reread.get("read_fact")'),
-    "local backend does not persist shipped Signal read/reread facts",
+      /let fact = reread\s*\.and_then\(\|r\| r\.get\("read_fact"\)\)/.test(backend),
+    "Rust backend does not persist shipped Signal read/reread facts",
   );
   assert(
     sourceApp.includes("signalConversationUnreadCount") &&
