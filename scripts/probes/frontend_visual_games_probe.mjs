@@ -77,7 +77,6 @@ async function captureTarget({ label, outDir, historical, backendPort, previewPo
       env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
       stdio: ["ignore", "pipe", "pipe"],
       readyTimeoutMs: 15_000,
-      pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
     });
     backendLog = backend.log();
     const backendOrigin = backend.origin;

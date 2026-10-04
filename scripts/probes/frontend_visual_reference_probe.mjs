@@ -480,7 +480,6 @@ try {
     env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
     stdio: ["ignore", "pipe", "pipe"],
     readyTimeoutMs: 15_000,
-    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
   });
   referenceServer = await startPreview(publicDir, referencePort);
   candidateServer = await startPreview(candidateDir, candidatePort);

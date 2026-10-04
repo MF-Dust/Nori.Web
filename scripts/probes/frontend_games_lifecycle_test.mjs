@@ -15,7 +15,7 @@ import zhCN from "../../frontend-src/i18n/zh-CN.ts";
  * apps (frontend-src/apps/production-catalog.ts) — there is no aggregate
  * "games" launcher. Each is driven through
  * start -> play -> close -> reopen -> reconnect against the source app served by
- * vite plus the local python backend, in en-US and zh-CN, plus a reduced-motion
+ * vite plus the local Rust backend, in en-US and zh-CN, plus a reduced-motion
  * pass. Labels are resolved from the real dictionaries so the two locale runs
  * assert the strings the source actually renders.
  */
@@ -43,7 +43,6 @@ function startBackend() {
     env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
     stdio: ["ignore", "pipe", "pipe"],
     readyTimeoutMs: 15_000,
-    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
   });
 }
 

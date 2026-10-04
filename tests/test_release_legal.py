@@ -1,7 +1,6 @@
 """Focused checks for source/notice delivery (no compiler or network required)."""
 from __future__ import annotations
 
-import hashlib
 import io
 import json
 import subprocess
@@ -9,7 +8,6 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from scripts import release_legal as legal
@@ -53,9 +51,9 @@ class ReleaseLegalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             subprocess.run(["git", "init", "-q", str(root)], check=True)
-            (root / "server.py").write_text("old", encoding="utf-8")
-            subprocess.run(["git", "add", "server.py"], cwd=root, check=True)
-            (root / "server.py").write_text("actual build source", encoding="utf-8")
+            (root / "main.rs").write_text("old", encoding="utf-8")
+            subprocess.run(["git", "add", "main.rs"], cwd=root, check=True)
+            (root / "main.rs").write_text("actual build source", encoding="utf-8")
             (root / "uv.lock").write_text("generated lock", encoding="utf-8")
             (root / "rust").mkdir()
             (root / "rust/Cargo.lock").write_text("generated Cargo lock", encoding="utf-8")
@@ -63,77 +61,85 @@ class ReleaseLegalTests(unittest.TestCase):
                 archive = Path(out) / "project.zip"
                 legal.archive_project(archive, root)
                 with zipfile.ZipFile(archive) as source:
-                    self.assertEqual(source.read("server.py"), b"actual build source")
+                    self.assertEqual(source.read("main.rs"), b"actual build source")
                     self.assertIn("uv.lock", source.namelist())
                     self.assertIn("rust/Cargo.lock", source.namelist())
-                (root / "forgotten.py").write_text("untracked", encoding="utf-8")
+                (root / "forgotten.rs").write_text("untracked", encoding="utf-8")
                 with self.assertRaisesRegex(RuntimeError, "git add"):
                     legal.archive_project(archive, root)
                 legal.archive_project(archive, root, allow_untracked=True)
                 with zipfile.ZipFile(archive) as source:
-                    self.assertEqual(source.read("forgotten.py"), b"untracked")
+                    self.assertEqual(source.read("forgotten.rs"), b"untracked")
 
-    def test_dependency_graph_honors_extras_and_platform_markers(self):
-        deps = {
-            "service": SimpleNamespace(version="1.0", requires=['transport[standard]>=1', 'other; sys_platform == "never"']),
-            "transport": SimpleNamespace(version="1.0", requires=['extra-lib; extra == "standard"']),
-            "extra-lib": SimpleNamespace(version="1.0", requires=[]),
-        }
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            (root / "pyproject.toml").write_text('[project]\ndependencies=["service"]\n[project.optional-dependencies]\nlocal=[]\n')
-            with patch.object(legal.metadata, "distribution", side_effect=deps.__getitem__):
-                result = legal.runtime_distributions(root)
-            self.assertEqual(len(result), 3)
-
-    def test_sdist_is_exact_version_and_checksum_verified(self):
-        dist = SimpleNamespace(metadata={"Name": "chess"}, version="1.11.2")
-        data = b"source archive bytes"
-        entry = {"packagetype": "sdist", "filename": "chess-1.11.2.tar.gz", "url": "https://files.pythonhosted.org/chess.tar.gz", "digests": {"sha256": hashlib.sha256(data).hexdigest()}}
-        with tempfile.TemporaryDirectory() as tmp:
-            with patch.object(legal, "urlopen", side_effect=[io.BytesIO(json.dumps({"urls": [entry]}).encode()), io.BytesIO(data)]) as request:
-                record = legal.download_sdist(dist, Path(tmp))
-                self.assertIn("/chess/1.11.2/json", request.call_args_list[0].args[0])
-                self.assertEqual(record["sha256"], hashlib.sha256(data).hexdigest())
-                self.assertEqual((Path(tmp) / record["file"]).read_bytes(), data)
-            with patch.object(legal, "urlopen", side_effect=[io.BytesIO(json.dumps({"urls": [entry]}).encode()), io.BytesIO(b"wrong")]):
-                with self.assertRaisesRegex(RuntimeError, "checksum"):
-                    legal.download_sdist(dist, Path(tmp))
-
-    def test_bundle_contains_license_source_and_version_records(self):
+    def test_rust_bundle_contains_license_source_and_version_records(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "repo"
             (root / "public/legal").mkdir(parents=True)
             for name in legal.NOTICE_FILES:
                 (root / name).write_text("license text", encoding="utf-8")
                 (root / "public/legal" / name).write_text("license text", encoding="utf-8")
-            (root / "README.md").write_text("readme", encoding="utf-8")
+            (root / "rust").mkdir()
+            registry = "registry+https://github.com/rust-lang/crates.io-index"
+            (root / "rust/Cargo.lock").write_text(
+                '[[package]]\nname = "dependency"\nversion = "1.2.3"\n'
+                f'source = "{registry}"\nchecksum = "pinned-checksum"\n',
+                encoding="utf-8",
+            )
             subprocess.run(["git", "init", "-q", str(root)], check=True)
             subprocess.run(["git", "add", "."], cwd=root, check=True)
-            license_file = Path("chess.dist-info/licenses/LICENSE.txt")
-            (root / license_file).parent.mkdir(parents=True)
-            (root / license_file).write_text("GNU GENERAL PUBLIC LICENSE", encoding="utf-8")
-            subprocess.run(["git", "add", "."], cwd=root, check=True)
-            dist = SimpleNamespace(metadata={"Name": "chess"}, version="1.11.2", files=[license_file], locate_file=lambda p: root / p, read_text=lambda _: "Name: chess")
-            data = b"source"
-            entry = {"packagetype": "sdist", "filename": "chess.tar.gz", "url": "https://example.test/source", "digests": {"sha256": hashlib.sha256(data).hexdigest()}}
+            crate = Path(tmp) / "dependency"
+            (crate / "src").mkdir(parents=True)
+            (crate / "LICENSE").write_text("MIT license text", encoding="utf-8")
+            (crate / "src/lib.rs").write_text("pub fn example() {}", encoding="utf-8")
+            package = {"name": "dependency", "version": "1.2.3", "license": "MIT", "source": registry}
             destination = Path(tmp) / "bundle"
-            with patch.object(legal, "runtime_distributions", return_value=[dist]), patch.object(legal, "urlopen", side_effect=[io.BytesIO(json.dumps({"urls": [entry]}).encode()), io.BytesIO(data)]):
-                legal.prepare_legal_bundle(destination, root)
-            self.assertTrue((destination / "source/project.zip").is_file())
-            self.assertEqual((destination / "source/dependencies/chess.tar.gz").read_bytes(), data)
-            self.assertIn("chess==1.11.2", (destination / "source/requirements-runtime.txt").read_text())
-            self.assertTrue((destination / "licenses/PYTHON-LICENSE.txt").is_file())
-            self.assertTrue(list((destination / "licenses/python").rglob("LICENSE.txt")))
-            self.assertEqual(json.loads((destination / "source/dependencies.json").read_text())[0]["version"], "1.11.2")
-            from scripts import build_nuitka
-            release = Path(tmp) / "release"
-            release.mkdir()
-            with patch.object(build_nuitka, "ROOT", root), patch.object(build_nuitka, "BUILD_ROOT", Path(tmp)):
-                destination.rename(Path(tmp) / "legal")
-                build_nuitka._copy_release_metadata(release)
-            self.assertTrue((release / "source/project.zip").is_file())
-            self.assertTrue((release / "COPYRIGHT.md").is_file())
+            with (
+                patch.object(legal, "_rust_linked_packages", return_value=({"name": "nori-local", "version": "2.0.0"}, {}, [package])),
+                patch.object(legal, "_vendor_directories", return_value={("dependency", "1.2.3"): crate}),
+                patch.object(legal, "subprocess", wraps=subprocess) as commands,
+            ):
+                commands.run.return_value = subprocess.CompletedProcess(["cargo", "vendor"], 0)
+                records = legal.prepare_rust_legal_bundle(destination, root=root, target_triple="test-target")
+            with zipfile.ZipFile(destination / "source/project.zip") as source:
+                self.assertIn("rust/Cargo.lock", source.namelist())
+            with zipfile.ZipFile(destination / "source/rust-vendor.zip") as source:
+                self.assertEqual(source.read("vendor/dependency/src/lib.rs"), b"pub fn example() {}")
+            self.assertEqual((destination / "legal/licenses/dependency-1.2.3/LICENSE").read_text(), "MIT license text")
+            self.assertEqual(json.loads((destination / "source/dependencies.json").read_text()), records)
+            self.assertEqual(records[0]["version"], "1.2.3")
+            self.assertEqual(records[0]["checksum"], "pinned-checksum")
+            self.assertIn("test-target", (destination / "RUST-LICENSE-SUMMARY.txt").read_text())
+            self.assertTrue((destination / "COPYRIGHT.md").is_file())
+
+    def test_legacy_build_command_delegates_to_rust(self):
+        from scripts import build_nuitka, build_release
+        release = Path("build/release/Nori.Web-test")
+        for arguments in ([], ["--no-clean"], ["--allow-untracked"], ["--no-clean", "--allow-untracked"]):
+            with self.subTest(arguments=arguments), patch.object(build_release, "build", return_value=release) as build:
+                with patch("sys.argv", ["build_nuitka.py", *arguments]), patch("sys.stderr", new=io.StringIO()) as stderr:
+                    build_nuitka.main()
+                build.assert_called_once_with(allow_untracked="--allow-untracked" in arguments)
+                self.assertIn("now uses Rust", stderr.getvalue())
+                self.assertEqual("--no-clean is obsolete" in stderr.getvalue(), "--no-clean" in arguments)
+        with patch.object(build_release, "build", return_value=release), patch("sys.stderr", new=io.StringIO()):
+            self.assertEqual(build_nuitka.build(), release)
+
+    def test_legacy_smoke_command_delegates_to_rust(self):
+        from scripts import smoke_nuitka, smoke_release
+        arguments = ["smoke_nuitka.py", "build/release/Nori.Web-test"]
+        with patch.object(smoke_release, "main") as smoke, patch("sys.argv", arguments):
+            with patch("sys.stderr", new=io.StringIO()) as stderr:
+                smoke_nuitka.main()
+            smoke.assert_called_once_with()
+            self.assertIn("now uses Rust", stderr.getvalue())
+
+    def test_smoke_resolves_relative_release_directory(self):
+        from scripts import smoke_release
+        with tempfile.TemporaryDirectory(dir=".") as tmp:
+            release_dir = Path(tmp)
+            binary = release_dir / ("Nori.Web.exe" if smoke_release.sys.platform == "win32" else "Nori.Web")
+            binary.touch()
+            self.assertEqual(smoke_release._find_executable(release_dir), binary.resolve())
 
     def test_browser_notices_and_font_licenses_ship_together(self):
         import re

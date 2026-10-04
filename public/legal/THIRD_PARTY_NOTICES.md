@@ -2,12 +2,12 @@
 
 本文件及 `public/legal/` 随网页和桌面包交付。它们记录许可证及来源，不是对整个分发包的权利清除证明。自有代码的 GPL 范围见 [COPYRIGHT.md](COPYRIGHT.md)。
 
-## Python 桌面运行时
+## Rust 桌面运行时
 
-- **python-chess / chess** — Niklas Fiekas and contributors，GPL-3.0-or-later；上游 https://github.com/niklasf/python-chess 。`backend/cartridges/chess.py` 直接使用 `chess`。
-- 桌面包 `source/dependencies/` 提供构建环境中实际版本的 Python 运行依赖源码归档；`source/requirements-runtime.txt` 记录版本，`source/dependencies.json` 记录上游下载地址和 SHA-256。
-- `licenses/python/` 保留各依赖发行包内的许可证、NOTICE、AUTHORS 等文件与包元数据；`licenses/PYTHON-LICENSE.txt` 保留构建时 Python 的许可证。
-- `source/project.zip` 包含本次构建使用的仓库工作树文件（不是只指向仓库首页），包括构建脚本；重建方法见包内 `source/README.md`。
+- 本地可执行文件由 `nori-local` 构建，不包含 Python 解释器或 Python 运行依赖。实际链接的主机目标 normal 依赖见 `source/dependencies.json`，记录 crate 名称、精确版本、SPDX 表达式、仓库和校验值。
+- **shakmaty** — Niklas Fiekas and contributors，GPL-3.0-or-later；上游 https://github.com/niklasf/shakmaty 。Rust 棋类卡带使用该库；包内许可证摘要记录对应版本及许可证文本补充说明。
+- `source/rust-vendor.zip` 提供链接依赖的精确 vendor 源码；`legal/licenses/<crate>-<version>/` 保留许可证及 NOTICE 文件，`RUST-LICENSE-SUMMARY.txt` 记录许可检查结果。
+- `source/project.zip` 包含本次构建使用的仓库工作树文件（不是只指向仓库首页），包括构建脚本；重建方法见包内 `source/README.md` 和 [docs/LOCAL_RELEASE.md](docs/LOCAL_RELEASE.md)。
 - 分发包含 GPL 组件的编译后端时，应保留相应 GPL 许可证及对应源码交付。单纯通过网络运行 GPL 服务不等同于分发二进制；发送桌面包则涉及分发义务。
 
 ## JavaScript / WebAssembly
@@ -39,6 +39,6 @@ Core 文件中的 Live2D 版权及链接应保留；本声明不提供 SDK、模
 ## 更新与发行
 
 - `LICENSE`、`COPYRIGHT.md`、本文件和 `public/legal/` 均应随发行包保留。
-- Nuitka 构建脚本交付实际 Python 依赖许可证及源码；若源码下载或法律文件收集失败，构建报错，不把缺文件的目录标记为成功发行包。
+- Rust 构建脚本交付实际链接 crate 的许可证及源码；若源码收集或许可证检查失败，构建报错，不把缺文件的目录标记为成功发行包。旧 Nuitka 命令名称只转发到 Rust 流程。
 - 收集脚本只处理标准上游依赖。若修改了依赖、加入了额外原生库或替换了资源，应交付对应修改源码并更新声明，不能只复用上游原版源码。
 - 增加这些文件并不意味着原站素材、历史前端及 Live2D 的许可问题已解决。

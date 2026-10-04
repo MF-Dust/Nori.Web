@@ -27,6 +27,7 @@ def _find_executable(release_dir: Path | None = None) -> Path:
         if len(candidates) != 1:
             raise RuntimeError(f"Expected one Rust release directory under {RELEASE_ROOT}, found {candidates}")
         release_dir = candidates[0]
+    release_dir = release_dir.resolve()
     binary = release_dir / ("Nori.Web.exe" if sys.platform == "win32" else "Nori.Web")
     if not binary.is_file():
         raise RuntimeError(f"Packaged executable not found: {binary}")

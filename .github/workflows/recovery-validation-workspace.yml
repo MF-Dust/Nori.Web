@@ -22,14 +22,16 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - uses: actions/setup-python@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
         with:
-          python-version: '3.12'
-      - name: Prepare browser and offline backend dependencies
+          workspaces: rust -> target
+      - name: Prepare browser and offline Rust backend
         run: |
           npx playwright install chromium
-          mkdir -p /tmp/recovery-validation/python-wheels
-          python -m pip download --dest /tmp/recovery-validation/python-wheels 'fastapi>=0.115' 'httpx>=0.27' 'python-chess>=1.999' 'uvicorn[standard]>=0.30' 'websockets>=13'
+          cargo build --locked --release -p nori-local --manifest-path rust/Cargo.toml
+          mkdir -p /tmp/recovery-validation
+          tar -czf /tmp/recovery-validation/backend.tar.gz rust/target/release/nori-web
       - name: Resolve cinematic animation dependencies
         run: npm install --no-audit --no-fund --save-exact motion@12.23.24 gsap@3.15.0
       - name: Package tracked source and locked frontend dependencies
@@ -56,6 +58,6 @@ jobs:
           name: recovery-browser-backend-${{ github.event.pull_request.head.sha }}
           path: |
             /tmp/recovery-validation/browsers.tar.gz
-            /tmp/recovery-validation/python-wheels/
+            /tmp/recovery-validation/backend.tar.gz
           retention-days: 1
           if-no-files-found: error

@@ -1,13 +1,8 @@
 // Browser-level smoke test: the restored public frontend reaches the local
 // ticket endpoint and opens both verified Arcade sockets without page errors.
 import assert from "node:assert/strict";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
 import { chromium } from "playwright";
 import { startBackend } from "../scripts/lib/backend_launch.mjs";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const serverPy = path.resolve(__dirname, "../server.py");
 
 const port = Number(process.env.NORI_E2E_PORT || 4183);
 const base = `http://127.0.0.1:${port}`;
@@ -15,8 +10,6 @@ const server = await startBackend({
   port,
   stdio: "ignore",
   readyTimeoutMs: 10_000,
-  pythonCommand: process.env.PYTHON || "python",
-  pythonArgs: [serverPy],
 });
 let browser;
 try {

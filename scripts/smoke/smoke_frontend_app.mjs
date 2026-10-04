@@ -35,7 +35,6 @@ try {
     env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
     stdio: ["ignore", "pipe", "pipe"],
     readyTimeoutMs: (isCI ? 120 : 100) * 100,
-    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
   });
   vite = await createServer({
     configFile: "frontend-src/app.vite.config.ts",

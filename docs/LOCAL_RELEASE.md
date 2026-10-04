@@ -4,10 +4,9 @@
 
 ## 本地构建、运行与验证
 
-需安装 Python 3.13、Rust stable（至少 1.98）和 Cargo；Python 构建/测试脚本需要 `packaging`。所有将进入正式发行包的源码（尤其是 `rust/` 和 `rust/Cargo.lock`）必须先提交或加入 Git 跟踪。默认构建会拒绝未跟踪源码，只允许未跟踪的 `uv.lock` 和 `rust/Cargo.lock`。
+需安装 Python 3.13、Rust stable（至少 1.98）和 Cargo；Python 仅运行标准库构建/测试辅助脚本，无需安装额外包。所有将进入正式发行包的源码（尤其是 `rust/` 和 `rust/Cargo.lock`）必须先提交或加入 Git 跟踪。默认构建会拒绝未跟踪源码，只允许未跟踪的 `uv.lock` 和 `rust/Cargo.lock`。
 
 ```bash
-python -m pip install 'packaging>=24'
 python -m unittest tests.test_release_legal
 cargo test --locked -p nori-core -p nori-local --manifest-path rust/Cargo.toml
 python scripts/build_release.py
@@ -24,6 +23,10 @@ python scripts/smoke_release.py
 该选项会把 Git 未跟踪的非忽略文件也放入 `source/project.zip`，并在 `BUILD_INFO.txt` 中标为 **DEVELOPMENT ONLY**。不要用它生成正式发行物；检查归档内容并提交所有发布源码后，再用默认命令构建。
 
 产物位于 `build/release/Nori.Web-<system>-<architecture>/`。启动目录中的 `Nori.Web` / `Nori.Web.exe`，然后访问 `http://127.0.0.1:4173/`。服务支持 `HOST`、`PORT`、`NORI_DISABLE_LIVE_PACK`、`NORI_PUBLIC_DIR` 和 `NORI_DATA_DIR` 环境变量。构建后 `smoke_release.py` 会用空闲端口启动程序，检查 API、网页、非官方提示、法律页面、源码/许可证文件和 Arcade WebSocket 启动行，并在完成后停止服务。
+
+## 旧打包命令兼容
+
+`scripts/build_nuitka.py` 和 `scripts/smoke_nuitka.py` 现在分别调用上述 Rust 构建器和 smoke test，不再使用 Nuitka。旧构建命令支持 `--allow-untracked`；`--no-clean` 仅保留兼容并提示弃用，发行目录始终重建，Cargo 编译缓存仍复用。旧 smoke 命令同样支持指定发行目录。`scripts/nuitka_entry.py` 与旧 Python 后端、测试及启动回退已移除；历史实现可从 Git 记录恢复。
 
 ## 发行目录和依赖解析
 

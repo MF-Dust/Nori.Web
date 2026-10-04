@@ -12,7 +12,6 @@ const backend = await startBackend({
   env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
   stdio: "ignore",
   readyTimeoutMs: 10_000,
-  pythonCommand: process.env.PYTHON ?? "python",
 });
 let vite, browser;
 try {

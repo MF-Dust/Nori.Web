@@ -18,7 +18,6 @@ try {
     env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
     stdio: ["ignore", "pipe", "pipe"],
     readyTimeoutMs: 15_000,
-    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
   });
   server = await preview({ configFile: false, root: process.cwd(), build: { outDir: resolve(".artifacts/build/app/cutover-candidate") }, preview: {
     host: "127.0.0.1", port: 47178, strictPort: true, proxy: { "/api": { target: backendOrigin, ws: true } },

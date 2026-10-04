@@ -105,7 +105,6 @@ async function main() {
     env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
     stdio: ["ignore", "pipe", "pipe"],
     readyTimeoutMs: 10_000,
-    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
   });
   const backendOrigin = backend.origin;
   process.env.NORI_BACKEND_ORIGIN = backendOrigin;

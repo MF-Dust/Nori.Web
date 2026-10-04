@@ -9,7 +9,7 @@ Guest cookies and Arcade tickets use `SECRET_KEY`. The former public fallback
 key must not be used: anyone who knows a signing key can forge identities.
 
 For local development, an absent, empty, or whitespace-only `SECRET_KEY` gets a
-fresh `secrets.token_urlsafe(32)` key when configuration loads. This key is not
+fresh cryptographically random key when configuration loads. This key is not
 persisted. Restarting the process invalidates its signed cookies and tickets;
 independently started processes will not share identities. To retain identities
 across restarts or share them across processes, securely provision the same
@@ -38,8 +38,8 @@ expired codes, and consumes a successful code once. There is no default
 `123456` bypass. Users, OTPs, and authenticated sessions are process-local memory,
 not durable or shared across Cloudflare isolates.
 
-Signing out removes the presented authenticated token from the local `SESSIONS`
-store and clears the browser cookie. It does not revoke stateless guest cookies
+Signing out removes the presented authenticated token from the process-local
+session store and clears the browser cookie. It does not revoke stateless guest cookies
 or already issued Arcade tickets; those remain governed by their expiry and
 signing key. Automatic guest access can create a new guest after logout.
 
@@ -83,10 +83,9 @@ rebuilt or switched over by this audit.
 
 ## Regression checks
 
-- `npm run test:backend`: key configuration, OTP lifecycle/logout, guest isolation,
-  HTTP and WebSocket origins, and local/edge API behavior.
-- `npm run test:tts`: offline provider protocol and streamed-response limits.
-- `npm run test:perf`: batch broadcasts, persistence, and static delivery.
+- `npm run test:rust`: Rust core, local service, and Worker regressions, including
+  authentication, guest isolation, request origins, providers, persistence, and
+  static delivery. The retired Python runtime tests are available in Git history.
 - `npm run frontend:runtime:test`: recovered frontend bridge and Markdown cases.
 - `npm audit --registry=https://registry.npmjs.org`: JavaScript dependency audit.
   The vulnerable development-only transitive `brace-expansion` was updated from

@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/MF-Dust/Nori.Web"><img src="https://img.shields.io/badge/GitHub-MF--Dust%2FNori.Web-0969da?style=flat-square&logo=github&logoColor=white" alt="GitHub" /></a>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+" /></a>
-  <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
+  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-1.98%2B-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust 1.98+" /></a>
+  <a href="https://github.com/tokio-rs/axum"><img src="https://img.shields.io/badge/axum-local%20server-009688?style=flat-square" alt="axum" /></a>
   <a href="https://workers.cloudflare.com/"><img src="https://img.shields.io/badge/Cloudflare-Workers%20%2B%20DO-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Workers" /></a>
   <a href="https://www.live2d.com/"><img src="https://img.shields.io/badge/Live2D-Cubism%204-FF6F61?style=flat-square" alt="Live2D" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-brightgreen.svg?style=flat-square" alt="Own code: GPL-3.0-or-later" /></a>
@@ -77,7 +77,7 @@ Nori.Web 通过社区维护的兼容后端实现重建了客户端通信所依�
   - 💬 **Chat (深海对白)**：支持分块流式传输、操作确认与音频回传；可无缝接入 OpenAI 兼容接口，无配置时优雅回退至本地规则引擎。
   - 🍰 **Cake Duel (蛋糕对决 · 算力2.64)**：全套基础牌组、回合轮替、虚张声势（Bluff）与质疑机制、蛋糕份额结算与本地 AI 对弈。
   - 🌲 **Codenames (森林词牌 · 算力2.94)**：25 格词牌矩阵、红蓝阵营对抗、队长提示、翻牌逻辑判定与刺客骤死结算。
-  - ♟️ **Chess (国际象棋 · 算力3.12)**：依托 `python-chess` 实现合法着法、将军、将杀、和棋判定、悔棋与本地引擎对战。
+  - ♟️ **Chess (国际象棋 · 算力3.12)**：依托 `shakmaty` 实现合法着法、将军、将杀、和棋判定、悔棋与本地引擎对战。
   - 🎨 **Pictionary (你画我猜 · 算力3.05)**：内置画板笔迹插值播放、词义智能判定与多回合流转控制。
   - 🌐 **Manifold (流形桌面)**：全套桌面事实（Facts）发射、剧情里程碑与系统级应用解锁联动。
 - **Cloudflare Workers 现代无服务器架构**
@@ -150,7 +150,7 @@ flowchart TD
     worldMgr <--> db
 ```
 
-Rust 工作区分为 `nori-core`（协议、卡带与世界状态）、`nori-local`（axum 本地服务）和 `nori-worker`（workers-rs 边缘适配）。Cloudflare 已使用 Rust Worker；Python 后端、`server.py` 和旧 Worker 源码暂留仓库，待下一阶段处理，下文 Python 本地启动方式仍可用。边缘持久化继续使用同一个 `NoriArcadeSession`，世界与公开 AI 设置以 JSON 字符串存于 `nori:world:v1`、`nori:ai-public:v1`。
+Rust 工作区分为 `nori-core`（协议、卡带与世界状态）、`nori-local`（axum 本地服务）和 `nori-worker`（workers-rs 边缘适配）。本地和 Cloudflare 均使用 Rust；旧 Python 后端、测试与启动回退已删除，历史实现可从 Git 记录恢复。边缘持久化继续使用同一个 `NoriArcadeSession`，世界与公开 AI 设置以 JSON 字符串存于 `nori:world:v1`、`nori:ai-public:v1`。
 
 ---
 
@@ -183,8 +183,6 @@ npm start
 
 常用环境变量：`HOST`（默认 `127.0.0.1`）、`PORT`（默认 `4173`）、`SECRET_KEY`（留空时每次启动随机生成）、`NORI_DISABLE_LIVE_PACK=1`（不加载线上世界归档）、`NORI_PUBLIC_DIR` / `NORI_DATA_DIR`（覆盖 `public/` 与 `backend/data/` 位置）。
 
-> 旧的 Python 服务（`python server.py` / `npm run start:py`）仅作为迁移期对照暂留，将在 Rust 版本验收后删除。
-
 启动成功后，在浏览器中访问：👉 **<http://127.0.0.1:4173>**
 
 > 💡 **访客会话与隐私机制**：  
@@ -194,7 +192,7 @@ npm start
 
 ## ☁️ Cloudflare Workers 边缘部署
 
-`wrangler.jsonc` 现在指向 `rust/crates/nori-worker/build/worker/shim.mjs`，构建钩子在 Worker crate 内执行 `worker-build --release`。生产不再使用 `python_workers` 或 pywrangler，旧 Python 运行时仅在仓库中暂留。
+`wrangler.jsonc` 现在指向 `rust/crates/nori-worker/build/worker/shim.mjs`，构建钩子在 Worker crate 内执行 `worker-build --release`。生产不再使用 `python_workers` 或 pywrangler；旧 Python 运行时只保存在 Git 历史中。
 
 ```text
 Browser (观测端)
@@ -257,7 +255,7 @@ python scripts/cloudflare_builds_deploy.py                 # 手动生产发布�
 
 ## ⚙️ 可选配置 (AI 意向对白)
 
-在本地独立运行时，如需启用大语言模型对话，在 `.env` 或系统环境变量中配置 OpenAI 兼容端点：
+在本地独立运行时，如需启用大语言模型对话，在系统环境变量中配置 OpenAI 兼容端点：
 
 ```env
 OPENAI_API_KEY=sk-...
@@ -300,20 +298,21 @@ OPENAI_MODEL=gpt-4o-mini
 ## 🧪 测试与质量门禁
 
 ```bash
-# 1. 验证所有内置卡带状态机核心逻辑
-python tests/test_cartridges.py
+# 1. 验证 Rust 核心、本地 HTTP/WebSocket 服务及 Worker
+cargo test --locked --workspace --manifest-path rust/Cargo.toml
 
-# 2. 验证虚拟应用与 Manifold 事实分发系统
-python tests/test_virtual_apps.py
+# 2. 使用前端 bundle 内置的 Zod parser 校验服务端消息信封格式
+npm run test:schema
 
-# 3. 验证 REST API、Ticket 机制与 WebSocket 媒体流
-python tests/test_backend_integration.py
+# 3. 验证恢复的前端源码
+npm run frontend:test
+npm run frontend:typecheck
 
-# 4. 使用前端 bundle 内置的 Zod parser 校验服务端消息信封格式
-node tests/test_client_schema.mjs
-
-# 5. 执行完整自动化自检套件
+# 4. 执行完整运行时自检（Rust、Schema、前端及浏览器启动）
 npm test
+
+# 5. 验证保留的构建/部署辅助脚本（仅需 Python 标准库）
+python -m unittest discover -s tests -t .
 ```
 
 ---
@@ -323,22 +322,15 @@ npm test
 ```text
 Nori.Web/
 ├── rust/                     # Rust 工作区：nori-core / nori-local / nori-worker
-├── backend/                  # Python 兼容服务端核心（过渡期保留）
-│   ├── api/                  # API 路由层 (Arcade WS, Better-Auth, Convex, System, Static)
-│   ├── cartridges/           # 领域卡带层与注册中心 (Chat, CakeDuel, Chess, Codenames, Manifold, Pictionary)
-│   ├── core/                 # 核心基础设施层 (Config, Media, Protocol)
-│   ├── services/             # 领域应用服务层 (EventDispatcher, LLMService)
-│   ├── session/              # 运行时会话层 (WorldSession, WorldManager)
-│   ├── virtual_apps/         # 虚拟应用服务 (Browser, Files, Mail, Messenger, Terminal)
-│   └── data/                 # 词库、事实链与 live_world_pack.json
+├── backend/data/             # 保留的数据：词库、事实链与 live_world_pack.json
 ├── docs/                     # 逆向协议规范与系统恢复文档
 ├── frontend-src/             # 恢复与重构维护的前端源码层（第三方权利仍需核对）
 ├── public/                   # 前端静态资源 (Live2D 模型、音效、UI 资源与脚本)
-├── tests/                    # 规范化多层级自动化测试套件
-├── server.py                 # 本地 FastAPI / Uvicorn 服务入口
-├── worker.py                 # 旧 Python Worker / Durable Object 源码（暂留）
+├── tests/                    # 前端、浏览器及构建/部署辅助脚本测试
+├── scripts/                  # Rust 发行构建、部署及验证辅助脚本
+├── scraper/                  # 可选的世界归档工具
 ├── wrangler.jsonc            # Rust Cloudflare Worker / 绑定 / 构建配置
-├── pyproject.toml            # 过渡期 Python 后端依赖清单
+├── pyproject.toml            # 辅助脚本元数据及可选归档依赖
 ├── package.json              # 测试与辅助脚本配置
 └── start.bat                 # Windows 一键启动脚本
 ```
@@ -365,7 +357,7 @@ Nori.Web/
 
 **代码许可与素材权利分别处理**：维护者有权授权的自有代码采用 [GPL-3.0-or-later](LICENSE)，具体范围及排除项见 [COPYRIGHT.md](COPYRIGHT.md)。字体、开源依赖、Live2D 及历史前端说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。GPL 声明不意味着原站代码、角色、剧情和素材已经获准再分发。
 
-**桌面包交付**：Nuitka 发行目录包含 `source/`（本次构建源码和实际版本的 Python 依赖源码）、`licenses/` 与网页可访问的 `/legal/index.html`。构建及再分发要求见 [docs/LOCAL_NUITKA.md](docs/LOCAL_NUITKA.md)。
+**桌面包交付**：Rust 发行目录包含 `source/`（本次构建源码和精确版本的 Rust 依赖源码）、`legal/licenses/`、`RUST-LICENSE-SUMMARY.txt` 与网页可访问的 `/legal/index.html`。构建及再分发要求见 [docs/LOCAL_RELEASE.md](docs/LOCAL_RELEASE.md)；旧 Nuitka 脚本名称仅保留为 Rust 兼容入口。
 
 0. **数据版权说明**：本仓库包含用于个人离线研究与技术复现的世界存档快照（`backend/data/live_world_pack.json` 及 `public/webAssets/**`），相关剧情文本与美术素材权利归各自权利人所有；公开部署或二次分发前须确认许可，或移除/替换无授权的内容。“个人研究”声明与禁用归档开关都不能替代授权。
 1. **独立实现范畴**：本项目为社区基于公开前端资产与网络逆向协议重构的开源实现，**不包含、不代理、亦不绕过**原官方私有云端特权或未公开数据库。

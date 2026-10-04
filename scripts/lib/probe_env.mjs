@@ -53,7 +53,7 @@ function capture(logFile) {
 }
 
 /**
- * Start the local Python backend on a free port and resolve once it answers.
+ * Start the local Rust backend on a free port and resolve once it answers.
  * The returned `stop` kills the process tree.
  */
 export async function startBackend(options = {}) {
@@ -73,7 +73,6 @@ export async function startBackend(options = {}) {
     stdio: ["ignore", "pipe", "pipe"],
     readyTimeoutMs: options.timeoutMs ?? 20_000,
     onOutput: captureOutput.onOutput,
-    pythonCommand: options.python ?? process.env.NORI_TEST_PYTHON ?? "python",
   });
   return { port, origin: backend.origin, log: captureOutput.log, stop: backend.stop };
 }

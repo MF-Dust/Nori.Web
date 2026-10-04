@@ -122,7 +122,7 @@ async function waitForReady(url, child, getLog, getSpawnError, timeoutMs) {
   throw new Error(`Timed out waiting for ${url}${lastStatus ? ` (last HTTP status ${lastStatus})` : ""}:\n${getLog()}`);
 }
 
-/** Start the configured backend and wait for its entry-status endpoint. */
+/** Start the Rust backend and wait for its entry-status endpoint. */
 export async function startBackend({
   port,
   host = "127.0.0.1",
@@ -132,15 +132,9 @@ export async function startBackend({
   stdio = ["ignore", "pipe", "pipe"],
   readyTimeoutMs = 60_000,
   onOutput,
-  pythonCommand = process.env.NORI_TEST_PYTHON ?? process.env.PYTHON ?? "python",
-  pythonArgs,
 } = {}) {
   if (port == null) throw new Error("startBackend requires a port");
-  const usePython = process.env.NORI_BACKEND === "python";
-  const command = usePython ? pythonCommand : await resolveBackendBinary();
-  const args = usePython
-    ? pythonArgs ?? ["-m", "uvicorn", "server:app", "--host", host, "--port", String(port)]
-    : [];
+  const command = await resolveBackendBinary();
   const address = host === "0.0.0.0" || host === "::" ? "127.0.0.1" : host;
   const originHost = address.includes(":") ? `[${address}]` : address;
   const origin = `http://${originHost}:${port}`;
@@ -150,7 +144,7 @@ export async function startBackend({
 
   let child;
   try {
-    child = spawn(command, args, {
+    child = spawn(command, [], {
       cwd: repoRoot,
       env: backendEnv,
       stdio,

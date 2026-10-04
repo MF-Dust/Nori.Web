@@ -1,34 +1,15 @@
 [project]
 name = "nori-web"
 version = "2.0.0"
-description = "NoriOS local compatibility backend and Cloudflare Workers deployment"
+description = "Build, deployment and archive helpers for the NoriOS Rust backend"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE", "COPYRIGHT.md", "THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.11"
-dependencies = [
-    "fastapi>=0.115",
-    "httpx>=0.27",
-    "python-chess>=1.999",
-]
+dependencies = []
 
 [project.optional-dependencies]
-local = [
-    "uvicorn[standard]>=0.30",
-    "websockets>=13",
-]
-
-[dependency-groups]
-dev = [
-    "workers-py>=1.16.2",
-    "workers-runtime-sdk>=1.6.8",
-    "uvicorn[standard]>=0.30",
-    "websockets>=13",
-]
-build = [
-    "nuitka==4.2",
-    "packaging>=24",
-]
+scrape = ["websockets>=13"]
 
 [tool.ruff]
 target-version = "py311"
