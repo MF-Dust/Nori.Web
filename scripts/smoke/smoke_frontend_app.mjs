@@ -99,6 +99,7 @@ try {
   // This smoke covers the finished archive desktop, so opt into it unless a
   // later step already chose a mode in this browser.
   await page.addInitScript(() => {
+    if (window !== window.top) return;
     if (!localStorage.getItem("unlock-settings"))
       localStorage.setItem(
         "unlock-settings",
@@ -675,6 +676,13 @@ try {
     artifactRequests: window.sourceSmoke?.sent.filter((item) => item.channel === "manifold.artifacts.request").length,
     chipScans: window.sourceSmoke?.sent.filter((item) => item.channel === "manifold.chip.scan"),
     sockets: window.sourceSmoke?.sockets.map((socket) => ({ url: socket.url, readyState: socket.readyState })),
+    noriStages: [...document.querySelectorAll(".nori-stage")].map((stage) => ({ ...stage.dataset })),
+    noriCanvases: [...document.querySelectorAll(".nori-stage canvas")].map((canvas) => ({
+      data: { ...canvas.dataset }, bounds: canvas.getBoundingClientRect().toJSON(),
+    })),
+    chipTargets: [...document.querySelectorAll(".chip-target")].map((target) => ({
+      id: target.dataset.chipTarget, bounds: target.getBoundingClientRect().toJSON(),
+    })),
   })).catch(() => null);
   console.error("[Source app diagnostics] browser errors:", errors);
   console.error("[Source app diagnostics] WebSocket activity:", JSON.stringify(transport));

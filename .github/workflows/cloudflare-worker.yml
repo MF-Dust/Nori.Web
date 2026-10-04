@@ -23,8 +23,10 @@ jobs:
         run: npm ci
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        # Same toolchain as scripts/cloudflare_builds_deploy.py RUST_TOOLCHAIN.
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.98.0
           targets: wasm32-unknown-unknown
 
       - name: Cache Rust builds

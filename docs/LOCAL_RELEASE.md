@@ -4,7 +4,7 @@
 
 ## 本地构建、运行与验证
 
-需安装 Python 3.13、Rust stable（至少 1.91）和 Cargo；Python 构建/测试脚本需要 `packaging`。所有将进入正式发行包的源码（尤其是 `rust/` 和 `rust/Cargo.lock`）必须先提交或加入 Git 跟踪。默认构建会拒绝未跟踪源码，只允许未跟踪的 `uv.lock` 和 `rust/Cargo.lock`。
+需安装 Python 3.13、Rust stable（至少 1.98）和 Cargo；Python 构建/测试脚本需要 `packaging`。所有将进入正式发行包的源码（尤其是 `rust/` 和 `rust/Cargo.lock`）必须先提交或加入 Git 跟踪。默认构建会拒绝未跟踪源码，只允许未跟踪的 `uv.lock` 和 `rust/Cargo.lock`。
 
 ```bash
 python -m pip install 'packaging>=24'

@@ -157,7 +157,7 @@ Rust 工作区分为 `nori-core`（协议、卡带与世界状态）、`nori-loc
 ## 🚀 快速上手
 
 ### 环境要求
-- **Rust** 1.91 或更高版本（通过 <https://rustup.rs> 安装；只运行发行包则不需要）
+- **Rust** 1.98 或更高版本（通过 <https://rustup.rs> 安装；只运行发行包则不需要）
 - **Node.js**（可选，仅用于前端构建、客户端 Schema 校验与浏览器端集成测试）
 
 > 不想装 Rust：直接下载发行包 `Nori.Web-<系统>-<架构>`，运行其中的 `Nori.Web` / `Nori.Web.exe` 即可（构建方式见 [`docs/LOCAL_RELEASE.md`](docs/LOCAL_RELEASE.md)）。
@@ -206,7 +206,7 @@ Browser (观测端)
 
 ### 1. 准备开发环境与本地调试
 
-需要 Node/npm、Rust（最低 1.91）及 WASM 目标；Python 仅用于部署/归档辅助脚本。
+需要 Node/npm、Rust（最低 1.98）及 WASM 目标；Python 仅用于部署/归档辅助脚本。
 
 ```bash
 npm ci  # 安装精确锁定的 Wrangler 4.147.0
@@ -240,7 +240,7 @@ npx wrangler secret put OPENAI_API_KEY  # 可选
 
 Cloudflare Dashboard 的 **Settings > Build**：生产分支 `master`、仓库根目录、Build command 留空、Deploy command 设为 `python scripts/cloudflare_builds_deploy.py`，启用缓存、禁用非生产分支构建，构建变量设 `SKIP_DEPENDENCY_INSTALL=1`，移除旧 `PYTHON_VERSION`。域名与路由继续由 Dashboard 管理（`workers_dev=false`，配置不声明 routes）。
 
-Workers Builds 镜像没有 Rust；包装脚本按需非交互安装 Rust 1.91.0、WASM 目标及 worker-build 0.8.7，并把 `~/.cargo/bin` 加入 PATH。冷安装/编译需额外数分钟。随后构建源码前端、按指纹同步私有 R2 分片，最后用锁定 Wrangler 部署候选配置（`CI=true`，无 `--yes`）。
+Workers Builds 镜像没有 Rust；包装脚本按需非交互安装 Rust 1.98.0（并以 `RUSTUP_TOOLCHAIN` 固定使用）、WASM 目标及 worker-build 0.8.7，并把 `~/.cargo/bin` 加入 PATH。冷安装/编译需额外数分钟。随后构建源码前端、按指纹同步私有 R2 分片，最后用锁定 Wrangler 部署候选配置（`CI=true`，无 `--yes`）。
 
 ```bash
 python scripts/cloudflare_builds_deploy.py --prepare-only  # 仅准备，不访问 Cloudflare

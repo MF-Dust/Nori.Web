@@ -234,10 +234,10 @@ export async function verifyChip(page, output) {
   );
   assert.ok(
     after - before < 12,
-    "artifact responses must not cause a reload loop",
+    `artifact responses must not cause a reload loop (${after - before} requests)`,
   );
   await page.getByRole("button", { name: "Close", exact: true }).click();
   console.log(
-    "Chip probe passed: fact unlock, status, Escape cancellation, target scan and backend readout.",
+    `Chip probe passed: fact unlock, status, Escape cancellation, target scan and backend readout (${after - before} artifact requests).`,
   );
 }

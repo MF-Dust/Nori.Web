@@ -38,9 +38,14 @@ Workers Builds supplies Node 24, Python 3.13, curl, and git, but not Rust.
 `ensure_rust_toolchain()` prepends `~/.cargo/bin` to child-process `PATH` and:
 
 - If cargo or rustup is missing, runs the HTTPS rustup installer non-interactively
-  with `-y --profile minimal --default-toolchain 1.91.0`. This pin matches the
-  workspace's minimum Rust version; an existing usable toolchain is reused.
-- Adds `wasm32-unknown-unknown` only when it is absent.
+  with `-y --profile minimal --default-toolchain 1.98.0`; otherwise runs
+  `rustup toolchain install 1.98.0 --profile minimal` (a no-op when present).
+  `RUSTUP_TOOLCHAIN=1.98.0` is then exported, so `cargo install` and Wrangler's
+  `worker-build` hook use the pinned toolchain even if a cached rustup defaults
+  to another version. The pin must satisfy every locked crate's `rust-version`
+  (shakmaty 0.30.1 needs 1.95) and equals the toolchain the `validate-worker`
+  CI job uses; `tests/test_cloudflare_builds_deploy.py` enforces both.
+- Adds `wasm32-unknown-unknown` to that toolchain only when it is absent.
 - Installs `cargo install worker-build --version 0.8.7 --locked` only when the
   executable is missing or its version differs.
 

@@ -174,7 +174,7 @@ function createSourceSession() {
     },
     getWorldId: () => frontend.world.snapshot().worldId,
     onComputeSync: (state) => {
-      if (!frontend.world.snapshot().worldId) return;
+      if (frontend.arcade.connectionState !== "open" || !frontend.world.snapshot().worldId) return;
       void frontend.manifold.command("idle.sync", {
         ...state, cap: Number.isFinite(state.cap) ? state.cap : null,
       }).catch((error) => console.error("[SourceApp] idle.sync failed", error));

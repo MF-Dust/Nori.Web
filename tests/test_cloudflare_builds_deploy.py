@@ -35,7 +35,7 @@ def verify_rust_toolchain() -> None:
         def fake_run(command, **kwargs):
             calls.append(list(command))
             stdout = ""
-            if command == ["rustup", "target", "list", "--installed"]:
+            if command[:4] == ["rustup", "target", "list", "--installed"]:
                 stdout = "x86_64-unknown-linux-gnu\n"
                 if has_target:
                     stdout += "wasm32-unknown-unknown\n"
@@ -50,16 +50,22 @@ def verify_rust_toolchain() -> None:
             module.ensure_rust_toolchain()
             cargo_bin = str(Path.home() / ".cargo" / "bin")
             assert os.environ["PATH"].split(os.pathsep)[0] == cargo_bin
+            # cargo install and Wrangler's worker-build hook inherit the pin.
+            assert os.environ["RUSTUP_TOOLCHAIN"] == module.RUST_TOOLCHAIN
+            toolchain = module.RUST_TOOLCHAIN
             expected: list[list[str]] = []
             if missing & {"cargo", "rustup"}:
                 expected.append([
                     "sh", "-c",
                     "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs "
-                    f"| sh -s -- -y --profile minimal --default-toolchain {module.RUST_TOOLCHAIN}",
+                    f"| sh -s -- -y --profile minimal --default-toolchain {toolchain}",
                 ])
-            expected.append(["rustup", "target", "list", "--installed"])
+            else:
+                # A cached rustup may default to another version.
+                expected.append(["rustup", "toolchain", "install", toolchain, "--profile", "minimal"])
+            expected.append(["rustup", "target", "list", "--installed", "--toolchain", toolchain])
             if not has_target:
-                expected.append(["rustup", "target", "add", "wasm32-unknown-unknown"])
+                expected.append(["rustup", "target", "add", "wasm32-unknown-unknown", "--toolchain", toolchain])
             if "worker-build" not in missing:
                 expected.append(["/tools/worker-build", "--version"])
             if "worker-build" in missing or version != "0.8.7":
@@ -78,6 +84,23 @@ def verify_rust_toolchain() -> None:
     with patch.object(module, "_run") as run:
         module.prepare_runtime()
         run.assert_called_once_with(["worker-build", "--release"], cwd=module.WORKER_ROOT)
+
+
+def _version(text: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in text.split("."))
+
+
+def verify_toolchain_pin() -> None:
+    # The deploy toolchain must build the locked crates (the 1.91.0 pin failed
+    # on shakmaty 0.30.1, which needs rustc 1.95) and CI must validate the
+    # Worker with exactly the toolchain Workers Builds deploys with.
+    import tomllib
+
+    workspace = tomllib.loads((ROOT / "rust" / "Cargo.toml").read_text(encoding="utf-8"))
+    minimum = workspace["workspace"]["package"]["rust-version"]
+    assert _version(module.RUST_TOOLCHAIN) >= _version(minimum), (module.RUST_TOOLCHAIN, minimum)
+    workflow = (ROOT / ".github" / "workflows" / "cloudflare-worker.yml").read_text(encoding="utf-8")
+    assert f"toolchain: {module.RUST_TOOLCHAIN}\n" in workflow, "validate-worker must pin the deploy toolchain"
 
 
 def main() -> None:
@@ -147,6 +170,7 @@ def main() -> None:
         assert run.call_args.kwargs["env"]["CI"] == "true"
 
     verify_rust_toolchain()
+    verify_toolchain_pin()
 
     # Frontend preparation retains locked dependencies and root-local config output.
     with TemporaryDirectory(prefix="nori-frontend-deploy-test-") as temp:

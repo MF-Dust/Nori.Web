@@ -26,8 +26,8 @@
     deploys the Rust Worker with locked Wrangler 4.147.0.
 
 The Rust-free Workers Builds image is bootstrapped automatically with Rust
-1.91.0 (minimal profile), `wasm32-unknown-unknown`, and worker-build 0.8.7. Existing
-tools are reused; budget several additional minutes for a cold installation and
+1.98.0 (minimal profile, exported as `RUSTUP_TOOLCHAIN`), `wasm32-unknown-unknown`,
+and worker-build 0.8.7. Existing tools are reused; budget several additional minutes for a cold installation and
 compile. Wrangler runs the Rust build hook once, with `CI=true` and no `--yes`.
 
 Before deployment, run the local checks in [CLOUDFLARE_BUILDS.md](CLOUDFLARE_BUILDS.md):

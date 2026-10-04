@@ -6,7 +6,8 @@ members = ["crates/nori-core", "crates/nori-local", "crates/nori-worker"]
 version = "2.0.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
-rust-version = "1.91"
+# Verified toolchain; also >= every locked crate (shakmaty 0.30.1 needs 1.95).
+rust-version = "1.98"
 publish = false
 
 [workspace.dependencies]

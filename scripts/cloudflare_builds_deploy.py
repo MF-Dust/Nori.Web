@@ -22,7 +22,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PACK = ROOT / "backend" / "data" / "live_world_pack.json"
 LIVE_PACK_TOOL = ROOT / "scripts" / "upload_cloudflare_live_pack.py"
 WORKER_ROOT = ROOT / "rust" / "crates" / "nori-worker"
-RUST_TOOLCHAIN = "1.91.0"
+# Must satisfy every locked crate's rust-version (shakmaty 0.30.1 needs
+# 1.95) and match the toolchain CI validates the Worker with.
+RUST_TOOLCHAIN = "1.98.0"
 WASM_TARGET = "wasm32-unknown-unknown"
 WORKER_BUILD_VERSION = "0.8.7"
 FRONTEND_CANDIDATE_TOOL = (
@@ -67,7 +69,12 @@ def wrangler_command() -> list[str]:
 
 
 def ensure_rust_toolchain() -> None:
-    """Install missing build tools on the Rust-free Workers Builds image."""
+    """Install missing build tools on the Rust-free Workers Builds image.
+
+    Every rustup-managed command started afterwards (`cargo install` and
+    Wrangler's `worker-build` hook) runs on the pinned toolchain, even when a
+    cached rustup installation defaults to another version.
+    """
     cargo_bin = str(Path.home() / ".cargo" / "bin")
     path = os.environ.get("PATH", "").split(os.pathsep)
     os.environ["PATH"] = os.pathsep.join(
@@ -80,10 +87,16 @@ def ensure_rust_toolchain() -> None:
             "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs "
             f"| sh -s -- -y --profile minimal --default-toolchain {RUST_TOOLCHAIN}",
         ])
+    else:
+        _run(["rustup", "toolchain", "install", RUST_TOOLCHAIN, "--profile", "minimal"])
+    os.environ["RUSTUP_TOOLCHAIN"] = RUST_TOOLCHAIN
 
-    targets = _run(["rustup", "target", "list", "--installed"], capture=True)
+    targets = _run(
+        ["rustup", "target", "list", "--installed", "--toolchain", RUST_TOOLCHAIN],
+        capture=True,
+    )
     if WASM_TARGET not in targets.stdout.split():
-        _run(["rustup", "target", "add", WASM_TARGET])
+        _run(["rustup", "target", "add", WASM_TARGET, "--toolchain", RUST_TOOLCHAIN])
 
     worker_build = shutil.which("worker-build")
     version = (

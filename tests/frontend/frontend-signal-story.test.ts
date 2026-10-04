@@ -106,6 +106,54 @@ test("artifact subscriptions react to manifold revisions without reloading on th
     transition: { patches: [] },
   } as any);
   assert.equal(reloads, 2);
+  // The 500 ms Idle compute sync only rewrites variables: no artifact reload.
+  world.consume({
+    type: "runtime_transition",
+    cartridgeId: "manifold.web",
+    version: 2,
+    transition: {
+      actor: "player",
+      cmd: { type: "idle.sync", compute: 12 },
+      patches: [{ op: "replace", path: "/variables", value: { idle: { compute: 12 } } }],
+      events: [],
+    },
+  } as any);
+  assert.equal(reloads, 2);
+  // Facts emitted by the same tick arrive as their own commit and do reload.
+  world.consume({
+    type: "runtime_transition",
+    cartridgeId: "manifold.web",
+    version: 3,
+    transition: {
+      actor: "system",
+      cmd: { type: "client.emitFacts", factIds: ["recover.trainlog"] },
+      patches: [{ op: "replace", path: "/facts", value: { "recover.trainlog": {} } }],
+      events: [],
+    },
+  } as any);
+  assert.equal(reloads, 3);
+  // Do not suppress other variable commands or an Idle revision that adds facts.
+  for (const [index, transition] of [
+    {
+      cmd: { type: "browser.bookmark" },
+      patches: [{ op: "replace", path: "/variables", value: {} }],
+    },
+    {
+      cmd: { type: "idle.sync" },
+      patches: [
+        { op: "replace", path: "/variables/idle", value: { compute: 15 } },
+        { op: "replace", path: "/facts", value: { "compute.cap_hit": true } },
+      ],
+    },
+  ].entries()) {
+    world.consume({
+      type: "runtime_transition",
+      cartridgeId: "manifold.web",
+      version: 4 + index,
+      transition,
+    } as any);
+    assert.equal(reloads, 4 + index);
+  }
   unsubscribe();
 });
 
