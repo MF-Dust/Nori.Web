@@ -1,0 +1,223 @@
+{
+ "cookieCases": [
+  {
+   "case": "empty",
+   "headers": {},
+   "token": null
+  },
+  {
+   "case": "browser-cookie",
+   "headers": {
+    "cookie": "arcade-auth.session_token=guest.v1.cookie"
+   },
+   "token": "guest.v1.cookie"
+  },
+  {
+   "case": "better-auth-only",
+   "headers": {
+    "better-auth-cookie": "arcade-auth.session_token=better.v1.cookie"
+   },
+   "token": "better.v1.cookie"
+  },
+  {
+   "case": "browser-wins-over-stale-local-storage",
+   "headers": {
+    "better-auth-cookie": "arcade-auth.session_token=stale-local-token",
+    "cookie": "arcade-auth.session_token=browser.v1.cookie"
+   },
+   "token": "browser.v1.cookie"
+  },
+  {
+   "case": "suffix-session-token",
+   "headers": {
+    "cookie": "other.session_token=legacy-token"
+   },
+   "token": "legacy-token"
+  },
+  {
+   "case": "value-keeps-equals",
+   "headers": {
+    "cookie": "arcade-auth.session_token=a=b=c"
+   },
+   "token": "a=b=c"
+  },
+  {
+   "case": "first-matching-cookie",
+   "headers": {
+    "cookie": "x.session_token=first; arcade-auth.session_token=second"
+   },
+   "token": "first"
+  }
+ ],
+ "cookieHeaders": {
+  "insecure": {
+   "Cache-Control": "private, no-store",
+   "Set-Cookie": "arcade-auth.session_token=opaque; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax",
+   "set-better-auth-cookie": "arcade-auth.session_token=opaque; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax"
+  },
+  "secure": {
+   "Cache-Control": "private, no-store",
+   "Set-Cookie": "arcade-auth.session_token=opaque; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax; Secure",
+   "set-better-auth-cookie": "arcade-auth.session_token=opaque; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax; Secure"
+  }
+ },
+ "guestInvalidVariants": [
+  {
+   "case": "missing",
+   "created": true,
+   "input": null,
+   "notLegacy": true,
+   "replacementToken": "guest.v1.00000000000000000000000000000004.1702592000.0661ef42bedae7b6502caee1bb6fe7cc99c7c20d8564e4236e64798a56c17520",
+   "userId": "guest_00000000000000000000000000000004",
+   "validationAt": 1700000000
+  },
+  {
+   "case": "legacy-local-storage",
+   "created": true,
+   "input": "local-guest-token",
+   "notLegacy": true,
+   "replacementToken": "guest.v1.00000000000000000000000000000005.1702592000.96dd425bd5ee9c646146bd31000346ac9c31ae4a9adde36d19061ad9b67d6720",
+   "userId": "guest_00000000000000000000000000000005",
+   "validationAt": 1700000000
+  },
+  {
+   "case": "malformed",
+   "created": true,
+   "input": "guest.v1.bad",
+   "notLegacy": true,
+   "replacementToken": "guest.v1.00000000000000000000000000000006.1702592000.1be46de7454003636f88afee3ee337fec520affc56d946ebfeff1faf567ed4c2",
+   "userId": "guest_00000000000000000000000000000006",
+   "validationAt": 1700000000
+  },
+  {
+   "case": "tampered-signature",
+   "created": true,
+   "input": "guest.v1.00000000000000000000000000000001.1702592000.2ad76582a23641bfabdc116f306ed323dffda043fa644824033e1d28cd2f2b40",
+   "notLegacy": true,
+   "replacementToken": "guest.v1.00000000000000000000000000000007.1702592010.aaceda8a7893f84bf66346dbde945e14c69413d9fccffc53365cc443e2bfdaa7",
+   "userId": "guest_00000000000000000000000000000007",
+   "validationAt": 1700000010
+  },
+  {
+   "case": "non-ascii-signature",
+   "created": true,
+   "input": "guest.v1.00000000000000000000000000000002.1702592123.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+   "notLegacy": true,
+   "replacementToken": "guest.v1.00000000000000000000000000000008.1702592010.67d1e8be432e0411f8055d5d20343117f7335660469295c909f617e1dc355f80",
+   "userId": "guest_00000000000000000000000000000008",
+   "validationAt": 1700000010
+  },
+  {
+   "case": "expired",
+   "created": true,
+   "input": "guest.v1.00000000000000000000000000000009.1699999999.4f32987451a79c00d34ed21ab3b37d0760065686d43be0e1c3f4a7d487686926",
+   "notLegacy": true,
+   "replacementToken": "guest.v1.0000000000000000000000000000000a.1702592000.579a7c2985605c4b300ca43e12c7ea06b7edf7a6fb102185c6a14ec882adc0e7",
+   "userId": "guest_0000000000000000000000000000000a",
+   "validationAt": 1700000000
+  }
+ ],
+ "guestSessions": [
+  {
+   "case": "guest-1",
+   "created": true,
+   "expiry": 1702592000,
+   "issuedAt": 1700000000,
+   "token": "guest.v1.00000000000000000000000000000001.1702592000.2ad76582a23641bfabdc116f306ed323dffda043fa644824033e1d28cd2f2b44",
+   "userId": "guest_00000000000000000000000000000001",
+   "validAt": 1700000001,
+   "validOutcome": {
+    "created": false,
+    "token": "guest.v1.00000000000000000000000000000001.1702592000.2ad76582a23641bfabdc116f306ed323dffda043fa644824033e1d28cd2f2b44",
+    "userId": "guest_00000000000000000000000000000001"
+   }
+  },
+  {
+   "case": "guest-2",
+   "created": true,
+   "expiry": 1702592123,
+   "issuedAt": 1700000123,
+   "token": "guest.v1.00000000000000000000000000000002.1702592123.3429f7567a55557900d10b4ab9ca8f222534f40cdd27cf9222d6cc705915abfb",
+   "userId": "guest_00000000000000000000000000000002",
+   "validAt": 1700000124,
+   "validOutcome": {
+    "created": false,
+    "token": "guest.v1.00000000000000000000000000000002.1702592123.3429f7567a55557900d10b4ab9ca8f222534f40cdd27cf9222d6cc705915abfb",
+    "userId": "guest_00000000000000000000000000000002"
+   }
+  },
+  {
+   "case": "guest-3",
+   "created": true,
+   "expiry": 1712592000,
+   "issuedAt": 1710000000,
+   "token": "guest.v1.00000000000000000000000000000003.1712592000.9ff5345afa810bd31642427511fe999e13ad539f5b7a8298bb25212384f41632",
+   "userId": "guest_00000000000000000000000000000003",
+   "validAt": 1710000001,
+   "validOutcome": {
+    "created": false,
+    "token": "guest.v1.00000000000000000000000000000003.1712592000.9ff5345afa810bd31642427511fe999e13ad539f5b7a8298bb25212384f41632",
+    "userId": "guest_00000000000000000000000000000003"
+   }
+  }
+ ],
+ "secret": "rust-parity-secret-0123456789abcdef",
+ "tickets": [
+  {
+   "actualUserId": "guest_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "case": "valid",
+   "expectedUserId": "guest_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "expiry": 1700000300,
+   "resolveAt": 1700000001,
+   "token": "eyJ1IjoiZ3Vlc3RfYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJlIjoxNzAwMDAwMzAwLCJuIjoicGFyaXR5LXRva2VuLTAwMDUifQ.xDTCyNICL_aAbXdlaRUABE4ktsr3wtoyLMMxo14GVuo"
+  },
+  {
+   "actualUserId": "guest_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "case": "valid-at-expiry",
+   "expectedUserId": "guest_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "expiry": 1700000300,
+   "resolveAt": 1700000300,
+   "token": "eyJ1IjoiZ3Vlc3RfYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJlIjoxNzAwMDAwMzAwLCJuIjoicGFyaXR5LXRva2VuLTAwMDUifQ.xDTCyNICL_aAbXdlaRUABE4ktsr3wtoyLMMxo14GVuo"
+  },
+  {
+   "actualUserId": null,
+   "case": "expired",
+   "expectedUserId": null,
+   "expiry": 1700000300,
+   "resolveAt": 1700000301,
+   "token": "eyJ1IjoiZ3Vlc3RfYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJlIjoxNzAwMDAwMzAwLCJuIjoicGFyaXR5LXRva2VuLTAwMDUifQ.xDTCyNICL_aAbXdlaRUABE4ktsr3wtoyLMMxo14GVuo"
+  },
+  {
+   "actualUserId": null,
+   "case": "tampered",
+   "expectedUserId": null,
+   "expiry": null,
+   "resolveAt": 1700000001,
+   "token": "eyJ1IjoiZ3Vlc3RfYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJlIjoxNzAwMDAwMzAwLCJuIjoicGFyaXR5LXRva2VuLTAwMDUifQ.invalid-signature"
+  },
+  {
+   "actualUserId": null,
+   "case": "legacy-shared-user",
+   "expectedUserId": null,
+   "expiry": 1720000300,
+   "resolveAt": 1720000001,
+   "token": "eyJ1IjoiZ3Vlc3QtdXNlci0wMDEiLCJlIjoxNzIwMDAwMzAwLCJuIjoicGFyaXR5LXRva2VuLTAwMDcifQ.yE7QRmrEydWh_tNmNB5mwqvE__DDxfxXsFQEtWzRiQc"
+  },
+  {
+   "actualUserId": "user_rust_parity",
+   "case": "second-valid",
+   "expectedUserId": "user_rust_parity",
+   "expiry": 1710000300,
+   "resolveAt": 1710000001,
+   "token": "eyJ1IjoidXNlcl9ydXN0X3Bhcml0eSIsImUiOjE3MTAwMDAzMDAsIm4iOiJwYXJpdHktdG9rZW4tMDAwNiJ9.zM7I30DfPGwhXxZlXWJ5hSuldmTTcRU6dlnhuaB891g"
+  },
+  {
+   "actualUserId": null,
+   "case": "missing",
+   "expectedUserId": null,
+   "expiry": null,
+   "resolveAt": 1700000001,
+   "token": null
+  }
+ ]
+}

@@ -1,0 +1,336 @@
+{
+ "cartridge": "pictionary",
+ "steps": [
+  {
+   "actor": "player",
+   "cmd": {
+    "atMs": 1000,
+    "settings": {
+     "locale": "zh-CN"
+    },
+    "type": "startSession"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "index": 0,
+     "type": "session_started",
+     "version": 1
+    },
+    {
+     "drawingId": "<random>",
+     "index": 1,
+     "roles": {
+      "drawer": "player",
+      "guesser": "agent"
+     },
+     "roundId": "<random>",
+     "type": "round_started",
+     "version": 1
+    }
+   ],
+   "ok": true,
+   "result": {
+    "roundId": "<random>",
+    "success": true
+   },
+   "state": {
+    "gameState": {
+     "history": [],
+     "phase": "PLAYING",
+     "round": {
+      "drawingId": "<random>",
+      "noriRedrawEpoch": 0,
+      "pinyin": "<random>",
+      "roles": {
+       "drawer": "player",
+       "guesser": "agent"
+      },
+      "roundId": "<random>",
+      "startedAtMs": "<ts>",
+      "status": "active",
+      "synonyms": "<random>",
+      "word": "<random>"
+     },
+     "score": {
+      "skipped": 0,
+      "solved": 0
+     }
+    },
+    "settings": {
+     "inferenceMode": "fast",
+     "locale": "zh-CN",
+     "sessionDurationMs": 180000
+    }
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "batch": [
+     {
+      "x": 0.25,
+      "y": 0.75
+     }
+    ],
+    "type": "submitStrokeBatch"
+   },
+   "committed": false,
+   "error": null,
+   "events": [],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "gameState": {
+     "history": [],
+     "phase": "PLAYING",
+     "round": {
+      "drawingId": "<random>",
+      "noriRedrawEpoch": 0,
+      "pinyin": "<random>",
+      "roles": {
+       "drawer": "player",
+       "guesser": "agent"
+      },
+      "roundId": "<random>",
+      "startedAtMs": "<ts>",
+      "status": "active",
+      "synonyms": "<random>",
+      "word": "<random>"
+     },
+     "score": {
+      "skipped": 0,
+      "solved": 0
+     }
+    },
+    "settings": {
+     "inferenceMode": "fast",
+     "locale": "zh-CN",
+     "sessionDurationMs": 180000
+    }
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "batch": [
+     {
+      "x": 0.25,
+      "y": 0.75
+     }
+    ],
+    "type": "submitStrokeBatch"
+   },
+   "committed": false,
+   "error": "Only the player drawer can submit strokes",
+   "events": [],
+   "ok": false,
+   "result": null,
+   "state": {
+    "gameState": {
+     "history": [],
+     "phase": "PLAYING",
+     "round": {
+      "drawingId": "<random>",
+      "noriRedrawEpoch": 0,
+      "pinyin": "<random>",
+      "roles": {
+       "drawer": "player",
+       "guesser": "agent"
+      },
+      "roundId": "<random>",
+      "startedAtMs": "<ts>",
+      "status": "active",
+      "synonyms": "<random>",
+      "word": "<random>"
+     },
+     "score": {
+      "skipped": 0,
+      "solved": 0
+     }
+    },
+    "settings": {
+     "inferenceMode": "fast",
+     "locale": "zh-CN",
+     "sessionDurationMs": 180000
+    }
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "batch": [],
+    "type": "submitStrokeBatch"
+   },
+   "committed": false,
+   "error": "batch must contain 1 to 32 strokes",
+   "events": [],
+   "ok": false,
+   "result": null,
+   "state": {
+    "gameState": {
+     "history": [],
+     "phase": "PLAYING",
+     "round": {
+      "drawingId": "<random>",
+      "noriRedrawEpoch": 0,
+      "pinyin": "<random>",
+      "roles": {
+       "drawer": "player",
+       "guesser": "agent"
+      },
+      "roundId": "<random>",
+      "startedAtMs": "<ts>",
+      "status": "active",
+      "synonyms": "<random>",
+      "word": "<random>"
+     },
+     "score": {
+      "skipped": 0,
+      "solved": 0
+     }
+    },
+    "settings": {
+     "inferenceMode": "fast",
+     "locale": "zh-CN",
+     "sessionDurationMs": 180000
+    }
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "atMs": 2000,
+    "type": "skipRound"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "by": "player",
+     "index": 0,
+     "roundId": "<random>",
+     "type": "round_skipped",
+     "version": 2
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "gameState": {
+     "history": [
+      {
+       "drawingId": "<random>",
+       "elapsedMs": 1000,
+       "outcome": "skipped",
+       "roles": {
+        "drawer": "player",
+        "guesser": "agent"
+       },
+       "word": "<random>"
+      }
+     ],
+     "phase": "PLAYING",
+     "round": {
+      "drawingId": "<random>",
+      "noriRedrawEpoch": 0,
+      "pinyin": "<random>",
+      "roles": {
+       "drawer": "player",
+       "guesser": "agent"
+      },
+      "roundId": "<random>",
+      "startedAtMs": "<ts>",
+      "status": "skipped",
+      "synonyms": "<random>",
+      "word": "<random>"
+     },
+     "score": {
+      "skipped": 1,
+      "solved": 0
+     }
+    },
+    "settings": {
+     "inferenceMode": "fast",
+     "locale": "zh-CN",
+     "sessionDurationMs": 180000
+    }
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "atMs": 6000,
+    "type": "forceEndSession"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "index": 0,
+     "type": "session_finished",
+     "version": 3
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "gameState": {
+     "history": [
+      {
+       "drawingId": "<random>",
+       "elapsedMs": 1000,
+       "outcome": "skipped",
+       "roles": {
+        "drawer": "player",
+        "guesser": "agent"
+       },
+       "word": "<random>"
+      },
+      {
+       "drawingId": "<random>",
+       "elapsedMs": 5000,
+       "outcome": "unfinished",
+       "roles": {
+        "drawer": "player",
+        "guesser": "agent"
+       },
+       "word": "<random>"
+      }
+     ],
+     "phase": "RESULTS",
+     "round": {
+      "drawingId": "<random>",
+      "noriRedrawEpoch": 0,
+      "pinyin": "<random>",
+      "roles": {
+       "drawer": "player",
+       "guesser": "agent"
+      },
+      "roundId": "<random>",
+      "startedAtMs": "<ts>",
+      "status": "unfinished",
+      "synonyms": "<random>",
+      "word": "<random>"
+     },
+     "score": {
+      "skipped": 1,
+      "solved": 0
+     }
+    },
+    "settings": {
+     "inferenceMode": "fast",
+     "locale": "zh-CN",
+     "sessionDurationMs": 180000
+    }
+   }
+  }
+ ]
+}

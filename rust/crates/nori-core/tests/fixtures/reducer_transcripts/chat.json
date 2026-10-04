@@ -1,0 +1,407 @@
+{
+ "cartridge": "chat",
+ "steps": [
+  {
+   "actor": "player",
+   "cmd": {
+    "text": "你好，Nori。",
+    "type": "playerMessage"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "content": "你好，Nori。",
+     "createdAt": "<ts>",
+     "index": 0,
+     "messageId": "msg_1",
+     "type": "player_message",
+     "version": 1
+    }
+   ],
+   "ok": true,
+   "result": {
+    "messageId": "msg_1"
+   },
+   "state": {
+    "lines": [
+     {
+      "content": "你好，Nori。",
+      "createdAt": "<ts>",
+      "messageId": "msg_1",
+      "sender": "player"
+     }
+    ],
+    "nextMessageId": 2,
+    "operations": {},
+    "presentationMode": "text",
+    "turn": {
+     "operationId": null,
+     "outcome": null,
+     "phase": "idle"
+    }
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "presentationMode": "audio",
+    "type": "setPresentationMode"
+   },
+   "committed": true,
+   "error": null,
+   "events": [],
+   "ok": true,
+   "result": {
+    "presentationMode": "audio"
+   },
+   "state": {
+    "lines": [
+     {
+      "content": "你好，Nori。",
+      "createdAt": "<ts>",
+      "messageId": "msg_1",
+      "sender": "player"
+     }
+    ],
+    "nextMessageId": 2,
+    "operations": {},
+    "presentationMode": "audio",
+    "turn": {
+     "operationId": null,
+     "outcome": null,
+     "phase": "idle"
+    }
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "operationId": "op-fixed-1",
+    "type": "operationStarted"
+   },
+   "committed": true,
+   "error": null,
+   "events": [],
+   "ok": true,
+   "result": {
+    "turn": {
+     "operationId": "op-fixed-1",
+     "outcome": null,
+     "phase": "executing"
+    }
+   },
+   "state": {
+    "lines": [
+     {
+      "content": "你好，Nori。",
+      "createdAt": "<ts>",
+      "messageId": "msg_1",
+      "sender": "player"
+     }
+    ],
+    "nextMessageId": 2,
+    "operations": {},
+    "presentationMode": "audio",
+    "turn": {
+     "operationId": "op-fixed-1",
+     "outcome": null,
+     "phase": "executing"
+    }
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "blockId": 0,
+    "blockType": "text",
+    "content": "固定的语音文本。",
+    "emotion": "neutral",
+    "isSpeech": true,
+    "messageId": "msg-fixed-1",
+    "operationId": "op-fixed-1",
+    "type": "ingestBlock"
+   },
+   "committed": true,
+   "error": null,
+   "events": [],
+   "ok": true,
+   "result": {
+    "revealedBlockIds": []
+   },
+   "state": {
+    "lines": [
+     {
+      "content": "你好，Nori。",
+      "createdAt": "<ts>",
+      "messageId": "msg_1",
+      "sender": "player"
+     }
+    ],
+    "nextMessageId": 2,
+    "operations": {
+     "op-fixed-1": {
+      "ingestingActor": "agent",
+      "lastRevealedBlockIsSpeech": false,
+      "pendingBlocks": {
+       "0": {
+        "blockId": 0,
+        "blockType": "text",
+        "content": "固定的语音文本。",
+        "emotion": "neutral",
+        "isSpeech": true,
+        "messageId": "msg-fixed-1"
+       }
+      },
+      "pendingPresented": {},
+      "pendingStarted": {},
+      "presentedThrough": -1,
+      "revealedThrough": -1,
+      "startedThrough": -1
+     }
+    },
+    "presentationMode": "audio",
+    "turn": {
+     "operationId": "op-fixed-1",
+     "outcome": null,
+     "phase": "executing"
+    }
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "blockId": 0,
+    "operationId": "op-fixed-1",
+    "type": "audioStarted"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "blockId": 0,
+     "blockType": "text",
+     "content": "固定的语音文本。",
+     "createdAt": "<ts>",
+     "emotion": "neutral",
+     "index": 0,
+     "isSpeech": true,
+     "messageId": "msg-fixed-1",
+     "type": "agent_message",
+     "version": 5
+    }
+   ],
+   "ok": true,
+   "result": {
+    "startedThrough": 0
+   },
+   "state": {
+    "lines": [
+     {
+      "content": "你好，Nori。",
+      "createdAt": "<ts>",
+      "messageId": "msg_1",
+      "sender": "player"
+     },
+     {
+      "blockId": 0,
+      "blockType": "text",
+      "content": "固定的语音文本。",
+      "createdAt": "<ts>",
+      "emotion": "neutral",
+      "isSpeech": true,
+      "messageId": "msg-fixed-1",
+      "sender": "agent"
+     }
+    ],
+    "nextMessageId": 2,
+    "operations": {
+     "op-fixed-1": {
+      "ingestingActor": "agent",
+      "lastRevealedBlockIsSpeech": true,
+      "pendingBlocks": {},
+      "pendingPresented": {},
+      "pendingStarted": {},
+      "presentedThrough": -1,
+      "revealedThrough": 0,
+      "startedThrough": 0
+     }
+    },
+    "presentationMode": "audio",
+    "turn": {
+     "operationId": "op-fixed-1",
+     "outcome": null,
+     "phase": "executing"
+    }
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "blockId": 0,
+    "operationId": "op-fixed-1",
+    "type": "audioDone"
+   },
+   "committed": true,
+   "error": null,
+   "events": [],
+   "ok": true,
+   "result": {
+    "presentedThrough": 0
+   },
+   "state": {
+    "lines": [
+     {
+      "content": "你好，Nori。",
+      "createdAt": "<ts>",
+      "messageId": "msg_1",
+      "sender": "player"
+     },
+     {
+      "blockId": 0,
+      "blockType": "text",
+      "content": "固定的语音文本。",
+      "createdAt": "<ts>",
+      "emotion": "neutral",
+      "isSpeech": true,
+      "messageId": "msg-fixed-1",
+      "sender": "agent"
+     }
+    ],
+    "nextMessageId": 2,
+    "operations": {
+     "op-fixed-1": {
+      "ingestingActor": "agent",
+      "lastRevealedBlockIsSpeech": true,
+      "pendingBlocks": {},
+      "pendingPresented": {},
+      "pendingStarted": {},
+      "presentedThrough": 0,
+      "revealedThrough": 0,
+      "startedThrough": 0
+     }
+    },
+    "presentationMode": "audio",
+    "turn": {
+     "operationId": "op-fixed-1",
+     "outcome": null,
+     "phase": "executing"
+    }
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "operationId": "op-fixed-1",
+    "outcome": "completed",
+    "type": "operationSettled"
+   },
+   "committed": true,
+   "error": null,
+   "events": [],
+   "ok": true,
+   "result": {
+    "turn": {
+     "operationId": null,
+     "outcome": null,
+     "phase": "idle"
+    }
+   },
+   "state": {
+    "lines": [
+     {
+      "content": "你好，Nori。",
+      "createdAt": "<ts>",
+      "messageId": "msg_1",
+      "sender": "player"
+     },
+     {
+      "blockId": 0,
+      "blockType": "text",
+      "content": "固定的语音文本。",
+      "createdAt": "<ts>",
+      "emotion": "neutral",
+      "isSpeech": true,
+      "messageId": "msg-fixed-1",
+      "sender": "agent"
+     }
+    ],
+    "nextMessageId": 2,
+    "operations": {
+     "op-fixed-1": {
+      "ingestingActor": "agent",
+      "lastRevealedBlockIsSpeech": true,
+      "pendingBlocks": {},
+      "pendingPresented": {},
+      "pendingStarted": {},
+      "presentedThrough": 0,
+      "revealedThrough": 0,
+      "startedThrough": 0
+     }
+    },
+    "presentationMode": "audio",
+    "turn": {
+     "operationId": null,
+     "outcome": null,
+     "phase": "idle"
+    }
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "blockId": -1,
+    "blockType": "text",
+    "content": "bad",
+    "isSpeech": true,
+    "messageId": "msg-fixed-1",
+    "operationId": "op-fixed-1",
+    "type": "ingestBlock"
+   },
+   "committed": false,
+   "error": "Invalid ingestBlock payload",
+   "events": [],
+   "ok": false,
+   "result": null,
+   "state": {
+    "lines": [
+     {
+      "content": "你好，Nori。",
+      "createdAt": "<ts>",
+      "messageId": "msg_1",
+      "sender": "player"
+     },
+     {
+      "blockId": 0,
+      "blockType": "text",
+      "content": "固定的语音文本。",
+      "createdAt": "<ts>",
+      "emotion": "neutral",
+      "isSpeech": true,
+      "messageId": "msg-fixed-1",
+      "sender": "agent"
+     }
+    ],
+    "nextMessageId": 2,
+    "operations": {
+     "op-fixed-1": {
+      "ingestingActor": "agent",
+      "lastRevealedBlockIsSpeech": true,
+      "pendingBlocks": {},
+      "pendingPresented": {},
+      "pendingStarted": {},
+      "presentedThrough": 0,
+      "revealedThrough": 0,
+      "startedThrough": 0
+     }
+    },
+    "presentationMode": "audio",
+    "turn": {
+     "operationId": null,
+     "outcome": null,
+     "phase": "idle"
+    }
+   }
+  }
+ ]
+}

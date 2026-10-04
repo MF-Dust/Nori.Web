@@ -1,0 +1,108 @@
+{
+ "factsKeyCount": 1,
+ "fullUnlock": false,
+ "inputs": [
+  {
+   "cartridgeId": "chess",
+   "requestId": "mount-chess",
+   "type": "mount_cartridge"
+  },
+  {
+   "cartridgeId": "codenames",
+   "requestId": "mount-codenames",
+   "type": "mount_cartridge"
+  },
+  {
+   "cartridgeId": "cakeduel",
+   "requestId": "mount-cakeduel",
+   "type": "mount_cartridge"
+  },
+  {
+   "cartridgeId": "pictionary",
+   "requestId": "mount-pictionary",
+   "type": "mount_cartridge"
+  },
+  {
+   "actor": "player",
+   "cartridgeId": "chat",
+   "cmd": {
+    "text": "Rust parity 快照",
+    "type": "playerMessage"
+   },
+   "expectedHeadVersion": 0,
+   "requestId": "snapshot-chat",
+   "type": "dispatch"
+  },
+  {
+   "actor": "player",
+   "cartridgeId": "chess",
+   "cmd": {
+    "difficulty": "casual",
+    "mode": "normal",
+    "side": "white",
+    "type": "startGame"
+   },
+   "expectedHeadVersion": 0,
+   "requestId": "snapshot-chess",
+   "type": "dispatch"
+  },
+  {
+   "actor": "player",
+   "cartridgeId": "chess",
+   "cmd": {
+    "from": "e2",
+    "to": "e4",
+    "type": "move"
+   },
+   "expectedHeadVersion": 1,
+   "requestId": "snapshot-chess",
+   "type": "dispatch"
+  },
+  {
+   "actor": "player",
+   "cartridgeId": "codenames",
+   "cmd": {
+    "mode": "tutorial",
+    "settings": {
+     "wordLocale": "zh-CN"
+    },
+    "type": "startGame"
+   },
+   "expectedHeadVersion": 0,
+   "requestId": "snapshot-codenames",
+   "type": "dispatch"
+  },
+  {
+   "actor": "player",
+   "cartridgeId": "cakeduel",
+   "cmd": {
+    "scenarioId": "attack-phase",
+    "type": "debugLoadScenario"
+   },
+   "expectedHeadVersion": 0,
+   "requestId": "snapshot-cakeduel",
+   "type": "dispatch"
+  },
+  {
+   "actor": "player",
+   "cartridgeId": "pictionary",
+   "cmd": {
+    "atMs": 1000,
+    "settings": {
+     "locale": "zh-CN"
+    },
+    "type": "startSession"
+   },
+   "expectedHeadVersion": 0,
+   "requestId": "snapshot-pictionary",
+   "type": "dispatch"
+  }
+ ],
+ "locale": "zh-CN",
+ "mediaGrantCount": 2,
+ "mode": "story",
+ "ownerId": "guest_0123456789abcdef0123456789abcdef",
+ "snapshot": "{\"cartridges\":{\"cakeduel\":{\"headVersion\":1,\"state\":{\"config\":null,\"debugScenario\":{\"attackPile\":[{\"entityId\":1008,\"name\":\"archer\"},{\"entityId\":1009,\"name\":\"archer\"}],\"blockPile\":[],\"deckCount\":12,\"deckTop\":[{\"entityId\":1010,\"name\":\"soldier\"},{\"entityId\":1011,\"name\":\"wizard\"},{\"entityId\":1012,\"name\":\"archer\"},{\"entityId\":1013,\"name\":\"scientist\"}],\"discardCount\":3,\"opponentHand\":[{\"entityId\":1005,\"name\":\"archer\"},{\"entityId\":1006,\"name\":\"soldier\"},{\"entityId\":1007,\"name\":\"wizard\"}],\"playerHand\":[{\"entityId\":1000,\"name\":\"archer\"},{\"entityId\":1001,\"name\":\"scientist\"},{\"entityId\":1002,\"name\":\"soldier\"},{\"entityId\":1003,\"name\":\"archer\"},{\"entityId\":1004,\"name\":\"wizard\"}]},\"debugScenarioId\":\"attack-phase\",\"game\":null,\"lastError\":null,\"settings\":{\"difficulty\":\"soldier\",\"roundsToWin\":3,\"seed\":20260127},\"tutorial\":null},\"visibleVersion\":1},\"chat\":{\"headVersion\":1,\"state\":{\"lines\":[{\"content\":\"Rust parity 快照\",\"createdAt\":\"<ts>\",\"messageId\":\"msg_1\",\"sender\":\"player\"}],\"nextMessageId\":2,\"operations\":{},\"presentationMode\":\"text\",\"turn\":{\"operationId\":null,\"outcome\":null,\"phase\":\"idle\"}},\"visibleVersion\":1},\"chess\":{\"headVersion\":2,\"state\":{\"debugScenario\":null,\"debugScenarioId\":null,\"drawOffer\":null,\"gameState\":{\"fen\":\"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1\",\"fullMoveNumber\":1,\"halfMoveClock\":0,\"isCheck\":false,\"isCheckmate\":false,\"isDraw\":false,\"isInsufficientMaterial\":false,\"isStalemate\":false,\"isThreefoldRepetition\":false,\"moveHistory\":[{\"by\":\"white\",\"isCastling\":false,\"isCheck\":false,\"isCheckmate\":false,\"isEnPassant\":false,\"isPromotion\":false,\"isStalemate\":false,\"madeAtMs\":\"<ts>\",\"move\":{\"from\":\"e2\",\"piece\":\"p\",\"to\":\"e4\"},\"piece\":\"p\",\"san\":\"e4\"}],\"openingMatch\":null,\"pgn\":\"1. e4\",\"phase\":\"opening\",\"startFen\":\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\",\"status\":\"playing\",\"turn\":\"black\",\"winner\":null},\"settings\":{\"difficulty\":\"casual\",\"locale\":\"en\",\"playerSide\":\"white\"},\"takebackRequest\":null,\"tutorial\":null},\"visibleVersion\":2},\"codenames\":{\"headVersion\":1,\"state\":{\"agentSide\":\"B\",\"counterpartSide\":\"A\",\"gameState\":{\"board\":[{\"id\":\"月亮\",\"text\":\"月亮\"},{\"id\":\"溪流\",\"text\":\"溪流\"},{\"id\":\"坚果\",\"text\":\"坚果\"},{\"id\":\"麻雀\",\"text\":\"麻雀\"},{\"id\":\"吊桥\",\"text\":\"吊桥\"},{\"id\":\"城堡\",\"text\":\"城堡\"},{\"id\":\"蜂蜜\",\"text\":\"蜂蜜\"},{\"id\":\"野狼\",\"text\":\"野狼\"},{\"id\":\"灯笼\",\"text\":\"灯笼\"},{\"id\":\"枫叶\",\"text\":\"枫叶\"},{\"id\":\"星星\",\"text\":\"星星\"},{\"id\":\"蘑菇\",\"text\":\"蘑菇\"},{\"id\":\"铃铛\",\"text\":\"铃铛\"},{\"id\":\"狐狸\",\"text\":\"狐狸\"},{\"id\":\"云朵\",\"text\":\"云朵\"},{\"id\":\"藤蔓\",\"text\":\"藤蔓\"},{\"id\":\"罗盘\",\"text\":\"罗盘\"},{\"id\":\"猫头鹰\",\"text\":\"猫头鹰\"},{\"id\":\"鹅卵石\",\"text\":\"鹅卵石\"},{\"id\":\"雪花\",\"text\":\"雪花\"},{\"id\":\"蕨草\",\"text\":\"蕨草\"},{\"id\":\"草地\",\"text\":\"草地\"},{\"id\":\"乌鸦\",\"text\":\"乌鸦\"},{\"id\":\"余烬\",\"text\":\"余烬\"},{\"id\":\"贝壳\",\"text\":\"贝壳\"}],\"cells\":[{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null},{\"assassinatedBy\":null,\"bystanderMarks\":[null,null],\"solvedBy\":null}],\"history\":[],\"key\":{\"A\":[\"BYSTANDER\",\"BYSTANDER\",\"BYSTANDER\",\"ASSASSIN\",\"AGENT\",\"AGENT\",\"AGENT\",\"BYSTANDER\",\"AGENT\",\"BYSTANDER\",\"BYSTANDER\",\"BYSTANDER\",\"AGENT\",\"BYSTANDER\",\"AGENT\",\"AGENT\",\"BYSTANDER\",\"BYSTANDER\",\"BYSTANDER\",\"AGENT\",\"BYSTANDER\",\"AGENT\",\"ASSASSIN\",\"ASSASSIN\",\"BYSTANDER\"],\"B\":[\"AGENT\",\"BYSTANDER\",\"BYSTANDER\",\"BYSTANDER\",\"BYSTANDER\",\"BYSTANDER\",\"AGENT\",\"AGENT\",\"BYSTANDER\",\"AGENT\",\"AGENT\",\"ASSASSIN\",\"AGENT\",\"AGENT\",\"BYSTANDER\",\"ASSASSIN\",\"BYSTANDER\",\"BYSTANDER\",\"BYSTANDER\",\"BYSTANDER\",\"BYSTANDER\",\"AGENT\",\"AGENT\",\"ASSASSIN\",\"BYSTANDER\"]},\"phase\":\"NORMAL\",\"tokensRemaining\":9,\"whoseTurnToGive\":\"B\",\"winner\":null},\"settings\":{\"tokens\":9,\"wordLocale\":\"zh-CN\"},\"tutorial\":{\"step\":\"nori_opening_clue\"}},\"visibleVersion\":1},\"manifold.web\":{\"headVersion\":1,\"state\":{\"facts\":{\"session.ready\":{\"actor\":\"system\",\"emittedAt\":\"<ts>\",\"id\":\"session.ready\",\"source\":\"system.tick\"}},\"variables\":{}},\"visibleVersion\":1},\"pictionary\":{\"headVersion\":1,\"state\":{\"gameState\":{\"history\":[],\"phase\":\"PLAYING\",\"round\":{\"drawingId\":\"<random>\",\"noriRedrawEpoch\":0,\"pinyin\":\"<random>\",\"roles\":{\"drawer\":\"player\",\"guesser\":\"agent\"},\"roundId\":\"<random>\",\"startedAtMs\":\"<ts>\",\"status\":\"active\",\"synonyms\":\"<random>\",\"word\":\"<random>\"},\"score\":{\"skipped\":0,\"solved\":0}},\"settings\":{\"inferenceMode\":\"fast\",\"locale\":\"zh-CN\",\"sessionDurationMs\":180000}},\"visibleVersion\":1}},\"fullUnlock\":false,\"locale\":\"zh-CN\",\"mediaGrants\":[\"<media-grant-1>\",\"<media-grant-2>\"],\"mediaSequence\":0,\"ownerId\":\"guest_0123456789abcdef0123456789abcdef\",\"version\":1,\"worldId\":\"<world-id>\"}",
+ "snapshotBytes": 6185,
+ "variablesKeyCount": 0
+}

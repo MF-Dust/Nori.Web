@@ -1,0 +1,3927 @@
+{
+ "cartridge": "cakeduel",
+ "steps": [
+  {
+   "actor": "player",
+   "cmd": {
+    "difficulty": "soldier",
+    "type": "startGame"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "event": {
+      "cardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "config": {
+       "baseCardList": [
+        "soldier",
+        "soldier",
+        "soldier",
+        "soldier",
+        "soldier",
+        "archer",
+        "archer",
+        "archer",
+        "archer",
+        "defender",
+        "defender",
+        "defender",
+        "defender",
+        "wizard",
+        "wizard",
+        "wizard",
+        "scientist",
+        "scientist",
+        "scientist",
+        "wolfy"
+       ],
+       "gameId": "cakeduel_1700000000000",
+       "roundsToWin": 3,
+       "seed": 1700000000000,
+       "specialCardList": [
+        "assassin",
+        "scout",
+        "summoner",
+        "quartermaster",
+        "oracle",
+        "priest",
+        "angel",
+        "baacrates",
+        "agent_u",
+        "pierrot"
+       ],
+       "specialCardsToAdd": 0
+      },
+      "type": "game_started"
+     },
+     "index": 0,
+     "type": "engine",
+     "version": 1
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "type": "deck_shuffled"
+     },
+     "index": 1,
+     "type": "engine",
+     "version": 1
+    },
+    {
+     "event": {
+      "attackerIndex": 0,
+      "cakesAfter": [
+       3,
+       4
+      ],
+      "type": "bout_started"
+     },
+     "index": 2,
+     "type": "engine",
+     "version": 1
+    },
+    {
+     "event": {
+      "phase": "attack",
+      "player": 0,
+      "type": "phase_changed"
+     },
+     "index": 3,
+     "type": "engine",
+     "version": 1
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "player": 0,
+      "type": "card_drawn",
+      "zone": "deck"
+     },
+     "index": 4,
+     "type": "engine",
+     "version": 1
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "player": 1,
+      "type": "card_drawn",
+      "zone": "deck"
+     },
+     "index": 5,
+     "type": "engine",
+     "version": 1
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": null,
+    "debugScenarioId": null,
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "scenarioId": "attack-phase",
+    "type": "debugLoadScenario"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "index": 0,
+     "scenarioId": "attack-phase",
+     "type": "debug_scenario_loaded",
+     "version": 2
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [
+      {
+       "entityId": 1008,
+       "name": "archer"
+      },
+      {
+       "entityId": 1009,
+       "name": "archer"
+      }
+     ],
+     "blockPile": [],
+     "deckCount": 12,
+     "deckTop": [
+      {
+       "entityId": 1010,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1011,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1012,
+       "name": "archer"
+      },
+      {
+       "entityId": 1013,
+       "name": "scientist"
+      }
+     ],
+     "discardCount": 3,
+     "opponentHand": [
+      {
+       "entityId": 1005,
+       "name": "archer"
+      },
+      {
+       "entityId": 1006,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1007,
+       "name": "wizard"
+      }
+     ],
+     "playerHand": [
+      {
+       "entityId": 1000,
+       "name": "archer"
+      },
+      {
+       "entityId": 1001,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1002,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1003,
+       "name": "archer"
+      },
+      {
+       "entityId": 1004,
+       "name": "wizard"
+      }
+     ]
+    },
+    "debugScenarioId": "attack-phase",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "action": {
+     "type": "concede"
+    },
+    "type": "play"
+   },
+   "committed": false,
+   "error": "Not the phasing player's turn",
+   "events": [],
+   "ok": false,
+   "result": null,
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [
+      {
+       "entityId": 1008,
+       "name": "archer"
+      },
+      {
+       "entityId": 1009,
+       "name": "archer"
+      }
+     ],
+     "blockPile": [],
+     "deckCount": 12,
+     "deckTop": [
+      {
+       "entityId": 1010,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1011,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1012,
+       "name": "archer"
+      },
+      {
+       "entityId": 1013,
+       "name": "scientist"
+      }
+     ],
+     "discardCount": 3,
+     "opponentHand": [
+      {
+       "entityId": 1005,
+       "name": "archer"
+      },
+      {
+       "entityId": 1006,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1007,
+       "name": "wizard"
+      }
+     ],
+     "playerHand": [
+      {
+       "entityId": 1000,
+       "name": "archer"
+      },
+      {
+       "entityId": 1001,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1002,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1003,
+       "name": "archer"
+      },
+      {
+       "entityId": 1004,
+       "name": "wizard"
+      }
+     ]
+    },
+    "debugScenarioId": "attack-phase",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "action": {
+     "type": "concede"
+    },
+    "type": "play"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "event": {
+      "player": 0,
+      "type": "concede_made"
+     },
+     "index": 0,
+     "type": "engine",
+     "version": 3
+    },
+    {
+     "event": {
+      "type": "game_ended",
+      "winner": 1
+     },
+     "index": 1,
+     "type": "engine",
+     "version": 3
+    },
+    {
+     "index": 2,
+     "outcome": "loss",
+     "type": "game_outcome",
+     "version": 3
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [
+      {
+       "entityId": 1008,
+       "name": "archer"
+      },
+      {
+       "entityId": 1009,
+       "name": "archer"
+      }
+     ],
+     "blockPile": [],
+     "deckCount": 12,
+     "deckTop": [
+      {
+       "entityId": 1010,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1011,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1012,
+       "name": "archer"
+      },
+      {
+       "entityId": 1013,
+       "name": "scientist"
+      }
+     ],
+     "discardCount": 3,
+     "opponentHand": [
+      {
+       "entityId": 1005,
+       "name": "archer"
+      },
+      {
+       "entityId": 1006,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1007,
+       "name": "wizard"
+      }
+     ],
+     "playerHand": [
+      {
+       "entityId": 1000,
+       "name": "archer"
+      },
+      {
+       "entityId": 1001,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1002,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1003,
+       "name": "archer"
+      },
+      {
+       "entityId": 1004,
+       "name": "wizard"
+      }
+     ]
+    },
+    "debugScenarioId": "attack-phase",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 1,
+     "gameEnded": {
+      "winner": 1
+     },
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "difficulty": "soldier",
+    "type": "startGame"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "event": {
+      "cardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "config": {
+       "baseCardList": [
+        "soldier",
+        "soldier",
+        "soldier",
+        "soldier",
+        "soldier",
+        "archer",
+        "archer",
+        "archer",
+        "archer",
+        "defender",
+        "defender",
+        "defender",
+        "defender",
+        "wizard",
+        "wizard",
+        "wizard",
+        "scientist",
+        "scientist",
+        "scientist",
+        "wolfy"
+       ],
+       "gameId": "cakeduel_1700000000000",
+       "roundsToWin": 3,
+       "seed": 1700000000000,
+       "specialCardList": [
+        "assassin",
+        "scout",
+        "summoner",
+        "quartermaster",
+        "oracle",
+        "priest",
+        "angel",
+        "baacrates",
+        "agent_u",
+        "pierrot"
+       ],
+       "specialCardsToAdd": 0
+      },
+      "type": "game_started"
+     },
+     "index": 0,
+     "type": "engine",
+     "version": 4
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "type": "deck_shuffled"
+     },
+     "index": 1,
+     "type": "engine",
+     "version": 4
+    },
+    {
+     "event": {
+      "attackerIndex": 0,
+      "cakesAfter": [
+       3,
+       4
+      ],
+      "type": "bout_started"
+     },
+     "index": 2,
+     "type": "engine",
+     "version": 4
+    },
+    {
+     "event": {
+      "phase": "attack",
+      "player": 0,
+      "type": "phase_changed"
+     },
+     "index": 3,
+     "type": "engine",
+     "version": 4
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "player": 0,
+      "type": "card_drawn",
+      "zone": "deck"
+     },
+     "index": 4,
+     "type": "engine",
+     "version": 4
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "player": 1,
+      "type": "card_drawn",
+      "zone": "deck"
+     },
+     "index": 5,
+     "type": "engine",
+     "version": 4
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": null,
+    "debugScenarioId": null,
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "scenarioId": "block-phase",
+    "type": "debugLoadScenario"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "index": 0,
+     "scenarioId": "block-phase",
+     "type": "debug_scenario_loaded",
+     "version": 5
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [
+      {
+       "entityId": 1007,
+       "name": "archer"
+      },
+      {
+       "entityId": 1008,
+       "name": "archer"
+      }
+     ],
+     "blockPile": [
+      {
+       "entityId": 1009,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1010,
+       "name": "soldier"
+      }
+     ],
+     "deckCount": 8,
+     "deckTop": [
+      {
+       "entityId": 1011,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1012,
+       "name": "archer"
+      },
+      {
+       "entityId": 1013,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1014,
+       "name": "soldier"
+      }
+     ],
+     "discardCount": 5,
+     "opponentHand": [
+      {
+       "entityId": 1003,
+       "name": "archer"
+      },
+      {
+       "entityId": 1004,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1005,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1006,
+       "name": "wizard"
+      }
+     ],
+     "playerHand": [
+      {
+       "entityId": 1000,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1001,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1002,
+       "name": "archer"
+      }
+     ]
+    },
+    "debugScenarioId": "block-phase",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "action": {
+     "type": "concede"
+    },
+    "type": "play"
+   },
+   "committed": false,
+   "error": "Not the phasing player's turn",
+   "events": [],
+   "ok": false,
+   "result": null,
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [
+      {
+       "entityId": 1007,
+       "name": "archer"
+      },
+      {
+       "entityId": 1008,
+       "name": "archer"
+      }
+     ],
+     "blockPile": [
+      {
+       "entityId": 1009,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1010,
+       "name": "soldier"
+      }
+     ],
+     "deckCount": 8,
+     "deckTop": [
+      {
+       "entityId": 1011,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1012,
+       "name": "archer"
+      },
+      {
+       "entityId": 1013,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1014,
+       "name": "soldier"
+      }
+     ],
+     "discardCount": 5,
+     "opponentHand": [
+      {
+       "entityId": 1003,
+       "name": "archer"
+      },
+      {
+       "entityId": 1004,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1005,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1006,
+       "name": "wizard"
+      }
+     ],
+     "playerHand": [
+      {
+       "entityId": 1000,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1001,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1002,
+       "name": "archer"
+      }
+     ]
+    },
+    "debugScenarioId": "block-phase",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "action": {
+     "type": "concede"
+    },
+    "type": "play"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "event": {
+      "player": 0,
+      "type": "concede_made"
+     },
+     "index": 0,
+     "type": "engine",
+     "version": 6
+    },
+    {
+     "event": {
+      "type": "game_ended",
+      "winner": 1
+     },
+     "index": 1,
+     "type": "engine",
+     "version": 6
+    },
+    {
+     "index": 2,
+     "outcome": "loss",
+     "type": "game_outcome",
+     "version": 6
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [
+      {
+       "entityId": 1007,
+       "name": "archer"
+      },
+      {
+       "entityId": 1008,
+       "name": "archer"
+      }
+     ],
+     "blockPile": [
+      {
+       "entityId": 1009,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1010,
+       "name": "soldier"
+      }
+     ],
+     "deckCount": 8,
+     "deckTop": [
+      {
+       "entityId": 1011,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1012,
+       "name": "archer"
+      },
+      {
+       "entityId": 1013,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1014,
+       "name": "soldier"
+      }
+     ],
+     "discardCount": 5,
+     "opponentHand": [
+      {
+       "entityId": 1003,
+       "name": "archer"
+      },
+      {
+       "entityId": 1004,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1005,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1006,
+       "name": "wizard"
+      }
+     ],
+     "playerHand": [
+      {
+       "entityId": 1000,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1001,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1002,
+       "name": "archer"
+      }
+     ]
+    },
+    "debugScenarioId": "block-phase",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 1,
+     "gameEnded": {
+      "winner": 1
+     },
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "difficulty": "soldier",
+    "type": "startGame"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "event": {
+      "cardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "config": {
+       "baseCardList": [
+        "soldier",
+        "soldier",
+        "soldier",
+        "soldier",
+        "soldier",
+        "archer",
+        "archer",
+        "archer",
+        "archer",
+        "defender",
+        "defender",
+        "defender",
+        "defender",
+        "wizard",
+        "wizard",
+        "wizard",
+        "scientist",
+        "scientist",
+        "scientist",
+        "wolfy"
+       ],
+       "gameId": "cakeduel_1700000000000",
+       "roundsToWin": 3,
+       "seed": 1700000000000,
+       "specialCardList": [
+        "assassin",
+        "scout",
+        "summoner",
+        "quartermaster",
+        "oracle",
+        "priest",
+        "angel",
+        "baacrates",
+        "agent_u",
+        "pierrot"
+       ],
+       "specialCardsToAdd": 0
+      },
+      "type": "game_started"
+     },
+     "index": 0,
+     "type": "engine",
+     "version": 7
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "type": "deck_shuffled"
+     },
+     "index": 1,
+     "type": "engine",
+     "version": 7
+    },
+    {
+     "event": {
+      "attackerIndex": 0,
+      "cakesAfter": [
+       3,
+       4
+      ],
+      "type": "bout_started"
+     },
+     "index": 2,
+     "type": "engine",
+     "version": 7
+    },
+    {
+     "event": {
+      "phase": "attack",
+      "player": 0,
+      "type": "phase_changed"
+     },
+     "index": 3,
+     "type": "engine",
+     "version": 7
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "player": 0,
+      "type": "card_drawn",
+      "zone": "deck"
+     },
+     "index": 4,
+     "type": "engine",
+     "version": 7
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "player": 1,
+      "type": "card_drawn",
+      "zone": "deck"
+     },
+     "index": 5,
+     "type": "engine",
+     "version": 7
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": null,
+    "debugScenarioId": null,
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "scenarioId": "stacked",
+    "type": "debugLoadScenario"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "index": 0,
+     "scenarioId": "stacked",
+     "type": "debug_scenario_loaded",
+     "version": 8
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [
+      {
+       "entityId": 1012,
+       "name": "archer"
+      },
+      {
+       "entityId": 1013,
+       "name": "archer"
+      },
+      {
+       "entityId": 1014,
+       "name": "archer"
+      }
+     ],
+     "blockPile": [
+      {
+       "entityId": 1015,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1016,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1017,
+       "name": "soldier"
+      }
+     ],
+     "deckCount": 4,
+     "deckTop": [
+      {
+       "entityId": 1018,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1019,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1020,
+       "name": "archer"
+      },
+      {
+       "entityId": 1021,
+       "name": "soldier"
+      }
+     ],
+     "discardCount": 10,
+     "opponentHand": [
+      {
+       "entityId": 1007,
+       "name": "archer"
+      },
+      {
+       "entityId": 1008,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1009,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1010,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1011,
+       "name": "archer"
+      }
+     ],
+     "playerHand": [
+      {
+       "entityId": 1000,
+       "name": "archer"
+      },
+      {
+       "entityId": 1001,
+       "name": "archer"
+      },
+      {
+       "entityId": 1002,
+       "name": "archer"
+      },
+      {
+       "entityId": 1003,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1004,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1005,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1006,
+       "name": "scientist"
+      }
+     ]
+    },
+    "debugScenarioId": "stacked",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "action": {
+     "type": "concede"
+    },
+    "type": "play"
+   },
+   "committed": false,
+   "error": "Not the phasing player's turn",
+   "events": [],
+   "ok": false,
+   "result": null,
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [
+      {
+       "entityId": 1012,
+       "name": "archer"
+      },
+      {
+       "entityId": 1013,
+       "name": "archer"
+      },
+      {
+       "entityId": 1014,
+       "name": "archer"
+      }
+     ],
+     "blockPile": [
+      {
+       "entityId": 1015,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1016,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1017,
+       "name": "soldier"
+      }
+     ],
+     "deckCount": 4,
+     "deckTop": [
+      {
+       "entityId": 1018,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1019,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1020,
+       "name": "archer"
+      },
+      {
+       "entityId": 1021,
+       "name": "soldier"
+      }
+     ],
+     "discardCount": 10,
+     "opponentHand": [
+      {
+       "entityId": 1007,
+       "name": "archer"
+      },
+      {
+       "entityId": 1008,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1009,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1010,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1011,
+       "name": "archer"
+      }
+     ],
+     "playerHand": [
+      {
+       "entityId": 1000,
+       "name": "archer"
+      },
+      {
+       "entityId": 1001,
+       "name": "archer"
+      },
+      {
+       "entityId": 1002,
+       "name": "archer"
+      },
+      {
+       "entityId": 1003,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1004,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1005,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1006,
+       "name": "scientist"
+      }
+     ]
+    },
+    "debugScenarioId": "stacked",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "action": {
+     "type": "concede"
+    },
+    "type": "play"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "event": {
+      "player": 0,
+      "type": "concede_made"
+     },
+     "index": 0,
+     "type": "engine",
+     "version": 9
+    },
+    {
+     "event": {
+      "type": "game_ended",
+      "winner": 1
+     },
+     "index": 1,
+     "type": "engine",
+     "version": 9
+    },
+    {
+     "index": 2,
+     "outcome": "loss",
+     "type": "game_outcome",
+     "version": 9
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [
+      {
+       "entityId": 1012,
+       "name": "archer"
+      },
+      {
+       "entityId": 1013,
+       "name": "archer"
+      },
+      {
+       "entityId": 1014,
+       "name": "archer"
+      }
+     ],
+     "blockPile": [
+      {
+       "entityId": 1015,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1016,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1017,
+       "name": "soldier"
+      }
+     ],
+     "deckCount": 4,
+     "deckTop": [
+      {
+       "entityId": 1018,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1019,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1020,
+       "name": "archer"
+      },
+      {
+       "entityId": 1021,
+       "name": "soldier"
+      }
+     ],
+     "discardCount": 10,
+     "opponentHand": [
+      {
+       "entityId": 1007,
+       "name": "archer"
+      },
+      {
+       "entityId": 1008,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1009,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1010,
+       "name": "scientist"
+      },
+      {
+       "entityId": 1011,
+       "name": "archer"
+      }
+     ],
+     "playerHand": [
+      {
+       "entityId": 1000,
+       "name": "archer"
+      },
+      {
+       "entityId": 1001,
+       "name": "archer"
+      },
+      {
+       "entityId": 1002,
+       "name": "archer"
+      },
+      {
+       "entityId": 1003,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1004,
+       "name": "soldier"
+      },
+      {
+       "entityId": 1005,
+       "name": "wizard"
+      },
+      {
+       "entityId": 1006,
+       "name": "scientist"
+      }
+     ]
+    },
+    "debugScenarioId": "stacked",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 1,
+     "gameEnded": {
+      "winner": 1
+     },
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "difficulty": "soldier",
+    "type": "startGame"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "event": {
+      "cardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "config": {
+       "baseCardList": [
+        "soldier",
+        "soldier",
+        "soldier",
+        "soldier",
+        "soldier",
+        "archer",
+        "archer",
+        "archer",
+        "archer",
+        "defender",
+        "defender",
+        "defender",
+        "defender",
+        "wizard",
+        "wizard",
+        "wizard",
+        "scientist",
+        "scientist",
+        "scientist",
+        "wolfy"
+       ],
+       "gameId": "cakeduel_1700000000000",
+       "roundsToWin": 3,
+       "seed": 1700000000000,
+       "specialCardList": [
+        "assassin",
+        "scout",
+        "summoner",
+        "quartermaster",
+        "oracle",
+        "priest",
+        "angel",
+        "baacrates",
+        "agent_u",
+        "pierrot"
+       ],
+       "specialCardsToAdd": 0
+      },
+      "type": "game_started"
+     },
+     "index": 0,
+     "type": "engine",
+     "version": 10
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "type": "deck_shuffled"
+     },
+     "index": 1,
+     "type": "engine",
+     "version": 10
+    },
+    {
+     "event": {
+      "attackerIndex": 0,
+      "cakesAfter": [
+       3,
+       4
+      ],
+      "type": "bout_started"
+     },
+     "index": 2,
+     "type": "engine",
+     "version": 10
+    },
+    {
+     "event": {
+      "phase": "attack",
+      "player": 0,
+      "type": "phase_changed"
+     },
+     "index": 3,
+     "type": "engine",
+     "version": 10
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "player": 0,
+      "type": "card_drawn",
+      "zone": "deck"
+     },
+     "index": 4,
+     "type": "engine",
+     "version": 10
+    },
+    {
+     "event": {
+      "cardIds": "<random>",
+      "player": 1,
+      "type": "card_drawn",
+      "zone": "deck"
+     },
+     "index": 5,
+     "type": "engine",
+     "version": 10
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": null,
+    "debugScenarioId": null,
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "scenarioId": "empty",
+    "type": "debugLoadScenario"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "index": 0,
+     "scenarioId": "empty",
+     "type": "debug_scenario_loaded",
+     "version": 11
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [],
+     "blockPile": [],
+     "deckCount": 0,
+     "deckTop": [],
+     "discardCount": 0,
+     "opponentHand": [],
+     "playerHand": []
+    },
+    "debugScenarioId": "empty",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "agent",
+   "cmd": {
+    "action": {
+     "type": "concede"
+    },
+    "type": "play"
+   },
+   "committed": false,
+   "error": "Not the phasing player's turn",
+   "events": [],
+   "ok": false,
+   "result": null,
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [],
+     "blockPile": [],
+     "deckCount": 0,
+     "deckTop": [],
+     "discardCount": 0,
+     "opponentHand": [],
+     "playerHand": []
+    },
+    "debugScenarioId": "empty",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 0,
+     "gameEnded": null,
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  },
+  {
+   "actor": "player",
+   "cmd": {
+    "action": {
+     "type": "concede"
+    },
+    "type": "play"
+   },
+   "committed": true,
+   "error": null,
+   "events": [
+    {
+     "event": {
+      "player": 0,
+      "type": "concede_made"
+     },
+     "index": 0,
+     "type": "engine",
+     "version": 12
+    },
+    {
+     "event": {
+      "type": "game_ended",
+      "winner": 1
+     },
+     "index": 1,
+     "type": "engine",
+     "version": 12
+    },
+    {
+     "index": 2,
+     "outcome": "loss",
+     "type": "game_outcome",
+     "version": 12
+    }
+   ],
+   "ok": true,
+   "result": {
+    "success": true
+   },
+   "state": {
+    "config": {
+     "baseCardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "gameId": "cakeduel_1700000000000",
+     "roundsToWin": 3,
+     "seed": 1700000000000,
+     "specialCardList": [
+      "assassin",
+      "scout",
+      "summoner",
+      "quartermaster",
+      "oracle",
+      "priest",
+      "angel",
+      "baacrates",
+      "agent_u",
+      "pierrot"
+     ],
+     "specialCardsToAdd": 0
+    },
+    "debugScenario": {
+     "attackPile": [],
+     "blockPile": [],
+     "deckCount": 0,
+     "deckTop": [],
+     "discardCount": 0,
+     "opponentHand": [],
+     "playerHand": []
+    },
+    "debugScenarioId": "empty",
+    "game": {
+     "attackerIndex": 0,
+     "attackingClaim": null,
+     "blockingClaim": null,
+     "boutWinners": [],
+     "cardList": [
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "soldier",
+      "archer",
+      "archer",
+      "archer",
+      "archer",
+      "defender",
+      "defender",
+      "defender",
+      "defender",
+      "wizard",
+      "wizard",
+      "wizard",
+      "scientist",
+      "scientist",
+      "scientist",
+      "wolfy"
+     ],
+     "config": {
+      "baseCardList": [
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "soldier",
+       "archer",
+       "archer",
+       "archer",
+       "archer",
+       "defender",
+       "defender",
+       "defender",
+       "defender",
+       "wizard",
+       "wizard",
+       "wizard",
+       "scientist",
+       "scientist",
+       "scientist",
+       "wolfy"
+      ],
+      "gameId": "cakeduel_1700000000000",
+      "roundsToWin": 3,
+      "seed": 1700000000000,
+      "specialCardList": [
+       "assassin",
+       "scout",
+       "summoner",
+       "quartermaster",
+       "oracle",
+       "priest",
+       "angel",
+       "baacrates",
+       "agent_u",
+       "pierrot"
+      ],
+      "specialCardsToAdd": 0
+     },
+     "deck": "<random>",
+     "discard": "<random>",
+     "frame": 1,
+     "gameEnded": {
+      "winner": 1
+     },
+     "lastAttackPassed": false,
+     "lastEventId": 0,
+     "nextAttackerIndexOverride": [],
+     "phase": "attack",
+     "pickPhaseEffects": [],
+     "players": [
+      {
+       "cakes": 3,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      },
+      {
+       "cakes": 4,
+       "claimBlacklist": [],
+       "hand": "<random>",
+       "handLimit": 4,
+       "lastAttackingClaim": null
+      }
+     ]
+    },
+    "lastError": null,
+    "settings": {
+     "difficulty": "soldier",
+     "roundsToWin": 3,
+     "seed": 1700000000000
+    },
+    "tutorial": null
+   }
+  }
+ ]
+}

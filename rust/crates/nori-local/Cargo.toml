@@ -1,0 +1,28 @@
+[package]
+name = "nori-local"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "nori_local"
+path = "src/lib.rs"
+
+[[bin]]
+name = "nori-web"
+path = "src/main.rs"
+
+[dependencies]
+nori-core = { path = "../nori-core" }
+axum.workspace = true
+tokio.workspace = true
+serde_json.workspace = true
+tower-http.workspace = true
+http.workspace = true
+futures-util.workspace = true
+reqwest = { workspace = true, features = ["stream", "gzip", "deflate"] }
+
+[dev-dependencies]
+tokio-tungstenite = "0.29"
