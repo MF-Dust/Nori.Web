@@ -117,10 +117,19 @@ def main() -> None:
             "source/project.zip",
             "source/rust-vendor.zip",
             "source/dependencies.json",
+            "source/README.md",
+            "backend/data/live_world_pack.json",
         )
         for path in required:
             if not (release_dir / path).is_file():
                 raise RuntimeError(f"Missing release legal/source file: {path}")
+        project_archive = release_dir / "source" / "project.zip"
+        if not zipfile.is_zipfile(project_archive):
+            raise RuntimeError("Project source is not a valid ZIP archive")
+        with zipfile.ZipFile(project_archive) as project:
+            for path in ("rust/Cargo.toml", "rust/Cargo.lock", "scripts/build_release.py"):
+                if path not in project.namelist():
+                    raise RuntimeError(f"Missing project source file: {path}")
         dependency_file = release_dir / "source" / "dependencies.json"
         dependencies = json.loads(dependency_file.read_text(encoding="utf-8"))
         if not dependencies:

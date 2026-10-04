@@ -14,9 +14,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 NOTICE_FILES = ("LICENSE", "COPYRIGHT.md", "THIRD_PARTY_NOTICES.md")
+RUNTIME_DIRECTORIES = ("public", "backend/data")
 
 
-def archive_project(destination: Path, root: Path = ROOT, *, allow_untracked: bool = False) -> None:
+def archive_project(
+    destination: Path,
+    root: Path = ROOT,
+    *,
+    allow_untracked: bool = False,
+    reuse_runtime_assets: bool = False,
+) -> None:
+    """Archive worktree bytes; reused runtime directories must be shipped alongside the ZIP."""
     untracked = subprocess.check_output(
         ["git", "ls-files", "--others", "--exclude-standard", "-z"], cwd=root
     )
@@ -25,11 +33,12 @@ def archive_project(destination: Path, root: Path = ROOT, *, allow_untracked: bo
     if extra - allowed_locks and not allow_untracked:
         raise RuntimeError("Stage intended source/legal files with git add before packaging; untracked files are not archived.")
     files = set(subprocess.check_output(["git", "ls-files", "--cached", "-z"], cwd=root).decode("utf-8").split("\0")) | extra
+    reused_prefixes = tuple(f"{directory}/" for directory in RUNTIME_DIRECTORIES) if reuse_runtime_assets else ()
     # strict_timestamps=False clamps pre-1980 mtimes (ZIP cannot store them).
     with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED, strict_timestamps=False) as archive:
         for name in sorted(filter(None, files)):
             path = root / name
-            if path.is_file():
+            if path.is_file() and not name.startswith(reused_prefixes):
                 archive.write(path, name)  # Actual worktree bytes, including tracked modifications.
 
 
@@ -250,6 +259,7 @@ def prepare_rust_legal_bundle(
     target_triple: str,
     root: Path = ROOT,
     allow_untracked: bool = False,
+    reuse_runtime_assets: bool = False,
 ) -> list[dict]:
     """Collect the host-target nori-local dependency sources and notices."""
     destination.mkdir(parents=True, exist_ok=True)
@@ -260,7 +270,11 @@ def prepare_rust_legal_bundle(
 
     source_dir = destination / "source"
     source_dir.mkdir(exist_ok=True)
-    archive_project(source_dir / "project.zip", root, allow_untracked=allow_untracked)
+    archive_project(
+        source_dir / "project.zip", root,
+        allow_untracked=allow_untracked,
+        reuse_runtime_assets=reuse_runtime_assets,
+    )
     root_package, _, linked = _rust_linked_packages(root, target_triple)
 
     with tempfile.TemporaryDirectory(prefix="nori-rust-vendor-") as temporary:
@@ -364,17 +378,32 @@ def prepare_rust_legal_bundle(
         (source_dir / "dependencies.json").write_text(json.dumps(records, indent=2) + "\n", encoding="utf-8")
         (destination / "RUST-LICENSE-SUMMARY.txt").write_text("\n".join(summary) + "\n", encoding="utf-8")
         dev_note = (
-            "This development build's project.zip includes untracked worktree files collected using --allow-untracked.\n"
+            "This development build's source delivery includes untracked worktree files collected using --allow-untracked.\n"
             if allow_untracked else ""
+        )
+        runtime_note = (
+            "`public/` and `backend/data/` are stored once at the distribution root, not duplicated in `project.zip`. "
+            "These directories plus `project.zip` contain the complete project worktree used for this build. "
+            "Keep the entire distribution together.\n\n"
+            if reuse_runtime_assets else ""
+        )
+        reconstruct = (
+            'python -c "import shutil, zipfile; zipfile.ZipFile(\'source/project.zip\').extractall(\'rebuild\'); '
+            "shutil.copytree('public', 'rebuild/public', dirs_exist_ok=True); "
+            'shutil.copytree(\'backend/data\', \'rebuild/backend/data\', dirs_exist_ok=True)"\n'
+            if reuse_runtime_assets else "python -m zipfile -e source/project.zip rebuild\n"
         )
         (source_dir / "README.md").write_text(
             "# Rust corresponding source\n\n"
-            "`project.zip` contains the actual project worktree used for this build. "
+            "`project.zip` contains the actual project worktree files used for this build. "
             "`rust-vendor.zip` contains exact vendored source for the normal host-target dependency graph of `nori-local`; "
             "`dependencies.json` records each linked crate's version, license expression, repository, checksum, and source.\n\n"
-            f"{dev_note}"
-            "Rebuild with the Rust toolchain version recorded in `../BUILD_INFO.txt` using:\n\n"
+            f"{runtime_note}{dev_note}"
+            "From the distribution root (one directory above this README), reconstruct the worktree in a new `rebuild/` "
+            "directory and build with the Rust toolchain version recorded in `BUILD_INFO.txt`:\n\n"
             "```sh\n"
+            f"{reconstruct}"
+            "cd rebuild\n"
             "cargo build --release --locked -p nori-local --manifest-path rust/Cargo.toml\n"
             "```\n\n"
             "The root `RUST-LICENSE-SUMMARY.txt` records the license policy results for this bundle. "

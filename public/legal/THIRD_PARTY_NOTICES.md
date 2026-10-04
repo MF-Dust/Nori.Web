@@ -7,7 +7,7 @@
 - 本地可执行文件由 `nori-local` 构建，不包含 Python 解释器或 Python 运行依赖。实际链接的主机目标 normal 依赖见 `source/dependencies.json`，记录 crate 名称、精确版本、SPDX 表达式、仓库和校验值。
 - **shakmaty** — Niklas Fiekas and contributors，GPL-3.0-or-later；上游 https://github.com/niklasf/shakmaty 。Rust 棋类卡带使用该库；包内许可证摘要记录对应版本及许可证文本补充说明。
 - `source/rust-vendor.zip` 提供链接依赖的精确 vendor 源码；`legal/licenses/<crate>-<version>/` 保留许可证及 NOTICE 文件，`RUST-LICENSE-SUMMARY.txt` 记录许可检查结果。
-- `source/project.zip` 包含本次构建使用的仓库工作树文件（不是只指向仓库首页），包括构建脚本；重建方法见包内 `source/README.md` 和 [docs/LOCAL_RELEASE.md](docs/LOCAL_RELEASE.md)。
+- `source/project.zip` 提供本次构建使用的工作树源码和构建脚本；`public/` 与 `backend/data/` 直接复用发行根目录中的同名目录，不在 ZIP 内重复存储。三者共同提供完整源码，分发时保留整个发行目录；还原和重建方法见包内 `source/README.md` 和 [docs/LOCAL_RELEASE.md](docs/LOCAL_RELEASE.md)。
 - 分发包含 GPL 组件的编译后端时，应保留相应 GPL 许可证及对应源码交付。单纯通过网络运行 GPL 服务不等同于分发二进制；发送桌面包则涉及分发义务。
 
 ## JavaScript / WebAssembly

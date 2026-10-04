@@ -20,7 +20,7 @@ python scripts/build_release.py --allow-untracked
 python scripts/smoke_release.py
 ```
 
-该选项会把 Git 未跟踪的非忽略文件也放入 `source/project.zip`，并在 `BUILD_INFO.txt` 中标为 **DEVELOPMENT ONLY**。不要用它生成正式发行物；检查归档内容并提交所有发布源码后，再用默认命令构建。
+该选项会把 Git 未跟踪的非忽略文件也纳入源码交付（`source/project.zip` 及随包的 `public/`、`backend/data/`），并在 `BUILD_INFO.txt` 中标为 **DEVELOPMENT ONLY**。不要用它生成正式发行物；检查归档内容并提交所有发布源码后，再用默认命令构建。
 
 产物位于 `build/release/Nori.Web-<system>-<architecture>/`。启动目录中的 `Nori.Web` / `Nori.Web.exe`，然后访问 `http://127.0.0.1:4173/`。服务支持 `HOST`、`PORT`、`NORI_DISABLE_LIVE_PACK`、`NORI_PUBLIC_DIR` 和 `NORI_DATA_DIR` 环境变量。构建后 `smoke_release.py` 会用空闲端口启动程序，检查 API、网页、非官方提示、法律页面、源码/许可证文件和 Arcade WebSocket 启动行，并在完成后停止服务。
 
@@ -49,7 +49,19 @@ source/README.md
 
 构建器要求每个链接 crate 提供 SPDX 表达式、许可证/NOTICE 文件，且表达式必须至少有一个与 GPL-3.0-or-later 兼容的分支；`AND` 中的每个分支都必须兼容，`OR` 中至少一个分支兼容。未知表达式或缺失许可材料会使构建失败，并列出问题 crate。根目录许可证会复制到发行包；`LICENSE`、`COPYRIGHT.md`、`THIRD_PARTY_NOTICES.md` 必须与 `public/legal/` 中对应文件逐字节一致。
 
-`source/project.zip` 收录跟踪文件的实际工作树内容（包括已跟踪修改），不包含 Git 历史或被忽略的文件。不要将凭据加入 Git 跟踪。发送发行物时保留整个目录，而不只是可执行文件。
+`source/project.zip` 收录跟踪文件的实际工作树内容（包括已跟踪修改），但不重复收录发行根目录已提供的 `public/` 和 `backend/data/`。三者共同提供完整的本次构建源码；ZIP 不包含 Git 历史或被忽略的文件。不要将凭据加入 Git 跟踪。发送发行物时保留整个目录，而不只是可执行文件或 `source/`。
+
+## 从发行包还原源码
+
+在发行根目录运行以下跨平台命令，将源码解压到新的 `rebuild/` 目录，并复制随包的原始网页和数据（无需重新下载资源）：
+
+```sh
+python -c "import shutil, zipfile; zipfile.ZipFile('source/project.zip').extractall('rebuild'); shutil.copytree('public', 'rebuild/public', dirs_exist_ok=True); shutil.copytree('backend/data', 'rebuild/backend/data', dirs_exist_ok=True)"
+cd rebuild
+cargo build --release --locked -p nori-local --manifest-path rust/Cargo.toml
+```
+
+使用 `BUILD_INFO.txt` 记录的 Rust 工具链。包内 `source/README.md` 也提供相同的还原步骤；不要将精简后的 `project.zip` 单独当作完整源码包分发。
 
 ## GitHub Actions
 

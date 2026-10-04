@@ -357,7 +357,7 @@ Nori.Web/
 
 **代码许可与素材权利分别处理**：维护者有权授权的自有代码采用 [GPL-3.0-or-later](LICENSE)，具体范围及排除项见 [COPYRIGHT.md](COPYRIGHT.md)。字体、开源依赖、Live2D 及历史前端说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。GPL 声明不意味着原站代码、角色、剧情和素材已经获准再分发。
 
-**桌面包交付**：Rust 发行目录包含 `source/`（本次构建源码和精确版本的 Rust 依赖源码）、`legal/licenses/`、`RUST-LICENSE-SUMMARY.txt` 与网页可访问的 `/legal/index.html`。构建及再分发要求见 [docs/LOCAL_RELEASE.md](docs/LOCAL_RELEASE.md)；旧 Nuitka 脚本名称仅保留为 Rust 兼容入口。
+**桌面包交付**：Rust 发行目录包含 `source/`（构建源码和精确版本的 Rust 依赖源码）、`legal/licenses/`、`RUST-LICENSE-SUMMARY.txt` 与网页可访问的 `/legal/index.html`。`source/project.zip` 与随包的 `public/`、`backend/data/` 共同提供完整源码，运行资源只保存一份；还原步骤见包内 `source/README.md`，分发时保留整个发行目录。构建及再分发要求见 [docs/LOCAL_RELEASE.md](docs/LOCAL_RELEASE.md)；旧 Nuitka 脚本名称仅保留为 Rust 兼容入口。
 
 0. **数据版权说明**：本仓库包含用于个人离线研究与技术复现的世界存档快照（`backend/data/live_world_pack.json` 及 `public/webAssets/**`），相关剧情文本与美术素材权利归各自权利人所有；公开部署或二次分发前须确认许可，或移除/替换无授权的内容。“个人研究”声明与禁用归档开关都不能替代授权。
 1. **独立实现范畴**：本项目为社区基于公开前端资产与网络逆向协议重构的开源实现，**不包含、不代理、亦不绕过**原官方私有云端特权或未公开数据库。

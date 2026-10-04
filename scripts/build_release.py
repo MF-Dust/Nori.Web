@@ -33,7 +33,7 @@ def _rustc_info() -> tuple[str, str]:
 
 
 def build(*, allow_untracked: bool = False) -> Path:
-    from scripts.release_legal import prepare_rust_legal_bundle
+    from scripts.release_legal import RUNTIME_DIRECTORIES, prepare_rust_legal_bundle
 
     workspace = tomllib.loads(RUST_MANIFEST.read_text(encoding="utf-8"))
     version = workspace["workspace"]["package"]["version"]
@@ -49,6 +49,7 @@ def build(*, allow_untracked: bool = False) -> Path:
             legal_dir,
             target_triple=target_triple,
             allow_untracked=allow_untracked,
+            reuse_runtime_assets=True,
         )
     except Exception:
         shutil.rmtree(BUILD_ROOT, ignore_errors=True)
@@ -69,16 +70,16 @@ def build(*, allow_untracked: bool = False) -> Path:
 
     release_dir.mkdir(parents=True)
     shutil.copy2(executable, release_dir / shipped_name)
-    shutil.copytree(ROOT / "public", release_dir / "public")
-    shutil.copytree(ROOT / "backend" / "data", release_dir / "backend" / "data")
+    for directory in RUNTIME_DIRECTORIES:
+        shutil.copytree(ROOT / directory, release_dir / directory)
     shutil.copy2(ROOT / "README.md", release_dir / "README.md")
     shutil.copytree(legal_dir, release_dir, dirs_exist_ok=True)
     shutil.rmtree(BUILD_ROOT, ignore_errors=True)
 
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     build_kind = (
-        "DEVELOPMENT ONLY: --allow-untracked was used; untracked worktree files are included in source/project.zip."
-        if allow_untracked else "release-ready: only tracked worktree files and the allowed lock files are in source/project.zip."
+        "DEVELOPMENT ONLY: --allow-untracked was used; untracked worktree files are included in the source delivery."
+        if allow_untracked else "release-ready: only tracked worktree files and the allowed lock files are in the source delivery."
     )
     info = release_dir / "BUILD_INFO.txt"
     info.write_text(
@@ -96,6 +97,7 @@ def build(*, allow_untracked: bool = False) -> Path:
                 f"Build status: {build_kind}",
                 "Start Nori.Web, then open http://127.0.0.1:4173/",
                 "Configuration uses HOST, PORT, NORI_DISABLE_LIVE_PACK, NORI_PUBLIC_DIR, and NORI_DATA_DIR.",
+                "Source delivery: source/project.zip + public/ + backend/data/; see source/README.md to reconstruct.",
                 "License summary: see RUST-LICENSE-SUMMARY.txt.",
                 "",
             ]
@@ -112,7 +114,7 @@ def main() -> None:
     parser.add_argument(
         "--allow-untracked",
         action="store_true",
-        help="include untracked worktree files in the source archive and mark the build development-only",
+        help="include untracked worktree files in the source delivery and mark the build development-only",
     )
     args = parser.parse_args()
     build(allow_untracked=args.allow_untracked)

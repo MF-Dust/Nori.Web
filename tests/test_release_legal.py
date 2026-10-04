@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import io
 import json
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -71,6 +72,52 @@ class ReleaseLegalTests(unittest.TestCase):
                 with zipfile.ZipFile(archive) as source:
                     self.assertEqual(source.read("forgotten.rs"), b"untracked")
 
+    def test_project_archive_reuses_only_shipped_runtime_directories(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "repo"
+            root.mkdir()
+            files = {
+                "main.rs": b"source",
+                "rust/Cargo.lock": b"locked dependencies",
+                "public/index.html": b"old page",
+                "public/assets/model.glb": b"model bytes",
+                "backend/data/live_world_pack.json": b"{}",
+                "public-tools/help.txt": b"not a runtime directory",
+                "backend/data-notes.md": b"not a runtime directory",
+            }
+            for name, content in files.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            files["public/index.html"] = b"actual worktree page"
+            (root / "public/index.html").write_bytes(files["public/index.html"])
+
+            for reuse_runtime_assets in (False, True):
+                with self.subTest(reuse_runtime_assets=reuse_runtime_assets):
+                    archive = Path(tmp) / "project.zip"
+                    legal.archive_project(archive, root, reuse_runtime_assets=reuse_runtime_assets)
+                    rebuilt = Path(tmp) / f"rebuild-{reuse_runtime_assets}"
+                    with zipfile.ZipFile(archive) as source:
+                        expected = (
+                            {"main.rs", "rust/Cargo.lock", "public-tools/help.txt", "backend/data-notes.md"}
+                            if reuse_runtime_assets else set(files)
+                        )
+                        self.assertEqual(set(source.namelist()), expected)
+                        source.extractall(rebuilt)
+                    if reuse_runtime_assets:
+                        for directory in legal.RUNTIME_DIRECTORIES:
+                            shutil.copytree(root / directory, rebuilt / directory)
+                    self.assertEqual(
+                        {path.relative_to(rebuilt).as_posix(): path.read_bytes() for path in rebuilt.rglob("*") if path.is_file()},
+                        files,
+                    )
+
+            (root / "public/untracked.png").write_bytes(b"untracked runtime asset")
+            with self.assertRaisesRegex(RuntimeError, "git add"):
+                legal.archive_project(archive, root, reuse_runtime_assets=True)
+
     def test_rust_linked_packages_disables_color_and_deduplicates_tree(self):
         root_package = {
             "name": "nori-local",
@@ -106,6 +153,8 @@ class ReleaseLegalTests(unittest.TestCase):
             for name in legal.NOTICE_FILES:
                 (root / name).write_text("license text", encoding="utf-8")
                 (root / "public/legal" / name).write_text("license text", encoding="utf-8")
+            (root / "backend/data").mkdir(parents=True)
+            (root / "backend/data/live_world_pack.json").write_text("{}", encoding="utf-8")
             (root / "rust").mkdir()
             registry = "registry+https://github.com/rust-lang/crates.io-index"
             (root / "rust/Cargo.lock").write_text(
@@ -127,9 +176,15 @@ class ReleaseLegalTests(unittest.TestCase):
                 patch.object(legal, "subprocess", wraps=subprocess) as commands,
             ):
                 commands.run.return_value = subprocess.CompletedProcess(["cargo", "vendor"], 0)
-                records = legal.prepare_rust_legal_bundle(destination, root=root, target_triple="test-target")
+                records = legal.prepare_rust_legal_bundle(
+                    destination, root=root, target_triple="test-target", reuse_runtime_assets=True,
+                )
             with zipfile.ZipFile(destination / "source/project.zip") as source:
                 self.assertIn("rust/Cargo.lock", source.namelist())
+                self.assertFalse(any(name.startswith(("public/", "backend/data/")) for name in source.namelist()))
+            readme = (destination / "source/README.md").read_text(encoding="utf-8")
+            self.assertIn("shutil.copytree('public', 'rebuild/public'", readme)
+            self.assertIn("shutil.copytree('backend/data', 'rebuild/backend/data'", readme)
             with zipfile.ZipFile(destination / "source/rust-vendor.zip") as source:
                 self.assertEqual(source.read("vendor/dependency/src/lib.rs"), b"pub fn example() {}")
             self.assertEqual((destination / "legal/licenses/dependency-1.2.3/LICENSE").read_text(), "MIT license text")
