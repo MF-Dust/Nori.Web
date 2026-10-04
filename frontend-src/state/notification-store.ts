@@ -13,7 +13,8 @@ export interface NotificationInput {
   durationMs?: number;
   icon?: ReactNode;
   accentColor?: string;
-  sfx?: string;
+  /** Shipped `eje`: `undefined` plays the default toast cue, `null` is silent. */
+  sfx?: string | null;
   dismissKey?: string;
   action?: NotificationAction;
   onClick?: () => void;
@@ -152,7 +153,7 @@ export function createNotificationStore(
       if (suppressed) deferred = [record, ...deferred].slice(0, maxItems);
       else {
         queue = [record, ...queue].slice(0, maxItems);
-        cue(input.sfx ?? "comms-notify-toast-in");
+        if (input.sfx !== null) cue(input.sfx ?? "comms-notify-toast-in");
       }
       publish();
       return record.id;
@@ -167,7 +168,7 @@ export function createNotificationStore(
       queue = queue.filter((item) => item.dismissKey !== key);
       deferred = deferred.filter((item) => item.dismissKey !== key);
       if (before === queue.length + deferred.length) return;
-      cue("comms-notify-dismiss");
+      // Shipped `td.dismissByKey` is a silent state change (e.g. a read mail).
       publish();
     },
     dismissAll() {

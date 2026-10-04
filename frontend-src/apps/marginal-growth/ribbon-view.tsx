@@ -21,6 +21,8 @@ export interface MarginalGrowthRibbonViewProps {
   onTap?: () => void;
   reserveShopSpace?: boolean;
   onCameraTransform?: (transform: RibbonCameraTransform) => void;
+  /** Shipped `playMarginalGrowthFirstPurchase`, re-fired whenever `key` changes. */
+  firstPurchase?: { generatorId: string; color: number; key: number } | null;
 }
 
 /**
@@ -40,6 +42,7 @@ export function MarginalGrowthRibbonView({
   onTap,
   reserveShopSpace = false,
   onCameraTransform,
+  firstPurchase = null,
 }: MarginalGrowthRibbonViewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<MarginalGrowthApp | null>(null);
@@ -121,6 +124,15 @@ export function MarginalGrowthRibbonView({
   useEffect(() => {
     appRef.current?.setBackgroundColor(backgroundColor);
   }, [backgroundColor, ready]);
+
+  const firstPurchaseKey = firstPurchase?.key ?? 0;
+  const firstPurchaseRef = useRef(firstPurchase);
+  firstPurchaseRef.current = firstPurchase;
+  useEffect(() => {
+    const pending = firstPurchaseRef.current;
+    if (!pending || firstPurchaseKey === 0) return;
+    appRef.current?.ribbon.playFirstPurchase(pending.generatorId, pending.color);
+  }, [firstPurchaseKey]);
 
   return (
     <div

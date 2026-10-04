@@ -68,8 +68,8 @@ if (cssBoundaryMatch[1] === "true" && sourceHtml.includes("index-FU-0vwSE.css"))
   throw new Error("css-ownership is complete but the source frontend still imports legacy CSS");
 }
 
-// idle-qfr stays incomplete until a browser probe covers the four ribbon shapes.
-// Marking it complete requires the real mount and the cache loader, not a stub.
+// idle-qfr is complete only while IdleScreen mounts the real marginal-growth
+// ribbon and its loader fetches the shipped cache; a stubbed port must fail here.
 const idleBoundaryMatch = statusSource.match(
   /id:\s*"idle-qfr"[\s\S]*?complete:\s*(true|false)/,
 );

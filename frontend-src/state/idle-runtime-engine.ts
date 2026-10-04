@@ -161,7 +161,12 @@ export interface CreateSourceIdleRuntimeEngineOptions {
   storage?: Pick<Storage, "getItem" | "setItem" | "removeItem">;
   now?: () => number;
   random?: () => number;
-  onComputeSync?: (state: DesktopComputeState) => void;
+  onComputeSync?: (state: DesktopComputeState & {
+    maxCompute: number;
+    maxComputeThisRun: number;
+    currentAlignment: IdleAlignment | null;
+    claimedMementoCount: number;
+  }) => void;
   warn?: (message: string, error?: unknown) => void;
 }
 
@@ -680,7 +685,13 @@ export function createSourceIdleRuntimeEngine(
   };
 
   const syncCompute = () => {
-    options.onComputeSync?.({ compute: state.compute, cap: computeCap(state.facts) });
+    options.onComputeSync?.({
+      compute: state.compute, cap: computeCap(state.facts),
+      maxCompute: Math.max(persistedMaxCompute, state.maxComputeThisRun),
+      maxComputeThisRun: state.maxComputeThisRun,
+      currentAlignment: state.currentAlignment,
+      claimedMementoCount: state.claimedMementoCount,
+    });
   };
 
   const currentStorageKey = (): string | null => {
@@ -688,10 +699,10 @@ export function createSourceIdleRuntimeEngine(
     return worldId ? `${IDLE_RUN_STORAGE_PREFIX}${worldId}` : null;
   };
 
-  const normalizeThreads = (current: IdleRuntimeState): IdleRuntimeState => ({
-    ...current,
-    threads: idleThreadCountFromUpgrades(current.upgrades, upgrades, current.facts),
-  });
+  const normalizeThreads = (current: IdleRuntimeState): IdleRuntimeState => {
+    const threads = idleThreadCountFromUpgrades(current.upgrades, upgrades, current.facts);
+    return threads === current.threads ? current : { ...current, threads };
+  };
 
   const loadStorage = (key: string, facts: ReadonlySet<string>): boolean => {
     if (!storage) return false;
@@ -769,6 +780,7 @@ export function createSourceIdleRuntimeEngine(
       storageKey = nextKey;
       state = createInitialState(facts);
       manifoldRevealApplied = false;
+      persistedMaxCompute = 0;
       changed = true;
       if (storageKey) loadStorage(storageKey, facts);
     } else if (!sameFacts(state.facts, facts)) {
@@ -1080,6 +1092,7 @@ export function createSourceIdleRuntimeEngine(
         anyActionThisEra: true,
       };
       publish();
+      syncCompute();
     },
 
     fireSkill(skillId) {
@@ -1246,6 +1259,7 @@ export function createSourceIdleRuntimeEngine(
         anyActionThisEra: true,
       };
       publish();
+      syncCompute();
       if (claimedMementoCount >= IDLE_MEMENTO_COUNT) onCompleted?.();
     },
 

@@ -2,7 +2,7 @@
 # Date: 2026-09-26
 # HEAD: 0a38a16
 
-The sections below this header are a historical analysis. Current count is 11/15. `supporting-apps` is `complete: true`. The open boundaries are `messenger`, `games`, `live2d`, and `production-entry`. Lifecycle for the four games has passed. Datasea and Farewell static copy are not `nori_talk` gaps. Do not close a boundary from the recommendations further down. See `FRONTEND_ACCEPTANCE_STATUS.md`.
+The sections below this header are a historical analysis. Current count is 12/15. `supporting-apps` and `production-entry` (`dd13547`) are `complete: true`. The open boundaries are `messenger`, `games` and `live2d`. Lifecycle for the four games has passed. Datasea and Farewell static copy are not `nori_talk` gaps. Do not close a boundary from the recommendations further down. See `FRONTEND_ACCEPTANCE_STATUS.md`.
 
 ## Analysis Basis
 
@@ -183,16 +183,16 @@ This analysis is based on:
 
 ## Progress Metrics
 
-**Current**: 11/15 complete. `supporting-apps` is already in the completed set. Open: `messenger`, `games`, `live2d`, `production-entry`.
+**Current**: 12/15 complete. `supporting-apps` and `production-entry` are in the completed set. Open: `messenger`, `games`, `live2d`.
 
-**Achievable Without Agent Backend**: 11/15 (73.3%)
+**Achievable Without Agent Backend**: 12/15 (80%)
 
-**Target With Agent Backend**: 14/15 (93.3%, all except production-entry awaiting switch)
+**Target With Agent Backend**: 15/15 once the three agent/visual-blocked boundaries have evidence
 
 **Estimated Timeline**:
 - Supporting Apps: Complete now
 - Messenger/Games/Live2D: Blocked until agent backend available
-- Production Entry: Blocked until boundaries 1-4 complete
+- Production Entry: Complete (`dd13547`); historical JavaScript retirement still waits for the other boundaries and rollback validation
 
 ---
 

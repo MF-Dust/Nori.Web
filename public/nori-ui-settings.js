@@ -48,6 +48,8 @@
       subtitle: "Control the NoriOS desktop presentation in this browser.",
       hideGui: "Hide GUI",
       hideGuiHint: "Leaves only Nori and the scene background visible. Press Esc at any time to restore the GUI.",
+      fullUnlock: "Finished archive",
+      fullUnlockHint: "Opens the completed world instead of the story. Reset the system after changing this.",
     },
     zh: {
       tab: "界面",
@@ -55,6 +57,8 @@
       subtitle: "控制当前浏览器中的 NoriOS 桌面显示。",
       hideGui: "隐藏 GUI",
       hideGuiHint: "开启后只保留 Nori 与场景背景。随时按 Esc 恢复 GUI。",
+      fullUnlock: "已完结归档",
+      fullUnlockHint: "开启后进入结局存档，而不是从头剧情。切换后请重置系统。",
     },
   };
 
@@ -236,13 +240,49 @@
     line.append(toggle, caption);
     row.append(label, line);
     card.appendChild(row);
+
+    const archiveRow = document.createElement("div");
+    archiveRow.className = "nori-ui-row";
+    const archiveLabel = document.createElement("div");
+    archiveLabel.className = "nori-ui-label";
+    archiveLabel.textContent = t.fullUnlock;
+    const archiveHint = document.createElement("span");
+    archiveHint.className = "nori-ui-hint";
+    archiveHint.textContent = t.fullUnlockHint;
+    archiveLabel.appendChild(archiveHint);
+    const archiveLine = document.createElement("label");
+    archiveLine.className = "nori-ui-checkbox-line";
+    const archiveToggle = document.createElement("input");
+    archiveToggle.type = "checkbox";
+    const archiveCaption = document.createElement("span");
+    archiveCaption.textContent = t.fullUnlock;
+    archiveLine.append(archiveToggle, archiveCaption);
+    archiveRow.append(archiveLabel, archiveLine);
+    card.appendChild(archiveRow);
     wrap.append(head, card);
     panel.appendChild(wrap);
 
+    const archiveOn = () => {
+      try {
+        return localStorage.getItem("nori.fullUnlock") === "1";
+      } catch {
+        return false;
+      }
+    };
     toggle.checked = loadSettings().hideGui;
+    archiveToggle.checked = archiveOn();
     toggle.addEventListener("change", () => saveSettings({ hideGui: toggle.checked }));
+    archiveToggle.addEventListener("change", () => {
+      try {
+        if (archiveToggle.checked) localStorage.setItem("nori.fullUnlock", "1");
+        else localStorage.removeItem("nori.fullUnlock");
+      } catch {
+        // The next reset still uses the previous value if storage is blocked.
+      }
+    });
     panel.refresh = () => {
       toggle.checked = loadSettings().hideGui;
+      archiveToggle.checked = archiveOn();
     };
     return panel;
   }

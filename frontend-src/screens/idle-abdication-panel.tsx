@@ -5,16 +5,21 @@ import type {
   IdlePresentationSnapshot,
 } from "../apps/idle";
 import { formatDesktopCompute } from "../state/compute-runtime";
+import { useIdleCue } from "./idle-cue-context";
 
 export function IdleAbdicationPanel({
   runtime,
   snapshot,
   quote,
+  onClose,
 }: {
   runtime: Pick<IdlePresentationModel, "abdicate">;
   snapshot: IdlePresentationSnapshot;
   quote: IdleAbdicationQuote;
+  /** Shipped `cr`: the confirmation closes after committing. */
+  onClose?: () => void;
 }) {
+  const cue = useIdleCue();
   const noneAvailable = quote.gainedShards <= 0;
 
   return (
@@ -79,7 +84,11 @@ export function IdleAbdicationPanel({
           type="button"
           data-test="confirm-abdication"
           disabled={!quote.canAbdicate}
-          onClick={() => runtime.abdicate()}
+          onClick={() => {
+            cue("idle-abdicate-commit");
+            runtime.abdicate();
+            onClose?.();
+          }}
           className="flex h-9 w-full items-center justify-center gap-1.5 border-2 border-black bg-violet-400 text-[11px] font-semibold text-black hover:brightness-110 active:translate-y-[3px] disabled:cursor-not-allowed disabled:opacity-40"
           style={{
             boxShadow:

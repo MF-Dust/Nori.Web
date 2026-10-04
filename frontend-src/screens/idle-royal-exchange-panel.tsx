@@ -10,6 +10,7 @@ import {
   type IdleRoyalExchangeQuote,
 } from "../apps/idle";
 import { formatDesktopCompute } from "../state/compute-runtime";
+import { useIdleCue } from "./idle-cue-context";
 
 function formatMultiplier(value: number): string {
   if (!Number.isFinite(value)) return String(value);
@@ -23,6 +24,7 @@ export function IdleRoyalExchangePanel({
   runtime: Pick<IdlePresentationModel, "buyRoyalExchange" | "quoteRoyalExchange">;
   snapshot: IdlePresentationSnapshot;
 }) {
+  const cue = useIdleCue();
   const [mode, setMode] = useState<IdleRoyalExchangeBuyCount>(1);
   const rows = useMemo(
     () =>
@@ -92,7 +94,10 @@ export function IdleRoyalExchangePanel({
                 type="button"
                 key={faction.id}
                 disabled={!canBuy}
-                onClick={() => runtime.buyRoyalExchange(faction.id, mode)}
+                onClick={() => {
+                  cue("idle-upgrade-buy");
+                  runtime.buyRoyalExchange(faction.id, mode);
+                }}
                 className="border-2 bg-white/[.025] px-2 py-1.5 text-left disabled:cursor-not-allowed disabled:opacity-40"
                 style={{ borderColor: `${faction.accent}88` }}
               >

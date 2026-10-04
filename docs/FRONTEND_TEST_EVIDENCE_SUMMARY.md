@@ -10,7 +10,7 @@ Recorded against the working tree at `0a38a16`. These commands passed:
 - `npm run frontend:typecheck`
 - `npm run frontend:stories:test` (44)
 - `npm run frontend:recover:check`
-- `npm run frontend:cutover:check` (4 pending boundaries)
+- `npm run frontend:cutover:check` (4 pending boundaries at `0a38a16`; 3 since `production-entry` closed in `dd13547`)
 - `node scripts/smoke/smoke_frontend_recovery_surfaces.mjs` for `cult`, `farewell-ending`, `boot-corruption`, `boot-matrix`, `cold-open`, `memory-datasea`, and `datasea-games`
 - `node scripts/probes/frontend_visual_comparison.mjs` (44 frames, no pixel diff)
 - `npm run frontend:games:lifecycle` (en-US, zh-CN, reduced motion)

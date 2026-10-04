@@ -8,6 +8,7 @@ import {
   type IdlePresentationSnapshot,
 } from "../apps/idle";
 import { formatDesktopCompute } from "../state/compute-runtime";
+import { useIdleCue } from "./idle-cue-context";
 
 const ALIGNMENT_TONES = {
   none: "#67e8f9",
@@ -61,6 +62,7 @@ export function IdleAlignmentPanel({
   runtime: Pick<IdlePresentationModel, "buyProof">;
   snapshot: IdlePresentationSnapshot;
 }) {
+  const cue = useIdleCue();
   const [selectedId, setSelectedId] = useState(() => firstAlignment(snapshot.alignments, snapshot));
   const selected =
     snapshot.alignments.find((alignment) => alignment.id === selectedId) ?? snapshot.alignments[0];
@@ -170,7 +172,10 @@ export function IdleAlignmentPanel({
         <button
           type="button"
           disabled={!availability.committable}
-          onClick={() => runtime.buyProof(selected.id as IdleAlignment)}
+          onClick={() => {
+            cue(selected.id === "equilibrium" ? "idle-equilibrium-commit" : "idle-alignment-commit");
+            runtime.buyProof(selected.id as IdleAlignment);
+          }}
           className="w-full border-2 px-2 py-2 text-[10px] font-semibold disabled:cursor-not-allowed disabled:opacity-40"
           style={{ borderColor: tone, color: tone }}
         >

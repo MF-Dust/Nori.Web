@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 from pathlib import Path
 import time
@@ -17,6 +18,9 @@ from ..virtual_apps.messenger import (
     get_signal_message_artifacts,
     get_signal_thread_artifacts,
 )
+from .story import advance as story_advance
+from .story import FILE_GATE, present_artifacts, recovery_password
+from .story_commands import app_artifacts, run_story_command
 
 if TYPE_CHECKING:
     from ..session.world import WorldSession
@@ -132,7 +136,24 @@ class EventDispatcher:
         if not command:
             return False, "missing command"
 
+        if not isinstance(sub_payload, dict):
+            return False, "command payload must be an object"
         cartridge = self._mantridge = self._manifold()
+
+        if command == "idle.sync":
+            return True, self._sync_idle(sub_payload)
+        if command == "idle.complete":
+            facts = cartridge.state.get("facts", {}) if cartridge is not None else {}
+            if not facts.get("arg.manifold_unlocked"):
+                return True, {"ok": False, "error": "manifold is not unlocked"}
+            count = self._variables().get("idle", {}).get("claimedMementoCount")
+            if count is not None and (not isinstance(count, int) or count < 13):
+                return True, {"ok": False, "error": "all 13 mementos are required"}
+            commit = self._dispatch_manifold({"type": "idle.complete"})
+            return True, commit.result if commit is not None else {"ok": False}
+        story_result = run_story_command(self, command, sub_payload)
+        if story_result is not None:
+            return True, story_result
 
         if command == "signal.login":
             username = str(sub_payload.get("username") or "").strip()
@@ -146,7 +167,21 @@ class EventDispatcher:
             return True, {"ok": True, "username": username}
 
         if command == "signal.recover":
-            return True, {"ok": False, "error": "recovery unavailable"}
+            password = recovery_password(str(sub_payload.get("recoveryCode") or ""))
+            if not password:
+                return True, {"ok": False, "error": "invalid recovery code"}
+            return True, {"ok": True, "tempPassword": password}
+
+        if command == "mail.read":
+            mail_id = str(sub_payload.get("mailId") or sub_payload.get("id") or "")
+            read_fact = ""
+            for artifact in get_mail_artifacts():
+                if str(artifact.get("id") or "") == mail_id:
+                    read_fact = str((artifact.get("data") or {}).get("read_fact") or "")
+                    break
+            if read_fact:
+                self._dispatch_manifold({"type": "client.emitFact", "factId": read_fact, "source": "mail.read"})
+            return True, {"ok": True, "fact": read_fact or None}
 
         if command == "signal.read":
             thread_id = str(sub_payload.get("threadId") or "").strip()
@@ -239,6 +274,7 @@ class EventDispatcher:
                         messages = self.world._commit_messages(m, commit)
                         if messages:
                             self.world._spawn(self.world.broadcast(messages))
+                    self._publish_story()
                 except Exception as exc:
                     return False, f"fact emission rejected: {exc}"
             return True, {"fact": fact_id,
@@ -310,7 +346,36 @@ class EventDispatcher:
             messages = self.world._commit_messages(manifold, commit)
             if messages:
                 self.world._spawn(self.world.broadcast(messages))
+        self._publish_story()
         return commit
+
+    def _sync_idle(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Both shipped command RPC and the older event channel use this path."""
+        prestige = payload.get("prestige")
+        source = {**(prestige if isinstance(prestige, dict) else {}), **payload}
+        scalar = {k: v for k, v in source.items() if isinstance(v, (str, int, float, bool))}
+        for key in ("compute", "maxCompute", "maxComputeThisRun", "cap", "claimedMementoCount"):
+            value = scalar.get(key)
+            if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float))
+                                      or not math.isfinite(value) or value < 0):
+                return {"ok": False, "error": f"invalid {key}"}
+        previous = self._variables().get("idle", {})
+        if isinstance(previous, dict):
+            scalar["maxCompute"] = max(float(previous.get("maxCompute") or 0),
+                                       float(scalar.get("maxCompute") or 0),
+                                       float(scalar.get("maxComputeThisRun") or 0))
+        commit = self._dispatch_manifold({**scalar, "type": "idle.sync"})
+        if commit is None:
+            return {"ok": False, "error": "manifold unavailable"}
+        cap = scalar.get("cap")
+        if isinstance(cap, (int, float)) and cap > 0 and float(scalar.get("maxComputeThisRun") or scalar.get("compute") or 0) >= cap:
+            self._dispatch_manifold({"type": "client.emitFact", "factId": "compute.cap_hit", "source": "idle.sync"})
+        return {"ok": True, "prestige": dict(self._variables().get("idle", {}))}
+
+    def _publish_story(self) -> None:
+        messages = story_advance(self.world)
+        if messages:
+            self.world._spawn(self.world.broadcast(messages))
 
     def _bounty_submit(self, payload: Dict[str, Any]) -> Optional[str]:
         """Validate a bounty submission against archived artifacts.
@@ -322,30 +387,34 @@ class EventDispatcher:
         file_id = str(payload.get("fileId") or "").strip()
         url = str(payload.get("url") or "").strip().lower()
 
+        manifold = self._manifold()
+        facts = manifold.state.get("facts", {}) if manifold is not None else {}
+        if not self.world.full_unlock and not facts.get("bounty.ext_installed"):
+            return None
         matched_fact: Optional[str] = None
+        evidence_files = {"file.daniel_retraction": "dirt.daniel", "file.hanyue_consent": "dirt.hanyue_ssh", "file.futurum_aleph_obs": "dirt.futurum_aleph_obs"}
         if file_id:
             for art in get_file_artifacts():
                 data = art.get("data") or {}
                 path = str(data.get("display_path") or "")
                 aid = str(art.get("id") or "")
                 if file_id in (path.rsplit("/", 1)[-1], path, aid):
-                    matched_fact = data.get("open_emits_fact") \
-                        or data.get("open_sentinel_fact") \
-                        or data.get("read_fact")
+                    gate = FILE_GATE.get(aid)
+                    if self.world.full_unlock or not gate or facts.get(gate):
+                        matched_fact = evidence_files.get(aid)
                     break
-        if not url and not file_id:
-            return None
-
         if matched_fact is None and url:
-            pages = live_pack.all_pages_raw()
-            hit = (
-                any(hint in url for hint in self.HONEYPOT_URL_HINTS)
-                or any(
-                    url in ((page.get("data") or {}).get("url") or "").lower()
-                    for page in pages
-                )
-            )
-            if hit:
+            # Merely submitting any captured page must not award the payoff.
+            for page in live_pack.all_pages_raw():
+                data = page.get("data") or {}
+                if url.rstrip("/") != str(data.get("url") or "").lower().rstrip("/"):
+                    continue
+                for profile, fact in (("frank_mercer48", "dirt.frank"), ("mags_cole", "dirt.maggie"), ("jackwhite", "dirt.jack")):
+                    if f"/user/{profile}" in url or f"/snap/{profile}/" in url:
+                        matched_fact = fact
+                        break
+                break
+            if self.world.full_unlock and any(hint in url for hint in self.HONEYPOT_URL_HINTS):
                 matched_fact = "arg.honeypot_access"
 
         if not matched_fact:
@@ -489,27 +558,12 @@ class EventDispatcher:
             )
 
         if channel == "idle.sync":
-            prestige = (payload or {}).get("prestige") or {}
-            manifold = self._manifold()
-            if manifold is not None and isinstance(payload, dict) and payload:
-                scalar_payload = {
-                    k: v for k, v in payload.items()
-                    if isinstance(v, (str, int, float, bool))
-                }
-                try:
-                    commit = manifold.dispatch(
-                        "player",
-                        {"type": "idle.sync", **scalar_payload},
-                    )
-                    if commit.transition:
-                        messages = self.world._commit_messages(manifold, commit)
-                        if messages:
-                            self.world._spawn(self.world.broadcast(messages))
-                except Exception:
-                    pass
+            result = self._sync_idle(payload)
+            if result.get("ok") and isinstance(payload.get("prestige"), dict):
+                result["prestige"] = payload["prestige"]
             return self.build_response(
                 "idle.sync.result",
-                {"ok": True, "prestige": prestige},
+                result,
                 cartridge_id=cartridge_id,
                 request_id=request_id,
             )
@@ -521,10 +575,18 @@ class EventDispatcher:
                 artifacts.extend(get_mail_artifacts(now))
             if req_type in {None, "file"}:
                 artifacts.extend(get_file_artifacts(now))
+            if req_type in {None, "app"}:
+                artifacts.extend(app_artifacts())
             if req_type in {None, "signal_thread"}:
                 artifacts.extend(get_signal_thread_artifacts(now))
             if req_type in {None, "signal_message"}:
                 artifacts.extend(get_signal_message_artifacts(now))
+            if not self.world.full_unlock:
+                facts = {}
+                manifold = self._manifold()
+                if manifold is not None:
+                    facts = manifold.state.get("facts") or {}
+                artifacts = present_artifacts(artifacts, facts)
             return self.build_response(
                 "manifold.artifacts.response",
                 {"ok": True, "artifacts": artifacts},

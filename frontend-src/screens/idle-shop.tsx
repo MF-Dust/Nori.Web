@@ -2,6 +2,7 @@ import { Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PixelHeading, PixelTooltip } from "./idle-chrome";
 import { IdleIcon } from "./idle-icon";
+import { useIdleCue } from "./idle-cue-context";
 import {
   IDLE_BUY_COUNTS,
   IDLE_BUY_COUNT_LABELS,
@@ -119,6 +120,7 @@ function BuyModeSelector({
   mode: IdleBuyCount;
   onChange: (mode: IdleBuyCount) => void;
 }) {
+  const cue = useIdleCue();
   return (
     <div className="flex shrink-0 flex-col gap-1.5">
       <PixelHeading tone="cyan">购买模式</PixelHeading>
@@ -131,7 +133,10 @@ function BuyModeSelector({
             <button
               type="button"
               key={item}
-              onClick={() => onChange(item)}
+              onClick={() => {
+                if (item !== mode) cue("idle-buy-mode-switch");
+                onChange(item);
+              }}
               className={`relative inline-flex h-6 flex-1 items-center justify-center border-2 leading-none pixel-fs-sm transition-colors duration-75 ${cjk ? "pixel-cjk" : "pixel-ascii"} ${
                 selected
                   ? "border-[var(--px-void)] bg-[var(--px-cyan)] text-[var(--px-void)]"
@@ -157,6 +162,7 @@ export function IdleGeneratorShop({
   runtime: Pick<IdlePresentationModel, "buy" | "quoteGenerator">;
   snapshot: IdlePresentationSnapshot;
 }) {
+  const cue = useIdleCue();
   const [mode, setMode] = useState<IdleBuyCount>(1);
   const visibleGenerators = useMemo(
     () => snapshot.generators.filter((generator) => isIdleGeneratorVisible(generator, snapshot.state)),
@@ -185,7 +191,10 @@ export function IdleGeneratorShop({
             generator={generator}
             quote={quote}
             totalProduction={totalProduction}
-            onBuy={() => runtime.buy(generator.id, mode)}
+            onBuy={() => {
+              cue("idle-generator-buy");
+              runtime.buy(generator.id, mode);
+            }}
           />
         ))}
       </div>

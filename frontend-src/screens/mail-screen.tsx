@@ -43,6 +43,12 @@ export interface MailScreenRuntime {
   attachmentDownloadDurationMs?: number;
   getPendingFocusEmailId?: () => string | null;
   consumePendingFocusEmailId?: () => void;
+  /** Re-run pending focus when a notification targets an already open Mail window. */
+  subscribePendingFocus?: (listener: () => void) => () => void;
+  /** Shipped `yY.markReadLocal`: lets the desktop drop this mail's arrival toast. */
+  onMailRead?: (mailId: string) => void;
+  /** Shipped downloads `n(factId, false)` after an attachment download fact is emitted. */
+  onDownloaded?: (factId: string, already: boolean) => void;
 }
 
 const STRINGS: Record<string, string> = {
@@ -231,6 +237,7 @@ function DownloadAttachment({
       if (attachment.downloadFact) {
         await runtime.model.emitDownloadFact(attachment.downloadFact);
         setLocalDownloaded(true);
+        runtime.onDownloaded?.(attachment.downloadFact, false);
       }
       window.setTimeout(() => setProgress(0), duration);
     } catch (error) {
@@ -456,6 +463,7 @@ export function MailScreen({ runtime, instanceId }: { runtime: MailScreenRuntime
       try {
         await runtime.model.markRead(mail.id);
         setLocalRead((current) => new Set(current).add(mail.id));
+        runtime.onMailRead?.(mail.id);
       } catch (readError) {
         console.warn("[Mail] Failed to mark mail as read", readError);
       }
@@ -463,6 +471,11 @@ export function MailScreen({ runtime, instanceId }: { runtime: MailScreenRuntime
     [localRead, runtime.model],
   );
 
+  const [pendingFocusRevision, setPendingFocusRevision] = useState(0);
+  useEffect(
+    () => runtime.subscribePendingFocus?.(() => setPendingFocusRevision((value) => value + 1)),
+    [runtime],
+  );
   useEffect(() => {
     if (loading || !runtime.getPendingFocusEmailId) return;
     const pendingId = runtime.getPendingFocusEmailId();
@@ -475,7 +488,7 @@ export function MailScreen({ runtime, instanceId }: { runtime: MailScreenRuntime
     setFolder(mail.folder);
     setSelectedId(mail.id);
     void markRead(mail).finally(() => runtime.consumePendingFocusEmailId?.());
-  }, [loading, markRead, messages, runtime]);
+  }, [loading, markRead, messages, runtime, pendingFocusRevision]);
 
   const visible = useMemo(
     () => messages.filter((mail) => mail.folder === folder),

@@ -107,6 +107,12 @@ export interface MessengerScreenRuntime {
   subscribePendingFocus?: (listener: () => void) => () => void;
   localReadFacts?: SignalLocalReadFactsStore;
   serviceConversation?: SignalServiceConversationRuntime;
+  /**
+   * Shipped downloads `m("client.emitFact", payload, result)`. `already` is
+   * true when the attachment fact was known before this emit (the local
+   * backend does not return the shipped `emitted` flag).
+   */
+  onDownloaded?: (factId: string, already: boolean) => void;
 }
 
 const STRINGS: Record<string, string> = {
@@ -469,7 +475,10 @@ function FileAttachment({
   );
 
   const emit = async () => {
-    if (fact) await runtime.model.emitDownloadFact(fact);
+    if (!fact) return;
+    const already = runtime.hasFact?.(fact) === true;
+    await runtime.model.emitDownloadFact(fact);
+    runtime.onDownloaded?.(fact, already);
   };
 
   const download = () => {

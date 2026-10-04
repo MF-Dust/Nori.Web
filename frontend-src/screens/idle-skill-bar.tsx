@@ -6,6 +6,7 @@ import {
   type IdleSkillDefinition,
 } from "../apps/idle";
 import { formatDesktopCompute } from "../state/compute-runtime";
+import { useIdleCue } from "./idle-cue-context";
 import { PixelTooltip } from "./idle-chrome";
 import { IdleIcon } from "./idle-icon";
 
@@ -59,6 +60,7 @@ function SkillButton({
   tint: string;
   reserveBar: boolean;
 }) {
+  const cue = useIdleCue();
   const cooldown = Math.max(0, snapshot.state.skillCooldownSec[skill.id] ?? 0);
   const activeBuff = snapshot.state.activeSkillBuffs.find((buff) => buff.id === skill.id);
   const active = activeBuff != null;
@@ -67,6 +69,7 @@ function SkillButton({
 
   const fire = useCallback(() => {
     if (cooldown > 0) return;
+    cue("idle-skill-fire");
     const gained = runtime.fireSkill(skill.id);
     if (gained <= 0) return;
     const id = nextGainId.current++;
@@ -74,7 +77,7 @@ function SkillButton({
     window.setTimeout(() => {
       setGains((current) => current.filter((item) => item.id !== id));
     }, 1_000);
-  }, [cooldown, runtime, skill.id]);
+  }, [cooldown, cue, runtime, skill.id]);
 
   const cooldownTotal = Math.max(0, skill.cooldownSec ?? 0);
   const cooldownRatio = cooldownTotal > 0 ? Math.min(1, cooldown / cooldownTotal) : 0;

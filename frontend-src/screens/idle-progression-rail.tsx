@@ -1,5 +1,6 @@
 import { ChevronRight, Compass, RefreshCcw, ShoppingCart } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useIdleCue } from "./idle-cue-context";
 import type {
   IdlePresentationModel,
   IdlePresentationSnapshot,
@@ -72,13 +73,32 @@ export function IdleProgressionRail({
     | "buyHeritage"
     | "buyGemPower"
     | "claimMemento"
+    | "snapshot"
     | "quoteAbdication"
     | "quoteRoyalExchange"
   >;
   snapshot: IdlePresentationSnapshot;
 }) {
+  const cue = useIdleCue();
   const [popup, setPopup] = useState<ProgressionPopup | null>(null);
-  const toggle = (next: ProgressionPopup) => setPopup((current) => (current === next ? null : next));
+  const railRef = useRef<HTMLDivElement>(null);
+  // Shipped `ar`: toggles chirp up when opening and down when closing.
+  const toggle = (next: ProgressionPopup) => {
+    const value = popup === next ? null : next;
+    cue("idle-popup-toggle", { pitch: value !== null ? 1.06 : 0.94 });
+    setPopup(value);
+  };
+  // Shipped `ar`: a press outside the rail closes the open popup.
+  useEffect(() => {
+    if (popup === null) return;
+    const close = (event: PointerEvent) => {
+      if (railRef.current?.contains(event.target as Node)) return;
+      cue("idle-popup-toggle", { pitch: 0.94 });
+      setPopup(null);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [cue, popup]);
   const abdication = runtime.quoteAbdication();
   const royalPreview = useMemo(() => {
     for (const faction of snapshot.factions) {
@@ -90,6 +110,7 @@ export function IdleProgressionRail({
 
   return (
     <div
+      ref={railRef}
       className="pointer-events-none absolute bottom-3 left-3 top-3 z-30 flex w-[208px] flex-col gap-2 pixel-cjk [&_button]:pointer-events-auto"
       style={{ filter: "var(--px-ui-glow, none)" }}
     >
@@ -131,7 +152,7 @@ export function IdleProgressionRail({
 
       {popup === "abdicate" ? (
         <div className="pointer-events-auto absolute left-full top-0 z-30 ml-2 w-[300px]">
-          <IdleAbdicationPanel runtime={runtime} snapshot={snapshot} quote={abdication} />
+          <IdleAbdicationPanel runtime={runtime} snapshot={snapshot} quote={abdication} onClose={() => setPopup(null)} />
         </div>
       ) : null}
       {popup === "alignment" && snapshot.alignments.length > 0 ? (

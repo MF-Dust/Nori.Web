@@ -6,6 +6,8 @@ export type IdleInitializationSoundEvent =
 export interface IdleInitializationSequenceProps {
   onComplete(): void;
   onSoundEvent?: (event: IdleInitializationSoundEvent) => void;
+  /** Shipped `Js` cue schedule played through the shared UI cue bus. */
+  playCue?: (cue: string, options?: { volume?: number; pitch?: number }) => void;
   random?: () => number;
 }
 
@@ -46,8 +48,25 @@ function copy() {
     : { title: "算力核心初始化", lines: ["> 发现可用计算资源 …", "> 检查运行状态 …", "> 建立同步连接 …"], ready: "就绪" };
 }
 
+/** Shipped `Js`: seed tick, one rising tick per assembly step, line cues and the finale cues. */
+export function idleInitializationCueSchedule(): { at: number; cue: string; options?: { volume?: number; pitch?: number } }[] {
+  const steps = [...new Set(pixels.map((pixel) => pixel.at))].sort((a, b) => a - b);
+  return [
+    { at: .06, cue: "idle-boot-tick", options: { pitch: .8 } },
+    ...steps.map((at, index) => ({ at, cue: "idle-boot-tick", options: { volume: .8, pitch: .9 + (index / steps.length) * .5 } })),
+    ...[.52, 1.02, 1.46].map((at) => ({ at, cue: "idle-boot-line" })),
+    { at: 1.86, cue: "idle-boot-charge" },
+    { at: 2.28, cue: "idle-boot-ignite" },
+    { at: 2.46, cue: "idle-boot-shine" },
+    { at: 2.62, cue: "idle-boot-stamp" },
+    { at: 3.18, cue: "idle-boot-out" },
+  ].sort((a, b) => a.at - b.at);
+}
+
 /** Window-sized canvas keeps the core, labels and block reveal on one coordinate system. */
-export function IdleInitializationSequence({ onComplete, onSoundEvent, random }: IdleInitializationSequenceProps) {
+export function IdleInitializationSequence({ onComplete, onSoundEvent, playCue, random }: IdleInitializationSequenceProps) {
+  const playCueRef = useRef(playCue);
+  playCueRef.current = playCue;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const completed = useRef(false);
   const callback = useRef(onComplete);
@@ -60,6 +79,8 @@ export function IdleInitializationSequence({ onComplete, onSoundEvent, random }:
     const strings = copy();
     const blockOrder = new Map<number, number>();
     const played = new Set<string>();
+    const schedule = idleInitializationCueSchedule();
+    let nextCue = 0;
     let width = 0, height = 0, frame = 0, origin: number | null = null;
     const resize = () => {
       const ratio = Math.max(1, window.devicePixelRatio || 1);
@@ -80,6 +101,10 @@ export function IdleInitializationSequence({ onComplete, onSoundEvent, random }:
       const x = width / 2, y = height / 2, coreY = y - 74;
       ctx.clearRect(0, 0, width, height);
       ctx.fillStyle = "#050811"; ctx.fillRect(0, 0, width, height);
+      while (nextCue < schedule.length && time >= schedule[nextCue].at) {
+        const item = schedule[nextCue++];
+        playCueRef.current?.(item.cue, item.options);
+      }
       if (time >= .06) cue("seed", "buildTickStart");
       if (time >= 1.86) cue("charge", "charge");
       if (time >= 2.28) cue("ignite", "ignite");

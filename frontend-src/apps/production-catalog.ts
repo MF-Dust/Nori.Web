@@ -97,7 +97,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         alwaysOnTop: true,
       },
     ],
-    recoveryStatus: "runtime-recovered",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "LOe",
@@ -114,7 +114,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         maximizable: false,
       },
     ],
-    recoveryStatus: "metadata-recovered",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "bOe",
@@ -131,7 +131,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         resizable: true,
       },
     ],
-    recoveryStatus: "metadata-recovered",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "oOe",
@@ -243,7 +243,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         ],
       },
     ],
-    recoveryStatus: "ui-partial",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "UPe",
@@ -271,7 +271,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         ],
       },
     ],
-    recoveryStatus: "ui-partial",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "jPe",
@@ -295,7 +295,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         screens: [{ id: "main", transition: "fade" }],
       },
     ],
-    recoveryStatus: "ui-partial",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "rOe",
@@ -323,7 +323,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         ],
       },
     ],
-    recoveryStatus: "protocol-recovered",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "a2e",
@@ -338,7 +338,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         resizable: true,
       },
     ],
-    recoveryStatus: "ui-partial",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "c2e",
@@ -355,7 +355,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         alwaysOnTop: true,
       },
     ],
-    recoveryStatus: "metadata-recovered",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "sAe",
@@ -370,7 +370,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         resizable: true,
       },
     ],
-    recoveryStatus: "metadata-recovered",
+    recoveryStatus: "ui-recovered",
   },
   {
     sourceBinding: "mOe",
@@ -386,7 +386,7 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
         resizable: true,
       },
     ],
-    recoveryStatus: "metadata-recovered",
+    recoveryStatus: "ui-recovered",
   },
 ] as const;
 

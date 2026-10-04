@@ -12,6 +12,7 @@ export const groups = {
   runtime: [
     "tests/frontend/frontend-runtime.test.ts",
     "tests/frontend/frontend-notifications.test.ts",
+    "tests/frontend/frontend-os-notifications.test.ts",
     "tests/frontend/frontend-subscriptions.test.ts",
     "tests/frontend/frontend-browser-extension.test.ts",
     "tests/frontend/frontend-browser-bounty.test.ts",
@@ -19,6 +20,7 @@ export const groups = {
     "tests/frontend/frontend-markdown-body.test.ts",
   ],
   stories: [
+    "tests/frontend/frontend-story-progression.test.ts",
     "tests/frontend/frontend-production-stories.test.ts",
     "tests/frontend/frontend-memory-datasea.test.ts",
     "tests/frontend/frontend-memory-alert.test.ts",

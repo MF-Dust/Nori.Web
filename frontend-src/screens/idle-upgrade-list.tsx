@@ -29,6 +29,7 @@ import { isIdleGeneratorUpgradeAvailable } from "../apps/idle-upgrades";
 import { formatDesktopCompute } from "../state/compute-runtime";
 import { FactionMarks, IdleSlot, MementoGlass, PixelHeading, ThresholdBadge } from "./idle-chrome";
 import { IdleIcon } from "./idle-icon";
+import { useIdleCue } from "./idle-cue-context";
 
 const FACTION_ALIGNMENT: Readonly<Record<string, string>> = {
   elf: "accelerate",
@@ -179,10 +180,11 @@ export function IdleUpgradeList({
 }: {
   runtime: Pick<
     IdlePresentationModel,
-    "buyUpgrade" | "buyFactionUpgrade" | "buyHeritage" | "buyGemPower" | "claimMemento"
+    "buyUpgrade" | "buyFactionUpgrade" | "buyHeritage" | "buyGemPower" | "claimMemento" | "snapshot"
   >;
   snapshot: IdlePresentationSnapshot;
 }) {
+  const cue = useIdleCue();
   const definitions = snapshot.upgrades ?? [];
   const manifold = !!snapshot.state.facts[IDLE_MANIFOLD_UNLOCKED_FACT];
   const genericState = useMemo(() => genericProgressState(snapshot.state), [snapshot.state]);
@@ -296,7 +298,18 @@ export function IdleUpgradeList({
               glass
               enabled
               testId={`memento-${nextMemento.id}`}
-              onClick={() => runtime.claimMemento()}
+              onClick={() => {
+                // Shipped `rr`: the claim pitch climbs per memento; the last one completes the Manifold.
+                const before = runtime.snapshot().state.claimedMementoCount;
+                let completed = false;
+                runtime.claimMemento(() => {
+                  completed = true;
+                });
+                const after = runtime.snapshot().state.claimedMementoCount;
+                if (after <= before) return;
+                if (completed) cue("idle-memento-complete");
+                else cue("idle-memento-claim", { pitch: 2 ** ((after - 1) / DEFAULT_IDLE_MEMENTO_UPGRADES.length / 2) });
+              }}
             />
           ) : null}
 

@@ -1,4 +1,5 @@
 import { StoryScenes } from "./story/story-scenes";
+import { bindSourceStoryProgression } from "./story/story-progression";
 import { DebugScreen } from "./screens/debug-screen";
 import { subscribeManifoldChanges } from "./runtime/manifold-subscription";
 import { SignalDanielConversationRuntime } from "./apps/signal-daniel";
@@ -71,6 +72,9 @@ import {
 import { NotificationLayer } from "./components/notification-layer";
 import { NORI_PHASE_MOODS } from "./live2d/reaction-director";
 import { notificationInputFromMessage } from "./state/notification-store";
+import { bindOsNotifications, QFR_DECRYPT_MS, type OsNotificationBinding } from "./runtime/os-notifications";
+import { createParadigmRevealStore } from "./state/paradigm-reveal-store";
+import { hasRecoveredFilePayload, isRecoverableFile } from "./apps/files";
 
 /** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
 const MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS = 1800;
@@ -107,6 +111,11 @@ function createSourceSession() {
   });
   const signalLocalReadFacts = createSignalLocalReadFactsStore();
   const signalPendingFocus = createSignalPendingFocusStore();
+  // Shipped `Xje.pendingFocusEmailId`: a mail arrival toast focuses its message.
+  const mailPendingFocus = createSignalPendingFocusStore();
+  const paradigmReveal = createParadigmRevealStore();
+  const qfrDecrypt = createQfrDecryptState();
+  let osNotifications: OsNotificationBinding | undefined;
   const signalArrivalTracker = new SignalArrivalTracker();
   const daniel = new SignalDanielConversationRuntime({
     manifold: frontend.manifold,
@@ -164,6 +173,16 @@ function createSourceSession() {
       await frontend.manifold.command("client.emitFact", { factId });
     },
     getWorldId: () => frontend.world.snapshot().worldId,
+    onComputeSync: (state) => {
+      if (!frontend.world.snapshot().worldId) return;
+      void frontend.manifold.command("idle.sync", {
+        ...state, cap: Number.isFinite(state.cap) ? state.cap : null,
+      }).catch((error) => console.error("[SourceApp] idle.sync failed", error));
+      const facts = worldFacts(frontend);
+      if (state.currentAlignment === "equilibrium" && facts.has("arg.memory.shown") && !facts.has("arg.manifold_unlocked")) {
+        void idle.emitFact("arg.manifold_unlocked").catch((error) => console.error("[SourceApp] manifold unlock failed", error));
+      }
+    },
   });
   idle.start();
 
@@ -174,6 +193,8 @@ function createSourceSession() {
 
   const idlePresentation = {
     ...idle,
+    playCue: frontend.audio.playCue,
+    paradigmReveal,
     claimMemento(onCompleted?: () => void) {
       idle.claimMemento(() => {
         void frontend.manifold.command("idle.complete", {}).catch((error) => {
@@ -250,6 +271,7 @@ function createSourceSession() {
           args: { fileId: file.id },
         });
       },
+      registerDownload: (downloadFact, already) => osNotifications?.download(downloadFact, already),
     },
     mail: {
       setContentKey: chip.setContentKey,
@@ -259,13 +281,27 @@ function createSourceSession() {
       playCue: frontend.audio.playCue,
       model: frontend.mail,
       attachmentDownloadDurationMs: MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS,
+      getPendingFocusEmailId: () => mailPendingFocus.get(),
+      consumePendingFocusEmailId: () => {
+        mailPendingFocus.consume();
+      },
+      subscribePendingFocus: mailPendingFocus.subscribe,
+      onMailRead: (mailId) => osNotifications?.mailRead(mailId),
+      onDownloaded: (factId, already) => osNotifications?.download(factId, already),
     },
     files: {
       model: frontend.files,
       translate: sourceTranslate,
       hasFact: (factId) => hasWorldFact(frontend, factId),
-      subscribe: (listener) =>
-        subscribeManifoldChanges(frontend.world, listener),
+      decrypting: qfrDecrypt.active,
+      subscribe: (listener) => {
+        const releaseFacts = subscribeManifoldChanges(frontend.world, listener);
+        const releaseDecrypt = qfrDecrypt.subscribe(listener);
+        return () => {
+          releaseFacts();
+          releaseDecrypt();
+        };
+      },
       launchApp,
       reduceMotion: () =>
         window.matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -292,8 +328,13 @@ function createSourceSession() {
             )
               listener();
           }),
-        invokeCommand: (command, payload) =>
-          frontend.manifold.command(command, payload),
+        invokeCommand: async (command, payload) => {
+          const factId = command === "client.emitFact" ? payload.factId : undefined;
+          const known = typeof factId === "string" && hasWorldFact(frontend, factId);
+          const result = await frontend.manifold.command(command, payload);
+          osNotifications?.commandCompleted(command, payload, result, known);
+          return result;
+        },
       },
       translate: sourceTranslate,
     },
@@ -322,6 +363,7 @@ function createSourceSession() {
           signalPendingFocus.consume();
         },
         subscribePendingFocus: signalPendingFocus.subscribe,
+        onDownloaded: (factId, already) => osNotifications?.download(factId, already),
       },
     },
     idle: idlePresentation,
@@ -414,8 +456,70 @@ function createSourceSession() {
       persistName: "os-store-source-preview",
     },
   });
+  const releaseStoryProgression = bindSourceStoryProgression({
+    getWorldId: () => frontend.world.snapshot().worldId,
+    getFacts: () => worldFacts(frontend),
+    getDesktop: () => bundle.runtime.store.getState(),
+    subscribeFacts: (listener) => subscribeManifoldChanges(frontend.world, listener),
+    subscribeWindows: (listener) => bundle.runtime.store.subscribe(listener),
+    emitFact: (factId) => frontend.manifold.command("client.emitFact", { factId }),
+    warn: (error) => console.error("[SourceApp] story progression failed", error),
+  });
+  const desktopStore = bundle.runtime.store;
+  const openFilesTarget = (target: { folderPath: string; selectKey?: string }) => {
+    void (bundle?.openFilesIntent?.(target) ?? launchApp({ appId: "files", mode: "launch", args: { ...target } }));
+  };
+  osNotifications = bindOsNotifications({
+    translate: sourceTranslate,
+    push: (input) => frontend.notifications.push(input),
+    dismissByKey: (key) => frontend.notifications.dismissByKey(key),
+    getWorldId: () => frontend.world.snapshot().worldId,
+    getFacts: () => worldFacts(frontend),
+    subscribeFacts: (listener) => subscribeManifoldChanges(frontend.world, listener),
+    subscribeArtifacts: (listener) =>
+      frontend.arcade.onMessage((message) => {
+        const raw = message as unknown as { type?: string; channel?: string };
+        if (raw.type === "event" && raw.channel === "manifold.artifacts.invalidated") listener();
+      }),
+    isExclusive: () => desktopStore.getState().exclusiveAppId !== null,
+    subscribeExclusive: (listener) => {
+      let exclusive = desktopStore.getState().exclusiveAppId;
+      return desktopStore.subscribe((state) => {
+        if (state.exclusiveAppId === exclusive) return;
+        exclusive = state.exclusiveAppId;
+        listener();
+      });
+    },
+    isStoryActive: () => frontend.story.snapshot() !== null,
+    isIdleVisible: () =>
+      Object.values(desktopStore.getState().windows).some(
+        (window) => window.appId === "idle" && !window.minimized,
+      ),
+    activateApp: (appId) => void launchApp({ appId, mode: "activate" }),
+    openFiles: openFilesTarget,
+    focusMail: (mailId) => {
+      mailPendingFocus.set(mailId);
+      void launchApp({ appId: "mail", mode: "activate" });
+    },
+    showParadigmToast: (options) => paradigmReveal.show(options),
+    startQfrDecrypt: () => qfrDecrypt.start(),
+    loadMail: async () =>
+      (await frontend.mail.messages()).map((mail) => ({ id: mail.id, data: mail.raw })),
+    loadRecoveredFiles: async () =>
+      (await frontend.files.presentation()).files
+        .filter((file) => isRecoverableFile(file) && hasRecoveredFilePayload(file))
+        .map((file) => ({ id: file.id, name: file.name, folderPath: file.folderPath })),
+    warn: (error) => console.warn("[SourceApp] OS notifications failed", error),
+  });
+  const releaseOsNotifications = () => {
+    osNotifications?.dispose();
+    qfrDecrypt.dispose();
+    mailPendingFocus.clear();
+  };
   return {
     frontend,
+    releaseStoryProgression,
+    releaseOsNotifications,
     signalLocalReadFacts,
     signalPendingFocus,
     signalArrivalTracker,
@@ -436,6 +540,41 @@ function createSourceSession() {
 
 type SourceSession = ReturnType<typeof createSourceSession>;
 
+/** Shipped `pje`: Files shows its decrypting state for two seconds after QFR installs. */
+function createQfrDecryptState() {
+  let decrypting = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const listeners = new Set<() => void>();
+  const publish = () => {
+    for (const listener of listeners) listener();
+  };
+  return {
+    active: () => decrypting,
+    start() {
+      clearTimeout(timer);
+      decrypting = true;
+      publish();
+      timer = setTimeout(() => {
+        timer = undefined;
+        decrypting = false;
+        publish();
+      }, QFR_DECRYPT_MS);
+    },
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    dispose() {
+      clearTimeout(timer);
+      timer = undefined;
+      decrypting = false;
+      listeners.clear();
+    },
+  };
+}
+
 /** Own external subscriptions inside the effect lifetime, including StrictMode remounts. */
 export function SourceApp() {
   const [source, setSource] = useState<SourceSession | null>(null);
@@ -443,6 +582,8 @@ export function SourceApp() {
     const session = createSourceSession();
     setSource(session);
     return () => {
+      session.releaseStoryProgression();
+      session.releaseOsNotifications();
       session.signalArrivalTracker.reset();
       session.signalPendingFocus.clear();
       session.chip.dispose();
@@ -740,7 +881,9 @@ function SourceSessionView({ source }: { source: SourceSession }) {
             translate={sourceTranslate}
             onOpenApp={openNotificationApp}
           />
-          <StoryScenes frontend={source.frontend} minimizeWindows={source.bundle.runtime.store.getState().minimizeAllWindows} />
+          <div style={{ pointerEvents: "auto" }}>
+            <StoryScenes frontend={source.frontend} minimizeWindows={source.bundle.runtime.store.getState().minimizeAllWindows} />
+          </div>
           <NoriSceneEffects scene={source.frontend.scene} />
           <ConversationPanel
             frontend={source.frontend}

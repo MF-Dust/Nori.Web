@@ -13,11 +13,15 @@ Shipped behavior that was still diverging is now in `frontend-src`:
 
 `frontend:typecheck`, `frontend:stories:test` and `frontend:recover:check` passed. Browser probes passed for cult, farewell-ending, boot-corruption, boot-matrix, cold-open, memory-datasea (including the device matrix) and datasea-games. Visual capture wrote 44 frames. `npm run frontend:games:lifecycle` passed en-US, zh-CN and reduced motion. A desktop browser check settled the conversation margin at 12px, then at 94px, and saw a Codenames chat row take the enter pose.
 
-`messenger`, `games` and `live2d` stay `complete: false`. Original agent sessions are still blocked because `nori_talk.request` returns `{type:"noop"}`. `production-entry` stays false and `public/index.html` is unchanged.
+`messenger`, `games` and `live2d` stay `complete: false`. Original agent sessions are still blocked because `nori_talk.request` returns `{type:"noop"}`. `production-entry` was flipped to complete in `dd13547` (2026-09-27): Cloudflare Workers Builds deploys the verified source-app candidate by default, while `public/index.html` is unchanged and remains the explicit `--legacy-frontend` / `NORI_DEPLOY_LEGACY_FRONTEND=1` rollback entry.
+
+## Source gaps closed on 2026-09-27
+
+The shipped `downloads-*` producer, NormalApp fact toasts (repair, cap bump, gesture warning, QFR install, paradigm reveal), mail-arrival and file-decrypted toasts, the Idle in-screen paradigm/first-online toasts and all shipped Idle UI cues are now source-owned. See the "Desktop notification and Idle feedback pass" section of `FRONTEND_ACCEPTANCE_STATUS.md`. `frontend:app:smoke` currently times out waiting for the debug notification card on this working tree. The same failure happens with the new notification binding disabled, so the cause lies elsewhere and is not yet identified.
 
 ## Remaining gaps
 
-11 of 15 cutover boundaries are complete. The four open ones are `messenger`, `games`, `live2d`, and `production-entry`.
+12 of 15 cutover boundaries are complete. The three open ones are `messenger`, `games` and `live2d`. `FRONTEND_CUTOVER_READY` stays false until they close.
 
 External blocker, same noop:
 
@@ -36,7 +40,7 @@ Acceptance still open, with source already in place:
 
 Datasea lines and the Farewell monologue are shipped static copy, not `nori_talk` sessions. Corruption `vBehindScale` stays unwired because the shipped glow consumer is unreachable.
 
-`production-entry` waits until the other three open boundaries have evidence. `public/index.html` is unchanged.
+`production-entry` already serves the source frontend; it does not certify parity. Historical JavaScript retirement waits until the other three open boundaries have evidence and rollback validation has passed. `public/index.html` is unchanged.
 
 ## This pass: baseline repair, Boot/Ending static parity, readiness fix
 
@@ -102,7 +106,7 @@ Supporting Apps boundary is now marked complete with documented limitations:
 - ✅ Smoke test evidence: `frontend:app:smoke` covers all system apps
 - 📝 Private Inject Talk/Nori Context handlers documented as intentionally unavailable (local backend limitation)
 
-**Progress: 11/15 boundaries complete (73.3%)**
+**Progress at that time: 11/15 boundaries complete (73.3%).** Superseded: `production-entry` closed in `dd13547`, so the current count is 12/15.
 
 ### Non-Agent Acceptance Analysis Complete
 Comprehensive evaluation of what can be completed without agent backend:
@@ -150,7 +154,7 @@ This is an external dependency, not frontend work. Messenger, Games, and Live2D 
 - **`scripts/frontend_games_lifecycle_test.mjs`**: Complete lifecycle testing (start→play→close→reopen→reconnect) for 4 games × 2 locales × reduced motion
 
 ### Acceptance Tools Ready
-All 5 remaining boundaries (messenger/games/live2d/supporting-apps/production-entry) now have systematic test tools for visual comparison and lifecycle acceptance. See `FRONTEND_ACCEPTANCE_STATUS.md` for detailed status.
+At the time, all 5 remaining boundaries (messenger/games/live2d/supporting-apps/production-entry; only the first three remain open now) had systematic test tools for visual comparison and lifecycle acceptance. See `FRONTEND_ACCEPTANCE_STATUS.md` for detailed status.
 
 ---
 
@@ -160,7 +164,7 @@ Messenger interaction fixes, real Debug socket/compute controls, Credits SVGs, e
 
 Historical evidence checkpoint: 2026-09-18 16:15 UTC. The run/job IDs below are retained as historical records; no new CI result is asserted for HEAD `085bad3`. The local test baseline is 106 runtime cases, 11 story cases, 20 game cases and 3 historical-asset scanner cases passing. Browser verification runs in GitHub Actions because the execution sandbox denies Chromium socket creation. The cold-open fault probe isolates failed/retried/cancelled image loads in fresh contexts; CI 35354435518 passed the full source application smoke. On historical head `f7a7fa6683adc8c9088d416a2fa6784c94464ac1`, surface run `35364523143` passed Debug, cold-open, Boot/Corruption, Farewell/Ending and Messenger; job `105663601161` also passed all 12 Datasea games through real pointer/keyboard input. Debug job `105663601223` covers the UI-to-facade contract. In the prior Worker job `105661992194`, `Nori scene and cold-open lifecycle` passed against the real NoriStage model, including catalog, physics restoration and HeadPat restoration assertions. The job then failed in Scene editor because the new Audio Debug tab had dropped the real `Corrupt voice` checkbox. Commit `7de88a5` restores that checkbox and the Desktop music selector through the existing DebugScreen scene lease, preserving story/world/unmount cleanup. Worker run `35365741254`, job `105667661060`, then passed the unchanged Scene tools assertions, the complete Scene editor step, the real NoriStage/cold-open probe and every later source-app probe.
 
-All four incomplete cutover gates remain false: `messenger`, `games`, `live2d` and `production-entry`. `supporting-apps` was flipped to complete in `705a2e7`. Shatter and Datasea have production-backed dedicated tuners, and the shipped Debug chunk contains no other per-cinematic tuner tabs. The general tabs now bind the mounted Live2D model, persistent audio settings and mixer/speech runtime, production head-pat recognizer/spring/input/synth, all 37 recovered semantic reaction events including Cake Duel, forced variant/cooldown/mood/tell diagnostics, all recovered Chess/Codenames/Cake Duel scenario IDs, and the real notification RPC/event stream. Live2D idle/lip tuning, Audio transport/effects, Pat telemetry and the reaction internals are source-bound; the shipped Debug chunk exposes no additional per-cinematic tuner family. The remaining Debug gaps are original layout comparison and the private Inject Talk/Nori Context handlers. Those two private-agent tabs report the blocker and observable session state without substitute actions. `nori_talk.request` remains a documented local no-op, so this environment cannot certify original agent replies. Datasea's shipped static text is now source-owned; message-window/compositor parity and private-agent speech remain tracked separately from renderer completion. No production entry has been switched.
+Historical note (superseded by the current section above, `production-entry` closed in `dd13547`): all four incomplete cutover gates remained false at that time: `messenger`, `games`, `live2d` and `production-entry`. `supporting-apps` was flipped to complete in `705a2e7`. Shatter and Datasea have production-backed dedicated tuners, and the shipped Debug chunk contains no other per-cinematic tuner tabs. The general tabs now bind the mounted Live2D model, persistent audio settings and mixer/speech runtime, production head-pat recognizer/spring/input/synth, all 37 recovered semantic reaction events including Cake Duel, forced variant/cooldown/mood/tell diagnostics, all recovered Chess/Codenames/Cake Duel scenario IDs, and the real notification RPC/event stream. Live2D idle/lip tuning, Audio transport/effects, Pat telemetry and the reaction internals are source-bound; the shipped Debug chunk exposes no additional per-cinematic tuner family. The remaining Debug gaps are original layout comparison and the private Inject Talk/Nori Context handlers. Those two private-agent tabs report the blocker and observable session state without substitute actions. `nori_talk.request` remains a documented local no-op, so this environment cannot certify original agent replies. Datasea's shipped static text is now source-owned; message-window/compositor parity and private-agent speech remain tracked separately from renderer completion. No production entry has been switched.
 
 See `FRONTEND_RECOVERY_EXECUTION_PLAN.md` for task IDs and the scene-specific recovery documents for exact boundaries.
 

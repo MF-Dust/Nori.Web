@@ -1,20 +1,21 @@
 # Frontend Restoration Acceptance Status Report
 
-Updated: 2026-09-26  
-HEAD: `0a38a16`  
+Updated: 2026-09-27  
 Authority: `frontend-src/migration/cutover-status.ts`
 
-This report supersedes the older status paragraphs that counted 10/15 boundaries or listed `supporting-apps` as open.
+This report supersedes the older status paragraphs that counted 10/15 or 11/15 boundaries, listed `supporting-apps` as open, or described `production-entry` as false.
 
 ## Current count
 
-**11/15 boundaries complete.** Four remain `complete: false`.
+**12/15 boundaries complete.** Three remain `complete: false`.
 
-Completed: `desktop-shell`, `terminal`, `signal-auth`, `browser-popup`, `browser-main`, `signal-messenger`, `mail`, `files`, `idle-qfr`, `css-ownership`, `supporting-apps`.
+Completed: `desktop-shell`, `terminal`, `signal-auth`, `browser-popup`, `browser-main`, `signal-messenger`, `mail`, `files`, `idle-qfr`, `css-ownership`, `supporting-apps`, `production-entry`.
 
-Open: `messenger`, `games`, `live2d`, `production-entry`.
+Open: `messenger`, `games`, `live2d`.
 
-Do not close those four from source ownership alone. `production-entry` stays false while any other boundary is false, and `public/index.html` still loads the historical JavaScript entry.
+`production-entry` was flipped in `dd13547` (2026-09-27). It tracks which frontend the deploy pipeline serves, not parity: Cloudflare Workers Builds (`scripts/cloudflare_builds_deploy.py`) now materializes and deploys the verified source-app candidate by default. `public/index.html` is unchanged and remains the historical rollback entry, selected only through `--legacy-frontend` or `NORI_DEPLOY_LEGACY_FRONTEND=1` (see `docs/CLOUDFLARE_BUILDS.md`). `FRONTEND_CUTOVER_READY` stays false until the three open boundaries close, and historical JavaScript is not retired before rollback validation.
+
+Do not close the three open boundaries from source ownership alone.
 
 ## What closed in source
 
@@ -25,6 +26,20 @@ These were real divergences from the shipped bundle. They are now in `frontend-s
 - Boot and Ending environment channels use the shipped GSAP power eases. Camera smoothstep is unchanged.
 - The floating conversation stack lifts to 94px while a chip readout is visible and rests at 12px. Game chat rows enter and leave over 300ms without a motion library.
 
+### Desktop notification and Idle feedback pass (2026-09-27)
+
+A chunk-by-chunk audit found shipped producers that had no source owner. They are now source-owned in `runtime/os-notifications.ts`, `screens/idle-toasts.tsx` and `screens/idle-cue-context.tsx`, and covered by `tests/frontend/frontend-os-notifications.test.ts`:
+
+- The `downloads-*` chunk: download-complete / already-downloaded toasts for the nine shipped download facts, opening Files at the shipped target. Mail, Messenger, Terminal and BrowserPageView call it. The local backend does not return the shipped `emitted` flag, so Messenger and Browser pass whether the fact was already known.
+- NormalApp fact toasts: `system.repaired` (RepairController), compute cap bumps (deferred while an exclusive app runs), the four `gesture.*` warnings, `qfr.installed` (toast, two-second Files decrypting state, Files opened at `RSRCH-COLD-VOL`) and the `act3.paradigm_reveal.due` paradigm reveal (silent desktop toast plus the Idle in-screen toast when Idle is visible).
+- Mail arrival toasts (focus the mail on click, dismissed when read) and file-decrypted toasts (silenced between Manifold unlock and completion), each baselined per world like the shipped `Nx`.
+- Notification `sfx: null` is silent and keyed dismissal no longer plays a cue, as in the shipped store.
+- Idle: the "高维范式 已解锁" and "<generator> 上线" in-screen toasts, the ribbon first-purchase pulse, popup outside-click close, and closing the retrain confirmation after commit. All 21 shipped Idle UI cues are wired: core click/crit/lucky, generator buy, buy mode, upgrade buy, memento claim/complete, retrain, alignment/equilibrium commit, skill fire, popup toggle, cap reached, first online, paradigm toast, and the initialization `Js` schedule.
+
+`features/catalog.ts` now assigns every shipped `public/assets` JS/CSS chunk to an owner, and the test fails if a chunk has no owner or a listed module is missing.
+
+Known approximation: the shipped cap-reached cue is also suppressed by three desktop context flags (`Ige`, `ng`, the post-unlock veil). The source suppresses it only before Idle initialization.
+
 ## Evidence from this working tree
 
 Passed locally:
@@ -32,7 +47,7 @@ Passed locally:
 - `npm run frontend:typecheck`
 - `npm run frontend:stories:test` (44)
 - `npm run frontend:recover:check`
-- `npm run frontend:cutover:check` (4 pending boundaries)
+- `npm run frontend:cutover:check` (3 pending boundaries since `dd13547`; this note's original run reported 4)
 - Recovery surfaces: `cult`, `farewell-ending`, `boot-corruption` (corruption matrix 8/8), `boot-matrix` (8/8), `cold-open`, `memory-datasea` (including the device matrix), `datasea-games` (12/12)
 - `node scripts/probes/frontend_visual_comparison.mjs` (44 frames, no pixel verdict)
 - `npm run frontend:games:lifecycle` (en-US, zh-CN, reduced motion)
@@ -71,4 +86,4 @@ Corruption `vBehindScale` / `vBehindOffsetZ` stay unwired. The shipped glow cons
 
 ## Gate policy
 
-`messenger`, `games`, and `live2d` stay false until the external agent sessions and the original visual comparison have evidence. Documenting the noop is not a reason to flip them. `production-entry` is last.
+`messenger`, `games`, and `live2d` stay false until the external agent sessions and the original visual comparison have evidence. Documenting the noop is not a reason to flip them. `production-entry` already serves the source frontend by default; it does not certify parity, and the legacy rollback entry stays in place until the other three close and rollback validation has passed.

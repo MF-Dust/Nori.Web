@@ -203,6 +203,9 @@ class ManifoldWebCartridge(BaseCartridge):
 
     def reduce(self, actor: str, cmd: Dict[str, Any]) -> ReducerResult:
         command_type = cmd.get("type", "")
+        if command_type == "idle.complete":
+            cmd = {**cmd, "type": "client.emitFact", "factId": "idle.manifold_complete", "source": "idle.complete"}
+            command_type = "client.emitFact"
         fact_ids = [cmd.get("factId")]
         if command_type == "client.emitFacts":
             fact_ids = cmd.get("factIds")
@@ -434,9 +437,6 @@ class ManifoldWebCartridge(BaseCartridge):
                 },
                 events,
             )
-
-        if command_type == "idle.complete":
-            return ReducerResult(state, {"ok": True})
 
         if command_type == "system.setState":
             new_state = cmd.get("state")

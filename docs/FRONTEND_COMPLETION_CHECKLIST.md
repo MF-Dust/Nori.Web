@@ -3,8 +3,8 @@
 # HEAD: 0a38a16
 # Purpose: Systematic verification checklist for non-agent work
 #
-# Current count is 11/15. supporting-apps is complete.
-# messenger, games, live2d, and production-entry stay false.
+# Current count is 12/15 (production-entry flipped in dd13547, 2026-09-27).
+# messenger, games, and live2d stay false.
 # See FRONTEND_ACCEPTANCE_STATUS.md. Boxes below are evidence, not gate flips.
 
 ## Messenger Boundary
@@ -219,7 +219,7 @@ The boundary stays `complete: false`.
 ## Progress Tracking
 
 ### Current Status (2026-09-26, HEAD 0a38a16)
-- Typecheck, stories (44), recover check, cutover check: pass. Cutover reports 4 pending boundaries.
+- Typecheck, stories (44), recover check, cutover check: pass. Cutover reported 4 pending boundaries at 0a38a16; it reports 3 since `dd13547`.
 - Games lifecycle: pass for en-US, zh-CN, and reduced motion.
 - Story surfaces listed in `FRONTEND_ACCEPTANCE_STATUS.md`: pass.
 - Visual capture: 44 frames, no pixel verdict.
@@ -229,4 +229,4 @@ The boundary stays `complete: false`.
 - Messenger lifecycle, locale, and connection-loss matrix
 - Full input-device matrix for the four games
 - Agent replies listed above
-- `production-entry`
+- Historical JavaScript retirement after rollback validation (`production-entry` already deploys the source app; `public/index.html` is the rollback entry)

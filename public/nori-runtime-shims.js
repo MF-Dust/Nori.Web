@@ -119,4 +119,32 @@
     },
     true,
   );
+
+  // The historical client cannot send fullUnlock. Default to a fresh story;
+  // localStorage nori.fullUnlock=1 keeps the finished archive.
+  const nativeSocketSend = WebSocket.prototype.send;
+  WebSocket.prototype.send = function noriStorySend(data) {
+    if (typeof data === "string") {
+      try {
+        const message = JSON.parse(data);
+        if (
+          message &&
+          (message.type === "open_my_web_world" || message.type === "reset_my_web_world") &&
+          message.fullUnlock === undefined
+        ) {
+          let archive = false;
+          try {
+            archive = localStorage.getItem("nori.fullUnlock") === "1";
+          } catch {
+            archive = false;
+          }
+          message.fullUnlock = archive;
+          return nativeSocketSend.call(this, JSON.stringify(message));
+        }
+      } catch {
+        // Keep non-JSON frames unchanged.
+      }
+    }
+    return nativeSocketSend.call(this, data);
+  };
 })();

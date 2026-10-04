@@ -9,9 +9,13 @@ interface UnlockSettings {
 export const useUnlockSettings = create<UnlockSettings>()(
   persist(
     (set) => ({
-      fullUnlock: true,
+      fullUnlock: false,
       setFullUnlock: (fullUnlock) => set({ fullUnlock }),
     }),
-    { name: "unlock-settings", version: 1 },
+    {
+      name: "unlock-settings",
+      version: 2,
+      migrate: () => ({ fullUnlock: false }),
+    },
   ),
 );

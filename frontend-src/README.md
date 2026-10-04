@@ -64,26 +64,24 @@ const bundle = createRecoveredDesktopRuntime({
 
 The Browser sandbox keeps command execution page-scoped through each artifact's `allowed_commands` list. The one sanctioned escape to a real OS browser remains an anchor explicitly marked `data-arcade-external="true"`. `bounty.installExtension` is an explicit optional host callback rather than invented behavior, and podcast transport is source-owned while final routing through the OS SFX mixer remains a host-audio integration edge.
 
-The Files cold-volume QFR Dock and the Idle runtime that drives it are now source-owned. Idle no longer imports or delegates to historical JavaScript for its economy, simulation, progression, Manifold lifecycle or initialization flow. The initialization sequence exposes the shipped `buildTick` / `charge` / `ignite` / `shine` / `stamp` sound-event points; final playback remains part of the shared host AudioManager integration rather than an Idle-specific historical dependency.
+The Files cold-volume QFR Dock and the Idle runtime that drives it are now source-owned. Idle no longer imports or delegates to historical JavaScript for its economy, simulation, progression, Manifold lifecycle or initialization flow. The initialization sequence plays the shipped `idle-boot-*` cue schedule, and the Idle controls, paradigm-reveal and first-online toasts play their shipped cues through the shared source cue bus.
 
 Missing presentation modules are intentionally rendered through explicit migration fallbacks instead of silently delegating their behavior back to minified identifiers.
 
 ## Remaining boundaries
 
-The large `NormalApp-*` desktop shell is no longer a general migration boundary. Mail, Signal Messenger, Files, Browser main/popup and Idle/QFR are source-owned. Remaining work includes:
+The large `NormalApp-*` desktop shell is no longer a general migration boundary. Mail, Signal Messenger, Files, Browser main/popup and Idle/QFR are source-owned. The Idle marginal-growth ribbon world is ported too: `source-app.tsx` creates the `state/marginal-growth-store.ts` store, binds it to the live generator economy with `bindMarginalGrowthEconomy`, and `IdleScreen` mounts the Pixi `apps/marginal-growth/` ribbon (`MarginalGrowthRibbonView`, shipped cache loader, topology and GLSL/WGSL shaders) for all four shapes.
 
-- the shipped Idle marginal-growth ribbon world (a pixi renderer plus roughly thirty store
-  parameters, `public/assets/marginalGrowthStore-aMgk69c4.js` driving
-  `IdleScreen-DCDB640k.js`). Not ported. `state/marginal-growth-store.ts` exists but is never
-  instantiated, so the Idle boundary is complete on its smoke evidence with this one recorded
-  exception;
+The cutover status authority is `migration/cutover-status.ts`: 12 of 15 boundaries are complete and `messenger`, `games` and `live2d` remain open. Remaining work includes:
+
 - original-agent behaviour only: Messenger dialogue and media sessions, the four games' agent
   dialogue/voice/inference, and the Corruption, Memory, Datasea and Farewell voice tracks.
   `nori_talk.request` is a local no-op, so none of this is frontend source work;
 - original visual, audio and cinematic comparison against a reference run, plus the Cult,
   Datasea-compositor, Memory-alert and Debug-layout comparisons that have no baseline yet;
-- Cloudflare deploy-stage frontend staging and the final production entry switch;
 - final cross-boundary behavior/smoke comparison and historical JavaScript retirement after rollback validation.
+
+The production entry is already switched: Cloudflare Workers Builds (`scripts/cloudflare_builds_deploy.py`) builds and deploys the verified source-app candidate by default, and `public/index.html` is kept unchanged as the explicit `--legacy-frontend` / `NORI_DEPLOY_LEGACY_FRONTEND=1` rollback entry.
 
 Cake Duel, Codenames, Chess, Pictionary and the Live2D/Nori scene stack are all bound in
 `source-app.tsx` today; what remains for them is agent behaviour and original comparison, not

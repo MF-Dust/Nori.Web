@@ -52,6 +52,9 @@ import { IdleGeneratorShop } from "./idle-shop";
 import { IdleInitializationSequence } from "./idle-initialization-sequence";
 import { IdleProgressionRail } from "./idle-progression-rail";
 import { IdleSkillBar } from "./idle-skill-bar";
+import { IdleTierToasts, ParadigmRevealToast, useIdleFirstOnline, type IdleFirstPurchase } from "./idle-toasts";
+import type { ParadigmRevealStore } from "../state/paradigm-reveal-store";
+import { IdleCueContext, type IdleCue } from "./idle-cue-context";
 
 export interface IdleScreenRuntime {
   snapshot(): IdlePresentationSnapshot;
@@ -74,6 +77,10 @@ export interface IdleScreenRuntime {
   abdicate(): void;
   fireSkill(skillId: string): number;
   emitFact?: (factId: string) => Promise<void> | void;
+  /** Shared UI cue bus (shipped `D`). */
+  playCue?: (cue: string, options?: { volume?: number; pitch?: number }) => void;
+  /** Shipped `Att`: desktop-driven paradigm reveal toast token. */
+  paradigmReveal?: ParadigmRevealStore;
 }
 
 interface IdleTheme {
@@ -166,6 +173,7 @@ function ComputeField({
     accentColor: number;
     cameraClamp: ReturnType<typeof resolveMarginalGrowthCameraClamp>;
     backgroundColor: number;
+    firstPurchase?: IdleFirstPurchase | null;
   };
 }) {
   const count = Math.max(9, Math.min(180, Math.floor(Math.log10(Math.max(10, compute)) * 18)));
@@ -220,6 +228,7 @@ function ComputeField({
         accentColor={ribbon.accentColor}
         cameraClamp={ribbon.cameraClamp}
         backgroundColor={ribbon.backgroundColor}
+        firstPurchase={ribbon.firstPurchase}
         onTap={onTap}
         onCameraTransform={onCameraTransform}
         reserveShopSpace={reserveShopSpace}
@@ -320,10 +329,18 @@ export function IdleScreen({
     }
   }, [initialized, runtime]);
 
+  const playCue = useMemo<IdleCue>(
+    () => (cue, options) => runtime.playCue?.(cue, options),
+    [runtime],
+  );
   const clickCore = useCallback(() => {
     if (!interactive) return;
-    runtime.click();
-  }, [interactive, runtime]);
+    const result = runtime.click();
+    // Shipped `mt`: core click with a small pitch spread, then the lucky or crit accent.
+    playCue("idle-core-click", { pitch: 0.95 + Math.random() * 0.1 });
+    if (result.isLucky) playCue("idle-lucky-jackpot");
+    else if (result.isCrit) playCue("idle-click-crit");
+  }, [interactive, playCue, runtime]);
   const growth = useSyncExternalStore(
     marginalGrowth ? marginalGrowth.subscribe : subscribeNothing,
     () => (marginalGrowth ? marginalGrowth.getState() : NO_GROWTH),
@@ -338,6 +355,7 @@ export function IdleScreen({
     };
   }, [alignmentRibbon.growth, growth.params]);
   const ribbonOwned = growth.source === "owned" ? snapshot.state.owned : null;
+  const firstOnline = useIdleFirstOnline(snapshot.generators, snapshot.state.owned, runtime.playCue);
   const productionRate = useMemo(
     () =>
       snapshot.generators.reduce(
@@ -351,6 +369,12 @@ export function IdleScreen({
   const capReached = capFinite && effective.compute >= cap;
   const showCap = !capFinite || (capFinite && effective.compute >= cap * 0.5);
   const showMeta = !snapshot.state.facts[IDLE_MANIFOLD_UNLOCKED_FACT];
+  // Shipped `oi`: one cue on the rising edge of reaching a finite cap.
+  const capReachedBefore = useRef(capReached);
+  useEffect(() => {
+    if (capReached && !capReachedBefore.current && interactive) playCue("idle-cap-reached");
+    capReachedBefore.current = capReached;
+  }, [capReached, interactive, playCue]);
 
   useEffect(() => {
     if (!marginalGrowth || growth.source !== "autoplay") return;
@@ -371,6 +395,7 @@ export function IdleScreen({
   }, [growth.source, marginalGrowth]);
 
   return (
+    <IdleCueContext.Provider value={playCue}>
     <div
       className="pixel-idle pixel-scanlines relative h-full w-full select-none overflow-hidden"
       style={{
@@ -401,6 +426,7 @@ export function IdleScreen({
                   growth.phase,
                 ),
                 backgroundColor: alignmentRibbon.canvasBg,
+                firstPurchase: firstOnline.firstPurchase,
               }
             : undefined
         }
@@ -484,9 +510,15 @@ export function IdleScreen({
         </div>
       ) : null}
 
+      <div className="pointer-events-none absolute inset-0">
+        <IdleTierToasts toasts={firstOnline.toasts} />
+        <ParadigmRevealToast store={runtime.paradigmReveal} playCue={runtime.playCue} />
+      </div>
+
       {!initialized && !introCompleted ? (
-        <IdleInitializationSequence onComplete={finishInitialization} />
+        <IdleInitializationSequence onComplete={finishInitialization} playCue={playCue} />
       ) : null}
     </div>
+    </IdleCueContext.Provider>
   );
 }

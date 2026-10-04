@@ -1,3 +1,4 @@
+import { useIdleCue } from "./idle-cue-context";
 import {
   cloneElement,
   isValidElement,
@@ -257,6 +258,7 @@ export function IdleSlot({
   onClick?: () => void;
   children: ReactNode;
 }) {
+  const cue = useIdleCue();
   const enabled = !purchased && !locked && affordable;
   const showBorder = enabled && !bloom;
   const style: CSSProperties = {};
@@ -271,7 +273,10 @@ export function IdleSlot({
         data-test={testId}
         aria-label={label}
         aria-disabled={!enabled}
-        onClick={enabled ? onClick : undefined}
+        onClick={enabled ? () => {
+          if (!bloom) cue("idle-upgrade-buy");
+          onClick?.();
+        } : undefined}
         style={style}
         className={[
           "relative aspect-square p-1",

@@ -29,6 +29,7 @@ from ..core.protocol import (
     visibility_advanced_message,
 )
 from ..services.event_dispatcher import EventDispatcher
+from ..services.story import advance as story_advance, player_text as story_player_text
 
 Json = Any
 
@@ -148,6 +149,7 @@ class WorldSession:
                 print(f"[world:{self.world_id}] internal {cartridge_id}/{cmd.get('type')} rejected: {exc}")
                 return None
             messages = self._commit_messages(cartridge, commit)
+            messages.extend(story_advance(self))
         await self.broadcast(messages)
         return commit
 
@@ -349,6 +351,8 @@ class WorldSession:
                     state["facts"] = progress["facts"]
                 if isinstance(progress.get("variables"), dict):
                     state["variables"] = progress["variables"]
+            if not self.full_unlock:
+                story_advance(self)
             grant = self.issue_media_grant()
             await self.send_direct(
                 websocket,
@@ -454,6 +458,9 @@ class WorldSession:
                     else:
                         failure = None
                         messages = self._commit_messages(cartridge, commit)
+                        if cartridge_id == "chat" and message["actor"] == "player" and message["cmd"].get("type") == "playerMessage":
+                            messages.extend(story_player_text(self, str(message["cmd"].get("text") or "")))
+                        messages.extend(story_advance(self))
                         ack = dispatch_success_message(
                             world_id=self.world_id,
                             cartridge_id=cartridge_id,

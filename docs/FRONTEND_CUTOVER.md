@@ -10,7 +10,7 @@ PR #28 established a maintainable recovered source tree. This migration moves th
 
 ## Current source status — HEAD `085bad3`
 
-All seven story producers are registered in the source call chain (`StoryScenes` plus the runtime `STORY_ORDER` support set). The six non-Cult segments remain source-owned reconstructions without original visual, narrative, media and agent parity. Datasea source/probe coverage includes all three waves and all twelve games; original visual, media and agent acceptance remain open. The Debug panel and scene editor are source-owned; the remaining Debug gaps are original layout comparison and the private Inject Talk/Nori Context handlers. The five false gates remain `messenger`, `games`, `live2d`, `supporting-apps` and `production-entry`; no production entry has been switched.
+All seven story producers are registered in the source call chain (`StoryScenes` plus the runtime `STORY_ORDER` support set). The six non-Cult segments remain source-owned reconstructions without original visual, narrative, media and agent parity. Datasea source/probe coverage includes all three waves and all twelve games; original visual, media and agent acceptance remain open. The Debug panel and scene editor are source-owned; the remaining Debug gaps are original layout comparison and the private Inject Talk/Nori Context handlers. At that HEAD the five false gates were `messenger`, `games`, `live2d`, `supporting-apps` and `production-entry`. Current state (see `FRONTEND_ACCEPTANCE_STATUS.md`): `supporting-apps` closed in `705a2e7` and `production-entry` closed in `dd13547`, so only `messenger`, `games` and `live2d` remain false. Cloudflare Workers Builds deploys the source-app candidate by default; `public/index.html` is the preserved legacy rollback entry.
 
 ## Build contracts
 
@@ -42,8 +42,8 @@ artifact does not change the public entry, feature gates, or deployment.
 4. Cake Duel, Codenames, Chess and Pictionary presentation/controllers.
 5. Live2D/Nori scene lifecycle and visual integration.
 6. CSS ownership is complete: source modules and generated utilities replace the historical stylesheet link. See `FRONTEND_CSS_RECOVERY.md`.
-7. Add the deploy-stage frontend build to the Cloudflare build command.
-8. Switch `public/index.html` to the source build and mark `production-entry` complete.
+7. Add the deploy-stage frontend build to the Cloudflare build command. Done in `dd13547`.
+8. Serve the source build as the production entry and mark `production-entry` complete. Done in `dd13547`: the deploy wrapper materializes the source candidate; `public/index.html` stays as the explicit legacy rollback entry rather than being rewritten.
 9. Remove historical JavaScript chunks only after production behavior comparison and rollback validation.
 
 ## Acceptance criteria for each boundary
