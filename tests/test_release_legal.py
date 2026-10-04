@@ -71,6 +71,34 @@ class ReleaseLegalTests(unittest.TestCase):
                 with zipfile.ZipFile(archive) as source:
                     self.assertEqual(source.read("forgotten.rs"), b"untracked")
 
+    def test_rust_linked_packages_disables_color_and_deduplicates_tree(self):
+        root_package = {
+            "name": "nori-local",
+            "version": "2.0.0",
+            "manifest_path": str(ROOT / "rust/crates/nori-local/Cargo.toml"),
+        }
+        http = {"name": "http", "version": "1.5.0"}
+        metadata = {"packages": [root_package, http, {"name": "unlinked", "version": "1.0.0"}]}
+        tree = (
+            "nori-local v2.0.0 (/workspace/path with spaces/nori-local)\n"
+            "http v1.5.0\n"
+            "http v1.5.0 (*)\n"
+        )
+
+        def cargo_output(command, **kwargs):
+            if command[1] == "metadata":
+                return json.dumps(metadata)
+            self.assertEqual(command[:2], ["cargo", "tree"])
+            self.assertIn("--color", command)
+            self.assertEqual(command[command.index("--color") + 1], "never")
+            return tree
+
+        with patch.object(legal.subprocess, "check_output", side_effect=cargo_output):
+            self.assertEqual(
+                legal._rust_linked_packages(ROOT, "test-target"),
+                (root_package, metadata, [http]),
+            )
+
     def test_rust_bundle_contains_license_source_and_version_records(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "repo"

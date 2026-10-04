@@ -174,7 +174,7 @@ def _rust_linked_packages(root: Path, target_triple: str) -> tuple[dict, dict, l
 
     tree = subprocess.check_output(
         [
-            "cargo", "tree", "--locked", "--manifest-path", str(manifest), "-p", "nori-local",
+            "cargo", "tree", "--color", "never", "--locked", "--manifest-path", str(manifest), "-p", "nori-local",
             "--target", target_triple, "-e", "normal", "--prefix", "none", "--format", "{p}",
         ],
         cwd=root,
