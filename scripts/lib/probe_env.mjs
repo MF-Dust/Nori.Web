@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { createServer } from "vite";
 import { chromium } from "playwright";
 import { probeLaunchOptions } from "./probe_launch.mjs";
+import { startBackend as launchBackend } from "./backend_launch.mjs";
 import { artifactDir, repoRoot } from "./paths.mjs";
 
 /** Ask the OS for an unused localhost port. */
@@ -40,30 +41,15 @@ export function killTree(child) {
   return Promise.resolve();
 }
 
-async function waitForHttp(url, child, log, timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (child.exitCode !== null) throw new Error(`process exited before ${url} responded:\n${log()}`);
-    try {
-      const response = await fetch(url);
-      if (response.ok) return;
-    } catch {
-      // The server is not listening yet.
-    }
-    await new Promise((done) => setTimeout(done, 100));
-  }
-  throw new Error(`timed out waiting for ${url}:\n${log()}`);
-}
-
-function capture(child, logFile) {
+function capture(logFile) {
   let text = "";
-  const onData = (chunk) => {
-    text = (text + chunk).slice(-12_000);
-    if (logFile) appendFile(logFile, chunk).catch(() => {});
+  return {
+    log: () => text,
+    onOutput(chunk) {
+      text = (text + chunk).slice(-12_000);
+      if (logFile) appendFile(logFile, chunk).catch(() => {});
+    },
   };
-  child.stdout?.on("data", onData);
-  child.stderr?.on("data", onData);
-  return () => text;
 }
 
 /**
@@ -72,39 +58,24 @@ function capture(child, logFile) {
  */
 export async function startBackend(options = {}) {
   const port = options.port ?? (await freePort());
-  const origin = `http://127.0.0.1:${port}`;
   const logFile = options.logFile;
   if (logFile) await mkdir(resolve(logFile, ".."), { recursive: true });
-  const child = spawn(
-    options.python ?? process.env.NORI_TEST_PYTHON ?? "python",
-    ["-m", "uvicorn", "server:app", "--host", "127.0.0.1", "--port", String(port)],
-    {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        NORI_DISABLE_LIVE_PACK: "1",
-        OPENAI_API_KEY: "",
-        ANTHROPIC_API_KEY: "",
-        ...options.env,
-      },
-      stdio: ["ignore", "pipe", "pipe"],
-      detached: process.platform !== "win32",
-      windowsHide: true,
-    },
-  );
-  const log = capture(child, logFile);
-  try {
-    await waitForHttp(`${origin}/api/auth/get-session`, child, log, options.timeoutMs ?? 20_000);
-  } catch (error) {
-    await killTree(child);
-    throw error;
-  }
-  return {
+  const captureOutput = capture(logFile);
+  const backend = await launchBackend({
     port,
-    origin,
-    log,
-    stop: () => killTree(child),
-  };
+    host: "127.0.0.1",
+    env: {
+      NORI_DISABLE_LIVE_PACK: "1",
+      OPENAI_API_KEY: "",
+      ANTHROPIC_API_KEY: "",
+      ...options.env,
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+    readyTimeoutMs: options.timeoutMs ?? 20_000,
+    onOutput: captureOutput.onOutput,
+    pythonCommand: options.python ?? process.env.NORI_TEST_PYTHON ?? "python",
+  });
+  return { port, origin: backend.origin, log: captureOutput.log, stop: backend.stop };
 }
 
 /** Start the source app's Vite dev server on a free port. */

@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium } from "playwright";
 import { probeLaunchOptions } from "../lib/probe_launch.mjs";
+import { startBackend } from "../lib/backend_launch.mjs";
 import { preview } from "vite";
 
 const root = resolve(process.cwd());
@@ -51,33 +52,6 @@ assert.equal(
 
 await mkdir(output, { recursive: true });
 
-const backend = spawn(
-  process.env.NORI_TEST_PYTHON ?? "python",
-  [
-    "-m",
-    "uvicorn",
-    "server:app",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(backendPort),
-  ],
-  {
-    env: {
-      ...process.env,
-      NORI_DISABLE_LIVE_PACK: "1",
-      OPENAI_API_KEY: "",
-      ANTHROPIC_API_KEY: "",
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-  },
-);
-let backendLog = "";
-for (const stream of [backend.stdout, backend.stderr])
-  stream.on("data", (data) => {
-    backendLog = (backendLog + data).slice(-12_000);
-  });
-
 const manifest = {
   version: 1,
   purpose: "paired visual review; no pixel-parity claim",
@@ -99,18 +73,7 @@ const manifest = {
 let referenceServer;
 let candidateServer;
 let browser;
-
-async function waitForBackend() {
-  for (let attempt = 0; attempt < 100; attempt++) {
-    try {
-      if ((await fetch(`${backendOrigin}/api/auth/get-session`)).ok) return;
-    } catch {}
-    if (backend.exitCode !== null)
-      throw new Error(`Visual-reference backend exited: ${backendLog}`);
-    await new Promise((resolve) => setTimeout(resolve, 150));
-  }
-  throw new Error("Visual-reference backend did not start");
-}
+let backend;
 
 async function startPreview(outDir, port) {
   return preview({
@@ -512,7 +475,13 @@ async function captureTarget({ label, origin, historical }) {
 }
 
 try {
-  await waitForBackend();
+  backend = await startBackend({
+    port: backendPort,
+    env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
+    stdio: ["ignore", "pipe", "pipe"],
+    readyTimeoutMs: 15_000,
+    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
+  });
   referenceServer = await startPreview(publicDir, referencePort);
   candidateServer = await startPreview(candidateDir, candidatePort);
   browser = await chromium.launch(probeLaunchOptions());
@@ -551,8 +520,8 @@ try {
     closePreview(referenceServer),
     closePreview(candidateServer),
   ]);
-  backend.kill("SIGTERM");
-  await writeFile(resolve(output, "backend.log"), backendLog);
+  await backend?.stop();
+  await writeFile(resolve(output, "backend.log"), backend?.log() ?? "");
   await writeFile(
     resolve(output, "manifest.json"),
     `${JSON.stringify(manifest, null, 2)}\n`,

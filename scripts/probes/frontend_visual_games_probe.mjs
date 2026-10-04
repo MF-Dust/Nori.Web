@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium } from "playwright";
 import { probeLaunchOptions } from "../lib/probe_launch.mjs";
+import { startBackend } from "../lib/backend_launch.mjs";
 import { preview } from "vite";
 
 const root = resolve(process.cwd());
@@ -48,17 +49,6 @@ const manifest = {
   captures: {},
 };
 
-async function waitForBackend(process, origin, log) {
-  for (let attempt = 0; attempt < 100; attempt++) {
-    try {
-      if ((await fetch(`${origin}/api/auth/get-session`)).ok) return;
-    } catch {}
-    if (process.exitCode !== null) throw new Error(`Backend exited: ${log()}`);
-    await new Promise((resolve) => setTimeout(resolve, 150));
-  }
-  throw new Error("Game visual backend did not start");
-}
-
 async function closePreview(server) {
   await new Promise((resolve) => server ? server.httpServer.close(resolve) : resolve());
 }
@@ -73,19 +63,7 @@ async function settle(page) {
 async function captureTarget({ label, outDir, historical, backendPort, previewPort }, browser) {
   const directory = resolve(output, label);
   await mkdir(directory, { recursive: true });
-  const backendOrigin = `http://127.0.0.1:${backendPort}`;
-  let backendLog = "";
-  const backend = spawn(
-    process.env.NORI_TEST_PYTHON ?? "python",
-    ["-m", "uvicorn", "server:app", "--host", "127.0.0.1", "--port", String(backendPort)],
-    {
-      env: { ...process.env, NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-  for (const stream of [backend.stdout, backend.stderr])
-    stream.on("data", (data) => { backendLog = (backendLog + data).slice(-12_000); });
-  let server;
+  let backend, backendLog = "", server;
   let context;
   let page;
   const states = {};
@@ -94,7 +72,15 @@ async function captureTarget({ label, outDir, historical, backendPort, previewPo
   const failedAssets = [];
   const legacyRequests = [];
   try {
-    await waitForBackend(backend, backendOrigin, () => backendLog);
+    backend = await startBackend({
+      port: backendPort,
+      env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
+      stdio: ["ignore", "pipe", "pipe"],
+      readyTimeoutMs: 15_000,
+      pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
+    });
+    backendLog = backend.log();
+    const backendOrigin = backend.origin;
     server = await preview({
       configFile: false,
       root,
@@ -223,8 +209,8 @@ async function captureTarget({ label, outDir, historical, backendPort, previewPo
   } finally {
     await context?.close();
     await closePreview(server);
-    backend.kill("SIGTERM");
-    await writeFile(resolve(directory, "backend.log"), backendLog);
+    await backend?.stop();
+    await writeFile(resolve(directory, "backend.log"), backend?.log() ?? backendLog);
   }
 }
 

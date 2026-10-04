@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 import { probeLaunchOptions } from "../lib/probe_launch.mjs";
-import { spawn } from "node:child_process";
+import { startBackend } from "../lib/backend_launch.mjs";
 import { mkdir } from "node:fs/promises";
 import { resolve, join } from "node:path";
 
@@ -14,41 +14,6 @@ await mkdir(output, { recursive: true });
 
 const isCI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
 const modelReadyTimeout = isCI ? 90000 : 60000;
-
-async function startBackend(port) {
-  const backend = spawn(
-    process.env.NORI_TEST_PYTHON ?? "python",
-    ["-m", "uvicorn", "server:app", "--host", "127.0.0.1", "--port", String(port)],
-    {
-      env: {
-        ...process.env,
-        NORI_DISABLE_LIVE_PACK: "1",
-        OPENAI_API_KEY: "",
-        ANTHROPIC_API_KEY: "",
-      },
-      stdio: ["ignore", "pipe", "pipe"],
-    }
-  );
-
-  let backendLog = "";
-  backend.stdout.on("data", (data) => backendLog = (backendLog + data).slice(-4000));
-  backend.stderr.on("data", (data) => backendLog = (backendLog + data).slice(-4000));
-
-  const backendOrigin = `http://127.0.0.1:${port}`;
-  let ready = false;
-  for (let attempt = 0; attempt < 100; attempt++) {
-    try {
-      if ((await fetch(`${backendOrigin}/api/auth/get-session`)).ok) {
-        ready = true;
-        break;
-      }
-    } catch {}
-    if (backend.exitCode !== null) throw new Error("Backend exited: " + backendLog);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  if (!ready) throw new Error("Backend did not start");
-  return { backend, backendOrigin };
-}
 
 async function captureDebugLayouts(page) {
   console.log("Capturing Debug layouts...");
@@ -135,7 +100,14 @@ async function captureSystemApps(page) {
 
 async function main() {
   const backendPort = 47182;
-  const { backend, backendOrigin } = await startBackend(backendPort);
+  const backend = await startBackend({
+    port: backendPort,
+    env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
+    stdio: ["ignore", "pipe", "pipe"],
+    readyTimeoutMs: 10_000,
+    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
+  });
+  const backendOrigin = backend.origin;
   process.env.NORI_BACKEND_ORIGIN = backendOrigin;
 
   let browser;
@@ -163,7 +135,7 @@ async function main() {
 
   } finally {
     await browser?.close();
-    backend.kill();
+    await backend.stop();
   }
 }
 

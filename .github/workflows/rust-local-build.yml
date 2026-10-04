@@ -1,0 +1,64 @@
+name: Rust Local Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+          - name: Linux
+            os: ubuntu-latest
+          - name: macOS
+            os: macos-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Python build helper
+        run: python -m pip install "packaging>=24"
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Test license and source delivery
+        run: python -m unittest tests.test_release_legal
+
+      - name: Test Rust core and local service
+        run: cargo test --locked -p nori-core -p nori-local --manifest-path rust/Cargo.toml
+
+      - name: Build local distribution
+        run: python scripts/build_release.py
+
+      - name: Smoke test packaged distribution
+        run: python scripts/smoke_release.py
+
+      - name: Upload local distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nori.Web-${{ runner.os }}-${{ runner.arch }}
+          path: build/release/Nori.Web-*
+          if-no-files-found: error
+          retention-days: 14

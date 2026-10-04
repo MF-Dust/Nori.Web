@@ -1,35 +1,26 @@
 // Browser-level smoke test: the restored public frontend reaches the local
 // ticket endpoint and opens both verified Arcade sockets without page errors.
-import { spawn } from "node:child_process";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { chromium } from "playwright";
+import { startBackend } from "../scripts/lib/backend_launch.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const serverPy = path.resolve(__dirname, "../server.py");
 
 const port = Number(process.env.NORI_E2E_PORT || 4183);
 const base = `http://127.0.0.1:${port}`;
-const server = spawn(process.env.PYTHON || "python", [serverPy], {
-  env: { ...process.env, PORT: String(port), HOST: "127.0.0.1" },
+const server = await startBackend({
+  port,
   stdio: "ignore",
+  readyTimeoutMs: 10_000,
+  pythonCommand: process.env.PYTHON || "python",
+  pythonArgs: [serverPy],
 });
-
-async function waitForServer() {
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    try {
-      const response = await fetch(`${base}/api/entry-status`);
-      if (response.ok) return;
-    } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  }
-  throw new Error("Local server did not start");
-}
-
+let browser;
 try {
-  await waitForServer();
-  const browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
   const errors = [];
@@ -90,12 +81,11 @@ try {
   const newTab = await context.newPage();
   await newTab.goto(`${base}/`, { waitUntil: "domcontentloaded" });
   assert.equal((await sessionFor(newTab)).user.id, sessionA.user.id);
-  await browser.close();
-
   if (!sockets.some((url) => url.endsWith("/api/arcade/web/v1"))) throw new Error("Main Arcade socket did not open");
   if (!sockets.some((url) => url.endsWith("/api/arcade/web/v1/media"))) throw new Error("Media Arcade socket did not open");
   if (errors.length) throw new Error(`Browser errors: ${errors.join(" | ")}`);
   console.log("[ok] shipped frontend bootstraps with isolated browser identities stable across reloads/tabs");
 } finally {
-  server.kill("SIGTERM");
+  await browser?.close();
+  await server.stop();
 }

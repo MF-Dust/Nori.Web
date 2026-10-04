@@ -1,30 +1,25 @@
 import assert from "node:assert/strict";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { spawn } from "node:child_process";
 import { preview } from "vite";
 import { chromium } from "playwright";
 import { probeLaunchOptions } from "../lib/probe_launch.mjs";
+import { startBackend } from "../lib/backend_launch.mjs";
 
 // Exercise emitted files through a static server, without Vite source transforms.
 const output = resolve(".artifacts/candidate-smoke");
 await mkdir(output, { recursive: true });
 const backendOrigin = "http://127.0.0.1:47177";
 const historical = new Set((await readdir("public/assets")).filter(name => /\.(js|css)$/.test(name)));
-const backend = spawn(process.env.NORI_TEST_PYTHON ?? "python", ["-m", "uvicorn", "server:app", "--host", "127.0.0.1", "--port", "47177"], {
-  env: { ...process.env, NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
-  stdio: ["ignore", "pipe", "pipe"],
-});
-let backendLog = "", server, browser;
-for (const stream of [backend.stdout, backend.stderr]) stream.on("data", data => { backendLog = (backendLog + data).slice(-8000); });
+let backend, backendLog = "", server, browser;
 try {
-  let ready = false;
-  for (let i = 0; i < 100; i++) {
-    try { if ((await fetch(backendOrigin + "/api/auth/get-session")).ok) { ready = true; break; } } catch {}
-    if (backend.exitCode !== null) throw new Error("Candidate backend exited: " + backendLog);
-    await new Promise(resolve => setTimeout(resolve, 150));
-  }
-  assert.ok(ready, "candidate backend did not start");
+  backend = await startBackend({
+    port: 47177,
+    env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
+    stdio: ["ignore", "pipe", "pipe"],
+    readyTimeoutMs: 15_000,
+    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
+  });
   server = await preview({ configFile: false, root: process.cwd(), build: { outDir: resolve(".artifacts/build/app/cutover-candidate") }, preview: {
     host: "127.0.0.1", port: 47178, strictPort: true, proxy: { "/api": { target: backendOrigin, ws: true } },
   } });
@@ -58,6 +53,6 @@ try {
 } finally {
   await browser?.close();
   await new Promise(resolve => server ? server.httpServer.close(resolve) : resolve());
-  backend.kill();
-  await writeFile(resolve(output, "backend.log"), backendLog);
+  await backend?.stop();
+  await writeFile(resolve(output, "backend.log"), backend?.log() ?? backendLog);
 }

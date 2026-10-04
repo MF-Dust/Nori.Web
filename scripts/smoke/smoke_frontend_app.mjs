@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { probeLaunchOptions } from "../lib/probe_launch.mjs";
 import { createServer } from "vite";
-import { spawn } from "node:child_process";
+import { startBackend } from "../lib/backend_launch.mjs";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
@@ -27,63 +27,27 @@ const isCI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
 const isFastMode = process.env.NORI_TEST_FAST_MODE === "1";
 const modelReadyTimeout = isFastMode ? 30000 : isCI ? 90000 : 60000;
 const defaultTimeout = isFastMode ? 15000 : 20000;
-const backend = spawn(
-  process.env.NORI_TEST_PYTHON ?? "python",
-  [
-    "-m",
-    "uvicorn",
-    "server:app",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(backendPort),
-  ],
-  {
-    env: {
-      ...process.env,
-      NORI_DISABLE_LIVE_PACK: "1",
-      OPENAI_API_KEY: "",
-      ANTHROPIC_API_KEY: "",
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-  },
-);
-let backendLog = "";
-backend.stdout.on("data", (data) => {
-  backendLog = (backendLog + data).slice(-4000);
-});
-backend.stderr.on("data", (data) => {
-  backendLog = (backendLog + data).slice(-4000);
-});
-let vite, browser;
+let backend, vite, browser, page;
+const errors = [];
 try {
-  let ready = false;
-  const pollInterval = 100; // Reduced from 150ms
-  const maxAttempts = isCI ? 120 : 100;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      if ((await fetch(`${backendOrigin}/api/auth/get-session`)).ok) {
-        ready = true;
-        break;
-      }
-    } catch {}
-    if (backend.exitCode !== null)
-      throw new Error("Backend exited: " + backendLog);
-    await new Promise((resolve) => setTimeout(resolve, pollInterval));
-  }
-  assert.ok(ready, "local backend did not start");
+  backend = await startBackend({
+    port: backendPort,
+    env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
+    stdio: ["ignore", "pipe", "pipe"],
+    readyTimeoutMs: (isCI ? 120 : 100) * 100,
+    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
+  });
   vite = await createServer({
     configFile: "frontend-src/app.vite.config.ts",
     server: { host: "127.0.0.1", port: 47174, strictPort: true, hmr: false },
   });
   await vite.listen();
   browser = await chromium.launch(probeLaunchOptions());
-  const page = await browser.newPage({
+  page = await browser.newPage({
     viewport: { width: 1366, height: 900 },
     locale: "en-US",
   });
   page.setDefaultTimeout(20000);
-  const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
@@ -706,8 +670,18 @@ try {
   console.log(
     "Source app smoke passed: desktop, Live2D, text chat, PCM playback acknowledgement, reconnect, Terminal, About, Settings persistence/graphics/network/reset and Credits.",
   );
+} catch (error) {
+  const transport = await page?.evaluate(() => ({
+    artifactRequests: window.sourceSmoke?.sent.filter((item) => item.channel === "manifold.artifacts.request").length,
+    chipScans: window.sourceSmoke?.sent.filter((item) => item.channel === "manifold.chip.scan"),
+    sockets: window.sourceSmoke?.sockets.map((socket) => ({ url: socket.url, readyState: socket.readyState })),
+  })).catch(() => null);
+  console.error("[Source app diagnostics] browser errors:", errors);
+  console.error("[Source app diagnostics] WebSocket activity:", JSON.stringify(transport));
+  console.error("[Source app diagnostics] backend stdout/stderr:\n" + (backend?.log() ?? ""));
+  throw error;
 } finally {
   await browser?.close();
   await vite?.close();
-  backend.kill();
+  await backend?.stop();
 }

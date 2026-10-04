@@ -1,29 +1,21 @@
 // Natural first-boot interaction against the source app: no seeded story facts.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { createServer } from "vite";
 import { chromium } from "playwright";
 import { probeLaunchOptions } from "../scripts/lib/probe_launch.mjs";
+import { startBackend } from "../scripts/lib/backend_launch.mjs";
 
 const origin = "http://127.0.0.1:47273";
 process.env.NORI_BACKEND_ORIGIN = origin;
-const backend = spawn(process.env.PYTHON ?? "python", [
-  "-m", "uvicorn", "server:app", "--host", "127.0.0.1", "--port", "47273",
-], {
-  env: { ...process.env, NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
+const backend = await startBackend({
+  port: 47273,
+  env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
   stdio: "ignore",
+  readyTimeoutMs: 10_000,
+  pythonCommand: process.env.PYTHON ?? "python",
 });
 let vite, browser;
 try {
-  let ready = false;
-  for (let i = 0; i < 100; i++) {
-    try {
-      ready = (await fetch(`${origin}/api/auth/get-session`)).ok;
-      if (ready) break;
-    } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  assert(ready, "source story backend did not start");
   vite = await createServer({
     configFile: "frontend-src/app.vite.config.ts",
     server: { host: "127.0.0.1", port: 47274, strictPort: true, hmr: false },
@@ -63,5 +55,5 @@ try {
 } finally {
   await browser?.close();
   await vite?.close();
-  backend.kill();
+  await backend.stop();
 }

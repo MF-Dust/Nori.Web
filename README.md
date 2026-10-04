@@ -155,30 +155,33 @@ flowchart TD
 ## 🚀 快速上手
 
 ### 环境要求
-- **Python** 3.11 或更高版本（已在 Python 3.11 / 3.13 验证）
-- **Node.js**（可选，仅用于执行客户端 Schema 校验与浏览器端集成测试）
+- **Rust** 1.91 或更高版本（通过 <https://rustup.rs> 安装；只运行发行包则不需要）
+- **Node.js**（可选，仅用于前端构建、客户端 Schema 校验与浏览器端集成测试）
 
-### 1. 安装依赖
+> 不想装 Rust：直接下载发行包 `Nori.Web-<系统>-<架构>`，运行其中的 `Nori.Web` / `Nori.Web.exe` 即可（构建方式见 [`docs/LOCAL_RELEASE.md`](docs/LOCAL_RELEASE.md)）。
+
+### 1. 获取源码
 
 ```bash
 git clone https://github.com/MF-Dust/Nori.Web.git
 cd Nori.Web
-
-# 使用 pip 进行可编辑模式安装
-python -m pip install -e ".[local]"
-
-# 或使用 uv 进行高速同步（推荐）
-uv sync --extra local
 ```
 
 ### 2. 启动本地离线服务
 
 ```bash
-# 启动 FastAPI / Uvicorn 兼容服务器
-python server.py
+# 编译并启动 Rust 本地服务（首次编译需要几分钟）
+cargo run --release -p nori-local --manifest-path rust/Cargo.toml
+
+# 或
+npm start
 ```
 
-> **Windows 便捷启动**：直接双击根目录下的 `start.bat`。
+> **Windows 便捷启动**：直接双击根目录下的 `start.bat`（优先使用同目录的 `Nori.Web.exe`，否则用 cargo 编译运行）。
+
+常用环境变量：`HOST`（默认 `127.0.0.1`）、`PORT`（默认 `4173`）、`SECRET_KEY`（留空时每次启动随机生成）、`NORI_DISABLE_LIVE_PACK=1`（不加载线上世界归档）、`NORI_PUBLIC_DIR` / `NORI_DATA_DIR`（覆盖 `public/` 与 `backend/data/` 位置）。
+
+> 旧的 Python 服务（`python server.py` / `npm run start:py`）仅作为迁移期对照暂留，将在 Rust 版本验收后删除。
 
 启动成功后，在浏览器中访问：👉 **<http://127.0.0.1:4173>**
 

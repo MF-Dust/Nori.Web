@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 import { probeLaunchOptions } from "../lib/probe_launch.mjs";
+import { startBackend } from "../lib/backend_launch.mjs";
 
 /**
  * Messenger window lifecycle on the source desktop, plus a touch/narrow pass
@@ -36,29 +36,6 @@ function installTransportProbe() {
       super.send(data);
     }
   };
-}
-
-async function startBackend() {
-  const backend = spawn(
-    process.env.NORI_TEST_PYTHON ?? "python",
-    ["-m", "uvicorn", "server:app", "--host", "127.0.0.1", "--port", String(backendPort)],
-    {
-      env: { ...process.env, NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-  let log = "";
-  backend.stdout.on("data", (data) => (log = (log + data).slice(-4000)));
-  backend.stderr.on("data", (data) => (log = (log + data).slice(-4000)));
-  const backendOrigin = `http://127.0.0.1:${backendPort}`;
-  for (let attempt = 0; attempt < 150; attempt++) {
-    try {
-      if ((await fetch(`${backendOrigin}/api/auth/get-session`)).ok) return backend;
-    } catch {}
-    if (backend.exitCode !== null) throw new Error(log);
-    await new Promise((done) => setTimeout(done, 100));
-  }
-  throw new Error(log);
 }
 
 async function boot(page) {
@@ -206,19 +183,26 @@ async function touchMatrix(browser) {
   }
 }
 
-const backend = await startBackend();
-process.env.NORI_BACKEND_ORIGIN = `http://127.0.0.1:${backendPort}`;
-const vite = await createServer({
-  configFile: "frontend-src/app.vite.config.ts",
-  server: { host: "127.0.0.1", port: sourcePort, strictPort: true, hmr: false },
-});
-const browser = await chromium.launch(probeLaunchOptions());
+let backend, vite, browser;
 try {
+  backend = await startBackend({
+    port: backendPort,
+    env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
+    stdio: ["ignore", "pipe", "pipe"],
+    readyTimeoutMs: 15_000,
+    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
+  });
+  process.env.NORI_BACKEND_ORIGIN = backend.origin;
+  vite = await createServer({
+    configFile: "frontend-src/app.vite.config.ts",
+    server: { host: "127.0.0.1", port: sourcePort, strictPort: true, hmr: false },
+  });
+  browser = await chromium.launch(probeLaunchOptions());
   await vite.listen();
   await messengerLifecycle(browser);
   await touchMatrix(browser);
 } finally {
-  await browser.close();
-  await vite.close();
-  backend.kill();
+  await browser?.close();
+  await vite?.close();
+  await backend?.stop();
 }

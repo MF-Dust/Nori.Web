@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 import { probeLaunchOptions } from "../lib/probe_launch.mjs";
+import { startBackend as launchBackend } from "../lib/backend_launch.mjs";
 import en from "../../frontend-src/i18n/en.ts";
 import zhCN from "../../frontend-src/i18n/zh-CN.ts";
 
@@ -38,35 +38,13 @@ const text = (locale, key) => {
 };
 
 function startBackend() {
-  const backend = spawn(
-    process.env.NORI_TEST_PYTHON ?? "python",
-    ["-m", "uvicorn", "server:app", "--host", "127.0.0.1", "--port", String(backendPort)],
-    {
-      env: {
-        ...process.env,
-        NORI_DISABLE_LIVE_PACK: "1",
-        OPENAI_API_KEY: "",
-        ANTHROPIC_API_KEY: "",
-      },
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-
-  let log = "";
-  for (const stream of [backend.stdout, backend.stderr])
-    stream.on("data", (data) => (log = (log + data).slice(-8000)));
-
-  const origin = `http://127.0.0.1:${backendPort}`;
-  return (async () => {
-    for (let attempt = 0; attempt < 150; attempt++) {
-      try {
-        if ((await fetch(`${origin}/api/auth/get-session`)).ok) return { backend, log: () => log };
-      } catch {}
-      if (backend.exitCode !== null) throw new Error(`Backend exited: ${log}`);
-      await new Promise((done) => setTimeout(done, 100));
-    }
-    throw new Error(`Backend did not start: ${log}`);
-  })();
+  return launchBackend({
+    port: backendPort,
+    env: { NORI_DISABLE_LIVE_PACK: "1", OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "" },
+    stdio: ["ignore", "pipe", "pipe"],
+    readyTimeoutMs: 15_000,
+    pythonCommand: process.env.NORI_TEST_PYTHON ?? "python",
+  });
 }
 
 /**
@@ -410,8 +388,8 @@ async function runLocale(browser, locale) {
 }
 
 async function main() {
-  const { backend } = await startBackend();
-  process.env.NORI_BACKEND_ORIGIN = `http://127.0.0.1:${backendPort}`;
+  const backend = await startBackend();
+  process.env.NORI_BACKEND_ORIGIN = backend.origin;
 
   let browser;
   let vite;
@@ -432,7 +410,7 @@ async function main() {
   } finally {
     await browser?.close();
     await vite?.close();
-    backend.kill();
+    await backend.stop();
   }
 }
 

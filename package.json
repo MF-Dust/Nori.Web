@@ -10,7 +10,7 @@
     "legal:refresh": "node scripts/refresh_legal_notices.mjs",
     "test:legal": "python -m unittest tests.test_release_legal",
     "build": "vite build",
-    "start": "python server.py",
+    "start": "cargo run --release -p nori-local --manifest-path rust/Cargo.toml",
     "start:py": "python server.py",
     "frontend:build": "vite build --config frontend-src/vite.config.ts",
     "frontend:app:dev": "vite --config frontend-src/app.vite.config.ts",
