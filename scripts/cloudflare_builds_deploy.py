@@ -1,12 +1,10 @@
 """Production deploy entrypoint for Cloudflare Workers Builds.
 
-The wrapper builds and verifies the source frontend, keeps the private R2
-live-world layout synchronized, and then invokes pywrangler with an ephemeral
-Wrangler configuration that serves the materialized source candidate. Normal
-deployments intentionally do not pre-stage the Python Worker: `pywrangler
-deploy` invokes Wrangler, and Wrangler runs the repository's custom build hook
-exactly once. The historical public entry remains available as an explicit
-emergency rollback path.
+The wrapper builds and verifies the source frontend, bootstraps Rust when
+needed, keeps the private R2 live-world layout synchronized, and invokes the
+locked local Wrangler with the materialized source candidate. Wrangler runs
+worker-build exactly once during deployment. The historical public entry
+remains available as an explicit frontend-only rollback path.
 """
 
 from __future__ import annotations
@@ -23,7 +21,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PACK = ROOT / "backend" / "data" / "live_world_pack.json"
 LIVE_PACK_TOOL = ROOT / "scripts" / "upload_cloudflare_live_pack.py"
-PREPARE_TOOL = ROOT / "scripts" / "prepare_cloudflare_runtime.py"
+WORKER_ROOT = ROOT / "rust" / "crates" / "nori-worker"
+RUST_TOOLCHAIN = "1.91.0"
+WASM_TARGET = "wasm32-unknown-unknown"
+WORKER_BUILD_VERSION = "0.8.7"
 FRONTEND_CANDIDATE_TOOL = (
     ROOT / "scripts" / "recovery" / "prepare_frontend_cutover_candidate.mjs"
 )
@@ -45,12 +46,13 @@ def _run(
     check: bool = True,
     capture: bool = False,
     env: dict[str, str] | None = None,
+    cwd: Path = ROOT,
 ) -> subprocess.CompletedProcess[str]:
     printable = " ".join(command)
     print(f"+ {printable}")
     return subprocess.run(
         command,
-        cwd=ROOT,
+        cwd=cwd,
         check=check,
         text=True,
         stdout=subprocess.PIPE if capture else None,
@@ -59,23 +61,37 @@ def _run(
     )
 
 
-def pywrangler_command() -> list[str]:
-    """Return pywrangler from the active uv environment.
+def wrangler_command() -> list[str]:
+    """Use Wrangler 4.147.0 from the dependencies installed by npm ci."""
+    return [_required_executable("npx"), "wrangler"]
 
-    Workers Builds invokes this script through ``uv run python``. uv adds the
-    project environment's executable directory to PATH, so pywrangler is
-    normally directly discoverable here.
-    """
-    executable = shutil.which("pywrangler")
-    if executable:
-        return [executable]
-    uv = shutil.which("uv")
-    if uv:
-        return [uv, "run", "pywrangler"]
-    raise RuntimeError(
-        "pywrangler is unavailable. Run this script via "
-        "`uv run python scripts/cloudflare_builds_deploy.py`."
+
+def ensure_rust_toolchain() -> None:
+    """Install missing build tools on the Rust-free Workers Builds image."""
+    cargo_bin = str(Path.home() / ".cargo" / "bin")
+    path = os.environ.get("PATH", "").split(os.pathsep)
+    os.environ["PATH"] = os.pathsep.join(
+        [cargo_bin, *(entry for entry in path if entry != cargo_bin)]
     )
+
+    if not shutil.which("cargo") or not shutil.which("rustup"):
+        _run([
+            "sh", "-c",
+            "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs "
+            f"| sh -s -- -y --profile minimal --default-toolchain {RUST_TOOLCHAIN}",
+        ])
+
+    targets = _run(["rustup", "target", "list", "--installed"], capture=True)
+    if WASM_TARGET not in targets.stdout.split():
+        _run(["rustup", "target", "add", WASM_TARGET])
+
+    worker_build = shutil.which("worker-build")
+    version = (
+        _run([worker_build, "--version"], check=False, capture=True)
+        if worker_build else None
+    )
+    if version is None or version.returncode != 0 or version.stdout.strip() != WORKER_BUILD_VERSION:
+        _run(["cargo", "install", "worker-build", "--version", WORKER_BUILD_VERSION, "--locked"])
 
 
 def live_pack_fingerprint() -> str:
@@ -153,25 +169,26 @@ def sync_live_pack(base: list[str], *, force: bool = False) -> bool:
 
 
 def prepare_runtime() -> None:
-    """Prepare the staging tree for diagnostics without deploying."""
-    _run([sys.executable, str(PREPARE_TOOL)])
+    """Build the Rust Worker locally without accessing Cloudflare."""
+    _run(["worker-build", "--release"], cwd=WORKER_ROOT)
 
 
 def _required_executable(name: str) -> str:
     executable = shutil.which(name)
     if executable:
         return executable
-    raise RuntimeError(
-        f"{name} is unavailable. Cloudflare Workers Builds must provide Node.js "
-        "and npm to build the source frontend."
-    )
+    raise RuntimeError(f"{name} is unavailable; install it before deploying.")
+
+
+def install_node_dependencies() -> None:
+    _run([_required_executable("npm"), "ci", "--no-audit", "--no-fund"])
 
 
 def prepare_source_frontend() -> Path:
     """Build and materialize the verified source frontend deployment tree."""
     npm = _required_executable("npm")
     node = _required_executable("node")
-    _run([npm, "ci", "--no-audit", "--no-fund"])
+    install_node_dependencies()
     _run([npm, "run", "frontend:app:build"])
     _run([node, str(FRONTEND_CANDIDATE_TOOL), "--materialize"])
     _run([node, str(FRONTEND_CONFIG_TOOL)])
@@ -183,7 +200,7 @@ def prepare_source_frontend() -> Path:
 
 
 def deploy_worker(base: list[str], *, config: Path | None = None) -> None:
-    # Wrangler 4.127 rejects `wrangler deploy --yes` when a Wrangler config file
+    # Wrangler rejects `wrangler deploy --yes` when a Wrangler config file
     # already exists. Workers Builds is a CI environment, so force CI mode and
     # let Wrangler use its non-interactive fallback for confirmation prompts.
     deploy_env = os.environ.copy()
@@ -213,7 +230,7 @@ def main() -> None:
     parser.add_argument(
         "--prepare-only",
         action="store_true",
-        help="Prepare the frontend and Cloudflare staging trees without accessing Cloudflare.",
+        help="Prepare the frontend and Rust Worker without accessing Cloudflare.",
     )
     parser.add_argument(
         "--legacy-frontend",
@@ -234,16 +251,18 @@ def main() -> None:
 
     frontend_config = None
     if legacy_frontend:
-        print("Legacy frontend rollback enabled; deploying public/ as configured in wrangler.jsonc.")
+        print("Legacy frontend rollback enabled; deploying public/ with the Rust Worker.")
+        install_node_dependencies()
     else:
         frontend_config = prepare_source_frontend()
 
+    ensure_rust_toolchain()
     if args.prepare_only:
         prepare_runtime()
         print("Prepare-only mode complete.")
         return
 
-    base = pywrangler_command()
+    base = wrangler_command()
     if not args.skip_live_pack:
         sync_live_pack(base, force=args.force_live_pack)
     deploy_worker(base, config=frontend_config)

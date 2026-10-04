@@ -1,36 +1,13 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "nori-web",
-  "main": "cloudflare/entry.py",
+  "main": "rust/crates/nori-worker/build/worker/shim.mjs",
   "compatibility_date": "2026-08-28",
-  "compatibility_flags": ["python_workers"],
   "workers_dev": false,
   "preview_urls": true,
-  "base_dir": "./cloudflare",
-  "find_additional_modules": true,
-  "rules": [
-    {
-      "type": "Text",
-      "globs": [
-        "backend/data/codenames_words.json",
-        "backend/data/pictionary_words.json"
-      ],
-      "fallthrough": false
-    },
-    {
-      "type": "Data",
-      "globs": ["__nori_no_data_modules__"],
-      "fallthrough": false
-    },
-    {
-      "type": "CompiledWasm",
-      "globs": ["__nori_no_wasm_modules__"],
-      "fallthrough": false
-    }
-  ],
   "build": {
-    "command": "uv run python scripts/prepare_cloudflare_runtime.py",
-    "cwd": "."
+    "command": "worker-build --release",
+    "cwd": "rust/crates/nori-worker"
   },
   "observability": {
     "enabled": true,
@@ -76,8 +53,5 @@
   ],
   "vars": {
     "NORI_DISABLE_LIVE_PACK": "0"
-  },
-  "python_modules": {
-    "excludes": ["**/*.pyc", "**/__pycache__"]
   }
 }

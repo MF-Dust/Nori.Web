@@ -16,73 +16,49 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
+          cache: npm
 
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v6
+      - name: Install locked dependencies
+        run: npm ci
 
-      - name: Install Python 3.13
-        run: uv python install 3.13
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
 
-      - name: Sync Python dependencies
-        run: uv sync --group dev --python 3.13
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust -> target
 
-      - name: Verify stateless tickets
-        run: uv run python tests/test_cloudflare_ticket.py
+      - name: Test Rust core and Worker
+        run: cargo test --locked -p nori-core -p nori-worker --manifest-path rust/Cargo.toml
 
-      - name: Verify Cloudflare import safety
-        run: uv run python tests/test_cloudflare_import_safety.py
+      - name: Cache worker-build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/worker-build
+          key: worker-build-${{ runner.os }}-0.8.7
 
-      - name: Verify HTTP API runtime
-        run: uv run python tests/test_http_api_runtime.py
+      - name: Install worker-build
+        run: |
+          if ! command -v worker-build || [ "$(worker-build --version)" != "0.8.7" ]; then
+            cargo install worker-build --version 0.8.7 --locked
+          fi
 
-      - name: Verify browser guest isolation
-        run: uv run python tests/test_guest_isolation.py
-
-      - name: Verify edge Convex API
-        run: uv run python tests/test_edge_convex_api.py
-
-      - name: Verify runtime live pack injection
-        run: uv run python tests/test_live_pack_runtime.py
-
-      - name: Verify Durable Object hibernation snapshots
-        run: uv run python tests/test_durable_world_snapshot.py
-
-      - name: Verify Durable Object hibernation source path
-        run: uv run python tests/test_durable_object_hibernation.py
-
-      - name: Verify Durable Object runtime efficiency
-        run: uv run python tests/test_do_runtime_efficiency.py
-
-      - name: Verify Durable Object active-window pacing
-        run: uv run python tests/test_do_active_window_pacing.py
-
-      - name: Verify Python memory and CPU hot paths
-        run: uv run python tests/test_python_memory_cpu.py
-
-      - name: Verify static asset cache policy
-        run: uv run python tests/test_static_asset_cache.py
-
-      - name: Verify local access gate
-        run: uv run python tests/test_local_access_gate.py
+      - name: Set up Python for deploy wrapper tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
       - name: Verify Workers Builds deploy wrapper
-        run: uv run python tests/test_cloudflare_builds_deploy.py
+        run: python tests/test_cloudflare_builds_deploy.py
 
-      - name: Verify browser AI settings
-        run: uv run python tests/test_ai_runtime_settings.py
-
-      - name: Verify browser AI settings JavaScript
-        run: node --check public/nori-ai-settings.js
-
-      - name: Verify browser runtime shim
-        run: uv run python tests/test_browser_runtime_shims.py
-
-      - name: Verify browser runtime shim JavaScript
-        run: node --check public/nori-runtime-shims.js
-
-      - name: Verify legacy story-mode cookie
-        run: uv run python tests/test_story_mode_cookie.py
+      - name: Verify browser compatibility JavaScript
+        run: |
+          node --check public/nori-ai-settings.js
+          node --check public/nori-runtime-shims.js
 
       - name: Verify frontend recovery tool JavaScript
         run: |
@@ -94,57 +70,40 @@ jobs:
           node --check scripts/verify/verify_frontend_recovery.mjs
           node --check scripts/verify/verify_frontend_cutover.mjs
 
-      - name: Compile Python sources
-        run: uv run python -m compileall -q backend scripts server.py worker.py
-
-      - name: Dry-run Cloudflare bundle
+      - name: Dry-run Rust Cloudflare bundle
         shell: bash
         run: |
+          set -euo pipefail
+          outdir=$(mktemp -d "$RUNNER_TEMP/nori-worker.XXXXXX")
+          log="$RUNNER_TEMP/wrangler.log"
           set +e
-          uv run pywrangler deploy --dry-run --outdir .worker-dist > /tmp/pywrangler.log 2>&1
+          npx wrangler deploy --dry-run --config wrangler.jsonc --outdir "$outdir" > "$log" 2>&1
           code=$?
-          tail -n 120 /tmp/pywrangler.log
+          set -e
+          tail -n 120 "$log"
           if [ "$code" -ne 0 ]; then
             exit "$code"
           fi
-          if grep -Fq "Unexpected fields found" /tmp/pywrangler.log; then
+          if grep -Fq "Unexpected fields found" "$log"; then
             echo "::error::Wrangler rejected one or more configuration fields"
             exit 1
           fi
-          if ! grep -Fq "backend/data/codenames_words.json" /tmp/pywrangler.log; then
-            echo "::error::Cloudflare bundle is missing backend/data/codenames_words.json"
+          if grep -Fq "backend/data/live_world_pack.json" "$log" || find "$outdir" -type f -name 'live_world_pack.json' -print -quit | grep -q .; then
+            echo "::error::The live-world archive leaked into the Worker bundle instead of R2"
             exit 1
           fi
-          if ! grep -Fq "backend/data/pictionary_words.json" /tmp/pywrangler.log; then
-            echo "::error::Cloudflare bundle is missing backend/data/pictionary_words.json"
-            exit 1
-          fi
-          if grep -Fq "backend/data/live_world_pack.json" /tmp/pywrangler.log; then
-            echo "::error::The large live-world archive leaked into the Worker bundle instead of R2"
-            exit 1
-          fi
-          if grep -Eq "public/.*\.(bin|wasm)" /tmp/pywrangler.log; then
-            echo "::error::Static public binary/WASM assets leaked into the Worker module bundle"
-            exit 1
-          fi
-          if grep -Eq "node_modules/.*\.wasm" /tmp/pywrangler.log; then
-            echo "::error::Node development WASM leaked into the Worker module bundle"
-            exit 1
-          fi
-          if grep -Eq '│ (tests/|scraper/|\.venv[^/]*/)' /tmp/pywrangler.log; then
-            echo "::error::Development Python files leaked into the Worker module bundle"
-            exit 1
-          fi
-          gzip_kib=$(sed -n 's/.*gzip: \([0-9.]*\) KiB.*/\1/p' /tmp/pywrangler.log | tail -n 1)
-          if [ -z "$gzip_kib" ]; then
-            echo "::error::Unable to determine Cloudflare Worker gzip size"
-            exit 1
-          fi
-          echo "Cloudflare Worker gzip size: ${gzip_kib} KiB"
-          awk -v size="$gzip_kib" 'BEGIN { if (size >= 3072) exit 1 }' || {
-            echo "::error::Cloudflare Worker gzip bundle must stay below the Free-plan 3 MiB limit (3072 KiB)"
-            exit 1
-          }
+          node --input-type=module - "$outdir" <<'NODE'
+          import assert from "node:assert/strict";
+          import { readdirSync, readFileSync } from "node:fs";
+          import { join } from "node:path";
+          import { gzipSync } from "node:zlib";
+          const files = readdirSync(process.argv[2], { recursive: true })
+            .filter(path => path.endsWith(".wasm"));
+          assert.ok(files.length, "Worker output is missing its WASM module");
+          const bytes = files.reduce((total, path) => total + gzipSync(readFileSync(join(process.argv[2], path))).length, 0);
+          console.log(`Worker WASM gzip size: ${(bytes / 1024).toFixed(2)} KiB`);
+          assert.ok(bytes < 3 * 1024 * 1024, "Worker WASM must stay below 3 MiB gzipped");
+          NODE
 
   frontend-maintenance:
     runs-on: ubuntu-latest
@@ -253,18 +212,21 @@ jobs:
       - name: Verify recovered games in Chromium
         run: npm run frontend:games:smoke
 
-      - name: Set up Python for source application smoke
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
+      - name: Set up Rust for source application smoke
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Install local backend for source application smoke
-        run: python -m pip install 'fastapi>=0.115' 'httpx>=0.27' 'python-chess>=1.999' 'uvicorn[standard]>=0.30' 'websockets>=13'
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust -> target
+
+      - name: Test cartridges and build local backend
+        run: |
+          cargo test --locked -p nori-core --manifest-path rust/Cargo.toml
+          cargo build --release -p nori-local --manifest-path rust/Cargo.toml
 
       - name: Verify source application against local backend
-        run: |
-          python tests/test_cartridges.py
-          npm run frontend:app:smoke
+        run: npm run frontend:app:smoke
 
       - name: Upload source application screenshots
         if: always()

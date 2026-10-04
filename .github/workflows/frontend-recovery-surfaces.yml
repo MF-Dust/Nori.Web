@@ -55,20 +55,31 @@ jobs:
   candidate:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      NORI_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-      - uses: astral-sh/setup-uv@v6
-      - name: Install Python 3.13
-        run: uv python install 3.13
-      - name: Sync Worker dependencies
-        run: uv sync --group dev --python 3.13
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust -> target
+      - name: Cache worker-build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/worker-build
+          key: worker-build-${{ runner.os }}-0.8.7
+      - name: Install worker-build
+        run: |
+          if ! command -v worker-build || [ "$(worker-build --version)" != "0.8.7" ]; then
+            cargo install worker-build --version 0.8.7 --locked
+          fi
       - run: npm ci
+      - name: Build Rust backend for Node smokes
+        run: cargo build --release -p nori-local --manifest-path rust/Cargo.toml
       - run: npx playwright install --with-deps chromium
       - run: npm run frontend:app:build
       - run: npm run frontend:cutover:candidate -- --materialize
@@ -76,12 +87,8 @@ jobs:
       - run: npm run frontend:cutover:smoke
       - name: Capture paired visual reference
         run: node scripts/probes/frontend_visual_reference_probe.mjs
-        env:
-          NORI_TEST_PYTHON: .venv/bin/python
       - name: Capture paired game start screens
         run: node scripts/probes/frontend_visual_games_probe.mjs
-        env:
-          NORI_TEST_PYTHON: .venv/bin/python
       - name: Dry-run candidate Worker bundle
         if: ${{ !cancelled() && steps.stage.outcome == 'success' }}
         shell: bash
@@ -89,12 +96,12 @@ jobs:
           set -euo pipefail
           config=.wrangler-candidate.json
           outdir=.candidate-worker-dist
-          log=/tmp/candidate-pywrangler.log
+          log=/tmp/candidate-wrangler.log
           trap 'rm -f "$config"' EXIT
 
           node scripts/lib/frontend_candidate_worker_config.mjs
           set +e
-          uv run pywrangler deploy --dry-run --config "$config" --outdir "$outdir" > "$log" 2>&1
+          npx wrangler deploy --dry-run --config "$config" --outdir "$outdir" > "$log" 2>&1
           code=$?
           set -e
           tail -n 120 "$log"
@@ -105,10 +112,6 @@ jobs:
             echo "::error::Wrangler rejected the candidate configuration"
             exit 1
           fi
-          if ! grep -Fq 'backend/data/codenames_words.json' "$log" || ! grep -Fq 'backend/data/pictionary_words.json' "$log"; then
-            echo "::error::Candidate Worker bundle is missing required game word modules"
-            exit 1
-          fi
           if grep -Fq 'backend/data/live_world_pack.json' "$log" || find "$outdir" -type f -name 'live_world_pack.json' -print -quit | grep -q .; then
             echo "::error::The large live-world archive leaked into the candidate Worker bundle"
             exit 1
@@ -117,16 +120,18 @@ jobs:
           node --test tests/frontend/frontend-candidate-worker-assets.test.mjs
           node scripts/verify/verify_frontend_candidate_worker_assets.mjs .artifacts/build/app/cutover-candidate "$outdir"
 
-          gzip_kib=$(sed -n 's/.*gzip: \([0-9.]*\) KiB.*/\1/p' "$log" | tail -n 1)
-          if [ -z "$gzip_kib" ]; then
-            echo "::error::Unable to determine candidate Worker gzip size"
-            exit 1
-          fi
-          echo "Candidate Worker gzip size: ${gzip_kib} KiB"
-          awk -v size="$gzip_kib" 'BEGIN { if (size >= 3072) exit 1 }' || {
-            echo "::error::Candidate Worker gzip bundle must stay below 3 MiB (3072 KiB)"
-            exit 1
-          }
+          node --input-type=module - "$outdir" <<'NODE'
+          import assert from "node:assert/strict";
+          import { readdirSync, readFileSync } from "node:fs";
+          import { join } from "node:path";
+          import { gzipSync } from "node:zlib";
+          const files = readdirSync(process.argv[2], { recursive: true })
+            .filter(path => path.endsWith(".wasm"));
+          assert.ok(files.length, "Candidate Worker output is missing its WASM module");
+          const bytes = files.reduce((total, path) => total + gzipSync(readFileSync(join(process.argv[2], path))).length, 0);
+          console.log(`Candidate Worker WASM gzip size: ${(bytes / 1024).toFixed(2)} KiB`);
+          assert.ok(bytes < 3 * 1024 * 1024, "Candidate Worker WASM must stay below 3 MiB gzipped");
+          NODE
       - uses: actions/upload-artifact@v4
         if: always()
         with:

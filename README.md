@@ -81,7 +81,7 @@ Nori.Web 通过社区维护的兼容后端实现重建了客户端通信所依�
   - 🎨 **Pictionary (你画我猜 · 算力3.05)**：内置画板笔迹插值播放、词义智能判定与多回合流转控制。
   - 🌐 **Manifold (流形桌面)**：全套桌面事实（Facts）发射、剧情里程碑与系统级应用解锁联动。
 - **Cloudflare Workers 现代无服务器架构**
-  - Python Workers + FastAPI ASGI 网关；
+  - Rust workers-rs / WebAssembly 网关，共享 `nori-core` 协议与状态核心；
   - Workers Static Assets 托管前端 SPA、Live2D 模型、音效与桌面全量资产；
   - Durable Objects + SQLite 实现单用户独立世界实例与单调持久化。
 - **真实世界现场归档与剧情引擎**
@@ -101,15 +101,15 @@ flowchart TD
         qfr[QFR-9000 算力收割 / 放置引擎]
     end
 
-    subgraph Gateway[接入与路由网关: FastAPI / Worker]
+    subgraph Gateway[接入与路由网关: axum 本地服务 / Rust Worker]
         wsArcade["主通道 WS (/api/arcade/web/v1)"]
         wsMedia["媒体通道 WS (/api/arcade/web/v1/media)"]
         authRouter["Better-Auth & Cookie 鉴权"]
         convexRouter["Convex 兼容端点"]
     end
 
-    subgraph Core[运行时状态核心: WorldSession / Durable Object]
-        worldMgr[WorldManager / 会话状态机]
+    subgraph Core[运行时状态核心: nori-core / Durable Object]
+        worldMgr[World / 会话状态机]
         dispatcher[EventDispatcher 事实与事件总线]
         subgraph Cartridges[卡带引擎]
             cChat[Chat]
@@ -128,7 +128,7 @@ flowchart TD
     end
 
     subgraph Data[持久化与归档数据]
-        pack[(live_world_pack.json)]
+        pack[(本地 live_world_pack.json / 私有 R2 分片)]
         db[(Durable Object SQLite / 内存状态)]
     end
 
@@ -149,6 +149,8 @@ flowchart TD
     VApps <--> pack
     worldMgr <--> db
 ```
+
+Rust 工作区分为 `nori-core`（协议、卡带与世界状态）、`nori-local`（axum 本地服务）和 `nori-worker`（workers-rs 边缘适配）。Cloudflare 已使用 Rust Worker；Python 后端、`server.py` 和旧 Worker 源码暂留仓库，待下一阶段处理，下文 Python 本地启动方式仍可用。边缘持久化继续使用同一个 `NoriArcadeSession`，世界与公开 AI 设置以 JSON 字符串存于 `nori:world:v1`、`nori:ai-public:v1`。
 
 ---
 
@@ -192,45 +194,64 @@ npm start
 
 ## ☁️ Cloudflare Workers 边缘部署
 
-项目内置 `worker.py` 与 `wrangler.jsonc`，支持在全球分布式边缘网络中运行。
+`wrangler.jsonc` 现在指向 `rust/crates/nori-worker/build/worker/shim.mjs`，构建钩子在 Worker crate 内执行 `worker-build --release`。生产不再使用 `python_workers` 或 pywrangler，旧 Python 运行时仅在仓库中暂留。
 
 ```text
 Browser (观测端)
   ├─ /assets, Live2D, audio ... → Workers Static Assets (全球 CDN 静态托管)
-  ├─ /api/*                    → FastAPI / Python Worker (无服务器逻辑网关)
-  └─ Arcade WebSocket          → Durable Object (单用户独立持久化容器)
+  ├─ /api/*                    → Rust workers-rs / WASM 网关
+  └─ Arcade WebSocket          → NoriArcadeSession Durable Object
+                                  └─ JSON 快照 + 私有 R2 世界归档分片
 ```
 
 ### 1. 准备开发环境与本地调试
 
+需要 Node/npm、Rust（最低 1.91）及 WASM 目标；Python 仅用于部署/归档辅助脚本。
+
 ```bash
-uv sync --group dev
-uv run pywrangler dev
+npm ci  # 安装精确锁定的 Wrangler 4.147.0
+rustup target add wasm32-unknown-unknown
+cargo install worker-build --version 0.8.7 --locked
+cargo test --locked -p nori-core -p nori-worker --manifest-path rust/Cargo.toml
+npx wrangler deploy --dry-run --config wrangler.jsonc --outdir tmp/wrangler-dry-run
+npx wrangler dev --config wrangler.jsonc --local --port 8790 --var SECRET_KEY:x
 ```
+
+另开终端执行 HTTP/WebSocket 冒烟检查，完成后用 Ctrl+C 停止 Wrangler 父进程：
+
+```bash
+NORI_SMOKE_URL=http://127.0.0.1:8790 node rust/crates/nori-worker/tests/smoke.mjs
+```
+
+根配置在本地使用历史 `public/` 前端；生产包装脚本改用构建后的源码候选前端。本地 R2 无归档时会回退到演示数据。
 
 ### 2. 配置部署密钥
 
-生产环境请设置保密的 `SECRET_KEY` 用于签名会话 Cookie 与 WebSocket ticket：
+在 Worker 的 **Variables & Secrets** 保留非空的 `SECRET_KEY`（迁移时不要更换），用于会话 Cookie 与 WebSocket ticket 签名。也可手动配置：
 
 ```bash
-uv run pywrangler secret put SECRET_KEY
+npx wrangler secret put SECRET_KEY
+npx wrangler secret put OPENAI_API_KEY  # 可选
 ```
 
-如需启用大模型驱动对话：
+`OPENAI_BASE_URL`、`OPENAI_MODEL` 可在 vars 中定义。运行时密钥不要放入 Workers Builds 的构建变量；R2 通过绑定访问，无需公开桶或 R2 密钥。
+
+### 3. 发布与回滚
+
+Cloudflare Dashboard 的 **Settings > Build**：生产分支 `master`、仓库根目录、Build command 留空、Deploy command 设为 `python scripts/cloudflare_builds_deploy.py`，启用缓存、禁用非生产分支构建，构建变量设 `SKIP_DEPENDENCY_INSTALL=1`，移除旧 `PYTHON_VERSION`。域名与路由继续由 Dashboard 管理（`workers_dev=false`，配置不声明 routes）。
+
+Workers Builds 镜像没有 Rust；包装脚本按需非交互安装 Rust 1.91.0、WASM 目标及 worker-build 0.8.7，并把 `~/.cargo/bin` 加入 PATH。冷安装/编译需额外数分钟。随后构建源码前端、按指纹同步私有 R2 分片，最后用锁定 Wrangler 部署候选配置（`CI=true`，无 `--yes`）。
 
 ```bash
-uv run pywrangler secret put OPENAI_API_KEY
+python scripts/cloudflare_builds_deploy.py --prepare-only  # 仅准备，不访问 Cloudflare
+python scripts/cloudflare_builds_deploy.py                 # 手动生产发布，需认证
 ```
 
-`OPENAI_BASE_URL` 与 `OPENAI_MODEL` 可直接在 `wrangler.jsonc` 的 vars 中定义，运行时将自动动态绑定。
+首次 Rust 发布前记录最后一次正常 Python 版本 ID；需要恢复旧运行时时，暂停自动 Builds，在 Dashboard 回滚或执行 `npx wrangler rollback <LAST_PYTHON_VERSION_ID>`。保留 `NORI_ARCADE`/`NoriArcadeSession`、原 `v1` SQLite migration 与 `SECRET_KEY`；JSON 快照键不变，无需存储迁移。回滚不会倒退 DO/R2 数据，修复或撤回迁移后再恢复 Builds。`--legacy-frontend` 只恢复历史前端，不恢复 Python Worker。
 
-### 3. 发布至 Cloudflare
+详细步骤见 [Workers Builds](docs/CLOUDFLARE_BUILDS.md)、[配置清单](docs/CLOUDFLARE_BUILDS_CHECKLIST.md) 和 [R2 归档](docs/CLOUDFLARE_LIVE_PACK.md)。
 
-```bash
-uv run pywrangler deploy
-```
-
-> 提示：当前 `wrangler.jsonc` 配置为 `NORI_DISABLE_LIVE_PACK=0`，允许加载世界归档；实时状态由 Durable Object 的 SQLite 托管。设置为 `1` 仅关闭归档加载，不会删除或排除静态素材、Live2D 或历史前端代码，不能视为版权意义上的“纯净版”。
+> 提示：`NORI_DISABLE_LIVE_PACK=0` 允许加载世界归档；设置为 `1` 仅关闭归档加载，不会删除静态素材、Live2D 或历史前端代码，不能视为版权意义上的“纯净版”。
 
 ---
 
@@ -301,7 +322,8 @@ npm test
 
 ```text
 Nori.Web/
-├── backend/                  # Python 兼容服务端核心
+├── rust/                     # Rust 工作区：nori-core / nori-local / nori-worker
+├── backend/                  # Python 兼容服务端核心（过渡期保留）
 │   ├── api/                  # API 路由层 (Arcade WS, Better-Auth, Convex, System, Static)
 │   ├── cartridges/           # 领域卡带层与注册中心 (Chat, CakeDuel, Chess, Codenames, Manifold, Pictionary)
 │   ├── core/                 # 核心基础设施层 (Config, Media, Protocol)
@@ -314,9 +336,9 @@ Nori.Web/
 ├── public/                   # 前端静态资源 (Live2D 模型、音效、UI 资源与脚本)
 ├── tests/                    # 规范化多层级自动化测试套件
 ├── server.py                 # 本地 FastAPI / Uvicorn 服务入口
-├── worker.py                 # Cloudflare Python Worker / Durable Object 入口
-├── wrangler.jsonc            # Cloudflare Workers 边缘拓扑配置
-├── pyproject.toml            # Python / Worker 依赖清单
+├── worker.py                 # 旧 Python Worker / Durable Object 源码（暂留）
+├── wrangler.jsonc            # Rust Cloudflare Worker / 绑定 / 构建配置
+├── pyproject.toml            # 过渡期 Python 后端依赖清单
 ├── package.json              # 测试与辅助脚本配置
 └── start.bat                 # Windows 一键启动脚本
 ```

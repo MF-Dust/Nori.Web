@@ -130,15 +130,15 @@ def _write_object(root: Path, key: str, data: Any) -> Path:
     return target
 
 
-def _pywrangler_command() -> list[str]:
-    executable = shutil.which("pywrangler")
-    if executable:
-        return [executable]
-    return ["uv", "run", "pywrangler"]
+def _wrangler_command() -> list[str]:
+    executable = shutil.which("npx")
+    if not executable:
+        raise RuntimeError("npx is unavailable; install Node.js and run npm ci first.")
+    return [executable, "wrangler"]
 
 
 def upload_objects(bucket: str, files: list[tuple[str, Path]]) -> None:
-    base = _pywrangler_command()
+    base = _wrangler_command()
     total = len(files)
     for position, (key, path) in enumerate(files, 1):
         print(

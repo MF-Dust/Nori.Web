@@ -3,43 +3,33 @@ name: Settings Runtime
 on:
   pull_request:
     paths:
-      - "backend/api/arcade.py"
-      - "backend/services/ai_event_bridge.py"
-      - "backend/services/ai_runtime_config.py"
-      - "backend/services/llm_service.py"
-      - "backend/services/tts_*.py"
-      - "cloudflare/entry.py"
-      - "worker.py"
+      - "rust/crates/nori-core/src/llm.rs"
+      - "rust/crates/nori-core/src/tts.rs"
+      - "rust/crates/nori-core/src/session.rs"
+      - "rust/crates/nori-core/src/events.rs"
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
+      - "public/nori-runtime-shims.js"
       - "public/nori-ui-settings.js"
       - "public/nori-wallpaper-mode.js"
       - "public/wallpaper.html"
       - "public/index.html"
-      - "tests/test_ai_*.py"
-      - "tests/test_durable_object_hibernation.py"
-      - "tests/test_tts_runtime_settings.py"
       - ".github/workflows/settings-runtime.yml"
   push:
     branches:
       - master
     paths:
-      - "backend/api/arcade.py"
-      - "backend/services/ai_event_bridge.py"
-      - "backend/services/ai_runtime_config.py"
-      - "backend/services/llm_service.py"
-      - "backend/services/tts_*.py"
-      - "cloudflare/entry.py"
-      - "worker.py"
+      - "rust/crates/nori-core/src/llm.rs"
+      - "rust/crates/nori-core/src/tts.rs"
+      - "rust/crates/nori-core/src/session.rs"
+      - "rust/crates/nori-core/src/events.rs"
       - "public/nori-ai-*.js"
       - "public/nori-tts-*.js"
+      - "public/nori-runtime-shims.js"
       - "public/nori-ui-settings.js"
       - "public/nori-wallpaper-mode.js"
       - "public/wallpaper.html"
       - "public/index.html"
-      - "tests/test_ai_*.py"
-      - "tests/test_durable_object_hibernation.py"
-      - "tests/test_tts_runtime_settings.py"
       - ".github/workflows/settings-runtime.yml"
 
 jobs:
@@ -54,29 +44,23 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v6
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Install Python 3.13
-        run: uv python install 3.13
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust -> target
 
-      - name: Sync Python dependencies
-        run: uv sync --group dev --python 3.13
-
-      - name: Verify browser AI settings
-        run: |
-          uv run python tests/test_ai_runtime_settings.py
-          uv run python tests/test_ai_openai_compat.py
-          uv run python tests/test_durable_object_hibernation.py
-
-      - name: Verify browser TTS settings
-        run: uv run python tests/test_tts_runtime_settings.py
+      - name: Verify AI, TTS, session, and event runtime
+        run: cargo test --locked -p nori-core --manifest-path rust/Cargo.toml
 
       - name: Verify compatibility JavaScript syntax
         run: |
           node --check public/nori-ai-settings.js
           node --check public/nori-ai-provider-switch.js
           node --check public/nori-tts-settings.js
+          node --check public/nori-runtime-shims.js
           node --check public/nori-ui-settings.js
           node --check public/nori-wallpaper-mode.js
 
@@ -85,6 +69,3 @@ jobs:
           grep -q 'nori-wallpaper-mode.js' public/index.html
           grep -q 'wallpaper' public/wallpaper.html
           grep -q 'interactive' public/nori-wallpaper-mode.js
-
-      - name: Compile settings services and Worker entry
-        run: uv run python -m compileall -q backend/api backend/services worker.py cloudflare

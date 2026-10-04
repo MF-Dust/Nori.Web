@@ -1,136 +1,154 @@
 # Cloudflare Workers Builds
 
-Nori.Web is designed to deploy from the `master` branch through Cloudflare's
-native GitHub integration. The repository keeps Wrangler configuration as the
-source of truth, while `scripts/cloudflare_builds_deploy.py` provides the
-production deploy entrypoint.
+The `master` branch deploys the Rust workers-rs Worker in
+`rust/crates/nori-worker` through Cloudflare's GitHub integration.
+`wrangler.jsonc` is the production configuration; the Python backend and old
+Worker sources remain in the repository until the next migration phase, but are
+not bundled or executed by this deployment.
 
-## Why a deploy wrapper exists
+## Build and deploy flow
 
-The wrapper first installs the locked Node dependencies, builds the recovered
-source frontend, materializes its verified candidate/rollback trees, and writes
-an ignored temporary Wrangler configuration whose Assets directory points at
-the candidate. It then synchronizes the private R2 live-world layout and invokes
-`pywrangler deploy --config .wrangler-candidate.json`. The generated source
-entry is therefore the default production entry even though `public/index.html`
-is retained as the historical rollback source.
+The Dashboard runs `python scripts/cloudflare_builds_deploy.py`. The wrapper:
 
-Normal production deploys intentionally do **not** call
-`scripts/prepare_cloudflare_runtime.py` first: pywrangler invokes Wrangler, and
-Wrangler executes the repository's Custom Build hook itself. This keeps runtime
-staging to one pass instead of two. The explicit `--prepare-only` mode builds
-both deployment trees without accessing Cloudflare and remains available for
-diagnostics.
+1. Runs `npm ci --no-audit --no-fund`, builds the source frontend, and materializes
+   the verified candidate/rollback trees.
+2. Writes `.wrangler-candidate.json` at the repository root, changing only the
+   Assets directory to `.artifacts/build/app/cutover-candidate`. Keeping the
+   configuration at the root preserves the Rust `main` and build `cwd` paths.
+3. Ensures Rust, the WASM target, and worker-build are available (see below).
+4. Compares the private R2 live-pack fingerprint and uploads changed shards.
+5. Runs the locked local `npx wrangler deploy --config .wrangler-candidate.json`
+   with `CI=true`, without `--yes`.
 
-The wrapper forces `CI=true` for the final Worker deployment. Wrangler uses its
-non-interactive fallback for confirmation prompts in CI, including harmless
-Dashboard-vs-source metadata differences. Do not add `--yes` to the deploy
-command: Wrangler 4.127 rejects that flag when a Wrangler configuration file is
-already present.
+Wrangler's Custom Build hook runs `worker-build --release` in
+`rust/crates/nori-worker`, producing `build/worker/shim.mjs` and its WASM module.
+Normal deployments build the Worker once through that hook; there is no Python
+runtime staging or pywrangler dependency. Wrangler **4.147.0** is an exact
+npm devDependency installed from `package-lock.json`.
 
-The same wrapper synchronizes the private R2 live-world layout. It compares
-`runtime/live/source-fingerprint.txt` with a fingerprint derived from both:
+The R2 marker `runtime/live/source-fingerprint.txt` fingerprints both
+`backend/data/live_world_pack.json` and `scripts/upload_cloudflare_live_pack.py`.
+Matching content skips uploads. A content or upload-script change re-shards,
+uploads with `npx wrangler r2 object put --remote`, then updates the marker before
+deployment. The CLI change itself causes one refresh on the first Rust deploy.
 
-- `backend/data/live_world_pack.json`
-- `scripts/upload_cloudflare_live_pack.py`
+### Rust on the Workers Builds image
 
-If the fingerprint matches, R2 upload is skipped. If either the world archive or
-partitioning logic changes, the live pack is re-sharded, uploaded, and the marker
-is updated before the Worker is deployed.
+Workers Builds supplies Node 24, Python 3.13, curl, and git, but not Rust.
+`ensure_rust_toolchain()` prepends `~/.cargo/bin` to child-process `PATH` and:
+
+- If cargo or rustup is missing, runs the HTTPS rustup installer non-interactively
+  with `-y --profile minimal --default-toolchain 1.91.0`. This pin matches the
+  workspace's minimum Rust version; an existing usable toolchain is reused.
+- Adds `wasm32-unknown-unknown` only when it is absent.
+- Installs `cargo install worker-build --version 0.8.7 --locked` only when the
+  executable is missing or its version differs.
+
+No extra Python interpreter or Python project environment is installed. Cold
+Rust/tool installation and compilation add several minutes (budget roughly
+3–10 minutes, depending on the build image and network); an already-provisioned
+or cached environment skips the installations. Enable build caching, but expect
+fresh images to need the bootstrap again. GitHub Actions caches Cargo builds and
+the worker-build binary separately.
 
 ## Cloudflare Dashboard configuration
 
-In the existing `nori-web` Worker, open **Settings > Build** and connect the
-GitHub repository `MF-Dust/Nori.Web`.
-
-Use these production settings:
+For the existing `nori-web` Worker, open **Settings > Build** and connect
+`MF-Dust/Nori.Web`:
 
 - Production branch: `master`
 - Root directory: repository root / leave blank
 - Build command: leave blank
-- Deploy command:
-  `pipx run --spec uv==0.12.7 uv run python scripts/cloudflare_builds_deploy.py`
+- Deploy command: `python scripts/cloudflare_builds_deploy.py`
 - Non-production branch builds: disabled
 - Build caching: enabled
+- Build variable: `SKIP_DEPENDENCY_INSTALL=1`
 
-Add only this build variable:
+Remove the old pipx/uv deploy command and any `PYTHON_VERSION` override. Do not
+add `.python-version`; the image's Python is sufficient for the stdlib-only
+wrapper and R2 partitioning script. Automatic dependency installation is skipped
+because the wrapper explicitly installs the locked Node dependencies.
 
-- `SKIP_DEPENDENCY_INSTALL=1`
+Use the generated Workers Builds API token with Worker deployment and R2 access
+permissions. Domains and routes remain managed in the Dashboard: the config
+keeps `workers_dev=false` and deliberately declares no `routes`. Keep the
+existing R2 binding `NORI_ASSETS_R2` → `nori-web-assets`, Durable Object binding
+`NORI_ARCADE` → `NoriArcadeSession`, and Assets binding `ASSETS`.
 
-Do **not** set `PYTHON_VERSION`, and do not add a repository `.python-version`
-file for Workers Builds. Cloudflare's build image already supplies a compatible
-Python 3 runtime, while an explicit Python pin makes the environment manager
-install another Python before every production build. Nori.Web itself supports
-Python `>=3.11`, so the bundled Workers Builds interpreter is sufficient.
+Runtime keys belong in **Variables & Secrets**, not Build variables. Keep the
+existing nonblank `SECRET_KEY` unchanged to preserve signed cookies/tickets.
+Optional AI keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) are runtime secrets;
+provider URLs/models are runtime configuration. `NORI_DISABLE_LIVE_PACK=0`
+remains the configured production default. No R2 access-key secret or public
+bucket URL is needed.
 
-`SKIP_DEPENDENCY_INSTALL` avoids an unnecessary automatic pip install because
-`uv run` manages the Python project environment itself. The deploy wrapper runs
-`npm ci --no-audit --no-fund` explicitly so the source frontend is always built
-from `package-lock.json` on the Node.js runtime included in Workers Builds.
+Dashboard-only metadata should not be copied into the config unless Wrangler's
+schema supports it. CI fails on `Unexpected fields found`; the deployment's
+`CI=true` handles confirmation prompts without the unsupported `--yes` flag.
+Durable Object Workers do not receive Preview URLs, so non-production Builds
+remain disabled even though the existing `preview_urls` setting is retained.
 
-The deploy command deliberately keeps `pipx run --spec uv==0.12.7` even when a
-particular Cloudflare image happens to have `uv` on PATH. `pipx` is part of the
-supported build image toolchain and this keeps the deployment entrypoint pinned
-and reproducible; its overhead is small compared with installing another Python
-runtime.
+## Local preparation and testing
 
-Use Cloudflare's generated Workers Builds API token unless there is a reason to
-supply a custom one. The generated token includes the permissions required to
-deploy Workers and update R2.
+From the repository root, with Node/npm and Rust installed:
 
-### Dashboard-only observability metadata
-
-The Workers API exposes `observability.redact_query_string`, but Wrangler
-4.127's `wrangler.jsonc` schema does not currently accept that field. It is
-therefore intentionally not committed to this repository. If the Dashboard
-shows `redact_query_string: false` as remote-only metadata, leave it in the
-Dashboard; Wrangler's CI fallback handles that metadata difference without an
-interactive prompt.
-
-GitHub Actions fails if Wrangler reports `Unexpected fields found`, preventing
-unsupported Dashboard/API fields from silently creeping back into
-`wrangler.jsonc`.
-
-## Runtime secrets
-
-Build variables and runtime variables are separate. Do not place runtime API
-keys in Workers Builds variables merely to make deployment work. Runtime secrets
-such as `SECRET_KEY` stay under the Worker's **Variables & Secrets** settings (or
-are managed with Wrangler secrets) and are not committed to the repository.
-
-## Preview branches
-
-Nori.Web uses a Durable Object. Cloudflare does not generate Preview URLs for
-Workers that implement Durable Objects, so non-production Workers Builds are
-intentionally disabled. Pull requests continue to use GitHub Actions for tests,
-Python compilation, JavaScript checks, and the Free-plan bundle-size guard.
-
-## Manual deployment remains available
-
-For an emergency/manual deployment of the source frontend, use the same wrapper
-as CI:
-
-```text
-uv run python scripts/cloudflare_builds_deploy.py
+```bash
+npm ci
+rustup target add wasm32-unknown-unknown
+cargo install worker-build --version 0.8.7 --locked
+cargo test --locked -p nori-core -p nori-worker --manifest-path rust/Cargo.toml
+python tests/test_cloudflare_builds_deploy.py
+python scripts/cloudflare_builds_deploy.py --prepare-only
+npx wrangler deploy --dry-run --config wrangler.jsonc --outdir tmp/wrangler-dry-run
+npx wrangler dev --config wrangler.jsonc --local --port 8790 --var SECRET_KEY:x
 ```
 
-The direct Wrangler command continues to use `public/` and is reserved for an
-intentional legacy rollback:
+In a second terminal:
 
-```text
-uv run pywrangler deploy
+```bash
+NORI_SMOKE_URL=http://127.0.0.1:8790 node rust/crates/nori-worker/tests/smoke.mjs
 ```
 
-Useful emergency switches:
+`--prepare-only` builds the frontend and Rust Worker without reading or writing
+Cloudflare resources. It may download npm/Rust build dependencies on a cold
+machine. The direct root config serves the historical `public/` frontend;
+production uses the generated candidate config. Local R2 may be empty, so the
+smoke uses the runtime's demo fallback. Stop the Wrangler parent with Ctrl+C
+when finished. CI also checks the output WASM is below 3 MiB gzipped and that the
+large live-pack JSON is absent from the module bundle.
 
-```text
-uv run python scripts/cloudflare_builds_deploy.py --skip-live-pack
-uv run python scripts/cloudflare_builds_deploy.py --force-live-pack
-uv run python scripts/cloudflare_builds_deploy.py --prepare-only
-uv run python scripts/cloudflare_builds_deploy.py --legacy-frontend
+Manual production deployment uses the same wrapper (requires Cloudflare auth):
+
+```bash
+python scripts/cloudflare_builds_deploy.py
+python scripts/cloudflare_builds_deploy.py --skip-live-pack
+python scripts/cloudflare_builds_deploy.py --force-live-pack
 ```
 
-For an emergency Cloudflare Dashboard rollback, temporarily add the build
-variable `NORI_DEPLOY_LEGACY_FRONTEND=1` and retry the production deployment.
-Remove the variable after recovery so later deployments return to the source
-frontend.
+## Storage compatibility and rollback
+
+The Rust Worker exports the same `NoriArcadeSession` class and keeps the existing
+`v1` migration's `new_sqlite_classes` unchanged. **Do not add a migration or
+create a new namespace for this runtime switch.** World snapshots remain JSON
+strings under `nori:world:v1`; sanitized, key-free AI settings remain JSON
+strings under `nori:ai-public:v1`. The private R2 shard layout also stays the
+same, so the previous Python Worker can read the retained storage.
+
+Before the first Rust production deployment, record the last working Python
+version ID in **Deployments** (or `npx wrangler versions list`). If the runtime
+must be reverted, pause automatic Builds and select that Python version in the
+Dashboard rollback action, or run:
+
+```bash
+npx wrangler rollback <LAST_PYTHON_VERSION_ID> --message "Restore last Python Worker"
+```
+
+Rollback restores that deployed version and its frontend, not historical DO/R2
+data. Leave bindings, the `v1` migration, and `SECRET_KEY` unchanged; no storage
+conversion is needed. Resume Builds after fixing or reverting the Rust cutover,
+otherwise the next `master` build will deploy Rust again.
+
+For a **frontend-only** emergency rollback while retaining Rust, use
+`--legacy-frontend`, or temporarily set the Build variable
+`NORI_DEPLOY_LEGACY_FRONTEND=1`. This serves `public/`; it does **not** restore the
+Python runtime. Remove the variable after recovery.
