@@ -5,6 +5,7 @@ import type { GameService } from "../services/games";
 import {
   NORI_PHASE_MOODS,
   type CakeDuelReaction,
+  type CakeDuelTell,
   type NoriReactionDirector,
 } from "../live2d/reaction-director";
 import type {
@@ -48,8 +49,9 @@ export interface CakeDuelRuntimeGame {
   players: [CakeDuelRuntimePlayer, CakeDuelRuntimePlayer];
   boutWinners: number[];
   attackerIndex: number;
-  cardList: string[];
-  config: { roundsToWin: number };
+  /** Indexed by card id. The server names only the player's own cards; the rest are null. */
+  cardList: (string | null)[];
+  config: { roundsToWin: number; baseCardList: string[] };
 }
 
 export interface CakeDuelRuntimeState {
@@ -114,6 +116,8 @@ export interface CakeDuelControllerSnapshot {
   board: CakeDuelRuntimeBoard | null;
   banner: CakeDuelTransientBanner | null;
   challengeRevealStage: CakeDuelChallengeRevealStage;
+  /** Card names the last challenge turned face up, by card id. */
+  challengeRevealedNames: Readonly<Record<number, string>>;
   wolfyTauntActive: boolean;
   winner: number | null;
   playerWins: number;
@@ -150,6 +154,10 @@ const BLOCKS: Readonly<Record<string, "physical" | "magical">> = {
   scientist: "magical",
 };
 
+function isCakeDuelTell(value: unknown): value is CakeDuelTell {
+  return value === "confident" || value === "nervous" || value === "none";
+}
+
 function record(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -168,6 +176,10 @@ function numberArray(value: unknown): number[] {
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function nameList(value: unknown): (string | null)[] {
+  return Array.isArray(value) ? value.map((item) => typeof item === "string" ? item : null) : [];
 }
 
 function parseClaim(value: unknown): CakeDuelRuntimeClaim | null {
@@ -205,8 +217,8 @@ function parseGame(value: unknown): CakeDuelRuntimeGame | null {
     players: [parsePlayer(players[0]), parsePlayer(players[1])],
     boutWinners: numberArray(source.boutWinners),
     attackerIndex: numberValue(source.attackerIndex),
-    cardList: stringArray(source.cardList),
-    config: { roundsToWin: numberValue(config.roundsToWin, 3) },
+    cardList: nameList(source.cardList),
+    config: { roundsToWin: numberValue(config.roundsToWin, 3), baseCardList: stringArray(config.baseCardList) },
   };
 }
 
@@ -245,7 +257,10 @@ function phasingPlayer(game: CakeDuelRuntimeGame): number | null {
 function claimOptions(game: CakeDuelRuntimeGame): string[] {
   if (game.phase === "attack") {
     const player = game.players[game.attackerIndex] ?? game.players[0];
-    return [...new Set(game.cardList)].filter((name) => {
+    const names = game.config.baseCardList.length > 0
+      ? game.config.baseCardList
+      : game.cardList.filter((name): name is string => name !== null);
+    return [...new Set(names)].filter((name) => {
       const type = CARD_TYPE[name];
       return (type === "physical" || type === "magical") && !player.claimBlacklist.includes(name);
     });
@@ -277,7 +292,7 @@ export function deriveCakeDuelPlayerLegalActions(game: CakeDuelRuntimeGame): Cak
 }
 
 function cardName(game: CakeDuelRuntimeGame, entityId: number): string | undefined {
-  return game.cardList[entityId];
+  return game.cardList[entityId] ?? undefined;
 }
 
 function claimPresentation(claim: CakeDuelRuntimeClaim | null): CakeDuelClaimPresentation | null {
@@ -382,6 +397,7 @@ export class CakeDuelRuntimeController {
   private wolfyTauntActive = false;
   private wolfyTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingChallengeReaction: CakeDuelReaction | null = null;
+  private challengeRevealedNames: Readonly<Record<number, string>> = {};
   private connected: boolean;
   private users = 0;
   private current: CakeDuelControllerSnapshot;
@@ -562,7 +578,7 @@ export class CakeDuelRuntimeController {
 
   private consumeReactionEvents(
     events: readonly Record<string, unknown>[],
-    previousState: CakeDuelRuntimeState,
+    _previousState: CakeDuelRuntimeState,
     _nextState: CakeDuelRuntimeState,
   ): void {
     const reactions = this.reactions;
@@ -594,15 +610,10 @@ export class CakeDuelRuntimeController {
       if (
         event.type === "claim_made" &&
         event.player === 1 &&
-        typeof event.claim === "string"
+        isCakeDuelTell(event.tell)
       ) {
-        const cardList = previousState.game?.cardList ?? [];
-        const cards = numberArray(event.cardIds);
-        const claim = event.claim;
-        const bluff = cards.some(
-          (entityId) => cardList[entityId] !== claim,
-        );
-        reactions.playCakeDuelTell(bluff ? "bluff" : "honest");
+        // Only the server knows whether Nori bluffed; it rolls the tell and sends the result.
+        reactions.showCakeDuelTell(event.tell);
         continue;
       }
 
@@ -639,6 +650,14 @@ export class CakeDuelRuntimeController {
 
     for (const event of events) {
       if (event.type === "challenge_made") {
+        const revealed: Record<number, string> = {};
+        for (const card of Array.isArray(event.revealedCards) ? event.revealedCards : []) {
+          const entry = record(card);
+          if (entry && typeof entry.cardId === "number" && typeof entry.cardName === "string") {
+            revealed[entry.cardId] = entry.cardName;
+          }
+        }
+        this.challengeRevealedNames = revealed;
         this.enqueueBanner({ type: "challenge" });
         continue;
       }
@@ -750,6 +769,7 @@ export class CakeDuelRuntimeController {
     this.challengeRevealStage = "idle";
     this.pendingChallengeBanners.length = 0;
     this.pendingChallengeReaction = null;
+    this.challengeRevealedNames = {};
     this.wolfyTauntActive = false;
   }
 
@@ -785,6 +805,7 @@ export class CakeDuelRuntimeController {
       board: deriveCakeDuelRuntimeBoard(state),
       banner: this.banner,
       challengeRevealStage: this.challengeRevealStage,
+      challengeRevealedNames: this.challengeRevealedNames,
       wolfyTauntActive: this.wolfyTauntActive,
       winner: game?.gameEnded?.winner ?? null,
       playerWins: game?.boutWinners.filter((winner) => winner === 0).length ?? 0,

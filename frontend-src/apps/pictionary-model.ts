@@ -4,6 +4,7 @@ export const PICTIONARY_NEXT_ROUND_DELAY_MS = 5000;
 export const PICTIONARY_PEN_WIDTH = 6;
 export const PICTIONARY_ERASER_WIDTH = 54;
 export const PICTIONARY_COLORS = ["#363636", "#4A5568", "#9B6B5B", "#B8956B", "#5B7B6B", "#7B4B5B"] as const;
+const drawingSampleSchema = z.array(z.tuple([z.array(z.number()), z.array(z.number())]));
 const rolesSchema = z.object({ drawer: z.enum(["player", "agent"]), guesser: z.enum(["player", "agent"]) });
 const historySchema = z.object({
   word: z.string(), drawingId: z.string().optional(), roles: rolesSchema,
@@ -17,8 +18,12 @@ export const pictionaryStateSchema = z.object({
   gameState: z.object({
     phase: z.enum(["PLAYING", "RESULTS"]), score: z.object({ solved: z.number(), skipped: z.number() }),
     round: z.object({
-      roundId: z.string(), startedAtMs: z.number(), word: z.string(), drawingId: z.string(),
+      // While the player guesses, the server withholds the answer (word, drawingId, pinyin)
+      // and sends the hint and Nori's strokes instead.
+      roundId: z.string(), startedAtMs: z.number(), word: z.string().optional(), drawingId: z.string().optional(),
       pinyin: z.array(z.tuple([z.string().nullable(), z.string()])).optional(), roles: rolesSchema,
+      hint: z.object({ text: z.string(), revealed: z.number(), total: z.number() }).optional(),
+      noriDrawings: z.array(drawingSampleSchema).optional(),
       status: z.enum(["active", "solved", "skipped", "unfinished"]),
       noriRedrawEpoch: z.number().default(0), solvedAtMs: z.number().optional(),
       lastGuess: z.object({ by: z.enum(["player", "agent"]), text: z.string(), atMs: z.number(), correct: z.boolean() }).optional(),
@@ -31,7 +36,6 @@ export type PictionaryGame = NonNullable<PictionaryState["gameState"]>;
 export interface DrawingPoint { x: number; y: number }
 export interface DrawingStroke { points: DrawingPoint[]; color: string; width: number }
 export type DrawingSample = Array<[number[], number[]]>;
-export type DrawingIndex = Record<string, DrawingSample[]>;
 
 export function pictionaryElapsed(game: PictionaryGame, now: number): number {
   const completed = game.history.reduce((sum, item) => sum + item.elapsedMs, 0);
@@ -87,22 +91,7 @@ export function drawingSampleStrokes(sample: DrawingSample): DrawingStroke[] {
     color: PICTIONARY_COLORS[0], width: PICTIONARY_PEN_WIDTH,
   })).filter(stroke => stroke.points.length >= 2);
 }
-let drawingsPromise: Promise<DrawingIndex> | null = null;
-export function loadPictionaryDrawings(): Promise<DrawingIndex> {
-  return drawingsPromise ??= fetch("/pictionary/drawings.json").then(async response => {
-    if (!response.ok) throw new Error("Unable to load drawing samples: " + response.status);
-    const data: unknown = await response.json();
-    const parsed = z.record(z.array(z.array(z.tuple([z.array(z.number()), z.array(z.number())])))).parse(data);
-    return Object.fromEntries(Object.entries(parsed).map(([key, samples]) => [key.toLowerCase(), samples]));
-  }).catch(error => { drawingsPromise = null; throw error; });
-}
-export function chooseDrawingSample(index: DrawingIndex, word: string, used: Set<number>, random = Math.random): DrawingSample | null {
-  const key = word.trim().toLowerCase();
-  const samples = index[key] ?? index[Object.keys(index).find(candidate => candidate.includes(key) || key.includes(candidate)) ?? ""];
-  if (!samples?.length) return null;
-  let choices = samples.map((_, sample) => sample).filter(sample => !used.has(sample));
-  if (!choices.length) { used.clear(); choices = samples.map((_, sample) => sample); }
-  const selected = choices[Math.min(choices.length - 1, Math.floor(random() * choices.length))];
-  used.add(selected);
-  return samples[selected];
+/** The sample Nori draws on its `pass`-th attempt; a redraw starts from the next one. */
+export function noriDrawingSample(samples: readonly DrawingSample[], redrawEpoch: number, pass: number): DrawingSample | null {
+  return samples.length ? samples[(redrawEpoch + pass) % samples.length] : null;
 }

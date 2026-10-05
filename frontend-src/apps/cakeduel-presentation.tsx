@@ -93,6 +93,7 @@ function presentCakeDuelBanner(
  */
 function buildCakeDuelChallengeRevealBoards(
   snapshot: CakeDuelControllerSnapshot,
+  revealedNames: Readonly<Record<number, string>>,
 ): CakeDuelChallengeRevealBoards | null {
   const game = snapshot.state.game;
   const board = snapshot.board;
@@ -107,7 +108,7 @@ function buildCakeDuelChallengeRevealBoards(
 
   const revealedPile = board.zones[pileKey].map((card, index) => ({
     ...card,
-    revealedName: game.cardList[card.entityId] ?? card.name ?? null,
+    revealedName: revealedNames[card.entityId] ?? game.cardList[card.entityId] ?? card.name ?? null,
     flipDelayMs: index * CAKE_DUEL_CHALLENGE_FLIP_STAGGER_MS,
   }));
   const revealed: CakeDuelRuntimeBoard = {
@@ -212,7 +213,7 @@ export function createCakeDuelProductionWindowBinding(
       const previousBanner = previous.banner?.type ?? null;
 
       if (currentBanner === "challenge" && previousBanner !== "challenge") {
-        setChallengeRevealBoards(buildCakeDuelChallengeRevealBoards(previous));
+        setChallengeRevealBoards(buildCakeDuelChallengeRevealBoards(previous, snapshot.challengeRevealedNames));
       }
 
       if (
@@ -264,7 +265,7 @@ export function createCakeDuelProductionWindowBinding(
     }
 
     const incomingChallenge = snapshot.banner?.type === "challenge" && previousSnapshot.current.banner?.type !== "challenge"
-      ? buildCakeDuelChallengeRevealBoards(previousSnapshot.current)
+      ? buildCakeDuelChallengeRevealBoards(previousSnapshot.current, snapshot.challengeRevealedNames)
       : null;
     const challengeBoards = challengeRevealBoards ?? incomingChallenge;
     const challengeBannerActive = snapshot.banner?.type === "challenge";

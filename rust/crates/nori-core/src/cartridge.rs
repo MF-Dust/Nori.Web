@@ -166,8 +166,27 @@ impl Cartridge {
                 }
             }
             visible
+        } else if self.id == "cakeduel" {
+            crate::cartridges::cakeduel::client_state(value)
+        } else if self.id == "pictionary" {
+            crate::cartridges::pictionary::client_state(value)
         } else {
             value.clone()
+        }
+    }
+
+    /// Browser view of a committed transition (patches and events), taken right after the
+    /// commit so `self.state` is the state the transition produced.
+    pub fn client_transition(&self, transition: &Json) -> Json {
+        match self.id.as_str() {
+            "cakeduel" => crate::cartridges::cakeduel::client_transition(
+                transition,
+                self.state.get("game").unwrap_or(&Value::Null),
+            ),
+            "pictionary" => {
+                crate::cartridges::pictionary::client_transition(transition, &self.state)
+            }
+            _ => self.client_view(transition),
         }
     }
 
@@ -188,7 +207,8 @@ impl Cartridge {
         self.commit(actor, cmd, reduced)
     }
 
-    fn commit(
+    /// Commit a reduction made outside the command reducer (server-only transitions).
+    pub(crate) fn commit(
         &mut self,
         actor: &str,
         cmd: &Json,

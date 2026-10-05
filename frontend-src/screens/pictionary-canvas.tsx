@@ -1,8 +1,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type PointerEvent } from "react";
 import {
-  chooseDrawingSample, drawingSampleStrokes, loadPictionaryDrawings, normalizeDrawingStroke,
+  drawingSampleStrokes, noriDrawingSample, normalizeDrawingStroke,
   PICTIONARY_COLORS, PICTIONARY_ERASER_WIDTH, PICTIONARY_PEN_WIDTH,
-  type DrawingPoint, type DrawingStroke,
+  type DrawingPoint, type DrawingSample, type DrawingStroke,
 } from "../apps/pictionary-model";
 import type { PictionaryRenderer } from "./pictionary-renderer";
 import type { DrawingSnapshot } from "../apps/pictionary-runtime";
@@ -13,7 +13,9 @@ export interface PictionaryCanvasHandle {
   snapshot(): DrawingSnapshot | null;
 }
 export interface PictionaryCanvasProps {
-  roundId: string; drawingId: string; redrawEpoch: number;
+  roundId: string; redrawEpoch: number;
+  /** Nori's strokes for this round, chosen by the server. */
+  noriDrawings?: readonly DrawingSample[];
   active: boolean; drawer: "player" | "agent";
   color: string; eraser: boolean;
   onStroke(stroke: DrawingStroke): void;
@@ -113,45 +115,46 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     if (props.drawer !== "agent" || !props.active) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const used = new Set<number>();
+    let pass = 0;
+    const samples = props.noriDrawings ?? [];
     const schedule = (callback: () => void, ms: number) => {
       if (!cancelled) timer = setTimeout(() => { if (!cancelled) callback(); }, ms);
     };
-    void loadPictionaryDrawings().then(index => {
-      const drawSample = () => {
+    const drawSample = () => {
+      if (cancelled) return;
+      const sample = noriDrawingSample(samples, props.redrawEpoch, pass++);
+      if (!sample) { setError("No drawing sample available"); return; }
+      const prepared = drawingSampleStrokes(sample);
+      strokes.current = [];
+      const drawStroke = (index: number) => {
         if (cancelled) return;
-        const sample = chooseDrawingSample(index, props.drawingId, used);
-        if (!sample) { setError("No drawing sample available"); return; }
-        const prepared = drawingSampleStrokes(sample);
-        strokes.current = [];
-        const drawStroke = (index: number) => {
+        if (index >= prepared.length) { schedule(drawSample, 10_000); return; }
+        const source = prepared[index];
+        const current = { ...source, points: source.points.slice(0, 1) };
+        strokes.current.push(current);
+        let point = 1;
+        const extend = () => {
           if (cancelled) return;
-          if (index >= prepared.length) { schedule(drawSample, 10_000); return; }
-          const source = prepared[index];
-          const current = { ...source, points: source.points.slice(0, 1) };
-          strokes.current.push(current);
-          let point = 1;
-          const extend = () => {
-            if (cancelled) return;
-            if (point < source.points.length) {
-              current.points.push(source.points[point++]); touchScratch(); render(); schedule(extend, 15); return;
-            }
-            stopScratch();
-            const dimensions = base.current;
-            const length = source.points.slice(1).reduce((sum, next, point) => sum + Math.hypot(
-              (next.x - source.points[point].x) * dimensions.width,
-              (next.y - source.points[point].y) * dimensions.height), 0);
-            const fraction = Math.min(1, length / Math.max(1, Math.hypot(dimensions.width, dimensions.height)));
-            schedule(() => drawStroke(index + 1), Math.max(0, Math.floor(300 + fraction * 1700 + 1700 * .15 * (Math.random() - .5))));
-          };
-          extend();
+          if (point < source.points.length) {
+            current.points.push(source.points[point++]); touchScratch(); render(); schedule(extend, 15); return;
+          }
+          stopScratch();
+          const dimensions = base.current;
+          const length = source.points.slice(1).reduce((sum, next, point) => sum + Math.hypot(
+            (next.x - source.points[point].x) * dimensions.width,
+            (next.y - source.points[point].y) * dimensions.height), 0);
+          const fraction = Math.min(1, length / Math.max(1, Math.hypot(dimensions.width, dimensions.height)));
+          schedule(() => drawStroke(index + 1), Math.max(0, Math.floor(300 + fraction * 1700 + 1700 * .15 * (Math.random() - .5))));
         };
-        drawStroke(0);
+        extend();
       };
-      drawSample();
-    }).catch(reason => { if (!cancelled) setError(String(reason)); });
+      drawStroke(0);
+    };
+    drawSample();
     return () => { cancelled = true; if (timer !== null) clearTimeout(timer); stopScratch(); };
-  }, [props.roundId, props.drawingId, props.redrawEpoch, props.drawer, props.active]);
+    // Replicated snapshots allocate fresh sample arrays; the round id identifies them.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.roundId, props.redrawEpoch, props.drawer, props.active, props.noriDrawings?.length]);
   const point = (event: PointerEvent<HTMLDivElement>): DrawingPoint => {
     const bounds = event.currentTarget.getBoundingClientRect();
     return {

@@ -999,7 +999,9 @@ fn pictionary_next_round_starts_a_guesser_only_when_nori_guesses() {
     let (_, spawned) = drive(&mut next, &mut world);
     let round = &world.cartridge("pictionary").unwrap().state["gameState"]["round"];
     assert_eq!(round["roles"]["drawer"], "agent");
-    assert!(spawned.is_empty());
+    // Nori draws, so no guesser: only the player's hint giver starts.
+    let labels: Vec<_> = spawned.iter().map(Task::label).collect();
+    assert_eq!(labels, ["pictionary_hint"]);
     // Round 3: the player draws again and Nori's guesser is spawned with the new round.
     let out = pictionary_dispatch(&mut world, json!({"type": "skipRound", "atMs": 2}));
     let mut next = out
@@ -1018,4 +1020,102 @@ fn pictionary_next_round_starts_a_guesser_only_when_nori_guesses() {
         "{seen:?}"
     );
     assert_eq!(spawned.len(), 1);
+}
+
+#[test]
+fn pictionary_player_never_receives_the_answer_while_guessing() {
+    let mut world = world(Pacing::Edge, LivePack::empty());
+    session::handle(
+        &mut world,
+        &json!({"type": "mount_cartridge", "cartridgeId": "pictionary", "requestId": "m"}),
+        &Secrets::default(),
+    );
+    pictionary_dispatch(
+        &mut world,
+        json!({"type": "startSession", "atMs": 0, "settings": {"sessionDurationMs": 600_000, "locale": "en"}}),
+    );
+    // Round 2 is Nori's drawing for the player to guess.
+    let out = pictionary_dispatch(&mut world, json!({"type": "skipRound", "atMs": 1}));
+    let mut next = out
+        .tasks
+        .into_iter()
+        .find(|t| t.label() == "pictionary_next_round")
+        .unwrap();
+    let mut sent: Vec<Value> = Vec::new();
+    let server = ServerAi::default();
+    let mut hint = loop {
+        match next.poll(&mut world, &server, None) {
+            Step::Broadcast(messages) => sent.extend(messages),
+            Step::Spawn(task) => break task,
+            Step::Sleep(_) => {}
+            other => panic!("unexpected step {other:?}"),
+        }
+    };
+    assert_eq!(hint.label(), "pictionary_hint");
+    let round = world.cartridge("pictionary").unwrap().state["gameState"]["round"].clone();
+    let word = round["word"].as_str().unwrap().to_string();
+    let drawing_id = round["drawingId"].as_str().unwrap().to_string();
+
+    let snapshot = world.cartridge("pictionary").unwrap().snapshot("ui");
+    let visible = &snapshot["state"]["gameState"]["round"];
+    assert!(visible.get("word").is_none() && visible.get("drawingId").is_none());
+    assert!(visible.get("synonyms").is_none() && visible.get("pinyin").is_none());
+    assert_eq!(visible["hint"]["revealed"], 0);
+    assert!(!visible["hint"]["text"].as_str().unwrap().is_empty());
+    assert!(!visible["noriDrawings"].as_array().unwrap().is_empty());
+    sent.push(snapshot);
+
+    // Hints are server-only: the browser cannot ask for one, even posing as Nori.
+    for actor in ["player", "agent"] {
+        let message = json!({
+            "type": "dispatch", "actor": actor, "cartridgeId": "pictionary", "requestId": "h",
+            "expectedHeadVersion": world.cartridge("pictionary").unwrap().head_version,
+            "cmd": {"type": "revealHint", "roundId": round["roundId"]},
+        });
+        let out = session::handle(&mut world, &message, &Secrets::default());
+        assert_eq!(out.direct[0]["success"], false, "{actor}");
+    }
+
+    let mut reveals = 0;
+    for _ in 0..200 {
+        match hint.poll(&mut world, &server, None) {
+            Step::Sleep(ms) => assert!((1_200..=10_000).contains(&ms), "{ms}"),
+            Step::Broadcast(messages) => {
+                reveals += 1;
+                sent.extend(messages);
+            }
+            Step::Done => break,
+            other => panic!("unexpected step {other:?}"),
+        }
+    }
+    assert!(reveals > 0);
+    let visible = world.cartridge("pictionary").unwrap().snapshot("ui")["state"]["gameState"]
+        ["round"]
+        .clone();
+    // Fully revealed, the hint spells the answer, yet the answer field itself never left.
+    let spelled: String = word
+        .to_uppercase()
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect();
+    let shown: String = visible["hint"]["text"]
+        .as_str()
+        .unwrap()
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect();
+    assert_eq!(shown, spelled);
+    for message in &sent {
+        let text = message.to_string();
+        assert!(!text.contains(&format!("\"{word}\"")), "{text}");
+        assert!(!text.contains(&format!("\"{drawing_id}\"")), "{text}");
+    }
+
+    // Once the round is over the answer is shown.
+    pictionary_dispatch(&mut world, json!({"type": "skipRound", "atMs": 2}));
+    let visible = world.cartridge("pictionary").unwrap().snapshot("ui")["state"]["gameState"]
+        ["round"]
+        .clone();
+    assert_eq!(visible["word"], word);
+    assert!(visible.get("hint").is_none());
 }

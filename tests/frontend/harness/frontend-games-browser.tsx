@@ -51,8 +51,12 @@ function codenamesGame(guessing = false) {
   } };
 }
 function round(id = "one", drawer = "player") {
+  // Like the server: while the player guesses, the answer stays hidden behind the hint.
+  const answer = drawer === "player"
+    ? { word: "apple", drawingId: "apple" }
+    : { hint: { text: "_ _ _ _ _", revealed: 0, total: 5 }, noriDrawings: [[[[0, 128, 255], [255, 128, 0]]]] };
   return { ...pictInitial, gameState: { phase: "PLAYING", score: { solved: 0, skipped: 0 }, history: [],
-    round: { roundId: id, startedAtMs: Date.now(), word: "apple", drawingId: "apple", roles: { drawer, guesser: drawer === "player" ? "agent" : "player" }, status: "active", noriRedrawEpoch: 0 } } };
+    round: { roundId: id, startedAtMs: Date.now(), ...answer, roles: { drawer, guesser: drawer === "player" ? "agent" : "player" }, status: "active", noriRedrawEpoch: 0 } } };
 }
 const drawing = { setCapture(value: typeof capture) { capture = value; }, submit(stroke: any) { strokes.push(stroke); }, changed() { revisions++; } };
 Object.assign(window, { fixture: {
@@ -120,6 +124,11 @@ Object.assign(window, { fixture: {
   round(id?: string, drawer?: string) { pictionary.set(round(id, drawer)); },
   pictionaryState: () => pictionary.snapshot().state,
   setPictionary(state: any) { pictionary.set(state); },
+  revealHint(text: string, revealed: number) {
+    const state: any = structuredClone(pictionary.snapshot().state);
+    state.gameState.round.hint = { ...state.gameState.round.hint, text, revealed };
+    pictionary.set(state);
+  },
   pictionaryConnection(connected: boolean) { pictionary.connection(connected); },
 } });
 const pict = location.hash === "#pictionary";

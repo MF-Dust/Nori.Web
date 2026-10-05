@@ -26,10 +26,6 @@ const compiled = await build({
 const files = new Map(compiled.outputFiles.map(file => [file.path.endsWith(".css") ? "/fixture.css" : "/fixture.js", file.contents]));
 const server = createServer(async (req, res) => {
   const path = new URL(req.url, "http://localhost").pathname;
-  if (path === "/pictionary/drawings.json") {
-    res.setHeader("Content-Type", "application/json");
-    res.end(await readFile("public/pictionary/drawings.json")); return;
-  }
   if (path === "/source.css") {
     res.setHeader("Content-Type", "text/css");
     res.end(sourceCss); return;
@@ -226,7 +222,7 @@ try {
   const hint = page.locator("[data-pictionary-hint]");
   await page.evaluate(() => window.fixture.round("hint-one", "agent"));
   assert.equal(await hint.textContent(), "_ _ _ _ _");
-  await page.clock.runFor(6100);
+  await page.evaluate(() => window.fixture.revealHint("_ P P _ _", 2));
   assert.match(await hint.textContent(), /[A-Z]/);
   assert.ok(await page.evaluate(() => window.fixture.sounds.includes("partygames-pictionary-hint-reveal")));
   await page.screenshot({ path: join(output, "pictionary-progressive-hint.png") });
@@ -235,6 +231,8 @@ try {
   await page.evaluate(() => {
     const state = structuredClone(window.fixture.pictionaryState());
     state.gameState.round.status = "solved";
+    state.gameState.round.word = "apple";
+    delete state.gameState.round.hint;
     state.gameState.round.solvedAtMs = Date.now();
     state.gameState.round.lastGuess = { by: "player", text: "apple", correct: true, atMs: Date.now() };
     window.fixture.setPictionary(state);
@@ -250,12 +248,11 @@ try {
     window.fixture.round("hint-zh", "agent");
     const state = structuredClone(window.fixture.pictionaryState());
     state.settings.locale = "zh-CN";
-    state.gameState.round.word = "苹果";
-    state.gameState.round.pinyin = [["p", "ing"], ["g", "uo"]];
+    state.gameState.round.hint = { text: "__ __", revealed: 0, total: 2 };
     window.fixture.setPictionary(state);
   });
   assert.equal(await hint.textContent(), "__ __");
-  await page.clock.runFor(6100);
+  await page.evaluate(() => window.fixture.revealHint("__ g_", 1));
   assert.equal(await hint.textContent(), "__ g_");
   await page.screenshot({ path: join(output, "pictionary-chinese-hint.png") });
   await page.evaluate(() => {

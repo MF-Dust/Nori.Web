@@ -48,7 +48,6 @@ export const groups = {
     "tests/frontend/frontend-messenger-interactions.test.ts",
     "tests/frontend/frontend-messenger-model.test.ts",
     "tests/frontend/frontend-nori-scene.test.ts",
-    "tests/frontend/frontend-pictionary-hints.test.ts",
     "tests/frontend/frontend-reaction-director.test.ts",
     "tests/frontend/frontend-recovery-gaps.test.ts",
     "tests/frontend/frontend-scene-editor.test.ts",
