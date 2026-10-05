@@ -48,14 +48,12 @@ The original Three.js scene, camera/parallax, shadow, custom expression/gesture/
 npm ci
 npm run frontend:typecheck
 npm run frontend:runtime:test
-npm run frontend:recover:check
 npm run frontend:app:build
 npm run frontend:games:smoke
-# Install pyproject.toml runtime dependencies plus the local extra and Chromium first.
+# Build the Rust local backend and install Chromium first.
 npm run frontend:app:smoke
-npm run frontend:cutover:check
 ```
 
-The source app smoke starts an isolated local backend and Vite in one process tree, uses real model assets and WebSockets, and checks desktop CSS, text replies, actual PCM playback acknowledgements, reconnect, Terminal, About, Settings persistence/rendering/network/reset and Credits. It rejects historical JavaScript requests and browser errors. `NORI_TEST_PYTHON` and `NORI_TEST_CHROMIUM` optionally select installed executables. CI uploads screenshots.
+The source app smoke starts an isolated local backend and Vite in one process tree, uses real model assets and WebSockets, and checks desktop CSS, text replies, actual PCM playback acknowledgements, reconnect, Terminal, About, Settings persistence/rendering/network/reset and Credits. It rejects historical JavaScript requests and browser errors. `NORI_TEST_CHROMIUM` optionally selects installed executables. CI uploads screenshots.
 
-Remaining production blockers are recorded in `frontend-src/migration/cutover-status.ts`. Settings, About, system alerts and Credits now have source components and bindings; [the supporting-app ledger](FRONTEND_SYSTEM_RECOVERY.md) records their verification and remaining visual/audio edges. Debug, full Preview and shared music/SFX/story integrations still need recovery before the production entry can change.
+Settings, About, system alerts and Credits now have source components and bindings; [the supporting-app ledger](FRONTEND_SYSTEM_RECOVERY.md) records their verification and remaining visual/audio edges. Debug, full Preview and shared music/SFX/story integrations still need recovery before the production entry can change.

@@ -24,7 +24,7 @@ export type FrontendFeature =
  *
  * - `ui-recovered`: presentation and behavior are source-owned. Remaining
  *   acceptance (original-agent sessions, original-client visual comparison)
- *   is tracked by `migration/cutover-status.ts`, not by this catalog.
+ *   is not tracked by this catalog.
  * - `runtime-recovered`: a protocol/runtime layer with no UI of its own.
  * - `dependency-replaced`: third-party code (React, Pixi, pdf.js, Radix,
  *   Convex client, lucide icons, xterm, motion) that the source build takes
@@ -67,7 +67,6 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "apps/production-catalog.ts",
       "apps/production-icons.tsx",
       "apps/recovered-presentation.ts",
-      "screens/intro-page.tsx",
       "components/desktop-dock.tsx",
       "components/desktop-indicators.tsx",
       "components/desktop-root.tsx",
@@ -86,7 +85,6 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       "components/window-resize-handles.tsx",
       "components/window-runtime-context.tsx",
       "components/window-screen-router.tsx",
-      "hooks/use-compact-height.ts",
       "hooks/use-element-size.ts",
       "hooks/use-window-interaction.ts",
       "runtime/os-notifications.ts",

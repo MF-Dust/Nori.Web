@@ -26,7 +26,7 @@ python scripts/smoke_release.py
 
 ## 旧打包命令兼容
 
-`scripts/build_nuitka.py` 和 `scripts/smoke_nuitka.py` 现在分别调用上述 Rust 构建器和 smoke test，不再使用 Nuitka。旧构建命令支持 `--allow-untracked`；`--no-clean` 仅保留兼容并提示弃用，发行目录始终重建，Cargo 编译缓存仍复用。旧 smoke 命令同样支持指定发行目录。`scripts/nuitka_entry.py` 与旧 Python 后端、测试及启动回退已移除；历史实现可从 Git 记录恢复。
+发行目录始终重建，Cargo 编译缓存仍复用。旧 Nuitka 构建脚本、Python 后端、测试及启动回退已移除；历史实现可从 Git 记录恢复。
 
 ## 发行目录和依赖解析
 

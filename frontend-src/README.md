@@ -6,7 +6,7 @@ The shipped UI under `public/assets/` is a set of hashed Vite JavaScript/CSS chu
 
 Two outputs are deliberately separated:
 
-1. `.frontend-recovery/` — generated evidence for every shipped JavaScript/CSS chunk: hashes, dependency graph, symbol/style inventories, API/storage/protocol strings and optional beautified analysis copies. It is ignored by Git.
+1. `public/assets/` — the historical shipped chunks, kept as the rollback entry and reference evidence.
 2. `frontend-src/` — typed source reconstructed from that evidence. This is the implementation intended for development and optimization.
 
 ## Recovered source boundary
@@ -72,7 +72,7 @@ Missing presentation modules are intentionally rendered through explicit migrati
 
 The large `NormalApp-*` desktop shell is no longer a general migration boundary. Mail, Signal Messenger, Files, Browser main/popup and Idle/QFR are source-owned. The Idle marginal-growth ribbon world is ported too: `source-app.tsx` creates the `state/marginal-growth-store.ts` store, binds it to the live generator economy with `bindMarginalGrowthEconomy`, and `IdleScreen` mounts the Pixi `apps/marginal-growth/` ribbon (`MarginalGrowthRibbonView`, shipped cache loader, topology and GLSL/WGSL shaders) for all four shapes.
 
-The cutover status authority is `migration/cutover-status.ts`: 12 of 15 boundaries are complete and `messenger`, `games` and `live2d` remain open. Remaining work includes:
+`messenger`, `games` and `live2d` remain open boundaries. Remaining work includes:
 
 - original-agent behaviour only: Messenger dialogue and media sessions, the four games' agent
   dialogue/voice/inference, and the Corruption, Memory, Datasea and Farewell voice tracks.
@@ -85,25 +85,17 @@ The production entry is already switched: Cloudflare Workers Builds (`scripts/cl
 
 Cake Duel, Codenames, Chess, Pictionary and the Live2D/Nori scene stack are all bound in
 `source-app.tsx` today; what remains for them is agent behaviour and original comparison, not
-presentation wiring. Generated beautified bundles under `.frontend-recovery/pretty/` remain evidence, not project source.
+presentation wiring.
 
-## Recovery commands
+## Build commands
 
-Generate the full local evidence set:
+Validate and build the source application:
 
 ```bash
 npm ci
-npm run frontend:recover
-```
-
-Validate and build the maintenance source and source application:
-
-```bash
 npm run frontend:typecheck
-npm run frontend:build
 npm run frontend:app:build
-npm run frontend:cutover:check
-npm run frontend:recover:check
+npm run frontend:test
 ```
 
-`frontend:build` writes an ignored `.frontend-build/` ES-module library with source maps. `frontend:app:build` proves the source-owned browser application composes independently of the historical JavaScript entry. Pull-request CI runs these checks alongside the Worker/Cloudflare validation.
+`frontend:app:build` proves the source-owned browser application composes independently of the historical JavaScript entry. Pull-request CI runs these checks alongside the Worker/Cloudflare validation.

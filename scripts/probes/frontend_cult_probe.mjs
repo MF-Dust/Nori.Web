@@ -4,8 +4,7 @@ import { resolve } from "node:path";
 /**
  * Cult flash, the last story producer without its own recovery surface.
  *
- * Reuses `tests/frontend/harness/frontend-scene-tools-harness.tsx` — the same harness
- * `scripts/probes/frontend_visual_comparison.mjs` enters this segment with — and the
+ * Reuses `tests/frontend/harness/frontend-scene-tools-harness.tsx` and the
  * fake clock the other story probes drive, so the 7s reveal is reached
  * deterministically and every captured frame is the renderer's own output.
  * `StoryClock` here lives inside the effect and publishes only `data-progress`,

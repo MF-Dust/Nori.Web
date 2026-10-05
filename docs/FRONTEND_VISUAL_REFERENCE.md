@@ -30,7 +30,7 @@ geometry for Codenames, Pictionary, Chess and Cake Duel. It opens only each
 start route and exits without starting a game, so it neither invokes private
 agent output nor treats locally authored tutorial narrative as original text.
 
-The Python environment must provide FastAPI, HTTPX, python-chess, Uvicorn and websockets, matching `frontend:app:smoke`. `NORI_TEST_PYTHON` and `NORI_TEST_CHROMIUM` can select CI-managed executables. The backend and preview ports default to 47179, 47180 and 47181 and can be changed with `NORI_VISUAL_BACKEND_PORT`, `NORI_VISUAL_REFERENCE_PORT` and `NORI_VISUAL_CANDIDATE_PORT`.
+The probe uses the Rust local backend (`cargo build --release -p nori-local`), matching `frontend:app:smoke`. `NORI_TEST_CHROMIUM` can select a CI-managed browser. The backend and preview ports default to 47179, 47180 and 47181 and can be changed with `NORI_VISUAL_BACKEND_PORT`, `NORI_VISUAL_REFERENCE_PORT` and `NORI_VISUAL_CANDIDATE_PORT`.
 
 Upload `frontend-visual-reference/` as the CI artifact. It contains the five system PNGs and four game-start PNGs per entry, per-probe manifests, target metadata and bounded backend logs. `NORI_VISUAL_OUTPUT` changes the system artifact directory; `NORI_VISUAL_GAMES_OUTPUT` changes the game subdirectory.
 

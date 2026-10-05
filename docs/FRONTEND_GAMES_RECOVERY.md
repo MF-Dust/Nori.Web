@@ -32,10 +32,8 @@ Run:
 ```sh
 npm ci
 npm run frontend:typecheck
-npm run frontend:build
 npm run frontend:app:build
-npm run frontend:cutover:check
-npm run frontend:recover:check
+npm run frontend:games:test
 npx playwright install chromium
 npm run frontend:games:smoke
 ```
@@ -57,7 +55,7 @@ The Chromium suite mounts the actual React game screens with a test transport an
 
 Games is only part of the final cutover. The remaining boundaries are Messenger story/corruption/reveal choreography, full game lifecycle/fidelity and live-agent/media verification, the six non-Cult story segments' original Live2D parity, Debug original layout/private handlers, scene audio and production entry. Auth/bootstrap, source CSS ownership, shared audio, Preview, chips and Daniel integration have separate completed recovery records. A recovered module alone does not establish whole-app parity.
 
-The authoritative gate remains frontend-src/migration/cutover-status.ts. Keep Games and the other pending boundaries false until their production behavior is restored and verified. This PR does not switch public/index.html or remove historical assets.
+This PR does not switch public/index.html or remove historical assets.
 
 
 ## Original card art and Chess transition feedback
@@ -99,4 +97,4 @@ Codenames now has a full result surface over the forest background, original tre
 
 Pictionary now presents a session sheet with a tape motif, solved/attempted score, duration, accuracy, fastest and mean solve times. The history journal identifies the drawing role and differentiates solved, skipped and unfinished entries. Empty history and restart are supported. Short-window CSS and reduced-motion fallbacks cover both result surfaces.
 
-Browser tests exercise both Codenames outcomes and actions, and mixed Pictionary outcomes/statistics/restart. The new layout is source-owned; remaining animation, typography and original-agent comparison are tracked in [FRONTEND_REMAINING_WORK.md](FRONTEND_REMAINING_WORK.md).
+Browser tests exercise both Codenames outcomes and actions, and mixed Pictionary outcomes/statistics/restart. The new layout is source-owned; remaining animation, typography and original-agent comparison are still open.

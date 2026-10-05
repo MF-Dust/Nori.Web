@@ -38,7 +38,7 @@ Changing the provider or API host invalidates an unchanged saved key. The UI cle
 
 For a player chat message, `public/nori-ai-settings.js` attaches the active browser AI configuration to that **single** Arcade dispatch in the private `noriAiConfig` compatibility field.
 
-The local server and Cloudflare Durable Object remove `noriAiConfig` before protocol/cartridge handling, validate the configuration, and install it in a Python `ContextVar` only for work spawned by that chat dispatch. API keys are never serialized into WebSocket hibernation attachments and are deliberately **not** stored in cartridge state, runtime transitions, world snapshots, or Durable Object storage.
+The local server and Cloudflare Durable Object remove `noriAiConfig` before protocol/cartridge handling, validate the configuration, and pass it only to the work spawned by that chat dispatch. API keys are never serialized into WebSocket hibernation attachments and are deliberately **not** stored in cartridge state, runtime transitions, world snapshots, or Durable Object storage.
 
 The legacy `nori.ai.config` event remains accepted by the backend for compatibility, but it no longer persists credentials across messages. The settings connection test continues to send its configuration only for the test request.
 

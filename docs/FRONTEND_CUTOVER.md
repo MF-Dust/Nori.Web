@@ -4,19 +4,16 @@ PR #28 established a maintainable recovered source tree. This migration moves th
 
 ## Safety rule
 
-`public/index.html` remains on the historical entry until every item in `frontend-src/migration/cutover-status.ts` is complete. The source app must never import `index-CyHAbkO5.js` or `NormalApp-Cn6agT0F.js` as a shortcut.
-
-`npm run frontend:cutover:check` enforces that rule in CI.
+The source app must never import `index-CyHAbkO5.js` or `NormalApp-Cn6agT0F.js` as a shortcut. `public/index.html` stays on the historical entry as the rollback path.
 
 ## Current source status — HEAD `085bad3`
 
-All seven story producers are registered in the source call chain (`StoryScenes` plus the runtime `STORY_ORDER` support set). The six non-Cult segments remain source-owned reconstructions without original visual, narrative, media and agent parity. Datasea source/probe coverage includes all three waves and all twelve games; original visual, media and agent acceptance remain open. The Debug panel and scene editor are source-owned; the remaining Debug gaps are original layout comparison and the private Inject Talk/Nori Context handlers. At that HEAD the five false gates were `messenger`, `games`, `live2d`, `supporting-apps` and `production-entry`. Current state (see `FRONTEND_ACCEPTANCE_STATUS.md`): `supporting-apps` closed in `705a2e7` and `production-entry` closed in `dd13547`, so only `messenger`, `games` and `live2d` remain false. Cloudflare Workers Builds deploys the source-app candidate by default; `public/index.html` is the preserved legacy rollback entry.
+All seven story producers are registered in the source call chain (`StoryScenes` plus the runtime `STORY_ORDER` support set). The six non-Cult segments remain source-owned reconstructions without original visual, narrative, media and agent parity. Datasea source/probe coverage includes all three waves and all twelve games; original visual, media and agent acceptance remain open. The Debug panel and scene editor are source-owned; the remaining Debug gaps are original layout comparison and the private Inject Talk/Nori Context handlers. At that HEAD the five false gates were `messenger`, `games`, `live2d`, `supporting-apps` and `production-entry`. Current state: `supporting-apps` closed in `705a2e7` and `production-entry` closed in `dd13547`, so only `messenger`, `games` and `live2d` remain false. Cloudflare Workers Builds deploys the source-app candidate by default; `public/index.html` is the preserved legacy rollback entry.
 
 ## Build contracts
 
-There are now two independent builds:
+The production build is:
 
-- `npm run frontend:build` — library-mode build for the recovered modules.
 - `npm run frontend:app:build` — application-mode build rooted at `frontend-src/index.html` and `frontend-src/main.tsx`.
 
 The app build writes to ignored `.frontend-app-build/` until the production entry boundary is ready. It bundles React and runtime dependencies rather than externalizing them.
@@ -62,14 +59,11 @@ A boundary can be marked complete only when:
 
 Before changing `public/index.html`:
 
-- `FRONTEND_CUTOVER_BOUNDARIES` has no `complete: false` entries;
 - source app has no historical JS imports;
 - source app has no historical CSS import;
 - `npm run frontend:typecheck` passes;
-- `npm run frontend:build` passes;
 - `npm run frontend:app:build` passes;
-- `npm run frontend:cutover:check` passes;
-- `npm run frontend:recover:check` passes;
+- `npm run frontend:games:test` and `npm run frontend:suites:test` pass;
 - Cloudflare dry-run passes with the generated source assets staged;
 - browser smoke tests cover boot, login, desktop, launching/closing apps, persistence and sign-out;
 - a rollback path to the previous public entry is documented for the first production deployment.

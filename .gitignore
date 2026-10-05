@@ -10,38 +10,11 @@ __pycache__/
 # Local Pi LSP commands contain machine-specific paths.
 /.pi/pi-lsp.json
 
-# Generated outputs from before the .artifacts/ move.
-.frontend-build/
-.frontend-app-build/
-frontend-app-smoke/
-frontend-candidate-smoke/
-frontend-games-lifecycle/
-frontend-games-smoke/
-frontend-stories-smoke/
-frontend-surfaces-smoke/
-frontend-visual-comparison/
-frontend-debug-layout/
-frontend-visual-games/
-frontend-visual-reference/
 .wrangler-candidate.json
-data/*.sqlite3
-data/*.db
-
-# Retired local Python environments (never commit dependencies).
-.venv-workers/
-python_modules/
 
 # --- Cloudflare local state and secrets ---
 .wrangler/
 .dev.vars
-
-# --- scraper secrets & archive ---
-.scraper_token.txt
-.scraper_jwt.txt
-scraper/.scraper_token.txt
-live_archive/
-NoriOS_live_archive_*.zip
-backend/data/*.sqlite3
 
 *.log
 tmp/

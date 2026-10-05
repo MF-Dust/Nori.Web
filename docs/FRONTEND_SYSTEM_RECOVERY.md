@@ -43,7 +43,7 @@ This restores the source-owned Debug surface, not the original layout. The netwo
 
 ## Scoped scene-project editor
 
-Debug now includes a source-owned scene editor for validated JSON phase projects. It projects camera/model/light state and plays local audio intervals through the existing shared runtime, supports explicit gates and pause/resume, and releases overrides/audio on stop, completion, tab exit or world change. It never completes a production story or invents story facts. Invalid configuration produces an error before playback. Shatter and Datasea production tuners are also source-owned; original layout and private-agent handler acceptance remain listed in [FRONTEND_REMAINING_WORK.md](FRONTEND_REMAINING_WORK.md).
+Debug now includes a source-owned scene editor for validated JSON phase projects. It projects camera/model/light state and plays local audio intervals through the existing shared runtime, supports explicit gates and pause/resume, and releases overrides/audio on stop, completion, tab exit or world change. It never completes a production story or invents story facts. Invalid configuration produces an error before playback. Shatter and Datasea production tuners are also source-owned; original layout and private-agent handler acceptance remain open.
 
 ## Corruption Debug study
 

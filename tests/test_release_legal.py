@@ -1,7 +1,6 @@
 """Focused checks for source/notice delivery (no compiler or network required)."""
 from __future__ import annotations
 
-import io
 import json
 import shutil
 import subprocess
@@ -193,28 +192,6 @@ class ReleaseLegalTests(unittest.TestCase):
             self.assertEqual(records[0]["checksum"], "pinned-checksum")
             self.assertIn("test-target", (destination / "RUST-LICENSE-SUMMARY.txt").read_text())
             self.assertTrue((destination / "COPYRIGHT.md").is_file())
-
-    def test_legacy_build_command_delegates_to_rust(self):
-        from scripts import build_nuitka, build_release
-        release = Path("build/release/Nori.Web-test")
-        for arguments in ([], ["--no-clean"], ["--allow-untracked"], ["--no-clean", "--allow-untracked"]):
-            with self.subTest(arguments=arguments), patch.object(build_release, "build", return_value=release) as build:
-                with patch("sys.argv", ["build_nuitka.py", *arguments]), patch("sys.stderr", new=io.StringIO()) as stderr:
-                    build_nuitka.main()
-                build.assert_called_once_with(allow_untracked="--allow-untracked" in arguments)
-                self.assertIn("now uses Rust", stderr.getvalue())
-                self.assertEqual("--no-clean is obsolete" in stderr.getvalue(), "--no-clean" in arguments)
-        with patch.object(build_release, "build", return_value=release), patch("sys.stderr", new=io.StringIO()):
-            self.assertEqual(build_nuitka.build(), release)
-
-    def test_legacy_smoke_command_delegates_to_rust(self):
-        from scripts import smoke_nuitka, smoke_release
-        arguments = ["smoke_nuitka.py", "build/release/Nori.Web-test"]
-        with patch.object(smoke_release, "main") as smoke, patch("sys.argv", arguments):
-            with patch("sys.stderr", new=io.StringIO()) as stderr:
-                smoke_nuitka.main()
-            smoke.assert_called_once_with()
-            self.assertIn("now uses Rust", stderr.getvalue())
 
     def test_smoke_resolves_relative_release_directory(self):
         from scripts import smoke_release

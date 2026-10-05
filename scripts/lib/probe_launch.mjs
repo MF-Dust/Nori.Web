@@ -8,8 +8,7 @@ import process from "node:process";
  * slow enough to starve the host, so local Windows runs use the real adapter via
  * ANGLE D3D11. CI runners have no GPU, so they keep the software path.
  *
- * `NORI_TEST_ANGLE=d3d11|gl|swiftshader` overrides the choice;
- * `scripts/inspect/probe_webgl_backend.mjs` reports what each backend actually resolves to.
+ * `NORI_TEST_ANGLE=d3d11|gl|swiftshader` overrides the choice.
  */
 export function probeLaunchOptions() {
   const angle =

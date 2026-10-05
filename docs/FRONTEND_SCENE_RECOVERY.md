@@ -83,7 +83,7 @@ This supplies the shared time and audio infrastructure used by all seven registe
 
 The Debug scene editor validates typed JSON projects and previews camera/model/light targets with smooth interpolation, explicit input gates and local audio intervals. Pause/resume, hidden tabs, stop, world replacement and unmount share the clock/audio ownership rules. Preview does not emit story facts and yields to a production story. The sample is an authored camera/light study; it is not a replacement for original parity in the six non-Cult cinematics.
 
-See [the expanded remaining-work ledger](FRONTEND_REMAINING_WORK.md) for individual cinematic acceptance criteria. Browser coverage exercises the real model gesture and scene preview's input gate, restoration and rejected project path.
+Browser coverage exercises the real model gesture and scene preview's input gate, restoration and rejected project path.
 
 ## Debug and scene-editor boundary
 

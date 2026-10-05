@@ -80,4 +80,5 @@ If needed, pause Workers Builds and roll back to the last working Python
 version in Dashboard Deployments or with
 `npx wrangler rollback <LAST_PYTHON_VERSION_ID>`. Keep the R2 layout, DO binding,
 and `SECRET_KEY`; code rollback does not restore older DO/R2 contents. The
-Python runtime remains in the repository until the next phase.
+Python runtime has been removed from the repository; restore it from Git history
+if a Python-version rollback must be rebuilt.
