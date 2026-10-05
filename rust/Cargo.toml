@@ -32,5 +32,7 @@ futures-util = "0.3"
 opt-level = "z"
 lto = true
 codegen-units = 1
-strip = true
-panic = "abort"
+
+[profile.release.package."*"]
+opt-level = "z"
+codegen-units = 1
