@@ -1,5 +1,4 @@
 import test from "node:test";
-import "./frontend-pictionary-hints.test";
 import "./frontend-codenames-redaction.test";
 import { CODENAMES_TUTORIAL_STEPS, codenamesTutorialAllows, codenamesTutorialGate, codenamesTutorialInstruction, codenamesTutorialUi } from "../../frontend-src/apps/codenames-tutorial";
 import { codenamesReveals, waitForCodenamesAnimation } from "../../frontend-src/apps/codenames-reveal";
@@ -7,7 +6,7 @@ import assert from "node:assert/strict";
 import { Chess } from "chess.js";
 import { CHESS_START_FEN, chessCaptures, chessHistory, chessLayout, legalChessMoves } from "../../frontend-src/apps/chess-model";
 import { ChessFeedback } from "../../frontend-src/apps/chess-feedback";
-import { chooseDrawingSample, drawingSampleStrokes, normalizeDrawingStroke, pictionaryElapsed, pictionaryNextRoundAt, pictionaryStateSchema, pictionarySummary } from "../../frontend-src/apps/pictionary-model";
+import { drawingSampleStrokes, noriDrawingSample, normalizeDrawingStroke, pictionaryElapsed, pictionaryNextRoundAt, pictionaryStateSchema, pictionarySummary } from "../../frontend-src/apps/pictionary-model";
 import { GameCartridgeController } from "../../frontend-src/apps/game-cartridge-controller";
 import { CakeDuelRuntimeController } from "../../frontend-src/apps/cakeduel-runtime";
 import { PictionaryDrawingBridge } from "../../frontend-src/apps/pictionary-runtime";
@@ -102,12 +101,23 @@ test("Stroke payloads respect the 128-point normalized protocol and drawing samp
   const sample: [number[], number[]][] = [[[0, 128, 255], [255, 128, 0]]];
   const strokes = drawingSampleStrokes(sample);
   assert.ok(strokes[0].points.every(point => point.x >= .16 - 1e-12 && point.x <= .84 + 1e-12 && point.y >= .16 - 1e-12 && point.y <= .84 + 1e-12));
-  const used = new Set<number>();
-  const index = { apple: [sample, [[[10, 20], [30, 40]]] as typeof sample] };
-  const first = chooseDrawingSample(index, "Apple", used, () => 0);
-  const second = chooseDrawingSample(index, "Apple", used, () => 0);
-  assert.notEqual(first, second);
-  assert.equal(used.size, 2);
+  const samples = [sample, [[[10, 20], [30, 40]]] as typeof sample];
+  assert.equal(noriDrawingSample(samples, 0, 0), samples[0]);
+  assert.equal(noriDrawingSample(samples, 0, 1), samples[1]);
+  assert.equal(noriDrawingSample(samples, 1, 0), samples[1], "a redraw starts from the next sample");
+  assert.equal(noriDrawingSample([], 0, 0), null);
+});
+
+test("Pictionary accepts a guessing round without the answer", () => {
+  const value = pictionaryStateSchema.parse({ settings: { sessionDurationMs: 180000, inferenceMode: "fast", locale: "zh-CN" },
+    gameState: { phase: "PLAYING", score: { solved: 0, skipped: 0 }, history: [], round: {
+      roundId: "guess", startedAtMs: 0, roles: { drawer: "agent", guesser: "player" }, status: "active",
+      hint: { text: "__ __", revealed: 0, total: 2 }, noriDrawings: [[[[0, 255], [0, 255]]]],
+    } } });
+  const round = value.gameState!.round;
+  assert.equal(round.word, undefined);
+  assert.equal(round.hint?.text, "__ __");
+  assert.equal(round.noriDrawings?.length, 1);
 });
 function harness() {
   const world = new WorldStore();

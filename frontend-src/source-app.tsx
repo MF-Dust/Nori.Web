@@ -177,7 +177,10 @@ function createSourceSession() {
       if (frontend.arcade.connectionState !== "open" || !frontend.world.snapshot().worldId) return;
       void frontend.manifold.command("idle.sync", {
         ...state, cap: Number.isFinite(state.cap) ? state.cap : null,
-      }).catch((error) => console.error("[SourceApp] idle.sync failed", error));
+      }).catch((error) => {
+        // Periodic: a sync cut off by a disconnect is simply re-sent after reconnect.
+        if (frontend.arcade.connectionState === "open") console.error("[SourceApp] idle.sync failed", error);
+      });
       const facts = worldFacts(frontend);
       if (state.currentAlignment === "equilibrium" && facts.has("arg.memory.shown") && !facts.has("arg.manifold_unlocked")) {
         void idle.emitFact("arg.manifold_unlocked").catch((error) => console.error("[SourceApp] manifold unlock failed", error));

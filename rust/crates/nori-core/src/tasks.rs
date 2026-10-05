@@ -93,6 +93,12 @@ enum Kind {
         tried: Vec<String>,
         slept: bool,
     },
+    /// Revealing the answer bit by bit while the player guesses Nori's drawing.
+    PictionaryHint {
+        round_id: String,
+        started_ms: i64,
+        slept: bool,
+    },
     Probe {
         flow: Box<Probe>,
         stage: u8,
@@ -133,7 +139,9 @@ impl Task {
             pending: VecDeque::new(),
             agent_loop: matches!(
                 &kind,
-                Kind::AgentTurns { .. } | Kind::PictionaryGuess { .. }
+                Kind::AgentTurns { .. }
+                    | Kind::PictionaryGuess { .. }
+                    | Kind::PictionaryHint { .. }
             )
             .then(|| Arc::new(())),
             kind,
@@ -187,6 +195,18 @@ impl Task {
             Kind::PictionaryGuess {
                 round_id,
                 tried: Vec::new(),
+                slept: false,
+            },
+        )
+    }
+
+    pub fn pictionary_hint(world: &World, pacing: Pacing, round_id: String) -> Self {
+        Self::new(
+            world,
+            pacing,
+            Kind::PictionaryHint {
+                round_id,
+                started_ms: now_ms(),
                 slept: false,
             },
         )
@@ -296,6 +316,7 @@ impl Task {
             Kind::AgentTurns { .. } => "agent_turns",
             Kind::PictionaryNext { .. } => "pictionary_next_round",
             Kind::PictionaryGuess { .. } => "pictionary_guess",
+            Kind::PictionaryHint { .. } => "pictionary_hint",
             Kind::Probe { .. } => "probe",
         }
     }
@@ -408,6 +429,11 @@ impl Task {
                 tried,
                 slept,
             } => poll_pictionary_guess(world, pacing, round_id, tried, slept, pending),
+            Kind::PictionaryHint {
+                round_id,
+                started_ms,
+                slept,
+            } => poll_pictionary_hint(world, round_id, *started_ms, slept),
             Kind::Probe { flow, stage } => poll_probe(world, server_ai, flow, stage, input),
         }
     }
@@ -746,6 +772,37 @@ fn poll_pictionary_guess(
         pending.push_back(Step::Done);
     }
     Step::Broadcast(messages)
+}
+
+/// Hints follow the session clock like the shipped client did: progress is the time spent in
+/// the round as a share of the whole session. Gameplay pacing, so the edge keeps it.
+fn poll_pictionary_hint(
+    world: &mut World,
+    round_id: &str,
+    started_ms: i64,
+    slept: &mut bool,
+) -> Step {
+    let Some(state) = world.cartridge("pictionary").map(|c| c.state.clone()) else {
+        return Step::Done;
+    };
+    let duration = state
+        .pointer("/settings/sessionDurationMs")
+        .and_then(Value::as_i64)
+        .unwrap_or(180_000)
+        .max(1);
+    let progress = (now_ms() - started_ms).max(0) as f64 / duration as f64;
+    let Some(delay) = pictionary::hint_delay(&state, round_id, progress) else {
+        return Step::Done;
+    };
+    if !*slept {
+        *slept = true;
+        return Step::Sleep(delay);
+    }
+    *slept = false;
+    match world.pictionary_reveal_hint(round_id, progress) {
+        Some(messages) => Step::Broadcast(messages),
+        None => Step::Done,
+    }
 }
 
 fn poll_probe(

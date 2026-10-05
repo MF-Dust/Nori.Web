@@ -1,8 +1,8 @@
 use crate::cartridge::{CommandRejected, ReducerResult};
-use crate::jsonutil::{now_ms, Json};
+use crate::jsonutil::{now_ms, secret_seed, Json};
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 use serde_json::{json, Value};
 
 const BASE_CARDS: &[&str] = &[
@@ -690,10 +690,12 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                     "difficulty must be soldier, wizard, or assassin",
                 ));
             }
-            let seed = now_ms();
+            // The seed fixes every shuffle and the ids the browser sees, so it must not be
+            // guessable (it used to be the wall clock) and never leaves the server.
+            let seed = secret_seed();
             let settings = json!({"difficulty": difficulty, "roundsToWin": 3, "seed": seed});
             let config = json!({
-                "gameId": format!("cakeduel_{seed}"),
+                "gameId": format!("cakeduel_{}", now_ms()),
                 "seed": seed,
                 "roundsToWin": 3,
                 "baseCardList": BASE_CARDS,
@@ -725,7 +727,7 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                 "game_started",
                 json!({"cardList": game["cardList"], "config": config}),
             )];
-            start_bout(&mut game, &mut events, seed as u64);
+            start_bout(&mut game, &mut events, seed);
             state["settings"] = settings;
             state["config"] = config;
             state["game"] = game;
@@ -795,6 +797,7 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                 &mut events,
                 seed,
             )?;
+            add_nori_tells(&game, &mut events, seed);
             if let Some(winner) = game.pointer("/gameEnded/winner").and_then(|v| v.as_i64()) {
                 events.push(json!({"type": "game_outcome", "outcome": if winner == 0 { "win" } else { "loss" }}));
             }
@@ -806,6 +809,240 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             "Unknown Cake Duel command: {command_type}"
         ))),
     }
+}
+
+/// How likely Nori is to look confident or nervous after a claim, by whether it bluffed.
+/// The roll happens here because only the server may know whether the claim was a bluff;
+/// the browser just plays the tell it is given.
+const TELL_WEIGHTS: [(&str, f64, f64); 2] = [("bluff", 0.15, 0.25), ("honest", 0.25, 0.15)];
+
+fn add_nori_tells(game: &Json, events: &mut [Json], seed: u64) {
+    let frame = game.get("frame").and_then(Value::as_u64).unwrap_or(0);
+    for (index, envelope) in events.iter_mut().enumerate() {
+        let event = &mut envelope["event"];
+        if event.get("type").and_then(Value::as_str) != Some("claim_made")
+            || event.get("player").and_then(Value::as_u64) != Some(1)
+        {
+            continue;
+        }
+        let claim = event.get("claim").and_then(Value::as_str).unwrap_or("");
+        let bluff = i64_list(event.get("cardIds").unwrap_or(&Value::Null))
+            .into_iter()
+            .any(|id| card_name(game, id).ok().as_deref() != Some(claim));
+        let (_, confident, nervous) = TELL_WEIGHTS[usize::from(!bluff)];
+        let roll: f64 =
+            StdRng::seed_from_u64(mix(seed, 0x7e11, frame.wrapping_add(index as u64))).random();
+        let tell = if roll < confident {
+            "confident"
+        } else if roll < confident + nervous {
+            "nervous"
+        } else {
+            "none"
+        };
+        event["tell"] = json!(tell);
+    }
+}
+
+/// SplitMix64-style mixing, so derived streams share nothing visible with the shuffle.
+fn mix(seed: u64, salt: u64, value: u64) -> u64 {
+    let mut z = seed ^ salt.rotate_left(32) ^ value.wrapping_mul(0x9e37_79b9_7f4a_7c15);
+    z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+    z ^ (z >> 31)
+}
+
+/// The secret seed a game's shuffles derive from (settings and config agree on it).
+fn game_seed(game: &Json) -> u64 {
+    game.pointer("/config/seed")
+        .and_then(Value::as_u64)
+        .unwrap_or(1)
+}
+
+/// Server card id -> browser card id for one bout. Server ids index the public base list, so
+/// handing them out would name every card; the browser gets a secret per-bout relabelling.
+fn client_ids(game: &Json, bout: u64) -> Vec<i64> {
+    let len = game
+        .get("cardList")
+        .and_then(Value::as_array)
+        .map(Vec::len)
+        .unwrap_or(0);
+    let mut ids: Vec<i64> = (0..len as i64).collect();
+    ids.shuffle(&mut StdRng::seed_from_u64(mix(
+        game_seed(game),
+        0xc1d5,
+        bout,
+    )));
+    ids
+}
+
+fn relabel(ids: &[i64], value: &Value) -> Value {
+    match value.as_array() {
+        Some(items) => Value::Array(
+            items
+                .iter()
+                .map(|item| {
+                    item.as_i64()
+                        .and_then(|id| usize::try_from(id).ok())
+                        .and_then(|id| ids.get(id))
+                        .map_or(Value::Null, |id| json!(id))
+                })
+                .collect(),
+        ),
+        None => value.clone(),
+    }
+}
+
+fn strip_seed(value: &mut Json) {
+    if let Some(object) = value.as_object_mut() {
+        object.remove("seed");
+    }
+}
+
+/// What the player may see of a game: Nori's hand, the deck and every face-down card are
+/// opaque ids whose names are withheld; only the player's own cards are named.
+fn client_game(game: &Json) -> Json {
+    if !game.is_object() {
+        return game.clone();
+    }
+    let bout = game
+        .get("boutWinners")
+        .and_then(Value::as_array)
+        .map_or(0, |winners| winners.len() as u64);
+    let ids = client_ids(game, bout);
+    let mut visible = game.clone();
+    let attacker = game.get("attackerIndex").and_then(Value::as_u64);
+    let mut known = i64_list(game.pointer("/players/0/hand").unwrap_or(&Value::Null));
+    for (field, owner) in [
+        ("attackingClaim", attacker),
+        ("blockingClaim", attacker.map(|a| 1 - a.min(1))),
+    ] {
+        if owner == Some(0) {
+            known.extend(i64_list(
+                game.pointer(&format!("/{field}/cardIds"))
+                    .unwrap_or(&Value::Null),
+            ));
+        }
+        if let Some(card_ids) = visible
+            .get_mut(field)
+            .and_then(|claim| claim.get_mut("cardIds"))
+        {
+            *card_ids = relabel(&ids, card_ids);
+        }
+    }
+    let names = game
+        .get("cardList")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let mut card_list = vec![Value::Null; names.len()];
+    for id in known {
+        if let (Some(name), Some(client)) = (
+            usize::try_from(id).ok().and_then(|id| names.get(id)),
+            usize::try_from(id).ok().and_then(|id| ids.get(id)),
+        ) {
+            card_list[*client as usize] = name.clone();
+        }
+    }
+    visible["cardList"] = Value::Array(card_list);
+    for field in ["deck", "discard"] {
+        if let Some(value) = visible.get_mut(field) {
+            *value = relabel(&ids, value);
+        }
+    }
+    if let Some(players) = visible.get_mut("players").and_then(Value::as_array_mut) {
+        for player in players {
+            if let Some(hand) = player.get_mut("hand") {
+                *hand = relabel(&ids, hand);
+            }
+        }
+    }
+    if let Some(config) = visible.get_mut("config") {
+        strip_seed(config);
+    }
+    visible
+}
+
+/// Browser view of a whole Cake Duel state (snapshots and root patches).
+pub fn client_state(state: &Json) -> Json {
+    let mut visible = state.clone();
+    for key in ["settings", "config"] {
+        if let Some(value) = visible.get_mut(key) {
+            strip_seed(value);
+        }
+    }
+    if let Some(game) = state.get("game") {
+        visible["game"] = client_game(game);
+    }
+    visible
+}
+
+/// Browser view of a committed transition. `game` is the state after the commit, which the
+/// events lead up to: they are relabelled bout by bout, counting back from its bout.
+pub fn client_transition(transition: &Json, game: &Json) -> Json {
+    let mut visible = transition.clone();
+    if let Some(patches) = visible.get_mut("patches").and_then(Value::as_array_mut) {
+        for patch in patches {
+            let path = patch
+                .get("path")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
+            let Some(value) = patch.get_mut("value") else {
+                continue;
+            };
+            match path.as_str() {
+                "" => *value = client_state(value),
+                "/game" => *value = client_game(value),
+                "/settings" | "/config" => strip_seed(value),
+                _ => {}
+            }
+        }
+    }
+    let Some(events) = visible.get_mut("events").and_then(Value::as_array_mut) else {
+        return visible;
+    };
+    let ended = events
+        .iter()
+        .filter(|envelope| {
+            envelope.pointer("/event/type").and_then(Value::as_str) == Some("bout_ended")
+        })
+        .count() as u64;
+    let mut bout = game
+        .get("boutWinners")
+        .and_then(Value::as_array)
+        .map_or(0, |winners| winners.len() as u64)
+        .saturating_sub(ended);
+    let mut ids = client_ids(game, bout);
+    for envelope in events {
+        let Some(event) = envelope.get_mut("event").filter(|event| event.is_object()) else {
+            continue;
+        };
+        match event.get("type").and_then(Value::as_str).unwrap_or("") {
+            "game_started" => {
+                if let Some(config) = event.get_mut("config") {
+                    strip_seed(config);
+                }
+            }
+            "challenge_made" => {
+                if let Some(cards) = event.get_mut("revealedCards").and_then(Value::as_array_mut) {
+                    for card in cards {
+                        if let Some(id) = card.get_mut("cardId") {
+                            *id = relabel(&ids, &json!([id.clone()]))[0].clone();
+                        }
+                    }
+                }
+            }
+            "bout_ended" => {
+                bout += 1;
+                ids = client_ids(game, bout);
+            }
+            _ => {}
+        }
+        if let Some(card_ids) = event.get_mut("cardIds") {
+            *card_ids = relabel(&ids, card_ids);
+        }
+    }
+    visible
 }
 
 /// How sharply Nori plays, from the `settings.difficulty` the player picked.
@@ -1656,5 +1893,133 @@ mod tests {
                 "{difficulty}: Nori never challenged in {GAMES} games"
             );
         }
+    }
+
+    /// What the browser receives, checked against the server state it was projected from.
+    fn check_view(
+        cart: &crate::cartridge::Cartridge,
+        transition: &Json,
+        previous: &Json,
+        relabelled: &mut bool,
+    ) -> Json {
+        let view = cart.snapshot("ui")["state"].clone();
+        let sent = cart.client_transition(transition);
+        for json in [&view, &sent] {
+            assert!(
+                !json.to_string().contains("\"seed\""),
+                "seed leaked: {json}"
+            );
+        }
+        let game = &cart.state["game"];
+        let visible = &view["game"];
+        let names = visible["cardList"].as_array().unwrap();
+        assert_eq!(names.len(), BASE_CARDS.len());
+        // Client ids are a relabelling: every card appears exactly once.
+        let mut seen: Vec<i64> = ["deck", "discard"]
+            .iter()
+            .flat_map(|zone| i64_list(&visible[zone]))
+            .chain((0..2).flat_map(|p| i64_list(&visible["players"][p]["hand"])))
+            .chain(
+                ["attackingClaim", "blockingClaim"]
+                    .iter()
+                    .flat_map(|claim| i64_list(&visible[claim]["cardIds"])),
+            )
+            .collect();
+        seen.sort_unstable();
+        seen.dedup();
+        assert!(seen
+            .iter()
+            .all(|id| (0..BASE_CARDS.len() as i64).contains(id)));
+        let mut known = 0;
+        for (server, client) in i64_list(&game["players"][0]["hand"])
+            .into_iter()
+            .zip(i64_list(&visible["players"][0]["hand"]))
+        {
+            assert_eq!(names[client as usize], game["cardList"][server as usize]);
+            *relabelled |= server != client;
+            known += 1;
+        }
+        for client in i64_list(&visible["players"][1]["hand"]) {
+            assert!(names[client as usize].is_null(), "Nori's card is named");
+        }
+        let attacker = game["attackerIndex"].as_u64().unwrap();
+        for (claim, owner) in [
+            ("attackingClaim", attacker),
+            ("blockingClaim", 1 - attacker),
+        ] {
+            for client in i64_list(&visible[claim]["cardIds"]) {
+                assert_eq!(names[client as usize].is_null(), owner == 1, "{claim}");
+                known += usize::from(owner == 0);
+            }
+        }
+        assert_eq!(names.iter().filter(|name| !name.is_null()).count(), known);
+        for patch in sent["patches"].as_array().unwrap() {
+            if patch["path"] == "/game" {
+                assert_eq!(&patch["value"], visible, "patch and snapshot disagree");
+            }
+        }
+        for envelope in sent["events"].as_array().unwrap() {
+            let event = &envelope["event"];
+            if event["type"] == "claim_made" && event["player"] == 1 {
+                assert!(matches!(
+                    event["tell"].as_str(),
+                    Some("confident" | "nervous" | "none")
+                ));
+            }
+            if event["type"] == "challenge_made" {
+                // Revealed ids are the ones the browser was already showing face down.
+                let pile = if previous["blockingClaim"].is_null() {
+                    &previous["attackingClaim"]
+                } else {
+                    &previous["blockingClaim"]
+                };
+                let ids = i64_list(&pile["cardIds"]);
+                for card in event["revealedCards"].as_array().unwrap() {
+                    assert!(ids.contains(&card["cardId"].as_i64().unwrap()), "{event}");
+                }
+            }
+        }
+        visible.clone()
+    }
+
+    #[test]
+    fn cakeduel_browser_never_sees_hidden_cards_or_the_seed() {
+        let pack = crate::live_pack::LivePack::empty();
+        let mut cart = crate::cartridge::create("cakeduel", true, &pack).unwrap();
+        let mut rng = StdRng::seed_from_u64(11);
+        let mut relabelled = false;
+        let mut challenges = 0;
+        for _ in 0..40 {
+            let start = json!({"type": "startGame", "mode": "normal", "difficulty": "assassin"});
+            let commit = cart.dispatch("player", &start, &pack).unwrap();
+            let mut previous = Value::Null;
+            previous = check_view(
+                &cart,
+                commit.transition.as_ref().unwrap(),
+                &previous,
+                &mut relabelled,
+            );
+            for _ in 0..500 {
+                let game = cart.state["game"].clone();
+                if !game["gameEnded"].is_null() {
+                    break;
+                }
+                let (actor, command) = if phasing_player(&game).unwrap() == 1 {
+                    ("agent", agent_next_command(&cart.state).unwrap())
+                } else {
+                    ("player", human_move(&game, &mut rng))
+                };
+                challenges += i32::from(command["action"]["type"] == "challenge");
+                let commit = cart.dispatch(actor, &command, &pack).unwrap();
+                previous = check_view(
+                    &cart,
+                    commit.transition.as_ref().unwrap(),
+                    &previous,
+                    &mut relabelled,
+                );
+            }
+        }
+        assert!(relabelled, "browser ids still match the public card order");
+        assert!(challenges > 0);
     }
 }

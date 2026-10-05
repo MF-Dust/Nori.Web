@@ -41,6 +41,16 @@ pub fn now_ms() -> i64 {
     wall_clock_ms()
 }
 
+/// A seed for hidden game state that clients must not be able to guess.
+/// Under a frozen clock (fixture replays, tests) it is derived from that clock so runs stay
+/// reproducible; otherwise it is random, not the wall clock a player could brute-force.
+pub fn secret_seed() -> u64 {
+    match FIXED_TIME_MS.get() {
+        Some(now) => now as u64,
+        None => rand::random(),
+    }
+}
+
 pub fn now_secs() -> i64 {
     if let Some(now) = FIXED_TIME_MS.get() {
         return now.div_euclid(1000);

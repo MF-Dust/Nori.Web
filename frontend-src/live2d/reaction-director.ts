@@ -781,7 +781,11 @@ export class NoriReactionDirector {
   }
 
   playCakeDuelTell(kind: CakeDuelClaimKind): CakeDuelTellResult {
-    const tell = sampleCakeDuelTell(kind, this.random());
+    return this.showCakeDuelTell(sampleCakeDuelTell(kind, this.random()));
+  }
+
+  /** Play a tell the server already rolled (it alone knows whether Nori bluffed). */
+  showCakeDuelTell(tell: CakeDuelTell): CakeDuelTellResult {
     return {
       tell,
       reaction:

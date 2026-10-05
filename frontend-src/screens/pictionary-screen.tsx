@@ -4,7 +4,6 @@ import type { GameCartridgeController } from "../apps/game-cartridge-controller"
 import { PICTIONARY_COLORS, pictionaryElapsed, pictionaryNextRoundAt, pictionarySummary, type PictionaryState } from "../apps/pictionary-model";
 import type { PictionaryDrawingBridge } from "../apps/pictionary-runtime";
 import { PictionaryCanvas, type PictionaryCanvasHandle } from "./pictionary-canvas";
-import { usePictionaryHints } from "./use-pictionary-hints";
 import { usePictionarySounds } from "./use-pictionary-sounds";
 import "../styles/pictionary.css";
 import { PictionaryResults } from "./pictionary-results";
@@ -42,9 +41,15 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
   const isDrawer = round?.roles.drawer === "player";
   const remaining = game && state ? Math.max(0, state.settings.sessionDurationMs - pictionaryElapsed(game, now)) : 180000;
   const nextRoundAt = game ? pictionaryNextRoundAt(game) : null;
-  const hint = usePictionaryHints({ roundId: round?.roundId, word: round?.word, active: !!active,
-    guesser: round?.roles.guesser === "player", duration: state?.settings.sessionDurationMs ?? 180000,
-    locale: state?.settings.locale ?? locale, pinyin: round?.pinyin, playSound });
+  // The server reveals the hint over time; the answer itself never reaches the browser.
+  const hint = round?.roles.guesser === "player" ? round.hint?.text ?? null : null;
+  const hintReveal = useRef<{ roundId?: string; revealed: number }>({ revealed: 0 });
+  useEffect(() => {
+    const revealed = round?.hint?.revealed ?? 0;
+    const previous = hintReveal.current;
+    if (previous.roundId === round?.roundId && revealed > previous.revealed) playSound?.("partygames-pictionary-hint-reveal");
+    hintReveal.current = { roundId: round?.roundId, revealed };
+  }, [round?.roundId, round?.hint?.revealed, playSound]);
   usePictionarySounds(snapshot.connected === false ? null : game, remaining, nextRoundAt, now, playSound);
   const zh = locale.toLowerCase().startsWith("zh");
   const text = (en: string, cn: string) => zh ? cn : en;
@@ -125,7 +130,7 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
             <strong data-pictionary-hint aria-live="polite">{isDrawer || !roundActive ? round.word : hint}</strong></div>
           <span>{game.score.solved} ✓</span><button type="button" aria-label="Help" onClick={() => setHelp(true)}>?</button>
         </header>
-        <PictionaryCanvas ref={canvas} roundId={round.roundId} drawingId={round.drawingId} redrawEpoch={round.noriRedrawEpoch}
+        <PictionaryCanvas ref={canvas} roundId={round.roundId} noriDrawings={round.noriDrawings} redrawEpoch={round.noriRedrawEpoch}
           active={!!active} drawer={round.roles.drawer} color={color} eraser={eraser} startSoundLoop={startSoundLoop}
           onStroke={stroke => drawing.submit(stroke)} onChange={() => drawing.changed()} />
         {!roundActive && <div className="source-pictionary-round-result" role="status"><strong>{round.word}</strong>

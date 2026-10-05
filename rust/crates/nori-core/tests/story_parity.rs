@@ -1026,6 +1026,17 @@ fn story_python_walkthrough_fixture_replays_every_reply_and_fact_set() {
                 expected = nori_core::cartridges::codenames::client_view(&expected, "A");
                 rebase_codenames(&mut expected, &actual, selector);
             }
+            // Likewise for the Cake Duel and Pictionary projections (hidden seeds, cards, answers).
+            if let Some(runtimes) = expected.get_mut("runtimes").and_then(Value::as_array_mut) {
+                for runtime in runtimes {
+                    let project = match sent["cartridgeId"].as_str() {
+                        Some("cakeduel") => nori_core::cartridges::cakeduel::client_state,
+                        Some("pictionary") => nori_core::cartridges::pictionary::client_state,
+                        _ => continue,
+                    };
+                    runtime["state"] = project(&runtime["state"]);
+                }
+            }
             normalize(&mut actual, &expected);
             assert_eq!(actual, expected, "{name} step {i}: {sent}");
             assert_eq!(json!(ids(&world)), step["factIds"], "{name} step {i}");

@@ -179,7 +179,7 @@ impl World {
             .unwrap_or(commit.version);
         let head = cartridge.map(|c| c.head_version).unwrap_or(commit.version);
         let transition = cartridge
-            .map(|c| c.client_view(transition))
+            .map(|c| c.client_transition(transition))
             .unwrap_or_else(|| transition.clone());
         vec![
             protocol::runtime_transition(&self.world_id, cartridge_id, commit.version, &transition),
@@ -551,22 +551,31 @@ impl World {
         }
     }
 
-    /// One Nori guesser per active round where Nori is the guesser.
+    /// One Nori guesser per active round where Nori is the guesser, and one hint giver per
+    /// active round where the player is.
     pub(crate) fn schedule_pictionary_guess(&mut self) -> Vec<Task> {
         self.agent_loops.retain(|_, lease| lease.strong_count() > 0);
-        let Some(round_id) = self
-            .cartridge("pictionary")
-            .and_then(|c| crate::cartridges::pictionary::agent_guess_round(&c.state))
-        else {
+        let Some(state) = self.cartridge("pictionary").map(|c| c.state.clone()) else {
             return Vec::new();
         };
-        let key = format!("pictionary:{round_id}");
-        if self.agent_loops.contains_key(&key) {
-            return Vec::new();
+        let mut tasks = Vec::new();
+        if let Some(round_id) = crate::cartridges::pictionary::agent_guess_round(&state) {
+            let key = format!("pictionary:{round_id}");
+            if !self.agent_loops.contains_key(&key) {
+                let task = Task::pictionary_guess(self, self.pacing, round_id);
+                self.agent_loops.insert(key, task.agent_loop_lease());
+                tasks.push(task);
+            }
         }
-        let task = Task::pictionary_guess(self, self.pacing, round_id);
-        self.agent_loops.insert(key, task.agent_loop_lease());
-        vec![task]
+        if let Some(round_id) = crate::cartridges::pictionary::hint_round(&state) {
+            let key = format!("pictionary:hint:{round_id}");
+            if !self.agent_loops.contains_key(&key) {
+                let task = Task::pictionary_hint(self, self.pacing, round_id);
+                self.agent_loops.insert(key, task.agent_loop_lease());
+                tasks.push(task);
+            }
+        }
+        tasks
     }
 
     fn schedule_agent_loop(&mut self, cartridge_id: &str) -> Vec<Task> {
@@ -687,6 +696,16 @@ impl World {
         );
         self.dispatch_internal(cartridge_id, "agent", &recovery)
             .map(|(_, messages)| messages)
+    }
+
+    /// The hint task's reveal: committed straight from the server, never via a command.
+    pub fn pictionary_reveal_hint(&mut self, round_id: &str, progress: f64) -> Option<Vec<Json>> {
+        let cartridge = self.cartridge_mut("pictionary")?;
+        let reduced =
+            crate::cartridges::pictionary::reveal_hint(&cartridge.state, round_id, progress)?;
+        let cmd = json!({"type": "revealHint", "roundId": round_id});
+        let commit = cartridge.commit("system", &cmd, reduced).ok()?;
+        Some(self.commit_messages("pictionary", &commit))
     }
 
     /// Python `_start_next_pictionary_round` after its delay.
