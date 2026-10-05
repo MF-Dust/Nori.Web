@@ -133,6 +133,10 @@ const candidateLocalFonts = new Set([
   "sarasa-fixed-sc-bold.woff2",
   "fusion-pixel-12px-proportional-sc.woff2",
   "fusion-pixel-12px-monospaced-sc.woff2",
+  "press-start-2p-latin.woff2",
+  "vt323-latin.woff2",
+  "silkscreen-latin.woff2",
+  "silkscreen-bold-latin.woff2",
 ]);
 const historicalAssetPattern = /\.(?:js|mjs|css|map)$/i;
 
@@ -220,6 +224,10 @@ async function verifyRequiredCandidateAssets(buildHtml) {
     "fonts/sarasa-fixed-sc-bold.woff2",
     "fonts/fusion-pixel-12px-proportional-sc.woff2",
     "fonts/fusion-pixel-12px-monospaced-sc.woff2",
+    "fonts/press-start-2p-latin.woff2",
+    "fonts/vt323-latin.woff2",
+    "fonts/silkscreen-latin.woff2",
+    "fonts/silkscreen-bold-latin.woff2",
   ]) required.add(path);
 
   const generatedChecks = [
