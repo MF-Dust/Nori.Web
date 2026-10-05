@@ -1,8 +1,8 @@
 /*
  * Source-frontend typography.
  *
- * Common web fonts are loaded from third-party CDNs that are generally
- * reachable from mainland China. The large mirrored /fonts/web tree remains
+ * Common web fonts are loaded asynchronously from third-party CDNs in
+ * frontend-src/index.html. The large mirrored /fonts/web tree remains
  * in the repository only for the legacy rollback frontend and is deliberately
  * excluded from the source cutover candidate.
  *
