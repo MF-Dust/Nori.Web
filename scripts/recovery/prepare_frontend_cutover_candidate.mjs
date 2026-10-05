@@ -283,20 +283,31 @@ async function prepareRollbackSnapshot(productionHtml) {
 
 async function verifyRollbackSwap(candidateBytes, rollbackEntries) {
   const candidateIndex = resolve(candidateTemp, "index.html");
-  const rollbackIndex = resolve(rollbackTemp, "files/index.html");
   const candidateHash = createHash("sha256").update(candidateBytes).digest("hex");
   const productionHash = rollbackEntries.find((entry) => entry.path === "index.html").sha256;
-  await copyFile(rollbackIndex, candidateIndex);
-  if (await sha256(candidateIndex) !== productionHash)
-    throw new Error("rollback index replacement did not restore the production index bytes");
-  await writeFile(candidateIndex, candidateBytes);
+  const originals = [];
+
+  try {
+    for (const entry of rollbackEntries) {
+      const destination = safePath(candidateTemp, entry.path);
+      const original = (await exists(destination)) ? await readFile(destination) : null;
+      originals.push({ destination, original });
+      await mkdir(dirname(destination), { recursive: true });
+      await copyFile(resolve(rollbackTemp, "files", entry.path), destination);
+      if (await sha256(destination) !== entry.sha256)
+        throw new Error(`candidate rollback asset hash mismatch: ${entry.path}`);
+    }
+    if (await sha256(candidateIndex) !== productionHash)
+      throw new Error("rollback index replacement did not restore the production index bytes");
+  } finally {
+    for (const { destination, original } of originals.reverse()) {
+      if (original === null) await rm(destination, { force: true });
+      else await writeFile(destination, original);
+    }
+  }
+
   if (await sha256(candidateIndex) !== candidateHash)
     throw new Error("candidate index could not be restored after the rollback drill");
-  for (const entry of rollbackEntries) {
-    if (entry.path === "index.html") continue;
-    if (await sha256(safePath(candidateTemp, entry.path)) !== entry.sha256)
-      throw new Error(`candidate rollback asset hash mismatch: ${entry.path}`);
-  }
   return { candidateIndexSha256: candidateHash, productionIndexSha256: productionHash };
 }
 
