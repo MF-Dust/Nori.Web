@@ -179,7 +179,7 @@ async function resetCaptureWorld(page, label) {
       (item) =>
         item.url.endsWith("/api/arcade/web/v1") && item.readyState === 1,
     );
-    socket.send(JSON.stringify({ type: "reset_my_web_world", locale }));
+    socket.send(JSON.stringify({ type: "reset_my_web_world", locale, fullUnlock: true }));
   }, captureLocale);
   await page.waitForFunction(
     ({ resetAcks, worlds }) =>
@@ -251,6 +251,11 @@ async function captureTarget({ label, origin, historical }) {
   const context = await browser.newContext(browserOptions);
   await context.addInitScript(() => {
     localStorage.setItem("arcade-language", "zh-CN");
+    // Both entries default to the fresh story, whose scenes cover the desktop:
+    // capture the finished archive (source app setting, legacy shim setting).
+    if (window === window.top && !localStorage.getItem("unlock-settings"))
+      localStorage.setItem("unlock-settings", JSON.stringify({ state: { fullUnlock: true }, version: 2 }));
+    localStorage.setItem("nori.fullUnlock", "1");
     const Native = window.WebSocket;
     window.visualReference = { sockets: [], messages: [] };
     window.WebSocket = class extends Native {

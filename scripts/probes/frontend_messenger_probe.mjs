@@ -308,6 +308,26 @@ export async function verifyMessenger(browser, output) {
       name: "Message service account",
       exact: true,
     });
+    // The gap between replies is under a second, and this probe runs next to
+    // heavy software-rendered scenes, so polling can miss it. Record every DOM
+    // state between the two replies from inside the page instead.
+    await page.evaluate(() => {
+      const between = (window.danielBetweenReplies = []);
+      const exact = (text) =>
+        [...document.querySelectorAll("span, p, div")].some(
+          (element) => element.childElementCount === 0 && element.textContent === text,
+        );
+      const record = () => {
+        const text = document.body.textContent ?? "";
+        if (text.includes("First verified reply") && !text.includes("Second verified reply"))
+          between.push({ typing: exact("Typing"), evidence: exact("handoff.pdf") });
+      };
+      new MutationObserver(record).observe(document.body, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+      });
+    });
     await danielInput.fill("verify me");
     await danielInput.press("Enter");
 
@@ -319,17 +339,17 @@ export async function verifyMessenger(browser, output) {
       "Daniel evidence media must stay hidden while the assistant is typing",
     );
     await page.getByText("First verified reply", { exact: false }).waitFor();
-    assert.equal(
-      await typing.count(),
-      1,
+    await page.getByText("Second verified reply", { exact: false }).waitFor();
+    const between = await page.evaluate(() => window.danielBetweenReplies);
+    assert.ok(between.length > 0, "the page must render a state between the Daniel replies");
+    assert.ok(
+      between.every((state) => state.typing),
       "typing remains visible between sequential Daniel replies",
     );
-    assert.equal(
-      await evidenceFile.count(),
-      0,
+    assert.ok(
+      between.every((state) => !state.evidence),
       "evidence media must remain hidden until the reply sequence completes",
     );
-    await page.getByText("Second verified reply", { exact: false }).waitFor();
     await typing.waitFor({ state: "detached" });
     await evidenceFile.waitFor();
 

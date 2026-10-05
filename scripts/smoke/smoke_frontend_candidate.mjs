@@ -29,6 +29,13 @@ try {
   page.on("pageerror", error => errors.push(error.message));
   page.on("request", request => { if (historical.has(new URL(request.url()).pathname.split("/").at(-1))) legacyRequests.push(request.url()); });
   page.on("response", response => { if (response.status() >= 400 && !new URL(response.url()).pathname.startsWith("/api/")) failedAssets.push([response.status(), response.url()]); });
+  // Source worlds default to the fresh story (its boot scene has no chat), so
+  // opt into the finished archive desktop like the source app smoke does.
+  await page.addInitScript(() => {
+    if (window !== window.top) return;
+    if (!localStorage.getItem("unlock-settings"))
+      localStorage.setItem("unlock-settings", JSON.stringify({ state: { fullUnlock: true }, version: 2 }));
+  });
   await page.goto("http://127.0.0.1:47178", { waitUntil: "domcontentloaded" });
   await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: 90000 });
   const input = page.getByRole("textbox", { name: "Message", exact: true });
