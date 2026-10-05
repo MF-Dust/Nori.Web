@@ -44,7 +44,10 @@ pub struct Outbound {
 
 impl Outbound {
     pub fn direct(message: Json) -> Self {
-        Self { direct: vec![message], ..Self::default() }
+        Self {
+            direct: vec![message],
+            ..Self::default()
+        }
     }
 }
 
@@ -57,8 +60,15 @@ pub fn fence_for(cartridge_id: &str) -> &'static str {
 }
 
 /// `{"type":"event", ...}` reply envelope used by event channels.
-pub fn event_message(world: &World, channel: &str, payload: Json, cartridge_id: Json, request_id: Json) -> Json {
-    let mut message = json!({"type": "event", "worldId": world.world_id, "channel": channel, "payload": payload});
+pub fn event_message(
+    world: &World,
+    channel: &str,
+    payload: Json,
+    cartridge_id: Json,
+    request_id: Json,
+) -> Json {
+    let mut message =
+        json!({"type": "event", "worldId": world.world_id, "channel": channel, "payload": payload});
     if !cartridge_id.is_null() {
         message["cartridgeId"] = cartridge_id;
     }
@@ -85,7 +95,12 @@ pub struct World {
 }
 
 impl World {
-    pub fn new(owner_id: impl Into<String>, locale: Option<&str>, full_unlock: bool, pack: Arc<LivePack>) -> Self {
+    pub fn new(
+        owner_id: impl Into<String>,
+        locale: Option<&str>,
+        full_unlock: bool,
+        pack: Arc<LivePack>,
+    ) -> Self {
         Self {
             owner_id: owner_id.into(),
             world_id: uuid4(),
@@ -151,17 +166,30 @@ impl World {
             return Vec::new();
         };
         let cartridge = self.cartridge(cartridge_id);
-        let visible = cartridge.map(|c| c.visible_version).unwrap_or(commit.version);
+        let visible = cartridge
+            .map(|c| c.visible_version)
+            .unwrap_or(commit.version);
         let head = cartridge.map(|c| c.head_version).unwrap_or(commit.version);
         vec![
             protocol::runtime_transition(&self.world_id, cartridge_id, commit.version, transition),
-            protocol::visibility_advanced(&self.world_id, cartridge_id, fence_for(cartridge_id), visible, head),
+            protocol::visibility_advanced(
+                &self.world_id,
+                cartridge_id,
+                fence_for(cartridge_id),
+                visible,
+                head,
+            ),
         ]
     }
 
     /// Server-owned follow-up command (Python `_dispatch_internal`). `None`
     /// when the cartridge is missing or the command was rejected.
-    pub fn dispatch_internal(&mut self, cartridge_id: &str, actor: &str, cmd: &Json) -> Option<(Commit, Vec<Json>)> {
+    pub fn dispatch_internal(
+        &mut self,
+        cartridge_id: &str,
+        actor: &str,
+        cmd: &Json,
+    ) -> Option<(Commit, Vec<Json>)> {
         let pack = self.pack.clone();
         let cartridge = self.cartridge_mut(cartridge_id)?;
         let commit = match cartridge.dispatch(actor, cmd, &pack) {
@@ -171,7 +199,10 @@ impl World {
                     DispatchError::Rejected(text) | DispatchError::Internal(text) => text,
                 };
                 let kind = cmd.get("type").and_then(Value::as_str).unwrap_or("");
-                eprintln!("[world:{}] internal {cartridge_id}/{kind} rejected: {text}", self.world_id);
+                eprintln!(
+                    "[world:{}] internal {cartridge_id}/{kind} rejected: {text}",
+                    self.world_id
+                );
                 return None;
             }
         };
@@ -190,7 +221,8 @@ impl World {
         let mut messages = Vec::new();
         if !pending.is_empty() {
             let pack = self.pack.clone();
-            let cmd = json!({"type": "client.emitFacts", "factIds": pending, "source": "system.tick"});
+            let cmd =
+                json!({"type": "client.emitFacts", "factIds": pending, "source": "system.tick"});
             if let Some(manifold) = self.cartridge_mut("manifold.web") {
                 if let Ok(commit) = manifold.dispatch("system", &cmd, &pack) {
                     messages = self.commit_messages("manifold.web", &commit);
@@ -206,21 +238,38 @@ impl World {
     pub fn handle_message(&mut self, message: &Json, secrets: &Secrets) -> Outbound {
         let message = match protocol::validate_client_message(message) {
             Ok(message) => message,
-            Err(ProtocolError { code, message, request_id, cartridge_id }) => {
-                return Outbound::direct(protocol::error_message(&code, &message, None, cartridge_id.as_deref(), request_id.as_deref()));
+            Err(ProtocolError {
+                code,
+                message,
+                request_id,
+                cartridge_id,
+            }) => {
+                return Outbound::direct(protocol::error_message(
+                    &code,
+                    &message,
+                    None,
+                    cartridge_id.as_deref(),
+                    request_id.as_deref(),
+                ));
             }
         };
         match message.get("type").and_then(Value::as_str).unwrap_or("") {
             "open_my_web_world" => self.open_world(&message),
             "reset_my_web_world" => self.reset(&message),
             "join_world" => self.join_world(&message),
-            "leave_world" => Outbound::direct(json!({"type": "world_left", "worldId": self.world_id})),
-            "create_world" => Outbound::direct(json!({"type": "world_created", "world": self.world_payload(), "session": {"isAdmin": true}})),
+            "leave_world" => {
+                Outbound::direct(json!({"type": "world_left", "worldId": self.world_id}))
+            }
+            "create_world" => Outbound::direct(
+                json!({"type": "world_created", "world": self.world_payload(), "session": {"isAdmin": true}}),
+            ),
             "mount_cartridge" => self.mount(&message),
             "unmount_cartridge" => self.unmount(&message),
             "dispatch" => self.dispatch(&message, secrets),
             "advance_visibility_fence" => self.advance_fence(&message),
-            "ping" => Outbound::direct(json!({"type": "pong", "serverId": SERVER_ID, "now": now_ms()})),
+            "ping" => {
+                Outbound::direct(json!({"type": "pong", "serverId": SERVER_ID, "now": now_ms()}))
+            }
             "event" => crate::events::handle_event(self, &message),
             _ => Outbound::default(),
         }
@@ -236,7 +285,13 @@ impl World {
             .to_string();
         let full_unlock = message.get("fullUnlock") != Some(&Value::Bool(false));
         let pacing = self.pacing;
-        *self = World::new(self.owner_id.clone(), Some(&locale), full_unlock, self.pack.clone()).with_pacing(pacing);
+        *self = World::new(
+            self.owner_id.clone(),
+            Some(&locale),
+            full_unlock,
+            self.pack.clone(),
+        )
+        .with_pacing(pacing);
         Outbound {
             direct: vec![
                 json!({"type": "web_world_reset_ack", "worldId": self.world_id}),
@@ -282,15 +337,27 @@ impl World {
     fn join_world(&mut self, message: &Json) -> Outbound {
         let requested = message.get("worldId").and_then(Value::as_str).unwrap_or("");
         if requested != self.world_id {
-            return Outbound::direct(protocol::error_message("world_not_found", "World is not available for this local user", Some(requested), None, None));
+            return Outbound::direct(protocol::error_message(
+                "world_not_found",
+                "World is not available for this local user",
+                Some(requested),
+                None,
+                None,
+            ));
         }
         let joined = self.joined();
         Outbound::direct(joined)
     }
 
     fn mount(&mut self, message: &Json) -> Outbound {
-        let cartridge_id = message.get("cartridgeId").and_then(Value::as_str).unwrap_or("");
-        let request_id = message.get("requestId").and_then(Value::as_str).unwrap_or("");
+        let cartridge_id = message
+            .get("cartridgeId")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        let request_id = message
+            .get("requestId")
+            .and_then(Value::as_str)
+            .unwrap_or("");
         let transition = if self.cartridge(cartridge_id).is_some() {
             "already_mounted"
         } else if let Some(cartridge) = cartridge::create(cartridge_id, true, &self.pack) {
@@ -306,17 +373,30 @@ impl World {
                 Some(request_id),
             ));
         };
-        let runtimes = self.cartridge(cartridge_id).map(|c| vec![c.snapshot(fence_for(cartridge_id))]).unwrap_or_default();
+        let runtimes = self
+            .cartridge(cartridge_id)
+            .map(|c| vec![c.snapshot(fence_for(cartridge_id))])
+            .unwrap_or_default();
         Outbound {
-            broadcast: vec![json!({"type": "cartridge_mounted", "worldId": self.world_id, "cartridgeId": cartridge_id, "transition": transition, "runtimes": runtimes})],
-            direct: vec![json!({"type": "cartridge_mounted_ack", "worldId": self.world_id, "cartridgeId": cartridge_id, "requestId": request_id, "transition": transition, "runtimes": runtimes})],
+            broadcast: vec![
+                json!({"type": "cartridge_mounted", "worldId": self.world_id, "cartridgeId": cartridge_id, "transition": transition, "runtimes": runtimes}),
+            ],
+            direct: vec![
+                json!({"type": "cartridge_mounted_ack", "worldId": self.world_id, "cartridgeId": cartridge_id, "requestId": request_id, "transition": transition, "runtimes": runtimes}),
+            ],
             ..Outbound::default()
         }
     }
 
     fn unmount(&mut self, message: &Json) -> Outbound {
-        let cartridge_id = message.get("cartridgeId").and_then(Value::as_str).unwrap_or("");
-        let request_id = message.get("requestId").and_then(Value::as_str).unwrap_or("");
+        let cartridge_id = message
+            .get("cartridgeId")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        let request_id = message
+            .get("requestId")
+            .and_then(Value::as_str)
+            .unwrap_or("");
         let mut out = Outbound::default();
         // chat is the world-owned system cartridge and cannot be removed.
         if cartridge_id != "chat" {
@@ -328,57 +408,115 @@ impl World {
     }
 
     fn dispatch(&mut self, message: &Json, secrets: &Secrets) -> Outbound {
-        let text = |key: &str| message.get(key).and_then(Value::as_str).unwrap_or("").to_string();
-        let (cartridge_id, request_id, actor) = (text("cartridgeId"), text("requestId"), text("actor"));
+        let text = |key: &str| {
+            message
+                .get(key)
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string()
+        };
+        let (cartridge_id, request_id, actor) =
+            (text("cartridgeId"), text("requestId"), text("actor"));
         let cmd = message.get("cmd").cloned().unwrap_or_else(|| json!({}));
-        let expected = message.get("expectedHeadVersion").and_then(Value::as_u64).unwrap_or(0);
+        let expected = message
+            .get("expectedHeadVersion")
+            .and_then(Value::as_u64)
+            .unwrap_or(0);
         let world_id = self.world_id.clone();
         let pack = self.pack.clone();
-        let failure = |head: u64, error: &str, code: &str| Outbound::direct(protocol::dispatch_failure(&world_id, &cartridge_id, &request_id, head, error, code));
+        let failure = |head: u64, error: &str, code: &str| {
+            Outbound::direct(protocol::dispatch_failure(
+                &world_id,
+                &cartridge_id,
+                &request_id,
+                head,
+                error,
+                code,
+            ))
+        };
         let Some(cartridge) = self.cartridge_mut(&cartridge_id) else {
             return failure(0, "Cartridge is not mounted", "dispatch_error");
         };
         let head = cartridge.head_version;
         if expected != head {
-            return failure(head, &format!("Version mismatch: expected {expected}, head is {head}"), "version_mismatch");
+            return failure(
+                head,
+                &format!("Version mismatch: expected {expected}, head is {head}"),
+                "version_mismatch",
+            );
         }
         let commit = match cartridge.dispatch(&actor, &cmd, &pack) {
             Ok(commit) => commit,
-            Err(DispatchError::Rejected(error)) => return failure(head, &error, "command_rejected"),
+            Err(DispatchError::Rejected(error)) => {
+                return failure(head, &error, "command_rejected")
+            }
             Err(DispatchError::Internal(error)) => {
                 eprintln!("[world:{world_id}] dispatch error: {error}");
                 return failure(head, "Local runtime dispatch error", "dispatch_error");
             }
         };
-        let head = self.cartridge(&cartridge_id).map(|c| c.head_version).unwrap_or(commit.version);
+        let head = self
+            .cartridge(&cartridge_id)
+            .map(|c| c.head_version)
+            .unwrap_or(commit.version);
         let mut broadcast = self.commit_messages(&cartridge_id, &commit);
         let command_type = cmd.get("type").and_then(Value::as_str).unwrap_or("");
-        let player_message = cartridge_id == "chat" && actor == "player" && command_type == "playerMessage";
+        let player_message =
+            cartridge_id == "chat" && actor == "player" && command_type == "playerMessage";
         let typed_text = cmd.get("text").map(|v| match v {
             Value::String(s) => s.clone(),
             Value::Null => String::new(),
             other => other.to_string(),
         });
         if player_message {
-            broadcast.extend(crate::story::player_text(self, typed_text.as_deref().unwrap_or("")));
+            broadcast.extend(crate::story::player_text(
+                self,
+                typed_text.as_deref().unwrap_or(""),
+            ));
         }
         broadcast.extend(self.story_advance());
-        let ack = protocol::dispatch_success(&self.world_id, &cartridge_id, &request_id, head, commit.committed, &commit.result);
+        let ack = protocol::dispatch_success(
+            &self.world_id,
+            &cartridge_id,
+            &request_id,
+            head,
+            commit.committed,
+            &commit.result,
+        );
         let tasks = self.follow_up(&cartridge_id, &actor, &cmd, typed_text, secrets);
-        Outbound { broadcast, direct: vec![ack], tasks, ..Outbound::default() }
+        Outbound {
+            broadcast,
+            direct: vec![ack],
+            tasks,
+            ..Outbound::default()
+        }
     }
 
     /// Python `_schedule_follow_up`.
-    fn follow_up(&mut self, cartridge_id: &str, actor: &str, cmd: &Json, typed_text: Option<String>, secrets: &Secrets) -> Vec<Task> {
+    fn follow_up(
+        &mut self,
+        cartridge_id: &str,
+        actor: &str,
+        cmd: &Json,
+        typed_text: Option<String>,
+        secrets: &Secrets,
+    ) -> Vec<Task> {
         let command_type = cmd.get("type").and_then(Value::as_str).unwrap_or("");
         let pacing = self.pacing;
         match cartridge_id {
             "chat" => {
                 if actor == "player" && command_type == "playerMessage" {
-                    vec![Task::chat_reply(self, pacing, typed_text.unwrap_or_default(), secrets.clone())]
+                    vec![Task::chat_reply(
+                        self,
+                        pacing,
+                        typed_text.unwrap_or_default(),
+                        secrets.clone(),
+                    )]
                 } else if command_type == "audioDone" {
                     match cmd.get("operationId").and_then(Value::as_str) {
-                        Some(operation_id) => vec![Task::settle_chat(self, pacing, operation_id.to_string())],
+                        Some(operation_id) => {
+                            vec![Task::settle_chat(self, pacing, operation_id.to_string())]
+                        }
                         None => Vec::new(),
                     }
                 } else {
@@ -392,23 +530,51 @@ impl World {
                     Vec::new()
                 }
             }
-            "pictionary" if matches!(command_type, "submitGuess" | "skipRound") => vec![Task::pictionary_next(self, pacing)],
+            "pictionary" if matches!(command_type, "submitGuess" | "skipRound") => {
+                vec![Task::pictionary_next(self, pacing)]
+            }
             _ => Vec::new(),
         }
     }
 
     fn advance_fence(&mut self, message: &Json) -> Outbound {
-        let text = |key: &str| message.get(key).and_then(Value::as_str).unwrap_or("").to_string();
-        let (cartridge_id, request_id, fence) = (text("cartridgeId"), text("requestId"), text("visibilityFenceId"));
+        let text = |key: &str| {
+            message
+                .get(key)
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string()
+        };
+        let (cartridge_id, request_id, fence) = (
+            text("cartridgeId"),
+            text("requestId"),
+            text("visibilityFenceId"),
+        );
         let world_id = self.world_id.clone();
         let Some(cartridge) = self.cartridge_mut(&cartridge_id) else {
-            return Outbound::direct(protocol::error_message("cartridge_not_mounted", "Cartridge is not mounted", Some(&world_id), Some(&cartridge_id), Some(&request_id)));
+            return Outbound::direct(protocol::error_message(
+                "cartridge_not_mounted",
+                "Cartridge is not mounted",
+                Some(&world_id),
+                Some(&cartridge_id),
+                Some(&request_id),
+            ));
         };
-        let requested = message.get("version").and_then(Value::as_u64).unwrap_or(0).min(cartridge.head_version);
+        let requested = message
+            .get("version")
+            .and_then(Value::as_u64)
+            .unwrap_or(0)
+            .min(cartridge.head_version);
         cartridge.visible_version = cartridge.visible_version.max(requested);
         let (visible, head) = (cartridge.visible_version, cartridge.head_version);
         Outbound {
-            broadcast: vec![protocol::visibility_advanced(&world_id, &cartridge_id, &fence, visible, head)],
+            broadcast: vec![protocol::visibility_advanced(
+                &world_id,
+                &cartridge_id,
+                &fence,
+                visible,
+                head,
+            )],
             direct: vec![json!({
                 "type": "visibility_fence_advanced_ack",
                 "worldId": world_id,
@@ -423,7 +589,12 @@ impl World {
     }
 
     /// Fallback tone frames; reserves their sequence numbers immediately.
-    pub fn stream_fallback(&mut self, operation_id: &str, message_id: &str, text: &str) -> Vec<Vec<u8>> {
+    pub fn stream_fallback(
+        &mut self,
+        operation_id: &str,
+        message_id: &str,
+        text: &str,
+    ) -> Vec<Vec<u8>> {
         let count = text.chars().count().div_ceil(8).clamp(1, 12) as u32;
         let start = self.media_sequence;
         self.media_sequence = self.media_sequence.wrapping_add(count);
@@ -434,14 +605,19 @@ impl World {
     /// `_dispatch_agent_command`). `None` ends the agent loop.
     pub fn agent_step(&mut self, cartridge_id: &str) -> Option<Vec<Json>> {
         let state = self.cartridge(cartridge_id)?.state.clone();
-        let command = cartridge::agent_command(cartridge_id, &state).or_else(|| tasks::recovery_command(cartridge_id, &state))?;
+        let command = cartridge::agent_command(cartridge_id, &state)
+            .or_else(|| tasks::recovery_command(cartridge_id, &state))?;
         if let Some((_, messages)) = self.dispatch_internal(cartridge_id, "agent", &command) {
             return Some(messages);
         }
         let state = self.cartridge(cartridge_id)?.state.clone();
         let recovery = tasks::recovery_command(cartridge_id, &state).filter(|r| *r != command)?;
-        eprintln!("[world:{}] retrying rejected {cartridge_id} agent action with pass", self.world_id);
-        self.dispatch_internal(cartridge_id, "agent", &recovery).map(|(_, messages)| messages)
+        eprintln!(
+            "[world:{}] retrying rejected {cartridge_id} agent action with pass",
+            self.world_id
+        );
+        self.dispatch_internal(cartridge_id, "agent", &recovery)
+            .map(|(_, messages)| messages)
     }
 
     pub(crate) fn agent_loop_finished(&mut self, cartridge_id: &str) {
@@ -450,14 +626,20 @@ impl World {
 
     /// Python `_start_next_pictionary_round` after its delay.
     pub fn pictionary_next_round(&mut self) -> Vec<Json> {
-        let due = self.cartridge("pictionary").is_some_and(|c| tasks::pictionary_due(&c.state));
+        let due = self
+            .cartridge("pictionary")
+            .is_some_and(|c| tasks::pictionary_due(&c.state));
         if !due {
             return Vec::new();
         }
-        self.dispatch_internal("pictionary", "agent", &tasks::pictionary_command()).map(|(_, m)| m).unwrap_or_default()
+        self.dispatch_internal("pictionary", "agent", &tasks::pictionary_command())
+            .map(|(_, m)| m)
+            .unwrap_or_default()
     }
 
     pub fn chat_history(&self) -> Vec<Json> {
-        self.cartridge("chat").map(|c| chat::history(&c.state)).unwrap_or_default()
+        self.cartridge("chat")
+            .map(|c| chat::history(&c.state))
+            .unwrap_or_default()
     }
 }

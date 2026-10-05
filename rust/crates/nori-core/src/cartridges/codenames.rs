@@ -276,14 +276,16 @@ impl PythonRandom {
         state[0] = 19_650_218;
         for i in 1..624 {
             state[i] = (state[i - 1] ^ (state[i - 1] >> 30))
-                .wrapping_mul(1_812_433_253).wrapping_add(i as u32);
+                .wrapping_mul(1_812_433_253)
+                .wrapping_add(i as u32);
         }
         let key = [seed as u32, (seed >> 32) as u32];
         let key_len = if key[1] == 0 { 1 } else { 2 };
         let (mut i, mut j) = (1, 0);
         for _ in 0..624 {
             state[i] = (state[i] ^ (state[i - 1] ^ (state[i - 1] >> 30)).wrapping_mul(1_664_525))
-                .wrapping_add(key[j]).wrapping_add(j as u32);
+                .wrapping_add(key[j])
+                .wrapping_add(j as u32);
             i += 1;
             j = (j + 1) % key_len;
             if i == 624 {
@@ -292,8 +294,9 @@ impl PythonRandom {
             }
         }
         for _ in 0..623 {
-            state[i] = (state[i] ^ (state[i - 1] ^ (state[i - 1] >> 30)).wrapping_mul(1_566_083_941))
-                .wrapping_sub(i as u32);
+            state[i] = (state[i]
+                ^ (state[i - 1] ^ (state[i - 1] >> 30)).wrapping_mul(1_566_083_941))
+            .wrapping_sub(i as u32);
             i += 1;
             if i == 624 {
                 state[0] = state[623];
@@ -307,8 +310,10 @@ impl PythonRandom {
     fn next_u32(&mut self) -> u32 {
         if self.index == 624 {
             for i in 0..624 {
-                let value = (self.state[i] & 0x8000_0000) | (self.state[(i + 1) % 624] & 0x7fff_ffff);
-                self.state[i] = self.state[(i + 397) % 624] ^ (value >> 1)
+                let value =
+                    (self.state[i] & 0x8000_0000) | (self.state[(i + 1) % 624] & 0x7fff_ffff);
+                self.state[i] = self.state[(i + 397) % 624]
+                    ^ (value >> 1)
                     ^ if value & 1 == 0 { 0 } else { 0x9908_b0df };
             }
             self.index = 0;

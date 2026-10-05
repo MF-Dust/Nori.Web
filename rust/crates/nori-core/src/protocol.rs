@@ -74,7 +74,10 @@ pub fn validate_client_message(value: &Json) -> Result<Json, ProtocolError> {
         need_string(obj.get("actor"), "actor")?;
         need_string(obj.get("cartridgeId"), "cartridgeId")?;
         let request_id = need_string(obj.get("requestId"), "requestId")?;
-        let cartridge_id = obj.get("cartridgeId").and_then(Value::as_str).map(str::to_string);
+        let cartridge_id = obj
+            .get("cartridgeId")
+            .and_then(Value::as_str)
+            .map(str::to_string);
         // Python's `_version` error carries no request/cartridge ids.
         need_version(obj.get("expectedHeadVersion"), "expectedHeadVersion")?;
         let cmd = obj.get("cmd");
@@ -122,7 +125,12 @@ pub fn error_message(
     payload
 }
 
-pub fn runtime_transition(world_id: &str, cartridge_id: &str, version: u64, transition: &Json) -> Json {
+pub fn runtime_transition(
+    world_id: &str,
+    cartridge_id: &str,
+    version: u64,
+    transition: &Json,
+) -> Json {
     json!({
         "type": "runtime_transition",
         "worldId": world_id,

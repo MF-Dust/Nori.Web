@@ -27,7 +27,11 @@ pub struct ReducerResult {
 
 impl ReducerResult {
     pub fn new(state: Json, result: Json, events: Vec<Json>) -> Self {
-        Self { state, result, events }
+        Self {
+            state,
+            result,
+            events,
+        }
     }
 
     pub fn ok(state: Json, result: Json) -> Self {
@@ -71,12 +75,18 @@ pub fn top_level_patch(before: &Json, after: &Json) -> Vec<Json> {
         return vec![json!({"op": "replace", "path": "", "value": after})];
     };
     let mut patches = Vec::new();
-    let mut removed: Vec<&String> = before_obj.keys().filter(|k| !after_obj.contains_key(*k)).collect();
+    let mut removed: Vec<&String> = before_obj
+        .keys()
+        .filter(|k| !after_obj.contains_key(*k))
+        .collect();
     removed.sort();
     for key in removed {
         patches.push(json!({"op": "remove", "path": format!("/{}", escape_token(key))}));
     }
-    let mut added: Vec<&String> = after_obj.keys().filter(|k| !before_obj.contains_key(*k)).collect();
+    let mut added: Vec<&String> = after_obj
+        .keys()
+        .filter(|k| !before_obj.contains_key(*k))
+        .collect();
     added.sort();
     for key in added {
         patches.push(json!({
@@ -85,7 +95,10 @@ pub fn top_level_patch(before: &Json, after: &Json) -> Vec<Json> {
             "value": after_obj[key],
         }));
     }
-    let mut shared: Vec<&String> = before_obj.keys().filter(|k| after_obj.contains_key(*k)).collect();
+    let mut shared: Vec<&String> = before_obj
+        .keys()
+        .filter(|k| after_obj.contains_key(*k))
+        .collect();
     shared.sort();
     for key in shared {
         if before_obj[key] != after_obj[key] {
@@ -128,7 +141,12 @@ impl Cartridge {
         })
     }
 
-    pub fn dispatch(&mut self, actor: &str, cmd: &Json, pack: &LivePack) -> Result<Commit, DispatchError> {
+    pub fn dispatch(
+        &mut self,
+        actor: &str,
+        cmd: &Json,
+        pack: &LivePack,
+    ) -> Result<Commit, DispatchError> {
         if actor.is_empty() {
             return Err(CommandRejected::new("actor is required").into());
         }
@@ -140,10 +158,22 @@ impl Cartridge {
         self.commit(actor, cmd, reduced)
     }
 
-    fn commit(&mut self, actor: &str, cmd: &Json, reduced: ReducerResult) -> Result<Commit, DispatchError> {
+    fn commit(
+        &mut self,
+        actor: &str,
+        cmd: &Json,
+        reduced: ReducerResult,
+    ) -> Result<Commit, DispatchError> {
         for event in &reduced.events {
-            if !event.get("type").and_then(Value::as_str).is_some_and(|t| !t.is_empty()) {
-                return Err(DispatchError::Internal(format!("{}: transition event requires a type", self.id)));
+            if !event
+                .get("type")
+                .and_then(Value::as_str)
+                .is_some_and(|t| !t.is_empty())
+            {
+                return Err(DispatchError::Internal(format!(
+                    "{}: transition event requires a type",
+                    self.id
+                )));
             }
         }
         let patches = top_level_patch(&self.state, &reduced.state);
@@ -231,7 +261,14 @@ pub fn default_cartridges(full_unlock: bool, pack: &LivePack) -> Vec<Cartridge> 
 }
 
 /// Registered cartridge ids (Python `CartridgeRegistry.list_available`).
-pub const AVAILABLE: [&str; 6] = ["chat", "cakeduel", "codenames", "chess", "manifold.web", "pictionary"];
+pub const AVAILABLE: [&str; 6] = [
+    "chat",
+    "cakeduel",
+    "codenames",
+    "chess",
+    "manifold.web",
+    "pictionary",
+];
 
 pub fn agent_command(id: &str, state: &Json) -> Option<Json> {
     match id {

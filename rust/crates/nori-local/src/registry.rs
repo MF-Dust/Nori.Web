@@ -61,14 +61,20 @@ impl UserSlot {
             return;
         }
         let frames: Vec<String> = messages.iter().map(nori_core::protocol::ws_text).collect();
-        lock(&self.main).retain(|client| frames.iter().all(|frame| client.tx.send(Message::Text(frame.clone().into())).is_ok()));
+        lock(&self.main).retain(|client| {
+            frames
+                .iter()
+                .all(|frame| client.tx.send(Message::Text(frame.clone().into())).is_ok())
+        });
     }
 
     /// Binary media frame to the media sockets opened for the current world.
     pub fn broadcast_media(&self, frame: Vec<u8>) {
         let world_id = self.world().world_id.clone();
         let bytes = axum::body::Bytes::from(frame);
-        lock(&self.media).retain(|client| client.world_id != world_id || client.tx.send(Message::Binary(bytes.clone())).is_ok());
+        lock(&self.media).retain(|client| {
+            client.world_id != world_id || client.tx.send(Message::Binary(bytes.clone())).is_ok()
+        });
     }
 }
 
@@ -80,7 +86,11 @@ pub struct Registry {
 
 impl Registry {
     pub fn new(pack: Arc<LivePack>) -> Self {
-        Self { users: Mutex::new(HashMap::new()), pack, next_socket: AtomicU64::new(1) }
+        Self {
+            users: Mutex::new(HashMap::new()),
+            pack,
+            next_socket: AtomicU64::new(1),
+        }
     }
 
     pub fn pack(&self) -> &Arc<LivePack> {
@@ -97,8 +107,13 @@ impl Registry {
         users
             .entry(user_id.to_string())
             .or_insert_with(|| {
-                let world = World::new(user_id, None, true, self.pack.clone()).with_pacing(Pacing::Local);
-                Arc::new(UserSlot { world: Mutex::new(world), main: Mutex::new(Vec::new()), media: Mutex::new(Vec::new()) })
+                let world =
+                    World::new(user_id, None, true, self.pack.clone()).with_pacing(Pacing::Local);
+                Arc::new(UserSlot {
+                    world: Mutex::new(world),
+                    main: Mutex::new(Vec::new()),
+                    media: Mutex::new(Vec::new()),
+                })
             })
             .clone()
     }

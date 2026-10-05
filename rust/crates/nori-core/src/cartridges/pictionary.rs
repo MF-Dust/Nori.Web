@@ -27,7 +27,8 @@ fn normalize_guess(value: &Value) -> Result<String, CommandRejected> {
     };
     let mut out = String::new();
     for ch in value.trim().to_lowercase().chars() {
-        if ch.is_whitespace() || ".,!?'\"-_/\\，。！？、“”‘’（）()【】[]".contains(ch) {
+        if ch.is_whitespace() || ".,!?'\"-_/\\，。！？、“”‘’（）()【】[]".contains(ch)
+        {
             continue;
         }
         out.push(ch);
@@ -38,12 +39,22 @@ fn normalize_guess(value: &Value) -> Result<String, CommandRejected> {
 fn resolve_vocab(locale: &str) -> Vec<Json> {
     let data = vocab();
     let loc = locale.to_lowercase().replace('_', "-");
-    let key = if loc.starts_with("zh") || loc == "cn" { "zh-CN" } else { "en" };
+    let key = if loc.starts_with("zh") || loc == "cn" {
+        "zh-CN"
+    } else {
+        "en"
+    };
     data.get(key)
         .or_else(|| data.get("en"))
         .or_else(|| data.get("zh-CN"))
         .and_then(Value::as_array)
-        .map(|items| items.iter().filter(|item| item.get("removed").and_then(Value::as_bool) != Some(true)).cloned().collect())
+        .map(|items| {
+            items
+                .iter()
+                .filter(|item| item.get("removed").and_then(Value::as_bool) != Some(true))
+                .cloned()
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -58,7 +69,11 @@ fn choose_item(locale: &str, excluded: &[String]) -> Json {
                 .is_none_or(|id| !excluded.iter().any(|e| e == &id.to_lowercase()))
         })
         .collect();
-    let source = if candidates.is_empty() { pool.iter().collect::<Vec<_>>() } else { candidates };
+    let source = if candidates.is_empty() {
+        pool.iter().collect::<Vec<_>>()
+    } else {
+        candidates
+    };
     if source.is_empty() {
         return json!({"word": "apple", "drawingId": "apple", "synonyms": [], "pinyin": []});
     }
@@ -82,7 +97,9 @@ fn new_round(at_ms: i64, item: &Json, roles: Json) -> Json {
 
 fn need_ms(cmd: &Json) -> Result<i64, CommandRejected> {
     match cmd.get("atMs") {
-        Some(v) if !v.is_boolean() => v.as_i64().ok_or_else(|| CommandRejected::new("atMs must be an integer")),
+        Some(v) if !v.is_boolean() => v
+            .as_i64()
+            .ok_or_else(|| CommandRejected::new("atMs must be an integer")),
         _ => Err(CommandRejected::new("atMs must be an integer")),
     }
 }
@@ -95,8 +112,16 @@ fn check_guess(raw: &str, round: &Json) -> bool {
         return false;
     }
     let mut targets = vec![
-        normalize_guess(&json!(round.get("word").and_then(Value::as_str).unwrap_or(""))).unwrap_or_default(),
-        normalize_guess(&json!(round.get("drawingId").and_then(Value::as_str).unwrap_or(""))).unwrap_or_default(),
+        normalize_guess(&json!(round
+            .get("word")
+            .and_then(Value::as_str)
+            .unwrap_or("")))
+        .unwrap_or_default(),
+        normalize_guess(&json!(round
+            .get("drawingId")
+            .and_then(Value::as_str)
+            .unwrap_or("")))
+        .unwrap_or_default(),
     ];
     if let Some(syns) = round.get("synonyms").and_then(Value::as_array) {
         for syn in syns {
@@ -119,13 +144,23 @@ fn check_guess(raw: &str, round: &Json) -> bool {
 }
 
 fn session_finished(settings: &Json, history: &[Json]) -> bool {
-    let elapsed: i64 = history.iter().map(|e| e.get("elapsedMs").and_then(|v| v.as_i64()).unwrap_or(0)).sum();
-    elapsed >= settings.get("sessionDurationMs").and_then(|v| v.as_i64()).unwrap_or(180_000)
+    let elapsed: i64 = history
+        .iter()
+        .map(|e| e.get("elapsedMs").and_then(|v| v.as_i64()).unwrap_or(0))
+        .sum();
+    elapsed
+        >= settings
+            .get("sessionDurationMs")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(180_000)
 }
 
 pub fn needs_next_round(state: &Json) -> bool {
     state.pointer("/gameState/phase").and_then(Value::as_str) == Some("PLAYING")
-        && state.pointer("/gameState/round/status").and_then(Value::as_str) != Some("active")
+        && state
+            .pointer("/gameState/round/status")
+            .and_then(Value::as_str)
+            != Some("active")
 }
 
 pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, CommandRejected> {
@@ -146,16 +181,26 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                     return Err(CommandRejected::new("settings must be an object"));
                 }
                 if let Some(duration) = incoming.get("sessionDurationMs") {
-                    let n = duration.as_i64().filter(|_| !duration.is_boolean()).filter(|n| *n > 0);
+                    let n = duration
+                        .as_i64()
+                        .filter(|_| !duration.is_boolean())
+                        .filter(|n| *n > 0);
                     let Some(n) = n else {
-                        return Err(CommandRejected::new("sessionDurationMs must be a positive integer"));
+                        return Err(CommandRejected::new(
+                            "sessionDurationMs must be a positive integer",
+                        ));
                     };
                     settings["sessionDurationMs"] = json!(n);
                 }
                 if let Some(limit) = incoming.get("roundTimeLimitMs") {
-                    let n = limit.as_i64().filter(|_| !limit.is_boolean()).filter(|n| *n > 0);
+                    let n = limit
+                        .as_i64()
+                        .filter(|_| !limit.is_boolean())
+                        .filter(|n| *n > 0);
                     let Some(n) = n else {
-                        return Err(CommandRejected::new("roundTimeLimitMs must be a positive integer"));
+                        return Err(CommandRejected::new(
+                            "roundTimeLimitMs must be a positive integer",
+                        ));
                     };
                     settings["roundTimeLimitMs"] = json!(n);
                 }
@@ -174,9 +219,17 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                 }
             }
         }
-        let locale = settings.get("locale").and_then(Value::as_str).unwrap_or("zh-CN").to_string();
+        let locale = settings
+            .get("locale")
+            .and_then(Value::as_str)
+            .unwrap_or("zh-CN")
+            .to_string();
         let item = choose_item(&locale, &[]);
-        let round = new_round(at_ms, &item, json!({"drawer": "player", "guesser": "agent"}));
+        let round = new_round(
+            at_ms,
+            &item,
+            json!({"drawer": "player", "guesser": "agent"}),
+        );
         state["settings"] = settings;
         state["gameState"] = json!({"phase": "PLAYING", "score": {"solved": 0, "skipped": 0}, "round": round, "history": []});
         return Ok(ReducerResult::new(
@@ -197,21 +250,42 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
     }
     match command_type {
         "startNextRound" => {
-            if state.pointer("/gameState/round/status").and_then(Value::as_str) == Some("active") {
+            if state
+                .pointer("/gameState/round/status")
+                .and_then(Value::as_str)
+                == Some("active")
+            {
                 return Err(CommandRejected::new("Round is still active"));
             }
             let at_ms = need_ms(cmd)?;
-            let current = state.pointer("/gameState/round/drawingId").and_then(Value::as_str).unwrap_or("").to_string();
+            let current = state
+                .pointer("/gameState/round/drawingId")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
             let mut used = vec![current];
-            if let Some(history) = state.pointer("/gameState/history").and_then(Value::as_array) {
+            if let Some(history) = state
+                .pointer("/gameState/history")
+                .and_then(Value::as_array)
+            {
                 for entry in history {
-                    let id = entry.get("drawingId").and_then(Value::as_str).unwrap_or_else(|| entry.get("word").and_then(Value::as_str).unwrap_or(""));
+                    let id = entry
+                        .get("drawingId")
+                        .and_then(Value::as_str)
+                        .unwrap_or_else(|| entry.get("word").and_then(Value::as_str).unwrap_or(""));
                     used.push(id.replace(' ', "-"));
                 }
             }
-            let locale = state.pointer("/settings/locale").and_then(Value::as_str).unwrap_or("zh-CN").to_string();
+            let locale = state
+                .pointer("/settings/locale")
+                .and_then(Value::as_str)
+                .unwrap_or("zh-CN")
+                .to_string();
             let item = choose_item(&locale, &used);
-            let drawer = state.pointer("/gameState/round/roles/drawer").and_then(Value::as_str).unwrap_or("player");
+            let drawer = state
+                .pointer("/gameState/round/roles/drawer")
+                .and_then(Value::as_str)
+                .unwrap_or("player");
             let roles = if drawer == "player" {
                 json!({"drawer": "agent", "guesser": "player"})
             } else {
@@ -222,71 +296,144 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             Ok(ReducerResult::new(
                 state,
                 json!({"success": true, "roundId": next["roundId"]}),
-                vec![json!({"type": "round_started", "roundId": next["roundId"], "roles": roles, "drawingId": item["drawingId"]})],
+                vec![
+                    json!({"type": "round_started", "roundId": next["roundId"], "roles": roles, "drawingId": item["drawingId"]}),
+                ],
             ))
         }
         "submitStrokeBatch" => {
-            if actor != "player" || state.pointer("/gameState/round/roles/drawer").and_then(Value::as_str) != Some("player") {
-                return Err(CommandRejected::new("Only the player drawer can submit strokes"));
+            if actor != "player"
+                || state
+                    .pointer("/gameState/round/roles/drawer")
+                    .and_then(Value::as_str)
+                    != Some("player")
+            {
+                return Err(CommandRejected::new(
+                    "Only the player drawer can submit strokes",
+                ));
             }
-            let len = cmd.get("batch").and_then(Value::as_array).map(|a| a.len()).unwrap_or(0);
+            let len = cmd
+                .get("batch")
+                .and_then(Value::as_array)
+                .map(|a| a.len())
+                .unwrap_or(0);
             if !(1..=32).contains(&len) {
                 return Err(CommandRejected::new("batch must contain 1 to 32 strokes"));
             }
             Ok(ReducerResult::ok(state, json!({"success": true})))
         }
         "submitGuess" => {
-            if state.pointer("/gameState/round/status").and_then(Value::as_str) != Some("active") {
+            if state
+                .pointer("/gameState/round/status")
+                .and_then(Value::as_str)
+                != Some("active")
+            {
                 return Err(CommandRejected::new("Round is not active"));
             }
-            if state.pointer("/gameState/round/roles/guesser").and_then(Value::as_str) != Some(actor) {
+            if state
+                .pointer("/gameState/round/roles/guesser")
+                .and_then(Value::as_str)
+                != Some(actor)
+            {
                 return Err(CommandRejected::new("Not the current guesser"));
             }
             let at_ms = need_ms(cmd)?;
-            let Some(raw) = cmd.get("text").and_then(Value::as_str).filter(|t| !t.trim().is_empty()) else {
+            let Some(raw) = cmd
+                .get("text")
+                .and_then(Value::as_str)
+                .filter(|t| !t.trim().is_empty())
+            else {
                 return Err(CommandRejected::new("Empty guess"));
             };
-            let round = state.pointer("/gameState/round").cloned().unwrap_or(json!({}));
+            let round = state
+                .pointer("/gameState/round")
+                .cloned()
+                .unwrap_or(json!({}));
             let correct = check_guess(raw, &round);
-            state["gameState"]["round"]["lastGuess"] = json!({"by": actor, "text": raw.trim(), "atMs": at_ms, "correct": correct});
-            let mut events = vec![json!({"type": "guess_submitted", "roundId": round["roundId"], "by": actor, "text": raw.trim(), "correct": correct})];
+            state["gameState"]["round"]["lastGuess"] =
+                json!({"by": actor, "text": raw.trim(), "atMs": at_ms, "correct": correct});
+            let mut events = vec![
+                json!({"type": "guess_submitted", "roundId": round["roundId"], "by": actor, "text": raw.trim(), "correct": correct}),
+            ];
             if correct {
-                let started = round.get("startedAtMs").and_then(|v| v.as_i64()).unwrap_or(0);
+                let started = round
+                    .get("startedAtMs")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0);
                 let elapsed = (at_ms - started).max(0);
                 let entry = json!({"word": round["word"], "drawingId": round["drawingId"], "roles": round["roles"], "elapsedMs": elapsed, "outcome": "solved"});
-                if let Some(h) = state["gameState"]["history"].as_array_mut() { h.push(entry.clone()) }
-                let solved = state.pointer("/gameState/score/solved").and_then(|v| v.as_i64()).unwrap_or(0);
+                if let Some(h) = state["gameState"]["history"].as_array_mut() {
+                    h.push(entry.clone())
+                }
+                let solved = state
+                    .pointer("/gameState/score/solved")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0);
                 state["gameState"]["score"]["solved"] = json!(solved + 1);
                 state["gameState"]["round"]["status"] = json!("solved");
                 state["gameState"]["round"]["solvedAtMs"] = json!(at_ms);
                 events.push(json!({"type": "round_solved", "roundId": round["roundId"], "by": actor, "word": round["word"], "elapsedMs": elapsed}));
-                let history = state.pointer("/gameState/history").and_then(Value::as_array).cloned().unwrap_or_default();
+                let history = state
+                    .pointer("/gameState/history")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default();
                 if session_finished(state.get("settings").unwrap_or(&Value::Null), &history) {
                     state["gameState"]["phase"] = json!("RESULTS");
                     events.push(json!({"type": "session_finished"}));
                 }
             }
-            Ok(ReducerResult::new(state, json!({"success": true, "correct": correct}), events))
+            Ok(ReducerResult::new(
+                state,
+                json!({"success": true, "correct": correct}),
+                events,
+            ))
         }
         "skipRound" => {
-            if state.pointer("/gameState/round/status").and_then(Value::as_str) != Some("active") {
+            if state
+                .pointer("/gameState/round/status")
+                .and_then(Value::as_str)
+                != Some("active")
+            {
                 return Err(CommandRejected::new("Round is not active"));
             }
-            let drawer = state.pointer("/gameState/round/roles/drawer").and_then(Value::as_str).unwrap_or("");
-            let guesser = state.pointer("/gameState/round/roles/guesser").and_then(Value::as_str).unwrap_or("");
+            let drawer = state
+                .pointer("/gameState/round/roles/drawer")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            let guesser = state
+                .pointer("/gameState/round/roles/guesser")
+                .and_then(Value::as_str)
+                .unwrap_or("");
             if actor != drawer && actor != guesser {
                 return Err(CommandRejected::new("Not allowed to skip this round"));
             }
             let at_ms = need_ms(cmd)?;
-            let started = state.pointer("/gameState/round/startedAtMs").and_then(|v| v.as_i64()).unwrap_or(0);
+            let started = state
+                .pointer("/gameState/round/startedAtMs")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
             let elapsed = (at_ms - started).max(0);
-            let round = state.pointer("/gameState/round").cloned().unwrap_or(json!({}));
-            if let Some(h) = state["gameState"]["history"].as_array_mut() { h.push(json!({"word": round["word"], "drawingId": round["drawingId"], "roles": round["roles"], "elapsedMs": elapsed, "outcome": "skipped"})) }
-            let skipped = state.pointer("/gameState/score/skipped").and_then(|v| v.as_i64()).unwrap_or(0);
+            let round = state
+                .pointer("/gameState/round")
+                .cloned()
+                .unwrap_or(json!({}));
+            if let Some(h) = state["gameState"]["history"].as_array_mut() {
+                h.push(json!({"word": round["word"], "drawingId": round["drawingId"], "roles": round["roles"], "elapsedMs": elapsed, "outcome": "skipped"}))
+            }
+            let skipped = state
+                .pointer("/gameState/score/skipped")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
             state["gameState"]["score"]["skipped"] = json!(skipped + 1);
             state["gameState"]["round"]["status"] = json!("skipped");
-            let mut events = vec![json!({"type": "round_skipped", "roundId": round["roundId"], "by": actor})];
-            let history = state.pointer("/gameState/history").and_then(Value::as_array).cloned().unwrap_or_default();
+            let mut events =
+                vec![json!({"type": "round_skipped", "roundId": round["roundId"], "by": actor})];
+            let history = state
+                .pointer("/gameState/history")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             if session_finished(state.get("settings").unwrap_or(&Value::Null), &history) {
                 state["gameState"]["phase"] = json!("RESULTS");
                 events.push(json!({"type": "session_finished"}));
@@ -294,24 +441,54 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             Ok(ReducerResult::new(state, json!({"success": true}), events))
         }
         "noriRedraw" => {
-            if actor != "agent" || state.pointer("/gameState/round/roles/drawer").and_then(Value::as_str) != Some("agent") {
+            if actor != "agent"
+                || state
+                    .pointer("/gameState/round/roles/drawer")
+                    .and_then(Value::as_str)
+                    != Some("agent")
+            {
                 return Err(CommandRejected::new("Only Nori can redraw"));
             }
-            let epoch = state.pointer("/gameState/round/noriRedrawEpoch").and_then(|v| v.as_i64()).unwrap_or(0) + 1;
+            let epoch = state
+                .pointer("/gameState/round/noriRedrawEpoch")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0)
+                + 1;
             state["gameState"]["round"]["noriRedrawEpoch"] = json!(epoch);
-            let round_id = state.pointer("/gameState/round/roundId").cloned().unwrap_or(Value::Null);
-            Ok(ReducerResult::new(state, json!({"epoch": epoch}), vec![json!({"type": "nori_redraw", "roundId": round_id, "epoch": epoch})]))
+            let round_id = state
+                .pointer("/gameState/round/roundId")
+                .cloned()
+                .unwrap_or(Value::Null);
+            Ok(ReducerResult::new(
+                state,
+                json!({"epoch": epoch}),
+                vec![json!({"type": "nori_redraw", "roundId": round_id, "epoch": epoch})],
+            ))
         }
         "forceEndSession" => {
             let at_ms = need_ms(cmd)?;
-            let started = state.pointer("/gameState/round/startedAtMs").and_then(|v| v.as_i64()).unwrap_or(0);
+            let started = state
+                .pointer("/gameState/round/startedAtMs")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
             let elapsed = (at_ms - started).max(0);
-            let round = state.pointer("/gameState/round").cloned().unwrap_or(json!({}));
+            let round = state
+                .pointer("/gameState/round")
+                .cloned()
+                .unwrap_or(json!({}));
             state["gameState"]["round"]["status"] = json!("unfinished");
-            if let Some(h) = state["gameState"]["history"].as_array_mut() { h.push(json!({"word": round["word"], "drawingId": round["drawingId"], "roles": round["roles"], "elapsedMs": elapsed, "outcome": "unfinished"})) }
+            if let Some(h) = state["gameState"]["history"].as_array_mut() {
+                h.push(json!({"word": round["word"], "drawingId": round["drawingId"], "roles": round["roles"], "elapsedMs": elapsed, "outcome": "unfinished"}))
+            }
             state["gameState"]["phase"] = json!("RESULTS");
-            Ok(ReducerResult::new(state, json!({"success": true}), vec![json!({"type": "session_finished"})]))
+            Ok(ReducerResult::new(
+                state,
+                json!({"success": true}),
+                vec![json!({"type": "session_finished"})],
+            ))
         }
-        _ => Err(CommandRejected::new(format!("Unknown pictionary command: {command_type}"))),
+        _ => Err(CommandRejected::new(format!(
+            "Unknown pictionary command: {command_type}"
+        ))),
     }
 }

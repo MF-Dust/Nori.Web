@@ -1,16 +1,43 @@
 use crate::cartridge::{CommandRejected, ReducerResult};
 use crate::jsonutil::{now_ms, Json};
-use rand::seq::SliceRandom;
 use rand::rngs::StdRng;
+use rand::seq::SliceRandom;
 use rand::SeedableRng;
 use serde_json::{json, Value};
 
 const BASE_CARDS: &[&str] = &[
-    "soldier", "soldier", "soldier", "soldier", "soldier", "archer", "archer", "archer", "archer", "defender",
-    "defender", "defender", "defender", "wizard", "wizard", "wizard", "scientist", "scientist", "scientist", "wolfy",
+    "soldier",
+    "soldier",
+    "soldier",
+    "soldier",
+    "soldier",
+    "archer",
+    "archer",
+    "archer",
+    "archer",
+    "defender",
+    "defender",
+    "defender",
+    "defender",
+    "wizard",
+    "wizard",
+    "wizard",
+    "scientist",
+    "scientist",
+    "scientist",
+    "wolfy",
 ];
 const SPECIAL_CARDS: &[&str] = &[
-    "assassin", "scout", "summoner", "quartermaster", "oracle", "priest", "angel", "baacrates", "agent_u", "pierrot",
+    "assassin",
+    "scout",
+    "summoner",
+    "quartermaster",
+    "oracle",
+    "priest",
+    "angel",
+    "baacrates",
+    "agent_u",
+    "pierrot",
 ];
 
 fn card_type(name: &str) -> &'static str {
@@ -72,7 +99,10 @@ fn player_index(actor: &str) -> Result<usize, CommandRejected> {
 
 fn phasing_player(game: &Json) -> Result<usize, CommandRejected> {
     let phase = game.get("phase").and_then(Value::as_str).unwrap_or("");
-    let attacker = game.get("attackerIndex").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+    let attacker = game
+        .get("attackerIndex")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0) as usize;
     match phase {
         "attack" | "review" => Ok(attacker),
         "block" => Ok(1 - attacker),
@@ -93,11 +123,18 @@ fn card_name(game: &Json, card_id: i64) -> Result<String, CommandRejected> {
 }
 
 fn i64_list(value: &Value) -> Vec<i64> {
-    value.as_array().map(|a| a.iter().filter_map(|v| v.as_i64()).collect()).unwrap_or_default()
+    value
+        .as_array()
+        .map(|a| a.iter().filter_map(|v| v.as_i64()).collect())
+        .unwrap_or_default()
 }
 
 fn claim_options(game: &Json, phase: &str) -> Vec<String> {
-    let card_list = game.get("cardList").and_then(Value::as_array).cloned().unwrap_or_default();
+    let card_list = game
+        .get("cardList")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
     let mut names = Vec::new();
     for item in &card_list {
         if let Some(name) = item.as_str() {
@@ -107,7 +144,10 @@ fn claim_options(game: &Json, phase: &str) -> Vec<String> {
         }
     }
     if phase == "attack" {
-        let attacker = game.get("attackerIndex").and_then(|v| v.as_u64()).unwrap_or(0);
+        let attacker = game
+            .get("attackerIndex")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
         let blacklist = game
             .pointer(&format!("/players/{attacker}/claimBlacklist"))
             .and_then(Value::as_array)
@@ -120,11 +160,17 @@ fn claim_options(game: &Json, phase: &str) -> Vec<String> {
             .collect();
     }
     if phase == "block" {
-        let Some(attack) = game.pointer("/attackingClaim/claim").and_then(Value::as_str) else {
+        let Some(attack) = game
+            .pointer("/attackingClaim/claim")
+            .and_then(Value::as_str)
+        else {
             return Vec::new();
         };
         let attack_type = card_type(attack);
-        let defender = 1 - game.get("attackerIndex").and_then(|v| v.as_u64()).unwrap_or(0);
+        let defender = 1 - game
+            .get("attackerIndex")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
         let blacklist = game
             .pointer(&format!("/players/{defender}/claimBlacklist"))
             .and_then(Value::as_array)
@@ -145,7 +191,10 @@ fn legal_actions(game: &Json) -> Result<Vec<Json>, CommandRejected> {
         return Ok(Vec::new());
     }
     let player = phasing_player(game)?;
-    let hand = i64_list(game.pointer(&format!("/players/{player}/hand")).unwrap_or(&Value::Null));
+    let hand = i64_list(
+        game.pointer(&format!("/players/{player}/hand"))
+            .unwrap_or(&Value::Null),
+    );
     let phase = game.get("phase").and_then(Value::as_str).unwrap_or("");
     let mut result = Vec::new();
     let options = claim_options(game, phase);
@@ -169,7 +218,10 @@ fn legal_actions(game: &Json) -> Result<Vec<Json>, CommandRejected> {
 
 fn draw_to_limits(game: &mut Json, events: &mut Vec<Json>) {
     for player_index in 0..2 {
-        let limit = game.pointer(&format!("/players/{player_index}/handLimit")).and_then(|v| v.as_i64()).unwrap_or(4);
+        let limit = game
+            .pointer(&format!("/players/{player_index}/handLimit"))
+            .and_then(|v| v.as_i64())
+            .unwrap_or(4);
         let hand_len = game
             .pointer(&format!("/players/{player_index}/hand"))
             .and_then(Value::as_array)
@@ -183,22 +235,35 @@ fn draw_to_limits(game: &mut Json, events: &mut Vec<Json>) {
         let take = needed.min(deck.len());
         let cards: Vec<i64> = deck.drain(..take).collect();
         game["deck"] = json!(deck);
-        if let Some(hand) = game.pointer_mut(&format!("/players/{player_index}/hand")).and_then(Value::as_array_mut) {
+        if let Some(hand) = game
+            .pointer_mut(&format!("/players/{player_index}/hand"))
+            .and_then(Value::as_array_mut)
+        {
             hand.extend(cards.iter().copied().map(|id| json!(id)));
         }
         if !cards.is_empty() {
-            events.push(engine_event("card_drawn", json!({"zone": "deck", "cardIds": cards, "player": player_index})));
+            events.push(engine_event(
+                "card_drawn",
+                json!({"zone": "deck", "cardIds": cards, "player": player_index}),
+            ));
         }
     }
 }
 
 fn start_bout(game: &mut Json, events: &mut Vec<Json>, seed: u64) {
-    let len = game.get("cardList").and_then(Value::as_array).map(|a| a.len()).unwrap_or(0);
+    let len = game
+        .get("cardList")
+        .and_then(Value::as_array)
+        .map(|a| a.len())
+        .unwrap_or(0);
     let mut deck: Vec<i64> = (0..len as i64).collect();
     let mut rng = StdRng::seed_from_u64(seed);
     deck.shuffle(&mut rng);
     game["deck"] = json!(deck);
-    events.push(engine_event("deck_shuffled", json!({"cardIds": game["deck"].clone()})));
+    events.push(engine_event(
+        "deck_shuffled",
+        json!({"cardIds": game["deck"].clone()}),
+    ));
     game["lastAttackPassed"] = json!(false);
     game["discard"] = json!([]);
     game["attackingClaim"] = Value::Null;
@@ -206,15 +271,26 @@ fn start_bout(game: &mut Json, events: &mut Vec<Json>, seed: u64) {
     game["nextAttackerIndexOverride"] = json!([]);
     game["pickPhaseEffects"] = json!([]);
     for player in 0..2 {
-        if let Some(obj) = game.pointer_mut(&format!("/players/{player}")).and_then(Value::as_object_mut) {
+        if let Some(obj) = game
+            .pointer_mut(&format!("/players/{player}"))
+            .and_then(Value::as_object_mut)
+        {
             obj.insert("hand".into(), json!([]));
             obj.insert("handLimit".into(), json!(4));
             obj.insert("claimBlacklist".into(), json!([]));
             obj.insert("lastAttackingClaim".into(), Value::Null);
         }
     }
-    let winner = game.get("boutWinners").and_then(Value::as_array).and_then(|a| a.last()).and_then(|v| v.as_i64());
-    let attacker = if let Some(winner) = winner { 1 - winner } else { 0 };
+    let winner = game
+        .get("boutWinners")
+        .and_then(Value::as_array)
+        .and_then(|a| a.last())
+        .and_then(|v| v.as_i64());
+    let attacker = if let Some(winner) = winner {
+        1 - winner
+    } else {
+        0
+    };
     game["attackerIndex"] = json!(attacker);
     game["players"][attacker as usize]["cakes"] = json!(3);
     game["players"][(1 - attacker) as usize]["cakes"] = json!(4);
@@ -223,7 +299,10 @@ fn start_bout(game: &mut Json, events: &mut Vec<Json>, seed: u64) {
         "bout_started",
         json!({"attackerIndex": attacker, "cakesAfter": [game["players"][0]["cakes"], game["players"][1]["cakes"]]}),
     ));
-    events.push(engine_event("phase_changed", json!({"player": attacker, "phase": "attack"})));
+    events.push(engine_event(
+        "phase_changed",
+        json!({"player": attacker, "phase": "attack"}),
+    ));
     draw_to_limits(game, events);
 }
 
@@ -233,9 +312,14 @@ fn finish_game(game: &mut Json, winner: i64, events: &mut Vec<Json>) {
 }
 
 fn end_bout(game: &mut Json, winner: i64, events: &mut Vec<Json>, seed: u64) {
-    if let Some(a) = game["boutWinners"].as_array_mut() { a.push(json!(winner)) }
+    if let Some(a) = game["boutWinners"].as_array_mut() {
+        a.push(json!(winner))
+    }
     events.push(engine_event("bout_ended", json!({"winner": winner})));
-    let rounds = game.pointer("/config/roundsToWin").and_then(|v| v.as_i64()).unwrap_or(3);
+    let rounds = game
+        .pointer("/config/roundsToWin")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(3);
     let wins = game
         .get("boutWinners")
         .and_then(Value::as_array)
@@ -252,12 +336,23 @@ fn advance_attacker(game: &mut Json, events: &mut Vec<Json>) {
     let override_next = game
         .get("nextAttackerIndexOverride")
         .and_then(Value::as_array)
-        .and_then(|a| if a.is_empty() { None } else { Some(a[0].clone()) });
+        .and_then(|a| {
+            if a.is_empty() {
+                None
+            } else {
+                Some(a[0].clone())
+            }
+        });
     if let Some(next) = override_next {
-        if let Some(a) = game["nextAttackerIndexOverride"].as_array_mut() { a.remove(0); }
+        if let Some(a) = game["nextAttackerIndexOverride"].as_array_mut() {
+            a.remove(0);
+        }
         game["attackerIndex"] = next;
     } else {
-        let current = game.get("attackerIndex").and_then(|v| v.as_i64()).unwrap_or(0);
+        let current = game
+            .get("attackerIndex")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         game["attackerIndex"] = json!(1 - current);
     }
     game["phase"] = json!("attack");
@@ -269,13 +364,19 @@ fn advance_attacker(game: &mut Json, events: &mut Vec<Json>) {
 }
 
 fn transfer_cakes(game: &mut Json, from: usize, to: usize, amount: i64, events: &mut Vec<Json>) {
-    let have = game.pointer(&format!("/players/{from}/cakes")).and_then(|v| v.as_i64()).unwrap_or(0);
+    let have = game
+        .pointer(&format!("/players/{from}/cakes"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
     let amount = amount.clamp(0, have);
     if amount <= 0 {
         return;
     }
     game["players"][from]["cakes"] = json!(have - amount);
-    let dest = game.pointer(&format!("/players/{to}/cakes")).and_then(|v| v.as_i64()).unwrap_or(0);
+    let dest = game
+        .pointer(&format!("/players/{to}/cakes"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
     game["players"][to]["cakes"] = json!(dest + amount);
     events.push(engine_event(
         "cakes_transferred",
@@ -284,14 +385,24 @@ fn transfer_cakes(game: &mut Json, from: usize, to: usize, amount: i64, events: 
 }
 
 fn discard_claims(game: &mut Json, events: &mut Vec<Json>) {
-    for (field, pile) in [("attackingClaim", "attack_pile"), ("blockingClaim", "block_pile")] {
-        let Some(ids) = game.pointer(&format!("/{field}/cardIds")).and_then(Value::as_array).cloned() else {
+    for (field, pile) in [
+        ("attackingClaim", "attack_pile"),
+        ("blockingClaim", "block_pile"),
+    ] {
+        let Some(ids) = game
+            .pointer(&format!("/{field}/cardIds"))
+            .and_then(Value::as_array)
+            .cloned()
+        else {
             continue;
         };
         if let Some(discard) = game.get_mut("discard").and_then(Value::as_array_mut) {
             discard.extend(ids.iter().cloned());
         }
-        events.push(engine_event("card_discarded", json!({"cardIds": ids, "zone": pile})));
+        events.push(engine_event(
+            "card_discarded",
+            json!({"cardIds": ids, "zone": pile}),
+        ));
         game[field] = Value::Null;
     }
 }
@@ -300,9 +411,19 @@ fn resolve_pass(game: &mut Json, events: &mut Vec<Json>, seed: u64) -> Result<()
     let current = phasing_player(game)?;
     events.push(engine_event("pass_made", json!({"player": current})));
     if game.get("attackingClaim").is_none_or(Value::is_null) {
-        if game.get("lastAttackPassed").and_then(Value::as_bool).unwrap_or(false) {
-            let a = game.pointer("/players/0/cakes").and_then(|v| v.as_i64()).unwrap_or(0);
-            let b = game.pointer("/players/1/cakes").and_then(|v| v.as_i64()).unwrap_or(0);
+        if game
+            .get("lastAttackPassed")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+        {
+            let a = game
+                .pointer("/players/0/cakes")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
+            let b = game
+                .pointer("/players/1/cakes")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
             end_bout(game, if a > b { 0 } else { 1 }, events, seed);
             return Ok(());
         }
@@ -311,24 +432,44 @@ fn resolve_pass(game: &mut Json, events: &mut Vec<Json>, seed: u64) -> Result<()
         return Ok(());
     }
     game["lastAttackPassed"] = json!(false);
-    let attack_name = game.pointer("/attackingClaim/claim").and_then(Value::as_str).unwrap_or("").to_string();
-    let damage = attack_damage(&attack_name).ok_or_else(|| CommandRejected::new("Attacking claim is not an attacker"))?;
-    let attack_len = game.pointer("/attackingClaim/cardIds").and_then(Value::as_array).map(|a| a.len()).unwrap_or(0) as i64;
+    let attack_name = game
+        .pointer("/attackingClaim/claim")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let damage = attack_damage(&attack_name)
+        .ok_or_else(|| CommandRejected::new("Attacking claim is not an attacker"))?;
+    let attack_len = game
+        .pointer("/attackingClaim/cardIds")
+        .and_then(Value::as_array)
+        .map(|a| a.len())
+        .unwrap_or(0) as i64;
     let mut effective = attack_len;
     if let Some(block_name) = game.pointer("/blockingClaim/claim").and_then(Value::as_str) {
         if blocks(block_name) != Some(card_type(&attack_name)) {
             return Err(CommandRejected::new("Blocking claim is incompatible"));
         }
-        let block_len = game.pointer("/blockingClaim/cardIds").and_then(Value::as_array).map(|a| a.len()).unwrap_or(0) as i64;
+        let block_len = game
+            .pointer("/blockingClaim/cardIds")
+            .and_then(Value::as_array)
+            .map(|a| a.len())
+            .unwrap_or(0) as i64;
         effective = (effective - block_len).max(0);
     }
-    let attacker = game.get("attackerIndex").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+    let attacker = game
+        .get("attackerIndex")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0) as usize;
     for _ in 0..effective {
         transfer_cakes(game, 1 - attacker, attacker, damage, events);
     }
     discard_claims(game, events);
     for player_index in 0..2 {
-        if game.pointer(&format!("/players/{player_index}/cakes")).and_then(|v| v.as_i64()) == Some(0) {
+        if game
+            .pointer(&format!("/players/{player_index}/cakes"))
+            .and_then(|v| v.as_i64())
+            == Some(0)
+        {
             end_bout(game, (1 - player_index) as i64, events, seed);
             return Ok(());
         }
@@ -337,7 +478,11 @@ fn resolve_pass(game: &mut Json, events: &mut Vec<Json>, seed: u64) -> Result<()
     Ok(())
 }
 
-fn resolve_challenge(game: &mut Json, events: &mut Vec<Json>, seed: u64) -> Result<(), CommandRejected> {
+fn resolve_challenge(
+    game: &mut Json,
+    events: &mut Vec<Json>,
+    seed: u64,
+) -> Result<(), CommandRejected> {
     let claim = if game.get("blockingClaim").is_some_and(|v| !v.is_null()) {
         game.get("blockingClaim").cloned()
     } else {
@@ -352,19 +497,39 @@ fn resolve_challenge(game: &mut Json, events: &mut Vec<Json>, seed: u64) -> Resu
     for card_id in i64_list(claim.get("cardIds").unwrap_or(&Value::Null)) {
         revealed.push(json!({"cardId": card_id, "cardName": card_name(game, card_id)?}));
     }
-    let success = revealed.iter().all(|entry| entry.get("cardName").and_then(Value::as_str) != Some(claimed));
+    let success = revealed
+        .iter()
+        .all(|entry| entry.get("cardName").and_then(Value::as_str) != Some(claimed));
     events.push(engine_event(
         "challenge_made",
         json!({"challenger": challenger, "claimedCard": claimed, "success": success, "revealedCards": revealed}),
     ));
-    end_bout(game, if success { challenger } else { 1 - challenger }, events, seed);
+    end_bout(
+        game,
+        if success { challenger } else { 1 - challenger },
+        events,
+        seed,
+    );
     Ok(())
 }
 
-fn make_claim(game: &mut Json, player: usize, action: &Json, events: &mut Vec<Json>) -> Result<(), CommandRejected> {
-    let indices = action.get("handIndices").and_then(Value::as_array).cloned().unwrap_or_default();
+fn make_claim(
+    game: &mut Json,
+    player: usize,
+    action: &Json,
+    events: &mut Vec<Json>,
+) -> Result<(), CommandRejected> {
+    let indices = action
+        .get("handIndices")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
     let claim = action.get("claim").and_then(Value::as_str).unwrap_or("");
-    if indices.is_empty() || indices.iter().any(|v| v.is_boolean() || v.as_i64().is_none()) {
+    if indices.is_empty()
+        || indices
+            .iter()
+            .any(|v| v.is_boolean() || v.as_i64().is_none())
+    {
         return Err(CommandRejected::new("claim requires non-empty handIndices"));
     }
     let nums: Vec<i64> = indices.iter().filter_map(|v| v.as_i64()).collect();
@@ -375,8 +540,14 @@ fn make_claim(game: &mut Json, player: usize, action: &Json, events: &mut Vec<Js
     if !claim_options(game, phase).iter().any(|n| n == claim) {
         return Err(CommandRejected::new("Claiming card type is not allowed"));
     }
-    let hand = i64_list(game.pointer(&format!("/players/{player}/hand")).unwrap_or(&Value::Null));
-    if nums.iter().any(|index| *index < 0 || *index as usize >= hand.len()) {
+    let hand = i64_list(
+        game.pointer(&format!("/players/{player}/hand"))
+            .unwrap_or(&Value::Null),
+    );
+    if nums
+        .iter()
+        .any(|index| *index < 0 || *index as usize >= hand.len())
+    {
         return Err(CommandRejected::new("Played card is not in hand"));
     }
     let card_ids: Vec<i64> = nums.iter().map(|index| hand[*index as usize]).collect();
@@ -401,13 +572,25 @@ fn make_claim(game: &mut Json, player: usize, action: &Json, events: &mut Vec<Js
     } else {
         return Err(CommandRejected::new("Both claims are already set"));
     }
-    events.push(engine_event("claim_made", json!({"pile": pile, "player": player, "claim": claim, "cardIds": card_ids})));
+    events.push(engine_event(
+        "claim_made",
+        json!({"pile": pile, "player": player, "claim": claim, "cardIds": card_ids}),
+    ));
     let next_player = phasing_player(game)?;
-    events.push(engine_event("phase_changed", json!({"player": next_player, "phase": game["phase"]})));
+    events.push(engine_event(
+        "phase_changed",
+        json!({"player": next_player, "phase": game["phase"]}),
+    ));
     Ok(())
 }
 
-fn apply_action(game: &mut Json, actor: &str, action: &Json, events: &mut Vec<Json>, seed: u64) -> Result<(), CommandRejected> {
+fn apply_action(
+    game: &mut Json,
+    actor: &str,
+    action: &Json,
+    events: &mut Vec<Json>,
+    seed: u64,
+) -> Result<(), CommandRejected> {
     let kind = action.get("type").and_then(Value::as_str).unwrap_or("");
     if kind.is_empty() {
         return Err(CommandRejected::new("action.type is required"));
@@ -417,7 +600,10 @@ fn apply_action(game: &mut Json, actor: &str, action: &Json, events: &mut Vec<Js
         return Err(CommandRejected::new("Not the phasing player's turn"));
     }
     let legal = legal_actions(game)?;
-    if !legal.iter().any(|item| item.get("type").and_then(Value::as_str) == Some(kind)) {
+    if !legal
+        .iter()
+        .any(|item| item.get("type").and_then(Value::as_str) == Some(kind))
+    {
         return Err(CommandRejected::new(format!("Illegal action: {kind}")));
     }
     match kind {
@@ -438,10 +624,18 @@ fn apply_action(game: &mut Json, actor: &str, action: &Json, events: &mut Vec<Js
 
 fn debug_scenario(scenario_id: &str) -> Result<Json, CommandRejected> {
     let fixture = match scenario_id {
-        "attack-phase" => json!({"playerHand": ["archer", "scientist", "soldier", "archer", "wizard"], "opponentHand": ["archer", "soldier", "wizard"], "attackPile": ["archer", "archer"], "blockPile": [], "deckTop": ["soldier", "wizard", "archer", "scientist"], "deckCount": 12, "discardCount": 3}),
-        "block-phase" => json!({"playerHand": ["soldier", "wizard", "archer"], "opponentHand": ["archer", "scientist", "soldier", "wizard"], "attackPile": ["archer", "archer"], "blockPile": ["soldier", "soldier"], "deckTop": ["wizard", "archer", "scientist", "soldier"], "deckCount": 8, "discardCount": 5}),
-        "stacked" => json!({"playerHand": ["archer", "archer", "archer", "soldier", "soldier", "wizard", "scientist"], "opponentHand": ["archer", "soldier", "wizard", "scientist", "archer"], "attackPile": ["archer", "archer", "archer"], "blockPile": ["soldier", "soldier", "soldier"], "deckTop": ["wizard", "scientist", "archer", "soldier"], "deckCount": 4, "discardCount": 10}),
-        "empty" => json!({"playerHand": [], "opponentHand": [], "attackPile": [], "blockPile": [], "deckTop": [], "deckCount": 0, "discardCount": 0}),
+        "attack-phase" => {
+            json!({"playerHand": ["archer", "scientist", "soldier", "archer", "wizard"], "opponentHand": ["archer", "soldier", "wizard"], "attackPile": ["archer", "archer"], "blockPile": [], "deckTop": ["soldier", "wizard", "archer", "scientist"], "deckCount": 12, "discardCount": 3})
+        }
+        "block-phase" => {
+            json!({"playerHand": ["soldier", "wizard", "archer"], "opponentHand": ["archer", "scientist", "soldier", "wizard"], "attackPile": ["archer", "archer"], "blockPile": ["soldier", "soldier"], "deckTop": ["wizard", "archer", "scientist", "soldier"], "deckCount": 8, "discardCount": 5})
+        }
+        "stacked" => {
+            json!({"playerHand": ["archer", "archer", "archer", "soldier", "soldier", "wizard", "scientist"], "opponentHand": ["archer", "soldier", "wizard", "scientist", "archer"], "attackPile": ["archer", "archer", "archer"], "blockPile": ["soldier", "soldier", "soldier"], "deckTop": ["wizard", "scientist", "archer", "soldier"], "deckCount": 4, "discardCount": 10})
+        }
+        "empty" => {
+            json!({"playerHand": [], "opponentHand": [], "attackPile": [], "blockPile": [], "deckTop": [], "deckCount": 0, "discardCount": 0})
+        }
         _ => return Err(CommandRejected::new("Unknown Cake Duel debug scenario")),
     };
     let mut next_id = 1000i64;
@@ -469,8 +663,14 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             if actor != "player" && actor != "agent" {
                 return Err(CommandRejected::new("Unknown actor"));
             }
-            if actor == "agent" && state.get("game").is_some_and(|g| g.is_object() && g.get("gameEnded").is_none_or(Value::is_null)) {
-                return Err(CommandRejected::new("A duel is already in progress — only the player may start a new one"));
+            if actor == "agent"
+                && state
+                    .get("game")
+                    .is_some_and(|g| g.is_object() && g.get("gameEnded").is_none_or(Value::is_null))
+            {
+                return Err(CommandRejected::new(
+                    "A duel is already in progress — only the player may start a new one",
+                ));
             }
             let difficulty = match cmd.get("difficulty") {
                 Some(value) => value.as_str(),
@@ -480,10 +680,14 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                 },
             };
             let Some(difficulty) = difficulty else {
-                return Err(CommandRejected::new("difficulty must be soldier, wizard, or assassin"));
+                return Err(CommandRejected::new(
+                    "difficulty must be soldier, wizard, or assassin",
+                ));
             };
             if !matches!(difficulty, "soldier" | "wizard" | "assassin") {
-                return Err(CommandRejected::new("difficulty must be soldier, wizard, or assassin"));
+                return Err(CommandRejected::new(
+                    "difficulty must be soldier, wizard, or assassin",
+                ));
             }
             let seed = now_ms();
             let settings = json!({"difficulty": difficulty, "roundsToWin": 3, "seed": seed});
@@ -516,7 +720,10 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                 "cardList": BASE_CARDS,
                 "config": config,
             });
-            let mut events = vec![engine_event("game_started", json!({"cardList": game["cardList"], "config": config}))];
+            let mut events = vec![engine_event(
+                "game_started",
+                json!({"cardList": game["cardList"], "config": config}),
+            )];
             start_bout(&mut game, &mut events, seed as u64);
             state["settings"] = settings;
             state["config"] = config;
@@ -535,7 +742,14 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             if actor != "player" {
                 return Err(CommandRejected::new("Only player may reset"));
             }
-            for key in ["config", "game", "tutorial", "lastError", "debugScenarioId", "debugScenario"] {
+            for key in [
+                "config",
+                "game",
+                "tutorial",
+                "lastError",
+                "debugScenarioId",
+                "debugScenario",
+            ] {
                 state[key] = Value::Null;
             }
             Ok(ReducerResult::ok(state, json!({"success": true})))
@@ -549,7 +763,11 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             };
             state["debugScenarioId"] = json!(scenario_id);
             state["debugScenario"] = debug_scenario(scenario_id)?;
-            Ok(ReducerResult::new(state, json!({"success": true}), vec![json!({"type": "debug_scenario_loaded", "scenarioId": scenario_id})]))
+            Ok(ReducerResult::new(
+                state,
+                json!({"success": true}),
+                vec![json!({"type": "debug_scenario_loaded", "scenarioId": scenario_id})],
+            ))
         }
         "debugSetDealtCardGuarantee" => {
             if actor != "player" {
@@ -564,9 +782,18 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             if game.get("gameEnded").is_some_and(|v| !v.is_null()) {
                 return Err(CommandRejected::new("Game already ended"));
             }
-            let seed = state.pointer("/settings/seed").and_then(|v| v.as_u64()).unwrap_or(1);
+            let seed = state
+                .pointer("/settings/seed")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(1);
             let mut events = Vec::new();
-            apply_action(&mut game, actor, cmd.get("action").unwrap_or(&Value::Null), &mut events, seed)?;
+            apply_action(
+                &mut game,
+                actor,
+                cmd.get("action").unwrap_or(&Value::Null),
+                &mut events,
+                seed,
+            )?;
             if let Some(winner) = game.pointer("/gameEnded/winner").and_then(|v| v.as_i64()) {
                 events.push(json!({"type": "game_outcome", "outcome": if winner == 0 { "win" } else { "loss" }}));
             }
@@ -574,7 +801,9 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             state["lastError"] = Value::Null;
             Ok(ReducerResult::new(state, json!({"success": true}), events))
         }
-        _ => Err(CommandRejected::new(format!("Unknown Cake Duel command: {command_type}"))),
+        _ => Err(CommandRejected::new(format!(
+            "Unknown Cake Duel command: {command_type}"
+        ))),
     }
 }
 
@@ -587,26 +816,46 @@ pub fn agent_next_command(state: &Json) -> Option<Json> {
         return None;
     }
     let legal = legal_actions(game).ok()?;
-    if let Some(claim) = legal.iter().find(|item| item.get("type").and_then(Value::as_str) == Some("claim")) {
+    if let Some(claim) = legal
+        .iter()
+        .find(|item| item.get("type").and_then(Value::as_str) == Some("claim"))
+    {
         let hand = i64_list(game.pointer("/players/1/hand").unwrap_or(&Value::Null));
-        let options = claim.get("claimFrom").and_then(Value::as_array).cloned().unwrap_or_default();
+        let options = claim
+            .get("claimFrom")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
         for (index, card_id) in hand.iter().enumerate() {
             if let Ok(name) = card_name(game, *card_id) {
-                if options.iter().any(|opt| opt.as_str() == Some(name.as_str())) {
-                    return Some(json!({"type": "play", "action": {"type": "claim", "handIndices": [index], "claim": name}}));
+                if options
+                    .iter()
+                    .any(|opt| opt.as_str() == Some(name.as_str()))
+                {
+                    return Some(
+                        json!({"type": "play", "action": {"type": "claim", "handIndices": [index], "claim": name}}),
+                    );
                 }
             }
         }
         if !hand.is_empty() {
             if let Some(name) = options.first().and_then(Value::as_str) {
-                return Some(json!({"type": "play", "action": {"type": "claim", "handIndices": [0], "claim": name}}));
+                return Some(
+                    json!({"type": "play", "action": {"type": "claim", "handIndices": [0], "claim": name}}),
+                );
             }
         }
     }
-    if legal.iter().any(|item| item.get("type").and_then(Value::as_str) == Some("pass")) {
+    if legal
+        .iter()
+        .any(|item| item.get("type").and_then(Value::as_str) == Some("pass"))
+    {
         return Some(json!({"type": "play", "action": {"type": "pass"}}));
     }
-    if legal.iter().any(|item| item.get("type").and_then(Value::as_str) == Some("challenge")) {
+    if legal
+        .iter()
+        .any(|item| item.get("type").and_then(Value::as_str) == Some("challenge"))
+    {
         return Some(json!({"type": "play", "action": {"type": "challenge"}}));
     }
     None
@@ -627,7 +876,9 @@ fn python_equals_int(value: Option<&Value>, expected: i64) -> bool {
     value.is_some_and(|value| {
         value.as_i64() == Some(expected)
             || value.as_f64() == Some(expected as f64)
-            || value.as_bool().is_some_and(|boolean| i64::from(boolean) == expected)
+            || value
+                .as_bool()
+                .is_some_and(|boolean| i64::from(boolean) == expected)
     })
 }
 
@@ -666,9 +917,17 @@ mod tests {
             .as_array()
             .unwrap()
             .iter()
-            .map(|id| game["cardList"][id.as_u64().unwrap() as usize].as_str().unwrap())
+            .map(|id| {
+                game["cardList"][id.as_u64().unwrap() as usize]
+                    .as_str()
+                    .unwrap()
+            })
             .collect();
-        let claim = names.iter().copied().find(|name| matches!(*name, "soldier" | "archer" | "wizard")).unwrap_or("soldier");
+        let claim = names
+            .iter()
+            .copied()
+            .find(|name| matches!(*name, "soldier" | "archer" | "wizard"))
+            .unwrap_or("soldier");
         let hand_index = names.iter().position(|name| *name == claim).unwrap_or(0);
         let state = reduce(
             &state,
@@ -677,10 +936,16 @@ mod tests {
         )
         .unwrap()
         .state;
-        assert_eq!(state.pointer("/game/phase").and_then(Value::as_str), Some("block"));
+        assert_eq!(
+            state.pointer("/game/phase").and_then(Value::as_str),
+            Some("block")
+        );
         let command = agent_next_command(&state).expect("agent should respond");
         let state = reduce(&state, "agent", &command).unwrap().state;
-        assert!(matches!(state.pointer("/game/phase").and_then(Value::as_str), Some("review" | "attack")));
+        assert!(matches!(
+            state.pointer("/game/phase").and_then(Value::as_str),
+            Some("review" | "attack")
+        ));
     }
 
     #[test]
@@ -716,21 +981,33 @@ mod tests {
             )
             .unwrap();
             assert_eq!(result.result, json!({"success": true}));
-            assert_eq!(result.events, vec![json!({"type": "debug_scenario_loaded", "scenarioId": scenario_id})]);
+            assert_eq!(
+                result.events,
+                vec![json!({"type": "debug_scenario_loaded", "scenarioId": scenario_id})]
+            );
             let state = result.state;
             let scenario = &state["debugScenario"];
             assert_eq!(state["debugScenarioId"], scenario_id);
             assert_eq!(scenario["playerHand"].as_array().unwrap().len(), counts[0]);
-            assert_eq!(scenario["opponentHand"].as_array().unwrap().len(), counts[1]);
+            assert_eq!(
+                scenario["opponentHand"].as_array().unwrap().len(),
+                counts[1]
+            );
             assert_eq!(scenario["attackPile"].as_array().unwrap().len(), counts[2]);
             assert_eq!(scenario["blockPile"].as_array().unwrap().len(), counts[3]);
             assert_eq!(scenario["deckCount"], counts[4]);
             assert_eq!(scenario["discardCount"], counts[5]);
-            let ids: Vec<_> = ["playerHand", "opponentHand", "attackPile", "blockPile", "deckTop"]
-                .into_iter()
-                .flat_map(|key| scenario[key].as_array().unwrap())
-                .map(|entity| entity["entityId"].as_i64().unwrap())
-                .collect();
+            let ids: Vec<_> = [
+                "playerHand",
+                "opponentHand",
+                "attackPile",
+                "blockPile",
+                "deckTop",
+            ]
+            .into_iter()
+            .flat_map(|key| scenario[key].as_array().unwrap())
+            .map(|entity| entity["entityId"].as_i64().unwrap())
+            .collect();
             assert_eq!(ids, (1000..1000 + ids.len() as i64).collect::<Vec<_>>());
         }
     }
@@ -759,23 +1036,49 @@ mod tests {
         .state;
         let command = agent_next_command(&state).expect("agent should make blocking claim");
         state = reduce(&state, "agent", &command).unwrap().state;
-        assert_eq!(state.pointer("/game/phase").and_then(Value::as_str), Some("review"));
-        state = reduce(&state, "player", &json!({"type": "play", "action": {"type": "pass"}})).unwrap().state;
-        assert_eq!(state.pointer("/game/phase").and_then(Value::as_str), Some("attack"));
-        assert_eq!(state.pointer("/game/attackerIndex").and_then(Value::as_u64), Some(1));
+        assert_eq!(
+            state.pointer("/game/phase").and_then(Value::as_str),
+            Some("review")
+        );
+        state = reduce(
+            &state,
+            "player",
+            &json!({"type": "play", "action": {"type": "pass"}}),
+        )
+        .unwrap()
+        .state;
+        assert_eq!(
+            state.pointer("/game/phase").and_then(Value::as_str),
+            Some("attack")
+        );
+        assert_eq!(
+            state.pointer("/game/attackerIndex").and_then(Value::as_u64),
+            Some(1)
+        );
 
         let recovery = recovery_command(&state).unwrap();
-        assert_eq!(recovery, json!({"type": "play", "action": {"type": "pass"}}));
+        assert_eq!(
+            recovery,
+            json!({"type": "play", "action": {"type": "pass"}})
+        );
         state = reduce(&state, "agent", &recovery).unwrap().state;
-        assert_eq!(state.pointer("/game/phase").and_then(Value::as_str), Some("attack"));
-        assert_eq!(state.pointer("/game/attackerIndex").and_then(Value::as_u64), Some(0));
+        assert_eq!(
+            state.pointer("/game/phase").and_then(Value::as_str),
+            Some("attack")
+        );
+        assert_eq!(
+            state.pointer("/game/attackerIndex").and_then(Value::as_u64),
+            Some(0)
+        );
     }
 
     #[test]
     fn cakeduel_recovery_matches_python_truthiness_and_integer_comparison() {
-        let empty_ended_game = json!({"game": {"gameEnded": {}, "phase": "attack", "attackerIndex": 1}});
+        let empty_ended_game =
+            json!({"game": {"gameEnded": {}, "phase": "attack", "attackerIndex": 1}});
         assert!(recovery_command(&empty_ended_game).is_some());
-        let ended_game = json!({"game": {"gameEnded": true, "phase": "attack", "attackerIndex": 1}});
+        let ended_game =
+            json!({"game": {"gameEnded": true, "phase": "attack", "attackerIndex": 1}});
         assert_eq!(recovery_command(&ended_game), None);
         let missing_attacker = json!({"game": {"phase": "block"}});
         assert_eq!(recovery_command(&missing_attacker), None);

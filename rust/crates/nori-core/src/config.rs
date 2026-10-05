@@ -3,7 +3,9 @@
 /// Host-provided environment lookup (`std::env::var` locally, Worker
 /// vars/secrets at the edge). Blank values count as unset.
 pub fn read_env(lookup: &dyn Fn(&str) -> Option<String>, key: &str) -> Option<String> {
-    lookup(key).map(|v| v.trim().to_string()).filter(|v| !v.is_empty())
+    lookup(key)
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
 }
 
 /// Server default LLM credentials (Python `backend/core/config.py`).
@@ -33,15 +35,20 @@ impl ServerAi {
         let defaults = Self::default();
         Self {
             openai_api_key: read_env(lookup, "OPENAI_API_KEY").unwrap_or_default(),
-            openai_base_url: read_env(lookup, "OPENAI_BASE_URL").unwrap_or(defaults.openai_base_url),
+            openai_base_url: read_env(lookup, "OPENAI_BASE_URL")
+                .unwrap_or(defaults.openai_base_url),
             openai_model: read_env(lookup, "OPENAI_MODEL").unwrap_or(defaults.openai_model),
             anthropic_api_key: read_env(lookup, "ANTHROPIC_API_KEY").unwrap_or_default(),
-            anthropic_model: read_env(lookup, "ANTHROPIC_MODEL").unwrap_or(defaults.anthropic_model),
+            anthropic_model: read_env(lookup, "ANTHROPIC_MODEL")
+                .unwrap_or(defaults.anthropic_model),
         }
     }
 }
 
 /// Truthy flag parsing shared by `DEBUG`, `NORI_DISABLE_LIVE_PACK`, ...
 pub fn env_flag(value: Option<&str>) -> bool {
-    matches!(value.map(|v| v.trim().to_ascii_lowercase()).as_deref(), Some("1" | "true" | "yes" | "on"))
+    matches!(
+        value.map(|v| v.trim().to_ascii_lowercase()).as_deref(),
+        Some("1" | "true" | "yes" | "on")
+    )
 }

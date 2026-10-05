@@ -12,9 +12,16 @@ use serde_json::Value;
 /// Decode one client text frame. `Err` holds the error frame to send back on
 /// the same socket (the connection stays open).
 pub fn decode_frame(raw: &str) -> Result<Json, Json> {
-    let message: Json = serde_json::from_str(raw).map_err(|_| protocol::error_message("bad_request", "Invalid JSON", None, None, None))?;
+    let message: Json = serde_json::from_str(raw)
+        .map_err(|_| protocol::error_message("bad_request", "Invalid JSON", None, None, None))?;
     if !message.is_object() {
-        return Err(protocol::error_message("bad_request", "message must be an object", None, None, None));
+        return Err(protocol::error_message(
+            "bad_request",
+            "message must be an object",
+            None,
+            None,
+            None,
+        ));
     }
     Ok(message)
 }
@@ -27,7 +34,11 @@ fn is_player_chat_dispatch(message: &Json) -> bool {
     message.get("type").and_then(Value::as_str) == Some("dispatch")
         && message.get("cartridgeId").and_then(Value::as_str) == Some("chat")
         && message.get("actor").and_then(Value::as_str) == Some("player")
-        && message.get("cmd").and_then(|c| c.get("type")).and_then(Value::as_str) == Some("playerMessage")
+        && message
+            .get("cmd")
+            .and_then(|c| c.get("type"))
+            .and_then(Value::as_str)
+            == Some("playerMessage")
 }
 
 /// Remove `noriAiConfig` / `noriTtsConfig` from a player chat dispatch before
@@ -39,8 +50,14 @@ pub fn take_secrets(message: &mut Json) -> Secrets {
     let Some(object) = message.as_object_mut() else {
         return Secrets::default();
     };
-    let ai = object.remove("noriAiConfig").filter(Value::is_object).map(|raw| crate::llm::sanitize_ai_config(&raw));
-    let tts = object.remove("noriTtsConfig").filter(Value::is_object).map(|raw| crate::tts::sanitize_tts_config(&raw));
+    let ai = object
+        .remove("noriAiConfig")
+        .filter(Value::is_object)
+        .map(|raw| crate::llm::sanitize_ai_config(&raw));
+    let tts = object
+        .remove("noriTtsConfig")
+        .filter(Value::is_object)
+        .map(|raw| crate::tts::sanitize_tts_config(&raw));
     Secrets { ai, tts }
 }
 

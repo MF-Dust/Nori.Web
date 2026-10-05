@@ -53,12 +53,16 @@ pub fn is_int(value: &Value) -> bool {
 }
 
 pub fn as_i64(value: &Value) -> Option<i64> {
-    value.as_i64().or_else(|| value.as_u64().and_then(|n| i64::try_from(n).ok()))
+    value
+        .as_i64()
+        .or_else(|| value.as_u64().and_then(|n| i64::try_from(n).ok()))
 }
 
 pub fn as_nonneg(value: &Value) -> Option<u64> {
     match value {
-        Value::Number(n) => n.as_u64().or_else(|| n.as_i64().and_then(|v| u64::try_from(v).ok())),
+        Value::Number(n) => n
+            .as_u64()
+            .or_else(|| n.as_i64().and_then(|v| u64::try_from(v).ok())),
         _ => None,
     }
 }
@@ -92,7 +96,9 @@ fn write_canonical(out: &mut String, value: &Value) {
         Value::Bool(true) => out.push_str("true"),
         Value::Bool(false) => out.push_str("false"),
         Value::Number(n) => out.push_str(&n.to_string()),
-        Value::String(s) => out.push_str(&serde_json::to_string(s).unwrap_or_else(|_| "\"\"".into())),
+        Value::String(s) => {
+            out.push_str(&serde_json::to_string(s).unwrap_or_else(|_| "\"\"".into()))
+        }
         Value::Array(items) => {
             out.push('[');
             for (i, item) in items.iter().enumerate() {
@@ -141,5 +147,7 @@ pub fn token_urlsafe(nbytes: usize) -> String {
 
 /// Random UUID v4 string (randomness via `rand`, which also works on wasm32).
 pub fn uuid4() -> String {
-    uuid::Builder::from_random_bytes(rand::random()).into_uuid().to_string()
+    uuid::Builder::from_random_bytes(rand::random())
+        .into_uuid()
+        .to_string()
 }

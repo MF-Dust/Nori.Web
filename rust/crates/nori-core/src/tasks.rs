@@ -54,68 +54,199 @@ pub struct Task {
 }
 
 enum Kind {
-    ChatReply { user_text: String, secrets: Secrets, stage: u8, flow: Option<Box<crate::llm::ReplyFlow>> },
-    Speak { operation_id: String, message_id: String, text: String, tts: Option<Json>, stage: u8, flow: Option<Box<crate::tts::SynthFlow>>, frames: VecDeque<Vec<u8>> },
-    EnsureProgress { operation_id: String, stage: u8 },
-    SettleChat { operation_id: String, stage: u8 },
-    AgentTurns { cartridge_id: String, turns: u8, slept: bool },
-    PictionaryNext { stage: u8 },
-    Probe { flow: Box<Probe>, stage: u8 },
+    ChatReply {
+        user_text: String,
+        secrets: Secrets,
+        stage: u8,
+        flow: Option<Box<crate::llm::ReplyFlow>>,
+    },
+    Speak {
+        operation_id: String,
+        message_id: String,
+        text: String,
+        tts: Option<Json>,
+        stage: u8,
+        flow: Option<Box<crate::tts::SynthFlow>>,
+        frames: VecDeque<Vec<u8>>,
+    },
+    EnsureProgress {
+        operation_id: String,
+        stage: u8,
+    },
+    SettleChat {
+        operation_id: String,
+        stage: u8,
+    },
+    AgentTurns {
+        cartridge_id: String,
+        turns: u8,
+        slept: bool,
+    },
+    PictionaryNext {
+        stage: u8,
+    },
+    Probe {
+        flow: Box<Probe>,
+        stage: u8,
+    },
 }
 
 pub(crate) enum Probe {
     /// `nori.ai.test`: the flow is built on first poll (needs server config).
-    Ai { payload: Json, flow: Option<crate::llm::ProbeFlow>, cartridge_id: Json, request_id: Json },
+    Ai {
+        payload: Json,
+        flow: Option<crate::llm::ProbeFlow>,
+        cartridge_id: Json,
+        request_id: Json,
+    },
     /// `nori.tts.test`.
-    Tts { flow: crate::tts::SynthFlow, cartridge_id: Json, request_id: Json },
+    Tts {
+        flow: crate::tts::SynthFlow,
+        cartridge_id: Json,
+        request_id: Json,
+    },
 }
 
 impl std::fmt::Debug for Task {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Task").field("kind", &self.label()).field("world_id", &self.world_id).field("pacing", &self.pacing).finish()
+        f.debug_struct("Task")
+            .field("kind", &self.label())
+            .field("world_id", &self.world_id)
+            .field("pacing", &self.pacing)
+            .finish()
     }
 }
 
 impl Task {
     fn new(world: &World, pacing: Pacing, kind: Kind) -> Self {
-        Task { world_id: world.world_id.clone(), pacing, pending: VecDeque::new(), kind }
+        Task {
+            world_id: world.world_id.clone(),
+            pacing,
+            pending: VecDeque::new(),
+            kind,
+        }
     }
 
     pub fn chat_reply(world: &World, pacing: Pacing, user_text: String, secrets: Secrets) -> Self {
-        Self::new(world, pacing, Kind::ChatReply { user_text, secrets, stage: 0, flow: None })
+        Self::new(
+            world,
+            pacing,
+            Kind::ChatReply {
+                user_text,
+                secrets,
+                stage: 0,
+                flow: None,
+            },
+        )
     }
 
     pub fn settle_chat(world: &World, pacing: Pacing, operation_id: String) -> Self {
-        Self::new(world, pacing, Kind::SettleChat { operation_id, stage: 0 })
+        Self::new(
+            world,
+            pacing,
+            Kind::SettleChat {
+                operation_id,
+                stage: 0,
+            },
+        )
     }
 
     pub fn agent_turns(world: &World, pacing: Pacing, cartridge_id: String) -> Self {
-        Self::new(world, pacing, Kind::AgentTurns { cartridge_id, turns: 0, slept: false })
+        Self::new(
+            world,
+            pacing,
+            Kind::AgentTurns {
+                cartridge_id,
+                turns: 0,
+                slept: false,
+            },
+        )
     }
 
     pub fn pictionary_next(world: &World, pacing: Pacing) -> Self {
         Self::new(world, pacing, Kind::PictionaryNext { stage: 0 })
     }
 
-    fn speak(world: &World, pacing: Pacing, operation_id: String, message_id: String, text: String, tts: Option<Json>) -> Self {
-        Self::new(world, pacing, Kind::Speak { operation_id, message_id, text, tts, stage: 0, flow: None, frames: VecDeque::new() })
+    fn speak(
+        world: &World,
+        pacing: Pacing,
+        operation_id: String,
+        message_id: String,
+        text: String,
+        tts: Option<Json>,
+    ) -> Self {
+        Self::new(
+            world,
+            pacing,
+            Kind::Speak {
+                operation_id,
+                message_id,
+                text,
+                tts,
+                stage: 0,
+                flow: None,
+                frames: VecDeque::new(),
+            },
+        )
     }
 
     fn ensure_progress(world: &World, pacing: Pacing, operation_id: String) -> Self {
-        Self::new(world, pacing, Kind::EnsureProgress { operation_id, stage: 0 })
+        Self::new(
+            world,
+            pacing,
+            Kind::EnsureProgress {
+                operation_id,
+                stage: 0,
+            },
+        )
     }
 
     /// Python `ai_event_bridge` `nori.ai.test`: probe the provider and reply
     /// `nori.ai.test.result` on the requesting socket.
-    pub fn ai_test(world: &World, pacing: Pacing, payload: Json, cartridge_id: Json, request_id: Json) -> Self {
-        Self::new(world, pacing, Kind::Probe { flow: Box::new(Probe::Ai { payload, flow: None, cartridge_id, request_id }), stage: 0 })
+    pub fn ai_test(
+        world: &World,
+        pacing: Pacing,
+        payload: Json,
+        cartridge_id: Json,
+        request_id: Json,
+    ) -> Self {
+        Self::new(
+            world,
+            pacing,
+            Kind::Probe {
+                flow: Box::new(Probe::Ai {
+                    payload,
+                    flow: None,
+                    cartridge_id,
+                    request_id,
+                }),
+                stage: 0,
+            },
+        )
     }
 
     /// Python `ai_event_bridge` `nori.tts.test`: synthesize and reply
     /// `nori.tts.audio` / `nori.tts.error` on the requesting socket.
-    pub fn tts_test(world: &World, pacing: Pacing, payload: &Json, cartridge_id: Json, request_id: Json) -> Self {
+    pub fn tts_test(
+        world: &World,
+        pacing: Pacing,
+        payload: &Json,
+        cartridge_id: Json,
+        request_id: Json,
+    ) -> Self {
         let flow = crate::tts::test_flow(payload);
-        Self::new(world, pacing, Kind::Probe { flow: Box::new(Probe::Tts { flow, cartridge_id, request_id }), stage: 0 })
+        Self::new(
+            world,
+            pacing,
+            Kind::Probe {
+                flow: Box::new(Probe::Tts {
+                    flow,
+                    cartridge_id,
+                    request_id,
+                }),
+                stage: 0,
+            },
+        )
     }
 
     /// Agent-turn loops are deduplicated per cartridge (Python `_agent_tasks`).
@@ -140,7 +271,12 @@ impl Task {
 
     /// Advance the task. `input` carries the result of the previous
     /// [`Step::Http`] and must be `None` otherwise.
-    pub fn poll(&mut self, world: &mut World, server_ai: &ServerAi, input: Option<HttpResult>) -> Step {
+    pub fn poll(
+        &mut self,
+        world: &mut World,
+        server_ai: &ServerAi,
+        input: Option<HttpResult>,
+    ) -> Step {
         let mut input = input;
         loop {
             let step = match self.pending.pop_front() {
@@ -159,7 +295,12 @@ impl Task {
         }
     }
 
-    fn advance(&mut self, world: &mut World, server_ai: &ServerAi, input: Option<HttpResult>) -> Step {
+    fn advance(
+        &mut self,
+        world: &mut World,
+        server_ai: &ServerAi,
+        input: Option<HttpResult>,
+    ) -> Step {
         // A reset replaced the world; Python's orphaned coroutine would keep
         // mutating the old object, which nobody observes any more.
         if world.world_id != self.world_id {
@@ -168,14 +309,42 @@ impl Task {
         let pacing = self.pacing;
         let pending = &mut self.pending;
         match &mut self.kind {
-            Kind::ChatReply { user_text, secrets, stage, flow } => {
-                poll_chat_reply(world, pacing, server_ai, user_text, secrets, stage, flow, input, pending)
-            }
-            Kind::Speak { operation_id, message_id, text, tts, stage, flow, frames } => {
-                poll_speak(world, operation_id, message_id, text, tts, stage, flow, frames, input, pending)
-            }
-            Kind::EnsureProgress { operation_id, stage } => poll_ensure_progress(world, operation_id, stage, pending),
-            Kind::SettleChat { operation_id, stage } => {
+            Kind::ChatReply {
+                user_text,
+                secrets,
+                stage,
+                flow,
+            } => poll_chat_reply(
+                world, pacing, server_ai, user_text, secrets, stage, flow, input, pending,
+            ),
+            Kind::Speak {
+                operation_id,
+                message_id,
+                text,
+                tts,
+                stage,
+                flow,
+                frames,
+            } => poll_speak(
+                world,
+                operation_id,
+                message_id,
+                text,
+                tts,
+                stage,
+                flow,
+                frames,
+                input,
+                pending,
+            ),
+            Kind::EnsureProgress {
+                operation_id,
+                stage,
+            } => poll_ensure_progress(world, operation_id, stage, pending),
+            Kind::SettleChat {
+                operation_id,
+                stage,
+            } => {
                 if *stage == 0 && pacing == Pacing::Local {
                     *stage = 1;
                     return Step::Sleep(100);
@@ -183,7 +352,11 @@ impl Task {
                 pending.push_back(Step::Done);
                 Step::Broadcast(settle(world, operation_id))
             }
-            Kind::AgentTurns { cartridge_id, turns, slept } => poll_agent_turns(world, pacing, cartridge_id, turns, slept),
+            Kind::AgentTurns {
+                cartridge_id,
+                turns,
+                slept,
+            } => poll_agent_turns(world, pacing, cartridge_id, turns, slept),
             Kind::PictionaryNext { stage } => {
                 if *stage == 0 && pacing == Pacing::Local {
                     *stage = 1;
@@ -234,8 +407,16 @@ fn poll_chat_reply(
     }
     let outcome = if *stage == 1 {
         *stage = 2;
-        let history = world.cartridge("chat").map(|c| chat::history(&c.state)).unwrap_or_default();
-        let mut reply_flow = Box::new(crate::llm::ReplyFlow::new(user_text, &history, secrets.ai.as_ref(), server_ai));
+        let history = world
+            .cartridge("chat")
+            .map(|c| chat::history(&c.state))
+            .unwrap_or_default();
+        let mut reply_flow = Box::new(crate::llm::ReplyFlow::new(
+            user_text,
+            &history,
+            secrets.ai.as_ref(),
+            server_ai,
+        ));
         let step = reply_flow.start();
         *flow = Some(reply_flow);
         step
@@ -257,17 +438,43 @@ fn poll_chat_reply(
         }
     }
     pending.push_back(Step::Broadcast(messages));
-    let text_mode = world.cartridge("chat").map(|c| chat::presentation_mode(&c.state) == "text").unwrap_or(false);
-    let tts_enabled = secrets.tts.as_ref().and_then(|c| c.get("enabled")).and_then(Value::as_bool) == Some(true);
+    let text_mode = world
+        .cartridge("chat")
+        .map(|c| chat::presentation_mode(&c.state) == "text")
+        .unwrap_or(false);
+    let tts_enabled = secrets
+        .tts
+        .as_ref()
+        .and_then(|c| c.get("enabled"))
+        .and_then(Value::as_bool)
+        == Some(true);
     if pacing == Pacing::Edge && text_mode {
         // Text is visible after ingestBlock; only an enabled TTS still speaks.
         if tts_enabled {
-            pending.push_back(Step::Spawn(Task::speak(world, pacing, operation_id.clone(), message_id, reply.text.clone(), secrets.tts.clone())));
+            pending.push_back(Step::Spawn(Task::speak(
+                world,
+                pacing,
+                operation_id.clone(),
+                message_id,
+                reply.text.clone(),
+                secrets.tts.clone(),
+            )));
         }
         pending.push_back(Step::Broadcast(settle(world, &operation_id)));
     } else {
-        pending.push_back(Step::Spawn(Task::speak(world, pacing, operation_id.clone(), message_id, reply.text.clone(), secrets.tts.clone())));
-        pending.push_back(Step::Spawn(Task::ensure_progress(world, pacing, operation_id)));
+        pending.push_back(Step::Spawn(Task::speak(
+            world,
+            pacing,
+            operation_id.clone(),
+            message_id,
+            reply.text.clone(),
+            secrets.tts.clone(),
+        )));
+        pending.push_back(Step::Spawn(Task::ensure_progress(
+            world,
+            pacing,
+            operation_id,
+        )));
     }
     pending.push_back(Step::Done);
     pending.pop_front().unwrap_or(Step::Done)
@@ -291,7 +498,11 @@ fn poll_speak(
     const SYNTH: u8 = 1;
     let step = match *stage {
         START => {
-            let enabled = tts.as_ref().and_then(|c| c.get("enabled")).and_then(Value::as_bool) == Some(true);
+            let enabled = tts
+                .as_ref()
+                .and_then(|c| c.get("enabled"))
+                .and_then(Value::as_bool)
+                == Some(true);
             match tts.as_ref().filter(|_| enabled) {
                 // Python `tts_world_bridge`: configured TTS replaces the tones.
                 Some(config) => {
@@ -315,7 +526,18 @@ fn poll_speak(
     };
     match step {
         Some(FlowStep::Http(request)) => return Step::Http(request),
-        Some(FlowStep::Done(result)) => return speech_outcome(world, operation_id, message_id, text, stage, frames, result, pending),
+        Some(FlowStep::Done(result)) => {
+            return speech_outcome(
+                world,
+                operation_id,
+                message_id,
+                text,
+                stage,
+                frames,
+                result,
+                pending,
+            )
+        }
         None => {}
     }
     // Python sleeps 0.14 s after every frame, including the last one.
@@ -328,7 +550,14 @@ fn poll_speak(
     }
 }
 
-fn start_tones(world: &mut World, operation_id: &str, message_id: &str, text: &str, stage: &mut u8, frames: &mut VecDeque<Vec<u8>>) {
+fn start_tones(
+    world: &mut World,
+    operation_id: &str,
+    message_id: &str,
+    text: &str,
+    stage: &mut u8,
+    frames: &mut VecDeque<Vec<u8>>,
+) {
     frames.extend(world.stream_fallback(operation_id, message_id, text));
     *stage = 2;
 }
@@ -356,23 +585,40 @@ fn speech_outcome(
     Step::Broadcast(vec![message])
 }
 
-fn poll_ensure_progress(world: &mut World, operation_id: &str, stage: &mut u8, pending: &mut VecDeque<Step>) -> Step {
+fn poll_ensure_progress(
+    world: &mut World,
+    operation_id: &str,
+    stage: &mut u8,
+    pending: &mut VecDeque<Step>,
+) -> Step {
     // Python `_ensure_chat_progress` (kept at the edge too).
     let through = |world: &World, key: &str| -> Option<i64> {
-        let op = world.cartridge("chat")?.state.get("operations")?.get(operation_id)?;
+        let op = world
+            .cartridge("chat")?
+            .state
+            .get("operations")?
+            .get(operation_id)?;
         if op.is_null() || op.as_object().is_some_and(|m| m.is_empty()) {
             return None;
         }
         Some(op.get(key).and_then(Value::as_i64).unwrap_or(-1))
     };
-    let dispatch = |world: &mut World, cmd: Json| world.dispatch_internal("chat", "agent", &cmd).map(|(_, m)| m).unwrap_or_default();
+    let dispatch = |world: &mut World, cmd: Json| {
+        world
+            .dispatch_internal("chat", "agent", &cmd)
+            .map(|(_, m)| m)
+            .unwrap_or_default()
+    };
     *stage += 1;
     match *stage {
         1 => Step::Sleep(1100),
         2 => {
             pending.push_back(Step::Sleep(450));
             if through(world, "startedThrough").is_some_and(|v| v < 0) {
-                Step::Broadcast(dispatch(world, json!({"type": "audioStarted", "operationId": operation_id, "blockId": 0})))
+                Step::Broadcast(dispatch(
+                    world,
+                    json!({"type": "audioStarted", "operationId": operation_id, "blockId": 0}),
+                ))
             } else {
                 Step::Broadcast(Vec::new())
             }
@@ -380,7 +626,10 @@ fn poll_ensure_progress(world: &mut World, operation_id: &str, stage: &mut u8, p
         3 => {
             pending.push_back(Step::Sleep(100));
             if through(world, "presentedThrough").is_some_and(|v| v < 0) {
-                Step::Broadcast(dispatch(world, json!({"type": "audioDone", "operationId": operation_id, "blockId": 0})))
+                Step::Broadcast(dispatch(
+                    world,
+                    json!({"type": "audioDone", "operationId": operation_id, "blockId": 0}),
+                ))
             } else {
                 Step::Broadcast(Vec::new())
             }
@@ -393,7 +642,13 @@ fn poll_ensure_progress(world: &mut World, operation_id: &str, stage: &mut u8, p
     }
 }
 
-fn poll_agent_turns(world: &mut World, pacing: Pacing, cartridge_id: &str, turns: &mut u8, slept: &mut bool) -> Step {
+fn poll_agent_turns(
+    world: &mut World,
+    pacing: Pacing,
+    cartridge_id: &str,
+    turns: &mut u8,
+    slept: &mut bool,
+) -> Step {
     if *turns >= AGENT_TURN_LIMIT {
         return Step::Done;
     }
@@ -410,26 +665,49 @@ fn poll_agent_turns(world: &mut World, pacing: Pacing, cartridge_id: &str, turns
     }
 }
 
-fn poll_probe(world: &mut World, server_ai: &ServerAi, probe: &mut Probe, stage: &mut u8, input: Option<HttpResult>) -> Step {
+fn poll_probe(
+    world: &mut World,
+    server_ai: &ServerAi,
+    probe: &mut Probe,
+    stage: &mut u8,
+    input: Option<HttpResult>,
+) -> Step {
     use crate::provider::FlowStep;
     let first = *stage == 0;
     *stage = 1;
     match probe {
-        Probe::Ai { payload, flow, cartridge_id, request_id } => {
+        Probe::Ai {
+            payload,
+            flow,
+            cartridge_id,
+            request_id,
+        } => {
             let step = match (flow.as_mut(), input) {
-                (None, _) if first => flow.insert(crate::llm::test_flow(payload, server_ai)).start(),
+                (None, _) if first => flow
+                    .insert(crate::llm::test_flow(payload, server_ai))
+                    .start(),
                 (Some(probe_flow), Some(result)) => probe_flow.resume(result),
                 _ => return Step::Done,
             };
             match step {
                 FlowStep::Http(request) => Step::Http(request),
                 FlowStep::Done(result) => {
-                    let message = crate::world::event_message(world, "nori.ai.test.result", result, cartridge_id.clone(), request_id.clone());
+                    let message = crate::world::event_message(
+                        world,
+                        "nori.ai.test.result",
+                        result,
+                        cartridge_id.clone(),
+                        request_id.clone(),
+                    );
                     Step::Direct(message)
                 }
             }
         }
-        Probe::Tts { flow, cartridge_id, request_id } => {
+        Probe::Tts {
+            flow,
+            cartridge_id,
+            request_id,
+        } => {
             let step = match input {
                 None if first => flow.start(),
                 Some(result) => flow.resume(result),
@@ -439,7 +717,13 @@ fn poll_probe(world: &mut World, server_ai: &ServerAi, probe: &mut Probe, stage:
                 FlowStep::Http(request) => Step::Http(request),
                 FlowStep::Done(result) => {
                     let (channel, payload) = crate::tts::test_result_payload(&result);
-                    Step::Direct(crate::world::event_message(world, channel, payload, cartridge_id.clone(), request_id.clone()))
+                    Step::Direct(crate::world::event_message(
+                        world,
+                        channel,
+                        payload,
+                        cartridge_id.clone(),
+                        request_id.clone(),
+                    ))
                 }
             }
         }

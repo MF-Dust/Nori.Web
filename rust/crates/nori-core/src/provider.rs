@@ -38,9 +38,18 @@ pub struct HttpRequest {
 }
 
 impl HttpRequest {
-    pub fn post_json(url: impl Into<String>, headers: Vec<(String, String)>, body: &serde_json::Value, timeout_ms: u64, max_response_bytes: usize) -> Self {
+    pub fn post_json(
+        url: impl Into<String>,
+        headers: Vec<(String, String)>,
+        body: &serde_json::Value,
+        timeout_ms: u64,
+        max_response_bytes: usize,
+    ) -> Self {
         let mut headers = headers;
-        if !headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("content-type")) {
+        if !headers
+            .iter()
+            .any(|(k, _)| k.eq_ignore_ascii_case("content-type"))
+        {
             headers.push(("Content-Type".into(), "application/json".into()));
         }
         Self {

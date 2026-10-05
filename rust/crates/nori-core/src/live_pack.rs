@@ -90,7 +90,10 @@ impl LivePack {
             return false;
         }
         let mut inner = self.write();
-        inner.data.get_or_insert_with(Map::new).insert(key.to_string(), value);
+        inner
+            .data
+            .get_or_insert_with(Map::new)
+            .insert(key.to_string(), value);
         if key == "browser_pages" {
             inner.page_index = None;
         }
@@ -110,7 +113,10 @@ impl LivePack {
     }
 
     pub fn section_loaded(&self, key: &str) -> bool {
-        self.read().data.as_ref().is_some_and(|data| data.contains_key(key))
+        self.read()
+            .data
+            .as_ref()
+            .is_some_and(|data| data.contains_key(key))
     }
 
     /// Whether at least the archive core is resident.
@@ -127,7 +133,11 @@ impl LivePack {
             Some(Value::Array(items)) => items.len().to_string(),
             _ => "lazy".into(),
         };
-        let fact_count = p.get("facts").and_then(Value::as_object).map(Map::len).unwrap_or(0);
+        let fact_count = p
+            .get("facts")
+            .and_then(Value::as_object)
+            .map(Map::len)
+            .unwrap_or(0);
         format!(
             "live pack: mails={} files={} threads={} messages={} pages={} facts={} world={}",
             count("mail_artifacts"),
@@ -141,7 +151,12 @@ impl LivePack {
     }
 
     pub fn world_id(&self) -> Option<String> {
-        self.read().data.as_ref()?.get("world_id")?.as_str().map(str::to_string)
+        self.read()
+            .data
+            .as_ref()?
+            .get("world_id")?
+            .as_str()
+            .map(str::to_string)
     }
 
     /// Read-only view of a resident section without copying it.
@@ -213,7 +228,12 @@ impl LivePack {
 
     pub fn chip_status(&self) -> Option<Value> {
         let inner = self.read();
-        inner.data.as_ref()?.get("chip_status").filter(|v| v.is_object()).cloned()
+        inner
+            .data
+            .as_ref()?
+            .get("chip_status")
+            .filter(|v| v.is_object())
+            .cloned()
     }
 
     fn core_object(&self, key: &str) -> Map<String, Value> {
@@ -237,7 +257,10 @@ fn alias_text(value: &Value) -> Option<String> {
 
 fn build_page_index(data: Option<&Map<String, Value>>) -> HashMap<String, usize> {
     let mut index = HashMap::new();
-    let Some(pages) = data.and_then(|d| d.get("browser_pages")).and_then(Value::as_array) else {
+    let Some(pages) = data
+        .and_then(|d| d.get("browser_pages"))
+        .and_then(Value::as_array)
+    else {
         return index;
     };
     for (position, entry) in pages.iter().enumerate() {
@@ -271,7 +294,9 @@ fn urlsplit(url: &str) -> Option<Split<'_>> {
         let candidate = &rest[..colon];
         let valid = colon > 0
             && candidate.as_bytes()[0].is_ascii_alphabetic()
-            && candidate.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'+' | b'-' | b'.'));
+            && candidate
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'+' | b'-' | b'.'));
         if valid {
             scheme = candidate.to_ascii_lowercase();
             rest = &rest[colon + 1..];
@@ -294,7 +319,12 @@ fn urlsplit(url: &str) -> Option<Split<'_>> {
         Some((path, query)) => (path, query),
         None => (rest, ""),
     };
-    Some(Split { scheme, netloc, path, query })
+    Some(Split {
+        scheme,
+        netloc,
+        path,
+        query,
+    })
 }
 
 fn collapse_slashes(text: &str) -> String {
@@ -317,7 +347,10 @@ fn collapse_slashes(text: &str) -> String {
 /// Scheme/query-preserving canonicalization used by local and R2 indexes.
 pub fn canonical_lookup(url: &str) -> String {
     let raw = url.trim();
-    let cleaned: String = raw.chars().filter(|c| !matches!(c, '\t' | '\r' | '\n')).collect();
+    let cleaned: String = raw
+        .chars()
+        .filter(|c| !matches!(c, '\t' | '\r' | '\n'))
+        .collect();
     let Some(parts) = urlsplit(&cleaned) else {
         return raw.to_lowercase();
     };
@@ -325,8 +358,18 @@ pub fn canonical_lookup(url: &str) -> String {
         return collapse_slashes(raw).to_lowercase();
     }
     let path = collapse_slashes(parts.path);
-    let query = if parts.query.is_empty() { String::new() } else { format!("?{}", parts.query) };
-    format!("{}://{}{}{}", parts.scheme, parts.netloc.to_lowercase(), path, query)
+    let query = if parts.query.is_empty() {
+        String::new()
+    } else {
+        format!("?{}", parts.query)
+    };
+    format!(
+        "{}://{}{}{}",
+        parts.scheme,
+        parts.netloc.to_lowercase(),
+        path,
+        query
+    )
 }
 
 /// The forgiving URL variants used by the archived browser.
@@ -335,9 +378,17 @@ pub fn lookup_variants(url: &str) -> BTreeSet<String> {
     let trimmed = c.trim_end_matches('/').to_string();
     let mut variants = BTreeSet::from([c.clone(), trimmed.clone(), format!("{trimmed}/")]);
     if let Some((_, rest)) = c.split_once("://") {
-        let swapped = if c.starts_with("http://") { format!("https://{rest}") } else { format!("http://{rest}") };
+        let swapped = if c.starts_with("http://") {
+            format!("https://{rest}")
+        } else {
+            format!("http://{rest}")
+        };
         let swapped_trimmed = swapped.trim_end_matches('/').to_string();
-        variants.extend([swapped, swapped_trimmed.clone(), format!("{swapped_trimmed}/")]);
+        variants.extend([
+            swapped,
+            swapped_trimmed.clone(),
+            format!("{swapped_trimmed}/"),
+        ]);
     }
     variants.retain(|item| !item.is_empty());
     variants
@@ -350,7 +401,10 @@ mod tests {
 
     #[test]
     fn canonicalizes_like_python_urlsplit() {
-        assert_eq!(canonical_lookup(" HTTPS://Example.COM//a//b?q=1#frag "), "https://example.com/a/b?q=1");
+        assert_eq!(
+            canonical_lookup(" HTTPS://Example.COM//a//b?q=1#frag "),
+            "https://example.com/a/b?q=1"
+        );
         assert_eq!(canonical_lookup("Example.com//Foo"), "example.com/foo");
         assert_eq!(canonical_lookup("http://[::1"), "http://[::1");
     }
@@ -358,7 +412,12 @@ mod tests {
     #[test]
     fn variants_cover_scheme_and_trailing_slash() {
         let variants = lookup_variants("http://a.test/x/");
-        for expected in ["http://a.test/x", "http://a.test/x/", "https://a.test/x", "https://a.test/x/"] {
+        for expected in [
+            "http://a.test/x",
+            "http://a.test/x/",
+            "https://a.test/x",
+            "https://a.test/x/",
+        ] {
             assert!(variants.contains(expected), "{expected}");
         }
     }
@@ -367,7 +426,9 @@ mod tests {
     fn sections_install_lazily_and_pages_resolve() {
         let pack = LivePack::empty();
         assert!(!pack.is_available());
-        assert!(pack.install_core(json!({"world_id": "w", "facts": {"a": 1}, "mail_artifacts": [1]})));
+        assert!(
+            pack.install_core(json!({"world_id": "w", "facts": {"a": 1}, "mail_artifacts": [1]}))
+        );
         assert!(pack.is_available());
         assert!(!pack.section_loaded("mail_artifacts"));
         assert!(pack.summary().contains("mails=lazy"));

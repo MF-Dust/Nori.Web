@@ -247,7 +247,11 @@ async fn etags_cache_rules_ranges_spa_fallback_and_mime_types_match_static_serve
 async fn missing_index_returns_the_static_router_404_body() {
     let public = TempDir::new("empty-public");
     let server = start(config(public.path())).await;
-    let response = Client::builder().no_gzip().no_deflate().build().unwrap()
+    let response = Client::builder()
+        .no_gzip()
+        .no_deflate()
+        .build()
+        .unwrap()
         .get(format!("{}/missing", server.base))
         .send()
         .await

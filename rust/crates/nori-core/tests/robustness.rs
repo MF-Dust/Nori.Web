@@ -7,18 +7,119 @@ use serde_json::{json, Value};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
 const COMMANDS: &[(&str, &[&str])] = &[
-    ("chat", &["playerMessage", "agentMessage", "setPresentationMode", "ingestBlock", "audioStarted", "audioDone", "operationStarted", "operationCompleted", "operationSettled", "applyCut", "nope"]),
-    ("cakeduel", &["startGame", "reset", "debugLoadScenario", "debugSetDealtCardGuarantee", "play", "nope"]),
-    ("codenames", &["startGame", "reset", "restore", "submitClue", "submitGuess", "endTurn", "tutorialLoadStage", "debugLoadScenario", "nope"]),
-    ("chess", &["startGame", "debugLoadScenario", "move", "resign", "offerDraw", "cancelDrawOffer", "respondDraw", "requestTakeback", "cancelTakebackRequest", "respondTakeback", "nope"]),
-    ("pictionary", &["startSession", "startNextRound", "submitStrokeBatch", "submitGuess", "skipRound", "noriRedraw", "forceEndSession", "nope"]),
+    (
+        "chat",
+        &[
+            "playerMessage",
+            "agentMessage",
+            "setPresentationMode",
+            "ingestBlock",
+            "audioStarted",
+            "audioDone",
+            "operationStarted",
+            "operationCompleted",
+            "operationSettled",
+            "applyCut",
+            "nope",
+        ],
+    ),
+    (
+        "cakeduel",
+        &[
+            "startGame",
+            "reset",
+            "debugLoadScenario",
+            "debugSetDealtCardGuarantee",
+            "play",
+            "nope",
+        ],
+    ),
+    (
+        "codenames",
+        &[
+            "startGame",
+            "reset",
+            "restore",
+            "submitClue",
+            "submitGuess",
+            "endTurn",
+            "tutorialLoadStage",
+            "debugLoadScenario",
+            "nope",
+        ],
+    ),
+    (
+        "chess",
+        &[
+            "startGame",
+            "debugLoadScenario",
+            "move",
+            "resign",
+            "offerDraw",
+            "cancelDrawOffer",
+            "respondDraw",
+            "requestTakeback",
+            "cancelTakebackRequest",
+            "respondTakeback",
+            "nope",
+        ],
+    ),
+    (
+        "pictionary",
+        &[
+            "startSession",
+            "startNextRound",
+            "submitStrokeBatch",
+            "submitGuess",
+            "skipRound",
+            "noriRedraw",
+            "forceEndSession",
+            "nope",
+        ],
+    ),
 ];
 
 const FIELDS: &[&str] = &[
-    "text", "mode", "operationId", "messageId", "blockId", "content", "isSpeech", "emotion", "outcome", "actor",
-    "difficulty", "side", "scenarioId", "scenario", "action", "settings", "locale", "seed", "clue", "cellIndex",
-    "cell", "from", "to", "promotion", "accept", "plies", "atMs", "guess", "strokes", "batch", "state", "stage",
-    "stageId", "word", "count", "index", "cards", "card", "target", "presentationMode",
+    "text",
+    "mode",
+    "operationId",
+    "messageId",
+    "blockId",
+    "content",
+    "isSpeech",
+    "emotion",
+    "outcome",
+    "actor",
+    "difficulty",
+    "side",
+    "scenarioId",
+    "scenario",
+    "action",
+    "settings",
+    "locale",
+    "seed",
+    "clue",
+    "cellIndex",
+    "cell",
+    "from",
+    "to",
+    "promotion",
+    "accept",
+    "plies",
+    "atMs",
+    "guess",
+    "strokes",
+    "batch",
+    "state",
+    "stage",
+    "stageId",
+    "word",
+    "count",
+    "index",
+    "cards",
+    "card",
+    "target",
+    "presentationMode",
 ];
 
 fn weird_values() -> Vec<Value> {
@@ -44,7 +145,9 @@ fn weird_values() -> Vec<Value> {
 }
 
 fn no_panic(id: &str, state: &Value, actor: &str, cmd: &Value, pack: &LivePack) {
-    let outcome = catch_unwind(AssertUnwindSafe(|| cartridge::reduce(id, state, actor, cmd, pack)));
+    let outcome = catch_unwind(AssertUnwindSafe(|| {
+        cartridge::reduce(id, state, actor, cmd, pack)
+    }));
     assert!(outcome.is_ok(), "{id} panicked on actor={actor} cmd={cmd}");
 }
 
@@ -69,16 +172,21 @@ fn states(id: &str, pack: &LivePack) -> Vec<Value> {
     let corrupted: Vec<Value> = out
         .iter()
         .flat_map(|state| {
-            let keys: Vec<String> = state.as_object().map(|m| m.keys().cloned().collect()).unwrap_or_default();
+            let keys: Vec<String> = state
+                .as_object()
+                .map(|m| m.keys().cloned().collect())
+                .unwrap_or_default();
             keys.into_iter().flat_map(move |key| {
-                [json!(null), json!(7), json!("s"), json!([]), json!({})].into_iter().map({
-                    let state = state.clone();
-                    move |junk| {
-                        let mut copy = state.clone();
-                        copy[&key] = junk;
-                        copy
-                    }
-                })
+                [json!(null), json!(7), json!("s"), json!([]), json!({})]
+                    .into_iter()
+                    .map({
+                        let state = state.clone();
+                        move |junk| {
+                            let mut copy = state.clone();
+                            copy[&key] = junk;
+                            copy
+                        }
+                    })
             })
         })
         .collect();
@@ -89,13 +197,27 @@ fn states(id: &str, pack: &LivePack) -> Vec<Value> {
 fn sweep(full: bool) {
     let pack = LivePack::empty();
     let values = weird_values();
-    let values: Vec<Value> = if full { values } else { values.into_iter().step_by(3).collect() };
-    let actors: &[&str] = if full { &["player", "agent", "system"] } else { &["player", "agent"] };
+    let values: Vec<Value> = if full {
+        values
+    } else {
+        values.into_iter().step_by(3).collect()
+    };
+    let actors: &[&str] = if full {
+        &["player", "agent", "system"]
+    } else {
+        &["player", "agent"]
+    };
     for (id, commands) in COMMANDS {
         let all_states = states(id, &pack);
         // Light mode: reachable states plus corruptions of the initial state only.
-        let corrupted_initial = all_states.len().min(6 + 5 * all_states[0].as_object().map(|m| m.len()).unwrap_or(0));
-        let chosen: Vec<&Value> = if full { all_states.iter().collect() } else { all_states.iter().take(corrupted_initial).collect() };
+        let corrupted_initial = all_states
+            .len()
+            .min(6 + 5 * all_states[0].as_object().map(|m| m.len()).unwrap_or(0));
+        let chosen: Vec<&Value> = if full {
+            all_states.iter().collect()
+        } else {
+            all_states.iter().take(corrupted_initial).collect()
+        };
         for state in chosen {
             for command in *commands {
                 for actor in actors {

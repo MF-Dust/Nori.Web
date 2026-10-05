@@ -22,7 +22,10 @@ impl Executor {
             .redirect(reqwest::redirect::Policy::none())
             .build()
             .expect("HTTP client");
-        Self { http, server_ai: Arc::new(server_ai) }
+        Self {
+            http,
+            server_ai: Arc::new(server_ai),
+        }
     }
 
     /// Run a task in the background; `origin` receives `Step::Direct`.
@@ -46,7 +49,8 @@ impl Executor {
                 Step::Media(frame) => slot.broadcast_media(frame),
                 Step::Direct(message) => {
                     if let Some(tx) = &origin {
-                        let _ = tx.send(Message::Text(nori_core::protocol::ws_text(&message).into()));
+                        let _ =
+                            tx.send(Message::Text(nori_core::protocol::ws_text(&message).into()));
                     }
                 }
                 Step::Spawn(child) => self.spawn(slot.clone(), child, origin.clone()),
@@ -58,8 +62,12 @@ impl Executor {
     /// Execute a provider request: no redirects, whole-request timeout,
     /// transparent gzip/deflate, body capped at `max_response_bytes`.
     pub async fn perform(&self, request: HttpRequest) -> HttpResult {
-        let method = reqwest::Method::from_bytes(request.method.as_bytes()).unwrap_or(reqwest::Method::GET);
-        let mut builder = self.http.request(method, &request.url).timeout(Duration::from_millis(request.timeout_ms));
+        let method =
+            reqwest::Method::from_bytes(request.method.as_bytes()).unwrap_or(reqwest::Method::GET);
+        let mut builder = self
+            .http
+            .request(method, &request.url)
+            .timeout(Duration::from_millis(request.timeout_ms));
         for (name, value) in &request.headers {
             builder = builder.header(name.as_str(), value.as_str());
         }
@@ -76,7 +84,12 @@ impl Executor {
             .headers()
             .iter()
             .filter(|(name, _)| !matches!(name.as_str(), "content-encoding" | "content-length"))
-            .map(|(name, value)| (name.as_str().to_ascii_lowercase(), value.to_str().unwrap_or("").to_string()))
+            .map(|(name, value)| {
+                (
+                    name.as_str().to_ascii_lowercase(),
+                    value.to_str().unwrap_or("").to_string(),
+                )
+            })
             .collect();
         let cap = nori_core::provider::body_cap(status, request.max_response_bytes);
         let mut body = Vec::new();
@@ -97,6 +110,11 @@ impl Executor {
                 Err(error) => return HttpResult::Network(error.to_string()),
             }
         }
-        HttpResult::Response { status, headers, body, truncated }
+        HttpResult::Response {
+            status,
+            headers,
+            body,
+            truncated,
+        }
     }
 }

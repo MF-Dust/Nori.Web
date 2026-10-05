@@ -6,7 +6,10 @@ use shakmaty::fen::Fen;
 use shakmaty::san::SanPlus;
 use shakmaty::uci::UciMove;
 use shakmaty::zobrist::Zobrist64;
-use shakmaty::{CastlingMode, Chess, Color, EnPassantMode, FromSetup, Move, Position, PositionErrorKinds, Role, Square};
+use shakmaty::{
+    CastlingMode, Chess, Color, EnPassantMode, FromSetup, Move, Position, PositionErrorKinds, Role,
+    Square,
+};
 use std::num::NonZeroU32;
 
 const TUTORIAL: &str = include_str!("../../data/chess_tutorial.json");
@@ -54,14 +57,18 @@ fn parse_role(name: &str) -> Option<Role> {
 }
 
 fn board_from_fen(fen: &str) -> Result<Chess, CommandRejected> {
-    let parsed: Fen = fen.parse().map_err(|err| CommandRejected::new(format!("Invalid stored chess position: {err}")))?;
+    let parsed: Fen = fen
+        .parse()
+        .map_err(|err| CommandRejected::new(format!("Invalid stored chess position: {err}")))?;
     let setup = parsed.into_setup();
     match Chess::from_setup(setup.clone(), CastlingMode::Standard) {
         Ok(pos) => Ok(pos),
         Err(error) => {
             let message = error.to_string();
             if !error.kinds().contains(PositionErrorKinds::OPPOSITE_CHECK) {
-                return Err(CommandRejected::new(format!("Invalid stored chess position: {message}")));
+                return Err(CommandRejected::new(format!(
+                    "Invalid stored chess position: {message}"
+                )));
             }
             // python-chess accepts analysis FENs where the side not to move is in check.
             let mut adjusted = setup.clone();
@@ -72,26 +79,47 @@ fn board_from_fen(fen: &str) -> Result<Chess, CommandRejected> {
             if adjusted.turn == Color::Black && adjusted.fullmoves.get() > 1 {
                 adjusted.fullmoves = NonZeroU32::new(adjusted.fullmoves.get() - 1).unwrap();
             }
-            let mut pos = Chess::from_setup(adjusted, CastlingMode::Standard)
-                .map_err(|_| CommandRejected::new(format!("Invalid stored chess position: {message}")))?;
+            let mut pos = Chess::from_setup(adjusted, CastlingMode::Standard).map_err(|_| {
+                CommandRejected::new(format!("Invalid stored chess position: {message}"))
+            })?;
             let mover = pos.turn();
             let safe_piece = Square::ALL.into_iter().find_map(|square| {
-                pos.board().piece_at(square).filter(|piece| {
-                    piece.color == mover
-                        && (setup.halfmoves == 0 || piece.role != Role::Pawn)
-                        && (piece.role != Role::King
-                            && (piece.role != Role::Rook || !setup.castling_rights.contains(square)))
-                }).map(|piece| (square, piece))
+                pos.board()
+                    .piece_at(square)
+                    .filter(|piece| {
+                        piece.color == mover
+                            && (setup.halfmoves == 0 || piece.role != Role::Pawn)
+                            && (piece.role != Role::King
+                                && (piece.role != Role::Rook
+                                    || !setup.castling_rights.contains(square)))
+                    })
+                    .map(|piece| (square, piece))
             });
-            let (square, piece) = safe_piece.or_else(|| {
-                let king_has_rights = Square::ALL.into_iter().any(|square| {
-                    setup.castling_rights.contains(square)
-                        && pos.board().piece_at(square).is_some_and(|piece| piece.color == mover && piece.role == Role::Rook)
-                });
-                (!king_has_rights)
-                    .then(|| pos.board().king_of(mover).map(|square| (square, shakmaty::Piece { color: mover, role: Role::King })))
-                    .flatten()
-            }).ok_or_else(|| CommandRejected::new(format!("Invalid stored chess position: {message}")))?;
+            let (square, piece) = safe_piece
+                .or_else(|| {
+                    let king_has_rights = Square::ALL.into_iter().any(|square| {
+                        setup.castling_rights.contains(square)
+                            && pos.board().piece_at(square).is_some_and(|piece| {
+                                piece.color == mover && piece.role == Role::Rook
+                            })
+                    });
+                    (!king_has_rights)
+                        .then(|| {
+                            pos.board().king_of(mover).map(|square| {
+                                (
+                                    square,
+                                    shakmaty::Piece {
+                                        color: mover,
+                                        role: Role::King,
+                                    },
+                                )
+                            })
+                        })
+                        .flatten()
+                })
+                .ok_or_else(|| {
+                    CommandRejected::new(format!("Invalid stored chess position: {message}"))
+                })?;
             pos.play_unchecked(Move::Normal {
                 role: piece.role,
                 from: square,
@@ -105,10 +133,18 @@ fn board_from_fen(fen: &str) -> Result<Chess, CommandRejected> {
 }
 
 fn side_for_actor(state: &Json, actor: &str) -> Result<String, CommandRejected> {
-    let player_side = state.pointer("/settings/playerSide").and_then(Value::as_str).unwrap_or("white");
+    let player_side = state
+        .pointer("/settings/playerSide")
+        .and_then(Value::as_str)
+        .unwrap_or("white");
     match actor {
         "player" => Ok(player_side.to_string()),
-        "agent" => Ok(if player_side == "white" { "black" } else { "white" }.into()),
+        "agent" => Ok(if player_side == "white" {
+            "black"
+        } else {
+            "white"
+        }
+        .into()),
         _ => Err(CommandRejected::new("Unknown actor")),
     }
 }
@@ -150,18 +186,31 @@ fn is_seventyfive_moves(pos: &Chess) -> bool {
 
 fn is_fivefold_repetition(pos: &Chess, position_history: &[Zobrist64]) -> bool {
     let current = position_hash(pos);
-    position_history.iter().filter(|&&hash| hash == current).count() >= 5
+    position_history
+        .iter()
+        .filter(|&&hash| hash == current)
+        .count()
+        >= 5
 }
 
 fn can_claim_threefold(pos: &Chess, position_history: &[Zobrist64]) -> bool {
     let current = position_hash(pos);
-    if position_history.iter().filter(|&&hash| hash == current).count() >= 3 {
+    if position_history
+        .iter()
+        .filter(|&&hash| hash == current)
+        .count()
+        >= 3
+    {
         return true;
     }
     pos.legal_moves().into_iter().any(|mv| {
-        pos.clone()
-            .play(mv)
-            .is_ok_and(|next| position_history.iter().filter(|&&hash| hash == position_hash(&next)).count() >= 2)
+        pos.clone().play(mv).is_ok_and(|next| {
+            position_history
+                .iter()
+                .filter(|&&hash| hash == position_hash(&next))
+                .count()
+                >= 2
+        })
     })
 }
 
@@ -173,7 +222,10 @@ fn can_claim_fifty_moves(pos: &Chess) -> bool {
     if pos.halfmoves() >= 99 {
         return legal.into_iter().any(|mv| {
             !mv.is_zeroing()
-                && pos.clone().play(mv).is_ok_and(|next| next.halfmoves() >= 100 && !next.legal_moves().is_empty())
+                && pos
+                    .clone()
+                    .play(mv)
+                    .is_ok_and(|next| next.halfmoves() >= 100 && !next.legal_moves().is_empty())
         });
     }
     false
@@ -193,10 +245,22 @@ fn state_from_board(
     let is_threefold_repetition = can_claim_threefold(pos, position_history);
     let is_fifty_moves = can_claim_fifty_moves(pos);
     let (status, winner) = if pos.is_checkmate() {
-        ("checkmate", Some(if pos.turn() == Color::White { "black" } else { "white" }))
+        (
+            "checkmate",
+            Some(if pos.turn() == Color::White {
+                "black"
+            } else {
+                "white"
+            }),
+        )
     } else if pos.is_stalemate() {
         ("stalemate", Some("draw"))
-    } else if is_insufficient || is_seventyfive_moves || is_fivefold_repetition || is_fifty_moves || is_threefold_repetition {
+    } else if is_insufficient
+        || is_seventyfive_moves
+        || is_fivefold_repetition
+        || is_fifty_moves
+        || is_threefold_repetition
+    {
         ("draw", Some("draw"))
     } else {
         ("playing", None)
@@ -218,7 +282,9 @@ fn state_from_board(
     }
     let fullmove_number = fullmove_number.unwrap_or_else(|| pos.fullmoves().get());
     let fen = Fen::from_position(pos, EnPassantMode::Legal).to_string();
-    let fen = fen.rsplit_once(' ').map_or(fen.clone(), |(prefix, _)| format!("{prefix} {fullmove_number}"));
+    let fen = fen.rsplit_once(' ').map_or(fen.clone(), |(prefix, _)| {
+        format!("{prefix} {fullmove_number}")
+    });
     json!({
         "fen": fen,
         "pgn": pgn.trim(),
@@ -240,7 +306,12 @@ fn state_from_board(
     })
 }
 
-fn make_move(game: &Json, from: &str, to: &str, promotion: Option<&str>) -> Result<(Json, Json), CommandRejected> {
+fn make_move(
+    game: &Json,
+    from: &str,
+    to: &str,
+    promotion: Option<&str>,
+) -> Result<(Json, Json), CommandRejected> {
     let fen = game.get("fen").and_then(Value::as_str).unwrap_or("");
     let pos = board_from_fen(fen)?;
     if Square::from_ascii(from.as_bytes()).is_err() || Square::from_ascii(to.as_bytes()).is_err() {
@@ -252,14 +323,23 @@ fn make_move(game: &Json, from: &str, to: &str, promotion: Option<&str>) -> Resu
         }
     }
     let uci = format!("{from}{to}{}", promotion.unwrap_or(""));
-    let parsed: UciMove = uci.parse().map_err(|_| CommandRejected::new("Invalid move"))?;
-    let mv = parsed.to_move(&pos).map_err(|_| CommandRejected::new("Invalid move"))?;
+    let parsed: UciMove = uci
+        .parse()
+        .map_err(|_| CommandRejected::new("Invalid move"))?;
+    let mv = parsed
+        .to_move(&pos)
+        .map_err(|_| CommandRejected::new("Invalid move"))?;
     if !pos.is_legal(mv) {
         return Err(CommandRejected::new("Invalid move"));
     }
-    let from_sq = Square::from_ascii(from.as_bytes()).map_err(|_| CommandRejected::new("Invalid square"))?;
-    let piece = pos.board().piece_at(from_sq).ok_or_else(|| CommandRejected::new("Invalid move"))?;
-    let to_sq = Square::from_ascii(to.as_bytes()).map_err(|_| CommandRejected::new("Invalid square"))?;
+    let from_sq =
+        Square::from_ascii(from.as_bytes()).map_err(|_| CommandRejected::new("Invalid square"))?;
+    let piece = pos
+        .board()
+        .piece_at(from_sq)
+        .ok_or_else(|| CommandRejected::new("Invalid move"))?;
+    let to_sq =
+        Square::from_ascii(to.as_bytes()).map_err(|_| CommandRejected::new("Invalid square"))?;
     let mut captured = pos.board().piece_at(to_sq);
     if mv.is_en_passant() {
         captured = Some(shakmaty::Piece {
@@ -271,7 +351,11 @@ fn make_move(game: &Json, from: &str, to: &str, promotion: Option<&str>) -> Resu
     let is_castling = mv.is_castle();
     let is_en_passant = mv.is_en_passant();
     let is_promotion = mv.promotion().is_some();
-    let mover = if pos.turn() == Color::White { "white" } else { "black" };
+    let mover = if pos.turn() == Color::White {
+        "white"
+    } else {
+        "black"
+    };
     let previous_hash = position_hash(&pos);
     let fullmove_number = fen
         .split_whitespace()
@@ -279,7 +363,9 @@ fn make_move(game: &Json, from: &str, to: &str, promotion: Option<&str>) -> Resu
         .and_then(|number| number.parse::<u32>().ok())
         .unwrap_or_else(|| pos.fullmoves().get())
         .saturating_add(if pos.turn() == Color::Black { 1 } else { 0 });
-    let next = pos.play(mv).map_err(|_| CommandRejected::new("Invalid move"))?;
+    let next = pos
+        .play(mv)
+        .map_err(|_| CommandRejected::new("Invalid move"))?;
     let position_history = [previous_hash, position_hash(&next)];
     let mut move_info = json!({
         "by": mover,
@@ -301,13 +387,28 @@ fn make_move(game: &Json, from: &str, to: &str, promotion: Option<&str>) -> Resu
         move_info["promotionPiece"] = json!(promotion);
     }
     let mut history = game.get("moveHistory").cloned().unwrap_or(json!([]));
-    if let Some(items) = history.as_array_mut() { items.push(move_info.clone()) }
+    if let Some(items) = history.as_array_mut() {
+        items.push(move_info.clone())
+    }
     let start = game.get("startFen").and_then(Value::as_str).unwrap_or(fen);
-    Ok((state_from_board(&next, &history, start, &position_history, Some(fullmove_number)), move_info))
+    Ok((
+        state_from_board(
+            &next,
+            &history,
+            start,
+            &position_history,
+            Some(fullmove_number),
+        ),
+        move_info,
+    ))
 }
 
 fn undo_plies(game: &Json, plies: usize) -> Result<Json, CommandRejected> {
-    let history = game.get("moveHistory").and_then(Value::as_array).cloned().unwrap_or_default();
+    let history = game
+        .get("moveHistory")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
     if plies < 1 || history.len() < plies {
         return Err(CommandRejected::new("Not enough moves to take back"));
     }
@@ -317,19 +418,37 @@ fn undo_plies(game: &Json, plies: usize) -> Result<Json, CommandRejected> {
     let mut position_history = vec![position_hash(&pos)];
     if let Some(items) = kept.as_array() {
         for item in items {
-            let from = item.pointer("/move/from").and_then(Value::as_str).unwrap_or("");
-            let to = item.pointer("/move/to").and_then(Value::as_str).unwrap_or("");
-            let promo = item.pointer("/move/promotion").and_then(Value::as_str).unwrap_or("");
+            let from = item
+                .pointer("/move/from")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            let to = item
+                .pointer("/move/to")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            let promo = item
+                .pointer("/move/promotion")
+                .and_then(Value::as_str)
+                .unwrap_or("");
             let uci = format!("{from}{to}{promo}");
-            let parsed: UciMove = uci.parse().map_err(|_| CommandRejected::new("Invalid move"))?;
-            let mv = parsed.to_move(&pos).map_err(|_| CommandRejected::new("Invalid move"))?;
+            let parsed: UciMove = uci
+                .parse()
+                .map_err(|_| CommandRejected::new("Invalid move"))?;
+            let mv = parsed
+                .to_move(&pos)
+                .map_err(|_| CommandRejected::new("Invalid move"))?;
             pos.play_unchecked(mv);
             position_history.push(position_hash(&pos));
         }
     }
     let black_moves = kept
         .as_array()
-        .map(|items| items.iter().filter(|item| item.get("by").and_then(Value::as_str) == Some("black")).count() as u32)
+        .map(|items| {
+            items
+                .iter()
+                .filter(|item| item.get("by").and_then(Value::as_str) == Some("black"))
+                .count() as u32
+        })
         .unwrap_or(0);
     let fullmove_number = start
         .split_whitespace()
@@ -337,7 +456,13 @@ fn undo_plies(game: &Json, plies: usize) -> Result<Json, CommandRejected> {
         .and_then(|number| number.parse::<u32>().ok())
         .unwrap_or_else(|| pos.fullmoves().get())
         .saturating_add(black_moves);
-    Ok(state_from_board(&pos, &kept, start, &position_history, Some(fullmove_number)))
+    Ok(state_from_board(
+        &pos,
+        &kept,
+        start,
+        &position_history,
+        Some(fullmove_number),
+    ))
 }
 
 fn game_over_events(game: &Json, player_side: &str) -> Vec<Json> {
@@ -370,7 +495,10 @@ fn settings(previous: &Json, mode: &str, cmd: &Json) -> Result<Json, CommandReje
     if side != "white" && side != "black" {
         return Err(CommandRejected::new("side must be white or black"));
     }
-    if !matches!(difficulty, "sleepy" | "casual" | "normal" | "focused" | "serious") {
+    if !matches!(
+        difficulty,
+        "sleepy" | "casual" | "normal" | "focused" | "serious"
+    ) {
         return Err(CommandRejected::new("Invalid difficulty"));
     }
     let mut next = previous.clone();
@@ -388,13 +516,23 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             if mode != "normal" && mode != "tutorial" {
                 return Err(CommandRejected::new("mode must be normal or tutorial"));
             }
-            if actor == "agent" && state.pointer("/gameState/status").and_then(Value::as_str) == Some("playing") {
-                return Err(CommandRejected::new("A game is already in progress — only the player may start a new one"));
+            if actor == "agent"
+                && state.pointer("/gameState/status").and_then(Value::as_str) == Some("playing")
+            {
+                return Err(CommandRejected::new(
+                    "A game is already in progress — only the player may start a new one",
+                ));
             }
             let settings = settings(state.get("settings").unwrap_or(&json!({})), mode, cmd)?;
             let start = Chess::default();
             let start_fen = Fen::from_position(&start, shakmaty::EnPassantMode::Legal).to_string();
-            let game = state_from_board(&start, &json!([]), &start_fen, &[position_hash(&start)], Some(start.fullmoves().get()));
+            let game = state_from_board(
+                &start,
+                &json!([]),
+                &start_fen,
+                &[position_hash(&start)],
+                Some(start.fullmoves().get()),
+            );
             state["settings"] = settings.clone();
             state["gameState"] = game;
             state["drawOffer"] = Value::Null;
@@ -409,7 +547,9 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             Ok(ReducerResult::new(
                 state,
                 json!({"success": true}),
-                vec![json!({"type": "game_start", "playerSide": settings["playerSide"], "difficulty": settings["difficulty"]})],
+                vec![
+                    json!({"type": "game_start", "playerSide": settings["playerSide"], "difficulty": settings["difficulty"]}),
+                ],
             ))
         }
         "debugLoadScenario" => {
@@ -420,12 +560,33 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             let Some(fixture) = debug_scenarios().get(scenario_id).cloned() else {
                 return Err(CommandRejected::new("Unknown Chess debug scenario"));
             };
-            let start_fen = fixture.get("startFen").and_then(Value::as_str).unwrap_or("");
-            let mut pos = board_from_fen(start_fen).map_err(|_| CommandRejected::new(format!("Invalid debug start position: {start_fen}")))?;
-            let fullmove_number = start_fen.split_whitespace().nth(5).and_then(|number| number.parse::<u32>().ok());
-            let mut game = state_from_board(&pos, &json!([]), start_fen, &[position_hash(&pos)], fullmove_number);
-            let script = fixture.get("script").and_then(Value::as_array).cloned().unwrap_or_default();
-            let start_ply = fixture.get("startPly").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+            let start_fen = fixture
+                .get("startFen")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            let mut pos = board_from_fen(start_fen).map_err(|_| {
+                CommandRejected::new(format!("Invalid debug start position: {start_fen}"))
+            })?;
+            let fullmove_number = start_fen
+                .split_whitespace()
+                .nth(5)
+                .and_then(|number| number.parse::<u32>().ok());
+            let mut game = state_from_board(
+                &pos,
+                &json!([]),
+                start_fen,
+                &[position_hash(&pos)],
+                fullmove_number,
+            );
+            let script = fixture
+                .get("script")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let start_ply = fixture
+                .get("startPly")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0) as usize;
             if start_ply > script.len() {
                 return Err(CommandRejected::new("Invalid debug start ply"));
             }
@@ -434,12 +595,20 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                 if uci.len() != 4 && uci.len() != 5 {
                     return Err(CommandRejected::new("Invalid debug move"));
                 }
-                let promo = if uci.len() == 5 { Some(&uci[4..]) } else { None };
+                let promo = if uci.len() == 5 {
+                    Some(&uci[4..])
+                } else {
+                    None
+                };
                 let (next, mut info) = make_move(&game, &uci[..2], &uci[2..4], promo)?;
                 game = next;
                 if let Some(ms) = step.get("durationMs").and_then(|v| v.as_i64()) {
                     info["durationMs"] = json!(ms);
-                    let len = game.get("moveHistory").and_then(Value::as_array).map(|a| a.len()).unwrap_or(0);
+                    let len = game
+                        .get("moveHistory")
+                        .and_then(Value::as_array)
+                        .map(|a| a.len())
+                        .unwrap_or(0);
                     if len > 0 {
                         game["moveHistory"][len - 1] = info;
                     }
@@ -453,27 +622,45 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
             state["tutorial"] = Value::Null;
             state["debugScenarioId"] = json!(scenario_id);
             state["debugScenario"] = json!({"script": script, "nextPly": start_ply});
-            Ok(ReducerResult::new(state, json!({"success": true}), vec![json!({"type": "debug_scenario_loaded", "scenarioId": scenario_id})]))
+            Ok(ReducerResult::new(
+                state,
+                json!({"success": true}),
+                vec![json!({"type": "debug_scenario_loaded", "scenarioId": scenario_id})],
+            ))
         }
         _ => play_command(&mut state, actor, cmd, command_type),
     }
 }
 
-fn play_command(state: &mut Json, actor: &str, cmd: &Json, command_type: &str) -> Result<ReducerResult, CommandRejected> {
+fn play_command(
+    state: &mut Json,
+    actor: &str,
+    cmd: &Json,
+    command_type: &str,
+) -> Result<ReducerResult, CommandRejected> {
     let Some(game) = state.get("gameState").cloned().filter(|g| g.is_object()) else {
         return Err(CommandRejected::new("Game not started"));
     };
-    let tutorial_id = state.pointer("/tutorial/step").and_then(Value::as_str).map(str::to_string);
+    let tutorial_id = state
+        .pointer("/tutorial/step")
+        .and_then(Value::as_str)
+        .map(str::to_string);
     let guided = tutorial_id.as_deref().is_some_and(|id| id != "free_play");
     let steps = tutorial_steps();
     let tutorial_index = tutorial_id.as_deref().and_then(|id| {
-        steps.as_array().and_then(|items| items.iter().position(|step| step.get("id").and_then(Value::as_str) == Some(id)))
+        steps.as_array().and_then(|items| {
+            items
+                .iter()
+                .position(|step| step.get("id").and_then(Value::as_str) == Some(id))
+        })
     });
     if guided && tutorial_index.is_none() {
         return Err(CommandRejected::new("Unknown tutorial step"));
     }
     if guided && command_type != "move" {
-        return Err(CommandRejected::new("Complete the guided opening before using game actions"));
+        return Err(CommandRejected::new(
+            "Complete the guided opening before using game actions",
+        ));
     }
     match command_type {
         "move" => {
@@ -487,7 +674,10 @@ fn play_command(state: &mut Json, actor: &str, cmd: &Json, command_type: &str) -
             let from = cmd.get("from").and_then(Value::as_str);
             let to = cmd.get("to").and_then(Value::as_str);
             let promotion = cmd.get("promotion");
-            if promotion.is_some() && !promotion.unwrap().is_null() && promotion.and_then(Value::as_str).is_none() {
+            if promotion.is_some()
+                && !promotion.unwrap().is_null()
+                && promotion.and_then(Value::as_str).is_none()
+            {
                 return Err(CommandRejected::new("Invalid move payload"));
             }
             let (Some(from), Some(to)) = (from, to) else {
@@ -505,14 +695,27 @@ fn play_command(state: &mut Json, actor: &str, cmd: &Json, command_type: &str) -
                     return Err(CommandRejected::new("Follow the highlighted tutorial move"));
                 }
             }
-            if let Some(debug) = state.get("debugScenario").filter(|debug| debug.is_object()).cloned() {
+            if let Some(debug) = state
+                .get("debugScenario")
+                .filter(|debug| debug.is_object())
+                .cloned()
+            {
                 let next_ply = debug.get("nextPly").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-                let script = debug.get("script").and_then(Value::as_array).cloned().unwrap_or_default();
+                let script = debug
+                    .get("script")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default();
                 if next_ply < script.len() {
-                    let expected = script[next_ply].get("uci").and_then(Value::as_str).unwrap_or("");
+                    let expected = script[next_ply]
+                        .get("uci")
+                        .and_then(Value::as_str)
+                        .unwrap_or("");
                     let actual = format!("{from}{to}{}", promotion.unwrap_or(""));
                     if actual != expected {
-                        return Err(CommandRejected::new("Follow the loaded debug scenario move"));
+                        return Err(CommandRejected::new(
+                            "Follow the loaded debug scenario move",
+                        ));
                     }
                 }
             }
@@ -528,13 +731,24 @@ fn play_command(state: &mut Json, actor: &str, cmd: &Json, command_type: &str) -
             if let Some(previous) = previous {
                 move_info["durationMs"] = json!((now - previous).max(0));
             }
-            let len = next_game.get("moveHistory").and_then(Value::as_array).map(|a| a.len()).unwrap_or(0);
+            let len = next_game
+                .get("moveHistory")
+                .and_then(Value::as_array)
+                .map(|a| a.len())
+                .unwrap_or(0);
             if len > 0 {
                 next_game["moveHistory"][len - 1] = move_info.clone();
             }
-            if let Some(debug) = state.get_mut("debugScenario").filter(|debug| debug.is_object()) {
+            if let Some(debug) = state
+                .get_mut("debugScenario")
+                .filter(|debug| debug.is_object())
+            {
                 let next_ply = debug.get("nextPly").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-                if let Some(scripted) = debug.get("script").and_then(Value::as_array).and_then(|s| s.get(next_ply)) {
+                if let Some(scripted) = debug
+                    .get("script")
+                    .and_then(Value::as_array)
+                    .and_then(|s| s.get(next_ply))
+                {
                     if let Some(ms) = scripted.get("durationMs").and_then(|v| v.as_i64()) {
                         move_info["durationMs"] = json!(ms);
                         next_game["moveHistory"][len - 1] = move_info.clone();
@@ -569,9 +783,17 @@ fn play_command(state: &mut Json, actor: &str, cmd: &Json, command_type: &str) -
                 state["tutorial"] = json!({"step": step});
                 events.push(json!({"type": "tutorial_step", "step": tutorial_id}));
             }
-            let player_side = state.pointer("/settings/playerSide").and_then(Value::as_str).unwrap_or("white").to_string();
+            let player_side = state
+                .pointer("/settings/playerSide")
+                .and_then(Value::as_str)
+                .unwrap_or("white")
+                .to_string();
             events.extend(game_over_events(&next_game, &player_side));
-            Ok(ReducerResult::new(state.clone(), json!({"success": true, "move": move_info}), events))
+            Ok(ReducerResult::new(
+                state.clone(),
+                json!({"success": true, "move": move_info}),
+                events,
+            ))
         }
         "resign" => {
             if game.get("status").and_then(Value::as_str) != Some("playing") {
@@ -583,17 +805,31 @@ fn play_command(state: &mut Json, actor: &str, cmd: &Json, command_type: &str) -
             state["gameState"]["isCheck"] = json!(false);
             state["gameState"]["isCheckmate"] = json!(false);
             state["gameState"]["isStalemate"] = json!(false);
-            let player_side = state.pointer("/settings/playerSide").and_then(Value::as_str).unwrap_or("white").to_string();
+            let player_side = state
+                .pointer("/settings/playerSide")
+                .and_then(Value::as_str)
+                .unwrap_or("white")
+                .to_string();
             let events = game_over_events(&state["gameState"], &player_side);
-            Ok(ReducerResult::new(state.clone(), json!({"success": true}), events))
+            Ok(ReducerResult::new(
+                state.clone(),
+                json!({"success": true}),
+                events,
+            ))
         }
         "offerDraw" => {
-            if game.get("status").and_then(Value::as_str) != Some("playing") || state.get("drawOffer").is_some_and(|v| !v.is_null()) {
+            if game.get("status").and_then(Value::as_str) != Some("playing")
+                || state.get("drawOffer").is_some_and(|v| !v.is_null())
+            {
                 return Err(CommandRejected::new("Cannot offer a draw"));
             }
             let side = side_for_actor(state, actor)?;
             state["drawOffer"] = json!(side);
-            Ok(ReducerResult::new(state.clone(), json!({"success": true}), vec![json!({"type": "draw_offer", "side": side})]))
+            Ok(ReducerResult::new(
+                state.clone(),
+                json!({"success": true}),
+                vec![json!({"type": "draw_offer", "side": side})],
+            ))
         }
         "cancelDrawOffer" => {
             let side = side_for_actor(state, actor)?;
@@ -601,17 +837,25 @@ fn play_command(state: &mut Json, actor: &str, cmd: &Json, command_type: &str) -
                 return Err(CommandRejected::new("No draw offer from this side"));
             }
             state["drawOffer"] = Value::Null;
-            Ok(ReducerResult::new(state.clone(), json!({"success": true}), vec![json!({"type": "cancel_draw_offer", "side": side})]))
+            Ok(ReducerResult::new(
+                state.clone(),
+                json!({"success": true}),
+                vec![json!({"type": "cancel_draw_offer", "side": side})],
+            ))
         }
         "respondDraw" => {
             let side = side_for_actor(state, actor)?;
-            let offered = state.get("drawOffer").and_then(Value::as_str).map(str::to_string);
+            let offered = state
+                .get("drawOffer")
+                .and_then(Value::as_str)
+                .map(str::to_string);
             let accept = cmd.get("accept").and_then(Value::as_bool);
             if offered.is_none() || offered.as_deref() == Some(side.as_str()) || accept.is_none() {
                 return Err(CommandRejected::new("Invalid draw response"));
             }
             state["drawOffer"] = Value::Null;
-            let mut events = vec![json!({"type": "respond_draw", "respondSide": side, "accept": accept})];
+            let mut events =
+                vec![json!({"type": "respond_draw", "respondSide": side, "accept": accept})];
             if accept == Some(true) {
                 state["gameState"]["status"] = json!("draw");
                 state["gameState"]["winner"] = json!("draw");
@@ -619,20 +863,40 @@ fn play_command(state: &mut Json, actor: &str, cmd: &Json, command_type: &str) -
                 state["gameState"]["isCheck"] = json!(false);
                 state["gameState"]["isCheckmate"] = json!(false);
                 state["gameState"]["isStalemate"] = json!(false);
-                let player_side = state.pointer("/settings/playerSide").and_then(Value::as_str).unwrap_or("white").to_string();
+                let player_side = state
+                    .pointer("/settings/playerSide")
+                    .and_then(Value::as_str)
+                    .unwrap_or("white")
+                    .to_string();
                 events.extend(game_over_events(&state["gameState"], &player_side));
             }
-            Ok(ReducerResult::new(state.clone(), json!({"success": true}), events))
+            Ok(ReducerResult::new(
+                state.clone(),
+                json!({"success": true}),
+                events,
+            ))
         }
         "requestTakeback" => {
             let side = side_for_actor(state, actor)?;
-            let needed = if game.get("turn").and_then(Value::as_str) == Some(side.as_str()) { 2 } else { 1 };
-            let len = game.get("moveHistory").and_then(Value::as_array).map(|a| a.len()).unwrap_or(0);
+            let needed = if game.get("turn").and_then(Value::as_str) == Some(side.as_str()) {
+                2
+            } else {
+                1
+            };
+            let len = game
+                .get("moveHistory")
+                .and_then(Value::as_array)
+                .map(|a| a.len())
+                .unwrap_or(0);
             if state.get("takebackRequest").is_some_and(|v| !v.is_null()) || len < needed {
                 return Err(CommandRejected::new("Cannot request takeback"));
             }
             state["takebackRequest"] = json!(side);
-            Ok(ReducerResult::new(state.clone(), json!({"success": true}), vec![json!({"type": "request_takeback", "side": side})]))
+            Ok(ReducerResult::new(
+                state.clone(),
+                json!({"success": true}),
+                vec![json!({"type": "request_takeback", "side": side})],
+            ))
         }
         "cancelTakebackRequest" => {
             let side = side_for_actor(state, actor)?;
@@ -640,20 +904,39 @@ fn play_command(state: &mut Json, actor: &str, cmd: &Json, command_type: &str) -
                 return Err(CommandRejected::new("No takeback request from this side"));
             }
             state["takebackRequest"] = Value::Null;
-            Ok(ReducerResult::new(state.clone(), json!({"success": true}), vec![json!({"type": "cancel_takeback_request", "side": side})]))
+            Ok(ReducerResult::new(
+                state.clone(),
+                json!({"success": true}),
+                vec![json!({"type": "cancel_takeback_request", "side": side})],
+            ))
         }
         "respondTakeback" => {
             let side = side_for_actor(state, actor)?;
-            let requested = state.get("takebackRequest").and_then(Value::as_str).map(str::to_string);
+            let requested = state
+                .get("takebackRequest")
+                .and_then(Value::as_str)
+                .map(str::to_string);
             let accept = cmd.get("accept").and_then(Value::as_bool);
-            if requested.is_none() || requested.as_deref() == Some(side.as_str()) || accept.is_none() {
+            if requested.is_none()
+                || requested.as_deref() == Some(side.as_str())
+                || accept.is_none()
+            {
                 return Err(CommandRejected::new("Invalid takeback response"));
             }
-            let needed = if game.get("turn").and_then(Value::as_str) == requested.as_deref() { 2 } else { 1 };
+            let needed = if game.get("turn").and_then(Value::as_str) == requested.as_deref() {
+                2
+            } else {
+                1
+            };
             state["takebackRequest"] = Value::Null;
-            let mut events = vec![json!({"type": "respond_takeback", "respondSide": side, "accept": accept})];
+            let mut events =
+                vec![json!({"type": "respond_takeback", "respondSide": side, "accept": accept})];
             if accept == Some(true) {
-                let old = game.get("moveHistory").and_then(Value::as_array).map(|a| a.len()).unwrap_or(0);
+                let old = game
+                    .get("moveHistory")
+                    .and_then(Value::as_array)
+                    .map(|a| a.len())
+                    .unwrap_or(0);
                 state["gameState"] = undo_plies(&game, needed)?;
                 events.push(json!({
                     "type": "history_rewound",
@@ -663,9 +946,15 @@ fn play_command(state: &mut Json, actor: &str, cmd: &Json, command_type: &str) -
                     "fen": state.pointer("/gameState/fen").cloned().unwrap_or(Value::Null),
                 }));
             }
-            Ok(ReducerResult::new(state.clone(), json!({"success": true}), events))
+            Ok(ReducerResult::new(
+                state.clone(),
+                json!({"success": true}),
+                events,
+            ))
         }
-        _ => Err(CommandRejected::new(format!("Unknown chess command: {command_type}"))),
+        _ => Err(CommandRejected::new(format!(
+            "Unknown chess command: {command_type}"
+        ))),
     }
 }
 
@@ -680,7 +969,13 @@ pub fn agent_next_command(state: &Json) -> Option<Json> {
     }
     if let Some(debug) = state.get("debugScenario") {
         let next_ply = debug.get("nextPly").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-        if let Some(uci) = debug.get("script").and_then(Value::as_array).and_then(|s| s.get(next_ply)).and_then(|s| s.get("uci")).and_then(Value::as_str) {
+        if let Some(uci) = debug
+            .get("script")
+            .and_then(Value::as_array)
+            .and_then(|s| s.get(next_ply))
+            .and_then(|s| s.get("uci"))
+            .and_then(Value::as_str)
+        {
             if uci.len() == 4 || uci.len() == 5 {
                 let mut command = json!({"type": "move", "from": &uci[..2], "to": &uci[2..4]});
                 if uci.len() == 5 {
@@ -693,7 +988,10 @@ pub fn agent_next_command(state: &Json) -> Option<Json> {
     if let Some(step_id) = state.pointer("/tutorial/step").and_then(Value::as_str) {
         if step_id != "free_play" {
             let steps = tutorial_steps();
-            let step = steps.as_array()?.iter().find(|step| step.get("id").and_then(Value::as_str) == Some(step_id))?;
+            let step = steps
+                .as_array()?
+                .iter()
+                .find(|step| step.get("id").and_then(Value::as_str) == Some(step_id))?;
             if step.get("mover").and_then(Value::as_str) != Some("agent") {
                 return None;
             }
@@ -709,7 +1007,11 @@ pub fn agent_next_command(state: &Json) -> Option<Json> {
     let fen = game.get("fen").and_then(Value::as_str)?;
     let pos = board_from_fen(fen).ok()?;
     let legal = pos.legal_moves();
-    let mv: Move = if state.pointer("/settings/difficulty").and_then(Value::as_str) == Some("sleepy") {
+    let mv: Move = if state
+        .pointer("/settings/difficulty")
+        .and_then(Value::as_str)
+        == Some("sleepy")
+    {
         *legal.iter().next()?
     } else {
         **legal.iter().collect::<Vec<_>>().choose(&mut rand::rng())?
@@ -736,9 +1038,13 @@ mod tests {
     }
 
     fn play(state: &Json, actor: &str, from: &str, to: &str) -> Json {
-        reduce(state, actor, &json!({"type": "move", "from": from, "to": to}))
-            .unwrap()
-            .state
+        reduce(
+            state,
+            actor,
+            &json!({"type": "move", "from": from, "to": to}),
+        )
+        .unwrap()
+        .state
     }
 
     fn reject_unchanged(state: &Json, actor: &str, command: Json, expected: &str) {
@@ -752,12 +1058,23 @@ mod tests {
     fn chess_start_move_san_turn_and_agent_reply() {
         let mut state = started("normal");
         state = play(&state, "player", "e2", "e4");
-        assert_eq!(state.pointer("/gameState/turn").and_then(Value::as_str), Some("black"));
-        assert_eq!(state.pointer("/gameState/moveHistory/0/san").and_then(Value::as_str), Some("e4"));
+        assert_eq!(
+            state.pointer("/gameState/turn").and_then(Value::as_str),
+            Some("black")
+        );
+        assert_eq!(
+            state
+                .pointer("/gameState/moveHistory/0/san")
+                .and_then(Value::as_str),
+            Some("e4")
+        );
         let command = agent_next_command(&state).expect("agent should reply");
         assert_eq!(command["type"], "move");
         state = reduce(&state, "agent", &command).unwrap().state;
-        assert_eq!(state.pointer("/gameState/turn").and_then(Value::as_str), Some("white"));
+        assert_eq!(
+            state.pointer("/gameState/turn").and_then(Value::as_str),
+            Some("white")
+        );
     }
 
     #[test]
@@ -772,7 +1089,10 @@ mod tests {
             )
             .unwrap();
             assert_eq!(result.result, json!({"success": true}));
-            assert_eq!(result.events, vec![json!({"type": "debug_scenario_loaded", "scenarioId": scenario_id})]);
+            assert_eq!(
+                result.events,
+                vec![json!({"type": "debug_scenario_loaded", "scenarioId": scenario_id})]
+            );
             let state = result.state;
             let game = &state["gameState"];
             let start_ply = fixture["startPly"].as_u64().unwrap() as usize;
@@ -780,17 +1100,39 @@ mod tests {
             assert_eq!(state["settings"], fixture["settings"]);
             assert_eq!(game["startFen"], fixture["startFen"]);
             let fen = game["fen"].as_str().unwrap();
-            assert_eq!(game["fullMoveNumber"], fen.split_whitespace().nth(5).unwrap().parse::<u32>().unwrap());
+            assert_eq!(
+                game["fullMoveNumber"],
+                fen.split_whitespace()
+                    .nth(5)
+                    .unwrap()
+                    .parse::<u32>()
+                    .unwrap()
+            );
             if start_ply == 0 {
                 assert_eq!(fen, fixture["startFen"]);
             }
             assert_eq!(game["moveHistory"].as_array().unwrap().len(), start_ply);
-            assert_eq!(state.pointer("/debugScenario/nextPly").and_then(Value::as_u64), Some(start_ply as u64));
+            assert_eq!(
+                state
+                    .pointer("/debugScenario/nextPly")
+                    .and_then(Value::as_u64),
+                Some(start_ply as u64)
+            );
             if start_ply < fixture["script"].as_array().unwrap().len() {
-                let player_side = fixture.pointer("/settings/playerSide").and_then(Value::as_str).unwrap();
-                let agent_side = if player_side == "white" { "black" } else { "white" };
+                let player_side = fixture
+                    .pointer("/settings/playerSide")
+                    .and_then(Value::as_str)
+                    .unwrap();
+                let agent_side = if player_side == "white" {
+                    "black"
+                } else {
+                    "white"
+                };
                 if game["turn"].as_str() == Some(agent_side) {
-                    let uci = fixture.pointer(&format!("/script/{start_ply}/uci")).and_then(Value::as_str).unwrap();
+                    let uci = fixture
+                        .pointer(&format!("/script/{start_ply}/uci"))
+                        .and_then(Value::as_str)
+                        .unwrap();
                     let mut expected = json!({"type": "move", "from": &uci[..2], "to": &uci[2..4]});
                     if uci.len() == 5 {
                         expected["promotion"] = json!(&uci[4..]);
@@ -808,12 +1150,25 @@ mod tests {
         let steps = tutorial_steps();
         assert_eq!(steps.as_array().unwrap().len(), 22);
         let mut state = started("tutorial");
-        assert_eq!(state.pointer("/settings/playerSide").and_then(Value::as_str), Some("white"));
-        assert_eq!(state.pointer("/settings/difficulty").and_then(Value::as_str), Some("sleepy"));
+        assert_eq!(
+            state
+                .pointer("/settings/playerSide")
+                .and_then(Value::as_str),
+            Some("white")
+        );
+        assert_eq!(
+            state
+                .pointer("/settings/difficulty")
+                .and_then(Value::as_str),
+            Some("sleepy")
+        );
 
         for (index, step) in steps.as_array().unwrap().iter().enumerate() {
             let id = step["id"].as_str().unwrap();
-            assert_eq!(state.pointer("/tutorial/step").and_then(Value::as_str), Some(id));
+            assert_eq!(
+                state.pointer("/tutorial/step").and_then(Value::as_str),
+                Some(id)
+            );
             for command_type in ["resign", "offerDraw", "requestTakeback"] {
                 reject_unchanged(
                     &state,
@@ -823,7 +1178,12 @@ mod tests {
                 );
             }
             if index == 0 {
-                reject_unchanged(&state, "player", json!({"type": "move", "from": "d2", "to": "d4"}), "Follow the highlighted tutorial move");
+                reject_unchanged(
+                    &state,
+                    "player",
+                    json!({"type": "move", "from": "d2", "to": "d4"}),
+                    "Follow the highlighted tutorial move",
+                );
                 reject_unchanged(
                     &state,
                     "player",
@@ -832,7 +1192,12 @@ mod tests {
                 );
             }
             if index == 1 {
-                reject_unchanged(&state, "agent", json!({"type": "move", "from": "d7", "to": "d5"}), "Follow the highlighted tutorial move");
+                reject_unchanged(
+                    &state,
+                    "agent",
+                    json!({"type": "move", "from": "d7", "to": "d5"}),
+                    "Follow the highlighted tutorial move",
+                );
             }
             let mover = step["mover"].as_str().unwrap();
             let mv = &step["move"];
@@ -845,30 +1210,73 @@ mod tests {
             let wrong_actor = if mover == "player" { "agent" } else { "player" };
             reject_unchanged(&state, wrong_actor, command.clone(), "Not your turn");
             let result = reduce(&state, mover, &command).unwrap();
-            assert!(result.events.iter().any(|event| event["type"] == "tutorial_step" && event["step"] == id));
+            assert!(result
+                .events
+                .iter()
+                .any(|event| event["type"] == "tutorial_step" && event["step"] == id));
             state = result.state;
-            assert_eq!(state.pointer("/gameState/moveHistory").and_then(Value::as_array).unwrap().len(), index + 1);
+            assert_eq!(
+                state
+                    .pointer("/gameState/moveHistory")
+                    .and_then(Value::as_array)
+                    .unwrap()
+                    .len(),
+                index + 1
+            );
             if matches!(index, 16 | 17) {
-                assert_eq!(state["gameState"]["moveHistory"].as_array().unwrap().last().unwrap()["isCastling"], true);
+                assert_eq!(
+                    state["gameState"]["moveHistory"]
+                        .as_array()
+                        .unwrap()
+                        .last()
+                        .unwrap()["isCastling"],
+                    true
+                );
             }
             if index == 11 {
-                assert_eq!(state.pointer("/gameState/isCheck").and_then(Value::as_bool), Some(true));
+                assert_eq!(
+                    state.pointer("/gameState/isCheck").and_then(Value::as_bool),
+                    Some(true)
+                );
             }
             if index == 12 {
-                assert_eq!(state.pointer("/gameState/isCheck").and_then(Value::as_bool), Some(false));
+                assert_eq!(
+                    state.pointer("/gameState/isCheck").and_then(Value::as_bool),
+                    Some(false)
+                );
             }
         }
 
-        assert_eq!(state.pointer("/tutorial/step").and_then(Value::as_str), Some("free_play"));
-        state = reduce(&state, "player", &json!({"type": "offerDraw"})).unwrap().state;
-        state = reduce(&state, "player", &json!({"type": "cancelDrawOffer"})).unwrap().state;
+        assert_eq!(
+            state.pointer("/tutorial/step").and_then(Value::as_str),
+            Some("free_play")
+        );
+        state = reduce(&state, "player", &json!({"type": "offerDraw"}))
+            .unwrap()
+            .state;
+        state = reduce(&state, "player", &json!({"type": "cancelDrawOffer"}))
+            .unwrap()
+            .state;
         state = play(&state, "player", "a2", "a3");
         assert!(agent_next_command(&state).is_some());
         state = reduce(&state, "player", &json!({"type": "startGame", "mode": "normal", "side": "black", "difficulty": "casual"})).unwrap().state;
         assert!(state["tutorial"].is_null());
-        state = reduce(&state, "player", &json!({"type": "startGame", "mode": "tutorial"})).unwrap().state;
-        assert_eq!(state.pointer("/tutorial/step").and_then(Value::as_str), steps[0]["id"].as_str());
-        assert!(state.pointer("/gameState/moveHistory").and_then(Value::as_array).unwrap().is_empty());
+        state = reduce(
+            &state,
+            "player",
+            &json!({"type": "startGame", "mode": "tutorial"}),
+        )
+        .unwrap()
+        .state;
+        assert_eq!(
+            state.pointer("/tutorial/step").and_then(Value::as_str),
+            steps[0]["id"].as_str()
+        );
+        assert!(state
+            .pointer("/gameState/moveHistory")
+            .and_then(Value::as_array)
+            .unwrap()
+            .is_empty());
     }
 
     #[test]
@@ -880,14 +1288,39 @@ mod tests {
             state = play(&state, "player", "f3", "g1");
             state = play(&state, "agent", "f6", "g8");
         }
-        assert_eq!(state.pointer("/gameState/status").and_then(Value::as_str), Some("playing"));
-        state = reduce(&state, "agent", &json!({"type": "requestTakeback"})).unwrap().state;
-        let response = reduce(&state, "player", &json!({"type": "respondTakeback", "accept": true})).unwrap();
+        assert_eq!(
+            state.pointer("/gameState/status").and_then(Value::as_str),
+            Some("playing")
+        );
+        state = reduce(&state, "agent", &json!({"type": "requestTakeback"}))
+            .unwrap()
+            .state;
+        let response = reduce(
+            &state,
+            "player",
+            &json!({"type": "respondTakeback", "accept": true}),
+        )
+        .unwrap();
         state = response.state;
         assert_eq!(response.events[1]["pliesUndone"], 1);
-        assert_eq!(state.pointer("/gameState/status").and_then(Value::as_str), Some("draw"));
-        assert_eq!(state.pointer("/gameState/isThreefoldRepetition").and_then(Value::as_bool), Some(true));
-        assert_eq!(state.pointer("/gameState/moveHistory").and_then(Value::as_array).unwrap().len(), 7);
+        assert_eq!(
+            state.pointer("/gameState/status").and_then(Value::as_str),
+            Some("draw")
+        );
+        assert_eq!(
+            state
+                .pointer("/gameState/isThreefoldRepetition")
+                .and_then(Value::as_bool),
+            Some(true)
+        );
+        assert_eq!(
+            state
+                .pointer("/gameState/moveHistory")
+                .and_then(Value::as_array)
+                .unwrap()
+                .len(),
+            7
+        );
     }
 
     #[test]
@@ -907,7 +1340,13 @@ mod tests {
     fn chess_halfmove_99_can_claim_fifty_moves() {
         let fen = "7k/8/8/8/8/8/6R1/K7 w - - 99 1";
         let pos = board_from_fen(fen).unwrap();
-        let game = state_from_board(&pos, &json!([]), fen, &[position_hash(&pos)], Some(pos.fullmoves().get()));
+        let game = state_from_board(
+            &pos,
+            &json!([]),
+            fen,
+            &[position_hash(&pos)],
+            Some(pos.fullmoves().get()),
+        );
         assert_eq!(game["halfMoveClock"], 99);
         assert_eq!(game["status"], "draw");
         assert_eq!(game["winner"], "draw");

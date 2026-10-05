@@ -70,7 +70,9 @@ pub fn apply_story_default(message: &mut Json, preference: Option<bool>) {
         return;
     };
     let kind = obj.get("type").and_then(Value::as_str).unwrap_or("");
-    if (kind == "open_my_web_world" || kind == "reset_my_web_world") && !obj.contains_key("fullUnlock") {
+    if (kind == "open_my_web_world" || kind == "reset_my_web_world")
+        && !obj.contains_key("fullUnlock")
+    {
         obj.insert("fullUnlock".into(), json!(preference));
     }
 }
@@ -89,9 +91,12 @@ pub fn guest_session(secret: &str, token: Option<&str>, now: i64) -> (Json, bool
                 if let Ok(exp_i) = exp.parse::<i64>() {
                     let payload = format!("{GUEST_PREFIX}{n}.{exp}");
                     let sig_ok = sig.len() == 64
-                        && sig.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
+                        && sig
+                            .bytes()
+                            .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
                         && n.len() == 32
-                        && n.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
+                        && n.bytes()
+                            .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
                         && now < exp_i
                         && exp_i <= now + SESSION_TTL
                         && constant_hex_eq(&sign_hex(secret, &payload), sig);
@@ -147,9 +152,8 @@ fn constant_hex_eq(left: &str, right: &str) -> bool {
 }
 
 pub fn auth_cookie_headers(token: &str, secure: bool) -> Vec<(String, String)> {
-    let mut cookie = format!(
-        "{SESSION_COOKIE}={token}; Path=/; Max-Age={SESSION_TTL}; HttpOnly; SameSite=Lax"
-    );
+    let mut cookie =
+        format!("{SESSION_COOKIE}={token}; Path=/; Max-Age={SESSION_TTL}; HttpOnly; SameSite=Lax");
     if secure {
         cookie.push_str("; Secure");
     }
@@ -224,9 +228,15 @@ pub fn is_same_origin(origin: Option<&str>, request_url: &str) -> bool {
     } else if target.scheme == "wss" {
         target.scheme = "https".into();
     }
-    let source_port = source.port.unwrap_or(if source.scheme == "https" { 443 } else { 80 });
-    let target_port = target.port.unwrap_or(if target.scheme == "https" { 443 } else { 80 });
-    source.scheme == target.scheme && source.host.eq_ignore_ascii_case(&target.host) && source_port == target_port
+    let source_port = source
+        .port
+        .unwrap_or(if source.scheme == "https" { 443 } else { 80 });
+    let target_port = target
+        .port
+        .unwrap_or(if target.scheme == "https" { 443 } else { 80 });
+    source.scheme == target.scheme
+        && source.host.eq_ignore_ascii_case(&target.host)
+        && source_port == target_port
 }
 
 struct UrlParts {
@@ -241,9 +251,15 @@ struct UrlParts {
 
 fn url_parts(raw: &str) -> Result<UrlParts, ()> {
     let (scheme, rest) = raw.split_once("://").ok_or(())?;
-    let (authority, after) = rest.split_once('/').map(|(a, b)| (a, format!("/{b}"))).unwrap_or((rest, String::new()));
+    let (authority, after) = rest
+        .split_once('/')
+        .map(|(a, b)| (a, format!("/{b}")))
+        .unwrap_or((rest, String::new()));
     let (authority, query_fragment) = if after.is_empty() {
-        authority.split_once('?').map(|(a, q)| (a, Some(q))).unwrap_or((authority, None))
+        authority
+            .split_once('?')
+            .map(|(a, q)| (a, Some(q)))
+            .unwrap_or((authority, None))
     } else {
         (authority, None)
     };

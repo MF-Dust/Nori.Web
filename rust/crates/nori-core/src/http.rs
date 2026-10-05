@@ -23,7 +23,11 @@ impl HttpResponse {
     pub fn json(status: u16, value: &Json, extra: Vec<(String, String)>) -> Self {
         let mut headers = vec![("content-type".into(), "application/json".into())];
         headers.extend(extra);
-        Self { status, headers, body: serde_json::to_vec(value).unwrap_or_else(|_| b"{}".to_vec()) }
+        Self {
+            status,
+            headers,
+            body: serde_json::to_vec(value).unwrap_or_else(|_| b"{}".to_vec()),
+        }
     }
 }
 
@@ -37,7 +41,10 @@ pub struct HttpHost {
 }
 
 fn header<'a>(headers: &'a [(String, String)], name: &str) -> Option<&'a str> {
-    headers.iter().find(|(k, _)| k.eq_ignore_ascii_case(name)).map(|(_, v)| v.as_str())
+    headers
+        .iter()
+        .find(|(k, _)| k.eq_ignore_ascii_case(name))
+        .map(|(_, v)| v.as_str())
 }
 
 fn json_body(body: &[u8]) -> Json {
@@ -57,27 +64,50 @@ pub fn handle_http(host: &mut HttpHost, req: &HttpRequest, now: i64) -> Option<H
         return Some(HttpResponse::json(200, &json!({"ts": "0"}), vec![]));
     }
     if path == "/api/entry-status" && method == "GET" {
-        return Some(HttpResponse::json(200, &json!({"status": "ok", "machineId": host.machine_id}), vec![]));
+        return Some(HttpResponse::json(
+            200,
+            &json!({"status": "ok", "machineId": host.machine_id}),
+            vec![],
+        ));
     }
     if path == "/api/version" && method == "GET" {
-        return Some(HttpResponse::json(200, &json!({"version": "2.0.0", "service": "NoriOS local compatibility server"}), vec![]));
+        return Some(HttpResponse::json(
+            200,
+            &json!({"version": "2.0.0", "service": "NoriOS local compatibility server"}),
+            vec![],
+        ));
     }
     if path == "/api/auth/get-session" && (method == "GET" || method == "POST") {
         return Some(session_response(host, req, now));
     }
-    if (path == "/api/auth/email-otp/send-verification-otp" || path == "/api/auth/send-email-otp") && method == "POST" {
+    if (path == "/api/auth/email-otp/send-verification-otp" || path == "/api/auth/send-email-otp")
+        && method == "POST"
+    {
         if host.dev_otp.is_empty() {
-            return Some(HttpResponse::json(200, &json!({"status": false, "code": "OTP_DISABLED", "message": "Development email OTP is disabled"}), vec![]));
+            return Some(HttpResponse::json(
+                200,
+                &json!({"status": false, "code": "OTP_DISABLED", "message": "Development email OTP is disabled"}),
+                vec![],
+            ));
         }
         let body = json_body(&req.body);
         let email = body.get("email").and_then(Value::as_str).unwrap_or("");
         if !email.contains('@') {
-            return Some(HttpResponse::json(200, &json!({"status": false, "code": "INVALID_EMAIL", "message": "A valid email is required"}), vec![]));
+            return Some(HttpResponse::json(
+                200,
+                &json!({"status": false, "code": "INVALID_EMAIL", "message": "A valid email is required"}),
+                vec![],
+            ));
         }
-        host.auth.otps.insert(email.trim().to_lowercase(), (host.dev_otp.clone(), now + 600));
+        host.auth.otps.insert(
+            email.trim().to_lowercase(),
+            (host.dev_otp.clone(), now + 600),
+        );
         return Some(HttpResponse::json(200, &json!({"status": true}), vec![]));
     }
-    if (path == "/api/auth/sign-in/email-otp" || path == "/api/auth/email-otp/verify-email") && method == "POST" {
+    if (path == "/api/auth/sign-in/email-otp" || path == "/api/auth/email-otp/verify-email")
+        && method == "POST"
+    {
         return Some(sign_in_otp(host, req, now));
     }
     if path == "/api/auth/sign-out" && method == "POST" {
@@ -85,27 +115,57 @@ pub fn handle_http(host: &mut HttpHost, req: &HttpRequest, now: i64) -> Option<H
         if let Some(token) = token {
             host.auth.sessions.remove(&token);
         }
-        return Some(HttpResponse::json(200, &json!({"success": true}), vec![
-            ("Cache-Control".into(), "private, no-store".into()),
-            ("set-better-auth-cookie".into(), format!("{}=; Path=/; Max-Age=0; SameSite=Lax", auth::SESSION_COOKIE)),
-            // Starlette `Response.delete_cookie(SESSION_COOKIE)`.
-            ("Set-Cookie".into(), format!("{}=\"\"; expires={}; Max-Age=0; Path=/; SameSite=lax", auth::SESSION_COOKIE, http_date(now))),
-        ]));
+        return Some(HttpResponse::json(
+            200,
+            &json!({"success": true}),
+            vec![
+                ("Cache-Control".into(), "private, no-store".into()),
+                (
+                    "set-better-auth-cookie".into(),
+                    format!("{}=; Path=/; Max-Age=0; SameSite=Lax", auth::SESSION_COOKIE),
+                ),
+                // Starlette `Response.delete_cookie(SESSION_COOKIE)`.
+                (
+                    "Set-Cookie".into(),
+                    format!(
+                        "{}=\"\"; expires={}; Max-Age=0; Path=/; SameSite=lax",
+                        auth::SESSION_COOKIE,
+                        http_date(now)
+                    ),
+                ),
+            ],
+        ));
     }
     if path == "/api/auth/convex/token" && (method == "GET" || method == "POST") {
         let (session, headers) = current_session(host, req, now);
-        let token = session.as_ref().and_then(|s| s.pointer("/user/id")).and_then(Value::as_str).map(|id| format!("local-convex.{id}"));
+        let token = session
+            .as_ref()
+            .and_then(|s| s.pointer("/user/id"))
+            .and_then(Value::as_str)
+            .map(|id| format!("local-convex.{id}"));
         return Some(HttpResponse::json(200, &json!({"token": token}), headers));
     }
     if path == "/api/arcade/ws-ticket" && method == "POST" {
         let (session, headers) = current_session(host, req, now);
-        let Some(user_id) = session.as_ref().and_then(|s| s.pointer("/user/id")).and_then(Value::as_str) else {
-            return Some(HttpResponse::json(401, &json!({"error": "Unauthorized"}), vec![("Cache-Control".into(), "private, no-store".into())]));
+        let Some(user_id) = session
+            .as_ref()
+            .and_then(|s| s.pointer("/user/id"))
+            .and_then(Value::as_str)
+        else {
+            return Some(HttpResponse::json(
+                401,
+                &json!({"error": "Unauthorized"}),
+                vec![("Cache-Control".into(), "private, no-store".into())],
+            ));
         };
         let ticket = auth::issue_ticket(&host.secret, user_id, now);
         return Some(HttpResponse::json(200, &json!({"ticket": ticket}), headers));
     }
-    if matches!(path, "/api/mutation" | "/api/query" | "/api/action" | "/api/function" | "/api/query_at_ts") && method == "POST" {
+    if matches!(
+        path,
+        "/api/mutation" | "/api/query" | "/api/action" | "/api/function" | "/api/query_at_ts"
+    ) && method == "POST"
+    {
         return Some(convex(host, req, now));
     }
     None
@@ -113,21 +173,37 @@ pub fn handle_http(host: &mut HttpHost, req: &HttpRequest, now: i64) -> Option<H
 
 pub fn reject_origin(is_ws: bool) -> HttpResponse {
     if is_ws {
-        HttpResponse { status: 403, headers: vec![], body: b"origin_forbidden".to_vec() }
+        HttpResponse {
+            status: 403,
+            headers: vec![],
+            body: b"origin_forbidden".to_vec(),
+        }
     } else {
         HttpResponse::json(403, &json!({"error": "origin_forbidden"}), vec![])
     }
 }
 
 fn cookie_of(req: &HttpRequest) -> Option<String> {
-    auth::cookie_token(header(&req.headers, "cookie").unwrap_or(""), header(&req.headers, "better-auth-cookie").unwrap_or(""))
+    auth::cookie_token(
+        header(&req.headers, "cookie").unwrap_or(""),
+        header(&req.headers, "better-auth-cookie").unwrap_or(""),
+    )
 }
 
-fn current_session(host: &mut HttpHost, req: &HttpRequest, now: i64) -> (Option<Json>, Vec<(String, String)>) {
+fn current_session(
+    host: &mut HttpHost,
+    req: &HttpRequest,
+    now: i64,
+) -> (Option<Json>, Vec<(String, String)>) {
     let mut headers = vec![("Cache-Control".into(), "private, no-store".into())];
     if let Some(token) = cookie_of(req) {
         if let Some(session) = host.auth.sessions.get(&token).cloned() {
-            if session.pointer("/session/expiresAt").and_then(|v| v.as_i64()).unwrap_or(0) > now * 1000 {
+            if session
+                .pointer("/session/expiresAt")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0)
+                > now * 1000
+            {
                 return (Some(session), headers);
             }
         }
@@ -151,20 +227,45 @@ fn session_response(host: &mut HttpHost, req: &HttpRequest, now: i64) -> HttpRes
 
 fn sign_in_otp(host: &mut HttpHost, req: &HttpRequest, now: i64) -> HttpResponse {
     let body = json_body(&req.body);
-    let email = body.get("email").and_then(Value::as_str).filter(|e| e.contains('@'));
+    let email = body
+        .get("email")
+        .and_then(Value::as_str)
+        .filter(|e| e.contains('@'));
     // Python only requires `otp` to be a string; an empty one fails below.
     let (Some(email), Some(otp)) = (email, body.get("otp").and_then(Value::as_str)) else {
-        return HttpResponse::json(200, &json!({"code": "INVALID_OTP", "message": "Invalid email or OTP"}), vec![]);
+        return HttpResponse::json(
+            200,
+            &json!({"code": "INVALID_OTP", "message": "Invalid email or OTP"}),
+            vec![],
+        );
     };
     let key = email.trim().to_lowercase();
-    let valid = !host.dev_otp.is_empty() && host.auth.otps.get(&key).is_some_and(|(stored, exp)| stored == otp && *exp > now);
+    let valid = !host.dev_otp.is_empty()
+        && host
+            .auth
+            .otps
+            .get(&key)
+            .is_some_and(|(stored, exp)| stored == otp && *exp > now);
     if !valid {
-        return HttpResponse::json(200, &json!({"code": "INVALID_OTP", "message": "Invalid OTP"}), vec![]);
+        return HttpResponse::json(
+            200,
+            &json!({"code": "INVALID_OTP", "message": "Invalid OTP"}),
+            vec![],
+        );
     }
     // Python keeps one user per normalized email across logins.
-    let existing = host.auth.users.values().find(|u| u.get("email").and_then(Value::as_str) == Some(key.as_str())).cloned();
+    let existing = host
+        .auth
+        .users
+        .values()
+        .find(|u| u.get("email").and_then(Value::as_str) == Some(key.as_str()))
+        .cloned();
     let user = existing.unwrap_or_else(|| {
-        let name = key.split('@').next().filter(|n| !n.is_empty()).unwrap_or("Operator");
+        let name = key
+            .split('@')
+            .next()
+            .filter(|n| !n.is_empty())
+            .unwrap_or("Operator");
         let user = json!({
             "id": format!("user_{}", crate::jsonutil::uuid4().replace('-', "")),
             "name": name,
@@ -181,13 +282,19 @@ fn sign_in_otp(host: &mut HttpHost, req: &HttpRequest, now: i64) -> HttpResponse
     let session = json!({"session": {"id": format!("session_{}", crate::jsonutil::uuid4().replace('-', "")), "userId": user["id"], "token": token, "expiresAt": now_ms() + auth::SESSION_TTL * 1000}, "user": user});
     host.auth.sessions.insert(token.clone(), session.clone());
     host.auth.otps.remove(&key);
-    HttpResponse::json(200, &session, auth::auth_cookie_headers(&token, req.scheme == "https"))
+    HttpResponse::json(
+        200,
+        &session,
+        auth::auth_cookie_headers(&token, req.scheme == "https"),
+    )
 }
 
 /// RFC 7231 IMF-fixdate, e.g. `Sun, 04 Oct 2026 10:27:27 GMT`.
 pub fn http_date(unix_secs: i64) -> String {
     const DAYS: [&str; 7] = ["Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"];
-    const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const MONTHS: [&str; 12] = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
     let days = unix_secs.div_euclid(86_400);
     let secs = unix_secs.rem_euclid(86_400);
     // Howard Hinnant's civil-from-days.
@@ -217,16 +324,36 @@ fn convex(host: &mut HttpHost, req: &HttpRequest, now: i64) -> HttpResponse {
     let path = body.get("path").and_then(Value::as_str).unwrap_or("");
     if path == "auth/wsTickets:issueWebUserWsTicket" {
         let (session, headers) = current_session(host, req, now);
-        let Some(user_id) = session.as_ref().and_then(|s| s.pointer("/user/id")).and_then(Value::as_str) else {
-            return HttpResponse::json(200, &json!({"status": "error", "errorMessage": "Unauthorized", "logLines": []}), headers);
+        let Some(user_id) = session
+            .as_ref()
+            .and_then(|s| s.pointer("/user/id"))
+            .and_then(Value::as_str)
+        else {
+            return HttpResponse::json(
+                200,
+                &json!({"status": "error", "errorMessage": "Unauthorized", "logLines": []}),
+                headers,
+            );
         };
         let ticket = auth::issue_ticket(&host.secret, user_id, now);
-        return HttpResponse::json(200, &json!({"status": "success", "value": {"ticket": ticket}, "logLines": []}), headers);
+        return HttpResponse::json(
+            200,
+            &json!({"status": "success", "value": {"ticket": ticket}, "logLines": []}),
+            headers,
+        );
     }
     if path == "auth/otpEmail:preflightOtpSend" {
-        return HttpResponse::json(200, &json!({"status": "success", "value": Value::Null, "logLines": []}), vec![]);
+        return HttpResponse::json(
+            200,
+            &json!({"status": "success", "value": Value::Null, "logLines": []}),
+            vec![],
+        );
     }
-    HttpResponse::json(200, &json!({"status": "error", "errorMessage": format!("Unsupported local Convex function: {}", if path.is_empty() { "<missing>" } else { path }), "logLines": []}), vec![])
+    HttpResponse::json(
+        200,
+        &json!({"status": "error", "errorMessage": format!("Unsupported local Convex function: {}", if path.is_empty() { "<missing>" } else { path }), "logLines": []}),
+        vec![],
+    )
 }
 
 /// Archive sections a message needs before it is handled (edge R2 prefetch).
@@ -237,12 +364,20 @@ fn convex(host: &mut HttpHost, req: &HttpRequest, now: i64) -> HttpResponse {
 /// the Python edge only had them if an earlier request happened to load
 /// them in the same isolate. Browser pages are fetched by URL separately.
 pub fn required_sections(message: &Json) -> Vec<&'static str> {
-    const ARTIFACTS: [&str; 4] = ["mail_artifacts", "file_artifacts", "signal_thread_artifacts", "signal_message_artifacts"];
+    const ARTIFACTS: [&str; 4] = [
+        "mail_artifacts",
+        "file_artifacts",
+        "signal_thread_artifacts",
+        "signal_message_artifacts",
+    ];
     if message.get("type").and_then(Value::as_str) != Some("event") {
         return Vec::new();
     }
     let empty = json!({});
-    let payload = message.get("payload").filter(|p| p.is_object()).unwrap_or(&empty);
+    let payload = message
+        .get("payload")
+        .filter(|p| p.is_object())
+        .unwrap_or(&empty);
     match message.get("channel").and_then(Value::as_str).unwrap_or("") {
         "manifold.artifacts.request" => match payload.get("artifactType") {
             None | Some(Value::Null) => ARTIFACTS.to_vec(),
@@ -255,10 +390,19 @@ pub fn required_sections(message: &Json) -> Vec<&'static str> {
             },
             Some(_) => Vec::new(),
         },
-        "manifold.bounty.submit" if payload.get("fileId").is_some_and(python_truthy) => vec!["file_artifacts"],
+        "manifold.bounty.submit" if payload.get("fileId").is_some_and(python_truthy) => {
+            vec!["file_artifacts"]
+        }
         "idle.sync" => vec!["file_artifacts"],
-        "manifold.command.request" => match payload.get("command").and_then(Value::as_str).map(str::trim).unwrap_or("") {
-            "idle.sync" | "idle.complete" | "signal.login" | "signal.recover" => vec!["file_artifacts"],
+        "manifold.command.request" => match payload
+            .get("command")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .unwrap_or("")
+        {
+            "idle.sync" | "idle.complete" | "signal.login" | "signal.recover" => {
+                vec!["file_artifacts"]
+            }
             "mail.read" => vec!["mail_artifacts"],
             "signal.read" => vec!["signal_thread_artifacts", "signal_message_artifacts"],
             _ => Vec::new(),

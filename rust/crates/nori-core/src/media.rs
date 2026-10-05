@@ -36,14 +36,22 @@ pub fn tone_pcm(frequency: f64, duration_ms: u32) -> Vec<u8> {
     let mut result = vec![0u8; samples * 2];
     for index in 0..samples {
         let position = index as f64 / SAMPLE_RATE as f64;
-        let envelope = (std::f64::consts::PI * index as f64 / (samples.saturating_sub(1).max(1) as f64)).sin();
-        let amplitude = (32767.0 * 0.16 * envelope * (2.0 * std::f64::consts::PI * frequency * position).sin()) as i16;
+        let envelope =
+            (std::f64::consts::PI * index as f64 / (samples.saturating_sub(1).max(1) as f64)).sin();
+        let amplitude =
+            (32767.0 * 0.16 * envelope * (2.0 * std::f64::consts::PI * frequency * position).sin())
+                as i16;
         result[index * 2..index * 2 + 2].copy_from_slice(&amplitude.to_le_bytes());
     }
     result
 }
 
-pub fn fallback_frames(operation_id: &str, message_id: &str, text: &str, start_sequence: u32) -> Vec<Vec<u8>> {
+pub fn fallback_frames(
+    operation_id: &str,
+    message_id: &str,
+    text: &str,
+    start_sequence: u32,
+) -> Vec<Vec<u8>> {
     let count = text.chars().count().div_ceil(8).clamp(1, 12);
     let notes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.0];
     let mut frames = Vec::with_capacity(count);

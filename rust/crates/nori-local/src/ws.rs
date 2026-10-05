@@ -59,12 +59,19 @@ fn authorize(ctx: &WsContext, headers: &HeaderMap, uri: &Uri) -> Result<String, 
     if !protocols.contains(&"arcade.v1") {
         return Err(forbidden());
     }
-    let ticket = protocols.iter().find_map(|p| p.strip_prefix("ticket.")).unwrap_or("");
+    let ticket = protocols
+        .iter()
+        .find_map(|p| p.strip_prefix("ticket."))
+        .unwrap_or("");
     auth::resolve_ticket(&ctx.secret, ticket, nori_core::jsonutil::now_secs()).ok_or_else(forbidden)
 }
 
 fn not_a_websocket() -> Response {
-    (StatusCode::NOT_FOUND, axum::Json(serde_json::json!({"detail": "API endpoint not found"}))).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        axum::Json(serde_json::json!({"detail": "API endpoint not found"})),
+    )
+        .into_response()
 }
 
 async fn main_socket(
@@ -82,7 +89,9 @@ async fn main_socket(
     };
     // The historical client stores its story/archive choice in a cookie.
     let story = auth::story_preference(header_text(&headers, header::COOKIE).unwrap_or(""));
-    upgrade.protocols(["arcade.v1"]).on_upgrade(move |socket| run_main(ctx, socket, user_id, story))
+    upgrade
+        .protocols(["arcade.v1"])
+        .on_upgrade(move |socket| run_main(ctx, socket, user_id, story))
 }
 
 async fn media_socket(
@@ -98,7 +107,9 @@ async fn media_socket(
         Ok(user_id) => user_id,
         Err(response) => return response,
     };
-    upgrade.protocols(["arcade.v1"]).on_upgrade(move |socket| run_media(ctx, socket, user_id))
+    upgrade
+        .protocols(["arcade.v1"])
+        .on_upgrade(move |socket| run_media(ctx, socket, user_id))
 }
 
 /// Split a socket into a reader and a channel-fed writer task.
@@ -128,7 +139,10 @@ fn send_json(tx: &Outgoing, message: &Value) {
 }
 
 fn close(tx: &Outgoing, code: u16, reason: &str) {
-    let _ = tx.send(Message::Close(Some(CloseFrame { code, reason: reason.into() })));
+    let _ = tx.send(Message::Close(Some(CloseFrame {
+        code,
+        reason: reason.into(),
+    })));
 }
 
 async fn run_main(ctx: Arc<WsContext>, socket: WebSocket, user_id: String, story: Option<bool>) {
@@ -178,8 +192,12 @@ async fn run_media(ctx: Arc<WsContext>, socket: WebSocket, user_id: String) {
     let Ok(message) = serde_json::from_str::<Value>(first.as_str()) else {
         return close(&tx, 1002, "invalid_media_open");
     };
-    let grant = message.get("grant").and_then(Value::as_str).filter(|g| !g.is_empty());
-    let (Some("open_media"), Some(grant)) = (message.get("type").and_then(Value::as_str), grant) else {
+    let grant = message
+        .get("grant")
+        .and_then(Value::as_str)
+        .filter(|g| !g.is_empty());
+    let (Some("open_media"), Some(grant)) = (message.get("type").and_then(Value::as_str), grant)
+    else {
         return close(&tx, 4005, "media_grant_invalid");
     };
     let Some(slot) = ctx.registry.slot_for_grant(&user_id, grant) else {
