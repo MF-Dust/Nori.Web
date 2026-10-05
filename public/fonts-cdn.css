@@ -1,0 +1,43 @@
+/*
+ * Source-frontend typography.
+ *
+ * Common web fonts are loaded from third-party CDNs that are generally
+ * reachable from mainland China. The large mirrored /fonts/web tree remains
+ * in the repository only for the legacy rollback frontend and is deliberately
+ * excluded from the source cutover candidate.
+ *
+ * Sarasa Fixed SC and Fusion Pixel keep the exact reference-client files
+ * locally because substituting another build can change metrics and glyphs.
+ */
+
+@import url("https://fonts.loli.net/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..700&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Crimson+Pro:wght@400;500;600&family=Quicksand:wght@400;500;600&family=Nunito:wght@400;500;600;700;800&family=Lilita+One&family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&display=swap");
+@import url("https://npm.elemecdn.com/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css");
+@import url("https://npm.elemecdn.com/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-light.css");
+
+@font-face {
+  font-family: "SarasaFixed";
+  src: url("/fonts/sarasa-fixed-sc.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SarasaFixed";
+  src: url("/fonts/sarasa-fixed-sc-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fusion Pixel 12px Proportional SC";
+  src: url("/fonts/fusion-pixel-12px-proportional-sc.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fusion Pixel 12px Monospaced SC";
+  src: url("/fonts/fusion-pixel-12px-monospaced-sc.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
