@@ -128,15 +128,49 @@ async function stagePublic(source, destination) {
   stagedPublicPaths.add(destination);
 }
 
+const candidateLocalFonts = new Set([
+  "sarasa-fixed-sc.woff2",
+  "sarasa-fixed-sc-bold.woff2",
+  "fusion-pixel-12px-proportional-sc.woff2",
+  "fusion-pixel-12px-monospaced-sc.woff2",
+  "press-start-2p-latin.woff2",
+  "vt323-latin.woff2",
+  "silkscreen-latin.woff2",
+  "silkscreen-bold-latin.woff2",
+]);
+const historicalAssetPattern = /\.(?:js|mjs|css|map)$/i;
+
+async function stageFilteredAssetTree(source, destination) {
+  await mkdir(destination, { recursive: true });
+  for (const entry of await readdir(source, { withFileTypes: true })) {
+    const sourcePath = resolve(source, entry.name);
+    const destinationPath = resolve(destination, entry.name);
+    if (entry.isDirectory()) {
+      await stageFilteredAssetTree(sourcePath, destinationPath);
+      continue;
+    }
+    if (historicalAssetPattern.test(entry.name)) continue;
+    await stagePublic(sourcePath, destinationPath);
+  }
+}
+
 async function stagePublicTree() {
   await mkdir(resolve(candidateTemp, "assets"), { recursive: true });
   for (const entry of await readdir(options.public, { withFileTypes: true })) {
-    if (entry.name === "index.html" || entry.name === "assets") continue;
+    if (entry.name === "index.html" || entry.name === "assets" || entry.name === "fonts.css") continue;
+    if (entry.name === "fonts") {
+      const sourceFonts = resolve(options.public, "fonts");
+      const candidateFonts = resolve(candidateTemp, "fonts");
+      await mkdir(candidateFonts, { recursive: true });
+      for (const font of await readdir(sourceFonts, { withFileTypes: true })) {
+        if (!font.isFile() || !candidateLocalFonts.has(font.name)) continue;
+        await stagePublic(resolve(sourceFonts, font.name), resolve(candidateFonts, font.name));
+      }
+      continue;
+    }
     await stagePublic(resolve(options.public, entry.name), resolve(candidateTemp, entry.name));
   }
-  const publicAssets = resolve(options.public, "assets");
-  for (const entry of await readdir(publicAssets, { withFileTypes: true }))
-    await stagePublic(resolve(publicAssets, entry.name), resolve(candidateTemp, "assets", entry.name));
+  await stageFilteredAssetTree(resolve(options.public, "assets"), resolve(candidateTemp, "assets"));
 }
 
 const generatedFiles = [];
@@ -187,6 +221,13 @@ async function verifyRequiredCandidateAssets(buildHtml) {
     "audio/bgm1.m4a",
     "cubism_sdk/Core/live2dcubismcore.js",
     "fonts/sarasa-fixed-sc.woff2",
+    "fonts/sarasa-fixed-sc-bold.woff2",
+    "fonts/fusion-pixel-12px-proportional-sc.woff2",
+    "fonts/fusion-pixel-12px-monospaced-sc.woff2",
+    "fonts/press-start-2p-latin.woff2",
+    "fonts/vt323-latin.woff2",
+    "fonts/silkscreen-latin.woff2",
+    "fonts/silkscreen-bold-latin.woff2",
   ]) required.add(path);
 
   const generatedChecks = [
@@ -212,12 +253,14 @@ async function verifyRequiredCandidateAssets(buildHtml) {
   }
   if (await exists(resolve(candidateTemp, "backend/data/live_world_pack.json")))
     throw new Error("private live-world pack must remain in R2 and outside the static candidate");
+  if (await exists(resolve(candidateTemp, "fonts.css")) || await exists(resolve(candidateTemp, "fonts/web")))
+    throw new Error("legacy mirrored web fonts must stay outside the source cutover candidate");
   return { required: [...required].sort(), lazyChunks: lazyChunks.sort() };
 }
 
 async function verifyNoHistoricalExecution(buildHtml) {
   const historicalExecutables = (await readdir(resolve(options.public, "assets")))
-    .filter((name) => /\.(?:js|css)$/.test(name));
+    .filter((name) => /\.(?:js|mjs|css)$/.test(name));
   const direct = historicalAssetReferences(buildHtml, historicalExecutables);
   if (direct.length) throw new Error(`candidate index executes historical assets: ${direct.join(", ")}`);
   const violations = [];
@@ -248,20 +291,31 @@ async function prepareRollbackSnapshot(productionHtml) {
 
 async function verifyRollbackSwap(candidateBytes, rollbackEntries) {
   const candidateIndex = resolve(candidateTemp, "index.html");
-  const rollbackIndex = resolve(rollbackTemp, "files/index.html");
   const candidateHash = createHash("sha256").update(candidateBytes).digest("hex");
   const productionHash = rollbackEntries.find((entry) => entry.path === "index.html").sha256;
-  await copyFile(rollbackIndex, candidateIndex);
-  if (await sha256(candidateIndex) !== productionHash)
-    throw new Error("rollback index replacement did not restore the production index bytes");
-  await writeFile(candidateIndex, candidateBytes);
+  const originals = [];
+
+  try {
+    for (const entry of rollbackEntries) {
+      const destination = safePath(candidateTemp, entry.path);
+      const original = (await exists(destination)) ? await readFile(destination) : null;
+      originals.push({ destination, original });
+      await mkdir(dirname(destination), { recursive: true });
+      await copyFile(resolve(rollbackTemp, "files", entry.path), destination);
+      if (await sha256(destination) !== entry.sha256)
+        throw new Error(`candidate rollback asset hash mismatch: ${entry.path}`);
+    }
+    if (await sha256(candidateIndex) !== productionHash)
+      throw new Error("rollback index replacement did not restore the production index bytes");
+  } finally {
+    for (const { destination, original } of originals.reverse()) {
+      if (original === null) await rm(destination, { force: true });
+      else await writeFile(destination, original);
+    }
+  }
+
   if (await sha256(candidateIndex) !== candidateHash)
     throw new Error("candidate index could not be restored after the rollback drill");
-  for (const entry of rollbackEntries) {
-    if (entry.path === "index.html") continue;
-    if (await sha256(safePath(candidateTemp, entry.path)) !== entry.sha256)
-      throw new Error(`candidate rollback asset hash mismatch: ${entry.path}`);
-  }
   return { candidateIndexSha256: candidateHash, productionIndexSha256: productionHash };
 }
 

@@ -33,7 +33,7 @@ export default defineConfig({
     outDir: resolve(sourceRoot, "../.artifacts/build/app"),
     emptyOutDir: true,
     copyPublicDir: false,
-    sourcemap: true,
+    // Production source maps are not shipped with the Cloudflare asset tree.\n    sourcemap: false,
     target: "es2022",
     assetsDir: "assets",
   },

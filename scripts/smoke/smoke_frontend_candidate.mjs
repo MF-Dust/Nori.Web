@@ -25,6 +25,11 @@ try {
   browser = await chromium.launch(probeLaunchOptions());
   const page = await browser.newPage({ viewport: { width: 1366, height: 900 }, locale: "en-US" });
   page.setDefaultTimeout(30000);
+  // Third-party font availability must not make a functional smoke flaky.
+  // Production still loads these CDNs; CI deliberately exercises system fallback.
+  await page.route(/https?:\/\/(?:fonts\.loli\.net|npm\.elemecdn\.com)\//, (route) =>
+    route.abort("blockedbyclient"),
+  );
   const errors = [], legacyRequests = [], failedAssets = [];
   page.on("pageerror", error => errors.push(error.message));
   page.on("request", request => { if (historical.has(new URL(request.url()).pathname.split("/").at(-1))) legacyRequests.push(request.url()); });
