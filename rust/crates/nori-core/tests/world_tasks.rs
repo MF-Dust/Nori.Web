@@ -1,11 +1,12 @@
 //! World + follow-up task behavior (Python `WorldSession` scheduling and the
 //! Cloudflare pacing overrides in `cloudflare/entry.py`).
 
+use nori_core::cartridges::codenames;
 use nori_core::config::ServerAi;
 use nori_core::live_pack::LivePack;
 use nori_core::session;
 use nori_core::tasks::{Pacing, Step, Task};
-use nori_core::world::{Secrets, World};
+use nori_core::world::{Outbound, Secrets, World};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -215,6 +216,240 @@ fn agent_turn_loops_are_deduplicated_per_cartridge() {
     let out = session::handle(&mut world, &knight, &Secrets::default());
     assert_eq!(out.direct[0]["success"], true, "{:?}", out.direct[0]);
     assert_eq!(out.tasks.len(), 1);
+}
+
+fn codenames_dispatch(world: &mut World, cmd: Value) -> Outbound {
+    let message = json!({
+        "type": "dispatch", "actor": "player", "cartridgeId": "codenames", "requestId": "c",
+        "expectedHeadVersion": world.cartridge("codenames").unwrap().head_version,
+        "cmd": cmd,
+    });
+    session::handle(world, &message, &Secrets::default())
+}
+
+fn codenames_world() -> World {
+    let mut world = world(Pacing::Edge, LivePack::empty());
+    session::handle(
+        &mut world,
+        &json!({"type": "mount_cartridge", "cartridgeId": "codenames", "requestId": "m"}),
+        &Secrets::default(),
+    );
+    let out = codenames_dispatch(
+        &mut world,
+        json!({"type": "startGame", "settings": {"seed": 42, "tokens": 9, "wordLocale": "en"}}),
+    );
+    assert_eq!(out.direct[0]["success"], true, "{:?}", out.direct);
+    assert!(out.tasks.is_empty(), "the player gives the first clue");
+    world
+}
+
+#[test]
+fn codenames_clue_counts_end_agent_turns_and_games_do_not_stall() {
+    for count in [json!(1), json!(3), json!(9), json!(0), json!("infinity")] {
+        for all_correct in [false, true] {
+            let mut world = codenames_world();
+            if all_correct {
+                // A restored board with only treasures guarantees long guessing
+                // runs, including >8 actions and the voluntary endTurn path.
+                world.cartridge_mut("codenames").unwrap().state["gameState"]["key"] =
+                    json!({"A": vec!["AGENT"; 25], "B": vec!["AGENT"; 25]});
+            }
+            for _ in 0..80 {
+                let state = &world.cartridge("codenames").unwrap().state;
+                let game = &state["gameState"];
+                if game["phase"] == "GAME_OVER" {
+                    break;
+                }
+                let turn = game["history"].as_array().unwrap().last();
+                let open = turn.is_some_and(|turn| turn["endedBy"].is_null());
+                let command = if game["phase"] == "NORMAL" && !open {
+                    assert_eq!(
+                        game["whoseTurnToGive"], "A",
+                        "agent failed to give a clue: {game}"
+                    );
+                    json!({"type": "submitClue", "clue": {"word": "NORI", "count": count}})
+                } else if game["phase"] == "NORMAL"
+                    && !turn.unwrap()["guesses"].as_array().unwrap().is_empty()
+                {
+                    assert_eq!(
+                        turn.unwrap()["clueGiver"],
+                        "B",
+                        "agent turn is still open: {game}"
+                    );
+                    json!({"type": "endTurn"})
+                } else {
+                    if game["phase"] == "NORMAL" {
+                        assert_eq!(
+                            turn.unwrap()["clueGiver"],
+                            "B",
+                            "agent turn is still open: {game}"
+                        );
+                    }
+                    // The test player chooses a treasure to exercise more turns.
+                    let index = game["cells"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .enumerate()
+                        .find(|(index, cell)| {
+                            cell["solvedBy"].is_null() && game["key"]["B"][*index] == "AGENT"
+                        })
+                        .map(|(index, _)| index)
+                        .expect("player must have a legal guess");
+                    json!({"type": "submitGuess", "cell": index})
+                };
+                let out = codenames_dispatch(&mut world, command);
+                assert_eq!(out.direct[0]["success"], true, "{:?}", out.direct);
+                for mut task in out.tasks {
+                    let (_, spawned) = drive(&mut task, &mut world);
+                    assert!(spawned.is_empty());
+                }
+                let state = &world.cartridge("codenames").unwrap().state;
+                let game = &state["gameState"];
+                for turn in game["history"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter(|turn| turn["clueGiver"] == "A")
+                {
+                    let guesses = turn["guesses"].as_array().unwrap().len();
+                    if let Some(limit) = count.as_u64().filter(|count| *count > 0) {
+                        assert!(guesses as u64 <= limit, "{turn}");
+                    }
+                    assert!(guesses > 0);
+                    assert!(
+                        !turn["endedBy"].is_null() || game["phase"] == "GAME_OVER",
+                        "stuck guessing: {game}"
+                    );
+                }
+                if let Some(command) = codenames::agent_next_command(state) {
+                    assert!(
+                        codenames::reduce(state, "agent", &command).is_err(),
+                        "task dropped a legal action: {command}"
+                    );
+                }
+            }
+            let game = &world.cartridge("codenames").unwrap().state["gameState"];
+            assert_eq!(game["phase"], "GAME_OVER", "stalled: {game}");
+            if all_correct {
+                assert_eq!(game["winner"], "TEAM");
+                let first = &game["history"][0];
+                assert_eq!(
+                    first["guesses"].as_array().unwrap().len() as u64,
+                    count.as_u64().filter(|count| *count > 0).unwrap_or(25)
+                );
+                if count.as_u64().is_some_and(|count| count > 0) {
+                    assert_eq!(first["endedBy"], "VOLUNTARY_END");
+                    assert_eq!(game["history"][1]["clueGiver"], "B");
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn codenames_cannot_submit_another_clue_while_guessing_is_open() {
+    let mut world = codenames_world();
+    let out = codenames_dispatch(
+        &mut world,
+        json!({"type": "submitClue", "clue": {"word": "NORI", "count": 2}}),
+    );
+    assert_eq!(out.tasks.len(), 1);
+    let before = world.cartridge("codenames").unwrap().state.clone();
+    let head = world.cartridge("codenames").unwrap().head_version;
+    let again = codenames_dispatch(
+        &mut world,
+        json!({"type": "submitClue", "clue": {"word": "VALID", "count": 1}}),
+    );
+    assert_eq!(again.direct[0]["success"], false);
+    assert_eq!(again.direct[0]["error"], "Current turn has not ended");
+    assert!(again.tasks.is_empty());
+    assert_eq!(world.cartridge("codenames").unwrap().state, before);
+    assert_eq!(world.cartridge("codenames").unwrap().head_version, head);
+    for mut task in out.tasks {
+        drive(&mut task, &mut world);
+    }
+}
+
+#[test]
+fn codenames_remount_and_join_resume_pending_agent_turns_once() {
+    for entry in ["mount_cartridge", "join_world", "open_my_web_world"] {
+        let mut world = codenames_world();
+        // Internal dispatches model a persisted pending turn with no live task.
+        world
+            .dispatch_internal(
+                "codenames",
+                "player",
+                &json!({"type": "submitClue", "clue": {"word": "NORI", "count": 1}}),
+            )
+            .unwrap();
+        let index = world.cartridge("codenames").unwrap().state["gameState"]["key"]["A"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|role| role == "AGENT")
+            .unwrap();
+        world
+            .dispatch_internal(
+                "codenames",
+                "agent",
+                &json!({"type": "submitGuess", "cell": index}),
+            )
+            .unwrap();
+        let message = json!({"type": entry, "cartridgeId": "codenames", "requestId": "reload", "worldId": world.world_id});
+        let out = session::handle(&mut world, &message, &Secrets::default());
+        assert_eq!(out.tasks.len(), 1, "{entry}");
+        if entry == "mount_cartridge" {
+            assert_eq!(out.direct[0]["transition"], "already_mounted");
+        }
+        let duplicate = session::handle(&mut world, &message, &Secrets::default());
+        assert!(duplicate.tasks.is_empty(), "deduplicate {entry}");
+        let mut task = out.tasks.into_iter().next().unwrap();
+        drive(&mut task, &mut world);
+        let state = &world.cartridge("codenames").unwrap().state;
+        assert_eq!(state["gameState"]["history"][0]["endedBy"], "VOLUNTARY_END");
+        assert_eq!(state["gameState"]["history"][1]["clueGiver"], "B");
+        assert!(codenames::agent_next_command(state).is_none());
+    }
+}
+
+#[test]
+fn codenames_rejected_guess_recovers_with_end_turn() {
+    let mut world = codenames_world();
+    world
+        .dispatch_internal(
+            "codenames",
+            "player",
+            &json!({"type": "submitClue", "clue": {"word": "NORI", "count": 9}}),
+        )
+        .unwrap();
+    let index = world.cartridge("codenames").unwrap().state["gameState"]["key"]["A"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .position(|role| role == "AGENT")
+        .unwrap();
+    world
+        .dispatch_internal(
+            "codenames",
+            "agent",
+            &json!({"type": "submitGuess", "cell": index}),
+        )
+        .unwrap();
+    // A malformed restored board makes the next guess fail after selection.
+    let board = world.cartridge("codenames").unwrap().state["gameState"]["board"].clone();
+    world.cartridge_mut("codenames").unwrap().state["gameState"]["board"] = json!([]);
+    assert!(world.agent_step("codenames").is_some());
+    assert_eq!(
+        world.cartridge("codenames").unwrap().state["gameState"]["history"][0]["endedBy"],
+        "VOLUNTARY_END"
+    );
+    world.cartridge_mut("codenames").unwrap().state["gameState"]["board"] = board;
+    let mut task = Task::agent_turns(&world, Pacing::Edge, "codenames".into());
+    drive(&mut task, &mut world);
+    let state = &world.cartridge("codenames").unwrap().state;
+    assert_eq!(state["gameState"]["history"][1]["clueGiver"], "B");
+    assert!(codenames::agent_next_command(state).is_none());
 }
 
 #[test]

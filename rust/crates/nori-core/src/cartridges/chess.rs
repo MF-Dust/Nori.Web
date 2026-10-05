@@ -56,6 +56,25 @@ fn parse_role(name: &str) -> Option<Role> {
     })
 }
 
+/// `(from, to)` as the player UI sends them for `mv`.
+///
+/// Castling is the king's two-square step (`e1g1`). shakmaty's `Move::to()` is instead the
+/// *rook's* square for castling (`h1`), so never build a command from it.
+fn client_squares(mv: Move) -> Option<(Square, Square)> {
+    let uci = mv.to_uci(CastlingMode::Standard);
+    Some((uci.from()?, uci.to()?))
+}
+
+/// The `move` command a client sends for `mv` (used for the agent's own moves).
+fn move_command(mv: Move) -> Option<Json> {
+    let (from, to) = client_squares(mv)?;
+    let mut command = json!({"type": "move", "from": from.to_string(), "to": to.to_string()});
+    if let Some(role) = mv.promotion() {
+        command["promotion"] = json!(role_name(role));
+    }
+    Some(command)
+}
+
 fn board_from_fen(fen: &str) -> Result<Chess, CommandRejected> {
     let parsed: Fen = fen
         .parse()
@@ -332,6 +351,13 @@ fn make_move(
     if !pos.is_legal(mv) {
         return Err(CommandRejected::new("Invalid move"));
     }
+    // shakmaty also reads `e1h1` (king onto its own rook) as castling. Record the king's
+    // destination (`e1g1`) whichever form arrived, so history, events and takeback replay agree
+    // and the rook's square is never mistaken for a capture.
+    let castle_to = client_squares(mv)
+        .filter(|_| mv.is_castle())
+        .map(|(_, king_to)| king_to.to_string());
+    let to = castle_to.as_deref().unwrap_or(to);
     let from_sq =
         Square::from_ascii(from.as_bytes()).map_err(|_| CommandRejected::new("Invalid square"))?;
     let piece = pos
@@ -767,7 +793,12 @@ fn play_command(
                 events.push(json!({"type": "capture", "by": side, "from": {"piece": move_info["move"]["piece"], "square": from}, "captured": {"piece": captured, "square": to}}));
             }
             if move_info.get("isCastling").and_then(Value::as_bool) == Some(true) {
-                events.push(json!({"type": "castling", "by": side, "side": if to.starts_with('g') { "kingside" } else { "queenside" }}));
+                // `make_move` records the king's destination: g-file is kingside, c-file queenside.
+                let king_to = move_info
+                    .pointer("/move/to")
+                    .and_then(Value::as_str)
+                    .unwrap_or(to);
+                events.push(json!({"type": "castling", "by": side, "side": if king_to.starts_with('g') { "kingside" } else { "queenside" }}));
             }
             if move_info.get("isPromotion").and_then(Value::as_bool) == Some(true) {
                 events.push(json!({"type": "promotion", "by": side, "from": {"piece": "p", "square": from}, "promotion": promotion}));
@@ -1016,11 +1047,7 @@ pub fn agent_next_command(state: &Json) -> Option<Json> {
     } else {
         **legal.iter().collect::<Vec<_>>().choose(&mut rand::rng())?
     };
-    let mut command = json!({"type": "move", "from": mv.from().unwrap_or(mv.to()).to_string(), "to": mv.to().to_string()});
-    if let Some(role) = mv.promotion() {
-        command["promotion"] = json!(role_name(role));
-    }
-    Some(command)
+    move_command(mv)
 }
 
 #[cfg(test)]
@@ -1137,9 +1164,191 @@ mod tests {
                     if uci.len() == 5 {
                         expected["promotion"] = json!(&uci[4..]);
                     }
-                    assert_eq!(agent_next_command(&state), Some(expected), "{scenario_id}");
+                    assert_eq!(
+                        agent_next_command(&state),
+                        Some(expected.clone()),
+                        "{scenario_id}"
+                    );
+                    // The scripted agent move must also survive the reducer, not just be offered.
+                    let played = reduce(&state, "agent", &expected).unwrap_or_else(|error| {
+                        panic!("{scenario_id}: scripted agent move {uci} rejected: {error}")
+                    });
+                    assert_eq!(
+                        played.state["debugScenario"]["nextPly"],
+                        start_ply + 1,
+                        "{scenario_id}"
+                    );
+                    let history = played.state["gameState"]["moveHistory"].as_array();
+                    assert_eq!(history.map(Vec::len), Some(start_ply + 1), "{scenario_id}");
                 } else {
                     assert_eq!(agent_next_command(&state), None, "{scenario_id}");
+                }
+            }
+        }
+    }
+
+    /// Both kings and all four rooks home, every castling right intact.
+    const CASTLING_WHITE_TO_MOVE: &str = "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1";
+    const CASTLING_BLACK_TO_MOVE: &str = "r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 0 1";
+
+    /// A game in progress at `fen`, with the human on `player_side`.
+    fn state_at(fen: &str, player_side: &str) -> Json {
+        let pos = board_from_fen(fen).unwrap();
+        let mut state = initial_state();
+        state["settings"]["playerSide"] = json!(player_side);
+        state["gameState"] = state_from_board(
+            &pos,
+            &json!([]),
+            fen,
+            &[position_hash(&pos)],
+            Some(pos.fullmoves().get()),
+        );
+        state
+    }
+
+    /// Plays `command` as `actor` from a position with all castling available, and asserts it
+    /// was recorded as a castle on `side` ("kingside"/"queenside") with the king on `king_to`.
+    fn assert_castled(state: &Json, actor: &str, command: &Json, side: &str, king_to: &str) {
+        let by = side_for_actor(state, actor).unwrap();
+        let king_from = if by == "white" { "e1" } else { "e8" };
+        let result = reduce(state, actor, command)
+            .unwrap_or_else(|error| panic!("{actor} castle {command} rejected: {error}"));
+        let details = &result.result["move"];
+        assert_eq!(details["isCastling"], true, "{command}");
+        assert_eq!(details["move"]["from"], king_from, "{command}");
+        assert_eq!(details["move"]["to"], king_to, "{command}");
+        assert_eq!(
+            details["san"],
+            if side == "kingside" { "O-O" } else { "O-O-O" },
+            "{command}"
+        );
+        assert!(
+            details.get("captured").is_none(),
+            "{command}: castling must not capture the own rook"
+        );
+        let recorded = &result.state["gameState"]["moveHistory"][0]["move"];
+        assert_eq!(recorded["from"], king_from, "{command}");
+        assert_eq!(recorded["to"], king_to, "{command}");
+        let castling: Vec<_> = result
+            .events
+            .iter()
+            .filter(|event| event["type"] == "castling")
+            .collect();
+        assert_eq!(
+            castling,
+            [&json!({"type": "castling", "by": by, "side": side})],
+            "{command}"
+        );
+        assert!(
+            result.events.iter().all(|event| event["type"] != "capture"),
+            "{command}: castling reported as a capture"
+        );
+        // King and rook both landed on their castled squares.
+        let placement = match (by.as_str(), side) {
+            ("white", "kingside") => "r3k2r/8/8/8/8/8/8/R4RK1",
+            ("white", _) => "r3k2r/8/8/8/8/8/8/2KR3R",
+            (_, "kingside") => "r4rk1/8/8/8/8/8/8/R3K2R",
+            _ => "2kr3r/8/8/8/8/8/8/R3K2R",
+        };
+        let fen = result.state["gameState"]["fen"].as_str().unwrap();
+        assert_eq!(fen.split(' ').next(), Some(placement), "{command}");
+    }
+
+    /// Each legal castle in `fen` as `(shakmaty move, side, file the king lands on)`.
+    fn castles(fen: &str) -> Vec<(Move, &'static str, char)> {
+        let castles: Vec<_> = board_from_fen(fen)
+            .unwrap()
+            .legal_moves()
+            .into_iter()
+            .filter(|mv| mv.is_castle())
+            .map(|mv| match mv.castling_side() {
+                Some(shakmaty::CastlingSide::KingSide) => (mv, "kingside", 'g'),
+                _ => (mv, "queenside", 'c'),
+            })
+            .collect();
+        assert_eq!(castles.len(), 2, "{fen}");
+        castles
+    }
+
+    #[test]
+    fn chess_agent_castling_command_targets_the_king_not_the_rook() {
+        for (fen, rank) in [(CASTLING_WHITE_TO_MOVE, '1'), (CASTLING_BLACK_TO_MOVE, '8')] {
+            for (mv, _, king_file) in castles(fen) {
+                // shakmaty addresses a castle by its rook, which is what the agent used to send.
+                assert!(matches!(
+                    mv.to(),
+                    Square::A1 | Square::H1 | Square::A8 | Square::H8
+                ));
+                assert_eq!(
+                    move_command(mv),
+                    Some(json!({
+                        "type": "move",
+                        "from": format!("e{rank}"),
+                        "to": format!("{king_file}{rank}"),
+                    })),
+                    "{fen}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn chess_agent_castle_is_accepted_by_reduce_with_correct_side_and_square() {
+        // The agent plays whichever side the human is not.
+        for (fen, player_side, rank) in [
+            (CASTLING_WHITE_TO_MOVE, "black", '1'),
+            (CASTLING_BLACK_TO_MOVE, "white", '8'),
+        ] {
+            let state = state_at(fen, player_side);
+            for (mv, side, king_file) in castles(fen) {
+                let command = move_command(mv).unwrap();
+                let king_to = format!("{king_file}{rank}");
+                assert_castled(&state, "agent", &command, side, &king_to);
+            }
+        }
+    }
+
+    #[test]
+    fn chess_agent_move_selection_castles_through_reduce() {
+        // 26 legal moves, two of them castles, picked uniformly: both castles show up long
+        // before the cap (miss probability per castle ~ (25/26)^4000).
+        let state = state_at(CASTLING_BLACK_TO_MOVE, "white");
+        let mut castled = std::collections::BTreeSet::new();
+        for _ in 0..4000 {
+            let command = agent_next_command(&state).expect("agent has legal moves");
+            let result = reduce(&state, "agent", &command)
+                .unwrap_or_else(|error| panic!("agent move {command} rejected: {error}"));
+            if result.result["move"]["isCastling"] != true {
+                continue;
+            }
+            let (side, king_to) = match command["to"].as_str() {
+                Some("g8") => ("kingside", "g8"),
+                Some("c8") => ("queenside", "c8"),
+                other => panic!("agent castled with `to` = {other:?}, expected the king's square"),
+            };
+            assert_castled(&state, "agent", &command, side, king_to);
+            castled.insert(side);
+            if castled.len() == 2 {
+                break;
+            }
+        }
+        assert_eq!(castled.len(), 2, "agent never castled: {castled:?}");
+    }
+
+    #[test]
+    fn chess_castling_is_recorded_as_the_king_destination_for_either_command_form() {
+        // The player UI sends the king's destination (`e1g1`), but shakmaty's UCI parser also
+        // accepts the rook's square (`e1h1`) for the same castle. Both must be recorded alike.
+        for (fen, player_side, actor, rank) in [
+            (CASTLING_WHITE_TO_MOVE, "white", "player", '1'),
+            (CASTLING_BLACK_TO_MOVE, "white", "agent", '8'),
+        ] {
+            let state = state_at(fen, player_side);
+            for (rook_file, king_file, side) in [('h', 'g', "kingside"), ('a', 'c', "queenside")] {
+                let king_to = format!("{king_file}{rank}");
+                for to in [king_to.clone(), format!("{rook_file}{rank}")] {
+                    let command = json!({"type": "move", "from": format!("e{rank}"), "to": to});
+                    assert_castled(&state, actor, &command, side, &king_to);
                 }
             }
         }

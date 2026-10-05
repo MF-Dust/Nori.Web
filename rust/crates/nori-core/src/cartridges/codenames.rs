@@ -780,7 +780,11 @@ fn submit_clue(game: &mut Json, side: &str, clue: &Json) -> Result<(), CommandRe
     if remaining(game, side)? == 0 {
         return Err(CommandRejected::new("This side cannot give clues"));
     }
-    array_field(game, "history")?;
+    if let Some(turn) = array_field(game, "history")?.last() {
+        if field(turn, "endedBy")?.is_null() {
+            return Err(CommandRejected::new("Current turn has not ended"));
+        }
+    }
     game["history"]
         .as_array_mut()
         .ok_or_else(|| malformed("history must be an array"))?
@@ -1387,6 +1391,85 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
     }
 }
 
+// ponytail: character overlap is a cheap fallback, not semantic clue matching.
+fn lexical_overlap(word: &str, clue: &str) -> usize {
+    word.to_uppercase()
+        .chars()
+        .filter(|ch| clue.contains(*ch))
+        .count()
+}
+
+fn public_guess(state: &Json, game: &Json, clue: &str) -> Option<Json> {
+    let agent_side = string_field(state, "agentSide").ok()?;
+    let history = array_field(game, "history").ok()?;
+    let guesses = history
+        .last()
+        .and_then(|turn| turn.get("guesses"))
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
+    let mut candidates = Vec::new();
+    for (index, cell) in array_field(game, "cells").ok()?.iter().enumerate().take(25) {
+        if field(cell, "solvedBy").ok()?.is_null()
+            && field(cell, "assassinatedBy").ok()?.is_null()
+            && !array_field(cell, "bystanderMarks")
+                .ok()?
+                .iter()
+                .any(|side| side == agent_side)
+        {
+            candidates.push(index);
+        }
+    }
+    let seed = state
+        .pointer("/settings/seed")
+        .and_then(|value| {
+            value
+                .as_i64()
+                .map(i64::unsigned_abs)
+                .or_else(|| value.as_u64())
+        })
+        .unwrap_or(0);
+    PythonRandom::new(
+        seed.wrapping_add(history.len() as u64)
+            .wrapping_mul(31)
+            .wrapping_add(guesses as u64),
+    )
+    .shuffle(&mut candidates);
+    let board = array_field(game, "board").ok()?;
+    let clue = clue.to_uppercase();
+    let index = candidates.into_iter().max_by_key(|&index| {
+        lexical_overlap(
+            board
+                .get(index)
+                .and_then(|word| word.get("text"))
+                .and_then(Value::as_str)
+                .unwrap_or(""),
+            &clue,
+        )
+    })?;
+    Some(json!({"type": "submitGuess", "cell": index}))
+}
+
+fn agent_clue(state: &Json, game: &Json, agent_side: &str) -> Option<Json> {
+    let settings = settings_for_words(state).ok()?;
+    let locale = optional_locale(settings.and_then(|value| value.get("wordLocale"))).ok()?;
+    let board = array_field(game, "board").ok()?;
+    let target = array_field(game, "cells")
+        .ok()?
+        .iter()
+        .enumerate()
+        .find_map(|(index, cell)| {
+            (cell.get("solvedBy")?.is_null() && role(game, agent_side, index).ok()? == AGENT)
+                .then(|| board.get(index)?.get("text")?.as_str())
+                .flatten()
+        })?;
+    let word = resolve_words(locale)
+        .ok()?
+        .into_iter()
+        .filter(|word| validate_clue(game, &json!({"word": word, "count": 1})).is_ok())
+        .max_by_key(|word| lexical_overlap(word, &target.to_uppercase()))?;
+    Some(json!({"type": "submitClue", "clue": {"word": word, "count": 1}}))
+}
+
 pub fn agent_next_command(state: &Json) -> Option<Json> {
     let game = state.get("gameState").filter(|value| value.is_object())?;
     let agent_side = state.get("agentSide")?.as_str()?;
@@ -1430,19 +1513,6 @@ pub fn agent_next_command(state: &Json) -> Option<Json> {
     if game.get("phase")? == GAME_OVER {
         return None;
     }
-    let settings = settings_for_words(state).ok()?;
-    let locale = match settings.and_then(|value| value.get("wordLocale")) {
-        Some(value) => optional_locale(Some(value)).ok()?.unwrap_or(""),
-        None => "zh-CN",
-    }
-    .to_lowercase();
-    let clue_word = if locale.contains("zh") || locale.contains("cn") {
-        "诺莉"
-    } else if locale.contains("ja") {
-        "ノリ"
-    } else {
-        "NORI"
-    };
     if game["phase"] == NORMAL {
         let history = array_field(game, "history").ok()?;
         let closed = match history.last() {
@@ -1451,42 +1521,35 @@ pub fn agent_next_command(state: &Json) -> Option<Json> {
         };
         if closed {
             if game.get("whoseTurnToGive")? == agent_side && remaining(game, agent_side).ok()? > 0 {
-                return Some(
-                    json!({"type": "submitClue", "clue": {"word": clue_word, "count": 1}}),
-                );
+                return agent_clue(state, game, agent_side);
             }
         } else {
             let turn = history.last()?;
             if field(turn, "clueGiver").ok()? != agent_side {
-                let giver = string_field(turn, "clueGiver").ok()?;
-                let mut first = None;
-                for (index, cell) in array_field(game, "cells").ok()?.iter().enumerate() {
-                    if field(cell, "solvedBy").ok()?.is_null()
-                        && field(cell, "assassinatedBy").ok()?.is_null()
-                    {
-                        first.get_or_insert(index);
-                        if role(game, giver, index).ok()? == AGENT {
-                            return Some(json!({"type": "submitGuess", "cell": index}));
-                        }
-                    }
-                }
-                if !array_field(turn, "guesses").ok()?.is_empty() {
+                let guesses = array_field(turn, "guesses").ok()?.len();
+                let clue = field(turn, "clue").ok()?;
+                let count = field(clue, "count").ok()?;
+                // Zero and infinity permit unlimited guesses. Finite clues stop
+                // at count (rather than using the optional extra guess).
+                let limit = if count == "infinity" || count.as_u64() == Some(0) {
+                    u64::MAX
+                } else {
+                    count.as_u64()?
+                };
+                if guesses > 0 && guesses as u64 >= limit {
                     return Some(json!({"type": "endTurn"}));
                 }
-                if let Some(index) = first {
-                    return Some(json!({"type": "submitGuess", "cell": index}));
+                if let Some(command) = public_guess(state, game, string_field(clue, "word").ok()?) {
+                    return Some(command);
+                }
+                if guesses > 0 {
+                    return Some(json!({"type": "endTurn"}));
                 }
             }
         }
     } else if game["phase"] == SUDDEN_DEATH && remaining(game, agent_side).ok()? > 0 {
-        for (index, cell) in array_field(game, "cells").ok()?.iter().enumerate() {
-            if field(cell, "solvedBy").ok()?.is_null()
-                && field(cell, "assassinatedBy").ok()?.is_null()
-                && role(game, other(agent_side), index).ok()? == AGENT
-            {
-                return Some(json!({"type": "submitGuess", "cell": index}));
-            }
-        }
+        // Same eligibility check as the reducer; card choice never reads the key.
+        return public_guess(state, game, "");
     }
     None
 }
@@ -1656,14 +1719,14 @@ mod tests {
             .unwrap();
             assert_eq!(again.state["gameState"]["board"], game["board"]);
             assert_eq!(again.state["gameState"]["cells"], game["cells"]);
-            if scenario == "sudden_death_both" {
-                let command = agent_next_command(&state).unwrap();
-                assert_eq!(command["type"], "submitGuess");
-                let index = command["cell"].as_u64().unwrap() as usize;
-                assert_eq!(game["key"][TEAM_A][index], AGENT);
-            } else {
-                // Preserve Python's own-key eligibility/opposite-key reveal asymmetry.
-                assert!(agent_next_command(&state).is_none());
+            match agent_next_command(&state) {
+                Some(command) => {
+                    assert!(expected.1, "{scenario}");
+                    assert_eq!(command["type"], "submitGuess");
+                    let index = command["cell"].as_u64().unwrap() as usize;
+                    assert!(game["cells"][index]["solvedBy"].is_null());
+                }
+                None => assert!(!expected.1, "{scenario}"),
             }
         }
         let state = fixture();
@@ -2113,11 +2176,11 @@ mod tests {
             "Not your turn",
         );
         for count in [json!(0), json!("infinity"), json!(u64::MAX)] {
-            let reduced = dispatch(
-                &mut state,
+            let reduced = reduce(
+                &state,
                 "agent",
-                json!({"type": "submitClue", "clue": {"word": "\u{1c} valid² \u{1f}", "count": count}}),
-            );
+                &json!({"type": "submitClue", "clue": {"word": "\u{1c} valid² \u{1f}", "count": count}}),
+            ).unwrap();
             assert_eq!(reduced.events[0]["word"], "VALID²");
             assert_eq!(reduced.events[0]["count"], count);
         }
@@ -2437,11 +2500,17 @@ mod tests {
 
         let mut repeated = fixture();
         give_clue(&mut repeated, "agent");
-        give_clue(&mut repeated, "agent");
+        reject(
+            &repeated,
+            "agent",
+            json!({"type": "submitClue", "clue": {"word": "VALID", "count": 1}}),
+            "Current turn has not ended",
+        );
         assert_eq!(
             repeated["gameState"]["history"].as_array().unwrap().len(),
-            2
+            1
         );
+        assert_eq!(repeated["gameState"]["tokensRemaining"], 9);
         dispatch(
             &mut repeated,
             "player",
@@ -2591,40 +2660,34 @@ mod tests {
     fn codenames_agent_commands_and_tutorial_stage_resets() {
         assert!(agent_next_command(&initial_state()).is_none());
         let mut state = fixture();
-        for (locale, word) in [
-            ("zh-CN", "诺莉"),
-            ("ja", "ノリ"),
-            ("en", "NORI"),
-            ("jp", "NORI"),
-            ("", "NORI"),
-        ] {
+        for locale in ["zh-CN", "ja", "en", "jp", ""] {
             state["settings"]["wordLocale"] = json!(locale);
-            assert_eq!(
-                agent_next_command(&state),
-                Some(json!({"type": "submitClue", "clue": {"word": word, "count": 1}}))
-            );
+            let command = agent_next_command(&state).unwrap();
+            assert_eq!(command["type"], "submitClue");
+            assert_eq!(command["clue"]["count"], 1);
+            assert_eq!(agent_next_command(&state), Some(command.clone()));
+            assert!(reduce(&state, "agent", &command).is_ok(), "{command}");
+            assert!(!state["gameState"]["board"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|word| word["text"] == command["clue"]["word"]));
         }
         state["settings"]["wordLocale"] = Value::Null;
-        assert_eq!(agent_next_command(&state).unwrap()["clue"]["word"], "NORI");
+        assert!(agent_next_command(&state).is_some());
         state["gameState"]["whoseTurnToGive"] = json!(TEAM_A);
         assert!(agent_next_command(&state).is_none());
         give_clue(&mut state, "player");
-        assert_eq!(
-            agent_next_command(&state),
-            Some(json!({"type": "submitGuess", "cell": 4}))
-        );
-        state["gameState"]["cells"][4]["assassinatedBy"] = json!(TEAM_A);
-        assert_eq!(
-            agent_next_command(&state),
-            Some(json!({"type": "submitGuess", "cell": 5}))
-        );
-        state["gameState"]["key"][TEAM_A] = json!(vec![BYSTANDER; 25]);
-        assert_eq!(
-            agent_next_command(&state),
-            Some(json!({"type": "submitGuess", "cell": 0}))
-        );
-        state["gameState"]["history"][0]["guesses"] =
-            json!([{"cell": 0, "result": AGENT, "at": 0}]);
+        let first = agent_next_command(&state).unwrap()["cell"]
+            .as_u64()
+            .unwrap() as usize;
+        state["gameState"]["cells"][first]["assassinatedBy"] = json!(TEAM_A);
+        let next = agent_next_command(&state).unwrap();
+        assert_ne!(next["cell"], first);
+        let next_index = next["cell"].as_u64().unwrap() as usize;
+        state["gameState"]["cells"][next_index]["bystanderMarks"] = json!([TEAM_B, null]);
+        assert_ne!(agent_next_command(&state).unwrap()["cell"], next_index);
+        state["gameState"]["history"][0]["guesses"] = json!([{"cell": first, "result": AGENT, "at": 0}, {"cell": next_index, "result": AGENT, "at": 0}]);
         assert_eq!(agent_next_command(&state), Some(json!({"type": "endTurn"})));
 
         let mut stage = fixture();
@@ -2653,6 +2716,64 @@ mod tests {
             early_over.events.last().unwrap(),
             &json!({"type": "tutorial_step", "step": "player_free_guessing"})
         );
+    }
+
+    #[test]
+    fn codenames_guesses_use_only_public_state_and_respect_count() {
+        for count in [json!(1), json!(3), json!(0), json!("infinity")] {
+            let mut state = fixture();
+            state["settings"]["seed"] = json!(42);
+            state["gameState"]["whoseTurnToGive"] = json!(TEAM_A);
+            dispatch(
+                &mut state,
+                "player",
+                json!({"type": "submitClue", "clue": {"word": "NORI", "count": count}}),
+            );
+            let mut changed_key = state.clone();
+            changed_key["gameState"]["key"] =
+                json!({"A": vec![ASSASSIN; 25], "B": vec![BYSTANDER; 25]});
+            let mut no_key = state.clone();
+            no_key["gameState"].as_object_mut().unwrap().remove("key");
+            let limit = count.as_u64().filter(|count| *count > 0).unwrap_or(25) as usize;
+            let mut guessed = HashSet::new();
+            for _ in 0..limit {
+                let command = agent_next_command(&state).unwrap();
+                assert_eq!(command["type"], "submitGuess");
+                assert_eq!(agent_next_command(&changed_key), Some(command.clone()));
+                assert_eq!(agent_next_command(&no_key), Some(command.clone()));
+                let index = command["cell"].as_u64().unwrap() as usize;
+                assert!(guessed.insert(index));
+                // Supply identical public results without consulting either key.
+                for state in [&mut state, &mut changed_key, &mut no_key] {
+                    state["gameState"]["cells"][index]["solvedBy"] = json!(TEAM_B);
+                    state["gameState"]["history"][0]["guesses"]
+                        .as_array_mut()
+                        .unwrap()
+                        .push(json!({"cell": index, "result": AGENT, "at": 0}));
+                }
+            }
+            for state in [&state, &changed_key, &no_key] {
+                assert_eq!(agent_next_command(state), Some(json!({"type": "endTurn"})));
+            }
+        }
+        let mut state = fixture();
+        state["gameState"]["phase"] = json!(SUDDEN_DEATH);
+        let mut changed_key = state.clone();
+        // Same per-side counts (eligibility), different card positions.
+        for side in [TEAM_A, TEAM_B] {
+            changed_key["gameState"]["key"][side]
+                .as_array_mut()
+                .unwrap()
+                .reverse();
+        }
+        let command = agent_next_command(&state).unwrap();
+        assert_eq!(command["type"], "submitGuess");
+        assert_eq!(agent_next_command(&changed_key), Some(command));
+        // Ineligible once the agent's own side has nothing left.
+        for cell in state["gameState"]["cells"].as_array_mut().unwrap() {
+            cell["solvedBy"] = json!(TEAM_B);
+        }
+        assert!(agent_next_command(&state).is_none());
     }
 
     #[test]

@@ -44,7 +44,7 @@ pub enum Step {
     Done,
 }
 
-const AGENT_TURN_LIMIT: u8 = 8;
+const AGENT_TURN_LIMIT: u8 = 64;
 
 pub struct Task {
     world_id: String,
@@ -649,9 +649,6 @@ fn poll_agent_turns(
     turns: &mut u8,
     slept: &mut bool,
 ) -> Step {
-    if *turns >= AGENT_TURN_LIMIT {
-        return Step::Done;
-    }
     if !*slept {
         *slept = true;
         // Local: 350 ms per opponent turn. Edge: cooperative yield only.
@@ -659,7 +656,13 @@ fn poll_agent_turns(
     }
     *slept = false;
     *turns += 1;
-    match world.agent_step(cartridge_id) {
+    let recover = *turns >= AGENT_TURN_LIMIT;
+    if recover {
+        // A safety budget must yield a legal pass/endTurn, not strand a turn.
+        // If recovery is unavailable (e.g. giving a clue), keep playing.
+        *turns = 0;
+    }
+    match world.agent_step_with_recovery(cartridge_id, recover) {
         Some(messages) => Step::Broadcast(messages),
         None => Step::Done,
     }
@@ -753,9 +756,104 @@ pub(crate) fn pictionary_command() -> Json {
 
 /// Python `_cakeduel_recovery_command` / `_agent_recovery_command`.
 pub(crate) fn recovery_command(cartridge_id: &str, state: &Json) -> Option<Json> {
-    if cartridge_id == "cakeduel" {
-        cakeduel::recovery_command(state)
-    } else {
-        None
+    match cartridge_id {
+        "cakeduel" => cakeduel::recovery_command(state),
+        "codenames" => {
+            let game = state.get("gameState")?;
+            let agent_side = state.get("agentSide")?.as_str()?;
+            let turn = game.get("history")?.as_array()?.last()?;
+            (game.get("phase")?.as_str()? == "NORMAL"
+                && turn.get("endedBy")?.is_null()
+                && turn.get("clueGiver")?.as_str()? != agent_side
+                && !turn.get("guesses")?.as_array()?.is_empty())
+            .then(|| json!({"type": "endTurn"}))
+        }
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cartridge;
+    use crate::live_pack::LivePack;
+    use std::sync::Arc;
+
+    #[test]
+    fn agent_budget_recovers_without_dropping_pending_actions() {
+        for already_guessed in [false, true] {
+            let mut world = World::new("guest", Some("en"), true, Arc::new(LivePack::empty()))
+                .with_pacing(Pacing::Edge);
+            world
+                .cartridges
+                .push(cartridge::create("codenames", true, &world.pack).unwrap());
+            world
+                .dispatch_internal(
+                    "codenames",
+                    "player",
+                    &json!({"type": "startGame", "settings": {"seed": 42}}),
+                )
+                .unwrap();
+            world.cartridge_mut("codenames").unwrap().state["gameState"]["key"] =
+                json!({"A": vec!["AGENT"; 25], "B": vec!["AGENT"; 25]});
+            world
+                .dispatch_internal(
+                    "codenames",
+                    "player",
+                    &json!({"type": "submitClue", "clue": {"word": "NORI", "count": "infinity"}}),
+                )
+                .unwrap();
+            if already_guessed {
+                world
+                    .dispatch_internal(
+                        "codenames",
+                        "agent",
+                        &json!({"type": "submitGuess", "cell": 0}),
+                    )
+                    .unwrap();
+            }
+            let mut turns = AGENT_TURN_LIMIT - 1;
+            let mut slept = true;
+            let Step::Broadcast(messages) = poll_agent_turns(
+                &mut world,
+                Pacing::Edge,
+                "codenames",
+                &mut turns,
+                &mut slept,
+            ) else {
+                panic!("the budget must not finish a pending turn");
+            };
+            assert_eq!(
+                messages[0]["transition"]["cmd"]["type"],
+                if already_guessed {
+                    "endTurn"
+                } else {
+                    "submitGuess"
+                }
+            );
+            assert_eq!(turns, 0);
+            if already_guessed {
+                assert!(matches!(
+                    poll_agent_turns(
+                        &mut world,
+                        Pacing::Edge,
+                        "codenames",
+                        &mut turns,
+                        &mut slept
+                    ),
+                    Step::Sleep(0)
+                ));
+                let Step::Broadcast(messages) = poll_agent_turns(
+                    &mut world,
+                    Pacing::Edge,
+                    "codenames",
+                    &mut turns,
+                    &mut slept,
+                ) else {
+                    panic!("recovery must continue to the agent's clue");
+                };
+                assert_eq!(messages[0]["transition"]["cmd"]["type"], "submitClue");
+            }
+        }
     }
 }

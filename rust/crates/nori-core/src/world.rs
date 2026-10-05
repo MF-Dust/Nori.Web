@@ -156,9 +156,15 @@ impl World {
         json!({"worldId": self.world_id, "mountedCartridges": mounted})
     }
 
-    fn joined(&mut self) -> Json {
+    fn joined(&mut self) -> Outbound {
         let grant = self.issue_media_grant();
-        json!({"type": "world_joined", "world": self.world_payload(), "session": {"isAdmin": true, "mediaGrant": grant}})
+        let mut out = Outbound::direct(
+            json!({"type": "world_joined", "world": self.world_payload(), "session": {"isAdmin": true, "mediaGrant": grant}}),
+        );
+        for cartridge_id in ["cakeduel", "codenames", "chess"] {
+            out.tasks.extend(self.schedule_agent_loop(cartridge_id));
+        }
+        out
     }
 
     pub fn commit_messages(&self, cartridge_id: &str, commit: &Commit) -> Vec<Json> {
@@ -330,8 +336,7 @@ impl World {
             // broadcast these transitions.
             self.story_advance();
         }
-        let joined = self.joined();
-        Outbound::direct(joined)
+        self.joined()
     }
 
     fn join_world(&mut self, message: &Json) -> Outbound {
@@ -345,8 +350,7 @@ impl World {
                 None,
             ));
         }
-        let joined = self.joined();
-        Outbound::direct(joined)
+        self.joined()
     }
 
     fn mount(&mut self, message: &Json) -> Outbound {
@@ -384,6 +388,7 @@ impl World {
             direct: vec![
                 json!({"type": "cartridge_mounted_ack", "worldId": self.world_id, "cartridgeId": cartridge_id, "requestId": request_id, "transition": transition, "runtimes": runtimes}),
             ],
+            tasks: self.schedule_agent_loop(cartridge_id),
             ..Outbound::default()
         }
     }
@@ -400,6 +405,7 @@ impl World {
         let mut out = Outbound::default();
         // chat is the world-owned system cartridge and cannot be removed.
         if cartridge_id != "chat" {
+            self.agent_loops.remove(cartridge_id);
             self.cartridges.retain(|c| c.id != cartridge_id);
             out.broadcast.push(json!({"type": "cartridge_unmounted", "worldId": self.world_id, "cartridgeId": cartridge_id}));
         }
@@ -523,17 +529,32 @@ impl World {
                     Vec::new()
                 }
             }
-            "cakeduel" | "codenames" | "chess" => {
-                if self.agent_loops.insert(cartridge_id.to_string()) {
-                    vec![Task::agent_turns(self, pacing, cartridge_id.to_string())]
-                } else {
-                    Vec::new()
-                }
-            }
+            "cakeduel" | "codenames" | "chess" => self.schedule_agent_loop(cartridge_id),
             "pictionary" if matches!(command_type, "submitGuess" | "skipRound") => {
                 vec![Task::pictionary_next(self, pacing)]
             }
             _ => Vec::new(),
+        }
+    }
+
+    fn schedule_agent_loop(&mut self, cartridge_id: &str) -> Vec<Task> {
+        if self.agent_loops.contains(cartridge_id) {
+            return Vec::new();
+        }
+        let pending = self.cartridge(cartridge_id).is_some_and(|cartridge| {
+            cartridge::agent_command(cartridge_id, &cartridge.state)
+                .or_else(|| tasks::recovery_command(cartridge_id, &cartridge.state))
+                .is_some()
+        });
+        if pending {
+            self.agent_loops.insert(cartridge_id.to_string());
+            vec![Task::agent_turns(
+                self,
+                self.pacing,
+                cartridge_id.to_string(),
+            )]
+        } else {
+            Vec::new()
         }
     }
 
@@ -604,8 +625,22 @@ impl World {
     /// One opponent move (Python `_next_agent_command` +
     /// `_dispatch_agent_command`). `None` ends the agent loop.
     pub fn agent_step(&mut self, cartridge_id: &str) -> Option<Vec<Json>> {
+        self.agent_step_with_recovery(cartridge_id, false)
+    }
+
+    pub(crate) fn agent_step_with_recovery(
+        &mut self,
+        cartridge_id: &str,
+        prefer_recovery: bool,
+    ) -> Option<Vec<Json>> {
         let state = self.cartridge(cartridge_id)?.state.clone();
-        let command = cartridge::agent_command(cartridge_id, &state)
+        let forced = if prefer_recovery {
+            tasks::recovery_command(cartridge_id, &state)
+        } else {
+            None
+        };
+        let command = forced
+            .or_else(|| cartridge::agent_command(cartridge_id, &state))
             .or_else(|| tasks::recovery_command(cartridge_id, &state))?;
         if let Some((_, messages)) = self.dispatch_internal(cartridge_id, "agent", &command) {
             return Some(messages);
@@ -613,7 +648,7 @@ impl World {
         let state = self.cartridge(cartridge_id)?.state.clone();
         let recovery = tasks::recovery_command(cartridge_id, &state).filter(|r| *r != command)?;
         eprintln!(
-            "[world:{}] retrying rejected {cartridge_id} agent action with pass",
+            "[world:{}] retrying rejected {cartridge_id} agent action with recovery",
             self.world_id
         );
         self.dispatch_internal(cartridge_id, "agent", &recovery)
