@@ -215,7 +215,7 @@ class ReleaseLegalTests(unittest.TestCase):
             if not link.startswith(("/", "https:")):
                 self.assertTrue((ROOT / "public/legal" / link).is_file(), link)
         fonts = list((ROOT / "public/legal/fonts").glob("*-OFL.txt"))
-        self.assertEqual(len(fonts), 6)
+        self.assertEqual(len(fonts), 17)
         for font in fonts:
             self.assertIn("SIL OPEN FONT LICENSE", font.read_text(encoding="utf-8").upper())
 

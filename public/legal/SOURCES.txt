@@ -3,6 +3,17 @@ fonts/Fusion-Pixel-OFL.txt: https://raw.githubusercontent.com/TakWolf/fusion-pix
 fonts/Press-Start-2P-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/pressstart2p/OFL.txt
 fonts/Silkscreen-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/silkscreen/OFL.txt
 fonts/VT323-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/vt323/OFL.txt
+fonts/Plus-Jakarta-Sans-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/plusjakartasans/OFL.txt
+fonts/Noto-Sans-SC-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/OFL.txt
+fonts/Noto-Sans-JP-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/notosansjp/OFL.txt
+fonts/Bodoni-Moda-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/bodonimoda/OFL.txt
+fonts/Newsreader-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/newsreader/OFL.txt
+fonts/IBM-Plex-Mono-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexmono/OFL.txt
+fonts/Fredoka-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/fredoka/OFL.txt
+fonts/Crimson-Pro-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/crimsonpro/OFL.txt
+fonts/Quicksand-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/quicksand/OFL.txt
+fonts/Lilita-One-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/lilitaone/OFL.txt
+fonts/LXGW-WenKai-OFL.txt: https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/OFL.txt (copyright lines from the font name table)
 vendor/colord-LICENSE.txt: https://raw.githubusercontent.com/omgovich/colord/master/LICENSE.md
 vendor/Basis-Universal-LICENSE.txt: https://raw.githubusercontent.com/BinomialLLC/basis_universal/master/LICENSE
 vendor/KTX-LICENSE.txt: https://raw.githubusercontent.com/KhronosGroup/KTX-Software/main/LICENSE.md

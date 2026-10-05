@@ -33,6 +33,19 @@ Core 文件中的 Live2D 版权及链接应保留；本声明不提供 SDK、模
 | `silkscreen*-latin.woff2` | Silkscreen 1.001 | Copyright 2001 The Silkscreen Project Authors |
 | `vt323-latin.woff2` | VT323 2.000 | Copyright 2011, The VT323 Project Authors |
 | 源码前端生成的 `nunito-*.woff2` | @fontsource/nunito 5.2.7 | Nunito Project Authors；来自已安装包的 LICENSE |
+| `web/plus-jakarta-sans/*.woff2` | Plus Jakarta Sans 2.071 | Copyright 2020 The Plus Jakarta Sans Project Authors |
+| `web/noto-sans-sc/*.woff2`、`web/noto-sans-jp/*.woff2` | Noto Sans SC / JP 2.004 | (c) 2014-2021 Adobe；Reserved Font Name 'Source' |
+| `web/bodoni-moda/*.woff2` | Bodoni Moda 2.005 | Copyright 2020 The Bodoni Moda Project Authors |
+| `web/newsreader/*.woff2` | Newsreader 1.003 | Copyright 2020 The Newsreader Project Authors |
+| `web/ibm-plex-mono/*.woff2` | IBM Plex Mono 2.3 | Copyright 2017 IBM Corp.；Reserved Font Name "Plex" |
+| `web/fredoka/*.woff2` | Fredoka 2.001 | Copyright 2016 The Fredoka Project Authors |
+| `web/crimson-pro/*.woff2` | Crimson Pro 1.003 | Copyright 2018 The Crimson Pro Project Authors |
+| `web/quicksand/*.woff2` | Quicksand 3.006 | Copyright 2019 The Quicksand Project Authors；Reserved Font Name "Quicksand" |
+| `web/nunito/*.woff2` | Nunito 3.602 | Copyright 2014 The Nunito Project Authors |
+| `web/lilita-one/*.woff2` | Lilita One 1.002 | Copyright (c) 2011 Juan Montoreano；Reserved Font Name "Lilita One" |
+| `web/lxgw-wenkai/*.woff2` | LXGW WenKai GB 1.250（lxgw-wenkai-webfont 1.7.0） | Copyright 2021-2023 LXGW；Copyright 2020 The Klee Project Authors |
+
+`public/fonts/web/` 由 `node scripts/fonts/sync_web_fonts.mjs` 从 Google Fonts 和 jsDelivr 镜像，对应原站引用的同名字体；文件为上游 Web 交付格式（WOFF2，按 unicode-range 分片），本仓库未再修改。该脚本同时重新生成 `public/fonts.css`。
 
 字体继续按 OFL 授权，不改为 GPL。修改、转换或子集化字体时需另行遵循 OFL 条件及保留字体名要求。
 

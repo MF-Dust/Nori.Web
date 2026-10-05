@@ -38,3 +38,62 @@ public\fonts\vt323-latin.woff2
   nameID 1: VT323
   nameID 5: Version 2.000
   nameID 14: http://scripts.sil.org/OFL
+public\fonts\web\bodoni-moda\*.woff2 (sample: aFTQ7PxzY382XsXX63LUYJSESKjEXw.woff2)
+  nameID 0: Copyright 2020 The Bodoni Moda Project Authors (https://github.com/indestructible-type/Bodoni)
+  nameID 1: Bodoni Moda
+  nameID 5: Version 2.005
+  nameID 14: https://scripts.sil.org/OFL
+public\fonts\web\crimson-pro\*.woff2 (sample: q5uDsoa5M_tv7IihmnkabARUoYFoCQ.woff2)
+  nameID 0: Copyright 2018 The Crimson Pro Project Authors (https://github.com/Fonthausen/CrimsonPro)
+  nameID 1: Crimson Pro
+  nameID 5: Version 1.003
+  nameID 14: https://scripts.sil.org/OFL
+public\fonts\web\fredoka\*.woff2 (sample: X7n64b87HvSqjb_WIi2yDCRwoQ_k7367_DWg89XyHw.woff2)
+  nameID 0: Copyright 2016 The Fredoka Project Authors (https://github.com/hafontia/Fredoka-One)
+  nameID 1: Fredoka Light
+  nameID 5: Version 2.001
+  nameID 14: http://scripts.sil.org/OFL
+public\fonts\web\ibm-plex-mono\*.woff2 (sample: -F63fjptAgt5VM-kVkqdyU8n1i8q1w.woff2)
+  nameID 0: Copyright 2017 IBM Corp. All rights reserved.
+  nameID 1: IBM Plex Mono
+  nameID 5: Version 2.3
+  nameID 14: http://scripts.sil.org/OFL
+public\fonts\web\lilita-one\*.woff2 (sample: i7dPIFZ9Zz-WBtRtedDbYE98RWq7.woff2)
+  nameID 0: Copyright (c) 2011 Juan Montoreano (juan@remolacha.biz), with Reserved Font Names "Lilita One"
+  nameID 1: Lilita One
+  nameID 5: Version 1.002
+  nameID 14: http://scripts.sil.org/OFL
+public\fonts\web\lxgw-wenkai\*.woff2 (sample: lxgwwenkai-light-subset-100.woff2)
+  nameID 0: Copyright 2021-2023 LXGW (https://github.com/lxgw/LxgwWenKai) Copyright 2020 The Klee Project Authors (https://github.com/fontworks-fonts/Klee)
+  nameID 1: LXGW WenKai Light
+  nameID 5: Version 1.250;January 17, 2023
+public\fonts\web\newsreader\*.woff2 (sample: cY9AfjOCX1hbuyalUrK4397yjA.woff2)
+  nameID 0: Copyright 2020 The Newsreader Project Authors (http://github.com/productiontype/Newsreader)
+  nameID 1: Newsreader 16pt
+  nameID 5: Version 1.003
+  nameID 14: http://scripts.sil.org/OFL
+public\fonts\web\noto-sans-jp\*.woff2 (sample: -F62fjtqLzI2JPCgQBnw7HFYwQgP.woff2)
+  nameID 0: (c) 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
+  nameID 1: Noto Sans JP Thin
+  nameID 5: Version 2.004-H2;hotconv 1.0.118;makeotfexe 2.5.65603
+  nameID 14: http://scripts.sil.org/OFL
+public\fonts\web\noto-sans-sc\*.woff2 (sample: k3kXo84MPvpLmixcA63oeALRIIKIyQ4.woff2)
+  nameID 0: (c) 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
+  nameID 1: Noto Sans SC Thin
+  nameID 5: Version 2.004-H2;hotconv 1.0.118;makeotfexe 2.5.65603
+  nameID 14: http://scripts.sil.org/OFL
+public\fonts\web\nunito\*.woff2 (sample: XRXV3I6Li01BKofIMeaBXso.woff2)
+  nameID 0: Copyright 2014 The Nunito Project Authors (https://github.com/googlefonts/nunito)
+  nameID 1: Nunito ExtraLight
+  nameID 5: Version 3.602
+  nameID 14: https://scripts.sil.org/OFL
+public\fonts\web\plus-jakarta-sans\*.woff2 (sample: LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yw.woff2)
+  nameID 0: Copyright 2020 The Plus Jakarta Sans Project Authors (https://github.com/tokotype/PlusJakartaSans)
+  nameID 1: Plus Jakarta Sans
+  nameID 5: Version 2.071;gftools[0.9.30]
+  nameID 14: https://scripts.sil.org/OFL
+public\fonts\web\quicksand\*.woff2 (sample: 6xKtdSZaM9iE8KbpRA_hJFQNcOM.woff2)
+  nameID 0: Copyright 2019 The Quicksand Project Authors (https://github.com/andrew-paglinawan/QuicksandFamily.git), with Reserved Font Name "Quicksand"
+  nameID 1: Quicksand Light
+  nameID 5: Version 3.006
+  nameID 14: https://scripts.sil.org/OFL
