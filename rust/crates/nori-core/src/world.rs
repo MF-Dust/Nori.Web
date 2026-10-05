@@ -13,8 +13,8 @@ use crate::media::fallback_frames;
 use crate::protocol::{self, ProtocolError};
 use crate::tasks::{self, Pacing, Task};
 use serde_json::{json, Value};
-use std::collections::BTreeSet;
-use std::sync::Arc;
+use std::collections::BTreeMap;
+use std::sync::{Arc, Weak};
 
 pub const SERVER_ID: &str = "nori-local-arcade";
 pub const MAX_MEDIA_GRANTS: usize = 32;
@@ -91,7 +91,8 @@ pub struct World {
     pub pack: Arc<LivePack>,
     pub pacing: Pacing,
     story_advancing: bool,
-    agent_loops: BTreeSet<String>,
+    // Tasks own the strong leases: panics/cancellation cannot keep an app locked.
+    agent_loops: BTreeMap<String, Weak<()>>,
 }
 
 impl World {
@@ -112,7 +113,7 @@ impl World {
             pack,
             pacing: Pacing::Local,
             story_advancing: false,
-            agent_loops: BTreeSet::new(),
+            agent_loops: BTreeMap::new(),
         }
     }
 
@@ -164,6 +165,7 @@ impl World {
         for cartridge_id in ["cakeduel", "codenames", "chess"] {
             out.tasks.extend(self.schedule_agent_loop(cartridge_id));
         }
+        out.tasks.extend(self.schedule_pictionary_guess());
         out
     }
 
@@ -176,8 +178,11 @@ impl World {
             .map(|c| c.visible_version)
             .unwrap_or(commit.version);
         let head = cartridge.map(|c| c.head_version).unwrap_or(commit.version);
+        let transition = cartridge
+            .map(|c| c.client_view(transition))
+            .unwrap_or_else(|| transition.clone());
         vec![
-            protocol::runtime_transition(&self.world_id, cartridge_id, commit.version, transition),
+            protocol::runtime_transition(&self.world_id, cartridge_id, commit.version, &transition),
             protocol::visibility_advanced(
                 &self.world_id,
                 cartridge_id,
@@ -405,7 +410,9 @@ impl World {
         let mut out = Outbound::default();
         // chat is the world-owned system cartridge and cannot be removed.
         if cartridge_id != "chat" {
-            self.agent_loops.remove(cartridge_id);
+            let prefix = format!("{cartridge_id}:");
+            self.agent_loops
+                .retain(|key, _| key != cartridge_id && !key.starts_with(&prefix));
             self.cartridges.retain(|c| c.id != cartridge_id);
             out.broadcast.push(json!({"type": "cartridge_unmounted", "worldId": self.world_id, "cartridgeId": cartridge_id}));
         }
@@ -481,13 +488,17 @@ impl World {
             ));
         }
         broadcast.extend(self.story_advance());
+        let result = self
+            .cartridge(&cartridge_id)
+            .map(|c| c.client_view(&commit.result))
+            .unwrap_or_else(|| commit.result.clone());
         let ack = protocol::dispatch_success(
             &self.world_id,
             &cartridge_id,
             &request_id,
             head,
             commit.committed,
-            &commit.result,
+            &result,
         );
         let tasks = self.follow_up(&cartridge_id, &actor, &cmd, typed_text, secrets);
         Outbound {
@@ -531,14 +542,39 @@ impl World {
             }
             "cakeduel" | "codenames" | "chess" => self.schedule_agent_loop(cartridge_id),
             "pictionary" if matches!(command_type, "submitGuess" | "skipRound") => {
-                vec![Task::pictionary_next(self, pacing)]
+                let mut tasks = vec![Task::pictionary_next(self, pacing)];
+                tasks.extend(self.schedule_pictionary_guess());
+                tasks
             }
+            "pictionary" => self.schedule_pictionary_guess(),
             _ => Vec::new(),
         }
     }
 
+    /// One Nori guesser per active round where Nori is the guesser.
+    pub(crate) fn schedule_pictionary_guess(&mut self) -> Vec<Task> {
+        self.agent_loops.retain(|_, lease| lease.strong_count() > 0);
+        let Some(round_id) = self
+            .cartridge("pictionary")
+            .and_then(|c| crate::cartridges::pictionary::agent_guess_round(&c.state))
+        else {
+            return Vec::new();
+        };
+        let key = format!("pictionary:{round_id}");
+        if self.agent_loops.contains_key(&key) {
+            return Vec::new();
+        }
+        let task = Task::pictionary_guess(self, self.pacing, round_id);
+        self.agent_loops.insert(key, task.agent_loop_lease());
+        vec![task]
+    }
+
     fn schedule_agent_loop(&mut self, cartridge_id: &str) -> Vec<Task> {
-        if self.agent_loops.contains(cartridge_id) {
+        if cartridge_id == "pictionary" {
+            return self.schedule_pictionary_guess();
+        }
+        self.agent_loops.retain(|_, lease| lease.strong_count() > 0);
+        if self.agent_loops.contains_key(cartridge_id) {
             return Vec::new();
         }
         let pending = self.cartridge(cartridge_id).is_some_and(|cartridge| {
@@ -547,12 +583,10 @@ impl World {
                 .is_some()
         });
         if pending {
-            self.agent_loops.insert(cartridge_id.to_string());
-            vec![Task::agent_turns(
-                self,
-                self.pacing,
-                cartridge_id.to_string(),
-            )]
+            let task = Task::agent_turns(self, self.pacing, cartridge_id.to_string());
+            self.agent_loops
+                .insert(cartridge_id.to_string(), task.agent_loop_lease());
+            vec![task]
         } else {
             Vec::new()
         }
@@ -653,10 +687,6 @@ impl World {
         );
         self.dispatch_internal(cartridge_id, "agent", &recovery)
             .map(|(_, messages)| messages)
-    }
-
-    pub(crate) fn agent_loop_finished(&mut self, cartridge_id: &str) {
-        self.agent_loops.remove(cartridge_id);
     }
 
     /// Python `_start_next_pictionary_round` after its delay.

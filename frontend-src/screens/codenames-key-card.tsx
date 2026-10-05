@@ -14,10 +14,11 @@ export interface CodenamesKeyCardProps {
 function roleClassName(role: CodenamesCardRole): string {
   if (role === "AGENT") return "border border-oklch(0.55_0.10_60_/_0.6)";
   if (role === "ASSASSIN") return "border border-oklch(0.32_0.05_200_/_0.6)";
-  return "border border-oklch(0.55_0.30_25_/_0.5)";
+  return role === "BYSTANDER" ? "border border-oklch(0.55_0.30_25_/_0.5)" : "border border-muted";
 }
 
 function roleStyle(role: CodenamesCardRole, selected: boolean): CSSProperties {
+  if (role !== "AGENT" && role !== "ASSASSIN" && role !== "BYSTANDER") return { background: "var(--muted)", boxShadow: "none" };
   const background =
     role === "AGENT"
       ? "linear-gradient(145deg, oklch(0.78 0.12 80) 0%, oklch(0.65 0.14 70) 50%, oklch(0.52 0.12 60) 100%)"
@@ -57,6 +58,7 @@ function KeyRoleIcon({ role }: { role: CodenamesCardRole }) {
       </svg>
     );
   }
+  if (role !== "BYSTANDER") return <span aria-hidden="true">?</span>;
   return (
     <svg viewBox="0 0 24 24" className="w-full h-full" aria-hidden="true">
       <ellipse cx="12" cy="15" rx="5.5" ry="6.5" fill="hsl(5 55% 55%)" />
@@ -128,7 +130,7 @@ export const CodenamesKeyCard = memo(function CodenamesKeyCard({
           >
             <div className="grid grid-cols-5 gap-1">
               {Array.from({ length: 25 }, (_, index) => {
-                const role = keySide[index] ?? "BYSTANDER";
+                const role = keySide[index] ?? "HIDDEN";
                 const selectable = active && role === "AGENT";
                 const hovered = active && hoveredCellIndex === index;
                 const selected = selectable && (selectedCards?.has(index) ?? false);
@@ -136,7 +138,7 @@ export const CodenamesKeyCard = memo(function CodenamesKeyCard({
                   <button
                     key={index}
                     type="button"
-                    disabled={!active}
+                    disabled={!active || role === "HIDDEN"}
                     className={`aspect-[16/10] rounded-md flex items-center justify-center transition-all duration-150 ${roleClassName(role)} ${
                       hovered ? "ring-2 ring-amber-400 ring-offset-1 ring-offset-background brightness-110" : ""
                     } ${selected ? "border-[3px] border-amber-400" : ""} ${selectable ? "cursor-pointer" : "cursor-default"}`}

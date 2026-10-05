@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 pub const SNAPSHOT_VERSION: u64 = 1;
 
+/// Private server persistence, not the redacted snapshots sent to browsers.
 pub fn world_snapshot(world: &World) -> Json {
     let mut cartridges = serde_json::Map::new();
     for cartridge in &world.cartridges {
@@ -104,6 +105,11 @@ pub fn world_from_snapshot(payload: &Json, pack: Arc<LivePack>) -> Option<World>
         let Some(state) = saved.get("state").filter(|s| s.is_object()) else {
             continue;
         };
+        if id == "codenames"
+            && crate::cartridges::codenames::validate_restored_state(state).is_err()
+        {
+            continue;
+        }
         let Some(mut cartridge) = cartridge::create(id, true, &pack) else {
             continue;
         };
@@ -144,6 +150,10 @@ pub fn world_from_snapshot_json(raw: &str, pack: Arc<LivePack>) -> Option<World>
 
 pub fn restore_cartridge(id: &str, saved: &Json, pack: &LivePack) -> Option<Cartridge> {
     let mut cartridge = cartridge::create(id, true, pack)?;
-    cartridge.state = saved.get("state")?.clone();
+    let state = saved.get("state")?;
+    if id == "codenames" {
+        crate::cartridges::codenames::validate_restored_state(state).ok()?;
+    }
+    cartridge.state = state.clone();
     Some(cartridge)
 }

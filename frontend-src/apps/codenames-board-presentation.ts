@@ -1,5 +1,5 @@
 export type CodenamesSide = "A" | "B";
-export type CodenamesCardRole = "AGENT" | "BYSTANDER" | "ASSASSIN" | string;
+export type CodenamesCardRole = "AGENT" | "BYSTANDER" | "ASSASSIN" | string | null;
 export type CodenamesUiStateType =
   | "HUMAN_GIVING_CLUE"
   | "AI_GIVING_CLUE"
@@ -22,6 +22,7 @@ export interface CodenamesBoardPresentationCell extends CodenamesPresentationCel
 export interface CodenamesPresentationState {
   key: Record<CodenamesSide, readonly CodenamesCardRole[]>;
   cells: readonly CodenamesPresentationCell[];
+  remainingTargets?: Pick<CodenamesRemainingTargets, "A" | "B">;
 }
 
 export interface CodenamesRemainingTargets {
@@ -117,13 +118,17 @@ const LATIN_ADVANCE: Readonly<Record<string, number>> = {
 const wordSizeCache = new Map<string, number>();
 
 /**
- * Counts the still-unsolved agent cards for both sides exactly as the shipped
- * Codenames header does. The board contract is fixed at 25 cells.
+ * Public server counts keep the header and sudden-death turns correct when
+ * the opposite key is hidden. Full legacy states can still be counted locally.
  */
 export function countRemainingCodenamesTargets(
   state: CodenamesPresentationState | null | undefined,
 ): CodenamesRemainingTargets {
   if (!state) return { A: 0, B: 0, total: 0 };
+  if (state.remainingTargets) {
+    const { A, B } = state.remainingTargets;
+    return { A, B, total: A + B };
+  }
 
   let A = 0;
   let B = 0;

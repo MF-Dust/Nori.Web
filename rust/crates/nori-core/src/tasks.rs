@@ -8,13 +8,14 @@
 //! polls again. Pacing differences between the local server and the edge are
 //! decided when the task is created, so hosts never re-implement them.
 
-use crate::cartridges::{cakeduel, chat};
+use crate::cartridges::{cakeduel, chat, pictionary};
 use crate::config::ServerAi;
 use crate::jsonutil::{now_ms, Json};
 use crate::provider::{HttpRequest, HttpResult};
 use crate::world::{Secrets, World};
 use serde_json::{json, Value};
 use std::collections::VecDeque;
+use std::sync::{Arc, Weak};
 
 /// Which runtime is executing the tasks.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -51,6 +52,7 @@ pub struct Task {
     pacing: Pacing,
     pending: VecDeque<Step>,
     kind: Kind,
+    agent_loop: Option<Arc<()>>,
 }
 
 enum Kind {
@@ -84,6 +86,12 @@ enum Kind {
     },
     PictionaryNext {
         stage: u8,
+    },
+    /// Nori guessing the player's drawing, one round at a time.
+    PictionaryGuess {
+        round_id: String,
+        tried: Vec<String>,
+        slept: bool,
     },
     Probe {
         flow: Box<Probe>,
@@ -123,6 +131,11 @@ impl Task {
             world_id: world.world_id.clone(),
             pacing,
             pending: VecDeque::new(),
+            agent_loop: matches!(
+                &kind,
+                Kind::AgentTurns { .. } | Kind::PictionaryGuess { .. }
+            )
+            .then(|| Arc::new(())),
             kind,
         }
     }
@@ -165,6 +178,18 @@ impl Task {
 
     pub fn pictionary_next(world: &World, pacing: Pacing) -> Self {
         Self::new(world, pacing, Kind::PictionaryNext { stage: 0 })
+    }
+
+    pub fn pictionary_guess(world: &World, pacing: Pacing, round_id: String) -> Self {
+        Self::new(
+            world,
+            pacing,
+            Kind::PictionaryGuess {
+                round_id,
+                tried: Vec::new(),
+                slept: false,
+            },
+        )
     }
 
     fn speak(
@@ -257,6 +282,11 @@ impl Task {
         }
     }
 
+    /// Weak registration expires on completion or when any host drops the task.
+    pub(crate) fn agent_loop_lease(&self) -> Weak<()> {
+        Arc::downgrade(self.agent_loop.as_ref().expect("agent task lease"))
+    }
+
     pub fn label(&self) -> &'static str {
         match self.kind {
             Kind::ChatReply { .. } => "chat_reply",
@@ -265,6 +295,7 @@ impl Task {
             Kind::SettleChat { .. } => "settle_chat",
             Kind::AgentTurns { .. } => "agent_turns",
             Kind::PictionaryNext { .. } => "pictionary_next_round",
+            Kind::PictionaryGuess { .. } => "pictionary_guess",
             Kind::Probe { .. } => "probe",
         }
     }
@@ -287,7 +318,7 @@ impl Task {
                 // Nothing to send; keep the state machine moving.
                 Step::Broadcast(messages) if messages.is_empty() => continue,
                 Step::Done => {
-                    self.finish(world);
+                    self.agent_loop.take();
                     return Step::Done;
                 }
                 other => return other,
@@ -362,18 +393,22 @@ impl Task {
                     *stage = 1;
                     return Step::Sleep(1200);
                 }
+                let messages = world.pictionary_next_round();
+                pending.extend(
+                    world
+                        .schedule_pictionary_guess()
+                        .into_iter()
+                        .map(Step::Spawn),
+                );
                 pending.push_back(Step::Done);
-                Step::Broadcast(world.pictionary_next_round())
+                Step::Broadcast(messages)
             }
+            Kind::PictionaryGuess {
+                round_id,
+                tried,
+                slept,
+            } => poll_pictionary_guess(world, pacing, round_id, tried, slept, pending),
             Kind::Probe { flow, stage } => poll_probe(world, server_ai, flow, stage, input),
-        }
-    }
-
-    fn finish(&mut self, world: &mut World) {
-        if let Kind::AgentTurns { cartridge_id, .. } = &self.kind {
-            if world.world_id == self.world_id {
-                world.agent_loop_finished(cartridge_id);
-            }
         }
     }
 }
@@ -666,6 +701,51 @@ fn poll_agent_turns(
         Some(messages) => Step::Broadcast(messages),
         None => Step::Done,
     }
+}
+
+/// Pause before each guess, so the player has time to draw.
+const PICTIONARY_FIRST_GUESS_MS: u64 = 9_000;
+const PICTIONARY_GUESS_INTERVAL_MS: u64 = 7_000;
+
+fn poll_pictionary_guess(
+    world: &mut World,
+    pacing: Pacing,
+    round_id: &str,
+    tried: &mut Vec<String>,
+    slept: &mut bool,
+    pending: &mut VecDeque<Step>,
+) -> Step {
+    let state = |world: &World| world.cartridge("pictionary").map(|c| c.state.clone());
+    let Some(current) = state(world) else {
+        return Step::Done;
+    };
+    if pictionary::agent_guess(&current, round_id, tried, 0).is_none() {
+        return Step::Done;
+    }
+    if !*slept {
+        *slept = true;
+        // Guess pacing is gameplay, not presentation: the edge keeps it too.
+        return Step::Sleep(if tried.is_empty() {
+            PICTIONARY_FIRST_GUESS_MS
+        } else {
+            PICTIONARY_GUESS_INTERVAL_MS
+        });
+    }
+    *slept = false;
+    let Some(command) = pictionary::agent_guess(&current, round_id, tried, now_ms()) else {
+        return Step::Done;
+    };
+    tried.push(command["text"].as_str().unwrap_or_default().to_string());
+    let Some((_, messages)) = world.dispatch_internal("pictionary", "agent", &command) else {
+        return Step::Done;
+    };
+    let solved = state(world).is_some_and(|s| pictionary::agent_guess_round(&s).is_none());
+    if solved {
+        // Mirror the player's submitGuess follow-up: queue the next round.
+        pending.push_back(Step::Spawn(Task::pictionary_next(world, pacing)));
+        pending.push_back(Step::Done);
+    }
+    Step::Broadcast(messages)
 }
 
 fn poll_probe(

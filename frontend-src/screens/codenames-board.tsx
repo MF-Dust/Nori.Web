@@ -12,7 +12,7 @@ import {
   getCodenamesCardScale,
   getCodenamesCardWordFontSize,
   type CodenamesBoardPresentationCell,
-  type CodenamesCardRole,
+  type CodenamesPresentationState,
   type CodenamesSide,
   type CodenamesUiStateType,
 } from "../apps/codenames-board-presentation";
@@ -21,10 +21,9 @@ export interface CodenamesBoardWord {
   text: string;
 }
 
-export interface CodenamesBoardGameState {
+export interface CodenamesBoardGameState extends CodenamesPresentationState {
   board: readonly CodenamesBoardWord[];
   cells: readonly CodenamesBoardPresentationCell[];
-  key: Record<CodenamesSide, readonly CodenamesCardRole[]>;
 }
 
 export interface CodenamesBoardUiState {

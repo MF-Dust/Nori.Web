@@ -7,7 +7,7 @@ export function CodenamesResults({ state, translate: t, pending, onRematch, onMe
   state: CodenamesState; translate: CodenamesTranslate; pending: boolean; onRematch(): void; onMenu(): void;
 }) {
   const game = state.gameState;
-  if (!game) return null;
+  if (!game || game.phase !== "GAME_OVER") return null;
   const win = game.winner === "TEAM";
   const total = game.key.A.filter((type, index) => type === "AGENT" || game.key.B[index] === "AGENT").length;
   const found = game.cells.filter(cell => cell.solvedBy !== null).length;

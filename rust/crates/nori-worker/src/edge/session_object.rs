@@ -360,7 +360,7 @@ impl SessionObject {
                     active.push(self.tick(host, origin, ai, task, input).boxed_local())
                 }
                 Tick::Spawn(parent, child) => {
-                    active.push(self.tick(host, origin, ai, child, None).boxed_local());
+                    active.push(self.tick(host, origin, ai, *child, None).boxed_local());
                     active.push(self.tick(host, origin, ai, parent, None).boxed_local());
                 }
                 Tick::Done => {}
@@ -394,7 +394,7 @@ impl SessionObject {
                 }
             }
             Step::Direct(message) => send_direct(host, origin, &message),
-            Step::Spawn(child) => return Ok(Tick::Spawn(task, child)),
+            Step::Spawn(child) => return Ok(Tick::Spawn(task, Box::new(child))),
             Step::Done => return Ok(Tick::Done),
         }
         Ok(Tick::Continue(task, input))
@@ -432,7 +432,7 @@ impl<S> Default for Clients<S> {
 
 enum Tick {
     Continue(Task, Option<nori_core::provider::HttpResult>),
-    Spawn(Task, Task),
+    Spawn(Task, Box<Task>),
     Done,
 }
 

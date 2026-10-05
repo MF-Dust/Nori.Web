@@ -11,7 +11,8 @@ export const codenamesStateSchema = z.object({
   tutorial: z.object({ step: z.string() }).nullable().default(null),
   gameState: z.object({
     board: z.array(z.object({ id: z.string().optional(), text: z.string() })).length(25),
-    key: z.object({ A: z.array(role).length(25), B: z.array(role).length(25) }),
+    key: z.object({ A: z.array(role.nullable()).length(25), B: z.array(role.nullable()).length(25) }),
+    remainingTargets: z.object({ A: z.number().int().nonnegative(), B: z.number().int().nonnegative() }).optional(),
     cells: z.array(z.object({ solvedBy: side.nullable(), assassinatedBy: side.nullable(),
       bystanderMarks: z.tuple([side.nullable(), side.nullable()]) })).length(25),
     tokensRemaining: z.number().int().nonnegative(), whoseTurnToGive: side,

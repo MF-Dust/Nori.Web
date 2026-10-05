@@ -1,5 +1,6 @@
 import test from "node:test";
 import "./frontend-pictionary-hints.test";
+import "./frontend-codenames-redaction.test";
 import { CODENAMES_TUTORIAL_STEPS, codenamesTutorialAllows, codenamesTutorialGate, codenamesTutorialInstruction, codenamesTutorialUi } from "../../frontend-src/apps/codenames-tutorial";
 import { codenamesReveals, waitForCodenamesAnimation } from "../../frontend-src/apps/codenames-reveal";
 import assert from "node:assert/strict";

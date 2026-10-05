@@ -155,6 +155,65 @@ fn session_finished(settings: &Json, history: &[Json]) -> bool {
             .unwrap_or(180_000)
 }
 
+/// How many guesses Nori makes per round before leaving it to the player.
+pub const AGENT_GUESS_LIMIT: usize = 5;
+
+/// The active round Nori is guessing, if any.
+pub fn agent_guess_round(state: &Json) -> Option<String> {
+    let game = state.get("gameState")?;
+    let round = game.get("round")?;
+    (game.get("phase")?.as_str()? == "PLAYING"
+        && round.get("status")?.as_str()? == "active"
+        && round.pointer("/roles/guesser")?.as_str()? == "agent")
+        .then(|| round.get("roundId")?.as_str().map(str::to_string))
+        .flatten()
+}
+
+/// Nori's offline guess for the player's drawing: a seeded pick from the public vocabulary.
+///
+/// Without a vision model Nori cannot see the canvas, and it must never read the round's
+/// secret `word`/`drawingId`/`synonyms`. It only uses public information: the locale,
+/// the round id, words already used in earlier rounds, and its own previous guesses.
+pub fn agent_guess(state: &Json, round_id: &str, tried: &[String], at_ms: i64) -> Option<Json> {
+    if agent_guess_round(state).as_deref() != Some(round_id) || tried.len() >= AGENT_GUESS_LIMIT {
+        return None;
+    }
+    let locale = state
+        .pointer("/settings/locale")
+        .and_then(Value::as_str)
+        .unwrap_or("zh-CN");
+    let used: Vec<String> = state
+        .pointer("/gameState/history")
+        .and_then(Value::as_array)
+        .map(|history| {
+            history
+                .iter()
+                .filter_map(|entry| entry.get("word").and_then(Value::as_str))
+                .map(str::to_lowercase)
+                .collect()
+        })
+        .unwrap_or_default();
+    let candidates: Vec<String> = resolve_vocab(locale)
+        .iter()
+        .filter_map(|item| item.get("word").and_then(Value::as_str))
+        .filter(|word| {
+            let lower = word.to_lowercase();
+            !used.contains(&lower) && !tried.iter().any(|t| t.to_lowercase() == lower)
+        })
+        .map(str::to_string)
+        .collect();
+    if candidates.is_empty() {
+        return None;
+    }
+    // FNV-1a over the round id and attempt: stable per round, different across rounds.
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for byte in round_id.bytes().chain([tried.len() as u8]) {
+        hash = (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3);
+    }
+    let word = &candidates[(hash % candidates.len() as u64) as usize];
+    Some(json!({"type": "submitGuess", "text": word, "atMs": at_ms}))
+}
+
 pub fn needs_next_round(state: &Json) -> bool {
     state.pointer("/gameState/phase").and_then(Value::as_str) == Some("PLAYING")
         && state

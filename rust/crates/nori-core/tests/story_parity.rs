@@ -1022,6 +1022,8 @@ fn story_python_walkthrough_fixture_replays_every_reply_and_fact_set() {
             }
             let mut expected = step["reply"].clone();
             if sent["cartridgeId"] == "codenames" {
+                // The legacy Python reply predates the client-only key projection.
+                expected = nori_core::cartridges::codenames::client_view(&expected, "A");
                 rebase_codenames(&mut expected, &actual, selector);
             }
             normalize(&mut actual, &expected);

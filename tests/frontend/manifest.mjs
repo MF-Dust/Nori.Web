@@ -62,6 +62,7 @@ export const groups = {
 
 export const coveredByReexport = {
   "tests/frontend/frontend-dock-presentation.test.tsx": "tests/frontend/frontend-runtime.test.ts",
+  "tests/frontend/frontend-codenames-redaction.test.tsx": "tests/frontend/frontend-games.test.ts",
 };
 
 export function assertCoverage() {

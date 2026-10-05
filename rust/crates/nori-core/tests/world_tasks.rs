@@ -4,9 +4,9 @@
 use nori_core::cartridges::codenames;
 use nori_core::config::ServerAi;
 use nori_core::live_pack::LivePack;
-use nori_core::session;
 use nori_core::tasks::{Pacing, Step, Task};
 use nori_core::world::{Outbound, Secrets, World};
+use nori_core::{session, snapshot};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -219,8 +219,12 @@ fn agent_turn_loops_are_deduplicated_per_cartridge() {
 }
 
 fn codenames_dispatch(world: &mut World, cmd: Value) -> Outbound {
+    codenames_dispatch_as(world, "player", cmd)
+}
+
+fn codenames_dispatch_as(world: &mut World, actor: &str, cmd: Value) -> Outbound {
     let message = json!({
-        "type": "dispatch", "actor": "player", "cartridgeId": "codenames", "requestId": "c",
+        "type": "dispatch", "actor": actor, "cartridgeId": "codenames", "requestId": "c",
         "expectedHeadVersion": world.cartridge("codenames").unwrap().head_version,
         "cmd": cmd,
     });
@@ -241,6 +245,374 @@ fn codenames_world() -> World {
     assert_eq!(out.direct[0]["success"], true, "{:?}", out.direct);
     assert!(out.tasks.is_empty(), "the player gives the first clue");
     world
+}
+
+/// Inspect every embedded game: patches, results, restore echoes and snapshots.
+fn assert_client_codenames(value: &Value, full: &Value, known: &[(usize, &str)]) {
+    match value {
+        Value::Object(object) => {
+            assert!(!object.contains_key("seed"), "replay seed leaked: {value}");
+            if let Some(keys) = object.get("key") {
+                let human = full["counterpartSide"].as_str().unwrap();
+                let opponent = full["agentSide"].as_str().unwrap();
+                assert_eq!(keys[human], full["gameState"]["key"][human]);
+                if value["phase"] == "GAME_OVER" {
+                    assert_eq!(keys, &full["gameState"]["key"]);
+                } else {
+                    let roles = keys[opponent].as_array().unwrap();
+                    assert_eq!(roles.len(), 25);
+                    for (index, role) in roles.iter().enumerate() {
+                        if let Some((_, revealed)) = known.iter().find(|(cell, _)| *cell == index) {
+                            assert!(
+                                role.is_null() || role == *revealed,
+                                "wrong reveal: {index}: {role}"
+                            );
+                        } else {
+                            assert!(
+                                role.is_null(),
+                                "unrevealed opponent role leaked: {index}: {role}"
+                            );
+                        }
+                    }
+                }
+                for side in ["A", "B"] {
+                    let count = (0..25)
+                        .filter(|&index| {
+                            full["gameState"]["key"][side][index] == "AGENT"
+                                && value["cells"][index]["solvedBy"].is_null()
+                        })
+                        .count();
+                    assert_eq!(value["remainingTargets"][side], count);
+                }
+            }
+            for child in object.values() {
+                assert_client_codenames(child, full, known);
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                assert_client_codenames(item, full, known);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn assert_codenames_outbound(out: &Outbound, full: &Value, known: &[(usize, &str)]) {
+    for message in out.direct.iter().chain(&out.broadcast) {
+        assert_client_codenames(message, full, known);
+    }
+}
+
+#[test]
+fn codenames_outbound_redaction_keeps_private_save_round_trips() {
+    let mut world = codenames_world();
+    // Changing settings exercises the /settings patch as well as the command echo.
+    let start = codenames_dispatch(
+        &mut world,
+        json!({"type": "startGame", "settings": {"seed": 7}}),
+    );
+    let full = world.cartridge("codenames").unwrap().state.clone();
+    assert_codenames_outbound(&start, &full, &[]);
+    assert_client_codenames(&world.world_payload(), &full, &[]);
+    for entry in [
+        "mount_cartridge",
+        "create_world",
+        "join_world",
+        "open_my_web_world",
+    ] {
+        let message = json!({"type": entry, "cartridgeId": "codenames", "requestId": "snap", "worldId": world.world_id});
+        let out = session::handle(&mut world, &message, &Secrets::default());
+        assert_codenames_outbound(&out, &full, &[]);
+    }
+    let clue = codenames_dispatch(
+        &mut world,
+        json!({"type": "submitClue", "clue": {"word": "NORI", "count": 1}}),
+    );
+    assert_codenames_outbound(&clue, &full, &[]);
+    assert_eq!(
+        clue.direct[0]["result"]["newState"]["key"]["B"],
+        json!(vec![Value::Null; 25])
+    );
+
+    let saved = snapshot::world_snapshot(&world);
+    let private = world.cartridge("codenames").unwrap().state.clone();
+    assert_eq!(saved["cartridges"]["codenames"]["state"], private);
+    assert_eq!(private["settings"]["seed"], 7);
+    let restored = snapshot::world_from_snapshot(&saved, world.pack.clone()).unwrap();
+    assert_eq!(restored.cartridge("codenames").unwrap().state, private);
+    assert_eq!(
+        codenames::agent_next_command(&private),
+        codenames::agent_next_command(&restored.cartridge("codenames").unwrap().state)
+    );
+    assert_client_codenames(&restored.world_payload(), &private, &[]);
+    assert_eq!(
+        snapshot::restore_cartridge("codenames", &saved["cartridges"]["codenames"], &world.pack)
+            .unwrap()
+            .state,
+        private
+    );
+
+    // A browser snapshot is not a usable private save.
+    let mut redacted_save = saved;
+    redacted_save["cartridges"]["codenames"]["state"] =
+        world.cartridge("codenames").unwrap().snapshot("ui")["state"].clone();
+    assert!(
+        snapshot::world_from_snapshot(&redacted_save, world.pack.clone())
+            .unwrap()
+            .cartridge("codenames")
+            .is_none()
+    );
+    assert!(snapshot::restore_cartridge(
+        "codenames",
+        &redacted_save["cartridges"]["codenames"],
+        &world.pack
+    )
+    .is_none());
+}
+
+#[test]
+fn codenames_only_reveals_the_guessed_key_until_game_over() {
+    let mut world = codenames_world();
+    let full = world.cartridge("codenames").unwrap().state.clone();
+    codenames_dispatch(
+        &mut world,
+        json!({"type": "submitClue", "clue": {"word": "NORI", "count": 1}}),
+    );
+    let shared = (0..25)
+        .find(|&i| {
+            full["gameState"]["key"]["A"][i] == "AGENT"
+                && full["gameState"]["key"]["B"][i] == "AGENT"
+        })
+        .unwrap();
+    let agent_guess = codenames_dispatch_as(
+        &mut world,
+        "agent",
+        json!({"type": "submitGuess", "cell": shared}),
+    );
+    // Nori flipped the player's key, not Nori's own key, even on a shared treasure.
+    assert_codenames_outbound(&agent_guess, &full, &[]);
+    assert!(agent_guess.direct[0]["result"]["gameStateAfter"]["key"]["B"][shared].is_null());
+    codenames_dispatch_as(&mut world, "agent", json!({"type": "endTurn"}));
+    let clue = codenames_dispatch_as(
+        &mut world,
+        "agent",
+        json!({"type": "submitClue", "clue": {"word": "VALID", "count": 2}}),
+    );
+    assert_codenames_outbound(&clue, &full, &[]);
+    let treasure = (0..25)
+        .find(|&i| i != shared && full["gameState"]["key"]["B"][i] == "AGENT")
+        .unwrap();
+    let berry = (0..25)
+        .find(|&i| full["gameState"]["key"]["B"][i] == "BYSTANDER")
+        .unwrap();
+    let guess = codenames_dispatch(&mut world, json!({"type": "submitGuess", "cell": treasure}));
+    assert_eq!(guess.direct[0]["success"], true);
+    assert_codenames_outbound(&guess, &full, &[(treasure, "AGENT")]);
+    assert!(guess.direct[0]["result"]["gameStateBefore"]["key"]["B"][treasure].is_null());
+    assert_eq!(
+        guess.direct[0]["result"]["gameStateAfter"]["key"]["B"][treasure],
+        "AGENT"
+    );
+    let guess = codenames_dispatch(&mut world, json!({"type": "submitGuess", "cell": berry}));
+    let known = [(treasure, "AGENT"), (berry, "BYSTANDER")];
+    assert_codenames_outbound(&guess, &full, &known);
+    assert_eq!(
+        guess.direct[0]["result"]["gameStateAfter"]["key"]["B"][berry],
+        "BYSTANDER"
+    );
+    assert_client_codenames(&world.world_payload(), &full, &known);
+
+    codenames_dispatch(
+        &mut world,
+        json!({"type": "submitClue", "clue": {"word": "NORI", "count": 1}}),
+    );
+    let next = (0..25)
+        .find(|&i| i != shared && i != treasure && full["gameState"]["key"]["A"][i] == "AGENT")
+        .unwrap();
+    codenames_dispatch_as(
+        &mut world,
+        "agent",
+        json!({"type": "submitGuess", "cell": next}),
+    );
+    codenames_dispatch_as(&mut world, "agent", json!({"type": "endTurn"}));
+    codenames_dispatch_as(
+        &mut world,
+        "agent",
+        json!({"type": "submitClue", "clue": {"word": "VALID", "count": 1}}),
+    );
+    let monster = (0..25)
+        .find(|&i| full["gameState"]["key"]["B"][i] == "ASSASSIN")
+        .unwrap();
+    let ended = codenames_dispatch(&mut world, json!({"type": "submitGuess", "cell": monster}));
+    assert_eq!(ended.direct[0]["success"], true);
+    assert_codenames_outbound(&ended, &full, &known);
+    assert_eq!(
+        ended.direct[0]["result"]["gameStateAfter"]["phase"],
+        "GAME_OVER"
+    );
+    assert_eq!(
+        ended.direct[0]["result"]["gameStateAfter"]["key"],
+        full["gameState"]["key"]
+    );
+    assert_client_codenames(&world.world_payload(), &full, &known);
+}
+
+#[test]
+fn codenames_restore_requires_player_and_valid_full_state() {
+    let mut world = codenames_world();
+    let full = world.cartridge("codenames").unwrap().state.clone();
+    let head = world.cartridge("codenames").unwrap().head_version;
+    for actor in ["agent", "system", "unknown"] {
+        let out =
+            codenames_dispatch_as(&mut world, actor, json!({"type": "restore", "state": full}));
+        assert_eq!(out.direct[0]["success"], false);
+        assert_eq!(out.direct[0]["error"], "Only player may restore");
+        assert!(out.broadcast.is_empty() && out.tasks.is_empty());
+        assert_eq!(world.cartridge("codenames").unwrap().head_version, head);
+        assert_eq!(world.cartridge("codenames").unwrap().state, full);
+    }
+    let mut bad = vec![
+        json!({}),
+        world.cartridge("codenames").unwrap().snapshot("ui")["state"].clone(),
+    ];
+    for (pointer, value) in [
+        ("/agentSide", json!("A")),
+        ("/settings/tokens", json!(8)),
+        ("/gameState/board", json!([])),
+        ("/gameState/key/B/0", json!("UNKNOWN")),
+        ("/gameState/cells/0/bystanderMarks", json!([null])),
+        ("/gameState/cells/0/solvedBy", json!("X")),
+        ("/gameState/phase", json!("OTHER")),
+        ("/gameState/tokensRemaining", json!(-1)),
+        (
+            "/gameState/history",
+            json!([{ "clueGiver": "B", "clue": {"word": "NORI", "count": 1}, "guesses": [{"cell": 25, "result": "AGENT", "at": 0}], "endedBy": null }]),
+        ),
+        ("/tutorial", json!({"step": "unknown"})),
+    ] {
+        let mut invalid = full.clone();
+        *invalid.pointer_mut(pointer).unwrap() = value;
+        bad.push(invalid);
+    }
+    for invalid in bad {
+        let out = codenames_dispatch(&mut world, json!({"type": "restore", "state": invalid}));
+        assert_eq!(
+            out.direct[0]["success"], false,
+            "accepted invalid save: {invalid}"
+        );
+        assert!(out.broadcast.is_empty() && out.tasks.is_empty());
+        assert_eq!(world.cartridge("codenames").unwrap().head_version, head);
+        assert_eq!(world.cartridge("codenames").unwrap().state, full);
+    }
+    codenames_dispatch(
+        &mut world,
+        json!({"type": "startGame", "settings": {"seed": 7}}),
+    );
+    let out = codenames_dispatch(&mut world, json!({"type": "restore", "state": full}));
+    assert_eq!(out.direct[0]["success"], true);
+    assert_eq!(world.cartridge("codenames").unwrap().state, full);
+    assert_codenames_outbound(&out, &full, &[]); // Including transition.cmd.state.
+
+    let mut swapped = full;
+    swapped["counterpartSide"] = json!("B");
+    swapped["agentSide"] = json!("A");
+    let out = codenames_dispatch(&mut world, json!({"type": "restore", "state": swapped}));
+    assert_eq!(out.direct[0]["success"], true);
+    assert_codenames_outbound(&out, &swapped, &[]);
+    assert!(out.broadcast[0]["transition"]["patches"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|patch| patch["path"] == "/gameState"));
+    assert_client_codenames(&world.world_payload(), &swapped, &[]);
+}
+
+#[test]
+fn dropped_or_panicking_agent_tasks_release_their_loop_lease() {
+    for panic in [false, true] {
+        let mut world = codenames_world();
+        let mut out = codenames_dispatch(
+            &mut world,
+            json!({"type": "submitClue", "clue": {"word": "NORI", "count": 1}}),
+        );
+        let task = out.tasks.pop().unwrap();
+        let message =
+            json!({"type": "mount_cartridge", "cartridgeId": "codenames", "requestId": "resume"});
+        assert!(session::handle(&mut world, &message, &Secrets::default())
+            .tasks
+            .is_empty());
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+            let _running_task = task;
+            if panic {
+                panic!("simulated executor panic");
+            }
+        }));
+        assert_eq!(result.is_err(), panic);
+        let mut resumed = session::handle(&mut world, &message, &Secrets::default());
+        assert_eq!(
+            resumed.tasks.len(),
+            1,
+            "a dropped task must not deadlock its app"
+        );
+        drive(&mut resumed.tasks.pop().unwrap(), &mut world);
+    }
+}
+
+#[test]
+fn old_agent_task_completion_does_not_clear_a_remounted_apps_loop() {
+    let mut world = codenames_world();
+    let mut old = codenames_dispatch(
+        &mut world,
+        json!({"type": "submitClue", "clue": {"word": "NORI", "count": 1}}),
+    )
+    .tasks
+    .pop()
+    .unwrap();
+    session::handle(
+        &mut world,
+        &json!({"type": "unmount_cartridge", "cartridgeId": "codenames", "requestId": "u"}),
+        &Secrets::default(),
+    );
+    session::handle(
+        &mut world,
+        &json!({"type": "mount_cartridge", "cartridgeId": "codenames", "requestId": "m"}),
+        &Secrets::default(),
+    );
+    let saved = codenames::reduce(
+        &codenames::initial_state(),
+        "player",
+        &json!({"type": "startGame", "settings": {"seed": 7}}),
+    )
+    .unwrap()
+    .state;
+    let saved = codenames::reduce(
+        &saved,
+        "player",
+        &json!({"type": "submitClue", "clue": {"word": "NORI", "count": 1}}),
+    )
+    .unwrap()
+    .state;
+    let mut new = codenames_dispatch(&mut world, json!({"type": "restore", "state": saved}))
+        .tasks
+        .pop()
+        .unwrap();
+    drive(&mut old, &mut world);
+    world
+        .dispatch_internal(
+            "codenames",
+            "player",
+            &json!({"type": "restore", "state": saved}),
+        )
+        .unwrap();
+    // The older task may finish its work, but must not remove the newer lease.
+    let duplicate = session::handle(
+        &mut world,
+        &json!({"type": "mount_cartridge", "cartridgeId": "codenames", "requestId": "again"}),
+        &Secrets::default(),
+    );
+    assert!(duplicate.tasks.is_empty());
+    drive(&mut new, &mut world);
 }
 
 #[test]
@@ -520,4 +892,130 @@ fn frame_pipeline_strips_credentials_and_applies_story_cookie() {
         session::prepare("[]", None).unwrap_err()["message"],
         "message must be an object"
     );
+}
+
+fn pictionary_dispatch(world: &mut World, cmd: Value) -> Outbound {
+    let message = json!({
+        "type": "dispatch", "actor": "player", "cartridgeId": "pictionary", "requestId": "p",
+        "expectedHeadVersion": world.cartridge("pictionary").unwrap().head_version,
+        "cmd": cmd,
+    });
+    session::handle(world, &message, &Secrets::default())
+}
+
+#[test]
+fn pictionary_nori_guesses_without_reading_the_secret_word() {
+    use nori_core::cartridges::pictionary;
+    let mut world = world(Pacing::Edge, LivePack::empty());
+    session::handle(
+        &mut world,
+        &json!({"type": "mount_cartridge", "cartridgeId": "pictionary", "requestId": "m"}),
+        &Secrets::default(),
+    );
+    let out = pictionary_dispatch(
+        &mut world,
+        json!({"type": "startSession", "atMs": 0, "settings": {"locale": "en", "sessionDurationMs": 600_000}}),
+    );
+    assert_eq!(out.direct[0]["success"], true, "{:?}", out.direct);
+    // The player draws first, so Nori starts guessing; a second dispatch does not double it.
+    assert_eq!(out.tasks.len(), 1);
+    assert_eq!(out.tasks[0].label(), "pictionary_guess");
+    let again = pictionary_dispatch(
+        &mut world,
+        json!({"type": "submitStrokeBatch", "atMs": 1, "batch": [{}]}),
+    );
+    assert!(again.tasks.is_empty());
+
+    // Changing the secret word must not change Nori's guesses: it never reads it.
+    let state = world.cartridge("pictionary").unwrap().state.clone();
+    let round_id = state["gameState"]["round"]["roundId"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let mut decoy = state.clone();
+    decoy["gameState"]["round"]["word"] = json!("zzz");
+    decoy["gameState"]["round"]["drawingId"] = json!("zzz");
+    decoy["gameState"]["round"]["synonyms"] = json!(["zzz"]);
+    let mut tried = Vec::new();
+    for _ in 0..pictionary::AGENT_GUESS_LIMIT {
+        let real = pictionary::agent_guess(&state, &round_id, &tried, 5).unwrap();
+        assert_eq!(
+            Some(&real),
+            pictionary::agent_guess(&decoy, &round_id, &tried, 5).as_ref()
+        );
+        tried.push(real["text"].as_str().unwrap().to_string());
+    }
+    assert_eq!(
+        pictionary::agent_guess(&state, &round_id, &tried, 5),
+        None,
+        "bounded per round"
+    );
+
+    let mut task = out.tasks.into_iter().next().unwrap();
+    let (seen, spawned) = drive(&mut task, &mut world);
+    let guesses = seen
+        .iter()
+        .filter(
+            |s| matches!(s, Seen::Broadcast(m) if m.iter().any(|k| k.ends_with(":submitGuess"))),
+        )
+        .count();
+    assert!(
+        (1..=pictionary::AGENT_GUESS_LIMIT).contains(&guesses),
+        "{seen:?}"
+    );
+    assert_eq!(seen.first(), Some(&Seen::Sleep(9_000)), "{seen:?}");
+    let round = &world.cartridge("pictionary").unwrap().state["gameState"]["round"];
+    assert_eq!(round["lastGuess"]["by"], "agent");
+    if round["status"] == "solved" {
+        assert_eq!(spawned.len(), 1, "a correct guess queues the next round");
+    } else {
+        assert_eq!(
+            round["status"], "active",
+            "Nori gives up but leaves the round to the player"
+        );
+        assert!(spawned.is_empty());
+    }
+}
+
+#[test]
+fn pictionary_next_round_starts_a_guesser_only_when_nori_guesses() {
+    let mut world = world(Pacing::Edge, LivePack::empty());
+    session::handle(
+        &mut world,
+        &json!({"type": "mount_cartridge", "cartridgeId": "pictionary", "requestId": "m"}),
+        &Secrets::default(),
+    );
+    pictionary_dispatch(
+        &mut world,
+        json!({"type": "startSession", "atMs": 0, "settings": {"sessionDurationMs": 600_000}}),
+    );
+    // Round 1: player draws. Skip it; round 2 has Nori drawing, so no guesser.
+    let out = pictionary_dispatch(&mut world, json!({"type": "skipRound", "atMs": 1}));
+    let mut next = out
+        .tasks
+        .into_iter()
+        .find(|t| t.label() == "pictionary_next_round")
+        .unwrap();
+    let (_, spawned) = drive(&mut next, &mut world);
+    let round = &world.cartridge("pictionary").unwrap().state["gameState"]["round"];
+    assert_eq!(round["roles"]["drawer"], "agent");
+    assert!(spawned.is_empty());
+    // Round 3: the player draws again and Nori's guesser is spawned with the new round.
+    let out = pictionary_dispatch(&mut world, json!({"type": "skipRound", "atMs": 2}));
+    let mut next = out
+        .tasks
+        .into_iter()
+        .find(|t| t.label() == "pictionary_next_round")
+        .unwrap();
+    let (seen, spawned) = drive(&mut next, &mut world);
+    assert_eq!(
+        world.cartridge("pictionary").unwrap().state["gameState"]["round"]["roles"]["drawer"],
+        "player"
+    );
+    assert_eq!(
+        seen.last(),
+        Some(&Seen::Spawn("pictionary_guess")),
+        "{seen:?}"
+    );
+    assert_eq!(spawned.len(), 1);
 }

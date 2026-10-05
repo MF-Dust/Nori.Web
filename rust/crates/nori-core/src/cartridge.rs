@@ -137,8 +137,38 @@ impl Cartridge {
             "visibilityFenceId": fence,
             "headVersion": self.head_version,
             "visibleVersion": self.visible_version,
-            "state": self.state,
+            "state": self.client_view(&self.state),
         })
+    }
+
+    /// The only state projection used for browser snapshots and wire commits.
+    /// Never use it for persistence or agent decisions.
+    pub fn client_view(&self, value: &Json) -> Json {
+        if self.id == "codenames" {
+            let counterpart = self
+                .state
+                .get("counterpartSide")
+                .and_then(Value::as_str)
+                .filter(|side| matches!(*side, "A" | "B"))
+                .unwrap_or("A");
+            let mut visible = crate::cartridges::codenames::client_view(value, counterpart);
+            if let Some(patches) = visible.get_mut("patches").and_then(Value::as_array_mut) {
+                // A restored side swap changes the client key even when the full
+                // server game is unchanged and therefore has no gameState patch.
+                if patches
+                    .iter()
+                    .any(|patch| patch["path"] == "/counterpartSide")
+                    && !patches
+                        .iter()
+                        .any(|patch| patch["path"] == "/gameState" || patch["path"] == "")
+                {
+                    patches.push(json!({"op": "replace", "path": "/gameState", "value": crate::cartridges::codenames::client_view(&self.state["gameState"], counterpart)}));
+                }
+            }
+            visible
+        } else {
+            value.clone()
+        }
     }
 
     pub fn dispatch(

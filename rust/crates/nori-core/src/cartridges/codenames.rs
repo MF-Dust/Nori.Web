@@ -109,6 +109,91 @@ pub fn initial_state() -> Json {
     })
 }
 
+/// Project outbound JSON only, including games nested in patches, command
+/// echoes and reducer results. Persistence and reducers keep the full state.
+pub fn client_view(value: &Json, counterpart: &str) -> Json {
+    let mut visible = value.clone();
+    match &mut visible {
+        Value::Object(object) => {
+            let counterpart = value
+                .get("counterpartSide")
+                .and_then(Value::as_str)
+                .filter(|side| matches!(*side, TEAM_A | TEAM_B))
+                .unwrap_or(counterpart);
+            for child in object.values_mut() {
+                *child = client_view(child, counterpart);
+            }
+            // A replay seed can reconstruct the hidden key, too.
+            object.remove("seed");
+            if value.get("key").is_some() {
+                object.insert(
+                    "remainingTargets".into(),
+                    json!({"A": remaining(value, TEAM_A).unwrap_or(0), "B": remaining(value, TEAM_B).unwrap_or(0)}),
+                );
+                if value.get("phase") != Some(&json!(GAME_OVER)) {
+                    let mut known = vec![Value::Null; 25];
+                    if let Some(cells) = value.get("cells").and_then(Value::as_array) {
+                        for (index, cell) in cells.iter().enumerate().take(25) {
+                            if cell.get("solvedBy").is_some_and(|side| side == counterpart) {
+                                known[index] = json!(AGENT);
+                            } else if cell
+                                .get("assassinatedBy")
+                                .is_some_and(|side| side == counterpart)
+                            {
+                                known[index] = json!(ASSASSIN);
+                            } else if cell
+                                .get("bystanderMarks")
+                                .and_then(Value::as_array)
+                                .is_some_and(|marks| marks.iter().any(|side| side == counterpart))
+                            {
+                                known[index] = json!(BYSTANDER);
+                            }
+                        }
+                    }
+                    // Tutorial stages can reset cells, but prior guesses remain public.
+                    if let Some(history) = value.get("history").and_then(Value::as_array) {
+                        for turn in history {
+                            if turn
+                                .get("clueGiver")
+                                .is_some_and(|side| side == other(counterpart))
+                            {
+                                if let Some(guesses) = turn.get("guesses").and_then(Value::as_array)
+                                {
+                                    for guess in guesses {
+                                        if let Some(index) = guess
+                                            .get("cell")
+                                            .and_then(Value::as_u64)
+                                            .filter(|index| *index < 25)
+                                        {
+                                            known[index as usize] =
+                                                guess.get("result").cloned().unwrap_or(Value::Null);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    let mut keys = json!({"A": vec![Value::Null; 25], "B": vec![Value::Null; 25]});
+                    keys[counterpart] = value
+                        .get("key")
+                        .and_then(|key| key.get(counterpart))
+                        .cloned()
+                        .unwrap_or(Value::Null);
+                    keys[other(counterpart)] = json!(known);
+                    object.insert("key".into(), keys);
+                }
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                *item = client_view(item, counterpart);
+            }
+        }
+        _ => {}
+    }
+    visible
+}
+
 fn malformed(detail: impl std::fmt::Display) -> CommandRejected {
     CommandRejected::new(format!("Malformed codenames state: {detail}"))
 }
@@ -1156,16 +1241,142 @@ fn python_repr(value: &Json) -> String {
     }
 }
 
+/// Full server/save state only: a client projection with unknown key entries
+/// must never replace authoritative state.
+pub fn validate_restored_state(state: &Json) -> Result<(), CommandRejected> {
+    if !state.is_object() {
+        return Err(CommandRejected::new("state must be an object"));
+    }
+    let is_side = |value: &Json| value == TEAM_A || value == TEAM_B;
+    let is_role = |value: &Json| value == AGENT || value == BYSTANDER || value == ASSASSIN;
+    let counterpart = field(state, "counterpartSide")?;
+    let agent = field(state, "agentSide")?;
+    if !is_side(counterpart) || !is_side(agent) || counterpart == agent {
+        return Err(malformed("player and agent must have distinct A/B sides"));
+    }
+    let settings = field(state, "settings")?;
+    validate_settings(settings, &initial_state()["settings"])?;
+    let tokens = field(settings, "tokens")?
+        .as_f64()
+        .ok_or_else(|| malformed("tokens must be a number"))?;
+    let tutorial = state.get("tutorial").filter(|value| !value.is_null());
+    if let Some(tutorial) = tutorial {
+        if !TUTORIAL_STEPS.contains(&string_field(tutorial, "step")?) {
+            return Err(malformed("unknown tutorial step"));
+        }
+    }
+    let game = field(state, "gameState")?;
+    if game.is_null() {
+        return if tutorial.is_none() {
+            Ok(())
+        } else {
+            Err(malformed("tutorial requires a game"))
+        };
+    }
+    if !game.is_object() {
+        return Err(malformed("gameState must be an object or null"));
+    }
+    let board = array_field(game, "board")?;
+    let cells = array_field(game, "cells")?;
+    if board.len() != 25 || cells.len() != 25 {
+        return Err(malformed("board and cells must have 25 entries"));
+    }
+    for word in board {
+        string_field(word, "text")?;
+        if word.get("id").is_some_and(|id| !id.is_string()) {
+            return Err(malformed("board id must be a string"));
+        }
+    }
+    for side in [TEAM_A, TEAM_B] {
+        let roles = key(game, side)?;
+        if roles.len() != 25 || !roles.iter().all(is_role) {
+            return Err(malformed(
+                "restore requires complete, valid keys for both sides",
+            ));
+        }
+    }
+    if ![NORMAL, SUDDEN_DEATH, GAME_OVER].contains(&string_field(game, "phase")?)
+        || !is_side(field(game, "whoseTurnToGive")?)
+        || !field(game, "tokensRemaining")?
+            .as_f64()
+            .is_some_and(|remaining| {
+                remaining.fract() == 0.0 && (0.0..=tokens).contains(&remaining)
+            })
+        || !(field(game, "winner")?.is_null() || game["winner"] == "TEAM")
+        || (game["phase"] != GAME_OVER && !game["winner"].is_null())
+    {
+        return Err(malformed("invalid phase, turn, tokens or winner"));
+    }
+    for (index, cell) in cells.iter().enumerate() {
+        for (name, expected) in [("solvedBy", AGENT), ("assassinatedBy", ASSASSIN)] {
+            let by = field(cell, name)?;
+            if !by.is_null()
+                && (!is_side(by) || role(game, other(by.as_str().unwrap()), index)? != expected)
+            {
+                return Err(malformed(format!("invalid {name} at cell {index}")));
+            }
+        }
+        if !cell["solvedBy"].is_null() && !cell["assassinatedBy"].is_null() {
+            return Err(malformed("a cell cannot be both solved and assassinated"));
+        }
+        let marks = array_field(cell, "bystanderMarks")?;
+        if marks.len() != 2 {
+            return Err(malformed("bystanderMarks must have two entries"));
+        }
+        for by in marks.iter().filter(|by| !by.is_null()) {
+            if !is_side(by) || role(game, other(by.as_str().unwrap()), index)? != BYSTANDER {
+                return Err(malformed(format!("invalid bystander mark at cell {index}")));
+            }
+        }
+    }
+    for turn in array_field(game, "history")? {
+        let giver = field(turn, "clueGiver")?;
+        if !is_side(giver) {
+            return Err(malformed("invalid clue giver"));
+        }
+        let clue = field(turn, "clue")?;
+        string_field(clue, "word")?;
+        let count = field(clue, "count")?;
+        if count != "infinity" && count.as_u64().is_none() {
+            return Err(malformed("invalid clue count"));
+        }
+        let ended = field(turn, "endedBy")?;
+        if !ended.is_null()
+            && !["VOLUNTARY_END", "BYSTANDER", "ALL_FOUND"]
+                .iter()
+                .any(|reason| ended == reason)
+        {
+            return Err(malformed("invalid turn ending"));
+        }
+        for guess in array_field(turn, "guesses")? {
+            let index = field(guess, "cell")?
+                .as_u64()
+                .filter(|index| *index < 25)
+                .ok_or_else(|| malformed("invalid guess cell"))?;
+            if !is_role(field(guess, "result")?)
+                || guess["result"] != *role(game, giver.as_str().unwrap(), index as usize)?
+                || !field(guess, "at")?.is_number()
+            {
+                return Err(malformed("invalid guess result or timestamp"));
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, CommandRejected> {
     let command_type = cmd
         .get("type")
         .and_then(Value::as_str)
         .ok_or_else(|| CommandRejected::new("cmd.type is required"))?;
     if command_type == "restore" {
+        if actor != "player" {
+            return Err(CommandRejected::new("Only player may restore"));
+        }
         let restored = cmd
             .get("state")
-            .filter(|value| value.is_object())
             .ok_or_else(|| CommandRejected::new("state must be an object"))?;
+        validate_restored_state(restored)?;
         return Ok(ReducerResult::ok(
             restored.clone(),
             json!({"success": true}),
@@ -2283,20 +2494,28 @@ mod tests {
 
     #[test]
     fn codenames_restore_reset_and_start_permissions() {
-        let restored = json!({"custom": [1, 2], "settings": {"wordLocale": "en"}});
+        let restored = fixture();
         let reduced = reduce(
             &initial_state(),
-            "unknown",
+            "player",
             &json!({"type": "restore", "state": restored}),
         )
         .unwrap();
         assert_eq!(reduced.state, restored);
         assert_eq!(reduced.result, json!({"success": true}));
         assert!(reduced.events.is_empty());
+        for actor in ["agent", "unknown", "system"] {
+            reject(
+                &initial_state(),
+                actor,
+                json!({"type": "restore", "state": restored}),
+                "Only player may restore",
+            );
+        }
         for restored in [json!(null), json!([]), json!(false)] {
             reject(
                 &initial_state(),
-                "agent",
+                "player",
                 json!({"type": "restore", "state": restored}),
                 "state must be an object",
             );
@@ -2778,18 +2997,11 @@ mod tests {
 
     #[test]
     fn codenames_malformed_restored_state_is_rejected() {
-        let arbitrary = reduce(
+        reject(
             &initial_state(),
             "player",
-            &json!({"type": "restore", "state": {}}),
-        )
-        .unwrap()
-        .state;
-        reject(
-            &arbitrary,
-            "player",
-            json!({"type": "submitGuess", "cell": 0}),
-            "Game not started",
+            json!({"type": "restore", "state": {}}),
+            "Malformed codenames state: missing counterpartSide",
         );
         let mut state = fixture();
         state["gameState"]["cells"] = json!([]);
@@ -2830,7 +3042,7 @@ mod tests {
         );
         let restored = reduce(
             &Value::Null,
-            "agent",
+            "player",
             &json!({"type": "restore", "state": initial_state()}),
         )
         .unwrap();

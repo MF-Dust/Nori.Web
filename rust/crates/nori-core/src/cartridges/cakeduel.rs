@@ -97,18 +97,24 @@ fn player_index(actor: &str) -> Result<usize, CommandRejected> {
     }
 }
 
+/// The attacking seat. Only 0 (player) and 1 (Nori) exist; anything else is a
+/// corrupted game and must be rejected rather than underflow `1 - attacker`.
+fn attacker_index(game: &Json) -> Result<usize, CommandRejected> {
+    match game.get("attackerIndex").and_then(Value::as_u64) {
+        Some(index @ (0 | 1)) => Ok(index as usize),
+        _ => Err(CommandRejected::new("Invalid attacker index")),
+    }
+}
+
 fn phasing_player(game: &Json) -> Result<usize, CommandRejected> {
     let phase = game.get("phase").and_then(Value::as_str).unwrap_or("");
-    let attacker = game
-        .get("attackerIndex")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as usize;
     match phase {
-        "attack" | "review" => Ok(attacker),
-        "block" => Ok(1 - attacker),
+        "attack" | "review" => attacker_index(game),
+        "block" => Ok(1 - attacker_index(game)?),
         "pick" => game
             .pointer("/pickPhaseEffects/0/player")
             .and_then(|v| v.as_u64())
+            .filter(|n| *n <= 1)
             .map(|n| n as usize)
             .ok_or_else(|| CommandRejected::new("Invalid game phase")),
         _ => Err(CommandRejected::new("Invalid game phase")),
@@ -143,11 +149,10 @@ fn claim_options(game: &Json, phase: &str) -> Vec<String> {
             }
         }
     }
+    let Ok(attacker) = attacker_index(game) else {
+        return Vec::new();
+    };
     if phase == "attack" {
-        let attacker = game
-            .get("attackerIndex")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
         let blacklist = game
             .pointer(&format!("/players/{attacker}/claimBlacklist"))
             .and_then(Value::as_array)
@@ -167,10 +172,7 @@ fn claim_options(game: &Json, phase: &str) -> Vec<String> {
             return Vec::new();
         };
         let attack_type = card_type(attack);
-        let defender = 1 - game
-            .get("attackerIndex")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
+        let defender = 1 - attacker;
         let blacklist = game
             .pointer(&format!("/players/{defender}/claimBlacklist"))
             .and_then(Value::as_array)
@@ -286,11 +288,8 @@ fn start_bout(game: &mut Json, events: &mut Vec<Json>, seed: u64) {
         .and_then(Value::as_array)
         .and_then(|a| a.last())
         .and_then(|v| v.as_i64());
-    let attacker = if let Some(winner) = winner {
-        1 - winner
-    } else {
-        0
-    };
+    // The bout loser attacks first; a malformed winner falls back to seat 0.
+    let attacker: i64 = if winner == Some(0) { 1 } else { 0 };
     game["attackerIndex"] = json!(attacker);
     game["players"][attacker as usize]["cakes"] = json!(3);
     game["players"][(1 - attacker) as usize]["cakes"] = json!(4);
@@ -343,17 +342,20 @@ fn advance_attacker(game: &mut Json, events: &mut Vec<Json>) {
                 Some(a[0].clone())
             }
         });
-    if let Some(next) = override_next {
+    if override_next.is_some() {
         if let Some(a) = game["nextAttackerIndexOverride"].as_array_mut() {
             a.remove(0);
         }
-        game["attackerIndex"] = next;
-    } else {
-        let current = game
-            .get("attackerIndex")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
-        game["attackerIndex"] = json!(1 - current);
+    }
+    match override_next
+        .and_then(|next| next.as_u64())
+        .filter(|n| *n <= 1)
+    {
+        Some(next) => game["attackerIndex"] = json!(next),
+        None => {
+            let current = attacker_index(game).unwrap_or(1);
+            game["attackerIndex"] = json!(1 - current);
+        }
     }
     game["phase"] = json!("attack");
     events.push(engine_event(
@@ -456,10 +458,7 @@ fn resolve_pass(game: &mut Json, events: &mut Vec<Json>, seed: u64) -> Result<()
             .unwrap_or(0) as i64;
         effective = (effective - block_len).max(0);
     }
-    let attacker = game
-        .get("attackerIndex")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as usize;
+    let attacker = attacker_index(game)?;
     for _ in 0..effective {
         transfer_cakes(game, 1 - attacker, attacker, damage, events);
     }
@@ -497,9 +496,11 @@ fn resolve_challenge(
     for card_id in i64_list(claim.get("cardIds").unwrap_or(&Value::Null)) {
         revealed.push(json!({"cardId": card_id, "cardName": card_name(game, card_id)?}));
     }
+    // Shipped engine rule: a claim is true only if every played card is the
+    // claimed card, so one real card cannot cover a bluff.
     let success = revealed
         .iter()
-        .all(|entry| entry.get("cardName").and_then(Value::as_str) != Some(claimed));
+        .any(|entry| entry.get("cardName").and_then(Value::as_str) != Some(claimed));
     events.push(engine_event(
         "challenge_made",
         json!({"challenger": challenger, "claimedCard": claimed, "success": success, "revealedCards": revealed}),
@@ -807,19 +808,40 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
     }
 }
 
-/// Nori also calls a claim when at most this many copies of the claimed card are unaccounted
-/// for, so the claimant would have to be holding exactly that last one. With one left, a
-/// four-card hand holds it only about a quarter of the time, so the claim is a bluff at least as
-/// often as not. At two the odds tilt towards the claimant, and a lost challenge forfeits the
-/// whole bout.
+/// How sharply Nori plays, from the `settings.difficulty` the player picked.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Difficulty {
+    /// Easy: never bluffs, claims one card at a time, only calls provable lies.
+    Soldier,
+    /// Normal: bluffs when it must, calls a claim that needs the last unseen copy.
+    Wizard,
+    /// Hard: stacks real cards, bluffs plausibly with junk, counts copies per card played.
+    Assassin,
+}
+
+fn difficulty(state: &Json) -> Difficulty {
+    match state
+        .pointer("/settings/difficulty")
+        .and_then(Value::as_str)
+    {
+        Some("soldier") => Difficulty::Soldier,
+        Some("assassin") => Difficulty::Assassin,
+        _ => Difficulty::Wizard,
+    }
+}
+
+/// Nori (normal) also calls a single-card claim when at most this many copies of the claimed
+/// card are unaccounted for, so the claimant would have to be holding exactly that last one.
+/// With one left, a four-card hand holds it only about a quarter of the time. At two the odds
+/// tilt towards the claimant, and a lost challenge forfeits the whole bout.
 const DOUBTFUL_COPIES: usize = 1;
 
-/// How many copies of the card named by the claim Nori is answering are neither in Nori's hand
-/// nor in a claim Nori made itself, i.e. how many the claimant could possibly be holding.
-/// `None` when there is no claim to judge.
+/// The claim Nori is answering: how many cards were played for it, and how many copies of the
+/// claimed card are neither in Nori's hand nor in a claim Nori made itself, i.e. how many the
+/// claimant could possibly be holding. `None` when there is no claim to judge.
 ///
 /// Nori only counts what a player at the table knows. It never looks at the claimed cards.
-fn unaccounted_copies(game: &Json) -> Option<usize> {
+fn claim_odds(game: &Json) -> Option<(usize, usize)> {
     let pending = |field: &str| game.get(field).filter(|claim| !claim.is_null());
     // The claim `resolve_challenge` would reveal: the block if there is one, else the attack.
     // In review the attack is Nori's own (it is the attacker); in block there is no claim of its own.
@@ -828,6 +850,7 @@ fn unaccounted_copies(game: &Json) -> Option<usize> {
         None => (pending("attackingClaim")?, None),
     };
     let name = claim.get("claim").and_then(Value::as_str)?;
+    let played = claim.get("cardIds").and_then(Value::as_array)?.len().max(1);
     let copies = game
         .get("cardList")
         .and_then(Value::as_array)?
@@ -840,19 +863,96 @@ fn unaccounted_copies(game: &Json) -> Option<usize> {
         .chain(own_cards.unwrap_or_default())
         .filter(|id| card_name(game, *id).is_ok_and(|card| card == name))
         .count();
-    Some(copies.saturating_sub(held))
+    Some((played, copies.saturating_sub(held)))
+}
+
+fn claim_command(indices: &[usize], name: &str) -> Json {
+    json!({"type": "play", "action": {"type": "claim", "handIndices": indices, "claim": name}})
+}
+
+/// Nori's claim for this phase, or `None` to fall back to challenge/pass.
+fn choose_claim(game: &Json, options: &[&str], level: Difficulty) -> Option<Json> {
+    let hand = i64_list(game.pointer("/players/1/hand").unwrap_or(&Value::Null));
+    let names: Vec<Option<String>> = hand.iter().map(|id| card_name(game, *id).ok()).collect();
+    let indices_of = |name: &str| -> Vec<usize> {
+        names
+            .iter()
+            .enumerate()
+            .filter(|(_, card)| card.as_deref() == Some(name))
+            .map(|(index, _)| index)
+            .collect()
+    };
+    if level == Difficulty::Assassin {
+        // Stack every real copy of the strongest honest claim: more damage, fuller blocks.
+        let best = options
+            .iter()
+            .filter(|name| !indices_of(name).is_empty())
+            .max_by_key(|name| {
+                let damage = attack_damage(name).unwrap_or(1) as usize;
+                (indices_of(name).len() * damage, damage)
+            });
+        if let Some(name) = best {
+            return Some(claim_command(&indices_of(name), name));
+        }
+    } else {
+        for (index, card) in names.iter().enumerate() {
+            if let Some(name) = card.as_deref().filter(|name| options.contains(name)) {
+                return Some(claim_command(&[index], name));
+            }
+        }
+    }
+    if hand.is_empty() {
+        return None;
+    }
+    match level {
+        // Easy Nori never lies.
+        Difficulty::Soldier => None,
+        Difficulty::Wizard => options.first().map(|name| claim_command(&[0], name)),
+        Difficulty::Assassin => {
+            // Bluff with the least useful card, naming the most plausible claim: the one with
+            // the most copies Nori is not holding itself.
+            let junk = names
+                .iter()
+                .position(|card| card.as_deref() == Some("wolfy"))
+                .or_else(|| {
+                    names.iter().position(|card| {
+                        !matches!(
+                            card_type(card.as_deref().unwrap_or("")),
+                            "physical" | "magical"
+                        )
+                    })
+                })
+                .unwrap_or(0);
+            let copies = |name: &str| {
+                game.get("cardList")
+                    .and_then(Value::as_array)
+                    .map(|list| {
+                        list.iter()
+                            .filter(|card| card.as_str() == Some(name))
+                            .count()
+                    })
+                    .unwrap_or(0)
+                    .saturating_sub(indices_of(name).len())
+            };
+            options
+                .iter()
+                .enumerate()
+                .max_by_key(|(order, name)| (copies(name), std::cmp::Reverse(*order)))
+                .map(|(_, name)| claim_command(&[junk], name))
+        }
+    }
 }
 
 /// Nori's next move as the agent (player 1), or `None` when it is not Nori's turn.
 ///
 /// Order of preference:
 /// 1. Challenge a claim that cannot be true, which wins the bout outright.
-/// 2. Claim: honestly when Nori holds a suitable card, else a bluff with its first card.
-/// 3. Challenge a doubtful claim instead of letting it stand.
+/// 2. Claim honestly when Nori holds a suitable card; otherwise bluff (not on easy).
+/// 3. Challenge a doubtful claim instead of letting it stand (not on easy).
 /// 4. Pass.
 ///
 /// `pass` is legal in every phase where `challenge` is, so challenging has to be decided on the
-/// merits before falling back to `pass`. The decision is deterministic and ignores difficulty.
+/// merits before falling back to `pass`. Deterministic for a given state and difficulty.
 pub fn agent_next_command(state: &Json) -> Option<Json> {
     let game = state.get("game")?;
     if !game.is_object() || game.get("gameEnded").is_some_and(|v| !v.is_null()) {
@@ -861,6 +961,7 @@ pub fn agent_next_command(state: &Json) -> Option<Json> {
     if phasing_player(game).ok()? != 1 {
         return None;
     }
+    let level = difficulty(state);
     let legal = legal_actions(game).ok()?;
     let can = |kind: &str| {
         legal
@@ -868,45 +969,34 @@ pub fn agent_next_command(state: &Json) -> Option<Json> {
             .any(|item| item.get("type").and_then(Value::as_str) == Some(kind))
     };
     let challenge = json!({"type": "play", "action": {"type": "challenge"}});
-    let unaccounted = if can("challenge") {
-        unaccounted_copies(game)
+    let odds = if can("challenge") {
+        claim_odds(game)
     } else {
         None
     };
-    if unaccounted == Some(0) {
+    if odds.is_some_and(|(played, unaccounted)| played > unaccounted) {
         return Some(challenge);
     }
     if let Some(claim) = legal
         .iter()
         .find(|item| item.get("type").and_then(Value::as_str) == Some("claim"))
     {
-        let hand = i64_list(game.pointer("/players/1/hand").unwrap_or(&Value::Null));
-        let options = claim
+        let options: Vec<&str> = claim
             .get("claimFrom")
             .and_then(Value::as_array)
-            .cloned()
+            .map(|items| items.iter().filter_map(Value::as_str).collect())
             .unwrap_or_default();
-        for (index, card_id) in hand.iter().enumerate() {
-            if let Ok(name) = card_name(game, *card_id) {
-                if options
-                    .iter()
-                    .any(|opt| opt.as_str() == Some(name.as_str()))
-                {
-                    return Some(
-                        json!({"type": "play", "action": {"type": "claim", "handIndices": [index], "claim": name}}),
-                    );
-                }
-            }
-        }
-        if !hand.is_empty() {
-            if let Some(name) = options.first().and_then(Value::as_str) {
-                return Some(
-                    json!({"type": "play", "action": {"type": "claim", "handIndices": [0], "claim": name}}),
-                );
-            }
+        if let Some(command) = choose_claim(game, &options, level) {
+            return Some(command);
         }
     }
-    if unaccounted.is_some_and(|copies| copies <= DOUBTFUL_COPIES) {
+    let doubtful = odds.is_some_and(|(played, unaccounted)| match level {
+        Difficulty::Soldier => false,
+        Difficulty::Wizard => unaccounted <= DOUBTFUL_COPIES,
+        // Every unseen copy would have to be among the played cards.
+        Difficulty::Assassin => unaccounted <= played.max(DOUBTFUL_COPIES),
+    });
+    if doubtful {
         return Some(challenge);
     }
     can("pass").then(|| json!({"type": "play", "action": {"type": "pass"}}))
@@ -1067,10 +1157,11 @@ mod tests {
 
     #[test]
     fn cakeduel_stranded_agent_turn_recovers_with_pass() {
+        // Normal Nori always answers an attack with a (possibly bluffed) block.
         let mut state = reduce(
             &initial_state(),
             "player",
-            &json!({"type": "startGame", "mode": "normal", "difficulty": "soldier"}),
+            &json!({"type": "startGame", "mode": "normal", "difficulty": "wizard"}),
         )
         .unwrap()
         .state;
@@ -1176,7 +1267,7 @@ mod tests {
         let mut state = reduce(
             &initial_state(),
             "player",
-            &json!({"type": "startGame", "mode": "normal", "difficulty": "soldier"}),
+            &json!({"type": "startGame", "mode": "normal", "difficulty": "wizard"}),
         )
         .unwrap()
         .state;
@@ -1354,6 +1445,154 @@ mod tests {
         assert_eq!(agent_next_command(&hand_junk), Some(pass()));
     }
 
+    fn at(mut state: Json, difficulty: &str) -> Json {
+        state["settings"]["difficulty"] = json!(difficulty);
+        state
+    }
+
+    #[test]
+    fn cakeduel_difficulty_changes_how_nori_plays() {
+        // Bluffing: easy Nori never lies, normal bluffs with its first card, hard bluffs with
+        // junk (wolfy) under the most plausible name.
+        let hand = ["defender", "wolfy", "scientist"];
+        let attack = staged("attack", 1, &hand, None, None);
+        assert_eq!(
+            agent_next_command(&at(attack.clone(), "soldier")),
+            Some(pass())
+        );
+        assert_eq!(
+            agent_next_command(&at(attack.clone(), "wizard")),
+            Some(claim_command(&[0], "soldier"))
+        );
+        assert_eq!(
+            agent_next_command(&at(attack, "assassin")),
+            Some(claim_command(&[1], "soldier"))
+        );
+        // Stacking: hard Nori plays every real wizard at once.
+        let attack = staged("attack", 1, &["archer", "wizard", "wizard"], None, None);
+        assert_eq!(
+            agent_next_command(&at(attack.clone(), "wizard")),
+            Some(claim_command(&[0], "archer"))
+        );
+        assert_eq!(
+            agent_next_command(&at(attack, "assassin")),
+            Some(claim_command(&[1, 2], "wizard"))
+        );
+        // Doubt: one scientist left unseen. Easy lets it through, normal and hard call it.
+        let review = staged(
+            "review",
+            1,
+            &["scientist", "scientist", "soldier"],
+            Some(("wizard", &["wizard"])),
+            Some(("scientist", &["soldier"])),
+        );
+        assert_eq!(
+            agent_next_command(&at(review.clone(), "soldier")),
+            Some(pass())
+        );
+        assert_eq!(
+            agent_next_command(&at(review.clone(), "wizard")),
+            Some(challenge())
+        );
+        assert_eq!(
+            agent_next_command(&at(review, "assassin")),
+            Some(challenge())
+        );
+        // A two-card block with two unseen copies: only hard Nori counts per card played.
+        let review = staged(
+            "review",
+            1,
+            &["defender", "defender", "soldier"],
+            Some(("soldier", &["soldier"])),
+            Some(("defender", &["defender", "archer"])),
+        );
+        assert_eq!(
+            agent_next_command(&at(review.clone(), "wizard")),
+            Some(pass())
+        );
+        assert_eq!(
+            agent_next_command(&at(review, "assassin")),
+            Some(challenge())
+        );
+        // Every level calls a provable lie: three defenders claimed, only two unseen.
+        let review = staged(
+            "review",
+            1,
+            &["defender", "defender", "soldier"],
+            Some(("soldier", &["soldier"])),
+            Some(("defender", &["defender", "archer", "archer"])),
+        );
+        for level in ["soldier", "wizard", "assassin"] {
+            assert_eq!(
+                agent_next_command(&at(review.clone(), level)),
+                Some(challenge()),
+                "{level}"
+            );
+        }
+    }
+
+    #[test]
+    fn cakeduel_challenge_fails_unless_every_card_is_real() {
+        // Shipped rule: one real card does not cover a bluffed second card.
+        let review = staged(
+            "review",
+            1,
+            &["soldier"],
+            Some(("wizard", &["wizard"])),
+            Some(("scientist", &["scientist", "soldier"])),
+        );
+        let result = reduce(&review, "agent", &challenge()).unwrap();
+        let call = result
+            .events
+            .iter()
+            .map(|event| &event["event"])
+            .find(|event| event["type"] == "challenge_made")
+            .unwrap();
+        assert_eq!(call["success"], true);
+        assert_eq!(result.state["game"]["boutWinners"], json!([1]));
+    }
+
+    #[test]
+    fn cakeduel_rejects_corrupted_attacker_index_without_panicking() {
+        for phase in ["attack", "block", "review"] {
+            for bad in [
+                json!(2),
+                json!(u64::MAX),
+                json!(-1),
+                json!("1"),
+                json!(null),
+            ] {
+                let mut state = staged(
+                    phase,
+                    0,
+                    &["soldier"],
+                    Some(("soldier", &["soldier"])),
+                    None,
+                );
+                state["game"]["attackerIndex"] = bad.clone();
+                assert_eq!(agent_next_command(&state), None, "{phase} {bad}");
+                for actor in ["player", "agent"] {
+                    for action in ["pass", "challenge", "concede"] {
+                        let command = json!({"type": "play", "action": {"type": action}});
+                        assert!(
+                            reduce(&state, actor, &command).is_err(),
+                            "{phase} {bad} {actor} {action}"
+                        );
+                    }
+                }
+                assert!(claim_options(&state["game"], phase).is_empty());
+            }
+        }
+        // A bogus attacker override or bout winner falls back to a valid seat.
+        let mut game = staged("attack", 0, &[], None, None)["game"].clone();
+        game["nextAttackerIndexOverride"] = json!([7]);
+        advance_attacker(&mut game, &mut Vec::new());
+        assert_eq!(game["attackerIndex"], 1);
+        game["boutWinners"] = json!([9]);
+        start_bout(&mut game, &mut Vec::new(), 1);
+        assert_eq!(game["attackerIndex"], 0);
+    }
+
     /// A uniformly random legal move for the human, short of conceding.
     fn human_move(game: &Json, rng: &mut StdRng) -> Json {
         let actions: Vec<Json> = legal_actions(game)
@@ -1381,35 +1620,41 @@ mod tests {
         // Seeded end to end: every game and every human move is reproducible. Nori calls a
         // claim in roughly one game in twenty, so give it plenty of games to show it can.
         const GAMES: i64 = 200;
-        let mut rng = StdRng::seed_from_u64(7);
-        let mut challenges = 0;
-        for seed in 0..GAMES {
-            let start = json!({"type": "startGame", "mode": "normal", "difficulty": "soldier"});
-            let mut state = crate::jsonutil::with_now_ms(1_000 + seed, || {
-                reduce(&initial_state(), "player", &start)
-            })
-            .unwrap()
-            .state;
-            for _ in 0..500 {
-                if !state["game"]["gameEnded"].is_null() {
-                    break;
+        for difficulty in ["soldier", "wizard", "assassin"] {
+            let mut rng = StdRng::seed_from_u64(7);
+            let mut challenges = 0;
+            for seed in 0..GAMES {
+                let start =
+                    json!({"type": "startGame", "mode": "normal", "difficulty": difficulty});
+                let mut state = crate::jsonutil::with_now_ms(1_000 + seed, || {
+                    reduce(&initial_state(), "player", &start)
+                })
+                .unwrap()
+                .state;
+                for _ in 0..500 {
+                    if !state["game"]["gameEnded"].is_null() {
+                        break;
+                    }
+                    let (actor, command) = if phasing_player(&state["game"]).unwrap() == 1 {
+                        let command = agent_next_command(&state).expect("Nori always has a move");
+                        ("agent", command)
+                    } else {
+                        ("player", human_move(&state["game"], &mut rng))
+                    };
+                    challenges += i32::from(actor == "agent" && command == challenge());
+                    state = reduce(&state, actor, &command)
+                        .unwrap_or_else(|error| panic!("game {seed}: {actor} {command}: {error}"))
+                        .state;
                 }
-                let (actor, command) = if phasing_player(&state["game"]).unwrap() == 1 {
-                    let command = agent_next_command(&state).expect("Nori always has a move");
-                    ("agent", command)
-                } else {
-                    ("player", human_move(&state["game"], &mut rng))
-                };
-                challenges += i32::from(actor == "agent" && command == challenge());
-                state = reduce(&state, actor, &command)
-                    .unwrap_or_else(|error| panic!("game {seed}: {actor} {command}: {error}"))
-                    .state;
+                assert!(
+                    !state["game"]["gameEnded"].is_null(),
+                    "game {seed} never ended"
+                );
             }
             assert!(
-                !state["game"]["gameEnded"].is_null(),
-                "game {seed} never ended"
+                challenges > 0,
+                "{difficulty}: Nori never challenged in {GAMES} games"
             );
         }
-        assert!(challenges > 0, "Nori never challenged in {GAMES} games");
     }
 }
