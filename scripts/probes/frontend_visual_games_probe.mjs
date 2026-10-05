@@ -92,7 +92,14 @@ async function captureTarget({ label, outDir, historical, backendPort, previewPo
       },
     });
     context = await browser.newContext(browserOptions);
-    await context.addInitScript(() => localStorage.setItem("arcade-language", "zh-CN"));
+    await context.addInitScript(() => {
+      localStorage.setItem("arcade-language", "zh-CN");
+      // Both entries start in the fresh story. The game comparison intentionally
+      // captures the completed archive desktop, matching the paired visual probe.
+      if (window === window.top && !localStorage.getItem("unlock-settings"))
+        localStorage.setItem("unlock-settings", JSON.stringify({ state: { fullUnlock: true }, version: 2 }));
+      localStorage.setItem("nori.fullUnlock", "1");
+    });
     page = await context.newPage();
     page.setDefaultTimeout(45_000);
     page.on("pageerror", (error) => pageErrors.push(error.message));
