@@ -1,12 +1,12 @@
 import * as jsxRuntime from "react/jsx-runtime";
 
-/** Recovered shipped SVG piece geometry and white/black material. */
+/** ChessScreen-D3ynrc3S.js:11763: small setup/capture glyphs (not the board SVG set). */
 export function ChessPiece({ piece: piece, color: color, size: size = 16 }: { piece: string; color: "white" | "black"; size?: number }) {
   const white = color === "white",
-    fill = white ? "#ffffff" : "#000000",
-    stroke = "#000000",
-    detailStroke = white ? "#000000" : "#ffffff",
-    strokeWidth = 1.5,
+    fill = white ? "#f0f0f0" : "#1a1a1a",
+    stroke = white ? "#333" : "rgba(180, 210, 240, 0.85)",
+    detailStroke = white ? "#333" : "rgba(180, 210, 240, 0.7)",
+    strokeWidth = white ? 1.5 : 2,
     svgProps = {
       xmlns: "http://www.w3.org/2000/svg",
       viewBox: "0 0 45 45",
@@ -14,7 +14,9 @@ export function ChessPiece({ piece: piece, color: color, size: size = 16 }: { pi
       height: size,
       style: {
         display: "block",
-        filter: "drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35))",
+        filter: white
+          ? "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))"
+          : "drop-shadow(0 0 3px rgba(140, 180, 220, 0.6)) drop-shadow(0 0 6px rgba(120, 160, 200, 0.3))",
       },
     };
   switch (piece) {
@@ -47,11 +49,11 @@ export function ChessPiece({ piece: piece, color: color, size: size = 16 }: { pi
             }),
             jsxRuntime.jsx("path", {
               d: "M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0z",
-              fill: detailStroke,
+              fill: white ? stroke : "rgba(180, 210, 240, 0.9)",
             }),
             jsxRuntime.jsx("path", {
               d: "M14.933 15.75a.5 1.5 30 1 1-.866-.5.5 1.5 30 1 1 .866.5z",
-              fill: detailStroke,
+              fill: white ? stroke : "rgba(180, 210, 240, 0.9)",
             }),
           ],
         }),

@@ -284,7 +284,7 @@ export function IdleUpgradeList({
 
   return (
     <div className="pointer-events-auto flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pt-2 pr-1">
-      {hasAvailableRows ? <PixelHeading>可购</PixelHeading> : null}
+      <PixelHeading>可购</PixelHeading>
 
       {hasAvailableRows ? (
         <div className="grid grid-cols-5 gap-1">

@@ -8,9 +8,11 @@ import { repoRoot } from "../../scripts/lib/paths.mjs";
  * which re-exports it, so it has no entry of its own.
  */
 export const groups = {
-  games: ["tests/frontend/frontend-games.test.ts"],
+  games: ["tests/frontend/frontend-games.test.ts", "tests/frontend/frontend-confirmed-visuals.test.tsx"],
   runtime: [
     "tests/frontend/frontend-runtime.test.ts",
+    "tests/frontend/frontend-parity-wiring.test.ts",
+    "tests/frontend/frontend-mail.test.tsx",
     "tests/frontend/frontend-notifications.test.ts",
     "tests/frontend/frontend-os-notifications.test.ts",
     "tests/frontend/frontend-subscriptions.test.ts",

@@ -1,5 +1,6 @@
 import { useManagedWindowRuntime } from "../components/window-runtime-context";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { createSignalAuthentication } from "./signal-auth";
 import type { SignalDanielConversationRuntime } from "./signal-daniel";
 import type { SignalService } from "../services/signal";
 import {
@@ -17,6 +18,8 @@ export interface SignalPresentationRuntime {
   accountName: string | (() => string);
   authenticated?: boolean;
   authSignalPresent?: boolean | (() => boolean);
+  getWorldId?: () => string | null;
+  subscribe?: (listener: () => void) => () => void;
   translate: (key: string, variables?: Record<string, string>) => string;
   playSound?: (cue: string) => void;
   onScreenActive?: (
@@ -48,18 +51,21 @@ function objectParams(params: unknown): Record<string, unknown> {
 export function createSignalProductionWindowBinding(
   runtime: SignalPresentationRuntime,
 ): ProductionWindowBinding {
-  let authenticated = runtime.authenticated ?? false;
+  const authentication = createSignalAuthentication(runtime);
+
+  function useScreen(screen: Parameters<NonNullable<SignalPresentationRuntime["onScreenActive"]>>[0]) {
+    const { instanceId } = useManagedWindowRuntime();
+    useEffect(() => {
+      runtime.setContentKey?.(instanceId, screen);
+      return () => runtime.setContentKey?.(instanceId, null);
+    }, [instanceId, screen]);
+    return useSyncExternalStore(authentication.subscribe, authentication.snapshot, authentication.snapshot);
+  }
 
   function LoginScreen({ navigate, params }: WindowScreenComponentProps) {
-    const [, forceAuthenticated] = useState(authenticated);
+    const authenticated = useScreen("signal:login");
     const screenParams = objectParams(params);
     const notice = typeof screenParams.notice === "string" ? screenParams.notice : undefined;
-
-    const setAuthenticated = (next: boolean) => {
-      authenticated = next;
-      forceAuthenticated(next);
-      runtime.onAuthenticatedChange?.(next);
-    };
 
     return (
       <SignalLoginScreen
@@ -71,7 +77,7 @@ export function createSignalProductionWindowBinding(
             ? false
             : valueOf(runtime.authSignalPresent)
         }
-        setAuthenticated={setAuthenticated}
+        setAuthenticated={authentication.setAuthenticated}
         navigate={(destination: SignalDestination) => navigate(destination)}
         translate={(key) => runtime.translate(key)}
         notice={notice}
@@ -82,6 +88,7 @@ export function createSignalProductionWindowBinding(
   }
 
   function ResetScreen({ navigate, goBack }: WindowScreenComponentProps) {
+    useScreen("signal:reset");
     return (
       <SignalResetScreen
         service={runtime.service}
@@ -98,6 +105,7 @@ export function createSignalProductionWindowBinding(
   }
 
   function TempPasswordScreen({ navigate, params }: WindowScreenComponentProps) {
+    useScreen("signal:tempPassword");
     const screenParams = objectParams(params);
     const tempPassword =
       typeof screenParams.tempPassword === "string" ? screenParams.tempPassword : "";
@@ -114,10 +122,11 @@ export function createSignalProductionWindowBinding(
 
   function MessengerRoute({ navigate }: WindowScreenComponentProps) {
     const { instanceId } = useManagedWindowRuntime();
+    const authenticated = useScreen("signal:messenger");
     useEffect(() => {
       runtime.onScreenActive?.("signal:messenger");
       if (!authenticated) navigate("login");
-    }, [navigate]);
+    }, [authenticated, navigate]);
 
     if (!authenticated || !runtime.messenger) return null;
     return (

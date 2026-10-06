@@ -37,7 +37,7 @@ export function ManagedWindowHost({
     () => ({ setTitleBarContent }),
     [],
   );
-  if (!managedWindow || managedWindow.minimized) return null;
+  if (!managedWindow) return null;
 
   const exclusive = item.kind === "exclusive";
   const interactive = !item.receded;
@@ -46,6 +46,7 @@ export function ManagedWindowHost({
   return (
     <div
       data-window-host={item.instanceId}
+      hidden={managedWindow.minimized}
       data-window-kind={item.kind}
       data-window-reveal-delay={item.revealDelay}
     >

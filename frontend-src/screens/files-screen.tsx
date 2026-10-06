@@ -3,10 +3,12 @@ import {
   ArrowRight,
   ArrowUp,
   ChevronRight,
+  Cpu,
   Download,
   FileArchive,
   FileText,
   Folder,
+  FolderLock,
   FolderOpen,
   HardDrive,
   Image as ImageIcon,
@@ -18,7 +20,6 @@ import {
   LockOpen,
   MessagesSquare,
   PanelLeft,
-  X,
 } from "lucide-react";
 import {
   useCallback,
@@ -51,6 +52,12 @@ import {
 } from "../apps/files-tree";
 import { MarkdownBody } from "../components/markdown-body";
 import { SidebarNavButton } from "../components/sidebar-nav-button";
+import { VaultSheet } from "../components/vault-sheet";
+import type { NotificationInput } from "../state/notification-store";
+import { formatComputeAmount } from "../runtime/os-notifications";
+import { FilesHexCanvas } from "./files-hex-canvas";
+import { ColdVolumeIcon, OpenColdVolumeIcon, PdfFileIcon, SealedColdVolumeIcon } from "./files-icons";
+import "./files-screen.css";
 
 const SIDEBAR_WIDTH = 224;
 const SIDEBAR_AUTO_COLLAPSE_WIDTH = 600;
@@ -109,7 +116,10 @@ export interface FilesScreenRuntime {
   translate?: FilesTranslate;
   hasFact?: (factId: string) => boolean;
   subscribe?: (listener: () => void) => () => void;
-  playCue?: (cue: string) => void;
+  /** Compute/scene changes only repaint recovery; they must not reload artifacts. */
+  subscribeRecovery?: (listener: () => void) => () => void;
+  playCue?: (cue: string, options?: { pitch?: number }) => void;
+  notify?: (input: NotificationInput) => void;
   launchApp?: (request: { appId: string; mode: string; args?: unknown }) => void | Promise<void>;
   recoveryState?: () => FilesRecoveryState;
   reduceMotion?: () => boolean;
@@ -134,6 +144,13 @@ const STRINGS: Record<string, string> = {
   "files.columns.recovery": "Recovery",
   "files.columns.modified": "Modified",
   "files.columns.size": "Size",
+  "files.toolbar.hideSidebar": "Hide sidebar",
+  "files.toolbar.showSidebar": "Show sidebar",
+  "files.view.grid": "Icons",
+  "files.view.list": "List",
+  "files.nav.back": "Back",
+  "files.nav.forward": "Forward",
+  "files.nav.up": "Up one level",
   "files.decrypting": "Decrypting recovered volume…",
   "files.empty": "This folder is empty.",
   "files.sealed.title": "Volume sealed",
@@ -173,9 +190,10 @@ function classes(...values: Array<string | false | null | undefined>): string {
 }
 
 function fileIcon(file: FilesRecoveredFile) {
-  if (file.launch === "qfr") return MessagesSquare;
+  if (file.launch === "qfr") return Cpu;
   if (file.kind === "image") return ImageIcon;
-  if (file.kind === "training-log") return FileArchive;
+  if (file.kind === "pdf") return PdfFileIcon;
+  if (file.kind === "training-log") return MessagesSquare;
   return FileText;
 }
 
@@ -270,15 +288,16 @@ function RecoveryProgress({ file, runtime, t }: { file: FilesRecoveredFile; runt
 }
 
 function EntryIcon({ entry, className }: { entry: FilesEntry; className?: string }) {
-  if (entry.kind === "folder") return <Folder className={className} />;
-  if (entry.kind === "device") return <HardDrive className={classes(className, entry.sealed ? "text-amber-500" : "text-[var(--nori-teal,#5eead4)]")} />;
+  if (entry.kind === "folder") return <Folder className={classes(className, "fill-sky-400/10 text-sky-400/90")} strokeWidth={1.25} />;
+  if (entry.kind === "device") return <ColdVolumeIcon className={className} sealed={entry.sealed} />;
   if (entry.kind === "vault") {
     const Icon = entry.vault.vaultKind === "file" ? FileArchive : Folder;
     const LockIcon = entry.vault.unlocked ? LockOpen : Lock;
-    return <span className="relative inline-flex"><Icon className={className} /><LockIcon className={classes("absolute -bottom-0.5 -right-0.5 size-3", entry.vault.unlocked ? "text-muted-foreground" : "text-amber-500")} /></span>;
+    return <span className="relative inline-flex"><Icon className={classes(className, "text-muted-foreground/70")} strokeWidth={1.25} /><LockIcon className={classes("absolute bottom-0 right-0 files-vault-badge", entry.vault.unlocked ? "text-muted-foreground" : "text-amber-500")} /></span>;
   }
-  const Icon = fileIcon(entry.file);
-  return <span className="relative inline-flex"><Icon className={classes(className, entry.file.launch === "qfr" && "text-[#4ee0c8]")} />{isRecoverableFile(entry.file) && !isRecoveredFile(entry.file) ? <Lock className="absolute -bottom-0.5 -right-0.5 size-3 text-amber-500" /> : null}</span>;
+  const locked = isRecoverableFile(entry.file) && !isRecoveredFile(entry.file);
+  const Icon = locked ? FileText : fileIcon(entry.file);
+  return <span className="relative inline-flex"><Icon className={classes(className, entry.file.launch === "qfr" ? "text-[#4ee0c8]" : "text-muted-foreground")} />{locked ? <Lock className="absolute -bottom-0.5 -right-0.5 size-2.5 text-amber-500" /> : null}</span>;
 }
 
 function Breadcrumbs({ path, onNavigate, t }: { path: string; onNavigate(path: string): void; t: FilesTranslate }) {
@@ -286,24 +305,28 @@ function Breadcrumbs({ path, onNavigate, t }: { path: string; onNavigate(path: s
   return <div className="flex min-w-0 items-center gap-1 overflow-hidden text-sm"><button type="button" onClick={() => onNavigate("")} className={classes("shrink-0 rounded px-1.5 py-0.5 hover:bg-muted", crumbs.length === 0 ? "font-medium text-foreground" : "text-muted-foreground")}>{t("files.breadcrumb.root")}</button>{crumbs.map((crumb, index) => <span key={crumb.path} className="contents"><ChevronRight className="size-3.5 shrink-0 text-muted-foreground/60" /><button type="button" onClick={() => onNavigate(crumb.path)} className={classes("truncate rounded px-1.5 py-0.5 hover:bg-muted", index === crumbs.length - 1 ? "font-medium text-foreground" : "text-muted-foreground")}>{crumb.name}</button></span>)}</div>;
 }
 
-function Modal({ children, onClose, label }: { children: ReactNode; onClose(): void; label?: string }) {
-  useEffect(() => {
-    const key = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
-  }, [onClose]);
-  return <div className="absolute inset-0 z-30 grid place-items-center bg-black/35 p-4" role="dialog" aria-modal="true" aria-label={label} onMouseDown={(event) => event.target === event.currentTarget && onClose()}><div className="w-[min(30rem,100%)] rounded-2xl border border-border bg-popover p-5 text-popover-foreground shadow-2xl">{children}</div></div>;
-}
-
 function SealedDialog({ onClose, t }: { onClose(): void; t: FilesTranslate }) {
-  return <Modal onClose={onClose} label={t("files.sealed.title")}><div className="flex items-start gap-3"><div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground"><Lock className="size-[18px]" /></div><div className="min-w-0 flex-1"><h2 className="text-sm font-semibold">{t("files.sealed.title")}</h2><p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{t("files.sealed.body")}</p></div></div><div className="mt-5 flex justify-end"><button type="button" onClick={onClose} className="rounded-lg bg-muted/60 px-4 py-1.5 text-[13px] font-medium hover:bg-muted">{t("files.sealed.ok")}</button></div></Modal>;
+  return <VaultSheet onClose={onClose} onEnter={onClose} label={t("files.sealed.title")} className="files-sealed-sheet" sfx={false}>
+    <div className="flex items-start gap-3"><div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground"><Lock className="size-[18px]" /></div><div className="min-w-0 flex-1"><h2 className="text-sm font-semibold">{t("files.sealed.title")}</h2><p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{t("files.sealed.body")}</p></div></div>
+    <div className="mt-5 flex justify-end"><button type="button" onClick={onClose} className="rounded-lg bg-muted/60 px-4 py-1.5 text-[13px] font-medium hover:bg-muted">{t("files.sealed.ok")}</button></div>
+  </VaultSheet>;
 }
 
 function VaultDialog({ vault, runtime, onCancel, onUnlocked, t }: { vault: FilesTreeVault; runtime: FilesScreenRuntime; onCancel(): void; onUnlocked(vault: FilesTreeVault): void; t: FilesTranslate }) {
   const [token, setToken] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "wrong" | "error">("idle");
+  const [shakeKey, setShakeKey] = useState<number>();
+  const input = useRef<HTMLInputElement>(null);
   const submitting = status === "submitting";
+  const invalid = status === "wrong" || status === "error";
   const name = vault.vaultPath.split("/").filter(Boolean).at(-1) ?? vault.title;
+  const reject = (failure: "wrong" | "error") => {
+    runtime.playCue?.("webapps-files-vault-wrong-pass");
+    setToken("");
+    setStatus(failure);
+    setShakeKey((previous) => (previous ?? 0) + 1);
+  };
+  useEffect(() => { if (invalid) input.current?.focus(); }, [invalid, shakeKey]);
   const submit = async () => {
     if (!token.trim() || submitting) return;
     setStatus("submitting");
@@ -314,17 +337,22 @@ function VaultDialog({ vault, runtime, onCancel, onUnlocked, t }: { vault: Files
         return;
       }
       await new Promise((resolve) => setTimeout(resolve, 900));
-      runtime.playCue?.("webapps-files-vault-wrong-pass");
-      setToken("");
-      setStatus("wrong");
+      reject("wrong");
     } catch (error) {
       console.warn("[Files] Vault unlock failed:", error);
-      runtime.playCue?.("webapps-files-vault-wrong-pass");
-      setStatus("error");
+      reject("error");
     }
   };
   const message = status === "wrong" ? t("files.vault.wrong") : status === "error" ? t("files.vault.error") : "";
-  return <Modal onClose={submitting ? () => {} : onCancel} label={name}><div className="flex gap-4"><Lock className="mt-0.5 size-10 shrink-0 text-muted-foreground" strokeWidth={1.25} /><div className="min-w-0 flex-1"><h2 className="text-sm font-semibold">{t("files.vault.title", { name })}</h2><input autoFocus value={token} disabled={submitting} onChange={(event) => { setToken(event.target.value); if (status !== "submitting") setStatus("idle"); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void submit(); } }} placeholder={vault.placeholder ?? t("files.vault.placeholder")} className="mt-3.5 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring/40" />{vault.hint ? <div className="mt-2 text-[12px] leading-relaxed text-muted-foreground"><MarkdownBody markdown={t("files.vault.hintLabel") + vault.hint} /></div> : null}<p className={classes("mt-2 min-h-4 text-[12px]", message ? "text-destructive" : "text-transparent")} aria-live="polite">{message || " "}</p></div></div><div className="mt-2 flex justify-end gap-2"><button type="button" disabled={submitting} onClick={onCancel} className="rounded-md px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50">{t("files.vault.cancel")}</button><button type="button" disabled={submitting || !token.trim()} onClick={() => void submit()} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50">{submitting ? <LoaderCircle className="size-4 animate-spin" /> : null}{t(submitting ? "files.vault.submitting" : "files.vault.submit")}</button></div></Modal>;
+  return <VaultSheet onClose={submitting ? undefined : onCancel} closeOnScrim={false} label={name} role="alertdialog" frameClassName="files-vault-frame" shakeKey={shakeKey} playCue={runtime.playCue}>
+    <form onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+      <div className="flex gap-4"><FolderLock className="mt-0.5 size-10 shrink-0 text-muted-foreground" strokeWidth={1.25} /><div className="min-w-0 flex-1"><h2 className="text-sm font-semibold leading-snug">{t("files.vault.title", { name })}</h2>
+        <input ref={input} type="text" autoFocus autoComplete="off" spellCheck={false} value={token} disabled={submitting} aria-label={t("files.vault.placeholder")} aria-invalid={invalid} onChange={(event) => { setToken(event.target.value); if (invalid) setStatus("idle"); }} placeholder={vault.placeholder ?? t("files.vault.placeholder")} className="mt-3.5 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring/40" />
+        {vault.hint ? <div className="mt-2 text-[12px] leading-relaxed text-muted-foreground"><MarkdownBody markdown={t("files.vault.hintLabel") + vault.hint} /></div> : null}<p className={classes("mt-2 min-h-4 text-[12px]", message ? "text-destructive" : "text-transparent")} aria-live="polite">{message || " "}</p>
+      </div></div>
+      <div className="mt-2 flex justify-end gap-2"><button type="button" disabled={submitting} onClick={onCancel} className="rounded-md px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50">{t("files.vault.cancel")}</button><button type="submit" disabled={submitting || !token.trim()} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50">{submitting ? <LoaderCircle className="size-4 animate-spin" /> : null}{t(submitting ? "files.vault.submitting" : "files.vault.submit")}</button></div>
+    </form>
+  </VaultSheet>;
 }
 
 function scientificThreshold(value: number): string {
@@ -336,7 +364,19 @@ function LockedFileDialog({ file, runtime, onClose, t }: { file: FilesRecoveredF
   const state = runtime.recoveryState?.() ?? { maxComputeThisRun: 0, computeCap: Number.POSITIVE_INFINITY, currentCompute: 0 };
   const progress = computeFileRecoveryProgress(file.threshold, state.maxComputeThisRun, state.computeCap);
   const cipher = file.cipher ?? "RSA-2048";
-  return <Modal onClose={onClose} label={file.name}><div className="flex items-start justify-between gap-4"><div className="min-w-0"><h2 className="truncate text-sm font-semibold">{file.name}</h2><div className="mt-1.5 flex items-center gap-2 text-[11px]"><span className="rounded-md border bg-muted/40 px-1.5 py-0.5 font-mono text-muted-foreground">{cipher}</span><span className={unknown ? "font-mono text-muted-foreground" : progress.stalled ? "text-amber-500" : "text-[var(--nori-teal,#5eead4)]"}>{t(unknown ? "files.lockedDialog.requiredUnknown" : progress.stalled ? "files.recovery.stalled" : "files.recovery.recovering")}</span></div></div><button type="button" onClick={onClose} className="rounded p-1 text-muted-foreground hover:bg-muted"><X className="size-4" /></button></div><div className="relative mt-4 overflow-hidden rounded-xl border border-border/50 bg-[#0a1119] px-4 pb-3.5 pt-3.5"><div className="text-[11px] tracking-[0.16em] text-muted-foreground">{t("files.lockedDialog.required")}</div><div className="mt-0.5 font-mono text-[40px] font-bold leading-[1.1] text-[var(--nori-teal,#5eead4)]">{file.threshold != null ? scientificThreshold(file.threshold) : t("files.lockedDialog.requiredUnknown")}</div>{file.threshold != null ? <><div className="mt-3 flex items-baseline justify-between text-xs"><span className="text-foreground/90">{t("files.lockedDialog.currentCompute")} <b className={classes("font-mono tabular-nums", progress.stalled && "text-amber-500")}>{state.currentCompute ?? state.maxComputeThisRun}</b></span><span className="font-mono tabular-nums text-muted-foreground">{progress.pct}%</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/10"><div className={classes("h-full rounded-full", progress.stalled ? "bg-amber-500" : "bg-[var(--nori-teal,#5eead4)]")} style={{ width: `${progress.pct}%` }} /></div><div className="mt-1 flex justify-between font-mono text-[10px] text-muted-foreground/60"><span>1</span><span>{scientificThreshold(file.threshold)}</span></div></> : null}</div>{!unknown && progress.stalled ? <p className="mt-2.5 text-[11.5px] leading-relaxed text-amber-500/90">{t("files.recovery.stalledHint")}</p> : null}<div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border/40 pt-3 font-mono text-[11px] text-muted-foreground"><span><small className="block text-[9.5px] uppercase tracking-wider">{t("files.lockedDialog.chain")}</small><span className="text-foreground/90">{cipher} → VMK → FVEK</span></span><span><small className="block text-[9.5px] uppercase tracking-wider">{t("files.lockedDialog.volume")}</small><span className="text-foreground/90">AES-256-XTS</span></span></div><div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-md px-3 py-1.5 text-sm hover:bg-muted">{t("files.lockedDialog.close")}</button>{!unknown ? <button type="button" onClick={() => { void runtime.launchApp?.({ appId: "idle", mode: "activate" }); onClose(); }} className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground">{t("files.lockedDialog.raiseCompute")}</button> : null}</div></Modal>;
+  return <VaultSheet onClose={onClose} label={file.name} frameClassName="files-locked-frame" sfx={false}>
+    <h2 className="truncate text-sm font-semibold">{file.name}</h2>
+    <div className="mt-1.5 flex items-center gap-2 text-[11px]"><span className="rounded-md border border-border/60 bg-muted/40 px-1.5 py-0.5 font-mono text-muted-foreground">{cipher}</span><span className={unknown ? "font-mono text-muted-foreground" : progress.stalled ? "text-amber-500" : "text-[var(--nori-teal,#5eead4)]"}>{t(unknown ? "files.lockedDialog.requiredUnknown" : progress.stalled ? "files.recovery.stalled" : "files.recovery.recovering")}</span></div>
+    <div className="relative mt-4 overflow-hidden rounded-xl border border-border/50 bg-[#0a1119] px-4 pb-3.5 pt-3.5">
+      <FilesHexCanvas seed={file.id} pct={unknown ? 0 : progress.pct} stalled={!unknown && progress.stalled} paused={runtime.reduceMotion?.()} cols={20} rows={6} className="absolute inset-0 h-full w-full opacity-30" />
+      <div className="relative"><div className="text-[11px] tracking-[0.16em] text-muted-foreground">{t("files.lockedDialog.required")}</div><div className="mt-0.5 font-mono text-[40px] font-bold leading-[1.1] text-[var(--nori-teal,#5eead4)]">{file.threshold != null ? scientificThreshold(file.threshold) : t("files.lockedDialog.requiredUnknown")}</div>
+        {file.threshold != null ? <><div className="mt-3 flex items-baseline justify-between text-xs"><span className="text-foreground/90">{t("files.lockedDialog.currentCompute")} <b className={classes("font-mono tabular-nums", progress.stalled && "text-amber-500")}>{formatComputeAmount(state.currentCompute ?? Math.min(state.maxComputeThisRun, state.computeCap))}</b></span><span className="font-mono tabular-nums text-muted-foreground">{progress.pct}%</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/10"><div className={classes("h-full rounded-full transition-[width] duration-500 ease-out", progress.stalled ? "bg-amber-500" : "bg-[var(--nori-teal,#5eead4)]")} style={{ width: `${progress.pct}%` }} /></div><div className="mt-1 flex justify-between font-mono text-[10px] text-muted-foreground/60"><span>1</span><span>{scientificThreshold(file.threshold)}</span></div></> : null}
+      </div>
+    </div>
+    {!unknown && progress.stalled ? <p className="mt-2.5 text-[11.5px] leading-relaxed text-amber-500/90">{t("files.recovery.stalledHint")}</p> : null}
+    <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border/40 pt-3 font-mono text-[11px] text-muted-foreground"><span><small className="block text-[9.5px] uppercase tracking-wider">{t("files.lockedDialog.chain")}</small><span className="text-foreground/90">{cipher} → VMK → FVEK</span></span><span><small className="block text-[9.5px] uppercase tracking-wider">{t("files.lockedDialog.volume")}</small><span className="text-foreground/90">AES-256-XTS</span></span></div>
+    <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-md px-3 py-1.5 text-sm hover:bg-muted">{t("files.lockedDialog.close")}</button>{!unknown ? <button type="button" onClick={() => { void runtime.launchApp?.({ appId: "idle", mode: "activate" }); onClose(); }} className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground">{t("files.lockedDialog.raiseCompute")}</button> : null}</div>
+  </VaultSheet>;
 }
 
 function SyncError({ t }: { t: FilesTranslate }) {
@@ -349,20 +389,33 @@ function columns(showCipher: boolean): string {
 
 function ListEntry({ entry, selected, showCipher, runtime, onSelect, onOpen, t }: { entry: FilesEntry; selected: boolean; showCipher: boolean; runtime: FilesScreenRuntime; onSelect(): void; onOpen(): void; t: FilesTranslate }) {
   const file = entry.kind === "file" ? entry.file : null;
-  return <button type="button" onClick={onSelect} onDoubleClick={onOpen} className={classes("w-full border-b border-border/40 border-l-2 border-l-transparent px-4 py-2 text-left transition-colors hover:bg-muted/40 focus:bg-muted/40 focus:outline-none", selected && "border-l-primary bg-primary/10 hover:bg-primary/15")}><div className={columns(showCipher)}><div className="flex min-w-0 items-center gap-2"><EntryIcon entry={entry} className="size-4 shrink-0 text-muted-foreground" /><span className="truncate text-sm text-foreground">{entry.kind === "folder" ? entry.node.name : entry.kind === "device" ? t("files.sidebar.coldVolume") : entry.kind === "vault" ? entry.vault.title : entry.file.name}</span></div>{showCipher ? <div className="font-mono text-[11px] text-muted-foreground">{file?.cipher ?? ""}</div> : null}{showCipher ? <div>{file && isRecoverableFile(file) && !isRecoveredFile(file) ? <RecoveryProgress file={file} runtime={runtime} t={t} /> : null}</div> : null}<div className="text-xs text-muted-foreground">{file ? formatModified(file.modifiedAt) : ""}</div><div className="text-right text-xs text-muted-foreground">{file ? formatBytes(file.sizeBytes) : "—"}</div></div></button>;
+  return <button type="button" onClick={onSelect} onDoubleClick={onOpen} className={classes("w-full border-b border-border/40 border-l-2 border-l-transparent px-4 py-2 text-left transition-colors hover:bg-muted/40 focus:bg-muted/40 focus:outline-none", selected && "border-l-primary bg-primary/10 hover:bg-primary/15")}><div className={columns(showCipher)}><div className="flex min-w-0 items-center gap-2"><EntryIcon entry={entry} className="size-4 shrink-0" /><span className="truncate text-sm text-foreground">{entry.kind === "folder" ? entry.node.name : entry.kind === "device" ? t("files.sidebar.coldVolume") : entry.kind === "vault" ? entry.vault.title : entry.file.name}</span></div>{showCipher ? <div className="font-mono text-[11px] text-muted-foreground">{file?.cipher ?? ""}</div> : null}{showCipher ? <div>{file && isRecoverableFile(file) && !isRecoveredFile(file) ? <RecoveryProgress file={file} runtime={runtime} t={t} /> : null}</div> : null}<div className="text-xs text-muted-foreground">{file ? formatModified(file.modifiedAt) : ""}</div><div className="text-right text-xs text-muted-foreground">{file ? formatBytes(file.sizeBytes) : "—"}</div></div></button>;
+}
+
+function LockedGridEntry({ file, selected, runtime, onSelect, onOpen, t }: { file: FilesRecoveredFile; selected: boolean; runtime: FilesScreenRuntime; onSelect(): void; onOpen(): void; t: FilesTranslate }) {
+  const unknown = isRecoverWhenOnly(file);
+  const state = runtime.recoveryState?.() ?? { maxComputeThisRun: 0, computeCap: Number.POSITIVE_INFINITY };
+  const progress = computeFileRecoveryProgress(file.threshold, state.maxComputeThisRun, state.computeCap);
+  const colour = progress.stalled ? "#f1b24a" : "var(--nori-teal, #5eead4)";
+  return <button type="button" onClick={onSelect} onDoubleClick={onOpen} title={file.name} className={classes("group flex flex-col items-center gap-1.5 rounded-xl p-3 transition-[background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary/40", selected ? "bg-primary/10 ring-1 ring-inset ring-primary/30" : "hover:bg-muted/40")}>
+    <div className="relative h-20 w-full overflow-hidden rounded-lg border border-border/50 bg-[#0a1119]"><FilesHexCanvas seed={file.id} pct={unknown ? 0 : progress.pct} stalled={!unknown && progress.stalled} paused={runtime.reduceMotion?.()} className="block h-full w-full" /><span className="absolute bottom-1 right-1 flex size-4 items-center justify-center rounded bg-background/60 text-amber-500"><Lock className="size-2.5" strokeWidth={2.5} /></span></div>
+    <div className="flex w-full items-center gap-1.5"><span className="shrink-0 font-mono text-[9px] text-muted-foreground">{file.cipher}</span>{unknown ? <span className="flex-1 text-center font-mono text-[10px] text-muted-foreground">{t("files.lockedDialog.requiredUnknown")}</span> : <><span className="relative h-[3px] flex-1 overflow-hidden rounded-full bg-foreground/10"><span className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out" style={{ width: `${progress.pct}%`, background: colour }} /></span><span className="shrink-0 font-mono text-[10px] tabular-nums" style={{ color: colour }}>{progress.pct}%</span></>}</div>
+    <span className="line-clamp-2 max-w-full break-words text-center text-xs text-foreground/90">{file.name}</span>
+  </button>;
 }
 
 function GridEntry({ entry, selected, runtime, onSelect, onOpen, t }: { entry: FilesEntry; selected: boolean; runtime: FilesScreenRuntime; onSelect(): void; onOpen(): void; t: FilesTranslate }) {
   const file = entry.kind === "file" ? entry.file : null;
+  if (file && isRecoverableFile(file) && !isRecoveredFile(file)) return <LockedGridEntry file={file} selected={selected} runtime={runtime} onSelect={onSelect} onOpen={onOpen} t={t} />;
   const label = entry.kind === "folder" ? entry.node.name : entry.kind === "device" ? t("files.sidebar.coldVolume") : entry.kind === "vault" ? entry.vault.title : entry.file.name;
-  return <button type="button" onClick={onSelect} onDoubleClick={onOpen} title={label} className={classes("group flex flex-col items-center gap-2 rounded-xl p-3 transition-[background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary/40", selected ? "bg-primary/10 ring-1 ring-inset ring-primary/30" : "hover:bg-muted/40")}><div className="flex h-20 w-full items-center justify-center group-hover:scale-[1.04] group-active:scale-95 transition-transform">{file?.kind === "image" && file.imageSrc && isRecoveredFile(file) ? <img src={file.imageSrc} alt={file.alt} draggable={false} className="max-h-20 max-w-full rounded-md object-contain shadow-sm ring-1 ring-border/40" /> : <EntryIcon entry={entry} className="size-14 text-muted-foreground/70" />}</div>{file && isRecoverableFile(file) && !isRecoveredFile(file) ? <div className="w-full"><RecoveryProgress file={file} runtime={runtime} t={t} /></div> : null}<span className={classes("line-clamp-2 max-w-full break-words rounded px-1 text-center text-xs", selected ? "font-medium text-primary" : "text-foreground/90")}>{label}</span></button>;
+  return <button type="button" onClick={onSelect} onDoubleClick={onOpen} title={label} className={classes("files-grid-entry group flex flex-col items-center gap-2 rounded-xl p-3 transition-[background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary/40", selected ? "bg-primary/10 ring-1 ring-inset ring-primary/30" : "hover:bg-muted/40")}><div className="flex h-20 w-full items-center justify-center group-hover:scale-[1.04] group-active:scale-95 transition-transform">{file?.kind === "image" && file.imageSrc ? <img src={file.imageSrc} alt={file.alt} draggable={false} className="max-h-20 max-w-full rounded-md object-contain shadow-sm ring-1 ring-border/40" /> : <EntryIcon entry={entry} className="size-14" />}</div><span className={classes("line-clamp-2 max-w-full break-words rounded px-1 text-center text-xs", selected ? "font-medium text-primary" : "text-foreground/90")}>{label}</span></button>;
 }
 
 function Sidebar({ path, qfrInstalled, files, onNavigate, onSealed, t }: { path: string; qfrInstalled: boolean; files: readonly FilesRecoveredFile[]; onNavigate(path: string): void; onSealed(): void; t: FilesTranslate }) {
   const recoverable = files.filter(isRecoverableFile);
   const recovered = recoverable.filter(isRecoveredFile).length;
   const pct = recoverable.length ? Math.round((recovered / recoverable.length) * 100) : 0;
-  return <div className="flex h-full flex-col border-r border-border/50 bg-muted/15"><nav className="px-2 pt-3"><SidebarNavButton icon={HardDrive} label={t("files.breadcrumb.root")} active={path === ""} onClick={() => onNavigate("")} sfx={false} /></nav><div className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">{t("files.sidebar.section")}</div><nav className="px-2 pb-3"><SidebarNavButton icon={Download} label={t("files.sidebar.downloads")} active={path === "下载"} onClick={() => onNavigate("下载")} sfx={false} /><SidebarNavButton icon={Folder} label={t("files.sidebar.documents")} active={path === "文稿"} onClick={() => onNavigate("文稿")} sfx={false} /><SidebarNavButton icon={ImageIcon} label={t("files.sidebar.pictures")} active={path === "图片"} onClick={() => onNavigate("图片")} sfx={false} /></nav><div className="px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">{t("files.sidebar.devices")}</div><nav className="px-2 pb-3"><SidebarNavButton icon={HardDrive} label={t("files.sidebar.coldVolume")} active={path === FILES_COLD_VOLUME_PATH} onClick={() => qfrInstalled ? onNavigate(FILES_COLD_VOLUME_PATH) : onSealed()} sfx={false} />{qfrInstalled && recoverable.length > 0 ? <div className="mt-1 pl-9 pr-2.5"><div className="flex items-center justify-between text-[10px] text-muted-foreground/80"><span>{t("files.sidebar.recovered")}</span><span className="tabular-nums">{recovered} / {recoverable.length}</span></div><div className="mt-1 h-1 overflow-hidden rounded-full bg-foreground/10"><div className="h-full rounded-full bg-[var(--nori-teal,#5eead4)] transition-[width] duration-500 ease-out" style={{ width: `${pct}%` }} /></div></div> : null}</nav></div>;
+  return <div className="flex h-full flex-col border-r border-border/50 bg-muted/15"><nav className="px-2 pt-3"><SidebarNavButton icon={HardDrive} label={t("files.breadcrumb.root")} active={path === ""} onClick={() => onNavigate("")} sfx={false} /></nav><div className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">{t("files.sidebar.section")}</div><nav className="px-2 pb-3"><SidebarNavButton icon={Download} label={t("files.sidebar.downloads")} active={path === "下载"} onClick={() => onNavigate("下载")} sfx={false} /><SidebarNavButton icon={Folder} label={t("files.sidebar.documents")} active={path === "文稿"} onClick={() => onNavigate("文稿")} sfx={false} /><SidebarNavButton icon={ImageIcon} label={t("files.sidebar.pictures")} active={path === "图片"} onClick={() => onNavigate("图片")} sfx={false} /></nav><div className="px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">{t("files.sidebar.devices")}</div><nav className="px-2 pb-3"><SidebarNavButton icon={qfrInstalled ? OpenColdVolumeIcon : SealedColdVolumeIcon} label={t("files.sidebar.coldVolume")} active={path === FILES_COLD_VOLUME_PATH} onClick={() => qfrInstalled ? onNavigate(FILES_COLD_VOLUME_PATH) : onSealed()} sfx={false} />{qfrInstalled && recoverable.length > 0 ? <div className="mt-1 pl-9 pr-2.5"><div className="flex items-center justify-between text-[10px] text-muted-foreground/80"><span>{t("files.sidebar.recovered")}</span><span className="tabular-nums">{recovered} / {recoverable.length}</span></div><div className="mt-1 h-1 overflow-hidden rounded-full bg-foreground/10"><div className="h-full rounded-full bg-[var(--nori-teal,#5eead4)] transition-[width] duration-500 ease-out" style={{ width: `${pct}%` }} /></div></div> : null}</nav></div>;
 }
 
 function rowColumns(ref: HTMLDivElement | null): number {
@@ -392,11 +445,13 @@ export function FilesScreen({ runtime, initialIntent = { folderPath: "" } }: { r
   const [lockedFile, setLockedFile] = useState<FilesRecoveredFile | null>(null);
   const [sealed, setSealed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [toast, setToast] = useState<{ title: string; subtitle: string } | null>(null);
+  const previousPath = useRef(navigation.path);
+  const skipFolderCue = useRef(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const entriesRef = useRef<HTMLDivElement>(null);
   const autoCollapsed = useRef(false);
-  void revision;
+  const systemRepaired = runtime.hasFact?.("system.repaired") ?? true;
+  const qfrInstalled = runtime.hasFact?.("qfr.installed") ?? false;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -407,6 +462,7 @@ export function FilesScreen({ runtime, initialIntent = { folderPath: "" } }: { r
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => runtime.subscribe?.(() => { setRevision((value) => value + 1); void load(); }), [runtime, load]);
+  useEffect(() => runtime.subscribeRecovery?.(() => setRevision((value) => value + 1)), [runtime]);
   useEffect(() => runtime.intent?.subscribe(() => {
     const pending = runtime.intent?.pending();
     if (!pending) return;
@@ -428,10 +484,22 @@ export function FilesScreen({ runtime, initialIntent = { folderPath: "" } }: { r
     });
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [systemRepaired]);
 
-  const systemRepaired = runtime.hasFact?.("system.repaired") ?? true;
-  const qfrInstalled = runtime.hasFact?.("qfr.installed") ?? false;
+  useEffect(() => {
+    if (systemRepaired && (document.activeElement === null || document.activeElement === document.body)) {
+      entriesRef.current?.focus({ preventScroll: true });
+    }
+  }, [systemRepaired, navigation.path]);
+
+  useEffect(() => {
+    const oldPath = previousPath.current;
+    if (oldPath === navigation.path) return;
+    previousPath.current = navigation.path;
+    if (skipFolderCue.current) { skipFolderCue.current = false; return; }
+    const depth = (path: string) => path.split("/").filter(Boolean).length;
+    runtime.playCue?.("webapps-files-open-folder", depth(navigation.path) < depth(oldPath) ? { pitch: 0.92 } : undefined);
+  }, [navigation.path, runtime]);
   const facts = useMemo(() => unlockedFacts(snapshot.vaults, runtime.hasFact), [snapshot.vaults, runtime.hasFact, revision]);
   const tree = useMemo(() => buildFilesTree(snapshot.files, snapshot.vaults, facts), [snapshot.files, snapshot.vaults, facts]);
   const current = useMemo(() => findFilesTreeNode(tree, navigation.path), [tree, navigation.path]);
@@ -445,11 +513,10 @@ export function FilesScreen({ runtime, initialIntent = { folderPath: "" } }: { r
   const downloadsEmpty = navigation.path === DOWNLOADS_PATH && !loading && entries.length === 0;
   const decrypting = coldVolume && (runtime.decrypting?.() ?? false);
 
-  const navigate = useCallback((path: string) => { navigation.go(path); setSelectedKey(null); runtime.playCue?.("webapps-files-open-folder"); }, [navigation.go, runtime]);
+  const navigate = useCallback((path: string) => { navigation.go(path); setSelectedKey(null); }, [navigation.go]);
   const showAlreadyUnpacked = useCallback((title: string) => {
-    setToast({ title: t("os.files.alreadyUnpacked"), subtitle: title });
-    window.setTimeout(() => setToast(null), 4000);
-  }, [t]);
+    runtime.notify?.({ appId: "files", icon: <FileArchive className="size-5" />, title: t("os.files.alreadyUnpacked"), subtitle: title, durationMs: 4000 });
+  }, [runtime, t]);
   const openEntry = useCallback(async (entry: FilesEntry) => {
     if (entry.kind === "folder") { navigate(entry.node.path); return; }
     if (entry.kind === "device") { if (entry.sealed) { runtime.playCue?.("webapps-files-locked-file"); setSealed(true); } else navigate(FILES_COLD_VOLUME_PATH); return; }
@@ -500,5 +567,5 @@ export function FilesScreen({ runtime, initialIntent = { folderPath: "" } }: { r
 
   if (!systemRepaired) return <SyncError t={t} />;
 
-  return <div ref={rootRef} className="relative flex h-full overflow-hidden animate-in fade-in duration-700"><div className="shrink-0 overflow-hidden transition-[width]" style={{ width: sidebarOpen ? SIDEBAR_WIDTH : 0, transitionDuration: runtime.reduceMotion?.() ? "0ms" : "240ms", transitionTimingFunction: VIEW_EASE }}><div className="h-full w-56"><Sidebar path={navigation.path} qfrInstalled={qfrInstalled} files={snapshot.files} onNavigate={navigate} onSealed={() => { runtime.playCue?.("webapps-files-locked-file"); setSealed(true); }} t={t} /></div></div><div className="flex min-w-0 flex-1 flex-col"><div className="flex items-center gap-2 border-b border-border/50 bg-muted/15 px-3 py-2"><button type="button" onClick={() => setSidebarOpen((value) => !value)} aria-pressed={sidebarOpen} className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground"><PanelLeft className="size-4" /></button><div className="inline-flex items-center rounded-lg bg-muted/40 p-0.5 ring-1 ring-inset ring-border/60"><button type="button" onClick={navigation.back} disabled={!navigation.canBack} className="flex size-7 items-center justify-center rounded-[7px] text-muted-foreground disabled:opacity-40"><ArrowLeft className="size-4" /></button><span className="mx-px h-4 w-px bg-border/60" /><button type="button" onClick={navigation.forward} disabled={!navigation.canForward} className="flex size-7 items-center justify-center rounded-[7px] text-muted-foreground disabled:opacity-40"><ArrowRight className="size-4" /></button></div><button type="button" onClick={navigateUp} disabled={navigation.path === ""} className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 disabled:opacity-40"><ArrowUp className="size-4" /></button><div className="min-w-0 flex-1"><Breadcrumbs path={navigation.path} onNavigate={navigate} t={t} /></div><div className="inline-flex items-center rounded-lg bg-muted/40 p-0.5 ring-1 ring-inset ring-border/60"><button type="button" onClick={() => setView("grid")} className={classes("flex size-7 items-center justify-center rounded-[7px] text-muted-foreground", view === "grid" && "bg-background/80 text-foreground shadow-sm")}><LayoutGrid className="size-4" /></button><button type="button" onClick={() => setView("list")} className={classes("flex size-7 items-center justify-center rounded-[7px] text-muted-foreground", view === "list" && "bg-background/80 text-foreground shadow-sm")}><List className="size-4" /></button></div></div>{navigation.path === "" ? <div className="flex items-center gap-2 border-b border-amber-500/25 bg-amber-500/10 px-4 py-2 text-[12px] leading-snug text-amber-600 dark:text-amber-400"><Info className="size-3.5 shrink-0" /><span>{t("files.warning.serverCorrupt")}</span></div> : null}{downloadsEmpty ? <div className="flex items-center gap-2 border-b border-border/50 bg-muted/20 px-4 py-2 text-[12px] text-muted-foreground"><Info className="size-3.5 shrink-0" /><span>{t("files.downloadsEmpty")}</span></div> : null}{view === "list" && !downloadsEmpty ? <div className={classes(columns(coldVolume), "border-b border-border/50 bg-muted/10 px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70")}><div>{t("files.columns.name")}</div>{coldVolume ? <div>{t("files.columns.cipher")}</div> : null}{coldVolume ? <div>{t("files.columns.recovery")}</div> : null}<div>{t("files.columns.modified")}</div><div className="text-right">{t("files.columns.size")}</div></div> : null}<div ref={entriesRef} tabIndex={-1} onKeyDown={onKeyDown} onClick={(event) => { if (!(event.target as HTMLElement).closest("button")) { setSelectedKey(null); entriesRef.current?.focus({ preventScroll: true }); } }} className="flex-1 overflow-auto outline-none">{decrypting ? <div className="flex h-full flex-col items-center justify-center gap-3 text-center"><LoaderCircle className="size-5 animate-spin text-[var(--nori-teal,#5eead4)]" /><div className="text-sm text-muted-foreground">{t("files.decrypting")}</div></div> : loading ? <div className="flex h-full items-center justify-center"><LoaderCircle className="size-5 animate-spin text-muted-foreground/70" /></div> : !current || entries.length === 0 ? downloadsEmpty ? null : <div className="flex h-full flex-col items-center justify-center gap-3 text-center"><FolderOpen className="size-10 text-muted-foreground/40" strokeWidth={1.25} /><div className="text-sm text-muted-foreground">{t("files.empty")}</div></div> : view === "grid" ? <div className="grid grid-cols-[repeat(auto-fill,minmax(108px,1fr))] gap-1.5 p-3">{entries.map((entry) => <GridEntry key={entry.key} entry={entry} selected={entry.key === selectedKey} runtime={runtime} onSelect={() => setSelectedKey(entry.key)} onOpen={() => void openEntry(entry)} t={t} />)}</div> : entries.map((entry) => <ListEntry key={entry.key} entry={entry} selected={entry.key === selectedKey} showCipher={coldVolume} runtime={runtime} onSelect={() => setSelectedKey(entry.key)} onOpen={() => void openEntry(entry)} t={t} />)}</div></div>{coldVolume ? runtime.renderColdVolumeDock?.(current?.files ?? []) : null}{vault ? <VaultDialog vault={vault} runtime={runtime} onCancel={() => setVault(null)} onUnlocked={(unlocked) => { setVault(null); if (unlocked.vaultKind === "file") { if (unlocked.unpackTo) navigate(unlocked.unpackTo); } else navigate(unlocked.vaultPath); }} t={t} /> : null}{lockedFile ? <LockedFileDialog file={lockedFile} runtime={runtime} onClose={() => setLockedFile(null)} t={t} /> : null}{sealed ? <SealedDialog onClose={() => setSealed(false)} t={t} /> : null}{toast ? <div className="pointer-events-none absolute right-3 top-3 z-40 rounded-xl border bg-popover px-3 py-2 shadow-lg"><div className="text-sm font-medium">{toast.title}</div><div className="text-xs text-muted-foreground">{toast.subtitle}</div></div> : null}</div>;
+  return <div ref={rootRef} className="relative flex h-full overflow-hidden animate-in fade-in duration-700"><div className="shrink-0 overflow-hidden transition-[width]" style={{ width: sidebarOpen ? SIDEBAR_WIDTH : 0, transitionDuration: runtime.reduceMotion?.() ? "0ms" : "240ms", transitionTimingFunction: VIEW_EASE }}><div className="h-full w-56"><Sidebar path={navigation.path} qfrInstalled={qfrInstalled} files={snapshot.files} onNavigate={navigate} onSealed={() => { runtime.playCue?.("webapps-files-locked-file"); setSealed(true); }} t={t} /></div></div><div className="flex min-w-0 flex-1 flex-col"><div className="flex items-center gap-2 border-b border-border/50 bg-muted/15 px-3 py-2"><button type="button" onClick={() => setSidebarOpen((value) => !value)} aria-label={t(sidebarOpen ? "files.toolbar.hideSidebar" : "files.toolbar.showSidebar")} title={t(sidebarOpen ? "files.toolbar.hideSidebar" : "files.toolbar.showSidebar")} aria-pressed={sidebarOpen} className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground"><PanelLeft className="size-4" /></button><div className="inline-flex items-center rounded-lg bg-muted/40 p-0.5 ring-1 ring-inset ring-border/60"><button type="button" onClick={navigation.back} disabled={!navigation.canBack} aria-label={t("files.nav.back")} title={t("files.nav.back")} className="flex size-7 items-center justify-center rounded-[7px] text-muted-foreground disabled:opacity-40"><ArrowLeft className="size-4" /></button><span className="mx-px h-4 w-px bg-border/60" /><button type="button" onClick={navigation.forward} disabled={!navigation.canForward} aria-label={t("files.nav.forward")} title={t("files.nav.forward")} className="flex size-7 items-center justify-center rounded-[7px] text-muted-foreground disabled:opacity-40"><ArrowRight className="size-4" /></button></div><button type="button" onClick={navigateUp} disabled={navigation.path === ""} aria-label={t("files.nav.up")} title={t("files.nav.up")} className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 disabled:opacity-40"><ArrowUp className="size-4" /></button><div className="min-w-0 flex-1"><Breadcrumbs path={navigation.path} onNavigate={navigate} t={t} /></div><div className="inline-flex items-center rounded-lg bg-muted/40 p-0.5 ring-1 ring-inset ring-border/60"><button type="button" onClick={() => setView("grid")} aria-label={t("files.view.grid")} title={t("files.view.grid")} aria-pressed={view === "grid"} className={classes("flex size-7 items-center justify-center rounded-[7px] text-muted-foreground", view === "grid" && "bg-background/80 text-foreground shadow-sm")}><LayoutGrid className="size-4" /></button><button type="button" onClick={() => setView("list")} aria-label={t("files.view.list")} title={t("files.view.list")} aria-pressed={view === "list"} className={classes("flex size-7 items-center justify-center rounded-[7px] text-muted-foreground", view === "list" && "bg-background/80 text-foreground shadow-sm")}><List className="size-4" /></button></div></div>{navigation.path === "" ? <div className="flex items-center gap-2 border-b border-amber-500/25 bg-amber-500/10 px-4 py-2 text-[12px] leading-snug text-amber-600 dark:text-amber-400"><Info className="size-3.5 shrink-0" /><span>{t("files.warning.serverCorrupt")}</span></div> : null}{downloadsEmpty ? <div className="flex items-center gap-2 border-b border-border/50 bg-muted/20 px-4 py-2 text-[12px] text-muted-foreground"><Info className="size-3.5 shrink-0" /><span>{t("files.downloadsEmpty")}</span></div> : null}{view === "list" && !downloadsEmpty ? <div className={classes(columns(coldVolume), "border-b border-border/50 bg-muted/10 px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70")}><div>{t("files.columns.name")}</div>{coldVolume ? <div>{t("files.columns.cipher")}</div> : null}{coldVolume ? <div>{t("files.columns.recovery")}</div> : null}<div>{t("files.columns.modified")}</div><div className="text-right">{t("files.columns.size")}</div></div> : null}<div ref={entriesRef} tabIndex={-1} onKeyDown={onKeyDown} onClick={(event) => { if (!(event.target as HTMLElement).closest("button")) { setSelectedKey(null); entriesRef.current?.focus({ preventScroll: true }); } }} className="flex-1 overflow-auto outline-none">{decrypting ? <div className="flex h-full flex-col items-center justify-center gap-3 text-center"><LoaderCircle className="size-5 animate-spin text-[var(--nori-teal,#5eead4)]" /><div className="text-sm text-muted-foreground">{t("files.decrypting")}</div></div> : loading ? <div className="flex h-full items-center justify-center"><LoaderCircle className="size-5 animate-spin text-muted-foreground/70" /></div> : !current || entries.length === 0 ? downloadsEmpty ? null : <div className="flex h-full flex-col items-center justify-center gap-3 text-center"><FolderOpen className="size-10 text-muted-foreground/40" strokeWidth={1.25} /><div className="text-sm text-muted-foreground">{t("files.empty")}</div></div> : view === "grid" ? <div className="grid grid-cols-[repeat(auto-fill,minmax(108px,1fr))] gap-1.5 p-3">{entries.map((entry) => <GridEntry key={entry.key} entry={entry} selected={entry.key === selectedKey} runtime={runtime} onSelect={() => setSelectedKey(entry.key)} onOpen={() => void openEntry(entry)} t={t} />)}</div> : entries.map((entry) => <ListEntry key={entry.key} entry={entry} selected={entry.key === selectedKey} showCipher={coldVolume} runtime={runtime} onSelect={() => setSelectedKey(entry.key)} onOpen={() => void openEntry(entry)} t={t} />)}</div></div>{coldVolume ? runtime.renderColdVolumeDock?.(current?.files ?? []) : null}{vault ? <VaultDialog vault={vault} runtime={runtime} onCancel={() => setVault(null)} onUnlocked={(unlocked) => { setVault(null); const path = unlocked.vaultKind === "file" ? unlocked.unpackTo : unlocked.vaultPath; if (path !== undefined) { skipFolderCue.current = path !== navigation.path; navigate(path); } }} t={t} /> : null}{lockedFile ? <LockedFileDialog file={lockedFile} runtime={runtime} onClose={() => setLockedFile(null)} t={t} /> : null}{sealed ? <SealedDialog onClose={() => setSealed(false)} t={t} /> : null}</div>;
 }

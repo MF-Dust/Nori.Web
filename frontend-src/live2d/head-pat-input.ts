@@ -101,8 +101,9 @@ export function bindHeadPatInput(
     };
   };
   const pointerTelemetry = (event: PointerEvent) => {
-    const u = (event.clientX - projected.x) / Math.max(1, projected.width);
-    const v = (event.clientY - projected.y) / Math.max(1, projected.height);
+    const root = host.getBoundingClientRect();
+    const u = (event.clientX - root.left - projected.x) / Math.max(1, projected.width);
+    const v = (event.clientY - root.top - projected.y) / Math.max(1, projected.height);
     const point = model.canvasUVToModel(u, v);
     const bounds = model.getPartsBounds(["Part9"]);
     const tuning = gesture.tuning();
@@ -223,6 +224,12 @@ export function bindHeadPatInput(
       reset();
   });
   return {
+    setHost(nextHost: HTMLElement) {
+      if (host === nextHost) return;
+      reset();
+      host = nextHost;
+      host.append(surface);
+    },
     update(rect: WindowRect) {
       projected = rect;
       const now = performance.now(),

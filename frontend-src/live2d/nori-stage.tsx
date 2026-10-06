@@ -1,7 +1,9 @@
 import { NoriSceneRenderer } from "./scene-renderer";
+import { bindOcclusionAvatar } from "./occlusion-avatar";
+import type { WindowStore } from "../state/window-types";
 import { createHeadPatPlugin } from "./head-pat-plugin";
 import { bindHeadPatInput } from "./head-pat-input";
-import { registerScanModel } from "./scan-bounds";
+import { registerScanModel, noriScanBounds } from "./scan-bounds";
 import { useEffect, useRef, useState } from "react";
 import {
   Live2DEngine,
@@ -34,10 +36,12 @@ export function NoriStage({
   frontend,
   facts,
   exclusive,
+  windows,
 }: {
   frontend: NoriFrontendRuntime;
   facts: ReadonlySet<string>;
   exclusive(): boolean;
+  windows?: WindowStore;
 }) {
   const speech: SpeechPlayer = frontend.speech;
   const latest = useRef({ facts, exclusive });
@@ -65,6 +69,7 @@ export function NoriStage({
     let unbindModel: (() => void) | undefined;
     let unbindDebug: (() => void) | undefined;
     let patInput: ReturnType<typeof bindHeadPatInput> | undefined;
+    let avatar: ReturnType<typeof bindOcclusionAvatar> | undefined;
     let disposed = false,
       engine: Live2DEngine | undefined,
       session: Live2DSession | undefined;
@@ -196,11 +201,14 @@ export function NoriStage({
           });
           session!.start();
           patInput = bindHeadPatInput(hostElement, model, frontend);
+          if (windows) avatar = bindOcclusionAvatar(canvas, frontend, windows);
           const renderScene = (now: number) => {
             if (disposed) return;
-            patInput?.update(renderer
+            const peek = avatar?.update(now, noriScanBounds(canvas));
+            patInput?.setHost(peek?.host ?? hostElement);
+            patInput?.update(peek?.rect ?? (renderer
               ? { x: projected.x - projected.width / 2, y: projected.y - projected.height / 2, width: projected.width, height: projected.height }
-              : { x: 0, y: 0, width: hostElement.clientWidth, height: hostElement.clientHeight });
+              : { x: 0, y: 0, width: hostElement.clientWidth, height: hostElement.clientHeight }));
             sceneFrame = requestAnimationFrame(renderScene);
             if (!renderer || now - lastFrame < 1000 / (graphicsMode === "ultra-performance" ? 30 : 60)) return;
             lastFrame = now;
@@ -227,6 +235,7 @@ export function NoriStage({
       unbindModel?.();
       unbindDebug?.();
       patInput?.dispose();
+      avatar?.dispose();
       clearTimeout(budgetTimer);
       resize.disconnect();
       cancelAnimationFrame(sceneFrame);
@@ -236,7 +245,7 @@ export function NoriStage({
       engine?.dispose();
       canvas.remove();
     };
-  }, [frontend, speech]);
+  }, [frontend, speech, windows]);
   return (
     <div className="nori-stage" ref={host} data-live2d-status={status}>
       {status === "error" && (

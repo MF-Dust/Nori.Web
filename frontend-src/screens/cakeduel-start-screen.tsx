@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import { BookOpen, Swords } from "lucide-react";
+import "../styles/cakeduel.css";
 import { CAKEDUEL_PALETTE } from "../apps/cakeduel-card-presentation";
 import type { CakeDuelDifficulty } from "../apps/cakeduel-runtime";
 import { useElementSize } from "../hooks/use-element-size";

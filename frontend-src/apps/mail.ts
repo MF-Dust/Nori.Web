@@ -1,6 +1,11 @@
 import type { JsonValue } from "../runtime/protocol";
 import type { ArtifactService } from "../services/artifacts";
 import type { ManifoldService } from "../services/manifold";
+import {
+  parseSignalTimestamp,
+  signalStoryDate,
+  signalStoryTimestampFromEpoch,
+} from "./signal-story-clock";
 
 export type MailFolder = "inbox" | "sent" | "archive";
 
@@ -75,27 +80,31 @@ function normalizeSender(value: JsonValue | undefined): MailSender {
   }
 
   const plain = stringValue(value);
-  return { name: plain, email: plain };
+  const match = /^(.*?)\s*<([^>]+)>$/.exec(plain);
+  return match
+    ? { name: match[1].trim() || match[2], email: match[2] }
+    : { name: plain, email: plain };
 }
 
-function normalizeAttachment(value: JsonValue, index: number): MailAttachment | undefined {
+function normalizeAttachment(value: JsonValue, mailId: string, index: number): MailAttachment | undefined {
   const item = record(value);
   if (!item) return undefined;
 
-  const id = stringValue(item.id, `attachment-${index}`);
+  const id = stringValue(item.id, `${mailId}:${index}`);
   const filename = stringValue(item.filename, stringValue(item.name, id));
-  const kind = stringValue(item.kind);
 
-  if (kind === "image") {
-    const src = stringValue(item.src, stringValue(item.url));
+  // Shipped attachments are images unless explicitly tagged as downloads.
+  if (item.kind !== "download") {
+    const src = stringValue(item.asset_path, stringValue(item.src, stringValue(item.url)));
     if (!src) return undefined;
+    const dimensions = record(item.dimensions);
     return {
       id,
       kind: "image",
       filename,
       src,
-      width: numberValue(item.width),
-      height: numberValue(item.height),
+      width: numberValue(dimensions?.width) ?? numberValue(item.width),
+      height: numberValue(dimensions?.height) ?? numberValue(item.height),
     };
   }
 
@@ -116,10 +125,50 @@ function normalizeAttachment(value: JsonValue, index: number): MailAttachment | 
   };
 }
 
-function normalizeMail(id: string, raw: Record<string, JsonValue>): MailMessage {
+/** Shipped read state ignores a raw `read` flag: only read facts/local acknowledgements matter. */
+export function isMailRead(
+  mail: Pick<MailMessage, "id" | "readFact">,
+  hasFact?: (factId: string) => boolean,
+  localRead?: ReadonlySet<string>,
+): boolean {
+  return mail.readFact === undefined || localRead?.has(mail.id) === true || hasFact?.(mail.readFact) === true;
+}
+
+function dateMilliseconds(value: string): number {
+  const milliseconds = parseSignalTimestamp(value).getTime();
+  return Number.isNaN(milliseconds) ? 0 : milliseconds;
+}
+
+export function formatMailListDate(value: string, now = signalStoryDate()): string {
+  const date = parseSignalTimestamp(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const days = Math.floor((now.getTime() - date.getTime()) / 86_400_000);
+  return days === 0
+    ? date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+    : days < 7
+      ? date.toLocaleDateString(undefined, { weekday: "short" })
+      : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+export function formatMailReaderDate(value: string, locale = "en"): string {
+  const date = parseSignalTimestamp(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const calendar = date.toLocaleDateString(locale, { month: "long", day: "numeric", weekday: "long" });
+  const time = date.toLocaleTimeString(locale, {
+    hour: "numeric", minute: "2-digit", hour12: locale.startsWith("en"),
+  });
+  return `${calendar}, ${time}`;
+}
+
+function normalizeMail(
+  id: string,
+  raw: Record<string, JsonValue>,
+  surfacedAt: number,
+  hasFact?: (factId: string) => boolean,
+): MailMessage {
   const attachments = Array.isArray(raw.attachments)
     ? raw.attachments
-        .map((attachment, index) => normalizeAttachment(attachment, index))
+        .map((attachment, index) => normalizeAttachment(attachment, id, index))
         .filter((attachment): attachment is MailAttachment => attachment !== undefined)
     : [];
   const readFact = stringValue(raw.readFact, stringValue(raw.read_fact));
@@ -128,12 +177,12 @@ function normalizeMail(id: string, raw: Record<string, JsonValue>): MailMessage 
     id,
     folder: normalizeFolder(raw.folder),
     from: normalizeSender(raw.from),
-    to: stringValue(raw.to),
+    to: stringValue(raw.to, "我 <me@manifold.institute>"),
     subject: stringValue(raw.subject),
     body: stringValue(raw.body, stringValue(raw.body_md)),
-    date: stringValue(raw.date),
+    date: stringValue(raw.date, signalStoryTimestampFromEpoch(surfacedAt > 0 ? surfacedAt : Date.now())),
     self: booleanValue(raw.self),
-    read: booleanValue(raw.read),
+    read: isMailRead({ id, readFact: readFact || undefined }, hasFact),
     readFact: readFact || undefined,
     attachments,
     raw,
@@ -147,12 +196,22 @@ export class MailAppModel {
     private readonly manifold: ManifoldService,
   ) {}
 
-  async messages(): Promise<MailMessage[]> {
+  async messages(hasFact?: (factId: string) => boolean): Promise<MailMessage[]> {
     const items = await this.artifacts.mail<Record<string, JsonValue>>();
     return items
-      .filter((item) => item.type === "mail")
-      .map((item) => normalizeMail(item.id, item.data))
-      .sort((a, b) => b.date.localeCompare(a.date));
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => item.type === "mail")
+      .map(({ item, index }) => ({
+        mail: normalizeMail(item.id, item.data, item.surfacedAt ?? 0, hasFact),
+        surfacedAt: item.surfacedAt ?? 0,
+        index,
+      }))
+      .sort((a, b) =>
+        b.surfacedAt - a.surfacedAt ||
+        dateMilliseconds(b.mail.date) - dateMilliseconds(a.mail.date) ||
+        b.index - a.index,
+      )
+      .map(({ mail }) => mail);
   }
 
   async inbox(): Promise<MailMessage[]> {
@@ -162,11 +221,11 @@ export class MailAppModel {
   /** Shipped MailScreen sends manifold command `mail.read` with only mailId. */
   async markRead(mail: MailMessage | string): Promise<void> {
     const mailId = typeof mail === "string" ? mail : mail.id;
-    await this.manifold.command("mail.read", { mailId });
+    await this.manifold.commandResult("mail.read", { mailId });
   }
 
   /** Download-type attachments reveal their local file by emitting a fact. */
   async emitDownloadFact(factId: string): Promise<void> {
-    await this.manifold.command("client.emitFact", { factId });
+    await this.manifold.commandResult("client.emitFact", { factId });
   }
 }

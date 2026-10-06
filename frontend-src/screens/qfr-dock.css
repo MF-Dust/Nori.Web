@@ -1,0 +1,33 @@
+/* The CRT shell lives in styles/components.css. This is the DOM equivalent of
+   QfrDock's Ink/xterm cell layout, using the same shipped font and colours. */
+.qfr-dock {
+  --qfr-accent: #4ee0c8;
+  font: 11px/1.25 SarasaFixed, "Sarasa Mono SC", monospace;
+}
+.qfr-dock.qfr-complete { --qfr-accent: #5fe39a; }
+.qfr-dock.qfr-suspended { --qfr-accent: #f1b24a; }
+.qfr-content, .qfr-status-line { color: var(--qfr-accent); padding: 0 1ch; }
+.qfr-heading { text-align: center; }
+.qfr-heading pre { margin: 0; font: inherit; text-align: left; white-space: pre; }
+.qfr-dim { color: #2f7e72; }
+.qfr-muted { color: #1d5048; }
+.qfr-amber { color: #f1b24a; }
+.qfr-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qfr-panel {
+  margin-top: 1.25em;
+  border: 1px solid var(--qfr-accent);
+  border-radius: 7px;
+  padding: 0 1ch;
+  overflow: hidden;
+}
+.qfr-row { display: flex; justify-content: space-between; gap: 1ch; white-space: pre; }
+.qfr-panel-title { font-weight: 700; }
+.qfr-panel-title > :last-child { font-weight: 400; }
+.qfr-progress { margin-top: 1.25em; }
+.qfr-hint + .qfr-hint { margin-top: 1.25em; }
+.qfr-hint-lines { padding-left: 2ch; white-space: pre-wrap; overflow-wrap: anywhere; }
+.qfr-log { border-color: #5fe39a; color: #5fe39a; }
+.qfr-log-line { color: #5fe39a80; overflow: hidden; white-space: pre; }
+.qfr-status-line { align-items: center; }
+.qfr-status-badge { color: #03100d; background: var(--qfr-accent); white-space: pre; }
+.qfr-dock.qfr-reduce-motion::after { animation: none; }

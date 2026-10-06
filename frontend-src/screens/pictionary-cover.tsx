@@ -8,7 +8,6 @@ export function PictionaryCover({ locale, open, durationSec, disabled, onDuratio
     <button type="button" className="source-pictionary-cover-help" aria-label={text("Help", "帮助")} onClick={onHelp}>?</button>
     <div className={`source-pictionary-cover ${open ? "is-open" : ""}`}>
       <div className="source-pictionary-cover-elastic" aria-hidden="true" />
-      <div className="source-pictionary-cover-pencil" aria-hidden="true" />
       <div className="source-pictionary-cover-texture" aria-hidden="true" />
       <span className="source-pictionary-coffee-ring" aria-hidden="true" />
       <div className="source-pictionary-cover-title">

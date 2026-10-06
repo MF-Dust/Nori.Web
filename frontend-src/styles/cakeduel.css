@@ -1,0 +1,4 @@
+/* StartScreen-DwCccaJ0.js:175: t.sky titlebar, scoped to the initial route. */
+.theme-nori .nori-window-glass:has([data-cakeduel-screen="start"]) > .nori-window-titlebar {
+  background: #8AB7E1;
+}

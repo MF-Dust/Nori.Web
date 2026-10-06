@@ -1,0 +1,5 @@
+.files-vault-frame { width: min(23rem, calc(100% - 1rem)); }
+.files-locked-frame { width: min(30rem, calc(100% - 1rem)); }
+.files-sealed-sheet { padding-top: 2.5rem; }
+.files-vault-badge { width: 0.625rem; height: 0.625rem; }
+.files-grid-entry .files-vault-badge { width: 1.25rem; height: 1.25rem; }

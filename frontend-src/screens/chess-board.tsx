@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Chess, type Square } from "chess.js";
 import { legalChessMoves, type ChessSide } from "../apps/chess-model";
-import { ChessPiece } from "./chess-piece";
+import { ChessBoardPiece } from "./chess-board-piece";
 
 export interface ChessBoardProps {
   fen: string;
@@ -84,21 +84,21 @@ export function ChessBoard({ fen, side, size, interactive, lastMove, tutorialMov
           }}
           onPointerUp={up} onPointerCancel={() => { drag.current = null; setDragged(null); }}
         >
-          {piece && <span style={{ opacity: dragged?.from === square ? .25 : 1 }}><ChessPiece piece={piece.type} color={piece.color === "w" ? "white" : "black"} size={size / 8 * .85} /></span>}
+          {piece && <span data-chess-piece style={{ opacity: dragged?.from === square ? .25 : 1 }}><ChessBoardPiece piece={piece.type} color={piece.color === "w" ? "white" : "black"} size={size / 8} /></span>}
           {target && <span className={target.captured ? "source-chess-capture-target" : "source-chess-target"} />}
         </button>;
       }))}
       {promotion && <div className="source-chess-promotion" role="dialog" aria-modal="true" aria-label="Promotion"
         onKeyDown={event => { if (event.key === "Escape") setPromotion(null); }}>
         {(["q", "r", "b", "n"] as const).map(piece => <button type="button" key={piece} aria-label={"Promote to " + piece}
-          onClick={() => { onMove(promotion.from, promotion.to, piece); setPromotion(null); }}><ChessPiece piece={piece} color={side} size={40} /></button>)}
+          onClick={() => { onMove(promotion.from, promotion.to, piece); setPromotion(null); }}><ChessBoardPiece piece={piece} color={side} size={40} /></button>)}
         <button type="button" onClick={() => setPromotion(null)} aria-label="Cancel promotion">×</button>
       </div>}
     </div>
     <div className="source-chess-files">{[...files].map(file => <span key={file}>{file}</span>)}</div>
     {dragged && (() => { const piece = board.get(dragged.from as Square); return piece ? <div
       style={{ position: "fixed", left: dragged.x, top: dragged.y, transform: "translate(-50%,-50%)", pointerEvents: "none", zIndex: 100000 }}>
-      <ChessPiece piece={piece.type} color={piece.color === "w" ? "white" : "black"} size={size / 8 * .9} />
+      <ChessBoardPiece piece={piece.type} color={piece.color === "w" ? "white" : "black"} size={size / 8} />
     </div> : null; })()}
   </div>;
 }

@@ -3,6 +3,8 @@ import { bindSourceStoryProgression } from "./story/story-progression";
 import { DebugScreen } from "./screens/debug-screen";
 import { subscribeManifoldChanges } from "./runtime/manifold-subscription";
 import { SignalDanielConversationRuntime } from "./apps/signal-daniel";
+import { SIGNAL_ACCOUNT_NAME, SIGNAL_AUTH_FACT } from "./apps/signal-auth";
+import { getEffectiveDesktopCompute } from "./state/compute-runtime";
 import {
   createSignalLocalReadFactsStore,
   createSignalPendingFocusStore,
@@ -279,8 +281,9 @@ function createSourceSession() {
   bundle = createRecoveredDesktopRuntime({
     terminal: {
       translate: sourceTranslate,
+      playCue: frontend.audio.playCue,
       getLocalFileSystem: () =>
-        frontend.world.snapshot().worldId ? terminalFiles : null,
+        frontend.world.snapshot().worldId && hasWorldFact(frontend, "system.repaired") ? terminalFiles : null,
       connectRemote: (host) => connectTerminalRemote(frontend.manifold, host),
       launchPreview: (file) => {
         void launchApp({
@@ -293,6 +296,8 @@ function createSourceSession() {
     },
     mail: {
       setContentKey: chip.setContentKey,
+      hasFact: (factId) => hasWorldFact(frontend, factId),
+      locale: () => locale,
       subscribe: (listener) =>
         subscribeManifoldChanges(frontend.world, listener),
       translate: sourceTranslate,
@@ -307,8 +312,33 @@ function createSourceSession() {
       onMailRead: (mailId) => osNotifications?.mailRead(mailId),
       onDownloaded: (factId, already) => osNotifications?.download(factId, already),
     },
+    qfr: {
+      computeState: () => ({ ...idle.snapshot().computeState, computeDrain: frontend.scene.snapshot().memoryComputeDrain }),
+      facts: () => worldFacts(frontend),
+      maxComputeThisRun: () => idle.snapshot().state.maxComputeThisRun,
+      reduceMotion: () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      subscribe: (listener) => {
+        const releaseIdle = idle.subscribe(listener);
+        const releaseFacts = subscribeManifoldChanges(frontend.world, listener);
+        const releaseScene = frontend.scene.subscribe(listener);
+        return () => { releaseIdle(); releaseFacts(); releaseScene(); };
+      },
+      suspended: () => frontend.scene.snapshot().active,
+    },
     files: {
       model: frontend.files,
+      playCue: frontend.audio.playCue,
+      notify: (input) => { frontend.notifications.push(input); },
+      recoveryState: () => {
+        const snapshot = idle.snapshot();
+        const effective = getEffectiveDesktopCompute({ ...snapshot.computeState, computeDrain: frontend.scene.snapshot().memoryComputeDrain });
+        return { maxComputeThisRun: snapshot.state.maxComputeThisRun, computeCap: effective.cap, currentCompute: effective.compute };
+      },
+      subscribeRecovery: (listener) => {
+        const releaseIdle = idle.subscribe(listener);
+        const releaseScene = frontend.scene.subscribe(listener);
+        return () => { releaseIdle(); releaseScene(); };
+      },
       translate: sourceTranslate,
       hasFact: (factId) => hasWorldFact(frontend, factId),
       decrypting: qfrDecrypt.active,
@@ -361,10 +391,10 @@ function createSourceSession() {
       setContentKey: chip.setContentKey,
       playSound: frontend.audio.playCue,
       service: frontend.signal,
-      accountName: () => {
-        const auth = frontend.auth.snapshot();
-        return auth.status === "authenticated" ? auth.session.user.email : "";
-      },
+      accountName: SIGNAL_ACCOUNT_NAME,
+      authSignalPresent: () => hasWorldFact(frontend, SIGNAL_AUTH_FACT),
+      getWorldId: () => frontend.world.snapshot().worldId,
+      subscribe: (listener) => subscribeManifoldChanges(frontend.world, listener),
       authenticated: false,
       translate: sourceTranslate,
       messenger: {
@@ -872,6 +902,7 @@ function SourceSessionView({ source }: { source: SourceSession }) {
           <NoriStage
             frontend={source.frontend}
             facts={facts}
+            windows={source.bundle.runtime.store}
             exclusive={() =>
               source.bundle.runtime.store.getState().exclusiveAppId !== null
             }

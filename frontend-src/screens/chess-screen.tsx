@@ -14,6 +14,8 @@ export interface ChessScreenProps {
   onSound?: (sound: string) => void;
   onNoriReaction?: (reaction: ChessReaction) => void;
 }
+const DIFFICULTY_PIECES = { sleepy: "p", casual: "n", normal: "b", focused: "r", serious: "q" } as const;
+
 export function ChessScreen({ controller, translate, onSound, onNoriReaction }: ChessScreenProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
   useEffect(() => controller.retain(), [controller]);
@@ -85,34 +87,36 @@ export function ChessScreen({ controller, translate, onSound, onNoriReaction }: 
     playing && state?.drawOffer && state.drawOffer !== playerSide ? "Draw" : null;
   return <section ref={ref} className="source-chess" aria-label={t("title", "Chess")}>
     <div className="source-chess-layout">
-      <div className="source-chess-board-column">
+      <div className="source-chess-board-column" data-setup={setup || undefined}>
         {capturedRow(captures.opponent, playerSide, -captures.advantage)}
-        <ChessBoard fen={setup ? CHESS_START_FEN : timeline?.fens[activePly] ?? game?.fen ?? CHESS_START_FEN}
+        <div className="source-chess-board-shell"><ChessBoard fen={setup ? CHESS_START_FEN : timeline?.fens[activePly] ?? game?.fen ?? CHESS_START_FEN}
           side={playerSide} size={layout.board} lastMove={setup ? null : history[activePly - 1]?.move}
           tutorialMove={playing && connected && tutorial?.mover === "player" && ply === null ? tutorial.move : null}
           interactive={connected && !!myTurn && !snapshot.pending && ply === null && (!guided || tutorial?.mover === "player")}
           onReturnToLive={() => setPly(null)}
-          onMove={(from, to, promotion) => { void controller.dispatch({ type: "move", from, to, ...(promotion ? { promotion } : {}) }).then(ok => { if (!ok) onSound?.("illegal"); }); }} />
+          onMove={(from, to, promotion) => { void controller.dispatch({ type: "move", from, to, ...(promotion ? { promotion } : {}) }).then(ok => { if (!ok) onSound?.("illegal"); }); }} /></div>
         {capturedRow(captures.player, playerSide === "white" ? "black" : "white", captures.advantage)}
       </div>
-      <aside className="source-chess-rail" style={{ width: layout.rail }} data-compact={layout.compact}>
+      <aside className="source-chess-rail" style={{ width: layout.rail }} data-compact={layout.compact} data-setup={setup || undefined}>
         <div className="source-chess-heading"><h1>{t("title", "Chess")}</h1><button type="button" aria-label={t("help.button", "Help")} onClick={() => setHelp(true)}>?</button></div>
         {setup ? <>
+          {!layout.compact && <p className="source-chess-subtitle">{t("subtitle", "Choose your color and a Nori mood.")}</p>}
           <div className="source-chess-sides">{(["white", "black"] as const).map(value =>
             <button type="button" key={value} aria-pressed={side === value} onClick={() => setSide(value)}>
-              <ChessPiece piece="k" color={value} size={layout.compact ? 22 : 32} />
-              {t(value === "white" ? "start.playWhite" : "start.playBlack", value === "white" ? "Play White" : "Play Black")}
+              <span style={{ opacity: side === value ? 1 : .65 }}><ChessPiece piece="k" color={value} size={layout.compact ? 22 : 32} /></span>
+              <span>{t(value === "white" ? "start.playWhite" : "start.playBlack", value === "white" ? "Play White" : "Play Black")}</span>
             </button>)}</div>
           <div className="source-chess-difficulties">{CHESS_DIFFICULTIES.map(item =>
             <button type="button" key={item.id} aria-pressed={difficulty === item.id} onClick={() => setDifficulty(item.id)}>
-              <span>{t("start.difficulties." + item.id, item.id)}</span><small>{item.elo}</small>
+              <span style={{ opacity: difficulty === item.id ? 1 : .55 }}><ChessPiece piece={DIFFICULTY_PIECES[item.id]} color={difficulty === item.id ? "white" : "black"} size={16} /></span>
+              <span className="source-chess-difficulty-label">{t("start.difficulties." + item.id, item.id)}</span><small>{t("start.elo", `${item.elo} ELO`, { elo: item.elo })}</small>
             </button>)}</div>
           <button type="button" className="primary" disabled={!snapshot.mounted || snapshot.pending} onClick={() => {
             void controller.dispatch({ type: "startGame", mode: "normal", side, difficulty }).then(ok => { if (ok) { setRestart(false); setPly(null); onSound?.("gameStart"); } });
           }}>{t("start.startGame", "Start game")}</button>
-          <button type="button" disabled={!snapshot.mounted || snapshot.pending} onClick={() => {
+          <button type="button" className="source-chess-tutorial-start" disabled={!snapshot.mounted || snapshot.pending} onClick={() => {
             void controller.dispatch({ type: "startGame", mode: "tutorial" }).then(ok => { if (ok) { setRestart(false); setPly(null); } });
-          }}>{t("start.tutorial", "Tutorial")}</button>
+          }}><span aria-hidden="true"><ChessPiece piece="p" color="black" size={14} /></span>{t("start.tutorial", "Tutorial")}</button>
         </> : <>
           <p role="status">{game?.isCheck ? t("game.check", "Check") + " · " : ""}{playing ? myTurn ? t("game.yourTurn", "Your turn") : t("game.norisTurn", "Nori's turn") : t("results." + game?.status, game?.status ?? "")}</p>
           {playing && state?.tutorial && <ChessTutorial step={state.tutorial.step} reviewing={ply !== null}

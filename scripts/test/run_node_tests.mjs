@@ -39,6 +39,8 @@ try {
     bundle: true,
     platform: "node",
     format: "esm",
+    // Bundled CommonJS dependencies (e.g. React's Node SSR) still require builtins.
+    banner: { js: 'import { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);' },
     target: "node22",
     sourcemap: "inline",
     outExtension: { ".js": ".mjs" },

@@ -10,6 +10,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -254,6 +255,9 @@ export function BrowserScreen({
   const app = useWindowAppRuntime();
   const managedWindow = useManagedWindowRuntime();
   const presentation = useWindowPresentationRuntime();
+  const setTitleBarContent = presentation?.setTitleBarContent;
+  const [tabsContainer, setTabsContainer] = useState<HTMLDivElement | null>(null);
+  const browserTitle = translate("browser.title");
   const restored = useMemo(() => loadBrowserTabs(), []);
   const initial = useMemo(() => {
     if (initialUrl) return [createTab(initialUrl)];
@@ -581,6 +585,12 @@ export function BrowserScreen({
             key={tab.id}
             draggable
             data-tab-id={tab.id}
+            onMouseDown={(event) => {
+              managedWindow.focus();
+              event.stopPropagation();
+              if (event.button === 1) event.preventDefault();
+            }}
+            onDoubleClick={(event) => event.stopPropagation()}
             onDragStart={(event) => onDragStart(event, tab.id)}
             onDragOver={(event) => onDragOver(event, tab.id)}
             onClick={() => selectTab(tab.id)}
@@ -604,31 +614,27 @@ export function BrowserScreen({
         );
       })}
       <div className="flex h-8 shrink-0 items-center">
-        <button type="button" onClick={() => openTab()} className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={translate("browser.newTab")} title={translate("browser.newTab")}>
+        <button type="button" onClick={() => openTab()} onMouseDown={(event) => { managedWindow.focus(); event.stopPropagation(); }} onDoubleClick={(event) => event.stopPropagation()} className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={translate("browser.newTab")} title={translate("browser.newTab")}>
           <Plus className="size-4" />
         </button>
       </div>
     </div>
-  ), [activeId, closeTab, openTab, selectTab, tabs, translate]);
+  ), [activeId, closeTab, managedWindow.focus, openTab, selectTab, tabs, translate]);
 
   useEffect(() => {
-    if (!presentation) return;
-    if (isMaximized) {
-      presentation.setTitleBarContent({
-        left: (
-          <>
-            <span className="shrink-0 select-none whitespace-nowrap pl-4 pr-2 text-sm font-medium text-foreground/80">
-              {translate("browser.title")}
-            </span>
-            {tabsBar}
-          </>
-        ),
-      });
-    } else {
-      presentation.setTitleBarContent(null);
-    }
-    return () => presentation.setTitleBarContent(null);
-  }, [isMaximized, presentation, tabsBar, translate]);
+    if (!setTitleBarContent) return;
+    setTitleBarContent({
+      left: (
+        <>
+          <span className="shrink-0 select-none whitespace-nowrap pl-4 pr-2 text-sm font-medium text-foreground/80">
+            {browserTitle}
+          </span>
+          <div ref={setTabsContainer} className="flex h-9 min-w-0 flex-1 items-end" />
+        </>
+      ),
+    });
+    return () => setTitleBarContent(null);
+  }, [browserTitle, setTitleBarContent]);
 
   if (!active) return null;
   const canBack = active.historyIndex > 0;
@@ -639,7 +645,9 @@ export function BrowserScreen({
 
   return (
     <div className="relative flex h-full select-none flex-col text-foreground">
-      {!isMaximized || !presentation ? <div className="flex shrink-0 items-end px-1 pt-1">{tabsBar}</div> : null}
+      {setTitleBarContent
+        ? tabsContainer && createPortal(tabsBar, tabsContainer)
+        : <div className="flex shrink-0 items-end px-1 pt-1">{tabsBar}</div>}
       <div className="flex items-center gap-2 border-b border-border/50 bg-foreground/10 px-3 py-2">
         <ToolbarButton icon={ArrowLeft} label={translate("browser.back")} disabled={!canBack} onClick={() => navigateHistory(active.id, -1)} />
         <ToolbarButton icon={ArrowRight} label={translate("browser.forward")} disabled={!canForward} onClick={() => navigateHistory(active.id, 1)} />
