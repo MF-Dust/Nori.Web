@@ -14,6 +14,7 @@ import {
   Monitor,
   Wifi,
   Gauge,
+  Bug,
   type LucideIcon,
 } from "lucide-react";
 import { useAudioSettings } from "../state/audio-store";
@@ -31,14 +32,16 @@ export interface SettingsRuntime {
   translate: Translate;
   onReset(): Promise<void>;
   speechControl?: ReactNode;
+  debugContent?: ReactNode;
 }
 const sections = ["sound", "graphics", "network", "system"] as const;
-type Section = (typeof sections)[number];
+type Section = (typeof sections)[number] | "debug";
 const icons = {
   sound: Volume2,
   graphics: Gauge,
   network: Wifi,
   system: Monitor,
+  debug: Bug,
 };
 
 function Toggle({
@@ -426,10 +429,13 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
   const t = runtime.translate;
   const [selected, setSelected] = useState<Section>("sound");
   const [reset, setReset] = useState(false);
+  const debugSelected = selected === "debug";
+  const navigation: readonly Section[] = runtime.debugContent ? [...sections, "debug"] : sections;
   const scroll = useRef<HTMLDivElement>(null);
   const navigatingUntil = useRef(0);
   const refs = useRef<Partial<Record<Section, HTMLElement | null>>>({});
   useEffect(() => {
+    if (debugSelected) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (performance.now() < navigatingUntil.current) return;
@@ -442,24 +448,28 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
     for (const section of Object.values(refs.current))
       if (section) observer.observe(section);
     return () => observer.disconnect();
-  }, []);
+  }, [debugSelected]);
   function navigate(section: Section) {
     setSelected(section);
     navigatingUntil.current = performance.now() + 500;
+    if (section === "debug") return;
+    // Wait for the regular settings pane to become visible when leaving Debug.
     // Scroll only this window's container; scrollIntoView also moves the desktop viewport.
-    const element = refs.current[section],
-      container = scroll.current;
-    if (element && container)
-      container.scrollTo({
-        top:
-          element.getBoundingClientRect().top -
-          container.getBoundingClientRect().top +
-          container.scrollTop -
-          20,
-        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "instant"
-          : "smooth",
-      });
+    requestAnimationFrame(() => {
+      const element = refs.current[section],
+        container = scroll.current;
+      if (element && container && container.clientHeight)
+        container.scrollTo({
+          top:
+            element.getBoundingClientRect().top -
+            container.getBoundingClientRect().top +
+            container.scrollTop -
+            20,
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "instant"
+            : "smooth",
+        });
+    });
   }
   return (
     // Compatibility AI / TTS / Interface panels locate this shell by walking
@@ -469,7 +479,7 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
     <div className="settings-root relative flex h-full min-h-0">
       <div className="settings-nav-pane flex w-44 shrink-0 flex-col border-r bg-muted/30 p-2">
         <nav className="flex flex-col gap-0.5" aria-label={t("apps.settings")}>
-          {sections.map((section) => {
+          {navigation.map((section) => {
             const Icon = icons[section];
             return (
               <button
@@ -491,7 +501,8 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
         role="region"
         aria-label={t("apps.settings")}
         tabIndex={0}
-        className="min-h-0 min-w-0 flex-1 overflow-y-auto scroll-smooth"
+        style={{ display: debugSelected ? "none" : undefined }}
+        className="settings-content min-h-0 min-w-0 flex-1 overflow-y-auto scroll-smooth"
       >
         <div className="mx-auto max-w-md space-y-8 p-5">
           {sections.map((section, index) => (
@@ -535,6 +546,11 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
           ))}
         </div>
       </div>
+      {debugSelected && (
+        <div className="settings-debug-page min-h-0 min-w-0 flex-1" role="region" aria-label={t("settings.sections.debug")}>
+          {runtime.debugContent}
+        </div>
+      )}
       {reset && (
         <ResetDialog runtime={runtime} onClose={() => setReset(false)} />
       )}

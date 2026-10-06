@@ -440,6 +440,10 @@ export default {
     "offline_line": "Host unresponsive; analysis offline.",
     "pick_hint": "Pick a window to analyze",
     "readout_header": "[ANALYSIS CHIP]",
+    "readout_fresh": "Fresh readout logged — key={{key}}, row={{row}}",
+    "readout_archived": "Archived scan replay — key={{key}}, row={{row}}",
+    "readout_thermal_lock": "[{{key}}] chip thermal lock — heat {{heat}}/{{capacity}}; wait for cooldown",
+    "readout_unavailable": "[chip] manifold link unavailable",
     "scan_failed": "Scan failed; retry advised.",
     "scanning": "Scanning...",
     "signal_photo": "Photo from {{name}}",
@@ -1137,6 +1141,7 @@ export default {
       "title": "Network"
     },
     "sections": {
+      "debug": "Debug",
       "developer": "Developer",
       "graphics": "Graphics",
       "language": "Language",

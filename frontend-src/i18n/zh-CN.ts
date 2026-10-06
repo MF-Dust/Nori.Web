@@ -440,6 +440,10 @@ export default {
     "offline_line": "宿主无响应；分析离线。",
     "pick_hint": "选一个要分析的窗口",
     "readout_header": "【分析芯片】",
+    "readout_fresh": "新扫描结果已记录 — 标识={{key}}，指纹={{row}}",
+    "readout_archived": "历史扫描结果重放 — 标识={{key}}，指纹={{row}}",
+    "readout_thermal_lock": "[{{key}}] 芯片过热锁定 — 热量 {{heat}}/{{capacity}}；请等待冷却",
+    "readout_unavailable": "【芯片】流形连接不可用",
     "scan_failed": "扫描失败；建议重试。",
     "scanning": "扫描中...",
     "signal_photo": "{{name}}发来的照片",
@@ -1137,6 +1141,7 @@ export default {
       "title": "网络"
     },
     "sections": {
+      "debug": "调试",
       "developer": "开发者",
       "graphics": "显示效果",
       "language": "语言",

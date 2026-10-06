@@ -6,6 +6,25 @@ import {
   chipAvailability,
 } from "../../frontend-src/runtime/chip-controller";
 import type { ArcadeClient } from "../../frontend-src/runtime/arcade-client";
+import { localizeChipReadout } from "../../frontend-src/i18n/chip-readout";
+
+test("chip readouts localize fixed backend results and preserve identifiers and custom text", () => {
+  const cases = [
+    ["Fresh readout logged — key=file:test, row=28e79f55aca63c3d", "新扫描结果已记录 — 标识=file:test，指纹=28e79f55aca63c3d"],
+    ["Archived scan replay — key=page:test, row=bb7d67907910d5d3", "历史扫描结果重放 — 标识=page:test，指纹=bb7d67907910d5d3"],
+    ["[signal:test] chip thermal lock — heat 5/5; wait for cooldown", "[signal:test] 芯片过热锁定 — 热量 5/5；请等待冷却"],
+    ["[chip] manifold link unavailable", "【芯片】流形连接不可用"],
+  ];
+  for (const [original, translated] of cases) {
+    assert.equal(localizeChipReadout(original, "zh-CN"), translated);
+    assert.equal(localizeChipReadout(original, "zh_CN"), translated);
+    assert.equal(localizeChipReadout(original, "en"), original);
+  }
+  for (const text of ["自定义分析结果", "Custom readout", "扫描失败；建议重试。", ""]) {
+    assert.equal(localizeChipReadout(text, "zh-CN"), text);
+    assert.equal(localizeChipReadout(text, "en"), text);
+  }
+});
 
 class ChipTransport {
   connectionState = "open";

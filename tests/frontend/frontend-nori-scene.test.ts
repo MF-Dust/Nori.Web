@@ -10,6 +10,35 @@ import {
   noriLipExpressionBlend,
 } from "../../frontend-src/live2d/idle-controller";
 import { NoriSceneStore } from "../../frontend-src/state/nori-scene";
+import { CanvasTexture } from "three";
+import { NoriSceneRenderer } from "../../frontend-src/live2d/scene-renderer";
+
+test("Live2D texture reallocates GPU storage on canvas growth and shrink, not on every frame", () => {
+  const canvas = { width: 1024, height: 2048 } as HTMLCanvasElement;
+  const texture = new CanvasTexture(canvas);
+  let disposals = 0;
+  texture.addEventListener("dispose", () => disposals++);
+  // Exercise texture lifetime without creating a WebGL context in the node test runner.
+  const renderer = Object.assign(Object.create(NoriSceneRenderer.prototype), {
+    texture, textureWidth: canvas.width, textureHeight: canvas.height,
+  });
+  const version = texture.version;
+  renderer.updateModelTexture();
+  assert.equal(disposals, 0);
+  assert.equal(texture.version, version + 1);
+  for (const [width, height] of [[1536, 3072], [768, 1536], [768, 1024]]) {
+    canvas.width = width;
+    canvas.height = height;
+    const previous = disposals;
+    renderer.updateModelTexture();
+    assert.equal(disposals, previous + 1);
+    assert.equal(renderer.textureWidth, width);
+    assert.equal(renderer.textureHeight, height);
+    renderer.updateModelTexture();
+    assert.equal(disposals, previous + 1);
+    assert.equal(renderer.texture, texture, "shader uniforms retain the same texture object");
+  }
+});
 
 test("Nori expressions hold for three seconds, retain the latest request and clear after speech", (t) => {
   t.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 1000 });

@@ -43,6 +43,8 @@ export class NoriSceneRenderer {
   private debug = createDebugGeometry();
   private shadowPrepass: ReturnType<typeof createShadowPrepass>;
   private texture: CanvasTexture;
+  private textureWidth: number;
+  private textureHeight: number;
   private width = 1;
   private height = 1;
   private manifold = 0;
@@ -78,6 +80,8 @@ export class NoriSceneRenderer {
     this.shadowPrepass = createShadowPrepass(this.renderer);
     this.shadow.uniforms.silhouetteMap.value = this.shadowPrepass.texture;
     this.texture = new CanvasTexture(modelCanvas);
+    this.textureWidth = modelCanvas.width;
+    this.textureHeight = modelCanvas.height;
     this.texture.flipY = false;
     this.texture.minFilter = this.texture.magFilter = LinearFilter;
     this.scene.add(
@@ -105,6 +109,16 @@ export class NoriSceneRenderer {
     this.renderer.setSize(this.width, this.height, false);
     this.camera.aspect = this.width / this.height;
     this.camera.updateProjectionMatrix();
+  }
+  private updateModelTexture() {
+    const modelCanvas = this.texture.image as HTMLCanvasElement;
+    if (modelCanvas.width !== this.textureWidth || modelCanvas.height !== this.textureHeight) {
+      // Three allocates immutable GPU texture storage; a resized canvas needs fresh storage.
+      this.texture.dispose();
+      this.textureWidth = modelCanvas.width;
+      this.textureHeight = modelCanvas.height;
+    }
+    this.texture.needsUpdate = true;
   }
   render(
     time: number,
@@ -183,7 +197,7 @@ export class NoriSceneRenderer {
         isDebug: false,
       },
     };
-    this.texture.needsUpdate = true;
+    this.updateModelTexture();
     if (state.coldOpen) {
       this.coldOpen ??= new ColdOpenRenderer(
         this.scene,

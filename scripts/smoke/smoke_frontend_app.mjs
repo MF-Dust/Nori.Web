@@ -500,6 +500,19 @@ try {
     .filter({ hasText: /^Average \d+ ms$/ })
     .waitFor();
   await page.screenshot({ path: resolve(output, "settings-network.png") });
+  await page.getByRole("button", { name: "Debug", exact: true }).click();
+  const settingsDebug = page.locator(".settings-debug-page");
+  await settingsDebug.getByRole("heading", { name: "Connection", exact: true }).waitFor();
+  assert.equal(await master.isVisible(), false);
+  assert.equal(await settingsDebug.getByRole("button").count() >= 21, true);
+  await settingsDebug.getByRole("button", { name: "Facts", exact: true }).click();
+  await settingsDebug.getByRole("textbox", { name: "Filter facts", exact: true }).fill("system");
+  await settingsDebug.getByRole("heading", { name: "Facts", exact: true }).waitFor();
+  await page.screenshot({ path: resolve(output, "settings-debug.png") });
+  await page.getByRole("button", { name: "Sound", exact: true }).click();
+  await master.waitFor({ state: "visible" });
+  assert.equal(await master.inputValue(), "37");
+  assert.equal(await settingsDebug.count(), 0);
   await page.getByRole("button", { name: "System", exact: true }).click();
   await page
     .getByRole("button", { name: "Reset system...", exact: true })

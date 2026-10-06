@@ -234,6 +234,21 @@ function createSourceSession() {
     arcade: frontend.arcade,
     system,
     speechControl: <SpeechModeControl frontend={frontend} locale={locale} />,
+    debugContent: <DebugScreen frontend={frontend} actions={{
+      compute: idle.debug,
+      marginalGrowth,
+      loadScenario: async (game, scenarioId) => {
+        const ok = game === "chess"
+          ? await chess.dispatch({ type: "debugLoadScenario", scenarioId })
+          : game === "cakeduel"
+            ? await cakeduel.loadDebugScenario(scenarioId)
+            : await codenames.dispatch({ type: "debugLoadScenario", scenarioId });
+        if (!ok) throw new Error(
+          (game === "chess" ? chess.snapshot().error : game === "cakeduel" ? cakeduel.snapshot().error : codenames.snapshot().error)
+            ?? `Unable to load ${game} scenario.`,
+        );
+      },
+    }} />,
     translate: sourceTranslate,
     onReset: async () => {
       await system.resetWorld(locale, useUnlockSettings.getState().fullUnlock);
@@ -406,21 +421,7 @@ function createSourceSession() {
       playCue: frontend.audio.playCue,
       translate: sourceTranslate,
       windows: {
-        debug: { main: { component: () => <DebugScreen frontend={frontend} actions={{
-          compute: idle.debug,
-          marginalGrowth,
-          loadScenario: async (game, scenarioId) => {
-            const ok = game === "chess"
-              ? await chess.dispatch({ type: "debugLoadScenario", scenarioId })
-              : game === "cakeduel"
-                ? await cakeduel.loadDebugScenario(scenarioId)
-                : await codenames.dispatch({ type: "debugLoadScenario", scenarioId });
-            if (!ok) throw new Error(
-              (game === "chess" ? chess.snapshot().error : game === "cakeduel" ? cakeduel.snapshot().error : codenames.snapshot().error)
-                ?? `Unable to load ${game} scenario.`,
-            );
-          },
-        }} /> } },
+        debug: { main: { component: () => settings.debugContent } },
         system: {
           about: { component: AboutScreen },
           alert: {

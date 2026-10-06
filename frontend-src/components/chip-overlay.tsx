@@ -10,6 +10,7 @@ import {
 import type { WindowStore } from "../state/window-types";
 import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import { createSourceTranslate } from "../i18n/translate";
+import { localizeChipReadout } from "../i18n/chip-readout";
 import "./chip-overlay.css";
 
 type ChipProps = { controller: ChipController; locale: string };
@@ -87,7 +88,8 @@ export function ChipReadout({ controller, locale }: ChipProps) {
   const [count, setCount] = useState(0);
   const [expired, setExpired] = useState(false);
   const t = useMemo(() => createSourceTranslate(locale), [locale]);
-  const characters = useMemo(() => Array.from(readout?.text ?? ""), [readout]);
+  const text = readout ? localizeChipReadout(readout.text, locale) : "";
+  const characters = useMemo(() => Array.from(text), [text]);
   useEffect(() => {
     setExpired(false);
     setCount(0);
@@ -117,7 +119,7 @@ export function ChipReadout({ controller, locale }: ChipProps) {
   }, [readout, characters]);
   if (!readout || expired) return null;
   return (
-    <div className="chip-readout" role="status" aria-label={readout.text}>
+    <div className="chip-readout" role="status" aria-label={text}>
       <div>{t("chip.readout_header")}</div>
       <span aria-hidden="true">
         {characters.slice(0, count).join("")}

@@ -5,7 +5,7 @@
 .settings-root hr {
   border-color: var(--border);
 }
-.settings-root input[type="range"] {
+.settings-content input[type="range"] {
   appearance: none;
   width: 100%;
   height: 6px;
@@ -17,7 +17,7 @@
   );
   cursor: pointer;
 }
-.settings-root input[type="range"]::-webkit-slider-thumb {
+.settings-content input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 16px;
   height: 16px;
@@ -26,7 +26,7 @@
   background: white;
   box-shadow: 0 1px 2px #0003;
 }
-.settings-root input[type="range"]::-moz-range-thumb {
+.settings-content input[type="range"]::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
@@ -101,6 +101,21 @@
 }
 .settings-reset-dialog::backdrop {
   background: #0006;
+}
+.settings-debug-page .source-debug {
+  flex-direction: column;
+  min-height: 0;
+}
+.settings-debug-page .source-debug nav {
+  flex: 0 0 auto;
+  flex-direction: row;
+  border-right: 0;
+  border-bottom: 1px solid var(--border);
+}
+.settings-debug-page .source-debug nav button {
+  flex-shrink: 0;
+  width: auto;
+  white-space: nowrap;
 }
 @media (max-width: 480px) {
   .settings-root {
