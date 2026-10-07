@@ -41,6 +41,7 @@ export const groups = {
     "tests/frontend/frontend-cold-open.test.ts",
     "tests/frontend/frontend-debug-reactions-tab.test.ts",
     "tests/frontend/frontend-debug-system-tabs.test.ts",
+    "tests/frontend/frontend-debug-localization.test.tsx",
     "tests/frontend/frontend-debug-tools.test.ts",
     "tests/frontend/frontend-drain-burst.test.ts",
     "tests/frontend/frontend-head-pat-audio.test.ts",

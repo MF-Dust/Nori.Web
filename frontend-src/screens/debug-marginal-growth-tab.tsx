@@ -1,3 +1,4 @@
+import { debugText } from "../i18n/debug";
 import { useSyncExternalStore } from "react";
 import type { StoreApi, UseBoundStore } from "zustand";
 import type { MarginalGrowthState } from "../state/marginal-growth-store";
@@ -23,9 +24,9 @@ export function MarginalGrowthDebugTab({
 }) {
   if (!store) {
     return (
-      <section aria-label="Marginal growth">
-        <h2>Marginal growth</h2>
-        <p role="status">Marginal-growth store is not mounted.</p>
+      <section aria-label={debugText("Marginal growth")}>
+        <h2>{debugText("Marginal growth")}</h2>
+        <p role="status">{debugText("Marginal-growth store is not mounted.")}</p>
       </section>
     );
   }
@@ -42,8 +43,8 @@ function MarginalGrowthPanel({
   const { setParam, setKRef, setExponent, setStepOffset, setSource } = state;
   const maxSteps = params.maxSteps;
   return (
-    <section aria-label="Marginal growth">
-      <h2>Marginal growth</h2>
+    <section aria-label={debugText("Marginal growth")}>
+      <h2>{debugText("Marginal growth")}</h2>
       <div className="source-debug-lab-actions">
         {SOURCES.map((option) => (
           <button
@@ -52,20 +53,16 @@ function MarginalGrowthPanel({
             aria-pressed={source === option.id}
             onClick={() => setSource(option.id)}
           >
-            {option.label}
+            {debugText(option.label)}
           </button>
         ))}
       </div>
       <div className="source-debug-lab-actions">
-        <button type="button" onClick={state.restart}>
-          Restart
-        </button>
-        <button type="button" onClick={state.reset}>
-          Defaults
-        </button>
+        <button type="button" onClick={state.restart}>{debugText("Restart")}{" "}</button>
+        <button type="button" onClick={state.reset}>{debugText("Defaults")}{" "}</button>
       </div>
       <Range
-        label="kRef"
+        label={debugText("kRef")}
         value={state.kRef}
         min={5}
         max={1000}
@@ -74,7 +71,7 @@ function MarginalGrowthPanel({
         format={(value) => value.toFixed(1)}
       />
       <Range
-        label="exp"
+        label={debugText("exp")}
         value={state.exponent}
         min={0.5}
         max={30}
@@ -83,7 +80,7 @@ function MarginalGrowthPanel({
         format={(value) => value.toFixed(2)}
       />
       <Range
-        label="step0"
+        label={debugText("step0")}
         value={state.stepOffset}
         min={0}
         max={Math.max(1, maxSteps - 1)}
@@ -91,15 +88,14 @@ function MarginalGrowthPanel({
         onChange={setStepOffset}
         format={integer}
       />
-      <p>
-        phase{" "}
+      <p>{debugText("phase")}{" "}
         <output>
           {phase.toFixed(3)}
-          {source === "owned" && phase > 1 ? " (clamped)" : ""}
+          {source === "owned" && phase > 1 ? debugText(" (clamped)") : ""}
         </output>
       </p>
       <Range
-        label="n"
+        label={debugText("n")}
         value={params.steps}
         min={0}
         max={maxSteps}
@@ -109,7 +105,7 @@ function MarginalGrowthPanel({
         format={integer}
       />
       <Range
-        label="width"
+        label={debugText("width")}
         value={params.lineWidth}
         min={0.6}
         max={4}
@@ -118,7 +114,7 @@ function MarginalGrowthPanel({
         format={(value) => value.toFixed(1)}
       />
       <Range
-        label="scale"
+        label={debugText("scale")}
         value={params.renderScale}
         min={0.25}
         max={10}
@@ -127,7 +123,7 @@ function MarginalGrowthPanel({
         format={(value) => `${value.toFixed(2)}x`}
       />
       <Range
-        label="alpha"
+        label={debugText("alpha")}
         value={params.renderOpacity}
         min={0}
         max={1}
@@ -136,7 +132,7 @@ function MarginalGrowthPanel({
         format={(value) => value.toFixed(2)}
       />
       <Range
-        label="blur"
+        label={debugText("blur")}
         value={params.renderBlur}
         min={0}
         max={64}
@@ -145,7 +141,7 @@ function MarginalGrowthPanel({
         format={(value) => value.toFixed(2)}
       />
       <Range
-        label="tint"
+        label={debugText("tint")}
         value={params.renderTint}
         min={0}
         max={16777215}

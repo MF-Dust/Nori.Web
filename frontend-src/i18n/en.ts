@@ -426,6 +426,13 @@ export default {
       "noriDeclinedTakeback": "Nori declined the takeback"
     }
   },
+  "errors": {
+    "connection": "Unable to connect. Check that the local service is running, then try again.",
+    "sendCode": "Could not send the verification code. Check your email address and connection, then try again.",
+    "signIn": "Could not sign in. Check your verification code and try again.",
+    "signOut": "Could not sign out. Check the connection and try again.",
+    "rateLimit": "Too many attempts. Please wait a moment and try again."
+  },
   "chip": {
     "analyze": "Analyze a window",
     "browser_tab": "Browser tab: {{title}}",
@@ -434,16 +441,17 @@ export default {
     "charge": "Chip charge: {{charges}}/{{capacity}} scans",
     "charge_label": "Scans",
     "cooling": "Cooling down; scan available in ~{{minutes}} min",
+    "loading": "Getting chip status…",
     "low_power": "Insufficient power; can't analyze",
     "nori": "Nori",
     "offline": "Analysis chip offline",
     "offline_line": "Host unresponsive; analysis offline.",
     "pick_hint": "Pick a window to analyze",
     "readout_header": "[ANALYSIS CHIP]",
-    "readout_fresh": "Fresh readout logged — key={{key}}, row={{row}}",
-    "readout_archived": "Archived scan replay — key={{key}}, row={{row}}",
-    "readout_thermal_lock": "[{{key}}] chip thermal lock — heat {{heat}}/{{capacity}}; wait for cooldown",
-    "readout_unavailable": "[chip] manifold link unavailable",
+    "readout_fresh": "Scan complete. No analysis is available for this content yet.",
+    "readout_archived": "This content was scanned before. No analysis is available yet.",
+    "readout_thermal_lock": "The chip is overheating. Wait for it to cool down before scanning again.",
+    "readout_unavailable": "Cannot connect to the analysis chip. Check the connection and try again.",
     "scan_failed": "Scan failed; retry advised.",
     "scanning": "Scanning...",
     "signal_photo": "Photo from {{name}}",

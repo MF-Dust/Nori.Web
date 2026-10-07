@@ -1,3 +1,4 @@
+import { debugText } from "../i18n/debug";
 import { useState } from "react";
 import {
   NORI_MODEL_EXPRESSIONS,
@@ -132,13 +133,11 @@ export function SceneEditorChannels({
   }
   return (
     <details className="source-scene-channels">
-      <summary>Camera and environment channels</summary>
+      <summary>{debugText("Camera and environment channels")}</summary>
       <fieldset disabled={disabled}>
-        <legend>Project overrides</legend>
-        <label>
-          Editing target
-          <select
-            aria-label="Scene channel target"
+        <legend>{debugText("Project overrides")}</legend>
+        <label>{debugText("Editing target")}{" "}<select
+            aria-label={debugText("Scene channel target")}
             value={index}
             onChange={(event) =>
               setSelection(
@@ -146,7 +145,7 @@ export function SceneEditorChannels({
               )
             }
           >
-            <option value={-1}>Initial state</option>
+            <option value={-1}>{debugText("Initial state")}</option>
             {project.phases.map((phase, i) => (
               <option value={i} key={phase.id}>
                 {phase.id}
@@ -154,25 +153,22 @@ export function SceneEditorChannels({
             ))}
           </select>
         </label>
-        <p>
-          Numbers apply on blur or Enter. Empty fields inherit the previous
-          phase; Auto returns nullable channels to scene defaults.
-        </p>
+        <p>{debugText("Numbers apply on blur or Enter. Empty fields inherit the previous phase; Auto returns nullable channels to scene defaults.")}{" "}</p>
         <div className="source-scene-channel-grid">
           {channels.map((channel) => (
             <div className="source-scene-channel" key={channel.key}>
               <label>
-                {channel.label}
+                {debugText(channel.label)}
                 <input
                   type="number"
-                  aria-label={`Scene ${channel.label}`}
+                  aria-label={`Scene ${debugText(channel.label)}`}
                   key={`${index}:${channel.key}:${target[channel.key]}`}
                   min={channel.min}
                   max={channel.max}
                   step={channel.step}
                   defaultValue={target[channel.key] ?? ""}
                   placeholder={
-                    target[channel.key] === null ? "Auto" : "Inherit"
+                    target[channel.key] === null ? debugText("Auto") : debugText("Inherit")
                   }
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
@@ -192,19 +188,15 @@ export function SceneEditorChannels({
               {channel.automatic && (
                 <button
                   type="button"
-                  aria-label={`Auto ${channel.label}`}
+                  aria-label={`Auto ${debugText(channel.label)}`}
                   onClick={() => update(channel.key, null)}
-                >
-                  Auto
-                </button>
+                >{debugText("Auto")}{" "}</button>
               )}
               <button
                 type="button"
-                aria-label={`Inherit ${channel.label}`}
+                aria-label={`Inherit ${debugText(channel.label)}`}
                 onClick={() => update(channel.key, undefined)}
-              >
-                Inherit
-              </button>
+              >{debugText("Inherit")}{" "}</button>
             </div>
           ))}
         </div>
@@ -213,7 +205,7 @@ export function SceneEditorChannels({
             ["noriRestPose", "noriSleep", "noriSmile", "corruptVoice"] as const
           ).map((key) => (
             <label key={key}>
-              {key}
+              {debugText(key)}
               <select
                 aria-label={`Scene ${key}`}
                 value={
@@ -234,10 +226,10 @@ export function SceneEditorChannels({
                   )
                 }
               >
-                <option value="inherit">Inherit</option>
-                {key === "noriSmile" && <option value="auto">Auto</option>}
-                <option value="true">On</option>
-                <option value="false">Off</option>
+                <option value="inherit">{debugText("Inherit")}</option>
+                {key === "noriSmile" && <option value="auto">{debugText("Auto")}</option>}
+                <option value="true">{debugText("On")}</option>
+                <option value="false">{debugText("Off")}</option>
               </select>
             </label>
           ))}
@@ -252,7 +244,7 @@ export function SceneEditorChannels({
             ] as const
           ).map(({ key, values }) => (
             <label key={key}>
-              {key}
+              {debugText(key)}
               <select
                 aria-label={`Scene ${key}`}
                 value={
@@ -271,10 +263,10 @@ export function SceneEditorChannels({
                   )
                 }
               >
-                <option value="inherit">Inherit</option>
+                <option value="inherit">{debugText("Inherit")}</option>
                 {values.map((value) => (
                   <option key={value} value={value}>
-                    {value}
+                    {debugText(value)}
                   </option>
                 ))}
               </select>
@@ -285,8 +277,8 @@ export function SceneEditorChannels({
           <fieldset key={key} className="source-scene-vector">
             <legend>
               {key === "camera"
-                ? "Camera position"
-                : "Camera rotation in radians"}
+                ? debugText("Camera position")
+                : debugText("Camera rotation in radians")}
             </legend>
             <select
               aria-label={`Scene ${key} mode`}
@@ -308,9 +300,9 @@ export function SceneEditorChannels({
                 )
               }
             >
-              <option value="inherit">Inherit</option>
-              <option value="auto">Auto</option>
-              <option value="explicit">Explicit</option>
+              <option value="inherit">{debugText("Inherit")}</option>
+              <option value="auto">{debugText("Auto")}</option>
+              <option value="explicit">{debugText("Explicit")}</option>
             </select>
             {target[key] && (
               <div className="source-scene-vector-fields">
@@ -348,11 +340,9 @@ export function SceneEditorChannels({
           </fieldset>
         ))}
         <fieldset className="source-scene-vector">
-          <legend>Model expression and motion</legend>
-          <label>
-            Expression
-            <select
-              aria-label="Scene model expression"
+          <legend>{debugText("Model expression and motion")}</legend>
+          <label>{debugText("Expression")}{" "}<select
+              aria-label={debugText("Scene model expression")}
               value={
                 target.noriExpression === undefined
                   ? "inherit"
@@ -369,17 +359,15 @@ export function SceneEditorChannels({
                 )
               }
             >
-              <option value="inherit">Inherit</option>
-              <option value="auto">Auto</option>
+              <option value="inherit">{debugText("Inherit")}</option>
+              <option value="auto">{debugText("Auto")}</option>
               {NORI_MODEL_EXPRESSIONS.map((name) => (
                 <option key={name}>{name}</option>
               ))}
             </select>
           </label>
-          <label>
-            Idle motion
-            <select
-              aria-label="Scene model idle motion"
+          <label>{debugText("Idle motion")}{" "}<select
+              aria-label={debugText("Scene model idle motion")}
               value={
                 target.noriIdleMotion === undefined
                   ? "inherit"
@@ -400,8 +388,8 @@ export function SceneEditorChannels({
                 );
               }}
             >
-              <option value="inherit">Inherit</option>
-              <option value="auto">Auto</option>
+              <option value="inherit">{debugText("Inherit")}</option>
+              <option value="auto">{debugText("Auto")}</option>
               {Object.entries(NORI_MODEL_MOTIONS).flatMap(([group, count]) =>
                 Array.from({ length: count }, (_, index) => (
                   <option key={`${group}:${index}`} value={`${group}:${index}`}>
@@ -413,11 +401,9 @@ export function SceneEditorChannels({
           </label>
         </fieldset>
         <fieldset className="source-scene-vector">
-          <legend>Ocean and glyph</legend>
-          <label>
-            Cold open mode
-            <select
-              aria-label="Scene cold open mode"
+          <legend>{debugText("Ocean and glyph")}</legend>
+          <label>{debugText("Cold open mode")}{" "}<select
+              aria-label={debugText("Scene cold open mode")}
               value={
                 target.coldOpen === undefined
                   ? "inherit"
@@ -447,18 +433,16 @@ export function SceneEditorChannels({
                 )
               }
             >
-              <option value="inherit">Inherit</option>
-              <option value="off">Off</option>
-              <option value="explicit">Explicit</option>
+              <option value="inherit">{debugText("Inherit")}</option>
+              <option value="off">{debugText("Off")}</option>
+              <option value="explicit">{debugText("Explicit")}</option>
             </select>
           </label>
           {target.coldOpen && (
             <>
-              <label>
-                Ocean enabled
-                <input
+              <label>{debugText("Ocean enabled")}{" "}<input
                   type="checkbox"
-                  aria-label="Scene ocean enabled"
+                  aria-label={debugText("Scene ocean enabled")}
                   checked={target.coldOpen.ocean}
                   onChange={(event) =>
                     update("coldOpen", {
@@ -483,7 +467,7 @@ export function SceneEditorChannels({
                   ] as const
                 ).map((key) => (
                   <label key={key}>
-                    {key}
+                    {debugText(key)}
                     <input
                       type="number"
                       aria-label={`Scene ${key}`}

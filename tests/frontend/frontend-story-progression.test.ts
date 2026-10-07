@@ -59,6 +59,56 @@ test("three corrupt documents arm only after the reader reveals the desktop", as
   f.release();
 });
 
+test("a restored final memento retries validated Idle completion after a lost request", async () => {
+  const facts = new Set(["arg.memory.shown", "arg.manifold_unlocked"]);
+  let update = () => {};
+  let attempts = 0;
+  const warnings: unknown[] = [];
+  let reject: (error: Error) => void = () => {};
+  const release = bindSourceStoryProgression({
+    getWorldId: () => "restored", getFacts: () => facts,
+    getDesktop: () => ({ windows: {}, focusedWindowId: null }),
+    subscribeFacts: (listener) => { update = listener; return () => {}; },
+    subscribeWindows: () => () => {},
+    getIdleMementoCount: () => 13,
+    emitFact: async (fact) => { assert.fail(`must use idle.complete, not emit ${fact}`); },
+    completeIdle: () => {
+      attempts++;
+      if (attempts === 1) return new Promise<void>((_resolve, fail) => { reject = fail; });
+      facts.add("idle.manifold_complete");
+      return Promise.resolve();
+    },
+    warn: (error) => warnings.push(error),
+  });
+  assert.equal(attempts, 1, "restored progress needs no new claim click");
+  update(); update(); assert.equal(attempts, 1, "pending request is deduplicated");
+  reject(new Error("disconnected")); await flush(); await flush();
+  assert.equal(warnings.length, 1);
+  update(); await flush();
+  assert.equal(attempts, 2);
+  assert(facts.has("idle.manifold_complete"));
+  update(); assert.equal(attempts, 2, "acknowledged completion is not repeated");
+  release();
+});
+
+test("Idle completion recovery never skips memory, manifold unlock or the last memento", async () => {
+  const facts = new Set<string>();
+  let count = 13, attempts = 0, update = () => {};
+  const release = bindSourceStoryProgression({
+    getWorldId: () => "world", getFacts: () => facts,
+    getDesktop: () => ({ windows: {}, focusedWindowId: null }),
+    subscribeFacts: (listener) => { update = listener; return () => {}; },
+    subscribeWindows: () => () => {}, getIdleMementoCount: () => count,
+    emitFact: async () => { assert.fail("unexpected fact emission"); },
+    completeIdle: async () => { attempts++; facts.add("idle.manifold_complete"); },
+  });
+  assert.equal(attempts, 0);
+  facts.add("arg.memory.shown"); update(); assert.equal(attempts, 0);
+  count = 12; facts.add("arg.manifold_unlocked"); update(); assert.equal(attempts, 0);
+  count = 13; update(); await flush(); assert.equal(attempts, 1);
+  release();
+});
+
 test("minimized and unrelated documents do not count as corrupt reads", () => {
   assert.equal(corruptionDocument({ ...popup("1z9Kq7AfR2xMcL0d"), minimized: true }), null);
   assert.equal(corruptionDocument(popup("other")), null);

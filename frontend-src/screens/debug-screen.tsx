@@ -1,3 +1,4 @@
+import { debugText } from "../i18n/debug";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import type { NoriSceneState, NoriSceneStore } from "../state/nori-scene";
@@ -128,7 +129,7 @@ export function DebugScreen({
   ) {
     return (
       <label key={key}>
-        {key}
+        {debugText(key)}
         <input
           type="range"
           min="0"
@@ -142,8 +143,8 @@ export function DebugScreen({
     );
   }
   return (
-    <section className="source-debug" aria-label="Debug">
-      <nav aria-label="Debug tabs">
+    <section className="source-debug" aria-label={debugText("Debug")}>
+      <nav aria-label={debugText("Debug tabs")}>
         {tabs.map((item) => (
           <button
             type="button"
@@ -154,12 +155,12 @@ export function DebugScreen({
               setVisited((previous) => new Set([...previous, item.id]));
             }}
           >
-            {item.label}
+            {debugText(item.label)}
           </button>
         ))}
       </nav>
       <div className="source-debug-panels">
-        {error && <p role="alert">{error}</p>}
+        {error && <p role="alert">{debugText(error)}</p>}
         {tab === "editor" && <SceneEditor frontend={frontend} />}
         {tab === "corruption" && <CorruptionPreview frontend={frontend} />}
         {tab === "glitch" && <GlitchDebugLab frontend={frontend} />}
@@ -205,27 +206,27 @@ export function DebugScreen({
         {tab === "nori-context" && <NoriContextDebugTab frontend={frontend} />}
         {visited.has("connection") && (
           <div hidden={tab !== "connection"}>
-            <h2>Connection</h2>
+            <h2>{debugText("Connection")}</h2>
             <dl>
-              <dt>World</dt>
-              <dd>{world.worldId ?? "Not joined"}</dd>
-              <dt>Chat</dt>
-              <dd>{chat.connected ? "Connected" : "Disconnected"}</dd>
-              <dt>Turn</dt>
-              <dd>{chat.phase}</dd>
-              <dt>Presentation</dt>
-              <dd>{chat.mode}</dd>
-              <dt>Pending command</dt>
-              <dd>{String(chat.pending)}</dd>
+              <dt>{debugText("World")}</dt>
+              <dd>{world.worldId ?? debugText("Not joined")}</dd>
+              <dt>{debugText("Chat")}</dt>
+              <dd>{chat.connected ? debugText("Connected") : debugText("Disconnected")}</dd>
+              <dt>{debugText("Turn")}</dt>
+              <dd>{debugText(chat.phase)}</dd>
+              <dt>{debugText("Presentation")}</dt>
+              <dd>{debugText(chat.mode)}</dd>
+              <dt>{debugText("Pending command")}</dt>
+              <dd>{debugText(String(chat.pending))}</dd>
             </dl>
             {frontend.speechError && <p role="alert">{frontend.speechError}</p>}
-            <h3>Cartridges</h3>
+            <h3>{debugText("Cartridges")}</h3>
             <table>
               <thead>
                 <tr>
-                  <th>Cartridge</th>
-                  <th>Head</th>
-                  <th>Visible</th>
+                  <th>{debugText("Cartridge")}</th>
+                  <th>{debugText("Head")}</th>
+                  <th>{debugText("Visible")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -252,20 +253,17 @@ export function DebugScreen({
         )}
         {visited.has("scene") && (
           <div hidden={tab !== "scene"}>
-            <h2>Scene</h2>
+            <h2>{debugText("Scene")}</h2>
             <button
               type="button"
               onClick={() => {
                 override.current?.release();
                 override.current = null;
               }}
-            >
-              Release overrides
-            </button>
+            >{debugText("Release overrides")}{" "}</button>
             <div className="source-debug-camera">
               {(["x", "y", "z"] as const).map((axis) => (
-                <label key={axis}>
-                  Camera {axis}
+                <label key={axis}>{debugText("Camera")}{" "}{axis}
                   <input
                     type="number"
                     step="0.1"
@@ -296,9 +294,7 @@ export function DebugScreen({
             {range("blur", 20)}
             {range("whiteFlash")}
             {range("shake")}
-            <label>
-              Chat mode
-              <select
+            <label>{debugText("Chat mode")}{" "}<select
                 value={scene.chatMode}
                 onChange={(event) =>
                   set({
@@ -307,13 +303,11 @@ export function DebugScreen({
                 }
               >
                 {["normal", "bubbles", "hidden"].map((value) => (
-                  <option key={value}>{value}</option>
+                  <option key={value} value={value}>{debugText(value)}</option>
                 ))}
               </select>
             </label>
-            <label>
-              Model texture
-              <select
+            <label>{debugText("Model texture")}{" "}<select
                 value={scene.noriTexture ?? "default"}
                 onChange={(event) =>
                   set({
@@ -322,8 +316,8 @@ export function DebugScreen({
                   })
                 }
               >
-                <option>default</option>
-                <option>corrupt</option>
+                <option value="default">{debugText("default")}</option>
+                <option value="corrupt">{debugText("corrupt")}</option>
               </select>
             </label>
             <label>
@@ -333,9 +327,7 @@ export function DebugScreen({
                 onChange={(event) =>
                   set({ noriRestPose: event.target.checked })
                 }
-              />
-              Rest pose
-            </label>
+              />{debugText("Rest pose")}{" "}</label>
           </div>
         )}
         {tab === "audio" && (
@@ -343,14 +335,14 @@ export function DebugScreen({
         )}
         {visited.has("facts") && (
           <div hidden={tab !== "facts"}>
-            <h2>Facts</h2>
+            <h2>{debugText("Facts")}</h2>
             <input
-              aria-label="Filter facts"
-              placeholder="Filter facts"
+              aria-label={debugText("Filter facts")}
+              placeholder={debugText("Filter facts")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
-            <p>{facts.length} facts</p>
+            <p>{facts.length}{debugText("facts")}</p>
             <ul>
               {facts.map((fact) => (
                 <li key={fact}>

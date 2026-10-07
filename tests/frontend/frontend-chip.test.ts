@@ -6,24 +6,33 @@ import {
   chipAvailability,
 } from "../../frontend-src/runtime/chip-controller";
 import type { ArcadeClient } from "../../frontend-src/runtime/arcade-client";
-import { localizeChipReadout } from "../../frontend-src/i18n/chip-readout";
+import { chipButtonLabel, localizeChipReadout } from "../../frontend-src/i18n/chip-readout";
 
-test("chip readouts localize fixed backend results and preserve identifiers and custom text", () => {
+test("chip readouts explain missing analyses without exposing scan IDs and preserve custom text", () => {
   const cases = [
-    ["Fresh readout logged — key=file:test, row=28e79f55aca63c3d", "新扫描结果已记录 — 标识=file:test，指纹=28e79f55aca63c3d"],
-    ["Archived scan replay — key=page:test, row=bb7d67907910d5d3", "历史扫描结果重放 — 标识=page:test，指纹=bb7d67907910d5d3"],
-    ["[signal:test] chip thermal lock — heat 5/5; wait for cooldown", "[signal:test] 芯片过热锁定 — 热量 5/5；请等待冷却"],
-    ["[chip] manifold link unavailable", "【芯片】流形连接不可用"],
+    ["Fresh readout logged — key=file:test, row=28e79f55aca63c3d", "扫描完成。当前内容暂时没有可用的分析结论。", "Scan complete. No analysis is available for this content yet."],
+    ["Archived scan replay — key=page:test, row=bb7d67907910d5d3", "这份内容之前已扫描过，暂时没有可用的分析结论。", "This content was scanned before. No analysis is available yet."],
+    ["[signal:test] chip thermal lock — heat 5/5; wait for cooldown", "芯片过热，请等待冷却后再扫描。", "The chip is overheating. Wait for it to cool down before scanning again."],
+    ["[chip] manifold link unavailable", "暂时无法连接分析芯片，请检查连接后重试。", "Cannot connect to the analysis chip. Check the connection and try again."],
   ];
-  for (const [original, translated] of cases) {
+  for (const [original, translated, english] of cases) {
     assert.equal(localizeChipReadout(original, "zh-CN"), translated);
     assert.equal(localizeChipReadout(original, "zh_CN"), translated);
-    assert.equal(localizeChipReadout(original, "en"), original);
+    assert.equal(localizeChipReadout(original, "en"), english);
   }
   for (const text of ["自定义分析结果", "Custom readout", "扫描失败；建议重试。", ""]) {
     assert.equal(localizeChipReadout(text, "zh-CN"), text);
     assert.equal(localizeChipReadout(text, "en"), text);
   }
+});
+
+test("chip status distinguishes loading, disconnection, offline, ready and cooling", () => {
+  assert.equal(chipButtonLabel(null, 0, 0, true, false, "zh-CN"), "正在获取芯片状态…");
+  assert.equal(chipButtonLabel(null, 0, 0, false, false, "zh-CN"), "暂时无法连接分析芯片，请检查连接后重试。");
+  assert.equal(chipButtonLabel(null, 0, 0, true, true, "zh-CN"), "分析芯片离线");
+  const full = { capacity: 2, heat: 0, coolEveryMs: 60000, serverNowMs: 1000 };
+  assert.equal(chipButtonLabel(full, 1000, 1000, true, false, "en"), "Chip charge: 2/2 scans");
+  assert.equal(chipButtonLabel({ ...full, heat: 2, nextCoolAtMs: 61000 }, 1000, 1000, true, false, "zh-CN"), "散热中；约 1 分钟后可扫描");
 });
 
 class ChipTransport {

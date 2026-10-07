@@ -1,3 +1,4 @@
+import { debugMessage, debugText } from "../i18n/debug";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import type { ArcadeServerMessage, JsonValue } from "../runtime/protocol";
@@ -133,61 +134,50 @@ export function NotificationsDebugTab({
       );
       setStatus(
         result.ok
-          ? `Sent${result.pushed ? ` (${result.pushed})` : ""}`
+          ? debugMessage("Sent{{id}}", { id: result.pushed ? ` (${result.pushed})` : "" })
           : "Server refused the push",
       );
     } catch (error) {
       setStatus(
-        `Failed: ${error instanceof Error ? error.message : String(error)}`,
+        debugMessage("Failed: {{error}}", { error: error instanceof Error ? error.message : String(error) }),
       );
     }
   }
 
   return (
-    <section aria-label="Notifications debug">
-      <h2>Notifications</h2>
-      <p>
-        Real server round trip: <code>notification.debug.push</code> →{" "}
+    <section aria-label={debugText("Notifications debug")}>
+      <h2>{debugText("Notifications")}</h2>
+      <p>{debugText("Real server round trip:")}{" "}<code>notification.debug.push</code> →{" "}
         <code>notification.pushed</code>.
       </p>
       <dl>
-        <dt>Arcade connection</dt>
-        <dd>{connection}</dd>
-        <dt>Source shell queue</dt>
-        <dd>{queueSize} visible notification(s)</dd>
+        <dt>{debugText("Arcade connection")}</dt>
+        <dd>{debugText(connection)}</dd>
+        <dt>{debugText("Source shell queue")}</dt>
+        <dd>{queueSize}{debugText("visible notification(s)")}</dd>
       </dl>
-      <label>
-        Title
-        <input
+      <label>{debugText("Title")}{" "}<input
           value={title}
           onChange={(event) => setTitle(event.target.value)}
         />
       </label>
-      <label>
-        Subtitle
-        <input
+      <label>{debugText("Subtitle")}{" "}<input
           value={subtitle}
           onChange={(event) => setSubtitle(event.target.value)}
         />
       </label>
-      <label>
-        Body
-        <input value={body} onChange={(event) => setBody(event.target.value)} />
+      <label>{debugText("Body")}{" "}<input value={body} onChange={(event) => setBody(event.target.value)} />
       </label>
-      <label>
-        Duration ms
-        <input
+      <label>{debugText("Duration ms")}{" "}<input
           type="number"
           min="0"
-          placeholder="server default"
+          placeholder={debugText("server default")}
           value={durationMs}
           onChange={(event) => setDurationMs(event.target.value)}
         />
       </label>
-      <label>
-        onClick open app
-        <input
-          placeholder="optional app id"
+      <label>{debugText("onClick open app")}{" "}<input
+          placeholder={debugText("optional app id")}
           value={openAppId}
           onChange={(event) => setOpenAppId(event.target.value)}
         />
@@ -197,14 +187,12 @@ export function NotificationsDebugTab({
           type="button"
           disabled={connection !== "open" || status === "Sending…"}
           onClick={() => void pushFromServer()}
-        >
-          Push from server
-        </button>
-        <output role="status">{status}</output>
+        >{debugText("Push from server")}{" "}</button>
+        <output role="status">{debugText(status)}</output>
       </div>
-      <h3>Observed notification.pushed events ({received.length})</h3>
+      <h3>{debugText("Observed notification.pushed events (")}{received.length})</h3>
       {received.length === 0 ? (
-        <p>No notification event observed in this tab session.</p>
+        <p>{debugText("No notification event observed in this tab session.")}</p>
       ) : (
         <ul>
           {received.map((notification, index) => (
@@ -232,22 +220,19 @@ export function InjectTalkDebugTab({
     frontend.conversation.snapshot,
   );
   return (
-    <section aria-label="Inject Talk debug">
-      <h2>Inject Talk</h2>
-      <p role="status">
-        Unavailable: this backend does not implement{" "}
-        <code>debug.chat_inject_talk.request</code> or the private agent
-        inject-talk queue.
-      </p>
-      <p>No authored line is sent, and no agent output is fabricated.</p>
-      <h3>Live session status</h3>
+    <section aria-label={debugText("Inject Talk debug")}>
+      <h2>{debugText("Inject Talk")}</h2>
+      <p role="status">{debugText("Unavailable: this backend does not implement")}{" "}
+        <code>debug.chat_inject_talk.request</code>{debugText("or the private agent inject-talk queue.")}{" "}</p>
+      <p>{debugText("No authored line is sent, and no agent output is fabricated.")}</p>
+      <h3>{debugText("Live session status")}</h3>
       <dl>
-        <dt>Arcade connection</dt>
-        <dd>{connection}</dd>
-        <dt>Chat connection</dt>
-        <dd>{chat.connected ? "connected" : "disconnected"}</dd>
-        <dt>Chat phase</dt>
-        <dd>{chat.phase}</dd>
+        <dt>{debugText("Arcade connection")}</dt>
+        <dd>{debugText(connection)}</dd>
+        <dt>{debugText("Chat connection")}</dt>
+        <dd>{debugText(chat.connected ? debugText("connected") : debugText("disconnected"))}</dd>
+        <dt>{debugText("Chat phase")}</dt>
+        <dd>{debugText(chat.phase)}</dd>
       </dl>
     </section>
   );
@@ -270,30 +255,26 @@ export function NoriContextDebugTab({
   );
   const facts = frontend.world.facts().size;
   return (
-    <section aria-label="Nori Context debug">
-      <h2>Nori Context</h2>
-      <p role="status">
-        Unavailable: this backend does not implement{" "}
+    <section aria-label={debugText("Nori Context debug")}>
+      <h2>{debugText("Nori Context")}</h2>
+      <p role="status">{debugText("Unavailable: this backend does not implement")}{" "}
         <code>debug.chat_context.stats</code>,{" "}
-        <code>debug.chat_context.append</code>, or{" "}
+        <code>debug.chat_context.append</code>{debugText(", or")}{" "}
         <code>debug.chat_context.reset</code>.
       </p>
-      <p>
-        Token budgets, history segments, and replay scenarios are private
-        agent/server state, so this source tab does not estimate or modify them.
-      </p>
-      <h3>Source-observable session facts</h3>
+      <p>{debugText("Token budgets, history segments, and replay scenarios are private agent/server state, so this source tab does not estimate or modify them.")}{" "}</p>
+      <h3>{debugText("Source-observable session facts")}</h3>
       <dl>
-        <dt>Arcade connection</dt>
-        <dd>{connection}</dd>
-        <dt>World</dt>
-        <dd>{world.worldId ?? "Not joined"}</dd>
-        <dt>Visible facts</dt>
+        <dt>{debugText("Arcade connection")}</dt>
+        <dd>{debugText(connection)}</dd>
+        <dt>{debugText("World")}</dt>
+        <dd>{world.worldId ?? debugText("Not joined")}</dd>
+        <dt>{debugText("Visible facts")}</dt>
         <dd>{facts}</dd>
-        <dt>Chat phase</dt>
-        <dd>{chat.phase}</dd>
-        <dt>Pending command</dt>
-        <dd>{String(chat.pending)}</dd>
+        <dt>{debugText("Chat phase")}</dt>
+        <dd>{debugText(chat.phase)}</dd>
+        <dt>{debugText("Pending command")}</dt>
+        <dd>{debugText(String(chat.pending))}</dd>
       </dl>
     </section>
   );
@@ -327,9 +308,9 @@ function AudioSlider({
 }) {
   return (
     <label>
-      {label}
+      {debugText(label)}
       <input
-        aria-label={label}
+        aria-label={debugText(label)}
         type="range"
         min="0"
         max="100"
@@ -388,11 +369,9 @@ function TrackEffectsDebug({
   ];
   return (
     <div>
-      <h4>{label}</h4>
-      <label>
-        Reverb
-        <select
-          aria-label={`${label} reverb`}
+      <h4>{debugText(label)}</h4>
+      <label>{debugText("Reverb")}{" "}<select
+          aria-label={`${debugText(label)} ${debugText("Reverb")}`}
           value={snapshot.reverb}
           onChange={(event) =>
             void frontend.audio.debugSetReverb(
@@ -403,15 +382,13 @@ function TrackEffectsDebug({
           }
         >
           {reverbs.map((preset) => (
-            <option key={preset}>{preset}</option>
+            <option key={preset} value={preset}>{debugText(preset)}</option>
           ))}
         </select>
       </label>
       {snapshot.reverb !== "none" && (
-        <label>
-          Wet
-          <input
-            aria-label={`${label} wet`}
+        <label>{debugText("Wet")}{" "}<input
+            aria-label={`${debugText(label)} ${debugText("Wet")}`}
             type="range"
             min="0"
             max="100"
@@ -427,10 +404,8 @@ function TrackEffectsDebug({
           <output>{Math.round(snapshot.wetness * 100)}%</output>
         </label>
       )}
-      <label>
-        Filter
-        <select
-          aria-label={`${label} filter`}
+      <label>{debugText("Filter")}{" "}<select
+          aria-label={`${debugText(label)} ${debugText("Filter")}`}
           value={snapshot.filter}
           onChange={(event) =>
             frontend.audio.debugSetFilter(
@@ -442,16 +417,14 @@ function TrackEffectsDebug({
           }
         >
           {filters.map((filter) => (
-            <option key={filter}>{filter}</option>
+            <option key={filter} value={filter}>{debugText(filter)}</option>
           ))}
         </select>
       </label>
       {snapshot.filter !== "none" && (
         <>
-          <label>
-            Freq
-            <input
-              aria-label={`${label} filter frequency`}
+          <label>{debugText("Freq")}{" "}<input
+              aria-label={`${debugText(label)} ${debugText("Filter")} ${debugText("Freq")}`}
               type="range"
               min="20"
               max="20000"
@@ -469,7 +442,7 @@ function TrackEffectsDebug({
           <label>
             Q
             <input
-              aria-label={`${label} filter Q`}
+              aria-label={`${debugText(label)} ${debugText("Filter")} Q`}
               type="range"
               min="0.1"
               max="20"
@@ -549,124 +522,116 @@ export function AudioDebugTab({
   const update = (action: () => void) =>
     syncDebugAudioSettings(frontend, action);
   return (
-    <section aria-label="Audio debug">
-      <h2>Audio</h2>
-      <h3>Status</h3>
+    <section aria-label={debugText("Audio debug")}>
+      <h2>{debugText("Audio")}</h2>
+      <h3>{debugText("Status")}</h3>
       <dl>
-        <dt>Initialized</dt>
-        <dd>{mixer.initialized ? "Yes" : "No"}</dd>
-        <dt>Context State</dt>
-        <dd>{mixer.contextState}</dd>
-        <dt>Speech Spatial</dt>
+        <dt>{debugText("Initialized")}</dt>
+        <dd>{debugText(mixer.initialized ? debugText("Yes") : debugText("No"))}</dd>
+        <dt>{debugText("Context State")}</dt>
+        <dd>{debugText(mixer.contextState)}</dd>
+        <dt>{debugText("Speech Spatial")}</dt>
         <dd>{mixer.speechHasPanner ? "3D (HRTF)" : "2D (Stereo)"}</dd>
-        <dt>Speech level</dt>
+        <dt>{debugText("Speech level")}</dt>
         <dd>{speechLevel.toFixed(2)}</dd>
-        <dt>Scene music</dt>
+        <dt>{debugText("Scene music")}</dt>
         <dd>{scene.bgm}</dd>
-        <dt>Corrupt voice</dt>
-        <dd>{scene.corruptVoice ? "active" : "inactive"}</dd>
+        <dt>{debugText("Corrupt voice")}</dt>
+        <dd>{debugText(scene.corruptVoice ? debugText("active") : debugText("inactive"))}</dd>
       </dl>
       <div className="source-debug-lab-actions">
         <button
           type="button"
           disabled={mixer.contextState === "running"}
           onClick={() => void resume()}
-        >
-          Resume
-        </button>
+        >{debugText("Resume")}{" "}</button>
         <button
           type="button"
           disabled={mixer.contextState !== "running"}
           onClick={() => void suspend()}
-        >
-          Suspend
-        </button>
+        >{debugText("Suspend")}{" "}</button>
       </div>
 
       {mixer.speechHasPanner && (
         <>
-          <h3>3D Spatial (Speech)</h3>
+          <h3>{debugText("3D Spatial (Speech)")}</h3>
           <dl>
-            <dt>Listener (Camera)</dt>
+            <dt>{debugText("Listener (Camera)")}</dt>
             <dd>
               {mixer.listenerPos
                 ? `(${mixer.listenerPos.x.toFixed(1)}, ${mixer.listenerPos.y.toFixed(1)}, ${mixer.listenerPos.z.toFixed(1)})`
-                : "N/A"}
+                : debugText("N/A")}
             </dd>
-            <dt>Source (Nori)</dt>
+            <dt>{debugText("Source (Nori)")}</dt>
             <dd>
               {mixer.speechPos
                 ? `(${mixer.speechPos.x.toFixed(1)}, ${mixer.speechPos.y.toFixed(1)}, ${mixer.speechPos.z.toFixed(1)})`
-                : "N/A"}
+                : debugText("N/A")}
             </dd>
-            <dt>Distance</dt>
-            <dd>{spatial ? spatial.distance.toFixed(2) : "N/A"}</dd>
-            <dt>Model</dt>
+            <dt>{debugText("Distance")}</dt>
+            <dd>{spatial ? spatial.distance.toFixed(2) : debugText("N/A")}</dd>
+            <dt>{debugText("Model")}</dt>
             <dd>
               {mixer.distanceParams
                 ? `${mixer.distanceParams.model} (ref=${mixer.distanceParams.refDistance}, roll=${mixer.distanceParams.rolloffFactor})`
-                : "N/A"}
+                : debugText("N/A")}
             </dd>
-            <dt>Calculated Gain</dt>
+            <dt>{debugText("Calculated Gain")}</dt>
             <dd>
               {spatial?.gain === null || spatial?.gain === undefined
-                ? "N/A"
+                ? debugText("N/A")
                 : `${(spatial.gain * 100).toFixed(1)}%`}
             </dd>
           </dl>
         </>
       )}
 
-      <h3>Scene audio</h3>
+      <h3>{debugText("Scene audio")}</h3>
       <label>
         <input
           type="checkbox"
           checked={scene.corruptVoice}
           onChange={(event) => setScene({ corruptVoice: event.target.checked })}
-        />
-        Corrupt voice
-      </label>
-      <label>
-        Desktop music
-        <select
+        />{debugText("Corrupt voice")}{" "}</label>
+      <label>{debugText("Desktop music")}{" "}<select
           value={scene.bgm}
           onChange={(event) =>
             setScene({ bgm: event.target.value as NoriSceneState["bgm"] })
           }
         >
-          <option value="auto">auto</option>
-          <option value="silent">silent</option>
+          <option value="auto">{debugText("auto")}</option>
+          <option value="silent">{debugText("silent")}</option>
           <option value="bgm1">bgm1</option>
           <option value="bgm_manifold">bgm_manifold</option>
           <option value="bgm_void">bgm_void</option>
         </select>
       </label>
 
-      <h3>Volume (settings → session mixer)</h3>
+      <h3>{debugText("Volume (settings → session mixer)")}</h3>
       <AudioSlider
         frontend={frontend}
-        label="Master"
+        label={debugText("Master")}
         setting="masterVolume"
         value={audio.masterVolume}
         update={audio.setMasterVolume}
       />
       <AudioSlider
         frontend={frontend}
-        label="Music"
+        label={debugText("Music")}
         setting="musicVolume"
         value={audio.musicVolume}
         update={audio.setMusicVolume}
       />
       <AudioSlider
         frontend={frontend}
-        label="SFX"
+        label={debugText("SFX")}
         setting="sfxVolume"
         value={audio.sfxVolume}
         update={audio.setSfxVolume}
       />
       <AudioSlider
         frontend={frontend}
-        label="Voice"
+        label={debugText("Voice")}
         setting="voiceVolume"
         value={audio.voiceVolume}
         update={audio.setVoiceVolume}
@@ -683,7 +648,7 @@ export function AudioDebugTab({
             checked={Boolean(checked)}
             onChange={() => update(toggle as () => void)}
           />
-          {String(label)}
+          {debugText(String(label))}
         </label>
       ))}
       <label>
@@ -693,13 +658,9 @@ export function AudioDebugTab({
           onChange={(event) =>
             update(() => audio.setSpatialVoice(event.target.checked))
           }
-        />
-        3D voice (HRTF)
-      </label>
-      <label>
-        Voice speed
-        <input
-          aria-label="Voice speed"
+        />{debugText("3D voice (HRTF)")}{" "}</label>
+      <label>{debugText("Voice speed")}{" "}<input
+          aria-label={debugText("Voice speed")}
           type="range"
           min="0.5"
           max="2"
@@ -712,11 +673,9 @@ export function AudioDebugTab({
         <output>{audio.voiceRate.toFixed(2)}×</output>
       </label>
 
-      <h3>Music</h3>
-      <p>Loaded: {mixer.loadedMusic.join(", ") || "none"}</p>
-      <button type="button" onClick={() => void loadMusic()}>
-        Load test music
-      </button>
+      <h3>{debugText("Music")}</h3>
+      <p>{debugText("Loaded:")}{" "}{mixer.loadedMusic.join(", ") || "none"}</p>
+      <button type="button" onClick={() => void loadMusic()}>{debugText("Load test music")}{" "}</button>
       <div className="source-debug-lab-actions">
         {(Object.keys(DESKTOP_MUSIC) as DesktopMusic[]).map((track) => (
           <button
@@ -725,8 +684,7 @@ export function AudioDebugTab({
             aria-pressed={mixer.musicTrackId === track}
             disabled={!mixer.loadedMusic.includes(track)}
             onClick={() => frontend.audio.debugPlayMusic(track)}
-          >
-            Play {track}
+          >{debugText("Play")}{" "}{track}
           </button>
         ))}
       </div>
@@ -735,29 +693,21 @@ export function AudioDebugTab({
           type="button"
           disabled={!mixer.musicPlaying}
           onClick={() => frontend.audio.debugPauseMusic()}
-        >
-          Pause
-        </button>
+        >{debugText("Pause")}{" "}</button>
         <button
           type="button"
           disabled={!mixer.musicPaused}
           onClick={() => frontend.audio.debugResumeMusic()}
-        >
-          Resume music
-        </button>
+        >{debugText("Resume music")}{" "}</button>
         <button
           type="button"
           disabled={!mixer.musicPlaying && !mixer.musicPaused}
           onClick={() => frontend.audio.debugStopMusic()}
-        >
-          Stop
-        </button>
+        >{debugText("Stop")}{" "}</button>
       </div>
       {mixer.musicDuration > 0 && (
-        <label>
-          Music position
-          <input
-            aria-label="Music position"
+        <label>{debugText("Music position")}{" "}<input
+            aria-label={debugText("Music position")}
             type="range"
             min="0"
             max={mixer.musicDuration}
@@ -772,10 +722,8 @@ export function AudioDebugTab({
           </output>
         </label>
       )}
-      <label>
-        Crossfade
-        <input
-          aria-label="Crossfade"
+      <label>{debugText("Crossfade")}{" "}<input
+          aria-label={debugText("Crossfade")}
           type="range"
           min="0.5"
           max="5"
@@ -798,46 +746,41 @@ export function AudioDebugTab({
             onClick={() =>
               frontend.audio.debugCrossfadeMusic(track, crossfade)
             }
-          >
-            Fade to {track}
+          >{debugText("Fade to")}{" "}{track}
           </button>
         ))}
       </div>
 
-      <h3>Sound Effects</h3>
-      <p>Loaded buffers: {mixer.loadedSfx.length}</p>
-      <label>
-        Cue
-        <select value={cue} onChange={(event) => setCue(event.target.value)}>
+      <h3>{debugText("Sound Effects")}</h3>
+      <p>{debugText("Loaded buffers:")}{" "}{mixer.loadedSfx.length}</p>
+      <label>{debugText("Cue")}{" "}<select value={cue} onChange={(event) => setCue(event.target.value)}>
           {cues.map((item) => (
             <option key={item}>{item}</option>
           ))}
         </select>
       </label>
-      <button type="button" onClick={() => void playCue()}>
-        Play cue
-      </button>
+      <button type="button" onClick={() => void playCue()}>{debugText("Play cue")}{" "}</button>
       <dl>
-        <dt>Active Sounds</dt>
+        <dt>{debugText("Active Sounds")}</dt>
         <dd>{mixer.sfxActiveCount}</dd>
       </dl>
-      <h3>Effects</h3>
+      <h3>{debugText("Effects")}</h3>
       <TrackEffectsDebug
         frontend={frontend}
         track="speech"
-        label="Speech"
+        label={debugText("Speech")}
         snapshot={mixer.effects.speech}
       />
       <TrackEffectsDebug
         frontend={frontend}
         track="music"
-        label="Music"
+        label={debugText("Music")}
         snapshot={mixer.effects.music}
       />
       <TrackEffectsDebug
         frontend={frontend}
         track="sfx"
-        label="SFX"
+        label={debugText("SFX")}
         snapshot={mixer.effects.sfx}
       />
     </section>

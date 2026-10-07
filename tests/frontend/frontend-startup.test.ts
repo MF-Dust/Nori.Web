@@ -4,6 +4,17 @@ import { resolve, dirname } from "node:path";
 import test from "node:test";
 import { createRequire } from "node:module";
 import type * as TypeScript from "typescript";
+import { localizeUserError } from "../../frontend-src/i18n/user-error";
+import { HttpCompatibilityError } from "../../frontend-src/runtime/http";
+
+test("user errors are localized, actionable and never expose transport diagnostics", () => {
+  const internal = new Error("World does not have a media grant yet");
+  assert.equal(localizeUserError(internal, "zh-CN", "connection"), "连接失败，请确认本地服务已启动后重试。");
+  assert.equal(localizeUserError(internal, "zh-CN", "signIn"), "登录失败，请检查验证码后重试。");
+  assert.equal(localizeUserError(new TypeError("Failed to fetch"), "en", "sendCode"), "Unable to connect. Check that the local service is running, then try again.");
+  assert.equal(localizeUserError(new HttpCompatibilityError("internal rate limiter", 429, null), "zh-CN", "sendCode"), "操作过于频繁，请稍后重试。");
+  assert.equal(localizeUserError(internal, "zh-CN", "signOut"), "退出登录失败，请检查连接后重试。");
+});
 
 const root = process.cwd();
 const ts: typeof TypeScript = createRequire(resolve(root, "package.json"))("typescript");

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import type { LocalAuthController } from "../runtime/auth";
 import { AuthConnecting } from "./source-asset-boot-gate";
+import { localizeUserError } from "../i18n/user-error";
 import "./source-login.css";
 
 export function SourceLogin({
@@ -35,7 +36,8 @@ export function SourceLogin({
         setSent(true);
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
+      console.error("Nori sign-in failed", error);
+      setError(localizeUserError(error, locale, sent ? "signIn" : "sendCode"));
     } finally {
       setPending(false);
     }

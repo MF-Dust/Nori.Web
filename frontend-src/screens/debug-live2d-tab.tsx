@@ -1,3 +1,4 @@
+import { debugMessage, debugText } from "../i18n/debug";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import { LIVE2D_DEBUG_PLUGINS } from "../live2d/debug-runtime";
@@ -43,9 +44,9 @@ export function Range({
 }) {
   return (
     <label>
-      {label}
+      {debugText(label)}
       <input
-        aria-label={label}
+        aria-label={debugText(label)}
         type="range"
         min={min}
         max={max}
@@ -106,19 +107,19 @@ export function Live2DDebugTab({
 
   if (!state.ready)
     return (
-      <section aria-label="Live2D debug">
+      <section aria-label={debugText("Live2D debug")}>
         <h2>Live2D</h2>
-        <p role="status">Production model is not mounted.</p>
+        <p role="status">{debugText("Production model is not mounted.")}</p>
       </section>
     );
 
   const tuning = state.tuning;
   return (
-    <section aria-label="Live2D debug">
+    <section aria-label={debugText("Live2D debug")}>
       <h2>Live2D</h2>
-      {blocked && <p role="status">Production story active; controls disabled.</p>}
+      {blocked && <p role="status">{debugText("Production story active; controls disabled.")}</p>}
 
-      <h3>Plugins</h3>
+      <h3>{debugText("Plugins")}</h3>
       <div className="source-debug-lab-actions">
         {LIVE2D_DEBUG_PLUGINS.map((id) => (
           <button
@@ -132,22 +133,20 @@ export function Live2DDebugTab({
               if (id === "lipSync" && !enabled) setSimulating(false);
             }}
           >
-            {PLUGIN_LABELS[id]}
+            {debugText(PLUGIN_LABELS[id])}
           </button>
         ))}
       </div>
 
-      <h3>Pose</h3>
+      <h3>{debugText("Pose")}</h3>
       <button
         type="button"
         aria-pressed={state.restPose}
         disabled={blocked}
         onClick={() => frontend.live2dDebug.setRestPose(!state.restPose)}
-      >
-        Rest Pose
-      </button>
+      >{debugText("Rest Pose")}{" "}</button>
 
-      <h3>Idle state</h3>
+      <h3>{debugText("Idle state")}</h3>
       <div className="source-debug-lab-actions">
         {IDLE_STATES.map((item) => (
           <button
@@ -157,25 +156,20 @@ export function Live2DDebugTab({
             disabled={blocked}
             onClick={() => frontend.live2dDebug.setIdleStateOverride(item.id)}
           >
-            {item.label}
+            {debugText(item.label)}
           </button>
         ))}
         <button
           type="button"
           disabled={blocked || tuning.idleStateOverride === null}
           onClick={() => frontend.live2dDebug.setIdleStateOverride(null)}
-        >
-          Follow story facts
-        </button>
+        >{debugText("Follow story facts")}{" "}</button>
       </div>
-      <p>
-        Glitch and kneel states stay awake; the source runtime continues to
-        derive the normal state from production facts when no override is set.
-      </p>
+      <p>{debugText("Glitch and kneel states stay awake; the source runtime continues to derive the normal state from production facts when no override is set.")}{" "}</p>
 
-      <h3>Idle / Sleep crossfade</h3>
+      <h3>{debugText("Idle / Sleep crossfade")}</h3>
       <Range
-        label="Sleep fade-in"
+        label={debugText("Sleep fade-in")}
         min={0}
         max={10}
         step={0.1}
@@ -185,7 +179,7 @@ export function Live2DDebugTab({
         format={(value) => `${value.toFixed(1)} s`}
       />
       <Range
-        label="Idle fade-in (wake)"
+        label={debugText("Idle fade-in (wake)")}
         min={0}
         max={10}
         step={0.1}
@@ -199,30 +193,24 @@ export function Live2DDebugTab({
           type="button"
           disabled={blocked}
           onClick={() => frontend.live2dDebug.playIdle("idle")}
-        >
-          ▶ Idle (wake)
-        </button>
+        >{debugText("▶ Idle (wake)")}{" "}</button>
         <button
           type="button"
           disabled={blocked}
           onClick={() => frontend.live2dDebug.playIdle("sleep")}
-        >
-          ▶ Sleep
-        </button>
+        >{debugText("▶ Sleep")}{" "}</button>
       </div>
 
-      <h3>Lip Sync Test</h3>
+      <h3>{debugText("Lip Sync Test")}</h3>
       <label>
         <input
           type="checkbox"
           checked={simulating}
           disabled={blocked || !lipEnabled}
           onChange={(event) => setSimulating(event.target.checked)}
-        />
-        Simulate talking
-      </label>
+        />{debugText("Simulate talking")}{" "}</label>
       <Range
-        label="Amplitude"
+        label={debugText("Amplitude")}
         min={0}
         max={1}
         step={0.01}
@@ -241,19 +229,17 @@ export function Live2DDebugTab({
             tuning.lipAmplitudeOverride === null
           }
           onClick={() => frontend.live2dDebug.setLipAmplitudeOverride(null)}
-        >
-          Use audio amplitude
-        </button>
+        >{debugText("Use audio amplitude")}{" "}</button>
         <span>
           {simulating
-            ? "Simulating speech"
+            ? debugText("Simulating speech")
             : tuning.lipAmplitudeOverride === null
-              ? "Using audio amplitude"
-              : `Debug: ${Math.round(tuning.lipAmplitudeOverride * 100)}%`}
+              ? debugText("Using audio amplitude")
+              : debugMessage("Debug: {{value}}%", { value: Math.round(tuning.lipAmplitudeOverride * 100) })}
         </span>
       </div>
       <Range
-        label="Intensity (mouth-open gain)"
+        label={debugText("Intensity (mouth-open gain)")}
         min={0}
         max={1.5}
         step={0.05}
@@ -272,12 +258,10 @@ export function Live2DDebugTab({
               event.target.checked ? "constant" : "amplitude",
             )
           }
-        />
-        Mouth form: constant mode
-      </label>
+        />{debugText("Mouth form: constant mode")}{" "}</label>
       {tuning.lipFormMode === "constant" ? (
         <Range
-          label="Mouth form (constant)"
+          label={debugText("Mouth form (constant)")}
           min={-1}
           max={1}
           step={0.05}
@@ -287,7 +271,7 @@ export function Live2DDebugTab({
         />
       ) : (
         <Range
-          label="Mouth form (width gain)"
+          label={debugText("Mouth form (width gain)")}
           min={-1}
           max={1}
           step={0.05}
@@ -298,7 +282,7 @@ export function Live2DDebugTab({
         />
       )}
 
-      <h3>Expressions ({state.expressions.length})</h3>
+      <h3>{debugText("Expressions (")}{state.expressions.length})</h3>
       <div className="source-debug-lab-actions">
         {state.expressions.map((expression) => (
           <div key={expression.name}>
@@ -328,7 +312,7 @@ export function Live2DDebugTab({
         ))}
       </div>
 
-      <h3>Motions ({state.motions.length})</h3>
+      <h3>{debugText("Motions (")}{state.motions.length})</h3>
       <div className="source-debug-lab-actions">
         {state.motions.map((motion) => (
           <button
@@ -339,8 +323,7 @@ export function Live2DDebugTab({
             onClick={() =>
               frontend.live2dDebug.playMotion(motion.group, motion.index)
             }
-          >
-            Play {motion.group} {motion.index}
+          >{debugText("Play")}{" "}{motion.group} {motion.index}
           </button>
         ))}
       </div>
@@ -352,9 +335,7 @@ export function Live2DDebugTab({
           setSimulating(false);
           frontend.live2dDebug.resetTuning();
         }}
-      >
-        Reset Live2D tuning
-      </button>
+      >{debugText("Reset Live2D tuning")}{" "}</button>
     </section>
   );
 }

@@ -10,7 +10,7 @@ import {
 import type { WindowStore } from "../state/window-types";
 import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import { createSourceTranslate } from "../i18n/translate";
-import { localizeChipReadout } from "../i18n/chip-readout";
+import { chipButtonLabel, localizeChipReadout } from "../i18n/chip-readout";
 import "./chip-overlay.css";
 
 type ChipProps = { controller: ChipController; locale: string };
@@ -29,13 +29,9 @@ export function ChipButton({
     return () => clearInterval(timer);
   }, []);
   const charge = chipCharge(state.status, state.receivedAt, now);
-  const label = offline
-    ? t("chip.offline")
-    : charge.charges > 0
-      ? t("chip.charge", charge)
-      : t("chip.cooling", {
-          minutes: Math.ceil(charge.nextChargeInMs / 60000),
-        });
+  const label = chipButtonLabel(
+    state.status, state.receivedAt, now, controller.connected, offline, locale,
+  );
   return (
     <button
       type="button"

@@ -1,3 +1,4 @@
+import { debugText } from "../i18n/debug";
 import {
   useEffect,
   useMemo,
@@ -163,23 +164,20 @@ export function ShatterSceneTuner({
   };
 
   return (
-    <section aria-label="Shatter scene tuner">
-      <h2>Boot shatter tuner</h2>
+    <section aria-label={debugText("Shatter scene tuner")}>
+      <h2>{debugText("Boot shatter tuner")}</h2>
       {blocked && (
-        <p role="status">Production story active; preview released.</p>
+        <p role="status">{debugText("Production story active; preview released.")}</p>
       )}
       {failure && (
-        <p role="alert">
-          Shatter preview failed: {failure}
+        <p role="alert">{debugText("Shatter preview failed:")}{" "}{failure}
           <button
             type="button"
             onClick={() => {
               setFailure(null);
               setAttempt((value) => value + 1);
             }}
-          >
-            Retry shatter preview
-          </button>
+          >{debugText("Retry shatter preview")}{" "}</button>
         </p>
       )}
       <canvas
@@ -187,10 +185,8 @@ export function ShatterSceneTuner({
         data-shatter-preview
         style={{ width: "100%", height: 360, background: "#020407" }}
       />
-      <label>
-        Preview progress
-        <input
-          aria-label="Shatter preview progress"
+      <label>{debugText("Preview progress")}{" "}<input
+          aria-label={debugText("Shatter preview progress")}
           type="range"
           min="0"
           max="1"
@@ -206,15 +202,13 @@ export function ShatterSceneTuner({
           setParams(shatterDefaults({}));
           setProgress(0.55);
         }}
-      >
-        Reset shatter defaults
-      </button>
+      >{debugText("Reset shatter defaults")}{" "}</button>
       <div className="source-scene-channel-grid">
         {Object.entries(SHATTER_PARAMETERS).map(([key, metadata]) => (
           <label key={key}>
-            {metadata.label}
+            {debugText(metadata.label)}
             <input
-              aria-label={`Shatter ${metadata.label}`}
+              aria-label={`${debugText("Shatter tuner")} ${debugText(metadata.label)}`}
               type="number"
               min={metadata.min}
               max={metadata.max}
@@ -329,14 +323,13 @@ export function DataseaSceneTuner({
   };
 
   return (
-    <section aria-label="Datasea scene tuner">
-      <h2>Datasea tuner</h2>
+    <section aria-label={debugText("Datasea scene tuner")}>
+      <h2>{debugText("Datasea tuner")}</h2>
       {blocked && (
-        <p role="status">Production story active; preview released.</p>
+        <p role="status">{debugText("Production story active; preview released.")}</p>
       )}
       {failure && (
-        <p role="alert">
-          Datasea preview failed: {failure}
+        <p role="alert">{debugText("Datasea preview failed:")}{" "}{failure}
           <button
             type="button"
             onClick={() => {
@@ -344,9 +337,7 @@ export function DataseaSceneTuner({
               setStatus("loading");
               setAttempt((value) => value + 1);
             }}
-          >
-            Retry Datasea preview
-          </button>
+          >{debugText("Retry Datasea preview")}{" "}</button>
         </p>
       )}
       <canvas
@@ -354,30 +345,26 @@ export function DataseaSceneTuner({
         data-datasea-preview
         style={{ width: "100%", height: 360, background: "#000205" }}
       />
-      <p role="status">Datasea renderer: {status}</p>
-      <label>
-        Phase
-        <select
-          aria-label="Datasea phase"
+      <p role="status">{debugText("Datasea renderer:")}{" "}{debugText(status)}</p>
+      <label>{debugText("Phase")}{" "}<select
+          aria-label={debugText("Datasea phase")}
           value={values.phase}
           onChange={(event) =>
             update("phase", event.target.value as DataseaTunerValues["phase"])
           }
         >
-          <option value="descent">Descent</option>
-          <option value="converge">Converge</option>
-          <option value="cosmic">Cosmic</option>
+          <option value="descent">{debugText("Descent")}</option>
+          <option value="converge">{debugText("Converge")}</option>
+          <option value="cosmic">{debugText("Cosmic")}</option>
         </select>
       </label>
-      <button type="button" onClick={() => setValues(dataseaTunerDefaults())}>
-        Reset Datasea defaults
-      </button>
+      <button type="button" onClick={() => setValues(dataseaTunerDefaults())}>{debugText("Reset Datasea defaults")}{" "}</button>
       <div className="source-scene-channel-grid">
         {Object.entries(DATASEA_TUNER_PARAMETERS).map(([key, metadata]) => (
           <label key={key}>
-            {metadata.label}
+            {debugText(metadata.label === "Roll" ? "Roll angle" : metadata.label)}
             <input
-              aria-label={`Datasea ${metadata.label}`}
+              aria-label={`${debugText("Datasea tuner")} ${debugText(metadata.label === "Roll" ? "Roll angle" : metadata.label)}`}
               type="number"
               min={metadata.min}
               max={metadata.max}

@@ -1,3 +1,4 @@
+import { debugMessage, debugText } from "../i18n/debug";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import {
@@ -144,7 +145,7 @@ function variantText(variant: ReactionVariant) {
 
 /** Shipped `dl`: priority, roll chance and how many outs the spec can land on. */
 function specHint(spec: { priority: string; chance?: number; variants: readonly unknown[] }) {
-  return `${spec.priority} · reacts ${Math.round((spec.chance ?? 1) * 100)}% · ${spec.variants.length} outs`;
+  return debugMessage("{{priority}} · reacts {{chance}}% · {{count}} outs", { priority: debugText(spec.priority), chance: Math.round((spec.chance ?? 1) * 100), count: spec.variants.length });
 }
 
 /** Shipped outcome line: the label is dropped only for the missing-model case. */
@@ -155,13 +156,13 @@ function outcomeLine(
 ) {
   switch (outcome) {
     case "played":
-      return `${label} → ${variantText(variant as ReactionVariant)}`;
+      return `${debugText(label)} → ${variantText(variant as ReactionVariant)}`;
     case "skipped_chance":
-      return `${label} → no reaction (lost the roll)`;
+      return debugMessage("{{label}} → no reaction (lost the roll)", { label: debugText(label) });
     case "skipped_cooldown":
-      return `${label} → skipped (motion cooldown)`;
+      return debugMessage("{{label}} → skipped (motion cooldown)", { label: debugText(label) });
     case "no_model":
-      return "No Live2D model mounted";
+      return debugText("No Live2D model mounted");
     default:
       return outcome;
   }
@@ -237,49 +238,42 @@ export function DebugReactionsTab({
   };
 
   return (
-    <section aria-label="Reactions">
-      <h2>Reactions</h2>
-      <h3>Engine</h3>
+    <section aria-label={debugText("Reactions")}>
+      <h2>{debugText("Reactions")}</h2>
+      <h3>{debugText("Engine")}</h3>
       <label>
         <input
           type="checkbox"
           checked={respectCooldown}
           onChange={(event) => setRespectCooldown(event.target.checked)}
-        />
-        Respect motion cooldown
-      </label>
-      <p>
-        Roll = fire like the game would: no-reaction roll, then a
-        weight-sampled out. Numbered buttons force one exact out.
-      </p>
+        />{debugText("Respect motion cooldown")}{" "}</label>
+      <p>{debugText("Roll = fire like the game would: no-reaction roll, then a weight-sampled out. Numbered buttons force one exact out.")}{" "}</p>
       {respectCooldown && (
         <p>
           {cooldown > 0
-            ? `Minor motions blocked for ${(cooldown / 1000).toFixed(1)}s (minor ${NORI_REACTION_COOLDOWNS.minor / 1000}s / major ${NORI_REACTION_COOLDOWNS.major / 1000}s / critical always)`
-            : "Motion budget ready"}
+            ? debugMessage("Minor motions blocked for {{time}}s (minor {{minor}}s / major {{major}}s / critical always)", { time: (cooldown / 1000).toFixed(1), minor: NORI_REACTION_COOLDOWNS.minor / 1000, major: NORI_REACTION_COOLDOWNS.major / 1000 })
+            : debugText("Motion budget ready")}
         </p>
       )}
       {result && <p role="status">{outcomeLine(result.label, result.outcome, result.variant)}</p>}
-      {!model && <p role="alert">No Live2D model mounted.</p>}
+      {!model && <p role="alert">{debugText("No Live2D model mounted.")}</p>}
 
       {DEBUG_REACTION_GROUPS.map((group) => (
-        <section key={group.game} aria-label={`${group.label} reactions`}>
-          <h3>{group.label}</h3>
+        <section key={group.game} aria-label={debugMessage("{{game}} reactions", { game: debugText(group.label) })}>
+          <h3>{debugText(group.label)}</h3>
           {group.entries.map((entry) => {
             const spec = debugReactionSpec(entry);
             return (
               <div key={entry.id}>
                 <div className="source-debug-lab-actions">
-                  <span>{entry.label}</span>
+                  <span>{debugText(entry.label)}</span>
                   <button
                     type="button"
                     disabled={!model}
                     onClick={() =>
                       run(entry, { ignoreCooldown: !respectCooldown })
                     }
-                  >
-                    Roll
-                  </button>
+                  >{debugText("Roll")}{" "}</button>
                 </div>
                 <p className="source-debug-hint">{specHint(spec)}</p>
                 <div className="source-debug-lab-actions">
@@ -300,15 +294,15 @@ export function DebugReactionsTab({
                     </button>
                   ))}
                 </div>
-                {entry.note && <p className="source-debug-note">{entry.note}</p>}
+                {entry.note && <p className="source-debug-note">{debugText(entry.note)}</p>}
               </div>
             );
           })}
         </section>
       ))}
 
-      <section aria-label="Phase moods">
-        <h3>Phase moods (persistent)</h3>
+      <section aria-label={debugText("Phase moods")}>
+        <h3>{debugText("Phase moods (persistent)")}</h3>
         <div className="source-debug-lab-actions">
           {NORI_PHASE_MOODS.map((mood) => (
             <button
@@ -321,7 +315,7 @@ export function DebugReactionsTab({
                 setClock((value) => value + 1);
               }}
             >
-              {mood.label}
+              {debugText(mood.label)}
             </button>
           ))}
           <button
@@ -331,51 +325,38 @@ export function DebugReactionsTab({
               frontend.reactions.clearMood();
               setClock((value) => value + 1);
             }}
-          >
-            Clear mood
-          </button>
+          >{debugText("Clear mood")}{" "}</button>
         </div>
         <p>
           {frontend.reactions.mood()
-            ? `Active mood: ${frontend.reactions.mood()}`
-            : "No active mood"}{" "}
-          — moods hold until cleared and layer with one-shot reactions.
-        </p>
+            ? debugMessage("Active mood: {{mood}}", { mood: frontend.reactions.mood() ?? "" })
+            : debugText("No active mood")}{" "}{debugText("— moods hold until cleared and layer with one-shot reactions.")}{" "}</p>
       </section>
 
-      <section aria-label="Cake Duel tell">
-        <h3>Cake Duel acting (tell layer)</h3>
-        <p>
-          On claim, a micro-expression is sampled with a soft correlation to the
-          truth: nervous weakly signals bluff, confident weakly signals honest.
-        </p>
+      <section aria-label={debugText("Cake Duel tell")}>
+        <h3>{debugText("Cake Duel acting (tell layer)")}</h3>
+        <p>{debugText("On claim, a micro-expression is sampled with a soft correlation to the truth: nervous weakly signals bluff, confident weakly signals honest.")}{" "}</p>
         <div className="source-debug-lab-actions">
           <button
             type="button"
             disabled={!model}
             onClick={() => claim("bluff")}
-          >
-            Claim (bluffing)
-          </button>
+          >{debugText("Claim (bluffing)")}{" "}</button>
           <button
             type="button"
             disabled={!model}
             onClick={() => claim("honest")}
-          >
-            Claim (honest)
-          </button>
-          <button type="button" onClick={() => setSample(tellSample(2000))}>
-            Sample 2000
-          </button>
+          >{debugText("Claim (honest)")}{" "}</button>
+          <button type="button" onClick={() => setSample(tellSample(2000))}>{debugText("Sample 2000")}{" "}</button>
         </div>
         {tell && (
           <p>
-            {tell.kind} claim →{" "}
+            {tell.kind}{debugText("claim →")}{" "}
             {tell.tell === "none"
-              ? "no tell"
+              ? debugText("no tell")
               : tell.tell === "confident"
-                ? "confident (Smile 2.5s)"
-                : "nervous (Troubled 2.5s)"}
+                ? debugText("confident (Smile 2.5s)")
+                : debugText("nervous (Troubled 2.5s)")}
           </p>
         )}
         {sample && <pre>{sample}</pre>}

@@ -1,3 +1,4 @@
+import { debugText } from "../i18n/debug";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
@@ -161,15 +162,14 @@ function Preview({
       ref={dialog}
       role="dialog"
       aria-modal="true"
-      aria-label="Corruption interaction preview"
+      aria-label={debugText("Corruption interaction preview")}
       className="corruption-preview-overlay"
       data-corruption-phase={state.phase}
       data-corruption-time={state.time}
       style={{ zIndex: NORI_SHELL_LAYERS.CUTSCENE }}
     >
       <div className="corruption-preview-toolbar">
-        <span>
-          Corruption preview · {state.phase} · {state.time.toFixed(2)} s
+        <span>{debugText("Corruption preview ·")}{" "}{state.phase} · {state.time.toFixed(2)} s
         </span>
         <button
           type="button"
@@ -184,11 +184,9 @@ function Preview({
               audioRef.current?.sync(clockRef.current.snapshot());
           }}
         >
-          {paused ? "Resume study" : "Pause study"}
+          {paused ? debugText("Resume study") : debugText("Pause study")}
         </button>
-        <button type="button" onClick={close}>
-          Close study
-        </button>
+        <button type="button" onClick={close}>{debugText("Close study")}{" "}</button>
       </div>
       {state.parkedAt === "qte" ? (
         <AntivirusGames
@@ -200,9 +198,9 @@ function Preview({
         <div className="corruption-preview-phase">
           <strong>
             {state.phase === "entry"
-              ? "RECOVERY CONSOLE / INITIALIZING"
+              ? debugText("RECOVERY CONSOLE / INITIALIZING")
               : state.phase === "heal"
-                ? "INTEGRITY RESTORATION"
+                ? debugText("INTEGRITY RESTORATION")
                 : state.parkedAt === "wake"
                   ? "恢复完成，等待唤醒"
                   : state.parkedAt === "awaitVoice"
@@ -216,9 +214,7 @@ function Preview({
                 type="button"
                 disabled={paused}
                 onClick={() => wake("awaitVoice")}
-              >
-                Continue voice gate
-              </button>
+              >{debugText("Continue voice gate")}{" "}</button>
             </>
           )}
           {state.phase === "heal" && (
@@ -233,9 +229,7 @@ function Preview({
               type="button"
               disabled={paused}
               onClick={() => wake("wake")}
-            >
-              Wake model
-            </button>
+            >{debugText("Wake model")}{" "}</button>
           )}
         </div>
       )}
@@ -258,11 +252,8 @@ export function CorruptionPreview({
   }, [active]);
   return (
     <div>
-      <h2>Corruption interaction study</h2>
-      <p>
-        Inspect the eleven-phase timeline and six antivirus microgames. This
-        preview does not complete the production story or submit facts.
-      </p>
+      <h2>{debugText("Corruption interaction study")}</h2>
+      <p>{debugText("Inspect the eleven-phase timeline and six antivirus microgames. This preview does not complete the production story or submit facts.")}{" "}</p>
       <button
         ref={launcher}
         type="button"
@@ -278,10 +269,8 @@ export function CorruptionPreview({
             .unlock()
             .catch((reason) => setError(String(reason)));
         }}
-      >
-        Open corruption study
-      </button>
-      {error && <p role="alert">{error}</p>}
+      >{debugText("Open corruption study")}{" "}</button>
+      {error && <p role="alert">{debugText(error)}</p>}
       {active && <Preview frontend={frontend} close={() => setActive(false)} />}
     </div>
   );

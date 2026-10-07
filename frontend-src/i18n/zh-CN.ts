@@ -426,6 +426,13 @@ export default {
       "noriDeclinedTakeback": "Nori 拒绝了悔棋"
     }
   },
+  "errors": {
+    "connection": "连接失败，请确认本地服务已启动后重试。",
+    "sendCode": "验证码发送失败，请检查邮箱地址和网络连接后重试。",
+    "signIn": "登录失败，请检查验证码后重试。",
+    "signOut": "退出登录失败，请检查连接后重试。",
+    "rateLimit": "操作过于频繁，请稍后重试。"
+  },
   "chip": {
     "analyze": "分析窗口",
     "browser_tab": "浏览器分页：{{title}}",
@@ -434,16 +441,17 @@ export default {
     "charge": "芯片余量：{{charges}}/{{capacity}} 次扫描",
     "charge_label": "余量",
     "cooling": "散热中；约 {{minutes}} 分钟后可扫描",
+    "loading": "正在获取芯片状态…",
     "low_power": "窗口信息量过载，芯片能量不足，暂时无法分析",
     "nori": "Nori",
     "offline": "分析芯片离线",
     "offline_line": "宿主无响应；分析离线。",
     "pick_hint": "选一个要分析的窗口",
     "readout_header": "【分析芯片】",
-    "readout_fresh": "新扫描结果已记录 — 标识={{key}}，指纹={{row}}",
-    "readout_archived": "历史扫描结果重放 — 标识={{key}}，指纹={{row}}",
-    "readout_thermal_lock": "[{{key}}] 芯片过热锁定 — 热量 {{heat}}/{{capacity}}；请等待冷却",
-    "readout_unavailable": "【芯片】流形连接不可用",
+    "readout_fresh": "扫描完成。当前内容暂时没有可用的分析结论。",
+    "readout_archived": "这份内容之前已扫描过，暂时没有可用的分析结论。",
+    "readout_thermal_lock": "芯片过热，请等待冷却后再扫描。",
+    "readout_unavailable": "暂时无法连接分析芯片，请检查连接后重试。",
     "scan_failed": "扫描失败；建议重试。",
     "scanning": "扫描中...",
     "signal_photo": "{{name}}发来的照片",

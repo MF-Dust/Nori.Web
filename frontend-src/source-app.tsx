@@ -39,6 +39,7 @@ import {
 } from "./apps/terminal-filesystem";
 import { codenamesStateSchema } from "./apps/codenames-model";
 import { sourceLocale, createSourceTranslate } from "./i18n/translate";
+import { localizeUserError } from "./i18n/user-error";
 import { pictionaryStateSchema } from "./apps/pictionary-model";
 import { PictionaryDrawingBridge } from "./apps/pictionary-runtime";
 import { GameCartridgeController } from "./apps/game-cartridge-controller";
@@ -228,14 +229,6 @@ function createSourceSession() {
     ...idle,
     playCue: frontend.audio.playCue,
     paradigmReveal,
-    claimMemento(onCompleted?: () => void) {
-      idle.claimMemento(() => {
-        void frontend.manifold.command("idle.complete", {}).catch((error) => {
-          console.error("[SourceApp] idle.complete failed", error);
-        });
-        onCompleted?.();
-      });
-    },
   };
 
   let bundle: RecoveredDesktopRuntimeBundle | undefined;
@@ -519,7 +512,18 @@ function createSourceSession() {
     getDesktop: () => bundle.runtime.store.getState(),
     subscribeFacts: (listener) => subscribeManifoldChanges(frontend.world, listener),
     subscribeWindows: (listener) => bundle.runtime.store.subscribe(listener),
-    emitFact: (factId) => frontend.manifold.command("client.emitFact", { factId }),
+    emitFact: (factId) => frontend.manifold.commandResult("client.emitFact", { factId }),
+    getIdleMementoCount: () => {
+      const variables = frontend.world.runtime("manifold.web")?.state.variables;
+      if (!variables || typeof variables !== "object" || Array.isArray(variables)) return 0;
+      const syncedIdle = variables.idle;
+      if (!syncedIdle || typeof syncedIdle !== "object" || Array.isArray(syncedIdle)) return 0;
+      return typeof syncedIdle.claimedMementoCount === "number" ? syncedIdle.claimedMementoCount : 0;
+    },
+    completeIdle: async () => {
+      const result = await frontend.manifold.commandResult<{ ok: boolean }>("idle.complete", {});
+      if (!result.ok) throw new Error("Idle completion was not accepted");
+    },
     warn: (error) => console.error("[SourceApp] story progression failed", error),
   });
   const desktopStore = bundle.runtime.store;
@@ -873,7 +877,10 @@ function SourceSessionView({ source }: { source: SourceSession }) {
     syncAudio();
     const unsubscribeAudio = useAudioSettings.subscribe(syncAudio);
     void source.frontend.start(locale).catch((error) => {
-      if (!disposed) setError(String(error));
+      if (!disposed) {
+        console.error("Nori startup failed", error);
+        setError(localizeUserError(error, locale, "connection"));
+      }
     });
     return () => {
       disposed = true;
@@ -951,7 +958,10 @@ function SourceSessionView({ source }: { source: SourceSession }) {
             source.frontend.arcade.close();
             source.frontend.media.close();
           })
-          .catch((error) => setError(String(error)));
+          .catch((error) => {
+            console.error("Nori sign-out failed", error);
+            setError(localizeUserError(error, locale, "signOut"));
+          });
       }}
       background={
         <>

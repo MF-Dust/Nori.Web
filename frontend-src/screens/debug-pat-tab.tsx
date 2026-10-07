@@ -1,3 +1,4 @@
+import { debugText } from "../i18n/debug";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import { HeadPatAudio } from "../live2d/head-pat-audio";
@@ -98,53 +99,50 @@ export function PatDebugTab({ frontend }: { frontend: NoriFrontendRuntime }) {
     auditionFrame.current = requestAnimationFrame(render);
   };
   return (
-    <section aria-label="Pat debug">
-      <h2>Pat</h2>
-      {blocked && <p role="status">Production story active; audition disabled.</p>}
-      <h3>Live state</h3>
+    <section aria-label={debugText("Pat debug")}>
+      <h2>{debugText("Pat")}</h2>
+      {blocked && <p role="status">{debugText("Production story active; audition disabled.")}</p>}
+      <h3>{debugText("Live state")}</h3>
       <dl>
-        <dt>Progress</dt>
+        <dt>{debugText("Progress")}</dt>
         <dd>
           {(frontend.headPat.progress / 1_000).toFixed(1)} /{" "}
           {(tuning.requiredMs / 1_000).toFixed(1)} s
         </dd>
-        <dt>Armed (touched head)</dt>
-        <dd>{frontend.headPat.armed ? "yes" : "no"}</dd>
-        <dt>Stroking now</dt>
-        <dd>{frontend.headPat.pressing ? "yes" : "no"}</dd>
-        <dt>Stroke velocity</dt>
-        <dd>{frontend.headPat.velocity.toFixed(2)} head-widths/s</dd>
-        <dt>Completions</dt>
+        <dt>{debugText("Armed (touched head)")}</dt>
+        <dd>{frontend.headPat.armed ? debugText("yes") : debugText("no")}</dd>
+        <dt>{debugText("Stroking now")}</dt>
+        <dd>{frontend.headPat.pressing ? debugText("yes") : debugText("no")}</dd>
+        <dt>{debugText("Stroke velocity")}</dt>
+        <dd>{frontend.headPat.velocity.toFixed(2)}{debugText("head-widths/s")}</dd>
+        <dt>{debugText("Completions")}</dt>
         <dd>{frontend.headPat.completions}</dd>
-        <dt>Last pointer phase</dt>
+        <dt>{debugText("Last pointer phase")}</dt>
         <dd>{frontend.headPat.lastPhase || "—"}</dd>
-        <dt>Pattable (state gate)</dt>
-        <dd>{frontend.headPat.lastPattable ? "yes" : "no"}</dd>
-        <dt>Drag pressed on desktop</dt>
-        <dd>{frontend.headPat.lastOnSurface ? "yes" : "no"}</dd>
-        <dt>In head-top zone</dt>
-        <dd>{frontend.headPat.lastInZone ? "yes" : "no"}</dd>
-        <dt>Pointer (model)</dt>
+        <dt>{debugText("Pattable (state gate)")}</dt>
+        <dd>{frontend.headPat.lastPattable ? debugText("yes") : debugText("no")}</dd>
+        <dt>{debugText("Drag pressed on desktop")}</dt>
+        <dd>{frontend.headPat.lastOnSurface ? debugText("yes") : debugText("no")}</dd>
+        <dt>{debugText("In head-top zone")}</dt>
+        <dd>{frontend.headPat.lastInZone ? debugText("yes") : debugText("no")}</dd>
+        <dt>{debugText("Pointer (model)")}</dt>
         <dd>
           {frontend.headPat.lastModelX.toFixed(2)},{" "}
           {frontend.headPat.lastModelY.toFixed(2)}
         </dd>
       </dl>
-      <p>
-        Gate rows update on pointer drags. Armed means the active drag has
-        touched the projected head-top zone and remains valid until release.
-      </p>
+      <p>{debugText("Gate rows update on pointer drags. Armed means the active drag has touched the projected head-top zone and remains valid until release.")}{" "}</p>
       {GROUPS.map((group) => (
         <div key={group.title}>
-          <h3>{group.title}</h3>
+          <h3>{debugText(group.title)}</h3>
           <div className="source-scene-channel-grid">
             {group.keys.map((key) => {
               const range = HEAD_PAT_TUNING_RANGES[key];
               return (
                 <label key={key}>
-                  {LABELS[key]}
+                  {debugText(LABELS[key])}
                   <input
-                    aria-label={`Pat ${LABELS[key]}`}
+                    aria-label={`${debugText("Pat")} ${debugText(LABELS[key])}`}
                     type="range"
                     min={range.min}
                     max={range.max}
@@ -160,24 +158,19 @@ export function PatDebugTab({ frontend }: { frontend: NoriFrontendRuntime }) {
         </div>
       ))}
       <div className="source-debug-lab-actions">
-        <button type="button" disabled={blocked} onClick={() => void startAudition(0.1)}>Slow rub 2s</button>
-        <button type="button" disabled={blocked} onClick={() => void startAudition(0.5)}>Medium rub 2s</button>
-        <button type="button" disabled={blocked} onClick={() => void startAudition(1)}>Fast rub 2s</button>
-        <button type="button" onClick={stopAudition}>Stop rub</button>
+        <button type="button" disabled={blocked} onClick={() => void startAudition(0.1)}>{debugText("Slow rub 2s")}</button>
+        <button type="button" disabled={blocked} onClick={() => void startAudition(0.5)}>{debugText("Medium rub 2s")}</button>
+        <button type="button" disabled={blocked} onClick={() => void startAudition(1)}>{debugText("Fast rub 2s")}</button>
+        <button type="button" onClick={stopAudition}>{debugText("Stop rub")}</button>
         <button
           type="button"
           onClick={() => {
             frontend.headPat.resetTuning();
             setTuning({ ...HEAD_PAT_DEFAULT_TUNING });
           }}
-        >
-          Reset pat defaults
-        </button>
+        >{debugText("Reset pat defaults")}{" "}</button>
       </div>
-      <p>
-        These controls and telemetry read from the production recognizer, projected
-        model surface, spring and friction synth used by the real pat gesture.
-      </p>
+      <p>{debugText("These controls and telemetry read from the production recognizer, projected model surface, spring and friction synth used by the real pat gesture.")}{" "}</p>
     </section>
   );
 }

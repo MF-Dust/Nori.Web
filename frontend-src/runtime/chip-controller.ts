@@ -127,6 +127,7 @@ export class ChipController {
       }),
     );
   }
+  get connected() { return this.arcade.connectionState === "open"; }
   snapshot = () => this.state;
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);

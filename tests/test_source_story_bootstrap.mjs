@@ -81,6 +81,25 @@ try {
   assert.equal(await page.getByLabel("语言", { exact: true }).inputValue(), "zh-CN");
   assert.deepEqual(errors, [], "language restart raised browser errors");
   console.log("[ok] settings language switch: cancel preserves the selection; confirm persists Chinese and restarts with translated UI");
+
+  await page.locator(".settings-nav-pane").getByRole("button", { name: "调试", exact: true }).click();
+  const debug = page.locator(".source-debug");
+  await debug.getByRole("heading", { name: "连接", exact: true }).waitFor();
+  assert.equal(await debug.locator("nav button").count(), 21);
+  assert.equal(await debug.getByRole("button", { name: "网络测试", exact: true }).count(), 1);
+  await debug.getByRole("button", { name: "场景", exact: true }).click();
+  const texture = debug.getByLabel("模型贴图");
+  assert.equal(await texture.inputValue(), "default");
+  await texture.selectOption("corrupt");
+  assert.equal(await texture.inputValue(), "corrupt", "translated option labels must not change model texture values");
+  await debug.getByRole("button", { name: "恢复剧情控制", exact: true }).click();
+  assert.equal(await texture.inputValue(), "default");
+  await debug.getByRole("button", { name: "网络测试", exact: true }).click();
+  assert.equal(await debug.getByRole("button", { name: "应用并重新加载", exact: true }).count(), 1);
+  await debug.getByRole("button", { name: "场景编辑器", exact: true }).click();
+  assert.equal(await debug.getByRole("button", { name: "导入项目", exact: true }).count(), 1);
+  assert.deepEqual(errors, [], "Chinese Debug controls raised browser errors");
+  console.log("[ok] Chinese Debug: localized tabs, scene/network/editor controls and unchanged model texture values");
 } finally {
   await browser?.close();
   await vite?.close();

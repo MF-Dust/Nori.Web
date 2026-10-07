@@ -1,3 +1,4 @@
+import { debugText } from "../i18n/debug";
 import { useEffect, useRef, useState } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import {
@@ -195,58 +196,46 @@ export function GlitchDebugLab({
   };
 
   return (
-    <section aria-label="Glitch tuner">
-      <h2>Glitch</h2>
+    <section aria-label={debugText("Glitch tuner")}>
+      <h2>{debugText("Glitch")}</h2>
       <p role="status">
         {blocked
-          ? "Production story active; glitch released."
+          ? debugText("Production story active; glitch released.")
           : mode === "idle"
-            ? "Idle."
+            ? debugText("Idle.")
             : mode === "running"
-              ? "Glitching."
-              : "Holding one torn frame; Stop clears it."}
+              ? debugText("Glitching.")
+              : debugText("Holding one torn frame; Stop clears it.")}
       </p>
       <div className="source-debug-lab-actions">
-        <button type="button" disabled={blocked} onClick={() => start(400)}>
-          Burst 400 ms
-        </button>
-        <button type="button" disabled={blocked} onClick={() => start(1500)}>
-          Burst 1.5 s
-        </button>
-        <button type="button" disabled={blocked || mode === "running"} onClick={() => start()}>
-          Start
-        </button>
-        <button type="button" disabled={mode === "idle"} onClick={stop}>
-          Stop
-        </button>
-        <button type="button" disabled={blocked} onClick={freeze}>
-          Freeze frame
-        </button>
+        <button type="button" disabled={blocked} onClick={() => start(400)}>{debugText("Burst 400 ms")}{" "}</button>
+        <button type="button" disabled={blocked} onClick={() => start(1500)}>{debugText("Burst 1.5 s")}{" "}</button>
+        <button type="button" disabled={blocked || mode === "running"} onClick={() => start()}>{debugText("Start")}{" "}</button>
+        <button type="button" disabled={mode === "idle"} onClick={stop}>{debugText("Stop")}{" "}</button>
+        <button type="button" disabled={blocked} onClick={freeze}>{debugText("Freeze frame")}{" "}</button>
       </div>
-      <h3>Presets</h3>
+      <h3>{debugText("Presets")}</h3>
       <div className="source-debug-lab-actions">
         {Object.entries(GLITCH_PRESETS).map(([label, preset]) => (
           <button type="button" key={label} onClick={() => apply({ ...preset })}>
-            {label}
+            {debugText(label)}
           </button>
         ))}
         <button
           type="button"
           onClick={() => apply({ ...CORRUPTION_GLITCH_DEFAULTS })}
-        >
-          Reset
-        </button>
+        >{debugText("Reset")}{" "}</button>
       </div>
-      <h3>Tuning</h3>
+      <h3>{debugText("Tuning")}</h3>
       <div className="source-scene-channel-grid">
         {Object.entries(GLITCH_PARAMETERS).map(([name, metadata]) => {
           const key = name as keyof CorruptionGlitchParams;
           return (
             <label key={key}>
-              {metadata.label}
+              {debugText(metadata.label)}
               <input
                 type="range"
-                aria-label={`Glitch ${metadata.label}`}
+                aria-label={`${debugText("Glitch")} ${debugText(metadata.label)}`}
                 min={metadata.min}
                 max={metadata.max}
                 step={metadata.step}

@@ -1,4 +1,5 @@
 import type { ManagedWindow } from "../state/window-types";
+import { IDLE_MEMENTO_COUNT } from "../apps/idle-faction-progression";
 
 const CORRUPT_DOCUMENTS: Record<string, number> = {
   "1z9Kq7AfR2xMcL0d": 1,
@@ -23,6 +24,8 @@ interface ProgressionOptions {
   subscribeFacts(listener: () => void): () => void;
   subscribeWindows(listener: () => void): () => void;
   emitFact(factId: string): Promise<unknown>;
+  getIdleMementoCount?(): number;
+  completeIdle?(): Promise<unknown>;
   warn?(error: unknown): void;
   repairDelayMs?: number;
   installDelayMs?: number;
@@ -44,7 +47,9 @@ export function bindSourceStoryProgression(options: ProgressionOptions): () => v
     if (disposed || !world || emitted.has(factId) || pending.has(factId) || options.getFacts().has(factId)) return;
     const owner = world;
     pending.add(factId);
-    void options.emitFact(factId).then(() => {
+    const request = factId === "idle.manifold_complete" && options.completeIdle
+      ? options.completeIdle() : options.emitFact(factId);
+    void request.then(() => {
       if (disposed || world !== owner) return;
       pending.delete(factId);
       emitted.add(factId);
@@ -60,6 +65,12 @@ export function bindSourceStoryProgression(options: ProgressionOptions): () => v
     if (next !== world) { clearTimers(); emitted.clear(); pending.clear(); world = next; }
     if (!world) return;
     const facts = options.getFacts();
+    // The final claim cannot be repeated. Resume its acknowledged-server
+    // completion after a lost request or reload, without bypassing idle.complete.
+    if (options.completeIdle && (options.getIdleMementoCount?.() ?? 0) >= IDLE_MEMENTO_COUNT &&
+        facts.has("arg.memory.shown") && facts.has("arg.manifold_unlocked")) {
+      emit("idle.manifold_complete");
+    }
     if (facts.has("mail.help.read") && !facts.has("system.repaired") && repairTimer === undefined && !emitted.has("system.repaired")) {
       repairTimer = setTimeout(() => {
         repairTimer = undefined;

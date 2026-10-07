@@ -1,3 +1,4 @@
+import { debugMessage, debugText } from "../i18n/debug";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import type { StoryClockState } from "../story/story-clock";
@@ -181,27 +182,20 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
   const busy = !!project || importing;
   return (
     <div className="source-scene-editor">
-      <h2>Scene editor</h2>
-      <p>
-        Preview camera, model, light and audio phases. Changes stay in this
-        window; preview never submits story completion facts.
-      </p>
+      <h2>{debugText("Scene editor")}</h2>
+      <p>{debugText("Preview camera, model, light and audio phases. Changes stay in this window; preview never submits story completion facts.")}{" "}</p>
       <div className="source-scene-editor-controls">
         <button
           type="button"
           disabled={busy}
           onClick={() => fileInput.current?.click()}
-        >
-          Import project
-        </button>
-        <button type="button" disabled={importing} onClick={exportFile}>
-          Export project
-        </button>
+        >{debugText("Import project")}{" "}</button>
+        <button type="button" disabled={importing} onClick={exportFile}>{debugText("Export project")}{" "}</button>
         <input
           ref={fileInput}
           type="file"
           accept=".json,application/json"
-          aria-label="Import scene project file"
+          aria-label={debugText("Import scene project file")}
           hidden
           disabled={busy}
           onChange={(event) => {
@@ -210,12 +204,10 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
             if (file) void importFile(file);
           }}
         />
-        {importing && <span role="status">Reading project…</span>}
+        {importing && <span role="status">{debugText("Reading project…")}</span>}
       </div>
-      <label>
-        Project JSON
-        <textarea
-          aria-label="Scene project JSON"
+      <label>{debugText("Project JSON")}{" "}<textarea
+          aria-label={debugText("Scene project JSON")}
           value={text}
           spellCheck={false}
           disabled={busy}
@@ -240,9 +232,7 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
         />
       )}
       <div className="source-scene-editor-controls">
-        <button type="button" disabled={busy} onClick={play}>
-          Play preview
-        </button>
+        <button type="button" disabled={busy} onClick={play}>{debugText("Play preview")}{" "}</button>
         <button
           type="button"
           disabled={!project}
@@ -255,10 +245,10 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
           }}
         >
           {clockState?.complete && project
-            ? "Restart preview"
+            ? debugText("Restart preview")
             : control.current?.paused
-              ? "Resume preview"
-              : "Pause preview"}
+              ? debugText("Resume preview")
+              : debugText("Pause preview")}
         </button>
         <button
           type="button"
@@ -267,9 +257,7 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
             const preview = control.current;
             if (preview) setClockState(preview.wake(performance.now()));
           }}
-        >
-          Continue phase
-        </button>
+        >{debugText("Continue phase")}{" "}</button>
         <button
           type="button"
           disabled={!project}
@@ -279,9 +267,7 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
             control.current = null;
             setProject(null);
           }}
-        >
-          Stop preview
-        </button>
+        >{debugText("Stop preview")}{" "}</button>
         <button
           type="button"
           disabled={busy}
@@ -289,16 +275,12 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
             apply(SCENE_EDITOR_SAMPLE);
             setClockState(null);
           }}
-        >
-          Reset project
-        </button>
+        >{debugText("Reset project")}{" "}</button>
       </div>
       <div className="source-scene-timeline">
-        <label>
-          Preview position
-          <input
+        <label>{debugText("Preview position")}{" "}<input
             type="range"
-            aria-label="Scene preview position"
+            aria-label={debugText("Scene preview position")}
             min={0}
             max={clockState?.duration ?? 1}
             step={0.01}
@@ -307,10 +289,7 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
             onChange={(event) => seek(event.target.valueAsNumber)}
           />
         </label>
-        <p>
-          Seeking pauses playback. Gates at the selected time remain pending;
-          later gates are rearmed. Scrubbing never completes a production story.
-        </p>
+        <p>{debugText("Seeking pauses playback. Gates at the selected time remain pending; later gates are rearmed. Scrubbing never completes a production story.")}{" "}</p>
         {project && (
           <div className="source-scene-phase-buttons">
             {project.phases.map((phase, index) => {
@@ -321,7 +300,7 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
                 <button
                   type="button"
                   key={phase.id}
-                  aria-label={`Seek to ${phase.id}`}
+                  aria-label={debugMessage("Seek to {{id}}", { id: phase.id })}
                   aria-pressed={clockState?.phase === phase.id}
                   onClick={() => {
                     const preview = control.current;
@@ -332,7 +311,7 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
                   }}
                 >
                   {phase.id} · {start.toFixed(2)} s
-                  {phase.pauseAtStart ? " · input" : ""}
+                  {phase.pauseAtStart ? debugText(" · input") : ""}
                 </button>
               );
             })}
@@ -345,27 +324,25 @@ export function SceneEditor({ frontend }: { frontend: NoriFrontendRuntime }) {
           {clockState.duration.toFixed(2)} s ·{" "}
           {project
             ? clockState.complete
-              ? "Complete — inspection paused"
+              ? debugText("Complete — inspection paused")
               : clockState.parkedAt
-                ? "Waiting for input"
+                ? debugText("Waiting for input")
                 : clockState.playing
-                  ? "Playing"
-                  : "Paused"
+                  ? debugText("Playing")
+                  : debugText("Paused")
             : clockState.complete
-              ? "Complete"
-              : "Stopped"}
+              ? debugText("Complete")
+              : debugText("Stopped")}
         </p>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{debugText(error)}</p>}
       <details>
-        <summary>Production scene registration</summary>
+        <summary>{debugText("Production scene registration")}</summary>
         <ul>
           {STORY_ORDER.map((scene) => (
             <li key={scene.id}>
               <code>{scene.id}</code> ·{" "}
-              {scene.id === "cult-flash"
-                ? "Registered"
-                : "Cinematic restoration pending"}
+              {debugText("Registered")}
             </li>
           ))}
         </ul>

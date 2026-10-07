@@ -1,3 +1,4 @@
+import { debugMessage, debugText } from "../i18n/debug";
 import { useState } from "react";
 import type { StoreApi, UseBoundStore } from "zustand";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
@@ -44,7 +45,7 @@ function Lab({
 }) {
   return (
     <section>
-      <h2>{title}</h2>
+      <h2>{debugText(title)}</h2>
       {children}
     </section>
   );
@@ -61,8 +62,8 @@ export function NetworkDebugLab({ reload = () => location.reload() }) {
     setProfile(next);
   };
   return (
-    <Lab title="Network lab">
-      <p>Flaky WebSocket profile: {active}</p>
+    <Lab title={debugText("Network lab")}>
+      <p>{debugText("Flaky WebSocket profile:")}{" "}{debugText(active)}</p>
       <div className="source-debug-lab-actions">
         {(["off", "mild", "moderate", "severe"] as const).map((preset) => (
           <button
@@ -71,14 +72,12 @@ export function NetworkDebugLab({ reload = () => location.reload() }) {
             aria-pressed={active === preset}
             onClick={() => select(preset)}
           >
-            {preset[0].toUpperCase() + preset.slice(1)}
+            {debugText(preset[0].toUpperCase() + preset.slice(1))}
           </button>
         ))}
-        <button type="button" onClick={reload}>
-          Apply &amp; reload
-        </button>
+        <button type="button" onClick={reload}>{debugText("Apply & reload")}{" "}</button>
       </div>
-      <p>Profiles apply after reload and never alter server state.</p>
+      <p>{debugText("Profiles apply after reload and never alter server state.")}</p>
     </Lab>
   );
 }
@@ -89,8 +88,8 @@ export function ComputeDebugLab({
   actions?: ComputeDebugActions;
 }) {
   return (
-    <Lab title="Compute lab">
-      {!actions && <p role="status">Compute runtime is not mounted.</p>}
+    <Lab title={debugText("Compute lab")}>
+      {!actions && <p role="status">{debugText("Compute runtime is not mounted.")}</p>}
       <div className="source-debug-lab-actions">
         {COMPUTE_TARGETS.map((target) => (
           <button
@@ -100,33 +99,26 @@ export function ComputeDebugLab({
             onClick={() =>
               actions?.grant(computeGrantToTarget(actions.current(), target))
             }
-          >
-            Target {target.toExponential(0)}
+          >{debugText("Target")}{" "}{target.toExponential(0)}
           </button>
         ))}
         <button
           type="button"
           disabled={!actions?.maxAll}
           onClick={actions?.maxAll}
-        >
-          Max all
-        </button>
+        >{debugText("Max all")}{" "}</button>
         <button
           type="button"
           disabled={!actions?.abdicate}
           onClick={actions?.abdicate}
-        >
-          Abdicate
-        </button>
+        >{debugText("Abdicate")}{" "}</button>
         <button
           type="button"
           disabled={!actions?.reset}
           onClick={actions?.reset}
-        >
-          Reset
-        </button>
+        >{debugText("Reset")}{" "}</button>
       </div>
-      <h3>Time travel</h3>
+      <h3>{debugText("Time travel")}</h3>
       <div className="source-debug-lab-actions">
         {COMPUTE_TIME_STEPS.map((seconds) => (
           <button
@@ -139,7 +131,7 @@ export function ComputeDebugLab({
           </button>
         ))}
       </div>
-      <h3>Faction coins</h3>
+      <h3>{debugText("Faction coins")}</h3>
       <div className="source-debug-lab-actions">
         {FACTION_COIN_GRANTS.map((amount) => (
           <button
@@ -163,7 +155,7 @@ export function GestureDebugLab({
 }) {
   const [result, setResult] = useState("Not run");
   return (
-    <Lab title="Gesture lab">
+    <Lab title={debugText("Gesture lab")}>
       <button
         type="button"
         onClick={() =>
@@ -173,14 +165,9 @@ export function GestureDebugLab({
               : "Recognizer did not complete",
           )
         }
-      >
-        Run qualifying pat
-      </button>
-      <output>{result}</output>
-      <p>
-        The lab exercises the recognizer only; it does not send a cartridge
-        event or story fact.
-      </p>
+      >{debugText("Run qualifying pat")}{" "}</button>
+      <output>{debugText(result)}</output>
+      <p>{debugText("The lab exercises the recognizer only; it does not send a cartridge event or story fact.")}{" "}</p>
     </Lab>
   );
 }
@@ -191,7 +178,7 @@ export function ReactionDebugLab({
   preview?: DebugLabActions["previewReaction"];
 }) {
   return (
-    <Lab title="Reaction lab">
+    <Lab title={debugText("Reaction lab")}>
       <div className="source-debug-lab-actions">
         {DEBUG_REACTIONS.map((reaction) => (
           <button
@@ -200,11 +187,11 @@ export function ReactionDebugLab({
             disabled={!preview}
             onClick={() => preview?.(reaction)}
           >
-            {reaction}
+            {debugText(reaction)}
           </button>
         ))}
       </div>
-      {!preview && <p role="status">No Live2D reaction preview is mounted.</p>}
+      {!preview && <p role="status">{debugText("No Live2D reaction preview is mounted.")}</p>}
     </Lab>
   );
 }
@@ -217,10 +204,10 @@ export function ScenarioDebugLab({
   const [status, setStatus] = useState("Select a scenario");
   const [pending, setPending] = useState<string | null>(null);
   return (
-    <Lab title="Game scenarios">
+    <Lab title={debugText("Game scenarios")}>
       {(["chess", "codenames", "cakeduel"] as const).map((game) => (
-        <section key={game} aria-label={`${game} scenarios`}>
-          <h3>{game === "cakeduel" ? "Cake Duel" : game[0].toUpperCase() + game.slice(1)}</h3>
+        <section key={game} aria-label={debugMessage("{{game}} scenarios", { game: debugText(game === "cakeduel" ? debugText("Cake Duel") : game[0].toUpperCase() + game.slice(1)) })}>
+          <h3>{game === "cakeduel" ? debugText("Cake Duel") : debugText(game[0].toUpperCase() + game.slice(1))}</h3>
           <div className="source-debug-lab-actions">
             {DEBUG_GAME_SCENARIOS.filter(
               (scenario) => scenario.game === game,
@@ -231,28 +218,28 @@ export function ScenarioDebugLab({
                 disabled={!load || pending !== null}
                 onClick={() => {
                   setPending(`${scenario.game}:${scenario.id}`);
-                  setStatus(`Loading ${scenario.id}…`);
+                  setStatus(debugMessage("Loading {{id}}…", { id: scenario.id }));
                   void load?.(scenario.game, scenario.id).then(
                     () => {
                       setPending(null);
-                      setStatus(`Loaded ${scenario.id}`);
+                      setStatus(debugMessage("Loaded {{id}}", { id: scenario.id }));
                     },
                     (error) => {
                       setPending(null);
-                      setStatus(`Failed: ${String(error)}`);
+                      setStatus(debugMessage("Failed: {{error}}", { error: String(error) }));
                     },
                   );
                 }}
               >
                 {pending === `${scenario.game}:${scenario.id}`
-                  ? "Loading…"
-                  : scenario.label}
+                  ? debugText("Loading…")
+                  : debugText(scenario.label)}
               </button>
             ))}
           </div>
         </section>
       ))}
-      <p role="status">{status}</p>
+      <p role="status">{debugText(status)}</p>
     </Lab>
   );
 }

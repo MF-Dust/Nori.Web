@@ -1,3 +1,4 @@
+import { debugMessage, debugText } from "../i18n/debug";
 import type { SceneProject } from "../story/scene-project";
 
 function uniqueId(prefix: string, entries: { id: string }[]) {
@@ -18,9 +19,9 @@ function Field({
 }) {
   return (
     <label>
-      {label}
+      {debugText(label)}
       <input
-        aria-label={label}
+        aria-label={debugText(label)}
         key={String(value)}
         type={numeric ? "number" : "text"}
         step={numeric ? "any" : undefined}
@@ -89,32 +90,29 @@ export function SceneEditorStructure({
   };
   return (
     <details className="source-scene-structure">
-      <summary>Phases and audio tracks</summary>
+      <summary>{debugText("Phases and audio tracks")}</summary>
       <fieldset disabled={disabled}>
-        <legend>Timeline structure</legend>
+        <legend>{debugText("Timeline structure")}</legend>
         <Field
-          label="Scene project name"
+          label={debugText("Scene project name")}
           value={project.name}
           onChange={(value) =>
             onChange({ ...project, name: String(value ?? "") })
           }
         />
         <p>
-          {duration.toFixed(2)} seconds before input waits. Audio positions use
-          this timeline. Source offset selects where playback starts within the
-          audio file.
-        </p>
+          {duration.toFixed(2)}{debugText("seconds before input waits. Audio positions use this timeline. Source offset selects where playback starts within the audio file.")}{" "}</p>
         <div className="source-scene-entries">
           {project.phases.map((entry, index) => (
             <fieldset key={entry.id}>
-              <legend>Phase {index + 1}</legend>
+              <legend>{debugText("Phase")}{" "}{index + 1}</legend>
               <Field
-                label={`Phase ${index + 1} ID`}
+                label={debugMessage("Phase {{index}} ID", { index: index + 1 })}
                 value={entry.id}
                 onChange={(value) => phase(index, { id: String(value ?? "") })}
               />
               <Field
-                label={`Phase ${index + 1} duration`}
+                label={debugMessage("Phase {{index}} duration", { index: index + 1 })}
                 numeric
                 value={entry.duration}
                 onChange={(value) =>
@@ -123,35 +121,29 @@ export function SceneEditorStructure({
               />
               <label>
                 <input
-                  aria-label={`Phase ${index + 1} input gate`}
+                  aria-label={debugMessage("Phase {{index}} input gate", { index: index + 1 })}
                   type="checkbox"
                   checked={entry.pauseAtStart ?? false}
                   onChange={(event) =>
                     phase(index, { pauseAtStart: event.target.checked })
                   }
-                />
-                Input gate
-              </label>
+                />{debugText("Input gate")}{" "}</label>
               <div className="source-scene-editor-controls">
                 <button
                   type="button"
-                  aria-label={`Move ${entry.id} earlier`}
+                  aria-label={debugMessage("Move {{id}} earlier", { id: entry.id })}
                   disabled={index === 0}
                   onClick={() => move(index, -1)}
-                >
-                  Earlier
-                </button>
+                >{debugText("Earlier")}{" "}</button>
                 <button
                   type="button"
-                  aria-label={`Move ${entry.id} later`}
+                  aria-label={debugMessage("Move {{id}} later", { id: entry.id })}
                   disabled={index === project.phases.length - 1}
                   onClick={() => move(index, 1)}
-                >
-                  Later
-                </button>
+                >{debugText("Later")}{" "}</button>
                 <button
                   type="button"
-                  aria-label={`Remove phase ${entry.id}`}
+                  aria-label={debugMessage("Remove phase {{id}}", { id: entry.id })}
                   disabled={project.phases.length <= 1}
                   onClick={() =>
                     onChange({
@@ -159,9 +151,7 @@ export function SceneEditorStructure({
                       phases: project.phases.filter((_, i) => i !== index),
                     })
                   }
-                >
-                  Remove
-                </button>
+                >{debugText("Remove")}{" "}</button>
               </div>
             </fieldset>
           ))}
@@ -182,21 +172,19 @@ export function SceneEditorStructure({
               ],
             })
           }
-        >
-          Add phase
-        </button>
-        <h3>Audio tracks</h3>
+        >{debugText("Add phase")}{" "}</button>
+        <h3>{debugText("Audio tracks")}</h3>
         <div className="source-scene-entries">
           {project.audio.map((entry, index) => (
             <fieldset key={entry.id}>
-              <legend>Track {index + 1}</legend>
+              <legend>{debugText("Track")}{" "}{index + 1}</legend>
               <Field
-                label={`Track ${index + 1} ID`}
+                label={debugMessage("Track {{index}} {{field}}", { index: index + 1, field: "ID" })}
                 value={entry.id}
                 onChange={(value) => audio(index, { id: String(value ?? "") })}
               />
               <Field
-                label={`Track ${index + 1} source`}
+                label={debugMessage("Track {{index}} {{field}}", { index: index + 1, field: debugText("source") })}
                 value={entry.src}
                 onChange={(value) => audio(index, { src: String(value ?? "") })}
               />
@@ -212,16 +200,14 @@ export function SceneEditorStructure({
               ).map((key) => (
                 <Field
                   key={key}
-                  label={`Track ${index + 1} ${key}`}
+                  label={debugMessage("Track {{index}} {{field}}", { index: index + 1, field: debugText(key) })}
                   value={entry[key]}
                   numeric
                   onChange={(value) => audio(index, { [key]: value })}
                 />
               ))}
-              <label>
-                Track bus
-                <select
-                  aria-label={`Track ${index + 1} bus`}
+              <label>{debugText("Track bus")}{" "}<select
+                  aria-label={debugMessage("Track {{index}} {{field}}", { index: index + 1, field: debugText("bus") })}
                   value={entry.kind ?? "music"}
                   onChange={(event) =>
                     audio(index, {
@@ -229,34 +215,30 @@ export function SceneEditorStructure({
                     })
                   }
                 >
-                  <option value="music">Music</option>
-                  <option value="sfx">Sound effects</option>
-                  <option value="voice">Voice</option>
+                  <option value="music">{debugText("Music")}</option>
+                  <option value="sfx">{debugText("Sound effects")}</option>
+                  <option value="voice">{debugText("Voice")}</option>
                 </select>
               </label>
               <label>
                 <input
                   type="checkbox"
-                  aria-label={`Track ${index + 1} loop`}
+                  aria-label={debugMessage("Track {{index}} {{field}}", { index: index + 1, field: debugText("loop") })}
                   checked={entry.loop ?? false}
                   onChange={(event) =>
                     audio(index, { loop: event.target.checked })
                   }
-                />
-                Loop
-              </label>
+                />{debugText("Loop")}{" "}</label>
               <button
                 type="button"
-                aria-label={`Remove track ${entry.id}`}
+                aria-label={debugMessage("Remove track {{id}}", { id: entry.id })}
                 onClick={() =>
                   onChange({
                     ...project,
                     audio: project.audio.filter((_, i) => i !== index),
                   })
                 }
-              >
-                Remove track
-              </button>
+              >{debugText("Remove track")}{" "}</button>
             </fieldset>
           ))}
         </div>
@@ -279,9 +261,7 @@ export function SceneEditorStructure({
               ],
             })
           }
-        >
-          Add audio track
-        </button>
+        >{debugText("Add audio track")}{" "}</button>
       </fieldset>
     </details>
   );
