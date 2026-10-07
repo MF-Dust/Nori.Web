@@ -537,6 +537,10 @@ fn resolve_web_asset(lookup: &str) -> Option<(&str, &str)> {
 /// All broadcasts precede the one correlated direct reply. Probe channels
 /// instead schedule a task, which replies to the requesting socket later.
 pub fn handle_event(world: &mut World, message: &Json) -> Outbound {
+    handle_event_with_secrets(world, message, &crate::world::Secrets::default())
+}
+
+pub(crate) fn handle_event_with_secrets(world: &mut World, message: &Json, secrets: &crate::world::Secrets) -> Outbound {
     let channel = message.get("channel").and_then(Value::as_str).unwrap_or("");
     let cartridge_id = message.get("cartridgeId").cloned().unwrap_or(Value::Null);
     let request_id = message.get("requestId").cloned().unwrap_or(Value::Null);
@@ -580,6 +584,13 @@ pub fn handle_event(world: &mut World, message: &Json) -> Outbound {
             ));
             return out.outbound;
         }
+        "pictionary.snapshot" => {
+            if let Some(task) = world.recognize_drawing(&payload, secrets) {
+                out.outbound.broadcast.push(event_message(world, "pictionary.vision.status", json!({"roundId":payload["roundId"],"revision":payload["revision"],"status":"analyzing"}), json!("pictionary"), Value::Null));
+                out.outbound.tasks.push(task);
+            }
+            return out.outbound;
+        }
         "manifold.chip.status" => ("manifold.chip.status.result".into(), chip_status(world)),
         "manifold.chip.scan"
         | "manifold.chip.debug_scan"
@@ -618,6 +629,28 @@ pub fn handle_event(world: &mut World, message: &Json) -> Outbound {
                         json!({"ok": false, "error": "manifold unavailable"})
                     }
                 });
+            if channel == "manifold.chip.scan" && result.get("kind").and_then(Value::as_str) == Some("readout") {
+                let key = text(payload.get("contentKey").filter(|v| truthy(v)).or_else(|| payload.get("key")));
+                let tail = key.split_once(':').map(|(_, tail)| tail).unwrap_or(&key);
+                let content = crate::llm::text_limit(payload.get("content"), 12_000);
+                let title = crate::llm::text_limit(payload.get("title"), 200);
+                let context = crate::ai_features::chip_context(&world.locale, &title, &content);
+                let cached = world.cartridge("manifold.web").and_then(|c| c.state.pointer("/variables/chipScans")).and_then(Value::as_array)
+                    .and_then(|scans| scans.iter().rev().find(|entry| entry.get("key").and_then(Value::as_str).is_some_and(|candidate| candidate == key || candidate.split_once(':').map(|(_, tail)| tail).unwrap_or(candidate) == tail)))
+                    .filter(|entry| entry.get("readoutContext").and_then(Value::as_str) == Some(context.as_str()))
+                    .and_then(|entry| entry.get("readout")).and_then(Value::as_str).filter(|text| !text.trim().is_empty());
+                if let Some(cached) = cached {
+                    let cached = cached.to_string();
+                    out.outbound.direct.push(event_message(world, "manifold.chip.scan.result", json!({"kind":"readout","text":cached}), cartridge_id, request_id));
+                    return out.outbound;
+                }
+                if !content.is_empty() {
+                    out.outbound.tasks.push(Task::ai_feature(world, crate::ai_features::Feature::Chip {
+                        key, content, title, context, cartridge: cartridge_id, request: request_id,
+                    }, secrets.clone()));
+                    return out.outbound;
+                }
+            }
             (format!("{channel}.result"), result)
         }
         "ambient.trigger" => {

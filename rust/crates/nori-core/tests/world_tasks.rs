@@ -952,29 +952,15 @@ fn pictionary_nori_guesses_without_reading_the_secret_word() {
     );
 
     let mut task = out.tasks.into_iter().next().unwrap();
-    let (seen, spawned) = drive(&mut task, &mut world);
-    let guesses = seen
-        .iter()
-        .filter(
-            |s| matches!(s, Seen::Broadcast(m) if m.iter().any(|k| k.ends_with(":submitGuess"))),
-        )
-        .count();
-    assert!(
-        (1..=pictionary::AGENT_GUESS_LIMIT).contains(&guesses),
-        "{seen:?}"
-    );
-    assert_eq!(seen.first(), Some(&Seen::Sleep(9_000)), "{seen:?}");
-    let round = &world.cartridge("pictionary").unwrap().state["gameState"]["round"];
-    assert_eq!(round["lastGuess"]["by"], "agent");
-    if round["status"] == "solved" {
-        assert_eq!(spawned.len(), 1, "a correct guess queues the next round");
-    } else {
-        assert_eq!(
-            round["status"], "active",
-            "Nori gives up but leaves the round to the player"
-        );
-        assert!(spawned.is_empty());
-    }
+    let server = ServerAi::default();
+    assert!(matches!(task.poll(&mut world, &server, None), Step::Sleep(9_000)));
+    let Step::Broadcast(messages) = task.poll(&mut world, &server, None) else { panic!("expected canvas request") };
+    assert_eq!(messages[0]["channel"], "pictionary.snapshot.request");
+    assert_eq!(messages[0]["payload"], json!({"roundId":round_id}));
+    assert!(world.cartridge("pictionary").unwrap().state["gameState"]["round"]["lastGuess"].is_null(), "no random guess without an image");
+    assert!(matches!(task.poll(&mut world, &server, None), Step::Sleep(7_000)));
+    pictionary_dispatch(&mut world, json!({"type":"skipRound","atMs":2}));
+    assert!(matches!(task.poll(&mut world, &server, None), Step::Done));
 }
 
 #[test]

@@ -2,6 +2,7 @@ import type { ArcadeClient } from "../runtime/arcade-client";
 import type { JsonValue } from "../runtime/protocol";
 import type { WorldStore } from "../runtime/world-store";
 import type { BuiltInGame, GameService } from "../services/games";
+import { localizeVersionConflict } from "../i18n/user-error";
 
 export interface GameSnapshot<T> {
   state: T | null;
@@ -50,7 +51,10 @@ export class GameCartridgeController<T> {
       }
       if (raw.requestId === this.request?.id) {
         if (raw.type === "error" || raw.success === false) {
-          this.finish(false, String(raw.error ?? raw.message ?? "Game request failed"));
+          const conflict = raw.errorCode === "version_mismatch" || String(raw.error ?? "").startsWith("Version mismatch:");
+          if (conflict) { this.resetPresentation(); this.fencedVersion = -1; }
+          // Game moves are not replayed against a changed board; show the refreshed state.
+          this.finish(false, conflict ? localizeVersionConflict() : String(raw.error ?? raw.message ?? "Game request failed"));
         } else if (raw.type === "dispatch_ack" || raw.type === "cartridge_mounted" || raw.type === "cartridge_mounted_ack") {
           this.finish(true);
         }

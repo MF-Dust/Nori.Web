@@ -427,6 +427,7 @@ export default {
     }
   },
   "errors": {
+    "stateChanged": "状态已更新，请重试刚才的操作。",
     "connection": "连接失败，请确认本地服务已启动后重试。",
     "sendCode": "验证码发送失败，请检查邮箱地址和网络连接后重试。",
     "signIn": "登录失败，请检查验证码后重试。",
@@ -446,7 +447,7 @@ export default {
     "nori": "Nori",
     "offline": "分析芯片离线",
     "offline_line": "宿主无响应；分析离线。",
-    "pick_hint": "选一个要分析的窗口",
+    "pick_hint": "选择窗口，将其可见文字发送给 AI 分析",
     "readout_header": "【分析芯片】",
     "readout_fresh": "扫描完成。当前内容暂时没有可用的分析结论。",
     "readout_archived": "这份内容之前已扫描过，暂时没有可用的分析结论。",

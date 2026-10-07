@@ -93,6 +93,8 @@ pub struct World {
     story_advancing: bool,
     // Tasks own the strong leases: panics/cancellation cannot keep an app locked.
     agent_loops: BTreeMap<String, Weak<()>>,
+    // Ephemeral recognition pacing; no images or credentials enter snapshots.
+    vision_revision: Option<(String, u64, i64)>,
 }
 
 impl World {
@@ -114,6 +116,7 @@ impl World {
             pacing: Pacing::Local,
             story_advancing: false,
             agent_loops: BTreeMap::new(),
+            vision_revision: None,
         }
     }
 
@@ -281,7 +284,7 @@ impl World {
             "ping" => {
                 Outbound::direct(json!({"type": "pong", "serverId": SERVER_ID, "now": now_ms()}))
             }
-            "event" => crate::events::handle_event(self, &message),
+            "event" => crate::events::handle_event_with_secrets(self, &message, secrets),
             _ => Outbound::default(),
         }
     }
@@ -452,11 +455,15 @@ impl World {
         };
         let head = cartridge.head_version;
         if expected != head {
-            return failure(
+            let mut out = failure(
                 head,
                 &format!("Version mismatch: expected {expected}, head is {head}"),
                 "version_mismatch",
             );
+            // Resynchronize the rejected request with the same redacted projection
+            // used by mounting. No command has run, so chat may safely retry once.
+            out.direct[0]["runtimes"] = json!([cartridge.snapshot(fence_for(&cartridge_id))]);
+            return out;
         }
         let commit = match cartridge.dispatch(&actor, &cmd, &pack) {
             Ok(commit) => commit,
@@ -576,6 +583,21 @@ impl World {
             }
         }
         tasks
+    }
+
+    pub(crate) fn recognize_drawing(&mut self, payload: &Json, secrets: &Secrets) -> Option<Task> {
+        let round_id = payload.get("roundId")?.as_str()?;
+        let revision = payload.get("revision")?.as_u64()?;
+        if revision == 0 || self.cartridge("pictionary").and_then(|c| crate::cartridges::pictionary::agent_guess_round(&c.state)).as_deref() != Some(round_id) { return None; }
+        let now = now_ms();
+        if self.vision_revision.as_ref().is_some_and(|(round, seen, at)| round == round_id && (revision <= *seen || now - at < 7_000)) { return None; }
+        self.agent_loops.retain(|_, lease| lease.strong_count() > 0);
+        if self.agent_loops.contains_key("pictionary:vision") { return None; }
+        let image = crate::ai_features::png_image(payload)?;
+        let task = Task::ai_feature(self, crate::ai_features::Feature::Drawing { round_id: round_id.into(), image, revision }, secrets.clone());
+        self.agent_loops.insert("pictionary:vision".into(), task.agent_loop_lease());
+        self.vision_revision = Some((round_id.into(), revision, now));
+        Some(task)
     }
 
     fn schedule_agent_loop(&mut self, cartridge_id: &str) -> Vec<Task> {

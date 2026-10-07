@@ -45,6 +45,8 @@ export class WorldStore {
   private worldId: string | null = null;
   private mediaGrant: string | null = null;
   private readonly runtimes = new Map<string, CartridgeRuntime>();
+  // A head advertised by a fence is not necessarily an applied state yet.
+  private readonly appliedVersions = new Map<string, number>();
   private readonly listeners = new Set<WorldListener>();
 
   facts(): Set<string> {
@@ -87,20 +89,25 @@ export class WorldStore {
     this.worldId = world.worldId;
     this.mediaGrant = mediaGrant ?? null;
     this.runtimes.clear();
+    this.appliedVersions.clear();
     for (const mounted of world.mountedCartridges ?? []) {
       for (const runtime of mounted.runtimes ?? []) {
-        this.runtimes.set(
-          runtimeKey(mounted.cartridgeId, runtime.visibilityFenceId),
-          {
-            cartridgeId: mounted.cartridgeId,
-            visibilityFenceId: runtime.visibilityFenceId,
-            headVersion: runtime.headVersion,
-            visibleVersion: runtime.visibleVersion,
-            state: structuredClone(runtime.state),
-          },
-        );
+        this.installRuntime(mounted.cartridgeId, runtime);
       }
     }
+  }
+
+  private installRuntime(cartridgeId: string, snapshot: CartridgeSnapshot): void {
+    const key = runtimeKey(cartridgeId, snapshot.visibilityFenceId);
+    if (snapshot.headVersion < (this.appliedVersions.get(key) ?? -1)) return;
+    const previous = this.runtimes.get(key);
+    this.runtimes.set(key, {
+      cartridgeId, visibilityFenceId: snapshot.visibilityFenceId,
+      headVersion: Math.max(previous?.headVersion ?? 0, snapshot.headVersion),
+      visibleVersion: Math.max(previous?.visibleVersion ?? 0, snapshot.visibleVersion),
+      state: structuredClone(snapshot.state),
+    });
+    this.appliedVersions.set(key, snapshot.headVersion);
   }
 
   runtime(
@@ -121,19 +128,16 @@ export class WorldStore {
       return;
     }
 
+    if (typeof raw.worldId === "string" && this.worldId && raw.worldId !== this.worldId) return;
+
     if (
       message.type === "cartridge_mounted" ||
-      message.type === "cartridge_mounted_ack"
+      message.type === "cartridge_mounted_ack" ||
+      (message.type === "dispatch_ack" && raw.errorCode === "version_mismatch" && Array.isArray(raw.runtimes))
     ) {
       const cartridgeId = String(raw.cartridgeId ?? "");
       for (const runtime of raw.runtimes ?? []) {
-        this.runtimes.set(runtimeKey(cartridgeId, runtime.visibilityFenceId), {
-          cartridgeId,
-          visibilityFenceId: runtime.visibilityFenceId,
-          headVersion: runtime.headVersion,
-          visibleVersion: runtime.visibleVersion,
-          state: structuredClone(runtime.state),
-        });
+        this.installRuntime(cartridgeId, runtime);
       }
       this.publish(message);
       return;
@@ -142,7 +146,7 @@ export class WorldStore {
     if (message.type === "cartridge_unmounted") {
       const prefix = `${String(raw.cartridgeId)}:`;
       for (const key of [...this.runtimes.keys()])
-        if (key.startsWith(prefix)) this.runtimes.delete(key);
+        if (key.startsWith(prefix)) { this.runtimes.delete(key); this.appliedVersions.delete(key); }
       this.publish(message);
       return;
     }
@@ -152,12 +156,17 @@ export class WorldStore {
       const matching = [...this.runtimes.values()].filter(
         (runtime) => runtime.cartridgeId === cartridgeId,
       );
+      let applied = false;
       for (const runtime of matching) {
+        const key = runtimeKey(cartridgeId, runtime.visibilityFenceId);
+        if (typeof raw.version === "number" && raw.version <= (this.appliedVersions.get(key) ?? -1)) continue;
         const patches = (raw.transition?.patches ?? []) as JsonPatchOperation[];
         runtime.state = applyJsonPatch(runtime.state, patches);
-        runtime.headVersion = Number(raw.version ?? runtime.headVersion);
+        runtime.headVersion = Math.max(runtime.headVersion, Number(raw.version ?? runtime.headVersion));
+        this.appliedVersions.set(key, Number(raw.version ?? runtime.headVersion));
+        applied = true;
       }
-      this.publish(message);
+      if (applied) this.publish(message);
       return;
     }
 
@@ -171,10 +180,16 @@ export class WorldStore {
       );
       const runtime = this.runtimes.get(key);
       if (runtime) {
-        runtime.visibleVersion = Number(
-          raw.visibleVersion ?? runtime.visibleVersion,
-        );
-        runtime.headVersion = Number(raw.headVersion ?? runtime.headVersion);
+        runtime.visibleVersion = Math.max(runtime.visibleVersion, Number(raw.visibleVersion ?? runtime.visibleVersion));
+        runtime.headVersion = Math.max(runtime.headVersion, Number(raw.headVersion ?? runtime.headVersion));
+      }
+      this.publish(message);
+      return;
+    }
+
+    if (message.type === "dispatch_ack" && typeof raw.headVersion === "number") {
+      for (const runtime of this.runtimes.values()) {
+        if (runtime.cartridgeId === raw.cartridgeId) runtime.headVersion = Math.max(runtime.headVersion, raw.headVersion);
       }
       this.publish(message);
       return;
@@ -184,6 +199,7 @@ export class WorldStore {
       this.worldId = null;
       this.mediaGrant = null;
       this.runtimes.clear();
+      this.appliedVersions.clear();
       this.publish(message);
       return;
     }

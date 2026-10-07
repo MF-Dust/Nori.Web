@@ -58,7 +58,8 @@ function round(id = "one", drawer = "player") {
   return { ...pictInitial, gameState: { phase: "PLAYING", score: { solved: 0, skipped: 0 }, history: [],
     round: { roundId: id, startedAtMs: Date.now(), ...answer, roles: { drawer, guesser: drawer === "player" ? "agent" : "player" }, status: "active", noriRedrawEpoch: 0 } } };
 }
-const drawing = { setCapture(value: typeof capture) { capture = value; }, submit(stroke: any) { strokes.push(stroke); }, changed() { revisions++; } };
+const vision = { status: "waiting" };
+const drawing = { subscribe: () => () => {}, snapshot: () => vision, retryRecognition() {}, setCapture(value: typeof capture) { capture = value; }, submit(stroke: any) { strokes.push(stroke); }, changed() { revisions++; } };
 Object.assign(window, { fixture: {
   commands, strokes, sounds,
   loops: () => loops,

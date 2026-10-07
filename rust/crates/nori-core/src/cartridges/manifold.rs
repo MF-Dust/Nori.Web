@@ -702,6 +702,19 @@ pub fn reduce(
             events.push(status_event(variables, pack)?);
             return Ok(ReducerResult::new(state, result, events));
         }
+        "chip.recordReadout" => {
+            let key = text_or_empty(cmd.get("key"));
+            let readout = text_or_empty(cmd.get("readout"));
+            if !readout.trim().is_empty() {
+                if let Some(scans) = variables_of(&mut state)?.get_mut("chipScans").and_then(Value::as_array_mut) {
+                    let tail = key.split_once(':').map(|(_, tail)| tail).unwrap_or(&key);
+                    if let Some(entry) = scans.iter_mut().rev().find(|entry| entry.get("key").and_then(Value::as_str).is_some_and(|candidate| candidate == key || candidate.split_once(':').map(|(_, tail)| tail).unwrap_or(candidate) == tail)) {
+                        entry["readout"] = json!(readout.chars().take(3000).collect::<String>());
+                        entry["readoutContext"] = json!(text_or_empty(cmd.get("context")));
+                    }
+                }
+            }
+        }
         "chip.debugScan" => {
             let key = text_or_empty(
                 cmd.get("contentKey")

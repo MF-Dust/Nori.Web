@@ -24,6 +24,7 @@
     "frontend:app:smoke": "node scripts/smoke/smoke_frontend_app.mjs",
     "frontend:stories:test": "node scripts/test/run_node_tests.mjs stories",
     "frontend:story:boot": "node tests/test_source_story_bootstrap.mjs",
+    "frontend:ai:smoke": "node tests/test_source_ai_features.mjs",
     "frontend:stories:smoke": "node scripts/smoke/smoke_frontend_stories.mjs",
     "frontend:ownership:test": "node --test tests/frontend/frontend-asset-ownership.test.mjs",
     "frontend:cutover:candidate": "node scripts/recovery/prepare_frontend_cutover_candidate.mjs",

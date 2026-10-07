@@ -92,8 +92,9 @@ export class ChipController {
     private arcade: ArcadeClient,
     private failedText: () => string,
     scene?: NoriSceneStore,
+    private captureContent: (target: ChipTarget) => Promise<string> = async () => "",
   ) {
-    this.rpc = new EventRpcClient(arcade, 5000);
+    this.rpc = new EventRpcClient(arcade, 70000);
     if (scene) {
       const syncScene = () => {
         const state = scene.snapshot();
@@ -221,12 +222,15 @@ export class ChipController {
     const minimum = this.delay(1400);
     try {
       const { appId, windowType, contentKey, title } = target;
+      const content = await this.captureContent(target);
+      if (epoch !== this.epoch || this.disposed) return;
       const [raw] = await Promise.all([
         this.rpc.call("manifold.chip.scan", {
           appId,
           windowType,
           contentKey,
           title,
+          content,
         }),
         minimum,
       ]);

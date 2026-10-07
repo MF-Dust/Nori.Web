@@ -4,6 +4,7 @@ import type { ArcadeClient } from "../runtime/arcade-client";
 import type { WorldStore } from "../runtime/world-store";
 import type { JsonValue } from "../runtime/protocol";
 import { sanitizeChatText } from "../runtime/chat-media";
+import { localizeVersionConflict } from "../i18n/user-error";
 
 const lineSchema = z.object({
   messageId: z.string(),
@@ -25,7 +26,7 @@ export interface ChatSnapshot {
   error: string | null;
 }
 type Command = { type: string; [key: string]: JsonValue };
-type Queued = { command: Command; resolve(ok: boolean): void };
+type Queued = { command: Command; retries: number; resolve(ok: boolean): void };
 
 /** Chat requests share one head-version queue, including speech lifecycle acknowledgements. */
 export class ChatRuntimeController {
@@ -63,6 +64,8 @@ export class ChatRuntimeController {
           requestId?: string;
           success?: boolean;
           error?: string;
+          errorCode?: string;
+          runtimes?: unknown[];
           message?: string;
         };
         if (
@@ -81,9 +84,18 @@ export class ChatRuntimeController {
           ["dispatch_ack", "error"].includes(raw.type)
         ) {
           const ok = raw.type !== "error" && raw.success !== false;
+          if (!ok && raw.errorCode === "version_mismatch" && raw.runtimes?.length && this.request.item.retries < 1) {
+            const { item, timer } = this.request;
+            clearTimeout(timer);
+            this.request = null;
+            item.retries++;
+            this.queue.unshift(item);
+            this.drain();
+            return;
+          }
           this.finish(
             ok,
-            ok ? null : (raw.error ?? raw.message ?? "Chat request failed"),
+            ok ? null : raw.errorCode === "version_mismatch" || raw.error?.startsWith("Version mismatch:") ? localizeVersionConflict() : (raw.error ?? raw.message ?? "Chat request failed"),
           );
         }
         const runtime = world.runtime("chat");
@@ -146,7 +158,7 @@ export class ChatRuntimeController {
     if (this.disposed || !this.value.connected || this.queue.length >= 64)
       return Promise.resolve(false);
     return new Promise((resolve) => {
-      this.queue.push({ command, resolve });
+      this.queue.push({ command, retries: 0, resolve });
       this.drain();
     });
   };

@@ -204,7 +204,7 @@
   }
 
   // The extension loads before the main Vite bundle. Attach browser AI
-  // credentials only to the chat dispatch that needs them. The Worker strips
+  // credentials only to chat, chip analysis and drawing recognition. The Worker strips
   // this compatibility field before the message reaches cartridge state, so
   // the API key never needs to survive in WebSocket attachment storage.
   const nativeSend = WebSocket.prototype.send;
@@ -213,7 +213,7 @@
     if (typeof data === "string") {
       try {
         const message = JSON.parse(data);
-        if (isChatPlayerDispatch(message)) {
+        if (isChatPlayerDispatch(message) || (message.type === "event" && ["manifold.chip.scan", "pictionary.snapshot"].includes(message.channel))) {
           activeSocket = this;
           if (message.worldId) activeWorldId = String(message.worldId);
           message.noriAiConfig = runtimePayload();
@@ -255,7 +255,7 @@
     en: {
       tab: "AI",
       title: "AI Model & Prompts",
-      subtitle: "Stored in this browser and applied to Nori chat.",
+      subtitle: "Used for chat, chip analysis and drawing recognition. Drawing recognition requires a vision-capable model.",
       enabled: "Use browser AI configuration",
       enabledHint: "Off = keep using the server's configured model and credentials.",
       provider: "Provider",
@@ -280,7 +280,7 @@
     zh: {
       tab: "AI",
       title: "AI 模型与提示词",
-      subtitle: "配置保存在当前浏览器，并应用到 Nori 对话。",
+      subtitle: "用于对话、芯片分析和画布识图；识图需要支持图片输入的模型。",
       enabled: "使用浏览器 AI 配置",
       enabledHint: "关闭时继续使用服务器中配置的模型与凭据。",
       provider: "提供商",

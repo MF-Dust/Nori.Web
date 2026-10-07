@@ -56,6 +56,11 @@ pub struct Task {
 }
 
 enum Kind {
+    AiFeature {
+        feature: Box<crate::ai_features::Feature>,
+        secrets: Secrets,
+        flow: Option<crate::llm::FeatureFlow>,
+    },
     ChatReply {
         user_text: String,
         secrets: Secrets,
@@ -90,7 +95,7 @@ enum Kind {
     /// Nori guessing the player's drawing, one round at a time.
     PictionaryGuess {
         round_id: String,
-        tried: Vec<String>,
+        requested: bool,
         slept: bool,
     },
     /// Revealing the answer bit by bit while the player guesses Nori's drawing.
@@ -139,13 +144,17 @@ impl Task {
             pending: VecDeque::new(),
             agent_loop: matches!(
                 &kind,
-                Kind::AgentTurns { .. }
+                Kind::AiFeature { .. } | Kind::AgentTurns { .. }
                     | Kind::PictionaryGuess { .. }
                     | Kind::PictionaryHint { .. }
             )
             .then(|| Arc::new(())),
             kind,
         }
+    }
+
+    pub(crate) fn ai_feature(world: &World, feature: crate::ai_features::Feature, secrets: Secrets) -> Self {
+        Self::new(world, world.pacing, Kind::AiFeature { feature: Box::new(feature), secrets, flow: None })
     }
 
     pub fn chat_reply(world: &World, pacing: Pacing, user_text: String, secrets: Secrets) -> Self {
@@ -194,7 +203,7 @@ impl Task {
             pacing,
             Kind::PictionaryGuess {
                 round_id,
-                tried: Vec::new(),
+                requested: false,
                 slept: false,
             },
         )
@@ -309,6 +318,7 @@ impl Task {
 
     pub fn label(&self) -> &'static str {
         match self.kind {
+            Kind::AiFeature { .. } => "ai_feature",
             Kind::ChatReply { .. } => "chat_reply",
             Kind::Speak { .. } => "speak",
             Kind::EnsureProgress { .. } => "ensure_chat_progress",
@@ -361,6 +371,7 @@ impl Task {
         let pacing = self.pacing;
         let pending = &mut self.pending;
         match &mut self.kind {
+            Kind::AiFeature { feature, secrets, flow } => crate::ai_features::poll(feature, secrets, flow, world, server_ai, input, pending),
             Kind::ChatReply {
                 user_text,
                 secrets,
@@ -426,9 +437,9 @@ impl Task {
             }
             Kind::PictionaryGuess {
                 round_id,
-                tried,
+                requested,
                 slept,
-            } => poll_pictionary_guess(world, pacing, round_id, tried, slept, pending),
+            } => poll_pictionary_guess(world, round_id, requested, slept),
             Kind::PictionaryHint {
                 round_id,
                 started_ms,
@@ -735,43 +746,26 @@ const PICTIONARY_GUESS_INTERVAL_MS: u64 = 7_000;
 
 fn poll_pictionary_guess(
     world: &mut World,
-    pacing: Pacing,
     round_id: &str,
-    tried: &mut Vec<String>,
+    requested: &mut bool,
     slept: &mut bool,
-    pending: &mut VecDeque<Step>,
 ) -> Step {
     let state = |world: &World| world.cartridge("pictionary").map(|c| c.state.clone());
-    let Some(current) = state(world) else {
-        return Step::Done;
-    };
-    if pictionary::agent_guess(&current, round_id, tried, 0).is_none() {
-        return Step::Done;
-    }
+    let Some(current) = state(world) else { return Step::Done; };
+    if pictionary::agent_guess_round(&current).as_deref() != Some(round_id) { return Step::Done; }
     if !*slept {
         *slept = true;
         // Guess pacing is gameplay, not presentation: the edge keeps it too.
-        return Step::Sleep(if tried.is_empty() {
+        return Step::Sleep(if !*requested {
             PICTIONARY_FIRST_GUESS_MS
         } else {
             PICTIONARY_GUESS_INTERVAL_MS
         });
     }
     *slept = false;
-    let Some(command) = pictionary::agent_guess(&current, round_id, tried, now_ms()) else {
-        return Step::Done;
-    };
-    tried.push(command["text"].as_str().unwrap_or_default().to_string());
-    let Some((_, messages)) = world.dispatch_internal("pictionary", "agent", &command) else {
-        return Step::Done;
-    };
-    let solved = state(world).is_some_and(|s| pictionary::agent_guess_round(&s).is_none());
-    if solved {
-        // Mirror the player's submitGuess follow-up: queue the next round.
-        pending.push_back(Step::Spawn(Task::pictionary_next(world, pacing)));
-        pending.push_back(Step::Done);
-    }
-    Step::Broadcast(messages)
+    *requested = true;
+    // The browser owns the actual canvas. Never substitute a vocabulary guess.
+    Step::Broadcast(vec![crate::world::event_message(world, "pictionary.snapshot.request", json!({"roundId":round_id}), json!("pictionary"), json!(crate::jsonutil::uuid4()))])
 }
 
 /// Hints follow the session clock like the shipped client did: progress is the time spent in

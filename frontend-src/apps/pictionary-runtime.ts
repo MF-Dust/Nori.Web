@@ -14,24 +14,38 @@ export class PictionaryDrawingBridge {
   private revision = 0;
   private capture: (() => DrawingSnapshot | null) | null = null;
   private disposed = false;
+  private recognizedRevision = -1;
+  private visionState = { status: "waiting" };
+  private listeners = new Set<() => void>();
+  subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
+  snapshot = () => this.visionState;
+  private setVision(status: string) { this.visionState = { status }; this.listeners.forEach(listener => listener()); }
+  retryRecognition() { this.recognizedRevision = -1; this.revision++; this.setVision("waiting"); }
   private cleanup: Array<() => void> = [];
   constructor(private controller: GameCartridgeController<PictionaryState>, private arcade: ArcadeClient) {
+    this.roundId = controller.snapshot().state?.gameState?.round.roundId ?? null;
     this.cleanup.push(controller.subscribe(() => {
       const roundId = controller.snapshot().state?.gameState?.round.roundId ?? null;
       if (roundId !== this.roundId) {
-        this.roundId = roundId; this.epoch++; this.queue = []; this.revision = 0;
+        this.roundId = roundId; this.epoch++; this.queue = []; this.revision = 0; this.recognizedRevision = -1; this.setVision("waiting");
       }
       if (!controller.snapshot().pending) void this.drain();
     }));
     this.cleanup.push(arcade.onMessage(message => {
-      const raw = message as unknown as { type: string; channel?: string; cartridgeId?: string; requestId?: string; payload?: { roundId?: string } };
+      const raw = message as unknown as { type: string; channel?: string; cartridgeId?: string; requestId?: string; payload?: { roundId?: string; status?: string; revision?: number } };
+      if (raw.type === "event" && raw.channel === "pictionary.vision.status" && raw.payload?.roundId === this.roundId) {
+        this.setVision(raw.payload.status ?? "failed");
+        if (raw.payload.status !== "analyzing" && typeof raw.payload.revision === "number") this.recognizedRevision = raw.payload.revision;
+        return;
+      }
       if (raw.type !== "event" || raw.channel !== "pictionary.snapshot.request" || (raw.cartridgeId && raw.cartridgeId !== "pictionary")) return;
       const round = this.controller.snapshot().state?.gameState?.round;
       if (round?.status !== "active" || round.roles.drawer !== "player" || raw.payload?.roundId !== round.roundId) return;
+      if (this.revision === 0 || this.revision <= this.recognizedRevision) return;
       const image = this.capture?.();
-      if (image) this.arcade.sendEvent("pictionary.snapshot", {
+      if (image) try { this.arcade.sendEvent("pictionary.snapshot", {
         ...image, revision: this.revision, roundId: round.roundId, atMs: Date.now(),
-      }, { cartridgeId: "pictionary", ...(raw.requestId ? { requestId: raw.requestId } : {}) });
+      }, { cartridgeId: "pictionary", ...(raw.requestId ? { requestId: raw.requestId } : {}) }); } catch { this.setVision("failed"); }
     }));
   }
   setCapture(capture: (() => DrawingSnapshot | null) | null) { this.capture = capture; }
@@ -61,5 +75,5 @@ export class PictionaryDrawingBridge {
       }
     } finally { this.draining = false; }
   }
-  dispose() { this.disposed = true; this.epoch++; this.queue = []; this.capture = null; this.cleanup.forEach(fn => fn()); }
+  dispose() { this.disposed = true; this.epoch++; this.queue = []; this.capture = null; this.cleanup.forEach(fn => fn()); this.listeners.clear(); }
 }

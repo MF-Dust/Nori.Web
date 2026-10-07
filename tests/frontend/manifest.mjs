@@ -11,6 +11,7 @@ export const groups = {
   games: ["tests/frontend/frontend-games.test.ts", "tests/frontend/frontend-confirmed-visuals.test.tsx"],
   runtime: [
     "tests/frontend/frontend-runtime.test.ts",
+    "tests/frontend/frontend-version-conflict.test.ts",
     "tests/frontend/frontend-parity-wiring.test.ts",
     "tests/frontend/frontend-mail.test.tsx",
     "tests/frontend/frontend-notifications.test.ts",

@@ -41,10 +41,12 @@ fn is_player_chat_dispatch(message: &Json) -> bool {
             == Some("playerMessage")
 }
 
-/// Remove `noriAiConfig` / `noriTtsConfig` from a player chat dispatch before
+/// Remove per-request credentials from chat and AI feature events before
 /// validation, so they never reach reducers, transitions or snapshots.
 pub fn take_secrets(message: &mut Json) -> Secrets {
-    if !is_player_chat_dispatch(message) {
+    let ai_event = message.get("type").and_then(Value::as_str) == Some("event")
+        && matches!(message.get("channel").and_then(Value::as_str), Some("manifold.chip.scan" | "pictionary.snapshot"));
+    if !is_player_chat_dispatch(message) && !ai_event {
         return Secrets::default();
     }
     let Some(object) = message.as_object_mut() else {

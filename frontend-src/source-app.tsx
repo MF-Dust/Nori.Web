@@ -21,6 +21,7 @@ import {
   type SignalConversation,
 } from "./apps/messenger";
 import { ChipController } from "./runtime/chip-controller";
+import { collectChipContent } from "./runtime/chip-context";
 import {
   ChipButton,
   ChipReadout,
@@ -154,6 +155,7 @@ function createSourceSession() {
     frontend.arcade,
     () => sourceTranslate("chip.scan_failed"),
     frontend.scene,
+    collectChipContent,
   );
   const previewRuntime = {
     subscribe: (listener: () => void) =>

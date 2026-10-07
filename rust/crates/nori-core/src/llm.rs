@@ -768,6 +768,47 @@ impl ReplyFlow {
     }
 }
 
+/// Task-specific text/vision completion using the same provider and credentials as chat.
+/// Unlike chat, failures never turn into an invented answer.
+pub struct FeatureFlow {
+    completion: Option<CompletionFlow>,
+}
+
+impl FeatureFlow {
+    pub fn new(system: &str, text: &str, image: Option<&str>, runtime: Option<&Json>, server: &ServerAi) -> Self {
+        let runtime = runtime.map(sanitize_ai_config).unwrap_or(Value::Null);
+        let browser = runtime.get("enabled").and_then(Value::as_bool) == Some(true);
+        if !browser && server.openai_api_key.is_empty() {
+            return Self { completion: None };
+        }
+        let mut flow = CompletionFlow::new(text, &[], &runtime, server, browser, false);
+        let anthropic = flow.provider == "anthropic";
+        if anthropic { flow.payload["system"] = json!(system); }
+        else { flow.payload["messages"][0]["content"] = json!(system); }
+        if let Some(image) = image {
+            let content = if anthropic {
+                json!([{"type":"image","source":{"type":"base64","media_type":"image/png","data":image}}, {"type":"text","text":text}])
+            } else {
+                json!([{"type":"text","text":text}, {"type":"image_url","image_url":{"url":format!("data:image/png;base64,{image}")}}])
+            };
+            let messages = flow.payload["messages"].as_array_mut().unwrap();
+            messages.last_mut().unwrap()["content"] = content;
+        }
+        flow.request.body = Some(serde_json::to_vec(&flow.payload).unwrap());
+        Self { completion: Some(flow) }
+    }
+
+    pub fn start(&self) -> FlowStep<Result<String, String>> {
+        self.completion.as_ref().map(CompletionFlow::start)
+            .unwrap_or_else(|| FlowStep::Done(Err("unconfigured".into())))
+    }
+
+    pub fn resume(&mut self, result: HttpResult) -> FlowStep<Result<String, String>> {
+        self.completion.as_mut().map(|flow| flow.resume(result))
+            .unwrap_or_else(|| FlowStep::Done(Err("unconfigured".into())))
+    }
+}
+
 pub struct ProbeFlow {
     completion: CompletionFlow,
     provider: String,

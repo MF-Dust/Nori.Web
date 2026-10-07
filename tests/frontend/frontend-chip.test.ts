@@ -120,11 +120,13 @@ test("chip enforces scan/fried pacing, refreshes status and releases subscriptio
   assert.equal(controller.toggle(), true);
   const scan = controller.scan(target);
   assert.equal(controller.snapshot().phase, "scanning");
+  await tick();
   assert.deepEqual(transport.sent.at(-1).payload, {
     appId: "preview",
     windowType: "main",
     contentKey: "file:test",
     title: "Test",
+    content: "",
   });
   transport.reply(transport.sent.at(-1), { kind: "fried", text: "Overheated" });
   await tick();

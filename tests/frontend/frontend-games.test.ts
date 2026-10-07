@@ -241,6 +241,7 @@ test("Old round stroke queues are discarded and snapshots retain the request ID"
   const bridge = new PictionaryDrawingBridge(h.controller, h.arcade as any);
   h.mount();
   bridge.setCapture(() => ({ revision: 1, image: "base64", width: 256, height: 128 }));
+  bridge.changed();
   h.emit({ type: "event", channel: "pictionary.snapshot.request", requestId: "snapshot-id", cartridgeId: "pictionary", payload: { roundId: "one" } });
   assert.equal(h.sent.at(-1).requestId, "snapshot-id");
   assert.equal(h.sent.at(-1).channel, "pictionary.snapshot");

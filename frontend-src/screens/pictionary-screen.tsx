@@ -21,6 +21,7 @@ export interface PictionaryScreenProps {
 }
 export function PictionaryScreen({ controller, drawing, locale = "en", playSound, startSoundLoop, onNoriReaction }: PictionaryScreenProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
+  const vision = useSyncExternalStore(drawing.subscribe, drawing.snapshot, drawing.snapshot);
   const [now, setNow] = useState(Date.now);
   const [bookOpen, setBookOpen] = useState(false);
   const [durationSec, setDurationSec] = useState(180);
@@ -147,6 +148,14 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
             {snapshot.connected === false ? text("OFFLINE", "离线") : "LIVE"}
           </span>
         </header>
+        {isDrawer && roundActive && <div role="status" className="source-pictionary-vision">
+          {vision.status === "analyzing" ? text("Nori is looking at your drawing…", "Nori 正在看你的画…") :
+            vision.status === "unconfigured" ? text("Choose a vision-capable model in AI settings.", "请在 AI 设置中配置支持识图的模型。") :
+            vision.status === "failed" ? text("Recognition failed. Check AI settings and retry.", "识图失败，请检查 AI 设置后重试。") :
+            vision.status === "unknown" ? text("Not clear yet. Add a few more strokes!", "暂时没看出来，再补几笔吧！") :
+            text("Your drawing is sent to the configured AI model to guess.", "画布会发送给已配置的 AI 模型来猜词。")}
+          {["failed", "unconfigured", "unknown"].includes(vision.status) && <button type="button" onClick={() => drawing.retryRecognition()}>{text("Retry", "重试")}</button>}
+        </div>}
         <div ref={chat} className="source-pictionary-messages" role="log">
           {messages.length ? messages.map(item => <p key={item.id} data-correct={item.correct}><small>{item.by === "agent" ? "Nori" : text("You", "你")}</small>{item.text}{item.correct ? " ✓" : ""}</p>) : (
             <div className="source-pictionary-chat-empty" role="status">

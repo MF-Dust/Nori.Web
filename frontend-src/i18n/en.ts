@@ -427,6 +427,7 @@ export default {
     }
   },
   "errors": {
+    "stateChanged": "The state has updated. Please try your action again.",
     "connection": "Unable to connect. Check that the local service is running, then try again.",
     "sendCode": "Could not send the verification code. Check your email address and connection, then try again.",
     "signIn": "Could not sign in. Check your verification code and try again.",
@@ -446,7 +447,7 @@ export default {
     "nori": "Nori",
     "offline": "Analysis chip offline",
     "offline_line": "Host unresponsive; analysis offline.",
-    "pick_hint": "Pick a window to analyze",
+    "pick_hint": "Pick a window to send its visible text to AI for analysis",
     "readout_header": "[ANALYSIS CHIP]",
     "readout_fresh": "Scan complete. No analysis is available for this content yet.",
     "readout_archived": "This content was scanned before. No analysis is available yet.",

@@ -1,3 +1,4 @@
+mod ai_features;
 pub mod apps;
 pub mod auth;
 pub mod cartridge;
