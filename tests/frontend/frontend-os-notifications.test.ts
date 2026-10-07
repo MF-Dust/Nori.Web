@@ -32,7 +32,9 @@ function harness(initialFacts: string[] = [], world: string | null = "w1") {
   let mail: OsMailArtifact[] = [];
   let files: OsRecoveredFile[] = [];
   const factListeners = new Set<() => void>();
+  const artifactListeners = new Set<{ types: readonly string[]; listener: () => void }>();
   const exclusiveListeners = new Set<() => void>();
+  const loads = { mail: 0, files: 0 };
   const pushed: NotificationInput[] = [];
   const dismissed: string[] = [];
   const opened: unknown[] = [];
@@ -53,6 +55,11 @@ function harness(initialFacts: string[] = [], world: string | null = "w1") {
       factListeners.add(listener);
       return () => factListeners.delete(listener);
     },
+    subscribeArtifactTypes: (types, listener) => {
+      const entry = { types, listener };
+      artifactListeners.add(entry);
+      return () => artifactListeners.delete(entry);
+    },
     isExclusive: () => exclusive,
     subscribeExclusive: (listener) => {
       exclusiveListeners.add(listener);
@@ -67,12 +74,26 @@ function harness(initialFacts: string[] = [], world: string | null = "w1") {
     startQfrDecrypt: () => {
       decrypts++;
     },
-    loadMail: async () => mail,
-    loadRecoveredFiles: async () => files,
+    loadMail: async () => {
+      loads.mail++;
+      return mail;
+    },
+    loadRecoveredFiles: async () => {
+      loads.files++;
+      return files;
+    },
   };
   const binding = bindOsNotifications(options);
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  /** A world change or an unhinted fact invalidates every type; a hinted fact only its own. */
+  const invalidate = async (types?: readonly string[]) => {
+    for (const entry of [...artifactListeners])
+      if (!types || entry.types.some((type) => types.includes(type))) entry.listener();
+    await settle();
+  };
   return {
+    loads: () => ({ ...loads }),
+    invalidate,
     binding,
     pushed,
     dismissed,
@@ -86,7 +107,13 @@ function harness(initialFacts: string[] = [], world: string | null = "w1") {
       facts = new Set(next);
       worldId = nextWorld;
       for (const listener of factListeners) listener();
-      await settle();
+      await invalidate();
+    },
+    /** Facts whose `changedArtifactTypes` hint names only these artifact types. */
+    async setHintedFacts(next: string[], types: readonly string[]) {
+      facts = new Set(next);
+      for (const listener of factListeners) listener();
+      await invalidate(types);
     },
     setExclusive(value: boolean) {
       exclusive = value;
@@ -274,6 +301,49 @@ test("a world change starts a new baseline", async () => {
   assert.equal(h.pushed.length, 0);
   await h.setFacts(["system.repaired", "gesture.chess"], "w2");
   assert.equal(h.pushed.length, 1);
+  h.binding.dispose();
+});
+
+test("mail and file artifacts reload only when their own type is invalidated", async () => {
+  const h = harness([]);
+  await h.settle();
+  const base = h.loads();
+  assert.deepEqual(base, { mail: 1, files: 1 }, "the first load of each part happens at bind time");
+
+  await h.invalidate(["mail"]);
+  assert.deepEqual(h.loads(), { mail: 2, files: 1 });
+  await h.invalidate(["file"]);
+  assert.deepEqual(h.loads(), { mail: 2, files: 2 });
+  await h.invalidate(["signal_thread", "signal_message", "app"]);
+  assert.deepEqual(h.loads(), { mail: 2, files: 2 });
+  await h.invalidate();
+  assert.deepEqual(h.loads(), { mail: 3, files: 3 }, "an unhinted change reloads both");
+  h.binding.dispose();
+});
+
+test("a hinted fact dismisses read mail at once and reloads only the hinted artifact type", async () => {
+  const h = harness([]);
+  h.setMail([{ id: "m1", data: { subject: "S", from: "Sender <s@x>", body_md: "b", read_fact: "mail.m1.read" } }]);
+  await h.setFacts([]);
+  const before = h.loads();
+  await h.setHintedFacts(["mail.m1.read"], ["mail"]);
+  assert.ok(h.dismissed.includes("mail:m1"), "the facts subscription dismisses the toast without a reload");
+  assert.deepEqual(h.loads(), { mail: before.mail + 1, files: before.files });
+  h.binding.dispose();
+});
+
+test("a mail reload and a file reload in flight together do not cancel each other", async () => {
+  const h = harness([]);
+  const mail = (id: string): OsMailArtifact => ({ id, data: { subject: id, from: `S <${id}@x>`, body_md: id } });
+  const file = (id: string): OsRecoveredFile => ({ id, name: id, folderPath: "docs" });
+  h.setMail([mail("m1")]);
+  h.setFiles([file("a")]);
+  await h.setFacts([]);
+  assert.equal(h.pushed.length, 0, "the first lists are the baseline");
+  h.setMail([mail("m1"), mail("m2")]);
+  h.setFiles([file("a"), file("b")]);
+  await h.invalidate(["mail", "file"]);
+  assert.deepEqual(h.pushed.map((item) => item.appId).sort(), ["files", "mail"]);
   h.binding.dispose();
 });
 

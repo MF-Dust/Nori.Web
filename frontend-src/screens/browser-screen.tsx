@@ -262,7 +262,11 @@ export function BrowserScreen({
   const initial = useMemo(() => {
     if (initialUrl) return [createTab(initialUrl)];
     return restored.tabs.length > 0
-      ? restored.tabs.map((tab) => createTab(tab.url, tab.pinned === true))
+      ? restored.tabs.map((tab, index) => {
+          const restoredTab = createTab(tab.url, tab.pinned === true);
+          // Background tabs only load once first activated, so nothing is loading yet.
+          return index === restored.activeIndex ? restoredTab : { ...restoredTab, status: "page" as const };
+        })
       : [createTab(BLANK_URL)];
   }, []);
   const [tabs, setTabs] = useState<BrowserTab[]>(initial);
@@ -276,6 +280,9 @@ export function BrowserScreen({
     Record<string, boolean>
   >({});
   const [menu, setMenu] = useState<MenuState | null>(null);
+  // A tab's page mounts when the tab is first activated and stays mounted to keep its state.
+  const activatedTabs = useRef(new Set<string>());
+  useEffect(() => { activatedTabs.current.add(activeId); }, [activeId]);
   const scroll = useRef(new Map<string, number>());
   const reloadTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const addressInput = useRef<HTMLInputElement | null>(null);
@@ -689,7 +696,7 @@ export function BrowserScreen({
             <div key={tab.id} className="absolute inset-0" style={isActive ? undefined : { display: "none" }} aria-hidden={isActive ? undefined : true}>
               {tab.url === BLANK_URL ? (
                 <BrowserHome bookmarks={bookmarks} facts={facts} translate={translate} onOpen={(url) => commitNavigation(tab.id, url)} onRemoveBookmark={removeBookmark} />
-              ) : (
+              ) : isActive || activatedTabs.current.has(tab.id) ? (
                 <>
                   <BrowserPageView
                     runtime={runtime}
@@ -721,7 +728,7 @@ export function BrowserScreen({
                   />
                   {tab.homeOverlay ? <BrowserHome bookmarks={bookmarks} facts={facts} translate={translate} onOpen={(url) => commitNavigation(tab.id, url)} onRemoveBookmark={removeBookmark} /> : null}
                 </>
-              )}
+              ) : null}
             </div>
           );
         })}

@@ -1,10 +1,16 @@
 import { StoryScenes } from "./story/story-scenes";
 import { bindSourceStoryProgression } from "./story/story-progression";
 import { DebugScreen } from "./screens/debug-screen";
-import { subscribeManifoldChanges } from "./runtime/manifold-subscription";
+import {
+  coalesceListener,
+  createArtifactLoader,
+  subscribeArtifactTypes,
+  subscribeManifoldChanges,
+} from "./runtime/manifold-subscription";
 import { SignalDanielConversationRuntime } from "./apps/signal-daniel";
 import { SIGNAL_ACCOUNT_NAME, SIGNAL_AUTH_FACT } from "./apps/signal-auth";
-import { getEffectiveDesktopCompute } from "./state/compute-runtime";
+import { getEffectiveDesktopCompute, type DesktopComputeState } from "./state/compute-runtime";
+import { DesktopComputeIndicator, DesktopComputeSummary } from "./components/desktop-indicators";
 import {
   createSignalLocalReadFactsStore,
   createSignalPendingFocusStore,
@@ -13,6 +19,7 @@ import {
 import {
   SignalArrivalTracker,
   signalArrivalPreview,
+  type SignalConversation,
 } from "./apps/messenger";
 import { ChipController } from "./runtime/chip-controller";
 import {
@@ -76,10 +83,17 @@ import { NORI_PHASE_MOODS } from "./live2d/reaction-director";
 import { notificationInputFromMessage } from "./state/notification-store";
 import { bindOsNotifications, QFR_DECRYPT_MS, type OsNotificationBinding } from "./runtime/os-notifications";
 import { createParadigmRevealStore } from "./state/paradigm-reveal-store";
-import { hasRecoveredFilePayload, isRecoverableFile } from "./apps/files";
+import {
+  hasRecoveredFilePayload,
+  isRecoverableFile,
+  normalizeFileArtifact,
+  type FilesRecoveredFile,
+} from "./apps/files";
 
 /** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
 const MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS = 1800;
+/** Files recovery progress repaints at most this often (Idle ticks every 100 ms). */
+const RECOVERY_REPAINT_MS = 250;
 
 function preferredLocale(): string {
   try {
@@ -112,6 +126,17 @@ function createSourceSession() {
     createWebSocket: createNetworkFaultWebSocketFactory(readNetworkFaultProfile(localStorage)),
   });
   const signalLocalReadFacts = createSignalLocalReadFactsStore();
+  // The dock badge and the Messenger window share one conversations load per change.
+  const signalConversations = createArtifactLoader(
+    frontend.world,
+    ["signal_thread", "signal_message"],
+    () => frontend.messenger.conversations(),
+  );
+  const messengerModel = {
+    conversations: signalConversations.load,
+    markThreadRead: (threadId: string) => frontend.messenger.markThreadRead(threadId),
+    emitDownloadFact: (factId: string) => frontend.messenger.emitDownloadFact(factId),
+  };
   const signalPendingFocus = createSignalPendingFocusStore();
   // Shipped `Xje.pendingFocusEmailId`: a mail arrival toast focuses its message.
   const mailPendingFocus = createSignalPendingFocusStore();
@@ -131,7 +156,7 @@ function createSourceSession() {
   );
   const previewRuntime = {
     subscribe: (listener: () => void) =>
-      subscribeManifoldChanges(frontend.world, listener),
+      subscribeArtifactTypes(frontend.world, ["file"], listener),
     hasFact: (factId: string) => hasWorldFact(frontend, factId),
     setContentKey: chip.setContentKey,
   };
@@ -139,34 +164,37 @@ function createSourceSession() {
     frontend.audio.connectMediaElement(audio),
   );
   frontend.audio.installUnlock();
-  const codenames = new GameCartridgeController(
+  // The game windows (and debug scenarios) are the only consumers, and none of
+  // these emit or wait for story facts, so a controller is not created (and does
+  // not listen to every world message) until its game is first opened.
+  const codenames = lazy(() => new GameCartridgeController(
     "codenames",
     frontend.games,
     frontend.world,
     frontend.arcade,
     (raw) => codenamesStateSchema.parse(raw),
-  );
-  const pictionary = new GameCartridgeController(
+  ));
+  const pictionary = lazy(() => new GameCartridgeController(
     "pictionary",
     frontend.games,
     frontend.world,
     frontend.arcade,
     (raw) => pictionaryStateSchema.parse(raw),
-  );
-  const drawing = new PictionaryDrawingBridge(pictionary, frontend.arcade);
-  const chess = new GameCartridgeController(
+  ));
+  const drawing = lazy(() => new PictionaryDrawingBridge(pictionary.get(), frontend.arcade));
+  const chess = lazy(() => new GameCartridgeController(
     "chess",
     frontend.games,
     frontend.world,
     frontend.arcade,
     (raw) => chessStateSchema.parse(raw),
-  );
-  const cakeduel = new CakeDuelRuntimeController(
+  ));
+  const cakeduel = lazy(() => new CakeDuelRuntimeController(
     frontend.games,
     frontend.world,
     frontend.arcade,
     frontend.reactions,
-  );
+  ));
   const idle = createSourceIdleRuntimeEngine({
     getFacts: () => worldFacts(frontend),
     subscribeFacts: (listener) =>
@@ -241,12 +269,12 @@ function createSourceSession() {
       marginalGrowth,
       loadScenario: async (game, scenarioId) => {
         const ok = game === "chess"
-          ? await chess.dispatch({ type: "debugLoadScenario", scenarioId })
+          ? await chess.get().dispatch({ type: "debugLoadScenario", scenarioId })
           : game === "cakeduel"
-            ? await cakeduel.loadDebugScenario(scenarioId)
-            : await codenames.dispatch({ type: "debugLoadScenario", scenarioId });
+            ? await cakeduel.get().loadDebugScenario(scenarioId)
+            : await codenames.get().dispatch({ type: "debugLoadScenario", scenarioId });
         if (!ok) throw new Error(
-          (game === "chess" ? chess.snapshot().error : game === "cakeduel" ? cakeduel.snapshot().error : codenames.snapshot().error)
+          (game === "chess" ? chess.get().snapshot().error : game === "cakeduel" ? cakeduel.get().snapshot().error : codenames.get().snapshot().error)
             ?? `Unable to load ${game} scenario.`,
         );
       },
@@ -298,8 +326,7 @@ function createSourceSession() {
       setContentKey: chip.setContentKey,
       hasFact: (factId) => hasWorldFact(frontend, factId),
       locale: () => locale,
-      subscribe: (listener) =>
-        subscribeManifoldChanges(frontend.world, listener),
+      subscribe: (listener) => subscribeArtifactTypes(frontend.world, ["mail"], listener),
       translate: sourceTranslate,
       playCue: frontend.audio.playCue,
       model: frontend.mail,
@@ -334,22 +361,19 @@ function createSourceSession() {
         const effective = getEffectiveDesktopCompute({ ...snapshot.computeState, computeDrain: frontend.scene.snapshot().memoryComputeDrain });
         return { maxComputeThisRun: snapshot.state.maxComputeThisRun, computeCap: effective.cap, currentCompute: effective.compute };
       },
+      // Idle ticks every 100 ms and the scene store can publish every frame; Files
+      // only needs a few repaints per second.
       subscribeRecovery: (listener) => {
-        const releaseIdle = idle.subscribe(listener);
-        const releaseScene = frontend.scene.subscribe(listener);
-        return () => { releaseIdle(); releaseScene(); };
+        const repaint = coalesceListener(listener, RECOVERY_REPAINT_MS);
+        const releaseIdle = idle.subscribe(repaint);
+        const releaseScene = frontend.scene.subscribe(repaint);
+        return () => { releaseIdle(); releaseScene(); repaint.cancel(); };
       },
       translate: sourceTranslate,
       hasFact: (factId) => hasWorldFact(frontend, factId),
       decrypting: qfrDecrypt.active,
-      subscribe: (listener) => {
-        const releaseFacts = subscribeManifoldChanges(frontend.world, listener);
-        const releaseDecrypt = qfrDecrypt.subscribe(listener);
-        return () => {
-          releaseFacts();
-          releaseDecrypt();
-        };
-      },
+      subscribeDecrypting: qfrDecrypt.subscribe,
+      subscribe: (listener) => subscribeArtifactTypes(frontend.world, ["file", "app"], listener),
       launchApp,
       reduceMotion: () =>
         window.matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -398,10 +422,9 @@ function createSourceSession() {
       authenticated: false,
       translate: sourceTranslate,
       messenger: {
-        model: frontend.messenger,
+        model: messengerModel,
         hasFact: (factId) => hasWorldFact(frontend, factId),
-        subscribe: (listener) =>
-          subscribeManifoldChanges(frontend.world, listener),
+        subscribe: signalConversations.subscribe,
         playCue: frontend.audio.playCue,
         translate: sourceTranslate,
         openUrl,
@@ -417,7 +440,7 @@ function createSourceSession() {
     idle: idlePresentation,
     marginalGrowth,
     codenames: {
-      controller: codenames,
+      get controller() { return codenames.get(); },
       onNoriReaction: (reaction) => { frontend.reactions.play("codenames", reaction); },
       onNoriPhaseMood: (active) => {
         const mood = NORI_PHASE_MOODS[0].expression;
@@ -429,21 +452,21 @@ function createSourceSession() {
       playSound: frontend.audio.playCue,
     },
     pictionary: {
-      controller: pictionary,
-      drawing,
+      get controller() { return pictionary.get(); },
+      get drawing() { return drawing.get(); },
       locale,
       playSound: frontend.audio.playCue,
       startSoundLoop: frontend.audio.startCueLoop,
       onNoriReaction: (reaction) => { frontend.reactions.play("pictionary", reaction); },
     },
     chess: {
-      controller: chess,
+      get controller() { return chess.get(); },
       onNoriReaction: (reaction) => { frontend.reactions.play("chess", reaction); },
       translate: sourceTranslate,
       onSound: (sound) => frontend.audio.playCue(sound === "response" ? "boardgames-chess-response-toast" : `chess.${sound}`),
     },
     cakeduel: {
-      controller: cakeduel,
+      get controller() { return cakeduel.get(); },
       translate: sourceTranslate,
       assets: createCakeDuelPresentationAssets(locale),
     },
@@ -510,11 +533,7 @@ function createSourceSession() {
     getWorldId: () => frontend.world.snapshot().worldId,
     getFacts: () => worldFacts(frontend),
     subscribeFacts: (listener) => subscribeManifoldChanges(frontend.world, listener),
-    subscribeArtifacts: (listener) =>
-      frontend.arcade.onMessage((message) => {
-        const raw = message as unknown as { type?: string; channel?: string };
-        if (raw.type === "event" && raw.channel === "manifold.artifacts.invalidated") listener();
-      }),
+    subscribeArtifactTypes: (types, listener) => subscribeArtifactTypes(frontend.world, types, listener),
     isExclusive: () => desktopStore.getState().exclusiveAppId !== null,
     subscribeExclusive: (listener) => {
       let exclusive = desktopStore.getState().exclusiveAppId;
@@ -539,9 +558,11 @@ function createSourceSession() {
     startQfrDecrypt: () => qfrDecrypt.start(),
     loadMail: async () =>
       (await frontend.mail.messages()).map((mail) => ({ id: mail.id, data: mail.raw })),
+    // File artifacts only: the vault (app) half of `presentation()` is irrelevant here.
     loadRecoveredFiles: async () =>
-      (await frontend.files.presentation()).files
-        .filter((file) => isRecoverableFile(file) && hasRecoveredFilePayload(file))
+      (await frontend.files.list())
+        .map(normalizeFileArtifact)
+        .filter((file): file is FilesRecoveredFile => file !== null && isRecoverableFile(file) && hasRecoveredFilePayload(file))
         .map((file) => ({ id: file.id, name: file.name, folderPath: file.folderPath })),
     warn: (error) => console.warn("[SourceApp] OS notifications failed", error),
   });
@@ -555,6 +576,7 @@ function createSourceSession() {
     releaseStoryProgression,
     releaseOsNotifications,
     signalLocalReadFacts,
+    signalConversations,
     signalPendingFocus,
     signalArrivalTracker,
     chip,
@@ -573,6 +595,15 @@ function createSourceSession() {
 }
 
 type SourceSession = ReturnType<typeof createSourceSession>;
+
+/** Creates the value on first `get()`; `dispose()` only reaches a value that was created. */
+function lazy<T extends { dispose(): void }>(create: () => T) {
+  let value: T | undefined;
+  return {
+    get: () => (value ??= create()),
+    dispose: () => value?.dispose(),
+  };
+}
 
 /** Shipped `pje`: Files shows its decrypting state for two seconds after QFR installs. */
 function createQfrDecryptState() {
@@ -637,18 +668,45 @@ export function SourceApp() {
   return source ? <SourceSessionView source={source} /> : null;
 }
 
+function readDesktopCompute(source: SourceSession): DesktopComputeState {
+  return {
+    ...source.idle.snapshot().computeState,
+    computeDrain: source.frontend.scene.snapshot().memoryComputeDrain,
+  };
+}
+
+/**
+ * Idle ticks every 100 ms and the memory scene drains compute every frame. Only
+ * these readouts subscribe, so the desktop shell above them is not re-rendered.
+ */
+function ComputeReadout({ source, summary = false }: { source: SourceSession; summary?: boolean }) {
+  const [state, setState] = useState(() => readDesktopCompute(source));
+  useEffect(() => {
+    const sync = () =>
+      setState((previous) => {
+        const next = readDesktopCompute(source);
+        return next.compute === previous.compute &&
+          next.cap === previous.cap &&
+          next.computeDrain === previous.computeDrain
+          ? previous
+          : next;
+      });
+    sync();
+    const releaseIdle = source.idle.subscribe(sync);
+    const releaseScene = source.frontend.scene.subscribe(sync);
+    return () => {
+      releaseIdle();
+      releaseScene();
+    };
+  }, [source]);
+  return summary ? <DesktopComputeSummary state={state} /> : <DesktopComputeIndicator state={state} />;
+}
+
 function SourceSessionView({ source }: { source: SourceSession }) {
   const sceneMusic = useSyncExternalStore(
     source.frontend.scene.subscribe,
     () => source.frontend.scene.snapshot().bgm,
   );
-  const computeDrain = useSyncExternalStore(source.frontend.scene.subscribe, () => source.frontend.scene.snapshot().memoryComputeDrain);
-  const [computeState, setComputeState] = useState(() => source.idle.snapshot().computeState);
-  useEffect(() => {
-    const sync = () => setComputeState(source.idle.snapshot().computeState);
-    sync();
-    return source.idle.subscribe(sync);
-  }, [source]);
   const graphicsMode = useGraphicsSettings((state) => state.mode);
   const [auth, setAuth] = useState<AuthState>(source.frontend.auth.snapshot());
   const [facts, setFacts] = useState(() => worldFacts(source.frontend));
@@ -664,12 +722,21 @@ function SourceSessionView({ source }: { source: SourceSession }) {
     let disposed = false;
     let revision = 0;
     let emptyBaselineTimer: ReturnType<typeof setTimeout> | undefined;
+    let loaded: { worldId: string; conversations: SignalConversation[] } | null = null;
+    const unreadCount = (conversations: readonly SignalConversation[]) => {
+      const currentFacts = worldFacts(source.frontend);
+      return signalConversationUnreadCount(
+        conversations,
+        (factId) => currentFacts.has(factId),
+        source.signalLocalReadFacts.snapshot(),
+      );
+    };
     const scheduleEmptyBaseline = (worldId: string) => {
       if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
       emptyBaselineTimer = setTimeout(() => {
         emptyBaselineTimer = undefined;
         if (disposed || source.frontend.world.snapshot().worldId !== worldId) return;
-        void source.frontend.messenger.conversations()
+        void source.signalConversations.load()
           .then((latest) => {
             if (!disposed && source.frontend.world.snapshot().worldId === worldId)
               source.signalArrivalTracker.seed(worldId, latest);
@@ -683,26 +750,21 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       if (!requestWorldId) {
         if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
         emptyBaselineTimer = undefined;
+        loaded = null;
         source.signalArrivalTracker.reset();
         if (!disposed) setSignalUnreadCount(0);
         return;
       }
       try {
-        const conversations = await source.frontend.messenger.conversations();
+        const conversations = await source.signalConversations.load();
         if (
           disposed ||
           currentRevision !== revision ||
           source.frontend.world.snapshot().worldId !== requestWorldId
         )
           return;
-        const currentFacts = worldFacts(source.frontend);
-        setSignalUnreadCount(
-          signalConversationUnreadCount(
-            conversations,
-            (factId) => currentFacts.has(factId),
-            source.signalLocalReadFacts.snapshot(),
-          ),
-        );
+        loaded = { worldId: requestWorldId, conversations };
+        setSignalUnreadCount(unreadCount(conversations));
         if (conversations.length) {
           if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
           emptyBaselineTimer = undefined;
@@ -734,29 +796,23 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       }
     };
     void syncSignal();
-    const unsubscribeWorld = subscribeManifoldChanges(
-      source.frontend.world,
+    // One coalesced subscription (shared with the Messenger window) covers world
+    // changes, signal artifact hints and `manifold.artifacts.invalidated`.
+    const unsubscribeConversations = source.signalConversations.subscribe(
       () => void syncSignal(),
     );
-    const unsubscribeLocalReads = source.signalLocalReadFacts.subscribe(
-      () => void syncSignal(),
-    );
-    const unsubscribeArtifacts = source.frontend.arcade.onMessage((message) => {
-      const raw = message as unknown as { type?: string; channel?: string };
-      if (
-        raw.type === "event" &&
-        (raw.channel === "manifold.artifacts.invalidated" ||
-          raw.channel === "manifold.facts.changed")
-      )
-        void syncSignal();
+    // Reading a thread only changes local read facts: recount the loaded
+    // conversations instead of requesting them again.
+    const unsubscribeLocalReads = source.signalLocalReadFacts.subscribe(() => {
+      if (disposed || !loaded || loaded.worldId !== source.frontend.world.snapshot().worldId) return;
+      setSignalUnreadCount(unreadCount(loaded.conversations));
     });
     return () => {
       disposed = true;
       revision++;
       if (emptyBaselineTimer !== undefined) clearTimeout(emptyBaselineTimer);
-      unsubscribeWorld();
+      unsubscribeConversations();
       unsubscribeLocalReads();
-      unsubscribeArtifacts();
     };
   }, [source]);
   useEffect(() => {
@@ -877,7 +933,8 @@ function SourceSessionView({ source }: { source: SourceSession }) {
     <RecoveredDesktopShell
       playCue={source.frontend.audio.playCue}
       bundle={source.bundle}
-      computeState={{ ...computeState, computeDrain }}
+      computeIndicator={<ComputeReadout source={source} />}
+      computeSummary={<ComputeReadout source={source} summary />}
       facts={facts}
       factsReady={ready}
       bootstrapStartupApps

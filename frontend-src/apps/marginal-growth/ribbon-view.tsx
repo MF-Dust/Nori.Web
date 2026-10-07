@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
+import { useWindowVisible } from "../../components/managed-window-host";
 import type { MarginalGrowthParams, ResolvedCameraClamp } from "../../state/marginal-growth-store";
 import { accentsForColor } from "./shaders";
 import {
@@ -44,6 +45,7 @@ export function MarginalGrowthRibbonView({
   onCameraTransform,
   firstPurchase = null,
 }: MarginalGrowthRibbonViewProps) {
+  const windowVisible = useWindowVisible();
   const hostRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<MarginalGrowthApp | null>(null);
   const [ready, setReady] = useState(false);
@@ -100,6 +102,13 @@ export function MarginalGrowthRibbonView({
       setReady(false);
     };
   }, []);
+
+  useEffect(() => {
+    const sync = () => appRef.current?.setSuspended(!windowVisible || document.visibilityState === "hidden");
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, [windowVisible, ready]);
 
   useEffect(() => {
     appRef.current?.ribbon.setParams(params);

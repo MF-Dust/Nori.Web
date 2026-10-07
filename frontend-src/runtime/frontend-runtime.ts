@@ -11,6 +11,7 @@ import { EventRpcClient } from "./event-rpc";
 import { ArcadeMediaClient } from "./media-client";
 import type { JsonValue } from "./protocol";
 import { WorldStore } from "./world-store";
+import { subscribeArtifactInvalidations } from "./manifold-subscription";
 import { BrowserAppModel } from "../apps/browser";
 import { FilesAppModel } from "../apps/files";
 import { MailAppModel } from "../apps/mail";
@@ -32,6 +33,8 @@ import {
 } from "../state/notification-store";
 
 const LOCAL_PROGRESS_KEY = "nori.source-progress.v1";
+/** Upper bound on how stale stored progress can be while the page stays open. */
+const LOCAL_PROGRESS_SAVE_MS = 1500;
 
 function readLocalProgress(): { facts?: JsonValue; variables?: JsonValue } | undefined {
   try {
@@ -40,6 +43,45 @@ function readLocalProgress(): { facts?: JsonValue; variables?: JsonValue } | und
   } catch {
     return undefined;
   }
+}
+
+/**
+ * World messages arrive many times a second but only the latest facts/variables
+ * matter, so serialize them at most once per `delayMs` instead of per message.
+ * `flush` writes immediately; callers use it when storage is about to be read
+ * or the page is going away.
+ */
+function createLocalProgressWriter(delayMs: number) {
+  let latest: { facts?: JsonValue; variables?: JsonValue } | undefined;
+  let dirty = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const flush = () => {
+    clearTimeout(timer);
+    timer = undefined;
+    if (!dirty || !latest) return;
+    dirty = false;
+    try {
+      localStorage.setItem(
+        LOCAL_PROGRESS_KEY,
+        JSON.stringify({
+          facts: latest.facts ?? {},
+          variables: latest.variables ?? {},
+        }),
+      );
+    } catch (error) {
+      console.warn("[World] local progress could not be saved", error);
+    }
+  };
+  return {
+    flush,
+    /** WorldStore replaces a cartridge's state object on every change, so equal references mean nothing new. */
+    update(facts: JsonValue | undefined, variables: JsonValue | undefined) {
+      if (latest && latest.facts === facts && latest.variables === variables) return;
+      latest = { facts, variables };
+      dirty = true;
+      timer ??= setTimeout(flush, delayMs);
+    },
+  };
 }
 
 export class NoriFrontendRuntime {
@@ -163,9 +205,11 @@ export class NoriFrontendRuntime {
   }
 
   constructor(options: ArcadeClientOptions = {}) {
+    const progress = createLocalProgressWriter(LOCAL_PROGRESS_SAVE_MS);
     this.arcade = new ArcadeClient(options);
     this.rpc = new EventRpcClient(this.arcade);
     this.artifacts = new ArtifactService(this.rpc);
+    this.cleanup.push(subscribeArtifactInvalidations(this.world, () => this.artifacts.invalidate()));
     this.manifold = new ManifoldService(this.rpc);
     this.story = new StoryDirector(new Set(STORY_ORDER.map((story) => story.id)), (factId) =>
       this.manifold.commandResult("client.emitFact", { factId }),
@@ -237,6 +281,8 @@ export class NoriFrontendRuntime {
         if (this.disposed) return;
         if (state === "open" && this.started) {
           const fullUnlock = useUnlockSettings.getState().fullUnlock;
+          // The server restores from the stored snapshot, so queued progress must reach storage first.
+          progress.flush();
           this.arcade.openMyWorld(
             this.locale,
             fullUnlock,
@@ -256,20 +302,24 @@ export class NoriFrontendRuntime {
       this.world.subscribe((state) => {
         if (useUnlockSettings.getState().fullUnlock) return;
         const manifold = state.cartridges.get("manifold.web:player");
-        if (!manifold) return;
-        try {
-          localStorage.setItem(
-            LOCAL_PROGRESS_KEY,
-            JSON.stringify({
-              facts: manifold.state.facts ?? {},
-              variables: manifold.state.variables ?? {},
-            }),
-          );
-        } catch (error) {
-          console.warn("[World] local progress could not be saved", error);
-        }
+        if (manifold) progress.update(manifold.state.facts, manifold.state.variables);
       }),
     );
+    // A hidden or closing tab may never see the timer fire. Node tests stub `window` without these hooks.
+    if (typeof document !== "undefined" && typeof window.addEventListener === "function") {
+      const flushWhenHidden = () => {
+        if (document.visibilityState === "hidden") progress.flush();
+      };
+      window.addEventListener("pagehide", progress.flush);
+      window.addEventListener("beforeunload", progress.flush);
+      document.addEventListener("visibilitychange", flushWhenHidden);
+      this.cleanup.push(() => {
+        window.removeEventListener("pagehide", progress.flush);
+        window.removeEventListener("beforeunload", progress.flush);
+        document.removeEventListener("visibilitychange", flushWhenHidden);
+      });
+    }
+    this.cleanup.push(progress.flush);
     this.cleanup.push(
       this.media.onFrame((bytes) => {
         this.syncSpeechCuts();

@@ -14,6 +14,8 @@ export interface AudioRoute {
   input: AudioNode;
 }
 type Track = "music" | "sfx" | "voice";
+const AUDIO_CACHE_BYTES = 64 * 1024 * 1024;
+const AUDIO_CACHE_ENTRIES = 128;
 export type AudioDebugTrack = "speech" | "music" | "sfx";
 type MixerSettings = Pick<
   AudioSettingsState,
@@ -538,6 +540,12 @@ export class AudioMixer {
 
   private load(url: string, trim = false): Promise<AudioBuffer> {
     const key = `${trim}:${url}`;
+    const decoded = this.decodedBuffers.get(key);
+    if (decoded) {
+      this.decodedBuffers.delete(key);
+      this.decodedBuffers.set(key, decoded);
+      return Promise.resolve(decoded);
+    }
     const cached = this.buffers.get(key);
     if (cached) return cached;
     const context = this.ensureContext();
@@ -553,13 +561,24 @@ export class AudioMixer {
       );
       if (this.disposed) throw new Error("Audio mixer is disposed");
       const result = trim ? trimCueSilence(context, decoded) : decoded;
-      this.decodedBuffers.set(key, result);
+      // Playing sources retain their buffers independently; eviction never stops playback.
+      const size = (buffer: AudioBuffer) => buffer.length * buffer.numberOfChannels * 4;
+      if (size(result) <= AUDIO_CACHE_BYTES) {
+        this.decodedBuffers.set(key, result);
+        let bytes = [...this.decodedBuffers.values()].reduce((sum, buffer) => sum + size(buffer), 0);
+        while (bytes > AUDIO_CACHE_BYTES || this.decodedBuffers.size > AUDIO_CACHE_ENTRIES) {
+          const oldest = this.decodedBuffers.keys().next().value!;
+          bytes -= size(this.decodedBuffers.get(oldest)!);
+          this.decodedBuffers.delete(oldest);
+        }
+      }
       return result;
     })();
     this.buffers.set(key, pending);
-    void pending.catch(() => {
+    const settled = () => {
       if (this.buffers.get(key) === pending) this.buffers.delete(key);
-    });
+    };
+    void pending.then(settled, settled);
     return pending;
   }
 

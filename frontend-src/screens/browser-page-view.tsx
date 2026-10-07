@@ -4,6 +4,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type RefCallback,
 } from "react";
 import type { BrowserAppModel, BrowserPageFetchResult } from "../apps/browser";
@@ -11,10 +12,10 @@ import {
   BROWSER_IFRAME_SANDBOX,
   BrowserPodcastRuntime,
   browserSameDocumentHashChange,
-  buildBrowserFontCss,
   buildBrowserIframeSrcDoc,
   createBrowserFrameBridge,
   normalizeBrowserPageData,
+  resolveBrowserFontCss,
   splitBrowserUrl,
   type BrowserEditAction,
   type BrowserFrameBridge,
@@ -22,10 +23,14 @@ import {
   type BrowserPageData,
 } from "../apps/browser-page-runtime";
 import type { JsonValue } from "../runtime/protocol";
+import { useWindowVisible } from "../components/managed-window-host";
 
 const ERROR_RETRY_MS = 4_000;
+const ERROR_RETRY_MAX_MS = 60_000;
 
 export type BrowserPageStatus = "loading" | "page" | "not-found" | "unavailable" | "error";
+
+const RETRY_STATUSES: readonly BrowserPageStatus[] = ["error", "not-found", "unavailable"];
 
 export interface BrowserPageHostRuntime {
   model: BrowserAppModel;
@@ -47,6 +52,10 @@ export interface BrowserPageViewProps {
   reloadNonce: number;
   isMaximized: boolean;
   showWhiteFlash?: boolean;
+  /**
+   * Background tabs pause fact pushes, envelope refetches and error retries, and
+   * catch up (one refetch if something was missed) when they become active again.
+   */
   active?: boolean;
   restoreScroll?: { y: number; token: number } | null;
   onTitleChange: (title: string) => void;
@@ -70,7 +79,16 @@ interface PreparedPage {
   pageUrl: string;
   data: BrowserPageData;
   srcDoc: string;
+  /** Fonts that were not cached when the srcDoc was built; delivered through the frame bridge. */
+  pendingFontCss: Promise<string> | null;
 }
+
+function subscribeDocumentVisibility(listener: () => void): () => void {
+  document.addEventListener("visibilitychange", listener);
+  return () => document.removeEventListener("visibilitychange", listener);
+}
+
+const documentVisible = () => document.visibilityState !== "hidden";
 
 function factsSnapshot(facts: ReadonlySet<string>): Record<string, boolean> {
   return Object.fromEntries([...facts].map((fact) => [fact, true]));
@@ -87,7 +105,7 @@ export function BrowserPageView({
   reloadNonce,
   isMaximized,
   showWhiteFlash = false,
-  active = true,
+  active: tabActive = true,
   restoreScroll = null,
   onTitleChange,
   onFaviconChange,
@@ -109,14 +127,27 @@ export function BrowserPageView({
   const [loaded, setLoaded] = useState(false);
   const [status, setStatus] = useState<BrowserPageStatus>("loading");
   const [errorBody, setErrorBody] = useState<string | null>(null);
-  const [errorNonce, setErrorNonce] = useState(0);
-  const [factNonce, setFactNonce] = useState(0);
-  const [envelopeNonce, setEnvelopeNonce] = useState(0);
+  const [refetchNonce, setRefetchNonce] = useState(0);
+  const visible = useSyncExternalStore(subscribeDocumentVisibility, documentVisible, () => true);
+  const windowVisible = useWindowVisible();
+  const active = tabActive && windowVisible && visible;
+  const awake = active;
   const generation = useRef(0);
   const urlRef = useRef(url);
   urlRef.current = url;
   const maximizedRef = useRef(isMaximized);
   maximizedRef.current = isMaximized;
+  // The page-load effect must not depend on what it sets, so it reads these through refs.
+  const displayedRef = useRef(displayed);
+  displayedRef.current = displayed;
+  const loadedRef = useRef(loaded);
+  loadedRef.current = loaded;
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  // An envelope change arrived while inactive and no fetch has started since.
+  const staleRef = useRef(false);
+  const retryAttempts = useRef(0);
+  const emittedReadFacts = useRef(new Set<string>());
   const bridges = useRef(new Map<number, BrowserFrameBridge>());
   const frames = useRef(new Map<number, HTMLIFrameElement>());
   const queuedInactiveFacts = useRef<Array<Record<string, JsonValue>>>([]);
@@ -145,6 +176,11 @@ export function BrowserPageView({
       ?? runtime.model.invokeCommand(command, payload);
   }, [active, onRequestExtensionInstall, podcast, runtime]);
 
+  // Frame refs stay stable across parent renders; bridge callbacks read current props.
+  const hostCallbacks = useRef({ invoke, onNavigate, onActivate, onLinkHover, onSubmittableChange,
+    onTitleChange, onScrollChange, onContextMenu, active, displayed, pageUrl, isMaximized, podcast });
+  hostCallbacks.current = { invoke, onNavigate, onActivate, onLinkHover, onSubmittableChange,
+    onTitleChange, onScrollChange, onContextMenu, active, displayed, pageUrl, isMaximized, podcast };
   const attachFrame = useCallback((page: PreparedPage): RefCallback<HTMLIFrameElement> => (frame) => {
     const existing = bridges.current.get(page.generation);
     if (!frame) {
@@ -159,24 +195,29 @@ export function BrowserPageView({
     const bridge = createBrowserFrameBridge({
       iframe: frame,
       allowedCommands: page.data.allowed_commands,
-      invokeCommand: (command, payload) => invoke(command, payload, page.pageUrl),
-      onNavigate: (target, options) => onNavigate?.(target, options),
-      onActivate,
-      onLinkHover,
+      fontCss: page.pendingFontCss,
+      invokeCommand: (command, payload) => hostCallbacks.current.invoke(command, payload, page.pageUrl),
+      onNavigate: (target, options) => hostCallbacks.current.onNavigate?.(target, options),
+      onActivate: () => hostCallbacks.current.onActivate(),
+      onLinkHover: (url) => hostCallbacks.current.onLinkHover?.(url),
       onSubmittable: (value) => {
-        if (displayed?.generation === page.generation && page.pageUrl === pageUrl)
-          onSubmittableChange?.(value);
+        const host = hostCallbacks.current;
+        if (host.displayed?.generation === page.generation && page.pageUrl === host.pageUrl)
+          host.onSubmittableChange?.(value);
       },
       onTitle: (title) => {
-        if (displayed?.generation === page.generation) onTitleChange(title);
+        const host = hostCallbacks.current;
+        if (host.displayed?.generation === page.generation) host.onTitleChange(title);
       },
       onScroll: (y) => {
-        if (displayed?.generation === page.generation) onScrollChange?.(y);
+        const host = hostCallbacks.current;
+        if (host.displayed?.generation === page.generation) host.onScrollChange?.(y);
       },
       onContextMenu: (event, sendEditAction) => {
-        if (!active || displayed?.generation !== page.generation) return;
+        const host = hostCallbacks.current;
+        if (!host.active || host.displayed?.generation !== page.generation) return;
         const rect = frame.getBoundingClientRect();
-        onContextMenu?.({
+        host.onContextMenu?.({
           ...event,
           x: rect.left + event.x,
           y: rect.top + event.y,
@@ -185,10 +226,13 @@ export function BrowserPageView({
       },
     });
     bridges.current.set(page.generation, bridge);
-    bridge.pushWindowState({ isMaximized });
+    const host = hostCallbacks.current;
+    bridge.pushWindowState({ isMaximized: host.isMaximized });
     bridge.pushFacts({ emitted: [...factsRef.current], retracted: [], snapshot: factsSnapshot(factsRef.current) });
-    bridge.pushPodcastState(podcast.snapshot());
-  }, [active, displayed?.generation, invoke, isMaximized, onActivate, onContextMenu, onLinkHover, onNavigate, onScrollChange, onSubmittableChange, onTitleChange, pageUrl, podcast]);
+    if (host.active) bridge.pushPodcastState(host.podcast.snapshot());
+  }, []);
+  const displayedFrameRef = useMemo(() => displayed ? attachFrame(displayed) : undefined, [attachFrame, displayed]);
+  const incomingFrameRef = useMemo(() => incoming ? attachFrame(incoming) : undefined, [attachFrame, incoming]);
 
   useEffect(() => () => {
     for (const bridge of bridges.current.values()) bridge.dispose();
@@ -196,14 +240,7 @@ export function BrowserPageView({
     frames.current.clear();
   }, []);
 
-  useEffect(() => runtime.subscribeFacts?.(() => {
-    factsRef.current = runtime.getFacts?.() ?? new Set();
-    setFactNonce((value) => value + 1);
-  }), [runtime]);
-
-  useEffect(() => runtime.subscribeEnvelopeChanges?.(() => setEnvelopeNonce((value) => value + 1)), [runtime]);
-
-  useEffect(() => {
+  const syncFacts = useCallback(() => {
     const next = new Set(runtime.getFacts?.() ?? []);
     factsRef.current = next;
     const previous = previousFacts.current;
@@ -213,15 +250,32 @@ export function BrowserPageView({
     if (emitted.length === 0 && retracted.length === 0) return;
     const snapshot = factsSnapshot(next);
     for (const bridge of bridges.current.values()) bridge.pushFacts({ emitted, retracted, snapshot });
-  }, [factNonce, runtime]);
+  }, [runtime]);
+
+  // Facts reach the page through the bridge, never through a refetch. Background tabs
+  // skip them and catch up with a single diff when they become active again.
+  useEffect(() => {
+    if (!active) return;
+    syncFacts();
+    return runtime.subscribeFacts?.(syncFacts);
+  }, [active, runtime, syncFacts]);
+
+  useEffect(() => runtime.subscribeEnvelopeChanges?.(() => {
+    if (activeRef.current) setRefetchNonce((value) => value + 1);
+    else staleRef.current = true;
+  }), [runtime]);
 
   useEffect(() => {
     for (const bridge of bridges.current.values()) bridge.pushWindowState({ isMaximized });
   }, [isMaximized]);
 
-  useEffect(() => podcast.subscribe((state) => {
-    for (const bridge of bridges.current.values()) bridge.pushPodcastState(state);
-  }), [podcast]);
+  // `subscribe` replays the current state, so a re-activated tab catches up immediately.
+  useEffect(() => {
+    if (!active) return;
+    return podcast.subscribe((state) => {
+      for (const bridge of bridges.current.values()) bridge.pushPodcastState(state);
+    });
+  }, [active, podcast]);
 
   useEffect(() => {
     podcast.retainOwner(pageUrl);
@@ -234,11 +288,17 @@ export function BrowserPageView({
     for (const payload of queue) void (runtime.invokeCommand?.("client.emitFact", payload) ?? runtime.model.invokeCommand("client.emitFact", payload));
   }, [active, runtime]);
 
+  const readFact = displayed?.data.read_fact;
   useEffect(() => {
-    if (!active || !displayed?.data.read_fact) return;
-    void (runtime.invokeCommand?.("client.emitFact", { factId: displayed.data.read_fact })
-      ?? runtime.model.invokeCommand("client.emitFact", { factId: displayed.data.read_fact }));
-  }, [active, displayed?.data.read_fact, runtime]);
+    if (!active || !readFact) return;
+    // Re-activating the tab or reloading the page must not re-emit a fact that is already known.
+    if (emittedReadFacts.current.has(readFact) || runtime.getFacts?.().has(readFact)) return;
+    emittedReadFacts.current.add(readFact);
+    const payload = { factId: readFact };
+    void (runtime.invokeCommand?.("client.emitFact", payload)
+      ?? runtime.model.invokeCommand("client.emitFact", payload))
+      .catch(() => emittedReadFacts.current.delete(readFact));
+  }, [active, readFact, runtime]);
 
   useEffect(() => {
     const before = previousUrl.current;
@@ -254,12 +314,19 @@ export function BrowserPageView({
     bridges.current.get(displayed.generation)?.scrollToPosition(restoreScroll.y);
   }, [displayed, loaded, pageUrl, restoreScroll]);
 
+  // A new navigation or manual reload starts the error backoff over.
+  useEffect(() => {
+    retryAttempts.current = 0;
+  }, [pageUrl, reloadNonce]);
+
+  // Refetches only on URL change, manual reload, an envelope change, or an error retry.
   useEffect(() => {
     let cancelled = false;
+    staleRef.current = false;
     setStatus("loading");
     setErrorBody(null);
     onSubmittableChange?.(false);
-    void runtime.model.fetchPage(pageUrl).then(async (result) => {
+    void runtime.model.fetchPage(pageUrl).then((result) => {
       if (cancelled) return;
       if (!result.ok || !result.artifact) {
         setStatus(errorStatus(result));
@@ -278,32 +345,37 @@ export function BrowserPageView({
         setLoaded(false);
         return;
       }
+      retryAttempts.current = 0;
+      const current = displayedRef.current;
+      if (current && current.artifactId === result.artifact.id && current.pageUrl === pageUrl) {
+        setIncoming(null);
+        setStatus(loadedRef.current ? "page" : "loading");
+        return;
+      }
       const locale = runtime.locale?.() ?? navigator.language ?? "en";
       const resolvedLocale = data.supported_locales.includes(locale)
         ? locale
         : (data.supported_locales[0] ?? locale);
-      const fontCss = await buildBrowserFontCss(data.fonts);
-      if (cancelled) return;
+      // The first paint never waits for font downloads: cached fonts are inlined and the
+      // rest reach the frame through the bridge once it asks for them.
+      const fonts = resolveBrowserFontCss(data.fonts);
       const prepared: PreparedPage = {
         generation: ++generation.current,
         artifactId: result.artifact.id,
         pageUrl,
         data,
+        pendingFontCss: fonts.pending,
         srcDoc: buildBrowserIframeSrcDoc({
           locale: resolvedLocale,
           facts: factsSnapshot(factsRef.current),
           bodyHtml: data.body_html,
           url: urlRef.current,
           isMaximized: maximizedRef.current,
-          fontCss,
+          fontCss: fonts.ready,
+          fontsPending: fonts.pending !== null,
         }),
       };
-      if (displayed && displayed.artifactId === prepared.artifactId && displayed.pageUrl === pageUrl) {
-        setIncoming(null);
-        setStatus(loaded ? "page" : "loading");
-        return;
-      }
-      if (displayed) setIncoming(prepared);
+      if (current) setIncoming(prepared);
       else {
         setDisplayed(prepared);
         setIncoming(null);
@@ -316,17 +388,27 @@ export function BrowserPageView({
       }
     });
     return () => { cancelled = true; };
-  }, [displayed?.artifactId, envelopeNonce, factNonce, pageUrl, reloadNonce, runtime]);
+  }, [pageUrl, refetchNonce, reloadNonce, runtime]);
 
+  // Re-activating a tab (or showing the window again) catches up with one refetch when an
+  // envelope change was skipped or an error retry was paused in the meantime.
   useEffect(() => {
-    if (!status || !["error", "not-found", "unavailable"].includes(status)) return;
-    const timer = setInterval(() => setErrorNonce((value) => value + 1), ERROR_RETRY_MS);
-    return () => clearInterval(timer);
-  }, [status]);
+    if (!awake || !(staleRef.current || RETRY_STATUSES.includes(status))) return;
+    staleRef.current = false;
+    retryAttempts.current = 0;
+    setRefetchNonce((value) => value + 1);
+  }, [awake]);
 
+  // Error retries back off (4s doubling to 60s) and pause while the tab or window is hidden.
   useEffect(() => {
-    if (errorNonce > 0) setEnvelopeNonce((value) => value + 1);
-  }, [errorNonce]);
+    if (!awake || !RETRY_STATUSES.includes(status)) return;
+    const delay = Math.min(ERROR_RETRY_MS * 2 ** retryAttempts.current, ERROR_RETRY_MAX_MS);
+    const timer = setTimeout(() => {
+      retryAttempts.current += 1;
+      setRefetchNonce((value) => value + 1);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [awake, refetchNonce, status]);
 
   const swapIncoming = useCallback((page: PreparedPage) => {
     if (incoming?.generation !== page.generation) return;
@@ -401,7 +483,7 @@ export function BrowserPageView({
       {displayed ? (
         <iframe
           key={displayed.generation}
-          ref={attachFrame(displayed)}
+          ref={displayedFrameRef}
           srcDoc={displayed.srcDoc}
           title={displayed.data.title}
           sandbox={BROWSER_IFRAME_SANDBOX}
@@ -415,7 +497,7 @@ export function BrowserPageView({
       {incoming ? (
         <iframe
           key={incoming.generation}
-          ref={attachFrame(incoming)}
+          ref={incomingFrameRef}
           srcDoc={incoming.srcDoc}
           title={incoming.data.title}
           sandbox={BROWSER_IFRAME_SANDBOX}

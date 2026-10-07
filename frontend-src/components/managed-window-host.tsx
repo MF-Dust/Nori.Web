@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { NORI_WINDOW_ANIMATION, type WindowLayoutRuntime } from "../state/window-layout-runtime";
 import type { WindowAppDefinition, WindowStore } from "../state/window-store";
 import { WindowChrome } from "./window-chrome";
@@ -8,6 +8,17 @@ import {
   WindowPresentationRuntimeProvider,
   type WindowTitleBarContentValue,
 } from "./window-runtime-context";
+
+/**
+ * Minimized windows stay mounted (hidden) so app state survives. Apps read this
+ * to pause timers, animation loops and polling while their window cannot be
+ * seen. Defaults to true outside a managed window.
+ */
+export const WindowVisibilityContext = createContext(true);
+
+export function useWindowVisible(): boolean {
+  return useContext(WindowVisibilityContext);
+}
 
 export interface ManagedWindowHostProps {
   store: WindowStore;
@@ -50,51 +61,53 @@ export function ManagedWindowHost({
       data-window-kind={item.kind}
       data-window-reveal-delay={item.revealDelay}
     >
-      <WindowChrome
-        instanceId={managedWindow.instanceId}
-        title={managedWindow.title}
-        titleBarContent={titleBarContent}
-        rect={managedWindow}
-        preSnapRect={managedWindow.preSnapRect}
-        snap={managedWindow.snap}
-        zIndex={managedWindow.zIndex}
-        focused={focusedWindowId === managedWindow.instanceId}
-        exclusive={exclusive}
-        alwaysOnTop={managedWindow.alwaysOnTop}
-        interactive={interactive}
-        windowMotion={windowMotion}
-        config={{
-          draggable: !exclusive,
-          resizable: managedWindow.config.resizable,
-          closable: managedWindow.config.closable,
-          minimizable: managedWindow.config.minimizable && !exclusive,
-          maximizable: managedWindow.config.maximizable && !exclusive,
-        }}
-        layout={layout}
-        playCue={playCue}
-        onFocus={(instanceId) => store.getState().focusWindow(instanceId)}
-        onClose={(instanceId) => store.getState().closeWindow(instanceId)}
-        onMinimize={(instanceId) => store.getState().minimizeWindow(instanceId)}
-        onSnap={(instanceId, snap) => store.getState().snapWindow(instanceId, snap)}
-        onToggleMaximize={(instanceId) => store.getState().toggleMaximize(instanceId)}
-        onMove={(instanceId, x, y) =>
-          store.getState().updateWindowPosition(instanceId, x, y)
-        }
-        onResize={(instanceId, x, y, width, height) =>
-          store.getState().updateWindowRect(instanceId, x, y, width, height)
-        }
-      >
-        <WindowPresentationRuntimeProvider value={presentationRuntime}>
-          <WindowContentHost
-            store={store}
-            instanceId={managedWindow.instanceId}
-            lookupApp={lookupApp}
-            isRuntimeReady={isRuntimeReady}
-            suspenseFallback={suspenseFallback}
-            runtimeFallback={runtimeFallback}
-          />
-        </WindowPresentationRuntimeProvider>
-      </WindowChrome>
+      <WindowVisibilityContext.Provider value={!managedWindow.minimized}>
+        <WindowChrome
+          instanceId={managedWindow.instanceId}
+          title={managedWindow.title}
+          titleBarContent={titleBarContent}
+          rect={managedWindow}
+          preSnapRect={managedWindow.preSnapRect}
+          snap={managedWindow.snap}
+          zIndex={managedWindow.zIndex}
+          focused={focusedWindowId === managedWindow.instanceId}
+          exclusive={exclusive}
+          alwaysOnTop={managedWindow.alwaysOnTop}
+          interactive={interactive}
+          windowMotion={windowMotion}
+          config={{
+            draggable: !exclusive,
+            resizable: managedWindow.config.resizable,
+            closable: managedWindow.config.closable,
+            minimizable: managedWindow.config.minimizable && !exclusive,
+            maximizable: managedWindow.config.maximizable && !exclusive,
+          }}
+          layout={layout}
+          playCue={playCue}
+          onFocus={(instanceId) => store.getState().focusWindow(instanceId)}
+          onClose={(instanceId) => store.getState().closeWindow(instanceId)}
+          onMinimize={(instanceId) => store.getState().minimizeWindow(instanceId)}
+          onSnap={(instanceId, snap) => store.getState().snapWindow(instanceId, snap)}
+          onToggleMaximize={(instanceId) => store.getState().toggleMaximize(instanceId)}
+          onMove={(instanceId, x, y) =>
+            store.getState().updateWindowPosition(instanceId, x, y)
+          }
+          onResize={(instanceId, x, y, width, height) =>
+            store.getState().updateWindowRect(instanceId, x, y, width, height)
+          }
+        >
+          <WindowPresentationRuntimeProvider value={presentationRuntime}>
+            <WindowContentHost
+              store={store}
+              instanceId={managedWindow.instanceId}
+              lookupApp={lookupApp}
+              isRuntimeReady={isRuntimeReady}
+              suspenseFallback={suspenseFallback}
+              runtimeFallback={runtimeFallback}
+            />
+          </WindowPresentationRuntimeProvider>
+        </WindowChrome>
+      </WindowVisibilityContext.Provider>
     </div>
   );
 }

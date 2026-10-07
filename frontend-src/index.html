@@ -33,13 +33,16 @@
     <link rel="stylesheet" href="/fonts-cdn.css" />
     <link rel="stylesheet" href="/nori-legal.css" />
     <link rel="stylesheet" href="/styles/app.css" />
+    <!-- Deferred classic scripts and the module entry share one ordered queue, so
+         the shims below still run, in this order, before main.tsx executes; they
+         just no longer block parsing and first paint. -->
     <script defer src="/cubism_sdk/Core/live2dcubismcore.js"></script>
-    <script src="/nori-runtime-shims.js"></script>
-    <script src="/nori-ai-settings.js"></script>
-    <script src="/nori-ai-provider-switch.js"></script>
-    <script src="/nori-tts-settings.js"></script>
-    <script src="/nori-ui-settings.js"></script>
-    <script src="/nori-wallpaper-mode.js"></script>
+    <script defer src="/nori-runtime-shims.js"></script>
+    <script defer src="/nori-ai-settings.js"></script>
+    <script defer src="/nori-ai-provider-switch.js"></script>
+    <script defer src="/nori-tts-settings.js"></script>
+    <script defer src="/nori-ui-settings.js"></script>
+    <script defer src="/nori-wallpaper-mode.js"></script>
     <link rel="stylesheet" href="/nori-settings-glass.css" />
     <script type="module" src="/main.tsx"></script>
   </head>

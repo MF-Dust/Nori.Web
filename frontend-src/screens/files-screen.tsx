@@ -25,8 +25,10 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
+  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
@@ -115,6 +117,7 @@ export interface FilesScreenRuntime {
   model: FilesAppModel;
   translate?: FilesTranslate;
   hasFact?: (factId: string) => boolean;
+  /** File/app artifact changes: reloads the snapshot. */
   subscribe?: (listener: () => void) => () => void;
   /** Compute/scene changes only repaint recovery; they must not reload artifacts. */
   subscribeRecovery?: (listener: () => void) => () => void;
@@ -124,6 +127,8 @@ export interface FilesScreenRuntime {
   recoveryState?: () => FilesRecoveryState;
   reduceMotion?: () => boolean;
   decrypting?: () => boolean;
+  /** The decrypting flag only repaints; it must not reload artifacts. */
+  subscribeDecrypting?: (listener: () => void) => () => void;
   renderColdVolumeDock?: (files: readonly FilesRecoveredFile[]) => ReactNode;
   intent?: FilesIntentStore;
 }
@@ -433,11 +438,32 @@ function inputTarget(target: EventTarget | null): boolean {
   return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable;
 }
 
+const subscribeNothing = () => () => {};
+
+/** Compute ticks every 100 ms, but recovery only repaints when a shown percentage, stall flag or compute readout changes. */
+function recoverySignature(
+  recoveryState: FilesScreenRuntime["recoveryState"],
+  files: readonly FilesRecoveredFile[],
+  readout: boolean,
+): string {
+  const state = recoveryState?.();
+  if (!state) return "";
+  const parts: Array<string | number | boolean> = [];
+  for (const file of files) {
+    if (!isRecoverableFile(file) || isRecoveredFile(file)) continue;
+    const progress = computeFileRecoveryProgress(file.threshold, state.maxComputeThisRun, state.computeCap);
+    parts.push(progress.pct, progress.stalled);
+  }
+  if (readout) parts.push(formatComputeAmount(state.currentCompute ?? Math.min(state.maxComputeThisRun, state.computeCap)));
+  return parts.join();
+}
+
 export function FilesScreen({ runtime, initialIntent = { folderPath: "" } }: { runtime: FilesScreenRuntime; initialIntent?: FilesIntentPayload }) {
   const t = runtime.translate ?? defaultTranslate;
   const [snapshot, setSnapshot] = useState<FilesPresentationSnapshot>({ files: [], vaults: [] });
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
+  const [, repaintRecovery] = useReducer((count: number) => count + 1, 0);
   const navigation = useHistory(initialIntent.folderPath);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selectedKey, setSelectedKey] = useState<string | null>(initialIntent.selectKey ?? null);
@@ -453,16 +479,22 @@ export function FilesScreen({ runtime, initialIntent = { folderPath: "" } }: { r
   const systemRepaired = runtime.hasFact?.("system.repaired") ?? true;
   const qfrInstalled = runtime.hasFact?.("qfr.installed") ?? false;
 
+  // Only the first load shows the spinner; later reloads update the snapshot in place.
+  const loadRevision = useRef(0);
   const load = useCallback(async () => {
-    setLoading(true);
-    try { setSnapshot(await runtime.model.presentation()); }
-    catch (error) { console.warn("[Files] Failed to load artifacts", error); }
-    finally { setLoading(false); }
+    const request = ++loadRevision.current;
+    try {
+      const next = await runtime.model.presentation();
+      if (request === loadRevision.current) setSnapshot(next);
+    } catch (error) { console.warn("[Files] Failed to load artifacts", error); }
+    finally { if (request === loadRevision.current) setLoading(false); }
   }, [runtime.model]);
 
-  useEffect(() => { void load(); }, [load]);
-  useEffect(() => runtime.subscribe?.(() => { setRevision((value) => value + 1); void load(); }), [runtime, load]);
-  useEffect(() => runtime.subscribeRecovery?.(() => setRevision((value) => value + 1)), [runtime]);
+  useEffect(() => {
+    void load();
+    return () => { loadRevision.current++; };
+  }, [load]);
+  useEffect(() => runtime.subscribe?.(() => { setRevision((value) => value + 1); void load(); }), [runtime.subscribe, load]);
   useEffect(() => runtime.intent?.subscribe(() => {
     const pending = runtime.intent?.pending();
     if (!pending) return;
@@ -511,7 +543,21 @@ export function FilesScreen({ runtime, initialIntent = { folderPath: "" } }: { r
   }, [current, navigation.path, qfrInstalled]);
   const coldVolume = navigation.path === FILES_COLD_VOLUME_PATH;
   const downloadsEmpty = navigation.path === DOWNLOADS_PATH && !loading && entries.length === 0;
-  const decrypting = coldVolume && (runtime.decrypting?.() ?? false);
+  const getDecrypting = () => runtime.decrypting?.() ?? false;
+  const decrypting = useSyncExternalStore(runtime.subscribeDecrypting ?? subscribeNothing, getDecrypting, getDecrypting) && coldVolume;
+
+  const { subscribeRecovery, recoveryState } = runtime;
+  useEffect(() => {
+    if (!subscribeRecovery) return;
+    const watched = lockedFile ? [...(current?.files ?? []), lockedFile] : current?.files ?? [];
+    let shown: string | undefined;
+    return subscribeRecovery(() => {
+      const next = recoverySignature(recoveryState, watched, lockedFile !== null);
+      if (next === shown) return;
+      shown = next;
+      repaintRecovery();
+    });
+  }, [subscribeRecovery, recoveryState, current, lockedFile]);
 
   const navigate = useCallback((path: string) => { navigation.go(path); setSelectedKey(null); }, [navigation.go]);
   const showAlreadyUnpacked = useCallback((title: string) => {

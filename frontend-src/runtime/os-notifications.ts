@@ -1,6 +1,7 @@
 import { createElement, type ReactNode } from "react";
 import { Cpu, Download, FileText, TriangleAlert } from "lucide-react";
 import type { JsonValue } from "./protocol";
+import type { ArtifactType } from "../services/artifacts";
 import type { NotificationInput } from "../state/notification-store";
 import { formatScientific } from "../state/compute-runtime";
 
@@ -197,8 +198,11 @@ export interface OsNotificationOptions {
   getWorldId(): string | null;
   getFacts(): ReadonlySet<string>;
   subscribeFacts(listener: () => void): () => void;
-  /** Artifact invalidations that are not visible as a manifold head change. */
-  subscribeArtifacts?(listener: () => void): () => void;
+  /**
+   * Fires when artifacts of these types may have changed; mail and files reload
+   * independently. Without it, any fact change reloads both.
+   */
+  subscribeArtifactTypes?(types: readonly ArtifactType[], listener: () => void): () => void;
   isExclusive(): boolean;
   subscribeExclusive(listener: () => void): () => void;
   isStoryActive(): boolean;
@@ -259,7 +263,8 @@ export function bindOsNotifications(options: OsNotificationOptions): OsNotificat
   let mailWorld: string | null = null;
   let paradigmWorld: string | null = null;
   let paradigmDue: boolean | null = null;
-  let artifactRevision = 0;
+  let mailRevision = 0;
+  let fileRevision = 0;
   let disposed = false;
 
   const download = (factId: unknown, already = false) => {
@@ -382,72 +387,91 @@ export function bindOsNotifications(options: OsNotificationOptions): OsNotificat
     for (const cap of deferredCaps.splice(0)) pushCapBump(cap);
   };
 
-  const refreshArtifacts = async () => {
-    const revision = ++artifactRevision;
+  const refreshMail = async () => {
+    const revision = ++mailRevision;
     const world = options.getWorldId();
     if (!world) {
       mailTracker.reset();
-      fileTracker.reset();
       mail = [];
       return;
     }
-    const [mailResult, filesResult] = await Promise.allSettled([
-      options.loadMail?.() ?? Promise.resolve(null),
-      options.loadRecoveredFiles?.() ?? Promise.resolve(null),
-    ]);
-    if (disposed || revision !== artifactRevision || options.getWorldId() !== world) return;
+    const [result] = await Promise.allSettled([options.loadMail?.() ?? null]);
+    if (disposed || revision !== mailRevision || options.getWorldId() !== world) return;
+    if (result.status === "rejected") {
+      options.warn?.(result.reason);
+      return;
+    }
+    if (!result.value) return;
+    mail = result.value;
+    const byId = new Map(mail.map((item) => [item.id, item]));
+    for (const mailId of mailTracker.update(world, mail.map((item) => item.id))) {
+      const data = byId.get(mailId)?.data;
+      if (!isMailData(data)) continue;
+      options.push({
+        appId: "mail",
+        sfx: "comms-mail-arrival",
+        title: mailSenderName(data.from),
+        subtitle: data.subject,
+        body: mailPreviewText(data.body_md).slice(0, 120),
+        dismissKey: mailNotificationKey(mailId),
+        onClick: () => options.focusMail(mailId),
+      });
+    }
+    syncMailDismissals(options.getFacts());
+  };
+
+  const refreshFiles = async () => {
+    const revision = ++fileRevision;
+    const world = options.getWorldId();
+    if (!world) {
+      fileTracker.reset();
+      return;
+    }
+    const [result] = await Promise.allSettled([options.loadRecoveredFiles?.() ?? null]);
+    if (disposed || revision !== fileRevision || options.getWorldId() !== world) return;
+    if (result.status === "rejected") {
+      options.warn?.(result.reason);
+      return;
+    }
+    if (!result.value) return;
+    const files = result.value;
     const facts = options.getFacts();
-
-    if (mailResult.status === "fulfilled" && mailResult.value) {
-      mail = mailResult.value;
-      const byId = new Map(mail.map((item) => [item.id, item]));
-      for (const mailId of mailTracker.update(world, mail.map((item) => item.id))) {
-        const data = byId.get(mailId)?.data;
-        if (!isMailData(data)) continue;
-        options.push({
-          appId: "mail",
-          sfx: "comms-mail-arrival",
-          title: mailSenderName(data.from),
-          subtitle: data.subject,
-          body: mailPreviewText(data.body_md).slice(0, 120),
-          dismissKey: mailNotificationKey(mailId),
-          onClick: () => options.focusMail(mailId),
-        });
-      }
-      syncMailDismissals(facts);
-    } else if (mailResult.status === "rejected") options.warn?.(mailResult.reason);
-
-    if (filesResult.status === "fulfilled" && filesResult.value) {
-      const files = filesResult.value;
-      const added = fileTracker.update(world, files.map((file) => file.id));
-      // Shipped `qje`: no recovery toast between the Manifold unlock and its completion.
-      const silenced = facts.has(MANIFOLD_UNLOCKED_FACT) && !facts.has(MANIFOLD_COMPLETE_FACT);
-      for (const fileId of silenced ? [] : added) {
-        const file = files.find((candidate) => candidate.id === fileId);
-        if (!file) continue;
-        options.push({
-          appId: "files",
-          sfx: "webapps-files-recovery-complete",
-          icon: icon(FileText),
-          title: t("files.recovery.notifyTitle"),
-          subtitle: t("files.recovery.notifySubtitle", { name: file.name }),
-          onClick: () => options.openFiles({ folderPath: file.folderPath, selectKey: `file:${file.id}` }),
-        });
-      }
-    } else if (filesResult.status === "rejected") options.warn?.(filesResult.reason);
+    const added = fileTracker.update(world, files.map((file) => file.id));
+    // Shipped `qje`: no recovery toast between the Manifold unlock and its completion.
+    const silenced = facts.has(MANIFOLD_UNLOCKED_FACT) && !facts.has(MANIFOLD_COMPLETE_FACT);
+    for (const fileId of silenced ? [] : added) {
+      const file = files.find((candidate) => candidate.id === fileId);
+      if (!file) continue;
+      options.push({
+        appId: "files",
+        sfx: "webapps-files-recovery-complete",
+        icon: icon(FileText),
+        title: t("files.recovery.notifyTitle"),
+        subtitle: t("files.recovery.notifySubtitle", { name: file.name }),
+        onClick: () => options.openFiles({ folderPath: file.folderPath, selectKey: `file:${file.id}` }),
+      });
+    }
   };
 
-  const refresh = () => {
-    syncFacts();
-    void refreshArtifacts().catch((error) => options.warn?.(error));
-  };
+  const reload = (refresh: () => Promise<void>) => () => void refresh().catch((error) => options.warn?.(error));
+  const reloadMail = reload(refreshMail);
+  const reloadFiles = reload(refreshFiles);
+  const subscribeArtifacts = (types: readonly ArtifactType[], listener: () => void) =>
+    options.subscribeArtifactTypes
+      ? options.subscribeArtifactTypes(types, listener)
+      : options.subscribeFacts(listener);
 
+  // Facts only drive the fact toasts and mail dismissals (no RPC); mail and
+  // files reload when their own artifact type may have changed.
   const releases = [
-    options.subscribeFacts(refresh),
-    options.subscribeArtifacts?.(() => void refreshArtifacts().catch((error) => options.warn?.(error))) ?? (() => {}),
+    options.subscribeFacts(syncFacts),
+    subscribeArtifacts(["mail"], reloadMail),
+    subscribeArtifacts(["file"], reloadFiles),
     options.subscribeExclusive(flushCaps),
   ];
-  refresh();
+  syncFacts();
+  reloadMail();
+  reloadFiles();
 
   return {
     download,
@@ -464,7 +488,8 @@ export function bindOsNotifications(options: OsNotificationOptions): OsNotificat
     },
     dispose() {
       disposed = true;
-      artifactRevision++;
+      mailRevision++;
+      fileRevision++;
       for (const release of releases) release();
       deferredCaps.length = 0;
     },

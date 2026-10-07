@@ -118,6 +118,10 @@ export function useWindowInteraction({
   const dragSessionRef = useRef<DragSession | null>(null);
   const resizeSessionRef = useRef<ResizeSession | null>(null);
   const resizeDirectionRef = useRef<WindowResizeDirection | null>(null);
+  // Document listeners exist only while a drag/resize session is active; they
+  // forward to the handlers of the latest render so they never go stale.
+  const handlersRef = useRef<{ move(event: MouseEvent): void; up(): void } | null>(null);
+  const stopTrackingRef = useRef<(() => void) | null>(null);
   const snapRef = useRef(snap);
   const alwaysOnTopRef = useRef(alwaysOnTop);
   const lastPreviewCueRef = useRef(0);
@@ -146,6 +150,24 @@ export function useWindowInteraction({
     liveRectRef.current = next;
     writeRect(rootRef.current, next);
   }, []);
+
+  const startTracking = useCallback(() => {
+    if (stopTrackingRef.current) return;
+    const move = (event: MouseEvent) => handlersRef.current?.move(event);
+    const up = () => {
+      stopTrackingRef.current?.();
+      handlersRef.current?.up();
+    };
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+    stopTrackingRef.current = () => {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+      stopTrackingRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => () => stopTrackingRef.current?.(), []);
 
   const playPreviewCue = useCallback(() => {
     const now = performance.now();
@@ -197,9 +219,10 @@ export function useWindowInteraction({
         restoreHeight,
         titlebarFractionX,
       };
+      startTracking();
       onFocus?.(instanceId);
     },
-    [draggable, exclusive, instanceId, onFocus, preSnapRect],
+    [draggable, exclusive, instanceId, onFocus, preSnapRect, startTracking],
   );
 
   const onTitlebarDoubleClick = useCallback(
@@ -226,9 +249,10 @@ export function useWindowInteraction({
         ...current,
       };
       resizeDirectionRef.current = direction;
+      startTracking();
       onFocus?.(instanceId);
     },
-    [exclusive, instanceId, onFocus, resizable],
+    [exclusive, instanceId, onFocus, resizable, startTracking],
   );
 
   const onResizeDoubleClick = useCallback(
@@ -421,12 +445,7 @@ export function useWindowInteraction({
       setCursor("default");
     };
 
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
+    handlersRef.current = { move: handleMouseMove, up: handleMouseUp };
   }, [
     applyLiveRect,
     dragSnapPreview,

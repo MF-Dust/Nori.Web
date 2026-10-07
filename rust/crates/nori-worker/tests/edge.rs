@@ -9,7 +9,7 @@ use nori_core::{
 use nori_worker::edge::{
     attachment,
     host::*,
-    live_pack_loader::{LivePackLoader, CORE_KEY, INDEX_KEY},
+    live_pack_loader::{LivePackLoader, CORE_KEY, INDEX_KEY, SHARD_CACHE},
     provider_io,
     router::{self, Route},
     session_object::{Frame, SessionObject, AI_KEY, WORLD_KEY},
@@ -79,6 +79,8 @@ struct Fake {
     sleeps: RefCell<Vec<u64>>,
     active_sleeps: Cell<usize>,
     max_active_sleeps: Cell<usize>,
+    active_reads: Cell<usize>,
+    max_active_reads: Cell<usize>,
     requests: RefCell<Vec<HttpRequest>>,
 }
 impl Fake {
@@ -196,6 +198,12 @@ impl Sockets for Fake {
 impl ObjectStore for Fake {
     async fn get_bytes(&self, key: &str) -> Result<Option<Vec<u8>>> {
         self.keys.borrow_mut().push(key.into());
+        let active = self.active_reads.get() + 1;
+        self.active_reads.set(active);
+        self.max_active_reads
+            .set(self.max_active_reads.get().max(active));
+        yield_once().await;
+        self.active_reads.set(self.active_reads.get() - 1);
         Ok(self.objects.borrow().get(key).cloned())
     }
 }
@@ -789,7 +797,7 @@ fn live_prefetch_artifacts_browser_and_bounty_use_python_keys() {
     let fake = Fake::new();
     let pack = LivePack::empty();
     pack.install_core(json!({"facts":{}}));
-    let mut loader = LivePackLoader::default();
+    let loader = LivePackLoader::default();
     for section in [
         "mail_artifacts",
         "file_artifacts",
@@ -846,7 +854,7 @@ fn live_prefetch_artifacts_browser_and_bounty_use_python_keys() {
 fn live_core_failure_retries_after_sixty_seconds_logs_unavailable_once() {
     let fake = Fake::new();
     let pack = LivePack::empty();
-    let mut loader = LivePackLoader::default();
+    let loader = LivePackLoader::default();
     assert!(!run(loader.core(&fake, &pack, false)));
     assert!(!run(loader.core(&fake, &pack, false)));
     assert_eq!(*fake.keys.borrow(), vec![CORE_KEY]);
@@ -875,7 +883,7 @@ fn live_core_failure_retries_after_sixty_seconds_logs_unavailable_once() {
 fn prefetch_skips_false_file_ids_nonstring_types_and_non_events() {
     let fake = Fake::new();
     let pack = LivePack::empty();
-    let mut loader = LivePackLoader::default();
+    let loader = LivePackLoader::default();
     for payload in [
         json!({"fileId":false}),
         json!({"fileId":""}),
@@ -895,6 +903,198 @@ fn prefetch_skips_false_file_ids_nonstring_types_and_non_events() {
         &json!({"type":"dispatch","channel":"manifold.artifacts.request"}),
     ));
     assert!(fake.keys.borrow().is_empty());
+}
+
+fn store_browser_shards<S: AsRef<str>>(fake: &Fake, shards: &[S]) {
+    let url = |shard: &S| format!("https://{}.test", shard.as_ref());
+    let entries: serde_json::Map<String, Value> = shards
+        .iter()
+        .map(|shard| (url(shard), json!(shard.as_ref())))
+        .collect();
+    fake.store_json(INDEX_KEY, json!({ "entries": entries }));
+    for shard in shards {
+        fake.store_json(
+            &format!("runtime/live/browser/{}.json", shard.as_ref()),
+            json!([{"key": url(shard), "data": {"url": url(shard)}}]),
+        );
+    }
+}
+fn resident_page(pack: &LivePack) -> Value {
+    pack.section("browser_pages")[0]["key"].clone()
+}
+fn shard_reads(fake: &Fake) -> usize {
+    fake.keys
+        .borrow()
+        .iter()
+        .filter(|key| key.starts_with("runtime/live/browser/"))
+        .count()
+}
+#[test]
+fn alternating_browser_shards_come_from_a_bounded_lru() {
+    let fake = Fake::new();
+    let pack = LivePack::empty();
+    let loader = LivePackLoader::default();
+    let shards: Vec<String> = (0..=SHARD_CACHE).map(|n| format!("s{n}")).collect();
+    store_browser_shards(&fake, &shards);
+    let visit = |shard: &str| {
+        let url = format!("https://{shard}.test");
+        assert!(run(loader.browser(&fake, &pack, &url, false)));
+        assert_eq!(resident_page(&pack), url);
+        assert!(pack.page(&url).is_some());
+    };
+    for _ in 0..3 {
+        visit("s0");
+        visit("s1");
+    }
+    assert_eq!(shard_reads(&fake), 2, "alternating shards must not reload");
+    for shard in &shards[..SHARD_CACHE] {
+        visit(shard);
+    }
+    visit("s0"); // s1 is now the least recently used
+    assert_eq!(shard_reads(&fake), SHARD_CACHE);
+    visit(&shards[SHARD_CACHE]); // evicts s1
+    assert_eq!(shard_reads(&fake), SHARD_CACHE + 1);
+    visit("s0");
+    assert_eq!(shard_reads(&fake), SHARD_CACHE + 1);
+    visit("s1");
+    assert_eq!(shard_reads(&fake), SHARD_CACHE + 2);
+    assert_eq!(
+        fake.keys.borrow().last().unwrap(),
+        "runtime/live/browser/s1.json"
+    );
+    // A cleared archive is reinstalled from the cache, not re-read.
+    pack.clear();
+    visit("s1");
+    assert_eq!(shard_reads(&fake), SHARD_CACHE + 2);
+    assert!(fake.logs.borrow().is_empty());
+}
+#[test]
+fn concurrent_browser_loads_overlap_and_share_one_read_per_shard() {
+    let fake = Fake::new();
+    let pack = LivePack::empty();
+    let isolate = Isolate::default();
+    store_browser_shards(&fake, &["a", "b"]);
+    let (a1, a2, b) = run(futures_util::future::join3(
+        isolate
+            .loader
+            .browser(&fake, &pack, "https://a.test", false),
+        isolate
+            .loader
+            .browser(&fake, &pack, "https://a.test", false),
+        isolate
+            .loader
+            .browser(&fake, &pack, "https://b.test", false),
+    ));
+    assert!(a1 && a2 && b);
+    assert_eq!(
+        *fake.keys.borrow(),
+        vec![
+            INDEX_KEY,
+            "runtime/live/browser/a.json",
+            "runtime/live/browser/b.json"
+        ]
+    );
+    assert_eq!(
+        fake.max_active_reads.get(),
+        2,
+        "different shards load concurrently"
+    );
+    for url in ["https://a.test", "https://b.test", "https://a.test"] {
+        assert!(run(isolate.loader.browser(&fake, &pack, url, false)));
+        assert_eq!(resident_page(&pack), url);
+    }
+    assert_eq!(fake.keys.borrow().len(), 3);
+}
+#[test]
+fn cached_shard_is_not_blocked_by_another_shard_still_loading() {
+    use futures_util::FutureExt;
+    let fake = Fake::new();
+    let pack = LivePack::empty();
+    let loader = LivePackLoader::default();
+    store_browser_shards(&fake, &["a", "b", "c"]);
+    for url in ["https://a.test", "https://b.test"] {
+        assert!(run(loader.browser(&fake, &pack, url, false)));
+    }
+    let mut loading = pin!(loader.browser(&fake, &pack, "https://c.test", false));
+    assert!(
+        loading.as_mut().now_or_never().is_none(),
+        "c.json read is in flight"
+    );
+    // Cached but not resident (b is): ready immediately, mid-read of c.json.
+    let hit = loader
+        .browser(&fake, &pack, "https://a.test", false)
+        .now_or_never();
+    assert_eq!(hit, Some(true));
+    assert_eq!(resident_page(&pack), "https://a.test");
+    assert!(run(loading));
+    assert_eq!(resident_page(&pack), "https://c.test");
+}
+#[test]
+fn concurrent_core_and_section_loads_read_r2_once() {
+    let fake = Fake::new();
+    fake.store_json(CORE_KEY, json!({"facts":{}}));
+    fake.store_json("runtime/live/mail_artifacts.json", json!([]));
+    let pack = LivePack::empty();
+    let loader = LivePackLoader::default();
+    let (first, second) = run(futures_util::future::join(
+        loader.core(&fake, &pack, false),
+        loader.core(&fake, &pack, false),
+    ));
+    assert!(first && second);
+    let mail = json!({"type":"event","channel":"manifold.artifacts.request","payload":{"artifactType":"mail"}});
+    run(futures_util::future::join(
+        loader.prefetch(&fake, &pack, &mail),
+        loader.prefetch(&fake, &pack, &mail),
+    ));
+    assert_eq!(
+        *fake.keys.borrow(),
+        vec![CORE_KEY, "runtime/live/mail_artifacts.json"]
+    );
+    // A failed read is shared too: the waiter sees the retry window.
+    fake.objects.borrow_mut().remove(CORE_KEY);
+    fake.keys.borrow_mut().clear();
+    let pack = LivePack::empty();
+    let loader = LivePackLoader::default();
+    let (first, second) = run(futures_util::future::join(
+        loader.core(&fake, &pack, false),
+        loader.core(&fake, &pack, false),
+    ));
+    assert!(!first && !second);
+    assert_eq!(*fake.keys.borrow(), vec![CORE_KEY]);
+}
+#[test]
+fn sessions_of_different_users_load_browser_shards_concurrently() {
+    let fake = Fake::new();
+    fake.socket(1, "guest-1", "main");
+    fake.socket(2, "guest-2", "main");
+    store_browser_shards(&fake, &["a", "b"]);
+    let isolate = Isolate::default();
+    let (one, two) = (SessionObject::default(), SessionObject::default());
+    send(
+        &one,
+        &fake,
+        &isolate,
+        1,
+        json!({"type":"open_my_web_world"}),
+    );
+    send(
+        &two,
+        &fake,
+        &isolate,
+        2,
+        json!({"type":"open_my_web_world"}),
+    );
+    fake.max_active_reads.set(0);
+    let fetch = |url: &str| {
+        Frame::Text(json!({"type":"event","channel":"manifold.artifacts.fetch","payload":{"artifactType":"browser_page","lookup_key":url}}).to_string())
+    };
+    run(futures_util::future::join(
+        one.on_message(&fake, &isolate, &1, fetch("https://a.test")),
+        two.on_message(&fake, &isolate, &2, fetch("https://b.test")),
+    ));
+    assert_eq!(fake.max_active_reads.get(), 2);
+    assert_eq!(shard_reads(&fake), 2);
+    assert!(fake.closes.borrow().is_empty());
 }
 #[test]
 fn media_joining_during_task_sleep_receives_remaining_frames() {

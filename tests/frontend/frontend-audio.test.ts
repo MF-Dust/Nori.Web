@@ -122,6 +122,31 @@ class Context {
     return node;
   }
 }
+test("decoded audio cache evicts LRU PCM, shares concurrent loads, and does not retain oversized tracks", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => new Response(new Uint8Array(8)));
+  const context = new Context();
+  let length = 8 * 1024 * 1024; // 32 MiB, with no real allocation in this fake
+  t.mock.method(context, "decodeAudioData", async () => ({
+    length, numberOfChannels: 1, sampleRate: 1000,
+  } as any));
+  const mixer = new AudioMixer(() => context as any);
+  t.after(() => mixer.dispose());
+  const load = (url: string) => (mixer as any).load(url) as Promise<AudioBuffer>;
+  const a = load("/a");
+  assert.equal(load("/a"), a);
+  const playing = await a;
+  await load("/b");
+  assert.equal(await load("/a"), playing); // touch A: B becomes least recent
+  await load("/c");
+  assert.equal((mixer as any).decodedBuffers.has("false:/b"), false);
+  assert.equal((mixer as any).decodedBuffers.size, 2);
+  assert.equal((mixer as any).buffers.size, 0); // settled promises cannot retain evicted PCM
+  assert.equal(playing.length, 8 * 1024 * 1024); // eviction doesn't mutate a playing buffer
+  length *= 3; // oversized tracks remain owned by playback, not the cache
+  await load("/large");
+  assert.equal((mixer as any).decodedBuffers.has("false:/large"), false);
+});
+
 test("window focus re-arms audio unlock and disposal removes the listener", () => {
   const documentTarget = new EventTarget();
   const windowTarget = new EventTarget();

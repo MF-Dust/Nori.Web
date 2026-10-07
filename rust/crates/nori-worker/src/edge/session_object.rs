@@ -83,11 +83,8 @@ impl SessionObject {
         {
             return Ok(());
         }
-        {
-            let mut loader = isolate.loader.lock().await;
-            if !loader.core(host, &isolate.pack, disabled).await {
-                loader.unavailable(host);
-            }
+        if !isolate.loader.core(host, &isolate.pack, disabled).await {
+            isolate.loader.unavailable(host);
         }
         let raw = host.get(WORLD_KEY).await?;
         let restored = raw
@@ -263,12 +260,7 @@ impl SessionObject {
             }
             return Ok(()); // No settings, per-frame R2 prefetch, tasks or snapshot.
         }
-        isolate
-            .loader
-            .lock()
-            .await
-            .prefetch(host, &isolate.pack, &decoded)
-            .await;
+        isolate.loader.prefetch(host, &isolate.pack, &decoded).await;
         let preference = saved.get("fullUnlock").and_then(Value::as_bool);
         let (message, secrets) =
             session::prepare(raw, preference).map_err(|_| "prepared decoded frame failed")?;

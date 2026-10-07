@@ -228,8 +228,72 @@ export function normalizeBrowserPageData(value: unknown): BrowserPageData | null
 
 const TRANSPARENT_IMAGE =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-const assetCache = new Map<string, Promise<string | null>>();
-const fontCache = new Map<string, Promise<string | null>>();
+
+interface DataUriEntry {
+  promise: Promise<string | null>;
+  /** Resolved data URI; undefined while the request is still in flight. */
+  value?: string;
+}
+
+/**
+ * Data-URI cache keyed by URL. Concurrent callers share one in-flight request,
+ * failed loads are not retained, and resolved entries are evicted
+ * least-recently-used first once the entry count or the approximate size (string
+ * length, i.e. bytes for base64) exceeds its budget.
+ */
+class DataUriCache {
+  private readonly entries = new Map<string, DataUriEntry>();
+  private bytes = 0;
+
+  constructor(private readonly maxEntries: number, private readonly maxBytes: number) {}
+
+  /** Resolved data URI, or undefined when absent or still loading. */
+  peek(url: string): string | undefined {
+    const entry = this.entries.get(url);
+    if (entry?.value === undefined) return undefined;
+    this.touch(url, entry);
+    return entry.value;
+  }
+
+  load(url: string, fetchData: () => Promise<string | null>): Promise<string | null> {
+    const current = this.entries.get(url);
+    if (current) {
+      this.touch(url, current);
+      return current.promise;
+    }
+    const entry: DataUriEntry = { promise: fetchData() };
+    this.entries.set(url, entry);
+    void entry.promise.then((value) => {
+      if (value === null) {
+        this.entries.delete(url);
+        return;
+      }
+      entry.value = value;
+      this.bytes += value.length;
+      this.trim();
+    });
+    return entry.promise;
+  }
+
+  private touch(url: string, entry: DataUriEntry): void {
+    this.entries.delete(url);
+    this.entries.set(url, entry);
+  }
+
+  private trim(): void {
+    // Map iteration order is recency order (oldest first); in-flight entries have no size yet.
+    for (const [url, entry] of this.entries) {
+      if (this.entries.size <= this.maxEntries && this.bytes <= this.maxBytes) return;
+      if (entry.value === undefined) continue;
+      this.entries.delete(url);
+      this.bytes -= entry.value.length;
+    }
+  }
+}
+
+const MIB = 1024 * 1024;
+const assetCache = new DataUriCache(256, 32 * MIB);
+const fontCache = new DataUriCache(64, 16 * MIB);
 
 function isSafeWebAsset(url: unknown): url is string {
   if (typeof url !== "string" || !url.startsWith("/webAssets/") || url.includes("..")) return false;
@@ -264,43 +328,54 @@ async function dataUri(url: string, fallbackMime: string): Promise<string | null
 
 export function fetchBrowserAssetData(url: string): Promise<string | null> {
   if (!isSafeWebAsset(url)) return Promise.resolve(null);
-  const current = assetCache.get(url);
-  if (current) return current;
-  const pending = dataUri(new URL(url, window.location.href).href, "application/octet-stream");
-  assetCache.set(url, pending);
-  void pending.then((value) => {
-    if (value === null) assetCache.delete(url);
-  });
-  return pending;
+  return assetCache.load(url, () =>
+    dataUri(new URL(url, window.location.href).href, "application/octet-stream"));
 }
 
-async function fetchBrowserFontData(url: string): Promise<string | null> {
-  const current = fontCache.get(url);
-  if (current) return current;
-  const pending = dataUri(url, "font/woff2");
-  fontCache.set(url, pending);
-  void pending.then((value) => {
-    if (value === null) fontCache.delete(url);
-  });
-  return pending;
+function fetchBrowserFontData(url: string): Promise<string | null> {
+  return fontCache.load(url, () => dataUri(url, "font/woff2"));
 }
 
 function safeCssToken(value: string): string {
   return value.replaceAll("<", "");
 }
 
-export async function buildBrowserFontCss(fonts?: readonly BrowserFontDescriptor[]): Promise<string> {
-  if (!fonts || fonts.length === 0) return "";
-  const data = await Promise.all(fonts.map((font) => fetchBrowserFontData(font.url)));
-  return fonts.flatMap((font, index) => {
-    const uri = data[index];
-    if (!uri) return [];
-    return [
-      `@font-face{font-family:${JSON.stringify(font.family).replaceAll("<", "\\3c ")};` +
-      `src:url(${uri});font-weight:${safeCssToken(font.weight ?? "400")};` +
-      `font-style:${safeCssToken(font.style ?? "normal")}}`,
-    ];
-  }).join("\n");
+function fontFaceRule(font: BrowserFontDescriptor, uri: string): string {
+  return `@font-face{font-family:${JSON.stringify(font.family).replaceAll("<", "\\3c ")};` +
+    `src:url(${uri});font-weight:${safeCssToken(font.weight ?? "400")};` +
+    `font-style:${safeCssToken(font.style ?? "normal")}}`;
+}
+
+export interface BrowserFontCss {
+  /** Rules for fonts that are already cached; safe to inline into the srcDoc. */
+  ready: string;
+  /** Rules for fonts still loading (resolves to "" if they all fail); null when nothing is pending. */
+  pending: Promise<string> | null;
+}
+
+/**
+ * Splits page fonts into what can be inlined right now and what is still being
+ * fetched, so a first paint never waits on font downloads. Pending fonts start
+ * loading immediately and are delivered later through the frame bridge.
+ */
+export function resolveBrowserFontCss(fonts?: readonly BrowserFontDescriptor[]): BrowserFontCss {
+  const ready: string[] = [];
+  const missing: BrowserFontDescriptor[] = [];
+  for (const font of fonts ?? []) {
+    const uri = fontCache.peek(font.url);
+    if (uri) ready.push(fontFaceRule(font, uri));
+    else missing.push(font);
+  }
+  return {
+    ready: ready.join("\n"),
+    pending: missing.length === 0
+      ? null
+      : Promise.all(missing.map((font) => fetchBrowserFontData(font.url))).then((data) =>
+          missing.flatMap((font, index) => {
+            const uri = data[index];
+            return uri ? [fontFaceRule(font, uri)] : [];
+          }).join("\n")),
+  };
 }
 
 const SCROLLBAR_CSS =
@@ -343,6 +418,7 @@ const BROWSER_RUNTIME_SHIM = String.raw`
   function applyFacts(snapshot){Object.keys(facts).forEach(k=>delete facts[k]);Object.keys(snapshot||{}).forEach(k=>facts[k]=snapshot[k]===true);fireFacts()}
   function fireWin(){winSubs.forEach(cb=>{try{cb({isMaximized:winState.isMaximized})}catch(e){console.error('[arcade] window subscriber',e)}})}
   function applyAsset(url,data){if(typeof url!=='string')return;if(data)received[url]=data;document.querySelectorAll('img[data-arcade-src]').forEach(img=>{if(img.getAttribute('data-arcade-src')===url){img.removeAttribute('data-arcade-src');img.setAttribute('src',data||url)}})}
+  function applyFontCss(css){if(typeof css!=='string'||!css)return;try{const style=document.createElement('style');style.textContent=css;(document.head||document.documentElement).append(style)}catch{}}
   function hydrate(root){const urls=[];(root||document).querySelectorAll('img[data-arcade-src]').forEach(img=>{const url=img.getAttribute('data-arcade-src');if(!url)return;if(received[url]){img.removeAttribute('data-arcade-src');img.setAttribute('src',received[url]);return}if(!requested.has(url)){requested.add(url);urls.push(url)}});if(urls.length)post({__arcade:true,type:'assets-request',urls})}
   function scrollId(hash){let raw=(hash||'').replace(/^#/,'');try{raw=decodeURIComponent(raw)}catch{}return raw}
   function scrollHash(hash){const target=scrollId(hash);if(!target)return;try{const u=new URL(arcade.url);u.hash=hash;arcade.url=u.toString()}catch{};const go=()=>{const el=document.getElementById(target)||(document.getElementsByName&&document.getElementsByName(target)[0]);if(el){try{el.scrollIntoView()}catch{};return true}return false};if(!go()&&typeof requestAnimationFrame==='function')requestAnimationFrame(go)}
@@ -350,7 +426,8 @@ const BROWSER_RUNTIME_SHIM = String.raw`
   function isText(el){if(!el||el.nodeType!==1)return false;if(el.tagName==='TEXTAREA')return true;if(el.tagName!=='INPUT')return false;return ['text','search','url','tel','password'].includes((el.getAttribute('type')||'text').toLowerCase())}
   function editable(start){let n=start;while(n&&n!==document){if(isText(n)||n.isContentEditable)return n;n=n.parentNode}return null}
   function edit(data){const el=editTarget;if(data.action==='select-all'){if(el&&isText(el)){el.focus();el.select();return}const sel=window.getSelection();if(sel)try{sel.selectAllChildren(el&&el.isContentEditable?el:document.body)}catch{};return}if(!el)return;if(isText(el)){if(el.readOnly||el.disabled)return;const a=typeof el.selectionStart==='number'?el.selectionStart:el.value.length,b=typeof el.selectionEnd==='number'?el.selectionEnd:a,insert=data.action==='paste'?String(data.text||''):'';el.focus();try{el.setRangeText(insert,a,b,'end')}catch{return}el.dispatchEvent(new Event('input',{bubbles:true}));return}el.focus();if(data.action==='paste')document.execCommand('insertText',false,String(data.text||''));else document.execCommand('delete')}
-  window.addEventListener('message',ev=>{if(ev.source!==window.parent)return;const d=ev.data;if(!d||d.__arcade!==true)return;if(d.type==='cmd-result'){const r=pending.get(d.requestId);if(r){pending.delete(d.requestId);r(d.result)}}else if(d.type==='facts')applyFacts(d.snapshot);else if(d.type==='window-state'){const n=d.isMaximized===true;if(n!==winState.isMaximized){winState.isMaximized=n;fireWin()}}else if(d.type==='podcast-state'){podcastState=d.state||null;podcastSubs.forEach(cb=>{try{cb(podcastState)}catch{}})}else if(d.type==='scroll-to-hash')scrollHash(d.hash);else if(d.type==='scroll-to-position')scrollY(d.y);else if(d.type==='edit-action')edit(d);else if(d.type==='asset-data')applyAsset(d.url,d.dataUri)});
+  window.addEventListener('message',ev=>{if(ev.source!==window.parent)return;const d=ev.data;if(!d||d.__arcade!==true)return;if(d.type==='cmd-result'){const r=pending.get(d.requestId);if(r){pending.delete(d.requestId);r(d.result)}}else if(d.type==='facts')applyFacts(d.snapshot);else if(d.type==='window-state'){const n=d.isMaximized===true;if(n!==winState.isMaximized){winState.isMaximized=n;fireWin()}}else if(d.type==='podcast-state'){podcastState=d.state||null;podcastSubs.forEach(cb=>{try{cb(podcastState)}catch{}})}else if(d.type==='scroll-to-hash')scrollHash(d.hash);else if(d.type==='scroll-to-position')scrollY(d.y);else if(d.type==='edit-action')edit(d);else if(d.type==='asset-data')applyAsset(d.url,d.dataUri);else if(d.type==='font-css')applyFontCss(d.css)});
+  if(init.fontsPending)post({__arcade:true,type:'fonts-request'});
   const arcade={locale:init.locale,url:init.url||'',facts:{current:facts,subscribe(ids,cb){const s={ids:new Set(ids),cb};factSubs.add(s);const v={};s.ids.forEach(f=>v[f]=facts[f]===true);try{cb(v)}catch{};return()=>factSubs.delete(s)}},invoke(command,payload){return new Promise(resolve=>{const requestId=id();pending.set(requestId,resolve);post({__arcade:true,type:'cmd',requestId,command,payload})})},navigate(url,newTab,popup){post({__arcade:true,type:'nav',url,newTab:newTab===true,popup:popup===true})},window:{get isMaximized(){return winState.isMaximized},subscribe(cb){winSubs.add(cb);try{cb({isMaximized:winState.isMaximized})}catch{};return()=>winSubs.delete(cb)}},podcast:{get state(){return podcastState},subscribe(cb){podcastSubs.add(cb);try{cb(podcastState)}catch{};return()=>podcastSubs.delete(cb)}}};
   Object.defineProperty(w,'arcade',{value:arcade,configurable:false,writable:false});
   function anchor(start){let n=start;while(n&&n!==document){if(n.tagName&&n.tagName.toLowerCase()==='a')return n;n=n.parentNode}return null}
@@ -391,6 +468,8 @@ export interface BuildBrowserSrcDocOptions {
   isMaximized: boolean;
   bodyHtml: string;
   fontCss?: string;
+  /** More fonts will arrive through the frame bridge (see `BrowserFrameBridgeOptions.fontCss`). */
+  fontsPending?: boolean;
 }
 
 export function buildBrowserIframeSrcDoc(options: BuildBrowserSrcDocOptions): string {
@@ -399,6 +478,7 @@ export function buildBrowserIframeSrcDoc(options: BuildBrowserSrcDocOptions): st
     url: options.url,
     facts: { ...options.facts },
     window: { isMaximized: options.isMaximized === true },
+    ...(options.fontsPending ? { fontsPending: true } : {}),
   };
   const injection =
     SCROLLBAR_CSS +
@@ -599,6 +679,8 @@ export interface BrowserFrameBridgeOptions {
   onTitle?: (title: string) => void;
   onScroll?: (y: number) => void;
   onContextMenu?: (event: BrowserFrameContextMenuEvent, sendEditAction: (action: BrowserEditAction) => void) => void;
+  /** @font-face rules still loading when the srcDoc was built; sent once the frame asks for them. */
+  fontCss?: Promise<string> | null;
   hostWindow?: Window;
 }
 
@@ -606,7 +688,7 @@ function isArcadeFrameMessage(value: unknown): value is Record<string, unknown> 
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   if (record.__arcade !== true || typeof record.type !== "string") return false;
-  return ["cmd", "nav", "activate", "link-hover", "submittable", "title", "scroll", "context-menu", "assets-request"].includes(record.type);
+  return ["cmd", "nav", "activate", "link-hover", "submittable", "title", "scroll", "context-menu", "assets-request", "fonts-request"].includes(record.type);
 }
 
 export interface BrowserFrameBridge {
@@ -659,6 +741,10 @@ export function createBrowserFrameBridge(options: BrowserFrameBridgeOptions): Br
     if (type === "assets-request") {
       const urls = Array.isArray(message.urls) ? message.urls.filter(isSafeWebAsset) : [];
       for (const url of urls) void fetchBrowserAssetData(url).then((value) => post({ type: "asset-data", url, dataUri: value }));
+      return;
+    }
+    if (type === "fonts-request") {
+      void options.fontCss?.then((css) => { if (css) post({ type: "font-css", css }); });
       return;
     }
     if (type !== "cmd" || typeof message.requestId !== "string" || typeof message.command !== "string") return;

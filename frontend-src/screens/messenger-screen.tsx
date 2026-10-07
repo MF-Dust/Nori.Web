@@ -94,8 +94,12 @@ export interface SignalServiceConversationRuntime {
   getServiceBadge?: (thread: SignalThread) => string | null | undefined;
 }
 
+/** The slice of the model the screen uses, so a host can share one conversations load with other consumers. */
+export type MessengerScreenModel = Pick<MessengerAppModel, "conversations" | "markThreadRead" | "emitDownloadFact">;
+
 export interface MessengerScreenRuntime {
-  model: MessengerAppModel;
+  model: MessengerScreenModel;
+  /** Conversation artifact changes (thread/message): reloads the list. */
   subscribe?: (listener: () => void) => () => void;
   translate?: MessengerTranslate;
   playCue?: (cue: string) => void;
