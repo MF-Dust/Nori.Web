@@ -1,13 +1,12 @@
-import {
-  TerminalWindow,
-  type TerminalEditBridge,
-  type TerminalWindowProps,
-} from "../screens/terminal-window";
+import { lazy } from "react";
+import type { TerminalEditBridge, TerminalWindowProps } from "../screens/terminal-window";
 import type { DesktopTopBarMenuGroup } from "../components/desktop-topbar";
 import type { ProductionWindowBinding } from "../state/production-window-apps";
 import type { DesktopRuntime } from "../state/desktop-runtime";
 import type { RegisteredWindowAppDefinition } from "../state/window-app-registry";
 import type { WindowComponentProps } from "../state/window-types";
+
+const TerminalWindow = lazy(() => import("../screens/terminal-window").then((module) => ({ default: module.TerminalWindow })));
 
 export type TerminalPresentationRuntime = Omit<
   TerminalWindowProps,

@@ -16,6 +16,7 @@ export const groups = {
     "tests/frontend/frontend-notifications.test.ts",
     "tests/frontend/frontend-os-notifications.test.ts",
     "tests/frontend/frontend-subscriptions.test.ts",
+    "tests/frontend/frontend-startup.test.ts",
     "tests/frontend/frontend-browser-extension.test.ts",
     "tests/frontend/frontend-browser-bounty.test.ts",
     "tests/frontend/frontend-browser-page-runtime.test.ts",

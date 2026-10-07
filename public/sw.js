@@ -1,14 +1,17 @@
 var CACHE_NAME = "arcade-assets-v1";
 var ASSET_LOADER_HEADER = "x-asset-loader";
 
-var CATEGORIES = ["boot", "desktop", "datasea", "farewell"];
+var CATEGORIES = ["boot", "onDemand", "desktop", "datasea", "farewell"];
 var PATTERNS = {
   boot: [
     "/cubism_sdk/Core/live2dcubismcore.js",
     "/ARGNori_web/**",
     "/ocean/**",
-    "/fonts/**",
     "/icon.png",
+  ],
+  // These are still cached when requested, but never block the boot gate.
+  onDemand: [
+    "/fonts/**",
     "/inori-logo.png",
     "/app-icons/**",
     "/audio/sfx/**",

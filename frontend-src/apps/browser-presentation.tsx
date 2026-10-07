@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import type { ComponentType } from "react";
 import type { ProductionWindowBinding } from "../state/production-window-apps";
 import type { WindowComponentProps } from "../state/window-types";
@@ -5,19 +6,14 @@ import {
   BROWSER_HOME_URL,
   BrowserPodcastRuntime,
 } from "./browser-page-runtime";
-import {
-  BrowserScreen,
-  type BrowserScreenProps,
-} from "../screens/browser-screen";
-import {
-  BrowserPageView,
-  type BrowserPageHostRuntime,
-} from "../screens/browser-page-view";
-import {
-  BrowserPopupScreen,
-  type BrowserPageViewProps as PopupPageViewProps,
-} from "../screens/browser-popup-screen";
+import type { BrowserScreenProps } from "../screens/browser-screen";
+import type { BrowserPageHostRuntime } from "../screens/browser-page-view";
+import type { BrowserPageViewProps as PopupPageViewProps } from "../screens/browser-popup-screen";
 import type { BrowserIntentStore } from "../intents/browser-intent";
+
+const BrowserScreen = lazy(() => import("../screens/browser-screen").then((module) => ({ default: module.BrowserScreen })));
+const BrowserPageView = lazy(() => import("../screens/browser-page-view").then((module) => ({ default: module.BrowserPageView })));
+const BrowserPopupScreen = lazy(() => import("../screens/browser-popup-screen").then((module) => ({ default: module.BrowserPopupScreen })));
 
 export type BrowserTranslate = (key: string) => string;
 

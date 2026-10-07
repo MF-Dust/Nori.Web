@@ -1,6 +1,5 @@
 import { StoryScenes } from "./story/story-scenes";
 import { bindSourceStoryProgression } from "./story/story-progression";
-import { DebugScreen } from "./screens/debug-screen";
 import {
   coalesceListener,
   createArtifactLoader,
@@ -28,16 +27,10 @@ import {
   ChipOverlay,
   ChipUpgradeNotice,
 } from "./components/chip-overlay";
-import { PreviewScreen } from "./screens/preview-screen";
 import { BrowserPodcastRuntime } from "./apps/browser-page-runtime";
 import { desktopMusicTarget } from "./runtime/audio-mixer";
 import { initializeGraphics } from "./runtime/graphics-detection";
-import { AboutScreen, SystemAlert } from "./screens/system-screen";
-import { CreditsScreen } from "./screens/credits-screen";
-import {
-  SettingsScreen,
-  type SettingsRuntime,
-} from "./screens/settings-screen";
+import type { SettingsRuntime } from "./screens/settings-screen";
 import { SystemService } from "./services/system";
 import { useUnlockSettings } from "./state/unlock-store";
 import {
@@ -50,7 +43,7 @@ import { pictionaryStateSchema } from "./apps/pictionary-model";
 import { PictionaryDrawingBridge } from "./apps/pictionary-runtime";
 import { GameCartridgeController } from "./apps/game-cartridge-controller";
 import { chessStateSchema } from "./apps/chess-model";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { lazy as lazyComponent, useEffect, useState, useSyncExternalStore } from "react";
 import { SpeechModeControl } from "./components/speech-mode-control";
 import { ConversationPanel } from "./components/conversation-panel";
 import { SourceLogin } from "./components/source-login";
@@ -89,6 +82,13 @@ import {
   normalizeFileArtifact,
   type FilesRecoveredFile,
 } from "./apps/files";
+
+const DebugScreen = lazyComponent(() => import("./screens/debug-screen").then((module) => ({ default: module.DebugScreen })));
+const PreviewScreen = lazyComponent(() => import("./screens/preview-screen").then((module) => ({ default: module.PreviewScreen })));
+const AboutScreen = lazyComponent(() => import("./screens/system-screen").then((module) => ({ default: module.AboutScreen })));
+const SystemAlert = lazyComponent(() => import("./screens/system-screen").then((module) => ({ default: module.SystemAlert })));
+const CreditsScreen = lazyComponent(() => import("./screens/credits-screen").then((module) => ({ default: module.CreditsScreen })));
+const SettingsScreen = lazyComponent(() => import("./screens/settings-screen").then((module) => ({ default: module.SettingsScreen })));
 
 /** Recovered NormalApp export aY / local eY used by MailScreen download progress. */
 const MAIL_ATTACHMENT_DOWNLOAD_DURATION_MS = 1800;

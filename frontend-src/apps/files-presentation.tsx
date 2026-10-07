@@ -1,12 +1,14 @@
 import type { ProductionWindowBinding } from "../state/production-window-apps";
+import { lazy } from "react";
+import { createFilesIntentStore } from "../intents/files-intent";
 import type { WindowComponentProps } from "../state/window-types";
-import {
-  FilesScreen,
-  createFilesIntentStore,
-  type FilesIntentPayload,
-  type FilesIntentStore,
-  type FilesScreenRuntime,
+import type {
+  FilesIntentPayload,
+  FilesIntentStore,
+  FilesScreenRuntime,
 } from "../screens/files-screen";
+
+const FilesScreen = lazy(() => import("../screens/files-screen").then((module) => ({ default: module.FilesScreen })));
 
 export interface FilesPresentationRuntime extends Omit<FilesScreenRuntime, "intent"> {
   intent?: FilesIntentStore;

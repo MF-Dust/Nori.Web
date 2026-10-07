@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   useSyncExternalStore,
@@ -15,6 +16,7 @@ import {
   Wifi,
   Gauge,
   Bug,
+  Languages,
   type LucideIcon,
 } from "lucide-react";
 import { useAudioSettings } from "../state/audio-store";
@@ -22,7 +24,7 @@ import { isGraphicsMode, useGraphicsSettings } from "../state/graphics-store";
 import { useUnlockSettings } from "../state/unlock-store";
 import type { ArcadeClient } from "../runtime/arcade-client";
 import type { SystemService } from "../services/system";
-import type { createSourceTranslate } from "../i18n/translate";
+import { sourceLocale, type createSourceTranslate } from "../i18n/translate";
 import "./settings-screen.css";
 
 type Translate = ReturnType<typeof createSourceTranslate>;
@@ -34,11 +36,12 @@ export interface SettingsRuntime {
   speechControl?: ReactNode;
   debugContent?: ReactNode;
 }
-const sections = ["sound", "graphics", "network", "system"] as const;
+const sections = ["sound", "graphics", "language", "network", "system"] as const;
 type Section = (typeof sections)[number] | "debug";
 const icons = {
   sound: Volume2,
   graphics: Gauge,
+  language: Languages,
   network: Wifi,
   system: Monitor,
   debug: Bug,
@@ -402,6 +405,31 @@ function ResetDialog({
   );
 }
 
+function LanguageSettings({ t }: { t: Translate }) {
+  const id = useId();
+  return (
+    <div className="space-y-3">
+      <div>
+        <label htmlFor={id} className="text-sm font-medium">{t("settings.language.title")}</label>
+        <p className="text-xs text-muted-foreground">{t("settings.language.description")}</p>
+      </div>
+      <select
+        id={id}
+        className="settings-action w-full"
+        value={sourceLocale(document.documentElement.lang)}
+        onChange={(event) => {
+          if (!window.confirm(t("settings.language.restartPrompt"))) return;
+          localStorage.setItem("arcade-language", event.target.value);
+          window.location.reload();
+        }}
+      >
+        <option value="zh-CN">简体中文</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  );
+}
+
 function UnlockSettings({ t }: { t: Translate }) {
   const fullUnlock = useUnlockSettings((state) => state.fullUnlock);
   const setFullUnlock = useUnlockSettings((state) => state.setFullUnlock);
@@ -519,6 +547,8 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
                   <SoundSettings t={t} speechControl={runtime.speechControl} />
                 ) : section === "graphics" ? (
                   <GraphicsSettings t={t} />
+                ) : section === "language" ? (
+                  <LanguageSettings t={t} />
                 ) : section === "network" ? (
                   <NetworkSettings runtime={runtime} />
                 ) : (

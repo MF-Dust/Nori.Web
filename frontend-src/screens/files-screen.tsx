@@ -66,41 +66,8 @@ const SIDEBAR_AUTO_COLLAPSE_WIDTH = 600;
 const DOWNLOADS_PATH = "下载";
 const VIEW_EASE = "cubic-bezier(0.32,0.72,0,1)";
 
-export interface FilesIntentPayload {
-  folderPath: string;
-  selectKey?: string;
-}
-
-export interface FilesIntentStore {
-  open(payload: FilesIntentPayload): void;
-  pending(): FilesIntentPayload | null;
-  clear(): void;
-  subscribe(listener: () => void): () => void;
-}
-
-export function createFilesIntentStore(): FilesIntentStore {
-  let value: FilesIntentPayload | null = null;
-  const listeners = new Set<() => void>();
-  const publish = () => listeners.forEach((listener) => listener());
-  return {
-    open(payload) {
-      value = payload;
-      publish();
-    },
-    pending: () => value,
-    clear() {
-      if (!value) return;
-      value = null;
-      publish();
-    },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-  };
-}
+import type { FilesIntentPayload, FilesIntentStore } from "../intents/files-intent";
+export { createFilesIntentStore, type FilesIntentPayload, type FilesIntentStore } from "../intents/files-intent";
 
 export interface FilesRecoveryState {
   maxComputeThisRun: number;

@@ -1,17 +1,17 @@
 import { useManagedWindowRuntime } from "../components/window-runtime-context";
-import { useEffect, useSyncExternalStore } from "react";
+import { lazy, useEffect, useSyncExternalStore } from "react";
 import { createSignalAuthentication } from "./signal-auth";
 import type { SignalDanielConversationRuntime } from "./signal-daniel";
 import type { SignalService } from "../services/signal";
-import {
-  SignalLoginScreen,
-  type SignalDestination,
-} from "../screens/signal-login-screen";
-import { MessengerScreen, type MessengerScreenRuntime } from "../screens/messenger-shipped-surfaces";
-import { SignalResetScreen } from "../screens/signal-reset-screen";
-import { SignalTempPasswordScreen } from "../screens/signal-temp-password-screen";
+import type { SignalDestination } from "../screens/signal-login-screen";
+import type { MessengerScreenRuntime } from "../screens/messenger-shipped-surfaces";
 import type { ProductionWindowBinding } from "../state/production-window-apps";
 import type { WindowScreenComponentProps } from "../state/window-types";
+
+const SignalLoginScreen = lazy(() => import("../screens/signal-login-screen").then((module) => ({ default: module.SignalLoginScreen })));
+const MessengerScreen = lazy(() => import("../screens/messenger-shipped-surfaces").then((module) => ({ default: module.MessengerScreen })));
+const SignalResetScreen = lazy(() => import("../screens/signal-reset-screen").then((module) => ({ default: module.SignalResetScreen })));
+const SignalTempPasswordScreen = lazy(() => import("../screens/signal-temp-password-screen").then((module) => ({ default: module.SignalTempPasswordScreen })));
 
 export interface SignalPresentationRuntime {
   service: SignalService;

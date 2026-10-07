@@ -320,6 +320,14 @@ async function runLifecycle(page, game, locale) {
   step("closed cleanly");
 }
 
+async function waitForDesktop(page) {
+  await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: modelReadyTimeout });
+  // Each isolated context is a fresh world: finish the natural opening before
+  // clicking the dock, rather than racing the blocking cutscene overlay.
+  await page.getByRole("button", { name: "Wake Nori", exact: true }).click({ timeout: 90000 });
+  await page.locator('[data-story-scene="boot"]').waitFor({ state: "detached", timeout: 30000 });
+}
+
 async function runReducedMotion(browser) {
   console.log("  reduced-motion pass");
   const context = await browser.newContext({
@@ -332,7 +340,7 @@ async function runReducedMotion(browser) {
     await page.addInitScript(installTransportProbe);
     await page.addInitScript((value) => localStorage.setItem("arcade-language", value), "en-US");
     await page.goto(sourceOrigin, { waitUntil: "domcontentloaded" });
-    await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: modelReadyTimeout });
+    await waitForDesktop(page);
     assert.equal(
       await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches),
       true,
@@ -369,7 +377,7 @@ async function runLocale(browser, locale) {
     // arcade-language switch instead of relying on the browser default.
     await page.addInitScript((value) => localStorage.setItem("arcade-language", value), locale);
     await page.goto(sourceOrigin, { waitUntil: "domcontentloaded" });
-    await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: modelReadyTimeout });
+    await waitForDesktop(page);
     assert.equal(
       await page.evaluate(() => document.documentElement.lang),
       locale === "en-US" ? "en" : "zh-CN",

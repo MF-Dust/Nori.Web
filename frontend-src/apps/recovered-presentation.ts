@@ -48,7 +48,7 @@ import type { ProductionWindowBindings } from "../state/production-window-apps";
 import {
   createFilesIntentStore,
   type FilesIntentStore,
-} from "../screens/files-screen";
+} from "../intents/files-intent";
 import {
   createQfrColdVolumeDockRenderer,
   type QfrDockRuntime,

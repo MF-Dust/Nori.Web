@@ -1,18 +1,16 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
+import { WindowContentFallback } from "../components/window-content-host";
 import type { ProductionWindowBinding } from "../state/production-window-apps";
 import type { WindowScreenComponentProps } from "../state/window-types";
 import type { CakeDuelBannerMessage } from "../screens/cakeduel-banner";
-import { CakeDuelCardPreviewProvider } from "../screens/cakeduel-card-preview";
-import { CakeDuelHelpOverlay } from "../screens/cakeduel-help-overlay";
-import { CakeDuelResultsScreen } from "../screens/cakeduel-results-screen";
-import { CakeDuelScreen } from "../screens/cakeduel-screen";
-import { CakeDuelStartScreen } from "../screens/cakeduel-start-screen";
 import type { CakeDuelTranslate } from "../screens/cakeduel-hud";
 import type {
   CakeDuelControllerSnapshot,
@@ -24,6 +22,12 @@ import {
   CAKE_DUEL_CHALLENGE_FLIP_STAGGER_MS,
   CakeDuelRuntimeController,
 } from "./cakeduel-runtime";
+
+const CakeDuelCardPreviewProvider = lazy(() => import("../screens/cakeduel-card-preview").then((module) => ({ default: module.CakeDuelCardPreviewProvider })));
+const CakeDuelHelpOverlay = lazy(() => import("../screens/cakeduel-help-overlay").then((module) => ({ default: module.CakeDuelHelpOverlay })));
+const CakeDuelResultsScreen = lazy(() => import("../screens/cakeduel-results-screen").then((module) => ({ default: module.CakeDuelResultsScreen })));
+const CakeDuelScreen = lazy(() => import("../screens/cakeduel-screen").then((module) => ({ default: module.CakeDuelScreen })));
+const CakeDuelStartScreen = lazy(() => import("../screens/cakeduel-start-screen").then((module) => ({ default: module.CakeDuelStartScreen })));
 
 export interface CakeDuelPresentationAssets {
   backgroundImage: string;
@@ -154,7 +158,7 @@ export function createCakeDuelProductionWindowBinding(
     }, [navigate, snapshot.route]);
 
     return (
-      <>
+      <Suspense fallback={<WindowContentFallback />}>
         <CakeDuelStartScreen
           difficulty={difficulty}
           mounted={snapshot.mounted}
@@ -176,7 +180,7 @@ export function createCakeDuelProductionWindowBinding(
           resolveCardIcon={icon}
           onClose={() => setHelpOpen(false)}
         />
-      </>
+      </Suspense>
     );
   }
 
@@ -254,13 +258,15 @@ export function createCakeDuelProductionWindowBinding(
 
     if (!snapshot.mounted || !board) {
       return (
-        <CakeDuelScreen
-          stage={snapshot.mounted ? "empty" : "loading"}
-          backgroundImage={runtime.assets.backgroundImage}
-          translate={runtime.translate}
-          actionError={snapshot.error}
-          onBackToStart={() => navigate("start")}
-        />
+        <Suspense fallback={<WindowContentFallback />}>
+          <CakeDuelScreen
+            stage={snapshot.mounted ? "empty" : "loading"}
+            backgroundImage={runtime.assets.backgroundImage}
+            translate={runtime.translate}
+            actionError={snapshot.error}
+            onBackToStart={() => navigate("start")}
+          />
+        </Suspense>
       );
     }
 
@@ -279,59 +285,63 @@ export function createCakeDuelProductionWindowBinding(
         : board;
     const displayBanner = presentCakeDuelBanner(snapshot.banner, runtime.translate);
 
+    // Keep route ownership mounted while its lazy UI downloads; otherwise the
+    // old route releases the cartridge before the new route can retain it.
     return (
-      <CakeDuelCardPreviewProvider>
-        <CakeDuelScreen
-          stage="game"
-          backgroundImage={runtime.assets.backgroundImage}
-          translate={runtime.translate}
-          banner={displayBanner}
-          wolfyTaunt={snapshot.wolfyTauntActive && runtime.assets.wolfyFrames
-            ? { frameImages: runtime.assets.wolfyFrames }
-            : null}
-          actionError={snapshot.error}
-          gameBoard={{
-            view: displayBoard.view,
-            zones: {
-              ...displayBoard.zones,
-              playerHand: displayBoard.zones.playerHand.map((card) => ({
-                ...card,
-                name: card.name ?? "",
-              })),
-            },
-            isMyTurn: displayBoard.isMyTurn,
-            legalActions: displayBoard.legalActions,
-            selectedHandEntityIds: selectedIds,
-            handOrderEntityIds: handOrder,
-            selectedClaim,
-            selectedPickIndex,
-            actionPending: snapshot.actionPending
-              || !snapshot.connected
-              || challengeBannerActive
-              || challengePauseActive
-              || challengeRevealActive
-              || challengeBoutEndActive,
-            lastAttackPassed: displayBoard.lastAttackPassed,
-            translate: runtime.translate,
-            cardBackImage: runtime.assets.cardBackImage,
-            cakeImage: runtime.assets.cakeImage,
-            resolveCardFront: runtime.assets.resolveCardFront,
-            resolveClaimColor: runtime.assets.resolveClaimColor,
-            onHelp: () => setHelpOpen(true),
-            onToggleHandEntity: toggleHandEntity,
-            onReorderHandEntityIds: (entityIds) => setHandOrder([...entityIds]),
-            onSelectClaim: setSelectedClaim,
-            onSelectPickIndex: setSelectedPickIndex,
-            onAction: (action) => runtime.controller.play(action),
-          }}
-        />
-        <CakeDuelHelpOverlay
-          open={helpOpen}
-          translate={runtime.translate}
-          resolveCardIcon={icon}
-          onClose={() => setHelpOpen(false)}
-        />
-      </CakeDuelCardPreviewProvider>
+      <Suspense fallback={<WindowContentFallback />}>
+        <CakeDuelCardPreviewProvider>
+          <CakeDuelScreen
+            stage="game"
+            backgroundImage={runtime.assets.backgroundImage}
+            translate={runtime.translate}
+            banner={displayBanner}
+            wolfyTaunt={snapshot.wolfyTauntActive && runtime.assets.wolfyFrames
+              ? { frameImages: runtime.assets.wolfyFrames }
+              : null}
+            actionError={snapshot.error}
+            gameBoard={{
+              view: displayBoard.view,
+              zones: {
+                ...displayBoard.zones,
+                playerHand: displayBoard.zones.playerHand.map((card) => ({
+                  ...card,
+                  name: card.name ?? "",
+                })),
+              },
+              isMyTurn: displayBoard.isMyTurn,
+              legalActions: displayBoard.legalActions,
+              selectedHandEntityIds: selectedIds,
+              handOrderEntityIds: handOrder,
+              selectedClaim,
+              selectedPickIndex,
+              actionPending: snapshot.actionPending
+                || !snapshot.connected
+                || challengeBannerActive
+                || challengePauseActive
+                || challengeRevealActive
+                || challengeBoutEndActive,
+              lastAttackPassed: displayBoard.lastAttackPassed,
+              translate: runtime.translate,
+              cardBackImage: runtime.assets.cardBackImage,
+              cakeImage: runtime.assets.cakeImage,
+              resolveCardFront: runtime.assets.resolveCardFront,
+              resolveClaimColor: runtime.assets.resolveClaimColor,
+              onHelp: () => setHelpOpen(true),
+              onToggleHandEntity: toggleHandEntity,
+              onReorderHandEntityIds: (entityIds) => setHandOrder([...entityIds]),
+              onSelectClaim: setSelectedClaim,
+              onSelectPickIndex: setSelectedPickIndex,
+              onAction: (action) => runtime.controller.play(action),
+            }}
+          />
+          <CakeDuelHelpOverlay
+            open={helpOpen}
+            translate={runtime.translate}
+            resolveCardIcon={icon}
+            onClose={() => setHelpOpen(false)}
+          />
+        </CakeDuelCardPreviewProvider>
+      </Suspense>
     );
   }
 
@@ -345,24 +355,26 @@ export function createCakeDuelProductionWindowBinding(
     }, [navigate, snapshot.route]);
 
     return (
-      <CakeDuelResultsScreen
-        winner={snapshot.winner}
-        playerWins={snapshot.playerWins}
-        noriWins={snapshot.noriWins}
-        roundsToWin={snapshot.state.settings.roundsToWin}
-        pending={snapshot.actionPending || !snapshot.connected}
-        backgroundImage={runtime.assets.backgroundImage}
-        cardBackImage={runtime.assets.cardBackImage}
-        cakeImage={runtime.assets.cakeImage}
-        trophyImage={runtime.assets.trophyImage}
-        translate={runtime.translate}
-        resolveCardFront={runtime.assets.resolveCardFront}
-        onPlayAgain={() => {
-          if (resetIssued.current) return;
-          resetIssued.current = true;
-          runtime.controller.reset();
-        }}
-      />
+      <Suspense fallback={<WindowContentFallback />}>
+        <CakeDuelResultsScreen
+          winner={snapshot.winner}
+          playerWins={snapshot.playerWins}
+          noriWins={snapshot.noriWins}
+          roundsToWin={snapshot.state.settings.roundsToWin}
+          pending={snapshot.actionPending || !snapshot.connected}
+          backgroundImage={runtime.assets.backgroundImage}
+          cardBackImage={runtime.assets.cardBackImage}
+          cakeImage={runtime.assets.cakeImage}
+          trophyImage={runtime.assets.trophyImage}
+          translate={runtime.translate}
+          resolveCardFront={runtime.assets.resolveCardFront}
+          onPlayAgain={() => {
+            if (resetIssued.current) return;
+            resetIssued.current = true;
+            runtime.controller.reset();
+          }}
+        />
+      </Suspense>
     );
   }
 
