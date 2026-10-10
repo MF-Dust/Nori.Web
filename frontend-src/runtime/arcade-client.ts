@@ -22,6 +22,7 @@ export interface ArcadeClientOptions {
   reconnect?: boolean;
   reconnectMinMs?: number;
   reconnectMaxMs?: number;
+  reconnectMaxAttempts?: number;
   keepAliveMs?: number;
   createWebSocket?: (
     url: string | URL,
@@ -60,6 +61,7 @@ export class ArcadeClient {
       reconnect: options.reconnect ?? true,
       reconnectMinMs: options.reconnectMinMs ?? 500,
       reconnectMaxMs: options.reconnectMaxMs ?? 10_000,
+      reconnectMaxAttempts: options.reconnectMaxAttempts ?? 10,
       // Protocol-level pings wake hibernating Durable Objects. Keep them off by
       // default and only enable them when a deployment actually needs them.
       keepAliveMs: options.keepAliveMs ?? 0,
@@ -102,6 +104,11 @@ export class ArcadeClient {
   }
 
   connect(): Promise<void> {
+    this.reconnectAttempt = 0;
+    return this.startConnection();
+  }
+
+  private startConnection(): Promise<void> {
     if (this.opening) return this.opening;
     if (this.socket?.readyState === WebSocket.OPEN) return Promise.resolve();
     this.manualClose = false;
@@ -153,7 +160,6 @@ export class ArcadeClient {
               finish();
               return;
             }
-            this.reconnectAttempt = 0;
             this.setState("open");
             this.installKeepAlive();
             finish();
@@ -171,7 +177,7 @@ export class ArcadeClient {
       });
     } catch (error) {
       if (epoch !== this.epoch || this.manualClose) return;
-      if (this.options.reconnect && this.state !== "waiting")
+      if (this.options.reconnect && this.state === "connecting")
         this.scheduleReconnect();
       else if (!this.options.reconnect) this.setState("closed");
       throw error;
@@ -192,6 +198,8 @@ export class ArcadeClient {
       typeof message.type !== "string"
     )
       return;
+    if (message.type === "world_joined" || message.type === "world_created")
+      this.reconnectAttempt = 0;
     for (const listener of this.listeners) listener(message);
   }
 
@@ -213,15 +221,20 @@ export class ArcadeClient {
       reason === "soft_closed" ||
       reason === "closed"
     ) {
+      this.clearReconnect();
       this.setState("closed");
       return;
     }
-    if (reason === "deploy_restart") this.reconnectAttempt = 0;
     this.scheduleReconnect();
   }
 
   private scheduleReconnect(): void {
     this.clearReconnect();
+    if (this.reconnectAttempt >= this.options.reconnectMaxAttempts) {
+      this.lastCloseInfo = { code: this.lastCloseInfo?.code ?? 0, reason: "reconnect_exhausted" };
+      this.setState("closed");
+      return;
+    }
     this.setState("waiting");
     const exponent = Math.min(this.reconnectAttempt++, 8);
     const base = Math.min(
@@ -230,7 +243,7 @@ export class ArcadeClient {
     );
     const delay = Math.round(base * (0.8 + Math.random() * 0.4));
     this.reconnectTimer = setTimeout(() => {
-      void this.connect().catch(() => {});
+      void this.startConnection().catch(() => {});
     }, delay);
   }
 

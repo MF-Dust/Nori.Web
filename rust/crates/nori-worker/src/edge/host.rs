@@ -21,6 +21,7 @@ pub trait Log {
 pub trait Storage {
     async fn get(&self, key: &str) -> Result<Option<String>>;
     async fn put(&self, key: &str, value: &str) -> Result<()>;
+    async fn set_alarm(&self, at_ms: i64) -> Result<()>;
 }
 
 pub trait Sockets {

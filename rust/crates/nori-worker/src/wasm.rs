@@ -68,6 +68,15 @@ impl host::Storage for CfHost {
             .await
             .map_err(|e| e.to_string())
     }
+    async fn set_alarm(&self, at_ms: i64) -> host::Result<()> {
+        self.state
+            .as_ref()
+            .ok_or("DO state missing")?
+            .storage()
+            .set_alarm(at_ms)
+            .await
+            .map_err(|e| e.to_string())
+    }
 }
 impl host::Sockets for CfHost {
     type Socket = WebSocket;
@@ -322,6 +331,10 @@ impl DurableObject for NoriArcadeSession {
             .set("Sec-WebSocket-Protocol", "arcade.v1")?;
         Ok(response)
     }
+    async fn alarm(&self) -> Result<Response> {
+        self.session.on_alarm(&self.host).await;
+        Response::empty()
+    }
     async fn websocket_message(
         &self,
         ws: WebSocket,
@@ -344,7 +357,8 @@ impl DurableObject for NoriArcadeSession {
         clean: bool,
     ) -> Result<()> {
         self.session
-            .on_close(&self.host, &ws, code as u16, &reason, clean);
+            .on_close(&self.host, &ws, code as u16, &reason, clean)
+            .await;
         Ok(())
     }
     async fn websocket_error(&self, _ws: WebSocket, error: Error) -> Result<()> {

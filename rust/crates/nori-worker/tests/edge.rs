@@ -12,7 +12,7 @@ use nori_worker::edge::{
     live_pack_loader::{LivePackLoader, CORE_KEY, INDEX_KEY, SHARD_CACHE},
     provider_io,
     router::{self, Route},
-    session_object::{Frame, SessionObject, AI_KEY, WORLD_KEY},
+    session_object::{Frame, SessionObject, AI_KEY, IDLE_FLUSH_MS, WORLD_KEY},
     Isolate,
 };
 use serde_json::{json, Value};
@@ -66,6 +66,9 @@ struct Fake {
     storage: RefCell<HashMap<String, String>>,
     puts: RefCell<Vec<(String, String)>>,
     get_error: Cell<bool>,
+    put_error: Cell<bool>,
+    alarm_error: Cell<bool>,
+    alarms: RefCell<Vec<i64>>,
     sockets: RefCell<HashMap<usize, Value>>,
     text: RefCell<Vec<(usize, Value)>>,
     binary: RefCell<Vec<(usize, Vec<u8>)>>,
@@ -160,8 +163,18 @@ impl Storage for Fake {
         }
     }
     async fn put(&self, key: &str, value: &str) -> Result<()> {
+        if self.put_error.get() {
+            return Err("daily rows written limit exceeded".into());
+        }
         self.puts.borrow_mut().push((key.into(), value.into()));
         self.storage.borrow_mut().insert(key.into(), value.into());
+        Ok(())
+    }
+    async fn set_alarm(&self, at_ms: i64) -> Result<()> {
+        if self.alarm_error.get() {
+            return Err("daily rows written limit exceeded".into());
+        }
+        self.alarms.borrow_mut().push(at_ms);
         Ok(())
     }
 }
@@ -260,6 +273,14 @@ fn send(object: &SessionObject, host: &Fake, isolate: &Isolate, id: usize, messa
 fn dispatch() -> Value {
     json!({"type":"dispatch","actor":"player","cartridgeId":"chat","requestId":"chat-1","expectedHeadVersion":0,"cmd":{"type":"playerMessage","text":"hello"}})
 }
+fn idle_sync(version: u64) -> Value {
+    json!({
+        "type": "dispatch", "actor": "player", "cartridgeId": "manifold.web",
+        "requestId": format!("idle-{version}"), "expectedHeadVersion": version,
+        "cmd": {"type": "idle.sync", "compute": version + 1}
+    })
+}
+
 fn setup() -> (Fake, Isolate, SessionObject) {
     let fake = Fake::new();
     fake.socket(1, "guest-1", "main");
@@ -773,7 +794,7 @@ fn unexpected_frame_runtime_failure_close_and_close_error_handlers() {
         fake.closes.borrow()[1],
         (1, 1011, "arcade_runtime_error".into())
     );
-    object.on_close(&fake, &1, 1000, "bye", true);
+    run(object.on_close(&fake, &1, 1000, "bye", true));
     assert_eq!(fake.closes.borrow()[2], (1, 1000, "bye".into()));
     object.on_error(&fake, "failure");
     assert!(fake
@@ -1123,6 +1144,134 @@ fn media_joining_during_task_sleep_receives_remaining_frames() {
     run(futures_util::future::join(chat, media));
     assert!(fake.binary.borrow().iter().any(|(id, _)| *id == 2));
     assert_eq!(fake.world_puts(), 2);
+}
+
+#[test]
+fn idle_sync_coalesces_sixty_messages_into_one_snapshot_per_alarm() {
+    let (fake, isolate, object) = setup();
+    send(
+        &object,
+        &fake,
+        &isolate,
+        1,
+        json!({"type":"open_my_web_world"}),
+    );
+    let initial_writes = fake.world_puts();
+    for version in 0..60 {
+        send(&object, &fake, &isolate, 1, idle_sync(version));
+        assert_eq!(fake.last("dispatch_ack")["success"], true);
+        fake.now.set(fake.now.get() + 500);
+    }
+    assert_eq!(fake.world_puts(), initial_writes);
+    assert_eq!(
+        *fake.alarms.borrow(),
+        vec![1_800_000_000_000 + IDLE_FLUSH_MS]
+    );
+    run(object.on_alarm(&fake));
+    assert_eq!(fake.world_puts(), initial_writes + 1);
+    let stored: Value =
+        serde_json::from_str(fake.storage.borrow().get(WORLD_KEY).unwrap()).unwrap();
+    assert_eq!(
+        stored["cartridges"]["manifold.web"]["state"]["variables"]["idle"]["compute"],
+        60
+    );
+    send(&object, &fake, &isolate, 1, idle_sync(60));
+    assert_eq!(fake.alarms.borrow().len(), 2);
+    run(object.on_alarm(&fake));
+    assert_eq!(fake.world_puts(), initial_writes + 2);
+    run(object.on_alarm(&fake));
+    assert_eq!(
+        fake.world_puts(),
+        initial_writes + 2,
+        "clean alarms must not write"
+    );
+    assert!(fake.closes.borrow().is_empty());
+}
+
+#[test]
+fn discrete_actions_and_socket_close_flush_pending_idle_progress() {
+    let (fake, isolate, object) = setup();
+    send(
+        &object,
+        &fake,
+        &isolate,
+        1,
+        json!({"type":"open_my_web_world"}),
+    );
+    let initial_writes = fake.world_puts();
+    send(&object, &fake, &isolate, 1, idle_sync(0));
+    send(&object, &fake, &isolate, 1, dispatch());
+    assert_eq!(
+        fake.world_puts(),
+        initial_writes + 1,
+        "chat still saves immediately"
+    );
+    run(object.on_alarm(&fake));
+    assert_eq!(
+        fake.world_puts(),
+        initial_writes + 1,
+        "already saved dirty state"
+    );
+    send(&object, &fake, &isolate, 1, idle_sync(1));
+    run(object.on_close(&fake, &1, 1000, "bye", true));
+    assert_eq!(fake.world_puts(), initial_writes + 2);
+    run(object.on_alarm(&fake));
+    assert_eq!(fake.world_puts(), initial_writes + 2);
+    // Hibernation reconstructs a fresh object: no missing-world error or extra write.
+    run(SessionObject::default().on_alarm(&fake));
+    assert_eq!(fake.world_puts(), initial_writes + 2);
+}
+
+#[test]
+fn storage_write_and_alarm_failures_close_as_overloaded_not_runtime_error() {
+    for ai in [false, true] {
+        let (fake, isolate, object) = setup();
+        fake.put_error.set(true);
+        let message = if ai {
+            json!({"type":"event","channel":"nori.ai.config","payload":{"enabled":true}})
+        } else {
+            json!({"type":"open_my_web_world"})
+        };
+        send(&object, &fake, &isolate, 1, message);
+        assert_eq!(fake.closes.borrow()[0], (1, 1013, "overloaded".into()));
+        assert!(fake
+            .logs
+            .borrow()
+            .iter()
+            .any(|log| log.contains("daily rows written limit")));
+    }
+    let (fake, isolate, object) = setup();
+    send(
+        &object,
+        &fake,
+        &isolate,
+        1,
+        json!({"type":"open_my_web_world"}),
+    );
+    fake.alarm_error.set(true);
+    send(&object, &fake, &isolate, 1, idle_sync(0));
+    assert_eq!(fake.closes.borrow()[0], (1, 1013, "overloaded".into()));
+    fake.alarm_error.set(false);
+    send(&object, &fake, &isolate, 1, idle_sync(1));
+    fake.socket(2, "guest-1", "pending_media");
+    fake.put_error.set(true);
+    run(object.on_alarm(&fake));
+    assert!(fake
+        .closes
+        .borrow()
+        .contains(&(2, 1013, "overloaded".into())));
+    assert!(fake
+        .logs
+        .borrow()
+        .iter()
+        .any(|log| log.contains("snapshot alarm error")));
+    fake.put_error.set(false);
+    run(object.on_alarm(&fake));
+    assert_eq!(
+        fake.world_puts(),
+        2,
+        "failed flush must keep dirty progress"
+    );
 }
 
 #[test]

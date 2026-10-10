@@ -57,7 +57,8 @@ export function SourceConnectionLayer({
   const reconnecting = seenOpen && (state === "waiting" || state === "connecting");
   const deploying = reconnecting && reason === "deploy_restart";
   const worldReset = state === "closed" && reason === "world_reset";
-  const fatal = state === "closed" && (reason === "session_replaced" || reason === "session_invalid");
+  const exhausted = state === "closed" && reason === "reconnect_exhausted";
+  const fatal = state === "closed" && (reason === "session_replaced" || reason === "session_invalid" || exhausted);
   const gated = state === "closed" && GATED.has(reason);
   useEffect(() => {
     if (!worldReset) return;
@@ -96,9 +97,9 @@ export function SourceConnectionLayer({
             </div>
             <div className="source-sys-copy">
               <strong>{t("connection.failed")}</strong>
-              <p>{t(reason === "session_replaced" ? "connection.sessionReplaced" : "connection.sessionInvalid")}</p>
+              <p>{t(exhausted ? "connection.failed" : reason === "session_replaced" ? "connection.sessionReplaced" : "connection.sessionInvalid")}</p>
             </div>
-            <button type="button" className="source-sys-button" onClick={() => window.location.reload()}>{t("connection.retry")}</button>
+            <button type="button" className="source-sys-button" onClick={() => exhausted ? void arcade.connect().catch(() => {}) : window.location.reload()}>{t("connection.retry")}</button>
           </div>
         </main>
       )}

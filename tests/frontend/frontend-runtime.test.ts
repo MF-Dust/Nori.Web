@@ -84,9 +84,9 @@ class Socket extends EventTarget {
   message(data: any) {
     this.dispatchEvent(new MessageEvent("message", { data }));
   }
-  close() {
+  close(code = 1000, reason = "") {
     this.readyState = 3;
-    this.dispatchEvent(new Event("close"));
+    this.dispatchEvent(Object.assign(new Event("close"), { code, reason }));
   }
 }
 const tick = () => new Promise((resolve) => setImmediate(resolve));
@@ -280,6 +280,116 @@ test("frontend disposal fences pending authentication and later starts", async (
   release(Response.json(null));
   await later;
   assert.equal(requests, 1);
+  assert.equal(Socket.sockets.length, 0);
+});
+
+function reconnectClock(t: any) {
+  let id = 0;
+  const timers = new Map<number, { callback: () => void; delay: number }>();
+  t.mock.method(globalThis, "setTimeout", (callback: () => void, delay: number) => {
+    timers.set(++id, { callback, delay });
+    return id;
+  });
+  t.mock.method(globalThis, "clearTimeout", (timer: number) => timers.delete(timer));
+  t.mock.method(Math, "random", () => 0.5);
+  return {
+    next() {
+      const entry = [...timers].find(([, timer]) => timer.delay < 15_000);
+      assert.ok(entry, "expected a reconnect timer");
+      timers.delete(entry[0]);
+      entry[1].callback();
+      return entry[1].delay;
+    },
+    pending: () => [...timers.values()].filter((timer) => timer.delay < 15_000),
+  };
+}
+
+test("open-close loops back off, exhaust their retry budget, and can be manually retried", async (t) => {
+  environment(t);
+  const clock = reconnectClock(t);
+  const client = new ArcadeClient({ reconnectMinMs: 100, reconnectMaxMs: 1000, reconnectMaxAttempts: 3 });
+  t.after(() => client.close());
+  const start = client.connect();
+  await tick();
+  Socket.sockets.at(-1)!.open();
+  await start;
+  for (const delay of [100, 200, 400]) {
+    Socket.sockets.at(-1)!.close(1011, "arcade_runtime_error");
+    assert.equal(clock.next(), delay, "transport open must not reset backoff");
+    await tick();
+    Socket.sockets.at(-1)!.open();
+    await tick();
+  }
+  Socket.sockets.at(-1)!.close(1011, "arcade_runtime_error");
+  assert.equal(client.connectionState, "closed");
+  assert.equal(client.lastClose?.reason, "reconnect_exhausted");
+  assert.equal(clock.pending().length, 0);
+  assert.equal(Socket.sockets.length, 4);
+  const retry = client.connect();
+  await tick();
+  Socket.sockets.at(-1)!.open();
+  await retry;
+  Socket.sockets.at(-1)!.close();
+  assert.equal(clock.next(), 100);
+  await tick();
+});
+
+for (const type of ["world_joined", "world_created"]) {
+  test(`only ${type} resets the backoff after a reconnect`, async (t) => {
+    environment(t);
+    const clock = reconnectClock(t);
+    const client = new ArcadeClient({ reconnectMinMs: 100 });
+    t.after(() => client.close());
+    const start = client.connect();
+    await tick();
+    Socket.sockets.at(-1)!.open();
+    await start;
+    Socket.sockets.at(-1)!.close();
+    assert.equal(clock.next(), 100);
+    await tick();
+    const socket = Socket.sockets.at(-1)!;
+    socket.open();
+    socket.message(JSON.stringify({ type }));
+    await tick();
+    socket.close();
+    assert.equal(clock.next(), 100);
+    await tick();
+  });
+}
+
+for (const opened of [false, true]) {
+  test(`overloaded closes stop retries even when opened=${opened}`, async (t) => {
+    environment(t);
+    const clock = reconnectClock(t);
+    const client = new ArcadeClient();
+    t.after(() => client.close());
+    const start = client.connect();
+    const checked = opened ? start : assert.rejects(start, /closed before opening/);
+    await tick();
+    const socket = Socket.sockets.at(-1)!;
+    if (opened) socket.open();
+    socket.close(1013, "overloaded");
+    await checked;
+    await tick();
+    assert.equal(client.connectionState, "closed");
+    assert.equal(client.lastClose?.reason, "overloaded");
+    assert.equal(clock.pending().length, 0, "openSocket catch must not revive a terminal close");
+  });
+}
+
+test("ticket failures also stop after the configured retry budget", async (t) => {
+  environment(t);
+  const clock = reconnectClock(t);
+  t.mock.method(globalThis, "fetch", async () => Response.json({ message: "unavailable" }, { status: 503 }));
+  const client = new ArcadeClient({ reconnectMinMs: 100, reconnectMaxAttempts: 2 });
+  t.after(() => client.close());
+  await assert.rejects(client.connect());
+  assert.equal(clock.next(), 100);
+  await tick();
+  assert.equal(clock.next(), 200);
+  await tick();
+  assert.equal(client.connectionState, "closed");
+  assert.equal(clock.pending().length, 0);
   assert.equal(Socket.sockets.length, 0);
 });
 

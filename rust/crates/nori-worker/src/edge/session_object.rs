@@ -10,10 +10,16 @@ use nori_core::{
     world::{Secrets, World},
 };
 use serde_json::{json, Map, Value};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 pub const WORLD_KEY: &str = "nori:world:v1";
 pub const AI_KEY: &str = "nori:ai-public:v1";
+pub const IDLE_FLUSH_MS: i64 = 30_000;
+const STORAGE_WRITE_ERROR: &str = "storage_write_failed: ";
+
+fn storage_write_error(error: String) -> String {
+    format!("{STORAGE_WRITE_ERROR}{error}")
+}
 
 pub enum Frame {
     Text(String),
@@ -24,6 +30,8 @@ pub enum Frame {
 pub struct SessionObject {
     world: RefCell<Option<World>>,
     last_persisted: RefCell<Option<String>>,
+    dirty: Cell<bool>,
+    alarm_pending: Cell<bool>,
     load_lock: Mutex<()>,
     persist_lock: Mutex<()>,
 }
@@ -110,25 +118,70 @@ impl SessionObject {
         Ok(())
     }
 
-    async fn persist_world(&self, host: &impl Storage, force: bool) -> Result<()> {
+    async fn persist_world(
+        &self,
+        host: &(impl Storage + Clock),
+        force: bool,
+        idle_sync: bool,
+    ) -> Result<()> {
         let _guard = self.persist_lock.lock().await;
         let raw =
             snapshot::world_snapshot_json(self.world.borrow().as_ref().ok_or("world missing")?);
         if force || self.last_persisted.borrow().as_deref() != Some(&raw) {
-            host.put(WORLD_KEY, &raw).await?;
-            *self.last_persisted.borrow_mut() = Some(raw);
+            self.dirty.set(true);
+            if idle_sync && !force {
+                // Idle sync is resent from browser storage; discrete actions still save immediately.
+                if !self.alarm_pending.get() {
+                    host.set_alarm(host.now_ms() + IDLE_FLUSH_MS)
+                        .await
+                        .map_err(storage_write_error)?;
+                    self.alarm_pending.set(true);
+                }
+            } else {
+                host.put(WORLD_KEY, &raw)
+                    .await
+                    .map_err(storage_write_error)?;
+                *self.last_persisted.borrow_mut() = Some(raw);
+                self.dirty.set(false);
+            }
         }
         Ok(())
     }
 
+    async fn flush_dirty(&self, host: &impl Storage) -> Result<()> {
+        let _guard = self.persist_lock.lock().await;
+        if !self.dirty.get() {
+            return Ok(());
+        }
+        let raw =
+            snapshot::world_snapshot_json(self.world.borrow().as_ref().ok_or("world missing")?);
+        host.put(WORLD_KEY, &raw)
+            .await
+            .map_err(storage_write_error)?;
+        *self.last_persisted.borrow_mut() = Some(raw);
+        self.dirty.set(false);
+        Ok(())
+    }
+
+    pub async fn on_alarm(&self, host: &(impl Storage + Sockets + Log)) {
+        // shortcut: hibernation can drop pending idle syncs; use durable staging if browser resync is insufficient.
+        self.alarm_pending.set(false);
+        if let Err(error) = self.flush_dirty(host).await {
+            host.log(&format!("[arcade] snapshot alarm error: {error}"));
+            for socket in host.list() {
+                let _ = host.close(&socket, 1013, "overloaded");
+            }
+        }
+    }
+
     async fn persist_ai(&self, host: &impl Storage, config: &Value) -> Result<String> {
         let raw = canonical_json(&session::public_ai_config(config));
-        host.put(AI_KEY, &raw).await?;
+        host.put(AI_KEY, &raw).await.map_err(storage_write_error)?;
         Ok(raw)
     }
 
-    /// All runtime errors use the Python close code/reason; ordinary protocol
-    /// errors returned by the core are direct frames and keep the socket open.
+    /// Storage writes fail closed as overloaded; other runtime errors use 1011.
+    /// Ordinary core protocol errors are direct frames and keep the socket open.
     pub async fn on_message<H: SessionHost>(
         &self,
         host: &H,
@@ -138,7 +191,11 @@ impl SessionObject {
     ) {
         if let Err(error) = self.message_inner(host, isolate, socket, frame).await {
             host.log(&format!("[arcade] hibernation message error: {error}"));
-            let _ = host.close(socket, 1011, "arcade_runtime_error");
+            if error.starts_with(STORAGE_WRITE_ERROR) {
+                let _ = host.close(socket, 1013, "overloaded");
+            } else {
+                let _ = host.close(socket, 1011, "arcade_runtime_error");
+            }
         }
     }
 
@@ -302,7 +359,10 @@ impl SessionObject {
             send_direct(host, socket, message);
         }
         self.drain(host, socket, &config.ai, out.tasks).await?;
-        self.persist_world(host, out.force_persist).await
+        let idle_sync = message.get("type").and_then(Value::as_str) == Some("dispatch")
+            && message.get("cartridgeId").and_then(Value::as_str) == Some("manifold.web")
+            && message.pointer("/cmd/type").and_then(Value::as_str) == Some("idle.sync");
+        self.persist_world(host, out.force_persist, idle_sync).await
     }
 
     fn clients<H: Sockets>(&self, host: &H) -> Clients<H::Socket> {
@@ -392,7 +452,7 @@ impl SessionObject {
         Ok(Tick::Continue(task, input))
     }
 
-    pub fn on_close<H: Sockets>(
+    pub async fn on_close<H: Storage + Sockets + Log>(
         &self,
         host: &H,
         socket: &H::Socket,
@@ -400,6 +460,9 @@ impl SessionObject {
         reason: &str,
         _was_clean: bool,
     ) {
+        if let Err(error) = self.flush_dirty(host).await {
+            host.log(&format!("[arcade] snapshot close error: {error}"));
+        }
         let _ = host.close(socket, code, reason);
     }
 
