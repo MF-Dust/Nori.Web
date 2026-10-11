@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { pdfAssetsPlugin } from "./pdf-assets-plugin";
+import { entryPreloadPlugin } from "./entry-preload-plugin";
 import { defineConfig } from "vite";
 
 const sourceRoot = dirname(fileURLToPath(import.meta.url));
@@ -20,7 +21,12 @@ export default defineConfig({
   root: sourceRoot,
   base: "/",
   publicDir: publicRoot,
-  plugins: [react(), tailwindcss(), pdfAssetsPlugin()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    pdfAssetsPlugin(),
+    entryPreloadPlugin({ module: "/source-app.tsx", skipPath: "/landing" }),
+  ],
   server: {
     proxy: {
       "/api": {
@@ -33,7 +39,8 @@ export default defineConfig({
     outDir: resolve(sourceRoot, "../.artifacts/build/app"),
     emptyOutDir: true,
     copyPublicDir: false,
-    // Production source maps are not shipped with the Cloudflare asset tree.\n    sourcemap: false,
+    // Production source maps are not shipped with the Cloudflare asset tree.
+    sourcemap: false,
     target: "es2022",
     assetsDir: "assets",
   },

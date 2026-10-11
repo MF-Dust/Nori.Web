@@ -44,7 +44,7 @@ import { localizeUserError } from "./i18n/user-error";
 import { pictionaryStateSchema } from "./apps/pictionary-model";
 import { PictionaryDrawingBridge } from "./apps/pictionary-runtime";
 import { GameCartridgeController } from "./apps/game-cartridge-controller";
-import { chessStateSchema } from "./apps/chess-model";
+import { chessStateSchema } from "./apps/chess-schema";
 import { lazy as lazyComponent, useEffect, useState, useSyncExternalStore } from "react";
 import { SpeechModeControl } from "./components/speech-mode-control";
 import { ConversationPanel } from "./components/conversation-panel";

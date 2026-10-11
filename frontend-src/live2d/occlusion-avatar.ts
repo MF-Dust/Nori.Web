@@ -42,7 +42,8 @@ export function bindOcclusionAvatar(source: HTMLCanvasElement, frontend: NoriFro
   let visible = false, want = false, wantedAt = 0, lastCheck = -Infinity;
   let v = 0, fromV = 0, toV = 0, movedAt = 0;
   return {
-    update(now: number, rect: WindowRect) {
+    /** `measure` is only sampled on the 100 ms occlusion check, never per frame. */
+    update(now: number, measure: () => WindowRect) {
       const scene = frontend.scene.snapshot();
       const state = store.getState();
       const blocked = scene.active || scene.chatMode !== "normal" || state.exclusiveWindowId !== null;
@@ -50,7 +51,7 @@ export function bindOcclusionAvatar(source: HTMLCanvasElement, frontend: NoriFro
       else if (now - lastCheck >= 100) {
         lastCheck = now;
         const windows = Object.values(state.windows).filter((window) => !window.minimized);
-        const next = noriOcclusionFraction(rect, windows) >= 0.8;
+        const next = noriOcclusionFraction(measure(), windows) >= 0.8;
         if (next !== want) { want = next; wantedAt = now; }
         if (visible !== want && now - wantedAt >= NORI_AVATAR.delayMs) {
           visible = want;

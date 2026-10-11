@@ -76,4 +76,13 @@ test("App screens are absent from the source entry's static dependency graph", (
     assert.equal(visited.has(path), false, `${screen} is still eagerly imported`);
     assert.ok(dynamic.has(path), `${screen} has no lazy import`);
   }
+  // Later story scenes carry Pixi and three post-processing; only Boot (first session.ready) is eager.
+  assert.ok(visited.has(resolve(root, "frontend-src/story/boot-scene.tsx")), "boot scene must stay eager");
+  for (const scene of ["corruption-scene", "memory-scene", "datasea-scene", "farewell-scene", "ending-scene"]) {
+    const path = resolve(root, `frontend-src/story/${scene}.tsx`);
+    assert.equal(visited.has(path), false, `${scene} is still eagerly imported`);
+    assert.ok(dynamic.has(path), `${scene} has no lazy import`);
+  }
+  // The entry validates chess state through the engine-free schema module.
+  assert.equal(visited.has(resolve(root, "frontend-src/apps/chess-model.ts")), false, "chess engine model is eagerly imported");
 });

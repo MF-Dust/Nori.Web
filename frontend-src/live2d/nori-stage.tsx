@@ -202,9 +202,12 @@ export function NoriStage({
           session!.start();
           patInput = bindHeadPatInput(hostElement, model, frontend);
           if (windows) avatar = bindOcclusionAvatar(canvas, frontend, windows);
+          const measureScanBounds = () => noriScanBounds(canvas);
+          // A live MediaQueryList tracks the preference without re-parsing the query every frame.
+          const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
           const renderScene = (now: number) => {
             if (disposed) return;
-            const peek = avatar?.update(now, noriScanBounds(canvas));
+            const peek = avatar?.update(now, measureScanBounds);
             patInput?.setHost(peek?.host ?? hostElement);
             patInput?.update(peek?.rect ?? (renderer
               ? { x: projected.x - projected.width / 2, y: projected.y - projected.height / 2, width: projected.width, height: projected.height }
@@ -212,7 +215,7 @@ export function NoriStage({
             sceneFrame = requestAnimationFrame(renderScene);
             if (!renderer || now - lastFrame < 1000 / (graphicsMode === "ultra-performance" ? 30 : 60)) return;
             lastFrame = now;
-            projected = renderer.render(now / 1000, frontend.scene.snapshot(), { exclusive: latest.current.exclusive(), facts: latest.current.facts, pointer, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches }) ?? projected;
+            projected = renderer.render(now / 1000, frontend.scene.snapshot(), { exclusive: latest.current.exclusive(), facts: latest.current.facts, pointer, reducedMotion: reducedMotion.matches }) ?? projected;
             hostElement.dataset.coldOpen = renderer.coldOpenStatus;
           };
           sceneFrame = requestAnimationFrame(renderScene);

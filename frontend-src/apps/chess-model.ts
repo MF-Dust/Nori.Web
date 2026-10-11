@@ -1,35 +1,19 @@
 import tutorialSteps from "../../shared/chess-tutorial.json";
 import { Chess, type Square } from "chess.js";
-import { z } from "zod";
+import { CHESS_START_FEN, type ChessHistoryMove, type ChessSide } from "./chess-schema";
 
-export const CHESS_START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-export const chessSide = z.enum(["white", "black"]);
-export type ChessSide = z.infer<typeof chessSide>;
+export {
+  CHESS_START_FEN,
+  chessSide,
+  chessStateSchema,
+  type ChessHistoryMove,
+  type ChessSide,
+  type ChessState,
+} from "./chess-schema";
 export const CHESS_DIFFICULTIES = [
   { id: "sleepy", elo: 400 }, { id: "casual", elo: 700 }, { id: "normal", elo: 1000 },
   { id: "focused", elo: 1300 }, { id: "serious", elo: 1600 },
 ] as const;
-const moveSchema = z.object({
-  by: chessSide,
-  move: z.object({ from: z.string(), to: z.string(), promotion: z.enum(["q", "r", "b", "n"]).optional() }),
-  captured: z.string().optional(), san: z.string().optional(),
-  isCheck: z.boolean().optional(), isCheckmate: z.boolean().optional(),
-  isCastling: z.boolean().optional(), isPromotion: z.boolean().optional(),
-});
-export const chessStateSchema = z.object({
-  settings: z.object({ playerSide: chessSide, difficulty: z.string(), locale: z.string().optional() }),
-  gameState: z.object({
-    fen: z.string(), startFen: z.string().default(CHESS_START_FEN),
-    turn: chessSide, status: z.string(), phase: z.string().optional(),
-    winner: z.union([chessSide, z.literal("draw")]).nullable(),
-    isCheck: z.boolean().optional(), moveHistory: z.array(moveSchema),
-  }).nullable(),
-  drawOffer: chessSide.nullable().default(null),
-  takebackRequest: chessSide.nullable().default(null),
-  tutorial: z.object({ step: z.string() }).nullable().default(null),
-});
-export type ChessState = z.infer<typeof chessStateSchema>;
-export type ChessHistoryMove = z.infer<typeof moveSchema>;
 
 export function chessHistory(startFen: string, moves: readonly ChessHistoryMove[]) {
   const board = new Chess(startFen);

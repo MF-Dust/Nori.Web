@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Suspense, lazy, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import { StoryClock } from "./story-clock";
@@ -6,11 +6,51 @@ import { StoryAudio } from "./story-audio";
 import { createCultRenderer } from "./cult-renderer";
 import type { StoryInstance } from "./story-director";
 import { BootScene } from "./boot-scene";
-import { CorruptionScene } from "./corruption-scene";
-import { MemoryScene } from "./memory-scene";
-import { DataseaScene } from "./datasea-scene";
-import { FarewellScene } from "./farewell-scene";
-import { EndingScene } from "./ending-scene";
+
+// Boot plays on the first session.ready, so it stays in the entry. The later scenes
+// (and their Pixi/three addon/post-processing dependencies) load on demand and are
+// prefetched while the desktop is idle, so they are normally resident before their
+// trigger fact arrives.
+const loadCorruptionScene = () => import("./corruption-scene");
+const loadMemoryScene = () => import("./memory-scene");
+const loadDataseaScene = () => import("./datasea-scene");
+const loadFarewellScene = () => import("./farewell-scene");
+const loadEndingScene = () => import("./ending-scene");
+const CorruptionScene = lazy(() => loadCorruptionScene().then((module) => ({ default: module.CorruptionScene })));
+const MemoryScene = lazy(() => loadMemoryScene().then((module) => ({ default: module.MemoryScene })));
+const DataseaScene = lazy(() => loadDataseaScene().then((module) => ({ default: module.DataseaScene })));
+const FarewellScene = lazy(() => loadFarewellScene().then((module) => ({ default: module.FarewellScene })));
+const EndingScene = lazy(() => loadEndingScene().then((module) => ({ default: module.EndingScene })));
+const DEFERRED_SCENE_LOADERS = [loadCorruptionScene, loadMemoryScene, loadDataseaScene, loadFarewellScene, loadEndingScene];
+/** Grace period after the desktop mounts before background scene prefetch starts. */
+const SCENE_PREFETCH_DELAY_MS = 4000;
+
+/** Warms deferred scene chunks one at a time during idle periods; failures retry on demand. */
+function useDeferredScenePrefetch() {
+  useEffect(() => {
+    let cancelled = false;
+    let idle: number | undefined;
+    const schedule = (run: () => void) => {
+      if (typeof window.requestIdleCallback === "function") idle = window.requestIdleCallback(run, { timeout: 5000 });
+      else idle = window.setTimeout(run, 0);
+    };
+    const queue = [...DEFERRED_SCENE_LOADERS];
+    const next = () => {
+      if (cancelled) return;
+      const load = queue.shift();
+      if (!load) return;
+      void load().catch(() => undefined).then(() => schedule(next));
+    };
+    const timer = window.setTimeout(() => schedule(next), SCENE_PREFETCH_DELAY_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      if (idle === undefined) return;
+      if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+    };
+  }, []);
+}
 
 function CultFlash({
   frontend,
@@ -148,7 +188,24 @@ export function StoryScenes({
     frontend.story.subscribe,
     frontend.story.snapshot,
   );
+  useDeferredScenePrefetch();
   if (!current) return null;
+  return (
+    <Suspense fallback={null}>
+      <StoryScene current={current} frontend={frontend} minimizeWindows={minimizeWindows} />
+    </Suspense>
+  );
+}
+
+function StoryScene({
+  current,
+  frontend,
+  minimizeWindows,
+}: {
+  current: StoryInstance;
+  frontend: NoriFrontendRuntime;
+  minimizeWindows?(): void;
+}) {
   const props = { frontend, story: current };
   switch (current.id) {
     case "boot":

@@ -307,6 +307,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
     maintenanceModules: [
       "services/games.ts",
       "apps/chess-model.ts",
+      "apps/chess-schema.ts",
       "apps/chess-presentation.tsx",
       "screens/chess-screen.tsx",
       "screens/chess-tutorial.tsx",
