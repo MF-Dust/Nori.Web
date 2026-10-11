@@ -15,6 +15,9 @@ async fn etags_cache_rules_ranges_spa_fallback_and_mime_types_match_static_serve
     )
     .unwrap();
     std::fs::write(public.path().join("mutable.js"), b"before").unwrap();
+    for name in ["nori-ai-settings.js", "nori-tts-settings.js"] {
+        std::fs::write(public.path().join(name), b"current settings script").unwrap();
+    }
     std::fs::write(
         public.path().join("wallpaper.html"),
         b"<html>wallpaper</html>",
@@ -95,6 +98,17 @@ async fn etags_cache_rules_ranges_spa_fallback_and_mime_types_match_static_serve
         mutable.headers()["cache-control"],
         "public, max-age=0, must-revalidate"
     );
+    for name in ["nori-ai-settings.js", "nori-tts-settings.js"] {
+        let url = format!("{}/{name}?v=per-dispatch-2", server.base);
+        let response = client.get(&url).send().await.unwrap();
+        assert_eq!(response.status(), 200);
+        assert_eq!(response.headers()["cache-control"], "public, max-age=0, must-revalidate");
+        let etag = response.headers()["etag"].clone();
+        assert_eq!(response.text().await.unwrap(), "current settings script");
+        let response = client.get(&url).header("if-none-match", etag).send().await.unwrap();
+        assert_eq!(response.status(), 304);
+        assert_eq!(response.headers()["cache-control"], "public, max-age=0, must-revalidate");
+    }
     for path in ["wallpaper.html", "sw.js", "asset-manifest.json"] {
         let response = client
             .get(format!("{}/{path}", server.base))

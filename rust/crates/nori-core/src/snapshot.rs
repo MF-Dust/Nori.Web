@@ -1,7 +1,7 @@
 use crate::cartridge::{self, Cartridge};
 use crate::jsonutil::{canonical_json, Json};
 use crate::live_pack::LivePack;
-use crate::world::{World, MAX_MEDIA_GRANTS};
+use crate::world::{DispatchAck, World, MAX_DISPATCH_ACKS, MAX_MEDIA_GRANTS};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -20,7 +20,7 @@ pub fn world_snapshot(world: &World) -> Json {
             }),
         );
     }
-    json!({
+    let mut snapshot = json!({
         "version": SNAPSHOT_VERSION,
         "ownerId": world.owner_id,
         "worldId": world.world_id,
@@ -30,7 +30,14 @@ pub fn world_snapshot(world: &World) -> Json {
         "mediaGrants": sorted_grants(world),
         "mediaSequence": world.media_sequence,
         "cartridges": cartridges,
-    })
+    });
+    let acks: Vec<_> = world.dispatch_acks.iter()
+        .filter(|entry| crate::jsonutil::now_ms().saturating_sub(entry.at_ms) < crate::world::DISPATCH_ACK_TTL_MS)
+        .collect();
+    if !acks.is_empty() {
+        snapshot["dispatchAcks"] = json!(acks);
+    }
+    snapshot
 }
 
 pub fn world_snapshot_json(world: &World) -> String {
@@ -130,6 +137,20 @@ pub fn world_from_snapshot(payload: &Json, pack: Arc<LivePack>) -> Option<World>
     let mut world = World::new(owner_id, locale, full_unlock, pack);
     world.world_id = world_id;
     world.cartridges = cartridges;
+    if let Some(entries) = payload.get("dispatchAcks").and_then(Value::as_array) {
+        for entry in entries.iter().rev().take(MAX_DISPATCH_ACKS).rev() {
+            if let Ok(entry) = serde_json::from_value::<DispatchAck>(entry.clone()) {
+                if entry.ack["type"] == "dispatch_ack"
+                    && entry.ack["success"] == true
+                    && entry.ack["worldId"] == world.world_id
+                    && entry.ack["requestId"] == entry.request_id
+                {
+                    world.dispatch_acks.push_back(entry);
+                }
+            }
+        }
+        world.prune_dispatch_acks(crate::jsonutil::now_ms());
+    }
     if let Some(grants) = payload.get("mediaGrants").and_then(Value::as_array) {
         let tail = &grants[grants.len().saturating_sub(MAX_MEDIA_GRANTS)..];
         world.media_grants = tail

@@ -968,10 +968,10 @@ fn events_ai_config_and_test_round_trips_keep_secrets_out_of_public_state() {
         let state = world.cartridge("manifold.web").unwrap().state.clone();
         let config = send(&mut world, "nori.ai.config", raw.clone());
         assert_eq!(config.direct[0]["channel"], "nori.ai.config.result");
-        assert_eq!(
-            config.direct[0]["payload"],
-            nori_core::llm::config_result_payload(&raw)
-        );
+        let mut expected = nori_core::llm::config_result_payload(&raw);
+        expected["ok"] = json!(false);
+        expected["error"] = json!("Browser configuration must be sent with each chat dispatch. Reload Nori.Web to update the settings script.");
+        assert_eq!(config.direct[0]["payload"], expected);
         assert_eq!(config.direct[0]["payload"]["temperature"], 2.0);
         assert_eq!(config.direct[0]["payload"]["maxTokens"], 4096);
         assert_eq!(
@@ -1044,10 +1044,10 @@ fn events_tts_config_and_test_round_trips_reply_with_audio_or_test_error() {
         let state = world.cartridge("manifold.web").unwrap().state.clone();
         let config = send(&mut world, "nori.tts.config", raw.clone());
         assert_eq!(config.direct[0]["channel"], "nori.tts.config.result");
-        assert_eq!(
-            config.direct[0]["payload"],
-            nori_core::tts::config_result_payload(&raw)
-        );
+        let mut expected = nori_core::tts::config_result_payload(&raw);
+        expected["ok"] = json!(false);
+        expected["error"] = json!("Browser configuration must be sent with each chat dispatch. Reload Nori.Web to update the settings script.");
+        assert_eq!(config.direct[0]["payload"], expected);
         assert_eq!(config.direct[0]["payload"]["hasApiKey"], true);
         assert_eq!(config.direct[0]["payload"]["speed"], 4.0);
         assert!(

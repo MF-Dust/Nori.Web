@@ -12,6 +12,7 @@ export const groups = {
   runtime: [
     "tests/frontend/frontend-runtime.test.ts",
     "tests/frontend/frontend-published-arcade.test.ts",
+    "tests/frontend/frontend-provider-settings.test.ts",
     "tests/frontend/frontend-version-conflict.test.ts",
     "tests/frontend/frontend-parity-wiring.test.ts",
     "tests/frontend/frontend-mail.test.tsx",

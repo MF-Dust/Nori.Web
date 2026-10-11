@@ -13,11 +13,20 @@ use crate::media::fallback_frames;
 use crate::protocol::{self, ProtocolError};
 use crate::tasks::{self, Pacing, Task};
 use serde_json::{json, Value};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::sync::{Arc, Weak};
 
 pub const SERVER_ID: &str = "nori-local-arcade";
 pub const MAX_MEDIA_GRANTS: usize = 32;
+pub const MAX_DISPATCH_ACKS: usize = 512;
+pub const DISPATCH_ACK_TTL_MS: i64 = 5 * 60 * 1000;
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub(crate) struct DispatchAck {
+    pub request_id: String,
+    pub at_ms: i64,
+    pub ack: Json,
+}
 
 /// Per-frame browser credentials (`noriAiConfig` / `noriTtsConfig`), already
 /// sanitized. They only ever live in follow-up tasks of one dispatch: never in
@@ -91,6 +100,8 @@ pub struct World {
     pub pack: Arc<LivePack>,
     pub pacing: Pacing,
     story_advancing: bool,
+    // Only successful acknowledgements, never commands or per-request credentials.
+    pub(crate) dispatch_acks: VecDeque<DispatchAck>,
     // Tasks own the strong leases: panics/cancellation cannot keep an app locked.
     agent_loops: BTreeMap<String, Weak<()>>,
     // Ephemeral recognition pacing; no images or credentials enter snapshots.
@@ -115,6 +126,7 @@ impl World {
             pack,
             pacing: Pacing::Local,
             story_advancing: false,
+            dispatch_acks: VecDeque::new(),
             agent_loops: BTreeMap::new(),
             vision_revision: None,
         }
@@ -433,6 +445,11 @@ impl World {
         };
         let (cartridge_id, request_id, actor) =
             (text("cartridgeId"), text("requestId"), text("actor"));
+        let now = now_ms();
+        self.prune_dispatch_acks(now);
+        if let Some(cached) = self.dispatch_acks.iter().find(|entry| entry.request_id == request_id) {
+            return Outbound::direct(cached.ack.clone());
+        }
         let cmd = message.get("cmd").cloned().unwrap_or_else(|| json!({}));
         let expected = message
             .get("expectedHeadVersion")
@@ -507,6 +524,14 @@ impl World {
             commit.committed,
             &result,
         );
+        self.dispatch_acks.push_back(DispatchAck {
+            request_id,
+            at_ms: now,
+            ack: ack.clone(),
+        });
+        while self.dispatch_acks.len() > MAX_DISPATCH_ACKS {
+            self.dispatch_acks.pop_front();
+        }
         let tasks = self.follow_up(&cartridge_id, &actor, &cmd, typed_text, secrets);
         Outbound {
             broadcast,
@@ -514,6 +539,10 @@ impl World {
             tasks,
             ..Outbound::default()
         }
+    }
+
+    pub(crate) fn prune_dispatch_acks(&mut self, now: i64) {
+        self.dispatch_acks.retain(|entry| now.saturating_sub(entry.at_ms) < DISPATCH_ACK_TTL_MS);
     }
 
     /// Python `_schedule_follow_up`.

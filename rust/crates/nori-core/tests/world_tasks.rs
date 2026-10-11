@@ -76,6 +76,67 @@ fn chat_dispatch(world: &World, text: &str) -> Value {
 }
 
 #[test]
+fn duplicate_chat_dispatch_replays_ack_without_reply_or_speech() {
+    let mut world = world(Pacing::Local, LivePack::empty());
+    let mut message = chat_dispatch(&world, "hello");
+    let out = session::handle(&mut world, &message, &Secrets::default());
+    assert_eq!(out.tasks.len(), 1);
+    let ack = out.direct.clone();
+    let state = snapshot::world_snapshot(&world);
+    // Outbox replay may retain the old head or rebuild it after reconnecting.
+    for head in [0, world.cartridge("chat").unwrap().head_version] {
+        message["expectedHeadVersion"] = json!(head);
+        let replay = session::handle(&mut world, &message, &Secrets::default());
+        assert_eq!(replay.direct, ack);
+        assert!(replay.broadcast.is_empty() && replay.tasks.is_empty());
+        assert_eq!(snapshot::world_snapshot(&world), state);
+    }
+    // Durable Object hibernation must not lose the deduplication record.
+    let mut restored = snapshot::world_from_snapshot(&state, world.pack.clone()).unwrap();
+    let replay = session::handle(&mut restored, &message, &Secrets::default());
+    assert_eq!(replay.direct, ack);
+    assert!(replay.broadcast.is_empty() && replay.tasks.is_empty());
+    let mut reply = out.tasks.into_iter().next().unwrap();
+    let (_, spawned) = drive(&mut reply, &mut world);
+    assert_eq!(spawned.iter().filter(|task| task.label() == "speak").count(), 1);
+    let replay = session::handle(&mut world, &message, &Secrets::default());
+    assert_eq!(replay.direct, ack);
+    assert!(replay.tasks.is_empty());
+}
+
+#[test]
+fn dispatch_deduplication_is_bounded_and_rejections_can_retry() {
+    use nori_core::jsonutil::with_now_ms;
+    use nori_core::world::{DISPATCH_ACK_TTL_MS, MAX_DISPATCH_ACKS};
+    with_now_ms(1_000, || {
+        let mut world = world(Pacing::Edge, LivePack::empty());
+        let mut message = chat_dispatch(&world, "hello");
+        message["expectedHeadVersion"] = json!(999);
+        assert_eq!(session::handle(&mut world, &message, &Secrets::default()).direct[0]["success"], false);
+        message["expectedHeadVersion"] = json!(0);
+        let out = session::handle(&mut world, &message, &Secrets::default());
+        assert_eq!(out.direct[0]["success"], true);
+        for index in 0..MAX_DISPATCH_ACKS {
+            let head = world.cartridge("chat").unwrap().head_version;
+            let command = json!({"type":"dispatch", "actor":"player", "cartridgeId":"chat",
+                "requestId":format!("mode-{index}"), "expectedHeadVersion":head,
+                "cmd":{"type":"setPresentationMode", "presentationMode":"text"}});
+            assert_eq!(session::handle(&mut world, &command, &Secrets::default()).direct[0]["success"], true);
+        }
+        let state = snapshot::world_snapshot(&world);
+        assert_eq!(state["dispatchAcks"].as_array().unwrap().len(), MAX_DISPATCH_ACKS);
+        assert!(!state["dispatchAcks"].as_array().unwrap().iter().any(|entry| entry["request_id"] == "r1"));
+        with_now_ms(1_000 + DISPATCH_ACK_TTL_MS, || {
+            assert!(snapshot::world_snapshot(&world).get("dispatchAcks").is_none());
+            let restored = snapshot::world_from_snapshot(&state, world.pack.clone()).unwrap();
+            assert!(snapshot::world_snapshot(&restored).get("dispatchAcks").is_none());
+        });
+        let mut fresh = World::new(world.owner_id.clone(), None, true, world.pack.clone());
+        assert_eq!(session::handle(&mut fresh, &message, &Secrets::default()).tasks.len(), 1);
+    });
+}
+
+#[test]
 fn local_chat_reply_keeps_presentation_delays_and_tone_fallback() {
     let mut world = world(Pacing::Local, LivePack::empty());
     let message = chat_dispatch(&world, "hello");
@@ -224,7 +285,7 @@ fn codenames_dispatch(world: &mut World, cmd: Value) -> Outbound {
 
 fn codenames_dispatch_as(world: &mut World, actor: &str, cmd: Value) -> Outbound {
     let message = json!({
-        "type": "dispatch", "actor": actor, "cartridgeId": "codenames", "requestId": "c",
+        "type": "dispatch", "actor": actor, "cartridgeId": "codenames", "requestId": nori_core::jsonutil::uuid4(),
         "expectedHeadVersion": world.cartridge("codenames").unwrap().head_version,
         "cmd": cmd,
     });
@@ -896,7 +957,7 @@ fn frame_pipeline_strips_credentials_and_applies_story_cookie() {
 
 fn pictionary_dispatch(world: &mut World, cmd: Value) -> Outbound {
     let message = json!({
-        "type": "dispatch", "actor": "player", "cartridgeId": "pictionary", "requestId": "p",
+        "type": "dispatch", "actor": "player", "cartridgeId": "pictionary", "requestId": nori_core::jsonutil::uuid4(),
         "expectedHeadVersion": world.cartridge("pictionary").unwrap().head_version,
         "cmd": cmd,
     });

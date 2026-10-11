@@ -285,17 +285,23 @@
 
   WebSocket.prototype.send = function noriTtsConfiguredSend(data) {
     attachSocket(this);
+    let message;
     if (typeof data === "string") {
       try {
-        const message = JSON.parse(data);
-        if (isChatDispatch(message)) {
-          activeSocket = this;
-          if (message.worldId) activeWorldId = String(message.worldId);
-          message.noriTtsConfig = runtimePayload();
-          return previousSend.call(this, JSON.stringify(message));
-        }
+        message = JSON.parse(data);
       } catch {
-        // Keep non-JSON WebSocket frames untouched.
+        // Preserve non-JSON frames, not failures attaching settings or sending.
+      }
+    }
+    if (isChatDispatch(message)) {
+      activeSocket = this;
+      if (message.worldId) activeWorldId = String(message.worldId);
+      try {
+        message.noriTtsConfig = runtimePayload();
+        data = JSON.stringify(message);
+      } catch (error) {
+        emitStatus("error", isChinese() ? "无法附加 TTS 配置，消息未发送" : "Could not attach TTS settings; message was not sent");
+        throw error;
       }
     }
     return previousSend.call(this, data);

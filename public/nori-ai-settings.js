@@ -210,17 +210,23 @@
   const nativeSend = WebSocket.prototype.send;
   WebSocket.prototype.send = function patchedNoriSend(data) {
     attachSocket(this);
+    let message;
     if (typeof data === "string") {
       try {
-        const message = JSON.parse(data);
-        if (isChatPlayerDispatch(message) || (message.type === "event" && ["manifold.chip.scan", "pictionary.snapshot"].includes(message.channel))) {
-          activeSocket = this;
-          if (message.worldId) activeWorldId = String(message.worldId);
-          message.noriAiConfig = runtimePayload();
-          return nativeSend.call(this, JSON.stringify(message));
-        }
+        message = JSON.parse(data);
       } catch {
-        // Preserve the shipped client's behavior for non-JSON frames.
+        // Preserve non-JSON frames, not failures attaching settings or sending.
+      }
+    }
+    if (isChatPlayerDispatch(message) || (message?.type === "event" && ["manifold.chip.scan", "pictionary.snapshot"].includes(message.channel))) {
+      activeSocket = this;
+      if (message.worldId) activeWorldId = String(message.worldId);
+      try {
+        message.noriAiConfig = runtimePayload();
+        data = JSON.stringify(message);
+      } catch (error) {
+        emitStatus("error", isChinese() ? "无法附加 AI 配置，消息未发送" : "Could not attach AI settings; message was not sent");
+        throw error;
       }
     }
     return nativeSend.call(this, data);

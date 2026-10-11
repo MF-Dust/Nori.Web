@@ -90,7 +90,7 @@ fn mount(world: &mut World, cartridge: &str) {
 
 fn dispatch(world: &mut World, cartridge: &str, cmd: Value, actor: &str) -> Outbound {
     let head = world.cartridge(cartridge).unwrap().head_version;
-    let out = world.handle_message(&json!({"type": "dispatch", "cartridgeId": cartridge, "requestId": "story-test", "actor": actor, "expectedHeadVersion": head, "cmd": cmd}), &Secrets::default());
+    let out = world.handle_message(&json!({"type": "dispatch", "cartridgeId": cartridge, "requestId": nori_core::jsonutil::uuid4(), "actor": actor, "expectedHeadVersion": head, "cmd": cmd}), &Secrets::default());
     assert_eq!(out.direct[0]["success"], true, "{:?}", out.direct);
     out
 }
@@ -991,6 +991,10 @@ fn story_python_walkthrough_fixture_replays_every_reply_and_fact_set() {
         let mut world = fresh(archive());
         for (i, step) in scenario["steps"].as_array().unwrap().iter().enumerate() {
             let mut sent = step["sent"].clone();
+            // Legacy fixtures reused one ID for unrelated commands, not retries.
+            if sent["type"] == "dispatch" {
+                sent["requestId"] = json!(format!("story-{i}"));
+            }
             let mut selector = None;
             if step.get("replaySelector").is_some() {
                 let game = &world.cartridge("codenames").unwrap().state["gameState"];
@@ -1021,6 +1025,9 @@ fn story_python_walkthrough_fixture_replays_every_reply_and_fact_set() {
                 *artifacts = artifacts.iter().map(compact_artifact).collect();
             }
             let mut expected = step["reply"].clone();
+            if sent["type"] == "dispatch" {
+                expected["requestId"] = sent["requestId"].clone();
+            }
             if sent["cartridgeId"] == "codenames" {
                 // The legacy Python reply predates the client-only key projection.
                 expected = nori_core::cartridges::codenames::client_view(&expected, "A");

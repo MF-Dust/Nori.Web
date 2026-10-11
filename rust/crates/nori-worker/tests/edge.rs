@@ -601,9 +601,20 @@ fn dispatch_drains_concurrent_tasks_and_persists_once_only_on_change() {
         "speech and progress must run concurrently"
     );
     assert!(!fake.sleeps.borrow().contains(&150));
+    let ack = fake.last("dispatch_ack");
+    let frames = fake.text.borrow().len();
     send(&object, &fake, &isolate, 1, dispatch());
     assert_eq!(fake.world_puts(), 1);
-    assert_eq!(fake.last("dispatch_ack")["success"], false);
+    assert_eq!(fake.last("dispatch_ack"), ack);
+    assert_eq!(fake.text.borrow().len(), frames + 1, "replay sends only the cached ack");
+    // A new instance models hibernation; replay with a rebuilt head still deduplicates.
+    let wake = SessionObject::default();
+    let mut replay = dispatch();
+    replay["expectedHeadVersion"] = snapshot["cartridges"]["chat"]["headVersion"].clone();
+    send(&wake, &fake, &isolate, 1, replay);
+    assert_eq!(fake.last("dispatch_ack"), ack);
+    assert_eq!(fake.world_puts(), 1);
+    assert_eq!(fake.text.borrow().len(), frames + 2);
     send(&object, &fake, &isolate, 1, json!({"type":"leave_world"}));
     assert_eq!(fake.world_puts(), 1);
 }

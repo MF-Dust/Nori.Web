@@ -555,10 +555,10 @@ pub(crate) fn handle_event_with_secrets(world: &mut World, message: &Json, secre
         "nori.ai.config" => {
             let sanitized = crate::llm::sanitize_ai_config(&payload);
             out.outbound.public_ai = Some(crate::session::public_ai_config(&sanitized));
-            (
-                "nori.ai.config.result".into(),
-                crate::llm::public_ai_summary(&sanitized),
-            )
+            let mut result = crate::llm::public_ai_summary(&sanitized);
+            result["ok"] = json!(false);
+            result["error"] = json!("Browser configuration must be sent with each chat dispatch. Reload Nori.Web to update the settings script.");
+            ("nori.ai.config.result".into(), result)
         }
         "nori.ai.test" => {
             out.outbound.tasks.push(Task::ai_test(
@@ -570,10 +570,12 @@ pub(crate) fn handle_event_with_secrets(world: &mut World, message: &Json, secre
             ));
             return out.outbound;
         }
-        "nori.tts.config" => (
-            "nori.tts.config.result".into(),
-            crate::tts::config_result_payload(&payload),
-        ),
+        "nori.tts.config" => {
+            let mut result = crate::tts::config_result_payload(&payload);
+            result["ok"] = json!(false);
+            result["error"] = json!("Browser configuration must be sent with each chat dispatch. Reload Nori.Web to update the settings script.");
+            ("nori.tts.config.result".into(), result)
+        },
         "nori.tts.test" => {
             out.outbound.tasks.push(Task::tts_test(
                 world,

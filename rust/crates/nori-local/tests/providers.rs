@@ -130,7 +130,7 @@ async fn browser_ai_and_tts_settings_drive_real_provider_calls() {
     let dispatch = json!({
         "type": "dispatch", "actor": "player", "cartridgeId": "chat", "requestId": "r1",
         "expectedHeadVersion": 0, "cmd": {"type": "playerMessage", "text": "在吗？"},
-        "noriAiConfig": {"enabled": true, "provider": "openai-compatible", "baseUrl": format!("{base}/chat/completions"), "model": "mock-model", "apiKey": "sk-browser-secret", "maxTokens": 77},
+        "noriAiConfig": {"enabled": true, "provider": "openai-compatible", "baseUrl": format!("{base}/chat/completions"), "model": "mock-model", "apiKey": "sk-browser-secret", "maxTokens": 77, "characterPrompt": "First persona"},
         "noriTtsConfig": {"enabled": true, "provider": "openai-compatible", "baseUrl": base, "apiKey": "tts-browser-secret", "voice": "alloy"},
     });
     socket
@@ -171,6 +171,7 @@ async fn browser_ai_and_tts_settings_drive_real_provider_calls() {
     assert_eq!(first["model"], "mock-model");
     assert_eq!(first["max_tokens"], 77);
     let system = first["messages"][0]["content"].as_str().unwrap();
+    assert!(system.contains("First persona"));
     assert!(
         system.contains("[emotion:"),
         "emotion protocol is always appended"
@@ -189,4 +190,36 @@ async fn browser_ai_and_tts_settings_drive_real_provider_calls() {
     assert_eq!(headers["authorization"], "Bearer tts-browser-secret");
     assert_eq!(body["input"], "你好，操作员！");
     assert_eq!(body["voice"], "alloy");
+
+    // Replay on a new authenticated socket, as the shipped outbox does.
+    socket.close(None).await.unwrap();
+    let mut socket = connect(&addr, "guest_provider").await;
+    socket.send(Message::Text(json!({"type":"open_my_web_world"}).to_string().into())).await.unwrap();
+    let joined = collect_until(&mut socket, |m| m["type"] == "world_joined").await;
+    let head = joined.last().unwrap()["world"]["mountedCartridges"].as_array().unwrap()
+        .iter().find(|c| c["cartridgeId"] == "chat").unwrap()["runtimes"][0]["headVersion"].clone();
+    let mut replay = dispatch.clone();
+    replay["expectedHeadVersion"] = head.clone();
+    socket.send(Message::Text(replay.to_string().into())).await.unwrap();
+    let frames = collect_until(&mut socket, |m| m["type"] == "dispatch_ack" && m["requestId"] == "r1").await;
+    assert_eq!(frames.last().unwrap()["success"], true);
+    assert!(!frames.iter().any(|m| m.pointer("/transition/cmd/type") == Some(&json!("ingestBlock"))));
+    socket.send(Message::Text(json!({"type":"ping"}).to_string().into())).await.unwrap();
+    collect_until(&mut socket, |m| m["type"] == "pong").await;
+    assert_eq!(seen.chat.lock().unwrap().len(), 2);
+    assert_eq!(seen.speech.lock().unwrap().len(), 1);
+
+    // A new request takes the newly edited persona and voice, not cached settings.
+    replay["requestId"] = json!("r2");
+    replay["noriAiConfig"]["characterPrompt"] = json!("Second persona");
+    replay["noriTtsConfig"]["voice"] = json!("nova");
+    socket.send(Message::Text(replay.to_string().into())).await.unwrap();
+    collect_until(&mut socket, |m| m["channel"] == "nori.tts.audio").await;
+    let calls = seen.chat.lock().unwrap();
+    assert_eq!(calls.len(), 3);
+    let prompt = calls[2].1["messages"][0]["content"].as_str().unwrap();
+    assert!(prompt.contains("Second persona") && !prompt.contains("First persona"));
+    let calls = seen.speech.lock().unwrap();
+    assert_eq!(calls.len(), 2);
+    assert_eq!(calls[1].1["voice"], "nova");
 }
