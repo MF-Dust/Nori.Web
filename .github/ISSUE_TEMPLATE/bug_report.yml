@@ -1,0 +1,100 @@
+name: Bug 反馈
+description: 在使用 Nori.Web 的过程中遇到了问题或程序异常。
+title: "【Bug】（替换为简要问题描述）"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您的反馈。请使用清晰的标题，**每个独立 Bug 单独开一个 Issue**。
+        请直接在正文描述问题和重现步骤，不要只上传附件。截图、录屏和日志可拖动到正文中上传。
+        **请勿上传 API Key、Cookie、WebSocket ticket、Authorization 请求头或包含这些信息的配置与 HAR 文件。**
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 检查清单
+      options:
+        - label: 我已经仔细阅读过选项里的内容，并且知道这个选项不用勾选。
+        - label: 我已使用最新发布版或 master 测试，并在已有 Issues 中检索过相同问题。
+          required: true
+        - label: 我已阅读 README 中的启动与配置说明。
+          required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望的行为
+      description: 描述正常情况下应该发生什么。
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 实际结果
+      description: 描述异常现象、错误提示、发生频率及影响。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce-steps
+    attributes:
+      label: 重现步骤
+      description: 请提供可以复现问题的完整操作步骤。
+      placeholder: |
+        1. 启动本地 Rust 服务 / 打开部署地址……
+        2. 打开某个应用 / 修改 AI 或 TTS 设置……
+        3. 发送消息 / 刷新页面 / 断线重连……
+        4. 出现异常……
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: 运行方式
+      options:
+        - 本地发布包（Nori.Web.exe）
+        - 本地源码（Rust 服务）
+        - 前端开发模式（Vite + Rust 服务）
+        - Cloudflare Worker 部署
+        - 其他（请在环境信息中说明）
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 运行环境与版本
+      description: 填写版本或 commit、操作系统、浏览器及版本。图形问题请补充显卡与驱动。
+      placeholder: |
+        - Nori.Web 版本 / commit：
+        - 操作系统：
+        - 浏览器与版本：
+        - 是否使用代理 / 浏览器扩展：
+        - 是否在更新后出现，硬刷新后是否仍存在：
+    validations:
+      required: true
+  - type: textarea
+    id: providers
+    attributes:
+      label: AI / TTS 配置（相关问题请填写）
+      description: 只提供非敏感信息，不要粘贴完整配置。自建服务地址如含密钥或私人信息请遮盖。
+      placeholder: |
+        - 使用浏览器配置还是服务端环境变量：
+        - LLM 提供商 / 模型：
+        - TTS 提供商 / 模型 / 音色：
+        - 连接测试结果：
+        - 角色提示词修改是否生效：
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图 / 录屏 / 附件（可选）
+      description: 推荐使用 GitHub 附件，并在正文概述附件中的关键现象。
+  - type: textarea
+    id: logs
+    attributes:
+      label: 浏览器控制台 / 服务端日志（可选）
+      description: 可提供浏览器开发者工具 Console 错误、本地服务终端输出或 Worker 日志；上传前删除凭据和私人对话。
+      render: shell
+  - type: checkboxes
+    id: revision
+    attributes:
+      label: 最后确认
+      options:
+        - label: 我已提供足够的重现信息，并检查正文与附件不包含密钥或其他敏感信息。
+          required: true

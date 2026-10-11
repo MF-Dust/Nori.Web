@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Nori.Web 使用与部署说明
+    url: https://github.com/MF-Dust/Nori.Web#readme
+    about: 提交问题前，请先查阅启动、部署和常见配置说明。
+  - name: 浏览器 AI 配置说明
+    url: https://github.com/MF-Dust/Nori.Web/blob/master/docs/AI_SETTINGS.md
+    about: 查阅模型、角色提示词和 API Key 的配置与安全说明。
