@@ -1,4 +1,4 @@
-import { issueArcadeTicket } from "./http";
+import { HttpCompatibilityError, issueArcadeTicket } from "./http";
 import {
   ARCADE_MAIN_PATH,
   ARCADE_SUBPROTOCOL,
@@ -45,6 +45,8 @@ export class ArcadeClient {
   private state: ArcadeConnectionState = "idle";
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private stableTimer: ReturnType<typeof setTimeout> | null = null;
+  private openingController: AbortController | null = null;
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
   private manualClose = false;
   private epoch = 0;
@@ -126,8 +128,11 @@ export class ArcadeClient {
   }
 
   private async openSocket(epoch: number): Promise<void> {
+    const controller = new AbortController();
+    this.openingController = controller;
+    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
-      const { ticket } = await issueArcadeTicket();
+      const { ticket } = await issueArcadeTicket(controller.signal);
       if (epoch !== this.epoch || this.manualClose) return;
       const socket = this.options.createWebSocket(
         websocketUrl(ARCADE_MAIN_PATH),
@@ -139,15 +144,16 @@ export class ArcadeClient {
         const finish = (error?: Error) => {
           if (settled) return;
           settled = true;
-          clearTimeout(timeout);
+          controller.signal.removeEventListener("abort", abort);
           this.cancelOpening = null;
           if (error) reject(error);
           else resolve();
         };
-        const timeout = setTimeout(() => {
+        const abort = () => {
           finish(new Error("Arcade connection timed out"));
           socket.close();
-        }, 15000);
+        };
+        controller.signal.addEventListener("abort", abort, { once: true });
         this.cancelOpening = () => finish();
         socket.addEventListener("message", (event) => {
           if (epoch === this.epoch) this.handleMessage(event.data);
@@ -177,10 +183,17 @@ export class ArcadeClient {
       });
     } catch (error) {
       if (epoch !== this.epoch || this.manualClose) return;
-      if (this.options.reconnect && this.state === "connecting")
+      if (error instanceof HttpCompatibilityError && (error.status === 401 || error.status === 403)) {
+        this.lastCloseInfo = { code: 1008, reason: "session_invalid" };
+        this.clearReconnect();
+        this.setState("closed");
+      } else if (this.options.reconnect && this.state === "connecting")
         this.scheduleReconnect();
       else if (!this.options.reconnect) this.setState("closed");
       throw error;
+    } finally {
+      clearTimeout(timeout);
+      if (this.openingController === controller) this.openingController = null;
     }
   }
 
@@ -198,8 +211,11 @@ export class ArcadeClient {
       typeof message.type !== "string"
     )
       return;
-    if (message.type === "world_joined" || message.type === "world_created")
-      this.reconnectAttempt = 0;
+    if ((message.type === "world_joined" || message.type === "world_created") && this.stableTimer === null)
+      this.stableTimer = setTimeout(() => {
+        this.stableTimer = null;
+        if (this.state === "open") this.reconnectAttempt = 0;
+      }, 30_000);
     for (const listener of this.listeners) listener(message);
   }
 
@@ -207,6 +223,7 @@ export class ArcadeClient {
     if (this.socket !== socket) return;
     this.socket = null;
     this.clearKeepAlive();
+    this.clearStableTimer();
     const reason = event?.reason ?? "";
     this.lastCloseInfo = { code: event?.code ?? 0, reason };
     if (this.manualClose || !this.options.reconnect) {
@@ -245,6 +262,11 @@ export class ArcadeClient {
     this.reconnectTimer = setTimeout(() => {
       void this.startConnection().catch(() => {});
     }, delay);
+  }
+
+  private clearStableTimer(): void {
+    if (this.stableTimer !== null) clearTimeout(this.stableTimer);
+    this.stableTimer = null;
   }
 
   private installKeepAlive(): void {
@@ -323,9 +345,12 @@ export class ArcadeClient {
     this.epoch++;
     this.cancelOpening?.();
     this.cancelOpening = null;
+    this.openingController?.abort();
+    this.openingController = null;
     this.opening = null;
     this.clearReconnect();
     this.clearKeepAlive();
+    this.clearStableTimer();
     this.socket?.close(1000, "client_close");
     this.socket = null;
     this.setState("closed");

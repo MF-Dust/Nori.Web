@@ -65,8 +65,8 @@ export function getSession(): Promise<LocalSession | null> {
   return requestJson<LocalSession | null>("/api/auth/get-session");
 }
 
-export function issueArcadeTicket(): Promise<ArcadeTicketResponse> {
-  return requestJson<ArcadeTicketResponse>("/api/arcade/ws-ticket", { method: "POST" });
+export function issueArcadeTicket(signal?: AbortSignal): Promise<ArcadeTicketResponse> {
+  return requestJson<ArcadeTicketResponse>("/api/arcade/ws-ticket", { method: "POST", signal });
 }
 
 export function convexCall<T = unknown>(path: string, args: unknown = {}): Promise<ConvexResult<T>> {

@@ -8,6 +8,7 @@ export class ArcadeMediaClient {
   private socket: WebSocket | null = null;
   private epoch = 0;
   private cancelOpening: (() => void) | null = null;
+  private openingController: AbortController | null = null;
   private state: MediaState = "idle";
   private readonly listeners = new Set<MediaFrameListener>();
   private readonly stateListeners = new Set<(state: MediaState) => void>();
@@ -36,8 +37,11 @@ export class ArcadeMediaClient {
     this.close();
     const epoch = this.epoch;
     this.publish("connecting");
+    const controller = new AbortController();
+    this.openingController = controller;
+    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
-      const { ticket } = await issueArcadeTicket();
+      const { ticket } = await issueArcadeTicket(controller.signal);
       if (epoch !== this.epoch) return;
       const url = new URL(ARCADE_MEDIA_PATH, window.location.href);
       url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
@@ -52,15 +56,16 @@ export class ArcadeMediaClient {
         const settle = (error?: Error) => {
           if (settled) return;
           settled = true;
-          clearTimeout(timeout);
+          controller.signal.removeEventListener("abort", abort);
           this.cancelOpening = null;
           if (error) reject(error);
           else resolve();
         };
-        const timeout = setTimeout(() => {
+        const abort = () => {
           settle(new Error("Media connection timed out"));
           socket.close();
-        }, 15000);
+        };
+        controller.signal.addEventListener("abort", abort, { once: true });
         this.cancelOpening = () => settle();
         // Install before open: an immediate server frame must not be dropped.
         socket.addEventListener("message", (event) => {
@@ -101,12 +106,17 @@ export class ArcadeMediaClient {
         this.publish("closed");
         throw error;
       }
+    } finally {
+      clearTimeout(timeout);
+      if (this.openingController === controller) this.openingController = null;
     }
   }
   close(): void {
     this.epoch++;
     this.cancelOpening?.();
     this.cancelOpening = null;
+    this.openingController?.abort();
+    this.openingController = null;
     this.socket?.close(1000, "client_close");
     this.socket = null;
     this.publish("closed");

@@ -33372,6 +33372,7 @@ class t0e {
   connectionState = "offline";
   reconnectAttempt = 0;
   reconnectTimeoutId = null;
+  reconnectStableTimeoutId = null;
   lastReconnectDelayMs = null;
   lastReconnectAt = null;
   lastClose = null;
@@ -33556,10 +33557,21 @@ class t0e {
     );
   }
   setConnectionState(e, n) {
-    e === "connected" &&
-      ((this.deployRestartUntil = null),
-      (this.reconnectAttempt = 0),
-      (this.reconnectExhausted = !1));
+    if (e === "connected") {
+      this.deployRestartUntil = null;
+      // A successful handshake or world join alone does not prove a stable connection.
+      if (this.reconnectStableTimeoutId === null)
+        this.reconnectStableTimeoutId = setTimeout(() => {
+          this.reconnectStableTimeoutId = null;
+          if (this.connectionState === "connected" && this.transport.state() === "open") {
+            this.reconnectAttempt = 0;
+            this.reconnectExhausted = !1;
+          }
+        }, 30_000);
+    } else {
+      clearTimeout(this.reconnectStableTimeoutId);
+      this.reconnectStableTimeoutId = null;
+    }
     const r = this.connectionState;
     if (r === e) {
       this.emitConnectionState(r, n);
@@ -33647,21 +33659,6 @@ class t0e {
       const i = this.transport.state();
       if (i === "open" || i === "connecting") return;
     }
-    if (this.isInDeployRestartWindow()) {
-      const i = jme;
-      ((this.lastReconnectDelayMs = i),
-        (this.lastReconnectAt = null),
-        this.setConnectionState("reconnecting", "deploy_restart"),
-        console.info("[arcade/client] reconnect_scheduled", {
-          deployRestart: !0,
-          delayMs: i,
-          reason: e,
-        }),
-        (this.reconnectTimeoutId = setTimeout(() => {
-          ((this.reconnectTimeoutId = null), this.connectTransport());
-        }, i)));
-      return;
-    }
     if (this.reconnectAttempt >= this.reconnectMaxAttempts) {
       ((this.reconnectExhausted = !0), this.setConnectionState("offline", "reconnect_exhausted"));
       const i = new _a(
@@ -33678,7 +33675,7 @@ class t0e {
     }
     const n = this.nextReconnectDelayOverrideMs;
     this.nextReconnectDelayOverrideMs = null;
-    const r = n ?? this.computeReconnectDelay(this.reconnectAttempt);
+    const r = n ?? (this.isInDeployRestartWindow() ? jme : this.computeReconnectDelay(this.reconnectAttempt));
     ((this.reconnectAttempt += 1),
       (this.lastReconnectDelayMs = r),
       (this.lastReconnectAt = null),
@@ -33701,6 +33698,7 @@ class t0e {
           await this.transport.connect(),
           (this.consecutiveConnectFailures = 0));
       } catch (n) {
+        if (this.closedExplicitly || this.getTerminalReconnectError()) return;
         if (Yme(n)) {
           (this.clearReconnectTimer(),
             (this.lastJoinError = n.message),
@@ -33864,6 +33862,10 @@ class t0e {
         (r.timeoutId && clearTimeout(r.timeoutId),
         this.waiters.delete(r),
         r.reject(new Error(`[arcade/client] WS closed (code=${e.code})`)));
+    if (e.reason === "session_invalid") {
+      this.handleSessionInvalid(e.reason);
+      return;
+    }
     if (this.invalidSessionReason) {
       (this.clearReconnectTimer(), this.setConnectionState("offline", "session_invalid"));
       const r =
@@ -33913,8 +33915,6 @@ class t0e {
     }
     if (e.code === Ef.deployRestart) {
       (this.clearReconnectTimer(),
-        (this.reconnectAttempt = 0),
-        (this.reconnectExhausted = !1),
         (this.deployRestartUntil = Date.now() + Hme),
         (this.sawDeployRestart = !0),
         this.setConnectionState("reconnecting", "deploy_restart"),
@@ -34974,15 +34974,15 @@ function r0e() {
     onError: (i) => (r.add(i), () => r.delete(i)),
   };
 }
-function DL() {}
 function i0e(t) {
   const e = t.wsUrl,
     n = t.connectTimeoutMs ?? n0e;
   let r = null,
-    i = "idle";
+    i = "idle",
+    epoch = 0,
+    opening = null,
+    cancelOpening = null;
   const s = r0e(),
-    o = s.onOpen,
-    a = s.onClose,
     l = (p) => {
       for (const v of s.closeListeners) v(p);
     },
@@ -34996,88 +34996,90 @@ function i0e(t) {
       for (const v of s.messageListeners) v(p);
     };
   return {
-    connect: async () => {
-      if (i === "open") return;
-      if (i === "connecting") {
-        await new Promise((x, w) => {
-          const S = o(() => {
-              (S(), T(), x());
-            }),
-            T = a((R) => {
-              (S(),
-                T(),
-                w(new Error(`[arcade/client] WS closed while connecting (code=${R.code})`)));
-            });
-        });
-        return;
-      }
+    connect: () => {
+      if (opening) return opening;
+      if (i === "open") return Promise.resolve();
       i = "connecting";
-      let p;
-      try {
-        p = await t.fetchSubprotocols?.();
-      } catch (x) {
-        throw ((i = "closed"), x);
-      }
-      const v = r;
-      if (v)
-        try {
-          v.close();
-        } catch {}
-      const y = p ? new WebSocket(e, p) : new WebSocket(e);
-      ((r = y),
-        y.addEventListener("open", () => {
-          r === y && ((i = "open"), c());
-        }),
-        y.addEventListener("close", (x) => {
-          r === y && ((i = "closed"), l({ code: x.code, reason: x.reason, wasClean: x.wasClean }));
-        }),
-        y.addEventListener("error", (x) => {
-          if (r !== y) return;
-          const w = x.type ? `[arcade/client] WS error: ${x.type}` : "[arcade/client] WS error";
-          u(new Error(w));
-        }),
-        y.addEventListener("message", (x) => {
-          if (r !== y) return;
-          let w;
-          try {
-            w = JSON.parse(String(x.data));
-          } catch (T) {
-            console.warn("[arcade/client] Failed to parse WS JSON:", T);
-            return;
-          }
-          const S = bte(w);
-          if (S.success) {
-            d(S.data);
-            return;
-          }
-          console.warn("[arcade/client] Dropping invalid server message:", S.error);
-        }),
-        await new Promise((x, w) => {
-          const S = () => {
-              (E(), x());
-            },
-            T = (M) => {
-              (E(), w(new Error(`[arcade/client] WS closed before open (code=${M.code})`)));
-            },
-            R = setTimeout(() => {
-              (E(), r === y && (i = "closed"));
-              try {
-                y.close();
-              } catch {}
-              w(new Error(`[arcade/client] WS handshake timed out after ${n}ms`));
-            }, n),
-            E = () => {
-              (clearTimeout(R),
-                y.removeEventListener("open", S),
-                y.removeEventListener("close", T),
-                y.removeEventListener("error", DL));
-            };
-          (y.addEventListener("open", S),
-            y.addEventListener("close", T),
-            y.addEventListener("error", DL));
-        }));
+      const attemptEpoch = ++epoch;
+      const controller = new AbortController();
+      const previous = r;
+      r = null;
+      previous?.close();
+      const attempt = new Promise((resolve, reject) => {
+        let settled = false;
+        const finish = (error) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          if (cancelOpening === cancel) cancelOpening = null;
+          if (error) {
+            if (epoch === attemptEpoch) i = "closed";
+            reject(error);
+          } else resolve();
+        };
+        const cancel = () => {
+          finish(new Error("[arcade/client] Closed while connecting"));
+          controller.abort();
+        };
+        cancelOpening = cancel;
+        // Bound the whole attempt, including the ticket response body.
+        const timeout = setTimeout(() => {
+          finish(new Error(`[arcade/client] WS connection timed out after ${n}ms`));
+          ++epoch;
+          controller.abort();
+          r?.close();
+        }, n);
+        void (async () => {
+          const protocols = await t.fetchSubprotocols?.(controller.signal);
+          if (settled || epoch !== attemptEpoch) return;
+          const socket = protocols ? new WebSocket(e, protocols) : new WebSocket(e);
+          r = socket;
+          socket.addEventListener("open", () => {
+            if (r !== socket || epoch !== attemptEpoch) return;
+            i = "open";
+            finish();
+            c();
+          });
+          socket.addEventListener("close", (event) => {
+            if (r !== socket) return;
+            r = null;
+            i = "closed";
+            finish(new Error(`[arcade/client] WS closed before open (code=${event.code})`));
+            l({ code: event.code, reason: event.reason, wasClean: event.wasClean });
+          });
+          socket.addEventListener("error", (event) => {
+            if (r !== socket || epoch !== attemptEpoch) return;
+            const error = new Error(`[arcade/client] WS error: ${event.type}`);
+            finish(error);
+            socket.close();
+            u(error);
+          });
+          socket.addEventListener("message", (event) => {
+            if (r !== socket || epoch !== attemptEpoch) return;
+            let message;
+            try {
+              message = JSON.parse(String(event.data));
+            } catch (error) {
+              console.warn("[arcade/client] Failed to parse WS JSON:", error);
+              return;
+            }
+            const parsed = bte(message);
+            if (parsed.success) d(parsed.data);
+            else console.warn("[arcade/client] Dropping invalid server message:", parsed.error);
+          });
+        })().catch((error) => finish(error));
+      });
+      opening = attempt;
+      void attempt.finally(() => {
+        if (opening === attempt) opening = null;
+      }).catch(() => {});
+      return attempt;
     },
     close: () => {
+      ++epoch;
+      i = "closed";
+      cancelOpening?.();
+      opening = null;
       r?.close();
     },
     send: (p) => {
@@ -35125,6 +35127,8 @@ function f0e(t) {
     _ = null,
     m = null,
     p = !1,
+    ticketController = null,
+    stableTimeout = null,
     v = null,
     y = 0,
     x = 0,
@@ -35142,6 +35146,10 @@ function f0e(t) {
     },
     k = () => {
       A();
+      clearTimeout(stableTimeout);
+      stableTimeout = null;
+      ticketController?.abort();
+      ticketController = null;
       const I = d;
       if (((d = null), (f += 1), I))
         try {
@@ -35254,13 +35262,27 @@ function f0e(t) {
       if (p || !u) return;
       (C(), k(), (c = "connecting"));
       const I = f,
-        F = u;
+        F = u,
+        controller = new AbortController();
+      ticketController = controller;
+      m = setTimeout(() => {
+        if (p || I !== f) return;
+        console.warn("[arcade/client] media_handshake_timeout", { timeoutMs: e });
+        k();
+        P("handshake_timeout");
+      }, e);
       (async () => {
         let G;
         try {
-          G = await t.fetchSubprotocols?.();
+          G = await t.fetchSubprotocols?.(controller.signal);
         } catch (oe) {
           if (p || I !== f) return;
+          if (Yme(oe)) {
+            k();
+            c = "parked";
+            return;
+          }
+          A();
           (console.warn("[arcade/client] media_ticket_fetch_failed", {
             error: oe instanceof Error ? oe.message : String(oe),
           }),
@@ -35272,6 +35294,7 @@ function f0e(t) {
         try {
           ee = t.createWebSocket(t.mediaWsUrl, G);
         } catch (oe) {
+          A();
           (console.warn("[arcade/client] media_socket_create_failed", {
             error: oe instanceof Error ? oe.message : String(oe),
           }),
@@ -35283,14 +35306,6 @@ function f0e(t) {
           (w = null),
           (R = 0),
           (E = !1),
-          A(),
-          (m = setTimeout(() => {
-            p ||
-              I !== f ||
-              (console.warn("[arcade/client] media_handshake_timeout", { timeoutMs: e }),
-              k(),
-              P("handshake_timeout"));
-          }, e)),
           ee.addEventListener("open", () => {
             if (!(p || I !== f)) {
               A();
@@ -35304,7 +35319,11 @@ function f0e(t) {
                   P("open_send_failed"));
                 return;
               }
-              ((c = "open"), (h = 0));
+              c = "open";
+              stableTimeout = setTimeout(() => {
+                stableTimeout = null;
+                if (!p && I === f && c === "open") h = 0;
+              }, 30_000);
             }
           }),
           ee.addEventListener("close", (oe) => {
@@ -36318,9 +36337,10 @@ class x0e {
         this.emitDiagnosticsChange()));
   }
   transitionToFatal(e, n) {
-    this.state.phase === "fatal" ||
-      this.state.phase === "closed" ||
-      (this.stopHealthChecks(), this.setState({ phase: "fatal", reason: e, error: n }));
+    if (this.state.phase === "fatal" || this.state.phase === "closed") return;
+    this.stopHealthChecks();
+    this.setState({ phase: "fatal", reason: e, error: n });
+    this.client?.close();
   }
   startHealthChecks() {
     (this.stopHealthChecks(),
@@ -36737,8 +36757,8 @@ function A0e(t) {
   return p0e({
     ...n,
     reconnectMode: "open_my_web_world",
-    fetchSubprotocols: async () => {
-      const { ticket: r } = await e();
+    fetchSubprotocols: async (signal) => {
+      const { ticket: r } = await e(signal);
       return ["arcade.v1", `ticket.${r}`];
     },
   });
@@ -37444,11 +37464,13 @@ function rge(t) {
   const e = t instanceof Error ? t.message : String(t);
   return /\bUnauthorized\b/i.test(e);
 }
-async function ige() {
+async function ige(signal) {
   const t = await fetch("/api/arcade/ws-ticket", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    signal,
   });
+  if (t.status === 401 || t.status === 403) throw new w0e();
   if (!t.ok) throw new Error(`[arcade/web] Local ticket request failed (${t.status})`);
   const e = await t.json();
   if (!e || typeof e.ticket !== "string" || !e.ticket)
@@ -37456,8 +37478,8 @@ async function ige() {
   return e;
 }
 async function sge() {}
-async function oge() {
-  return (await sge(), await ige());
+async function oge(signal) {
+  return (await sge(), await ige(signal));
 }
 let age = P0e,
   df = null,

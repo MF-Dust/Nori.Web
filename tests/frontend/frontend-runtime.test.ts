@@ -300,6 +300,12 @@ function reconnectClock(t: any) {
       entry[1].callback();
       return entry[1].delay;
     },
+    fire(delay: number) {
+      const entry = [...timers].find(([, timer]) => timer.delay === delay);
+      assert.ok(entry, `expected a ${delay}ms timer`);
+      timers.delete(entry[0]);
+      entry[1].callback();
+    },
     pending: () => [...timers.values()].filter((timer) => timer.delay < 15_000),
   };
 }
@@ -335,7 +341,7 @@ test("open-close loops back off, exhaust their retry budget, and can be manually
 });
 
 for (const type of ["world_joined", "world_created"]) {
-  test(`only ${type} resets the backoff after a reconnect`, async (t) => {
+  test(`${type} resets backoff only after the connection stays stable`, async (t) => {
     environment(t);
     const clock = reconnectClock(t);
     const client = new ArcadeClient({ reconnectMinMs: 100 });
@@ -352,6 +358,13 @@ for (const type of ["world_joined", "world_created"]) {
     socket.message(JSON.stringify({ type }));
     await tick();
     socket.close();
+    assert.equal(clock.next(), 200, "a brief world join must not reset backoff");
+    await tick();
+    const stable = Socket.sockets.at(-1)!;
+    stable.open();
+    stable.message(JSON.stringify({ type }));
+    clock.fire(30_000);
+    stable.close();
     assert.equal(clock.next(), 100);
     await tick();
   });
@@ -392,6 +405,46 @@ test("ticket failures also stop after the configured retry budget", async (t) =>
   assert.equal(clock.pending().length, 0);
   assert.equal(Socket.sockets.length, 0);
 });
+
+for (const status of [401, 403]) {
+  test(`ticket ${status} stops reconnect and records session_invalid`, async (t) => {
+    environment(t);
+    const clock = reconnectClock(t);
+    t.mock.method(globalThis, "fetch", async () => Response.json({}, { status }));
+    const client = new ArcadeClient();
+    t.after(() => client.close());
+    await assert.rejects(client.connect());
+    assert.equal(client.connectionState, "closed");
+    assert.equal(client.lastClose?.reason, "session_invalid");
+    assert.equal(clock.pending().length, 0);
+    assert.equal(Socket.sockets.length, 0);
+  });
+}
+
+for (const kind of ["main", "media"] as const) {
+  for (const cancel of ["timeout", "close"] as const) {
+    test(`${kind}: ${cancel} aborts a pending ticket request`, async (t) => {
+      environment(t);
+      const clock = reconnectClock(t);
+      let signal!: AbortSignal;
+      t.mock.method(globalThis, "fetch", (_url: any, init: RequestInit) => new Promise<Response>((_resolve, reject) => {
+        signal = init.signal as AbortSignal;
+        signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+      }));
+      const client = kind === "main" ? new ArcadeClient({ reconnect: false }) : new ArcadeMediaClient();
+      t.after(() => client.close());
+      const pending = kind === "main" ? (client as ArcadeClient).connect() : (client as ArcadeMediaClient).connect("grant");
+      const checked = cancel === "timeout" ? assert.rejects(pending) : pending;
+      if (cancel === "timeout") clock.fire(15_000);
+      else client.close();
+      await checked;
+      assert.equal(signal.aborted, true);
+      assert.equal(client.connectionState, "closed");
+      assert.equal(Socket.sockets.length, 0);
+      assert.equal(clock.pending().length, 0);
+    });
+  }
+}
 
 test("frontend rejoins its world once per socket and disposal fences startup", async (t) => {
   environment(t);
