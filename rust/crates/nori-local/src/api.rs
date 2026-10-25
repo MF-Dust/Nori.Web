@@ -86,6 +86,7 @@ fn allowed_methods(path: &str) -> Option<&'static str> {
         | "/api/auth/email-otp/verify-email"
         | "/api/auth/sign-out"
         | "/api/arcade/ws-ticket"
+        | "/api/presence"
         | "/api/query_ts"
         | "/api/query"
         | "/api/mutation"

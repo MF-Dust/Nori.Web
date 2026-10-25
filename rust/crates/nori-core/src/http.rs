@@ -38,6 +38,8 @@ pub struct HttpHost {
     pub auto_guest: bool,
     pub dev_otp: String,
     pub auth: MemoryAuth,
+    /// Online count for the local server. The edge counts in a shared Durable Object.
+    pub presence: crate::presence::Presence,
 }
 
 fn header<'a>(headers: &'a [(String, String)], name: &str) -> Option<&'a str> {
@@ -145,6 +147,15 @@ pub fn handle_http(host: &mut HttpHost, req: &HttpRequest, now: i64) -> Option<H
             .map(|id| format!("local-convex.{id}"));
         return Some(HttpResponse::json(200, &json!({"token": token}), headers));
     }
+    if path == crate::presence::PATH && method == "POST" {
+        let (identity, headers) = presence_identity(host, req, now);
+        let Some(identity) = identity else {
+            return Some(HttpResponse::json(401, &json!({"error": "Unauthorized"}), headers));
+        };
+        let leave = crate::presence::wants_leave(&req.body);
+        let online = host.presence.beat(&identity, leave, now * 1000);
+        return Some(HttpResponse::json(200, &crate::presence::response_body(online), headers));
+    }
     if path == "/api/arcade/ws-ticket" && method == "POST" {
         let (session, headers) = current_session(host, req, now);
         let Some(user_id) = session
@@ -218,6 +229,22 @@ fn current_session(
         return (Some(session), headers);
     }
     (None, headers)
+}
+
+/// The digest a presence heartbeat counts as (`None` without a session), plus the
+/// session headers (a new guest cookie, cache control) for the response.
+pub fn presence_identity(
+    host: &mut HttpHost,
+    req: &HttpRequest,
+    now: i64,
+) -> (Option<String>, Vec<(String, String)>) {
+    let (session, headers) = current_session(host, req, now);
+    let identity = session
+        .as_ref()
+        .and_then(|s| s.pointer("/user/id"))
+        .and_then(Value::as_str)
+        .map(crate::presence::identity);
+    (identity, headers)
 }
 
 fn session_response(host: &mut HttpHost, req: &HttpRequest, now: i64) -> HttpResponse {

@@ -1309,3 +1309,23 @@ fn provider_stream_caps_errors_at_64k_stops_and_reports_truncation() {
     assert_eq!(bytes, vec![1, 2]);
     assert!(!truncated);
 }
+
+#[test]
+fn presence_heartbeats_route_to_the_shared_counter_object() {
+    let fake = Fake::new(); // Guests are automatic by default.
+    let mut req = request("/api/presence", "POST");
+    req.http.body = br#"{"leave":true}"#.to_vec();
+    match run(router::route(&fake, &Isolate::default(), &req)).unwrap() {
+        Route::Presence { identity, leave, headers } => {
+            assert_eq!(identity.len(), 64);
+            assert!(leave);
+            assert!(headers.iter().any(|(name, _)| name.eq_ignore_ascii_case("set-cookie")), "new guests get their cookie");
+        }
+        _ => panic!("not routed to the presence object"),
+    }
+    assert_ne!(router::PRESENCE_OBJECT.len(), router::durable_name("alice").len());
+    let get = response(&fake, &request("/api/presence", "GET"));
+    assert_eq!(get.status, 404);
+    let wrong = response(&fake, &request("/api/presence", "PUT"));
+    assert!(wrong.headers.contains(&("Allow".into(), "POST".into())));
+}

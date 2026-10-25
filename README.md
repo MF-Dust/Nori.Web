@@ -80,6 +80,7 @@ Nori.Web 通过社区维护的兼容后端实现重建了客户端通信所依�
   - ♟️ **Chess (国际象棋 · 算力3.12)**：依托 `shakmaty` 实现合法着法、将军、将杀、和棋判定、悔棋与本地引擎对战。
   - 🎨 **Pictionary (你画我猜 · 算力3.05)**：内置画板笔迹插值播放、词义智能判定与多回合流转控制。
   - 👥 **多人联机（可选）**：四个小游戏可由另一位玩家占据 Nori 的席位；WebRTC 直连优先、TURN 回退，EasyTier WASM 为实验性通道。在设置中开关，详见 [`docs/MULTIPLAYER.md`](docs/MULTIPLAYER.md)。
+  - 📶 **在线人数**：设置 → 网络 显示当前服务器在线人数。客户端每 30 秒发送匿名心跳（`POST /api/presence`），服务器只在内存中保存用户 ID 的 SHA-256 摘要，150 秒无心跳即视为离线；同一用户多个标签页只计一次。Cloudflare 部署由固定名称的 Durable Object 统一计数。
   - 🌐 **Manifold (流形桌面)**：全套桌面事实（Facts）发射、剧情里程碑与系统级应用解锁联动。
 - **Cloudflare Workers 现代无服务器架构**
   - Rust workers-rs / WebAssembly 网关，共享 `nori-core` 协议与状态核心；

@@ -1215,6 +1215,9 @@ export default {
       "easyTierPeers": "EasyTier 节点（WebSocket）"
     },
     "network": {
+      "online": "在线人数",
+      "onlineValue": "{{count}} 人",
+      "onlineUnavailable": "暂不可用",
       "latency": "延迟",
       "latencyValue": "{{ms}} ms（{{quality}}）",
       "pending": "待发送",

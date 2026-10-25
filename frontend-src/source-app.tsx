@@ -59,6 +59,7 @@ import type { JsonValue } from "./runtime/protocol";
 import { createCakeDuelPresentationAssets } from "./apps/cakeduel-assets";
 import { CakeDuelRuntimeController } from "./apps/cakeduel-runtime";
 import { MultiplayerManager } from "./multiplayer/manager";
+import { PresenceClient } from "./runtime/presence";
 import type { BuiltInGame } from "./services/games";
 import {
   createRecoveredDesktopRuntime,
@@ -292,9 +293,13 @@ function createSourceSession() {
 
   const terminalFiles = createTerminalLocalFileSystem(frontend.files);
   const system = new SystemService(frontend.arcade);
+  // Anonymous online count shown in Settings > Network; heartbeats run while the app is open.
+  const presence = new PresenceClient();
+  presence.start();
   const settings: SettingsRuntime = {
     arcade: frontend.arcade,
     system,
+    presence,
     speechControl: <SpeechModeControl frontend={frontend} locale={locale} />,
     debugContent: <DebugScreen frontend={frontend} actions={{
       compute: idle.debug,
@@ -639,6 +644,7 @@ function createSourceSession() {
     pictionary,
     drawing,
     multiplayer,
+    presence,
     podcast,
     bundle,
   };
@@ -704,6 +710,7 @@ export function SourceApp() {
       session.chip.dispose();
       session.daniel.dispose();
       session.multiplayer.dispose();
+      session.presence.dispose();
       session.cakeduel.dispose();
       session.chess.dispose();
       session.codenames.dispose();

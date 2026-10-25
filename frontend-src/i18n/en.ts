@@ -1215,6 +1215,9 @@ export default {
       "easyTierPeers": "EasyTier peers (WebSocket)"
     },
     "network": {
+      "online": "Online now",
+      "onlineValue": "{{count}} online",
+      "onlineUnavailable": "Unavailable",
       "latency": "Latency",
       "latencyValue": "{{ms}} ms ({{quality}})",
       "pending": "Waiting to send",

@@ -26,6 +26,7 @@ import { isGraphicsMode, useGraphicsSettings } from "../state/graphics-store";
 import { useUnlockSettings } from "../state/unlock-store";
 import type { ArcadeClient } from "../runtime/arcade-client";
 import type { SystemService } from "../services/system";
+import type { PresenceClient } from "../runtime/presence";
 import { sourceLocale, type createSourceTranslate } from "../i18n/translate";
 import "./settings-screen.css";
 
@@ -33,6 +34,8 @@ type Translate = ReturnType<typeof createSourceTranslate>;
 export interface SettingsRuntime {
   arcade: ArcadeClient;
   system: SystemService;
+  /** Online count; absent in harnesses without a server. */
+  presence?: PresenceClient;
   translate: Translate;
   onReset(): Promise<void>;
   speechControl?: ReactNode;
@@ -250,6 +253,27 @@ function subscribeOnline(listener: () => void) {
     window.removeEventListener("offline", listener);
   };
 }
+const noPresence = () => () => {};
+function OnlineCount({ runtime }: { runtime: SettingsRuntime }) {
+  const t = runtime.translate, presence = runtime.presence;
+  const snapshot = useSyncExternalStore(
+    presence?.subscribe ?? noPresence,
+    () => presence?.snapshot() ?? null,
+    () => presence?.snapshot() ?? null,
+  );
+  // Opening Settings refreshes the count instead of showing a 30-second-old value.
+  useEffect(() => { void presence?.refresh(); }, [presence]);
+  if (!presence || !snapshot) return null;
+  return (
+    <InfoRow label={t("settings.network.online")}>
+      <span aria-live="polite">
+        {snapshot.online === null
+          ? snapshot.status === "failed" ? t("settings.network.onlineUnavailable") : "—"
+          : t("settings.network.onlineValue", { count: snapshot.online })}
+      </span>
+    </InfoRow>
+  );
+}
 function NetworkSettings({ runtime }: { runtime: SettingsRuntime }) {
   const t = runtime.translate;
   const [connection, setConnection] = useState(runtime.arcade.connectionState);
@@ -308,6 +332,7 @@ function NetworkSettings({ runtime }: { runtime: SettingsRuntime }) {
                 ),
               })}
         </InfoRow>
+        <OnlineCount runtime={runtime} />
       </div>
       <div className="flex items-center gap-3">
         <button

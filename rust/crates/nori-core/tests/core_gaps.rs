@@ -204,3 +204,29 @@ fn snapshot_sorts_grants_and_skips_bad_cartridges() {
         "chat is required"
     );
 }
+
+#[test]
+fn presence_counts_each_session_once_and_requires_one() {
+    let mut host = HttpHost { secret: "s".into(), ..HttpHost::default() };
+    let now = 1_800_000_000;
+    let online = |response: nori_core::http::HttpResponse| {
+        serde_json::from_slice::<Value>(&response.body).unwrap()["online"].as_u64()
+    };
+    let anonymous = handle_http(&mut host, &post("/api/presence", json!({}), None), now).unwrap();
+    assert_eq!(anonymous.status, 401, "no session, no count");
+    host.auto_guest = true;
+    let first = handle_http(&mut host, &post("/api/presence", json!({}), None), now).unwrap();
+    let cookie = first
+        .headers
+        .iter()
+        .find(|(name, _)| name.eq_ignore_ascii_case("set-cookie"))
+        .map(|(_, value)| value.split(';').next().unwrap().to_string())
+        .unwrap();
+    assert_eq!(online(first), Some(1));
+    let again = handle_http(&mut host, &post("/api/presence", json!({}), Some(&cookie)), now + 5).unwrap();
+    assert_eq!(online(again), Some(1), "the same guest counts once");
+    let other = handle_http(&mut host, &post("/api/presence", json!({}), None), now + 6).unwrap();
+    assert_eq!(online(other), Some(2));
+    let gone = handle_http(&mut host, &post("/api/presence", json!({"leave": true}), Some(&cookie)), now + 7).unwrap();
+    assert_eq!(online(gone), Some(1));
+}

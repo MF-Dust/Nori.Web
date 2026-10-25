@@ -13,8 +13,20 @@ pub enum Route<B> {
     Response(HttpResponse),
     Model(AssetObject<B>),
     Durable(String),
+    /// A presence heartbeat for the shared counter object; `headers` carry session cookies.
+    Presence {
+        identity: String,
+        leave: bool,
+        headers: Vec<(String, String)>,
+    },
     Assets,
 }
+
+/// The one Durable Object instance that counts online users for the deployment.
+/// Not a 64-hex digest, so it can never collide with a user's session object.
+pub const PRESENCE_OBJECT: &str = "presence-v1";
+/// Internal path the worker uses to reach the counter object.
+pub const PRESENCE_INTERNAL_PATH: &str = "/__nori/presence";
 
 pub fn plain(status: u16, body: &str) -> HttpResponse {
     HttpResponse {
@@ -79,6 +91,7 @@ fn asgi_allow(path: &str) -> &'static str {
         "/api/auth/get-session" => "GET, POST",
         "/api/auth/convex/token"
         | "/api/arcade/ws-ticket"
+        | "/api/presence"
         | "/api/auth/email-otp/send-verification-otp"
         | "/api/auth/send-email-otp"
         | "/api/auth/sign-in/email-otp"
@@ -168,6 +181,19 @@ pub async fn route<H: Bindings + Clock + ModelStore>(
         http_host.machine_id = "nori-local".into();
         http_host.auto_guest = config.auto_guest;
         http_host.dev_otp = config.dev_otp;
+        // Isolates do not share memory: the count lives in one Durable Object.
+        if path == nori_core::presence::PATH && req.http.method.eq_ignore_ascii_case("POST") {
+            let (identity, headers) =
+                http::presence_identity(&mut http_host, &req.http, host.now_ms() / 1000);
+            return Ok(match identity {
+                Some(identity) => Route::Presence {
+                    identity,
+                    leave: nori_core::presence::wants_leave(&req.http.body),
+                    headers,
+                },
+                None => Route::Response(HttpResponse::json(401, &json!({"error": "Unauthorized"}), headers)),
+            });
+        }
         if let Some(mut response) =
             http::handle_http(&mut http_host, &req.http, host.now_ms() / 1000)
         {

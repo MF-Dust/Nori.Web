@@ -11,7 +11,7 @@ use nori_core::{
     provider::{HttpRequest, HttpResult},
 };
 use serde_json::Value;
-use std::{rc::Rc, time::Duration};
+use std::{cell::RefCell, rc::Rc, time::Duration};
 use worker::{durable_object, event, js_sys, *};
 
 thread_local! {
@@ -284,8 +284,39 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
                 .fetch_with_request(req)
                 .await
         }
+        Route::Presence { identity, leave, headers: extra } => {
+            let body = serde_json::json!({"identity": identity, "leave": leave}).to_string();
+            let mut init = RequestInit::new();
+            init.with_method(Method::Post).with_body(Some(body.into()));
+            let inner = Request::new_with_init(
+                &format!("https://presence.internal{}", router::PRESENCE_INTERNAL_PATH),
+                &init,
+            )?;
+            let mut counted = host
+                .env
+                .durable_object("NORI_ARCADE")?
+                .get_by_name(router::PRESENCE_OBJECT)?
+                .fetch_with_request(inner)
+                .await?;
+            let status = counted.status_code();
+            let text = counted.text().await?;
+            let mut values = extra;
+            values.push(("Content-Type".into(), "application/json".into()));
+            response(HttpResponse { status, headers: values, body: text.into_bytes() })
+        }
         Route::Assets => host.env.service("ASSETS")?.fetch_request(req).await,
     }
+}
+
+/// The shared online counter, served by the `presence-v1` object only.
+fn presence_reply(presence: &RefCell<nori_core::presence::Presence>, raw: &str, now_ms: i64) -> Result<Response> {
+    let body: Value = serde_json::from_str(raw).unwrap_or(Value::Null);
+    let Some(identity) = body.get("identity").and_then(Value::as_str).filter(|id| id.len() == 64) else {
+        return Response::error("bad presence request", 400);
+    };
+    let leave = body.get("leave").and_then(Value::as_bool).unwrap_or(false);
+    let online = presence.borrow_mut().beat(identity, leave, now_ms);
+    Response::from_json(&nori_core::presence::response_body(online))
 }
 
 #[durable_object]
@@ -293,6 +324,8 @@ pub struct NoriArcadeSession {
     host: CfHost,
     session: SessionObject,
     isolate: Rc<Isolate>,
+    /// Used only by the `presence-v1` instance; in memory, rebuilt by heartbeats.
+    presence: RefCell<nori_core::presence::Presence>,
 }
 
 impl DurableObject for NoriArcadeSession {
@@ -304,10 +337,15 @@ impl DurableObject for NoriArcadeSession {
             },
             session: SessionObject::default(),
             isolate: isolate(),
+            presence: RefCell::new(Default::default()),
         }
     }
-    async fn fetch(&self, req: Request) -> Result<Response> {
+    async fn fetch(&self, mut req: Request) -> Result<Response> {
         let meta = request_meta(&req)?;
+        if meta.http.path == router::PRESENCE_INTERNAL_PATH {
+            let raw = req.text().await?;
+            return presence_reply(&self.presence, &raw, host::Clock::now_ms(&self.host));
+        }
         let user = match SessionObject::upgrade(&self.host, &meta).map_err(err)? {
             Ok(user) => user,
             Err(rejected) => return response(rejected),
