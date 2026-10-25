@@ -18,9 +18,16 @@ export interface EasyTierSettings {
   peers: string;
 }
 
+export const TURN_TIMEOUT_CHOICES = [0, 60, 120, 300] as const;
+export const MAX_NICKNAME_LENGTH = 24;
+
 export interface MultiplayerSettingsValues {
   /** Off by default: the games keep their single-player Nori behavior. */
   enabled: boolean;
+  /** Shown to the other player in place of "Nori"; empty uses a generic label. */
+  nickname: string;
+  /** Host only: after this many idle seconds on the guest's turn Nori plays one move for it (0 = off). */
+  turnTimeoutSec: number;
   transport: MultiplayerTransportKind;
   /** Comma/newline separated STUN URLs used for the direct path. */
   stunUrls: string;
@@ -34,6 +41,8 @@ export interface MultiplayerSettingsValues {
 
 export interface MultiplayerSettings extends MultiplayerSettingsValues {
   setEnabled(enabled: boolean): void;
+  setNickname(nickname: string): void;
+  setTurnTimeoutSec(seconds: number): void;
   setTransport(transport: MultiplayerTransportKind): void;
   setStunUrls(value: string): void;
   setTurn(patch: Partial<TurnServerSettings>): void;
@@ -44,6 +53,8 @@ export interface MultiplayerSettings extends MultiplayerSettingsValues {
 
 export const DEFAULT_MULTIPLAYER_SETTINGS: MultiplayerSettingsValues = {
   enabled: false,
+  nickname: "",
+  turnTimeoutSec: 120,
   transport: "webrtc",
   stunUrls: "stun:stun.cloudflare.com:3478\nstun:stun.l.google.com:19302",
   turn: { urls: "", username: "", credential: "" },
@@ -51,6 +62,10 @@ export const DEFAULT_MULTIPLAYER_SETTINGS: MultiplayerSettingsValues = {
   easyTierExperimental: false,
   easyTier: { moduleUrl: "", networkName: "", networkSecret: "", peers: "" },
 };
+
+function validTimeout(value: unknown): number {
+  return (TURN_TIMEOUT_CHOICES as readonly number[]).includes(value as number) ? value as number : DEFAULT_MULTIPLAYER_SETTINGS.turnTimeoutSec;
+}
 
 export function splitUrls(value: string): string[] {
   return value.split(/[\s,]+/).map((item) => item.trim()).filter(Boolean);
@@ -61,6 +76,8 @@ export const useMultiplayerSettings = create<MultiplayerSettings>()(
     (set) => ({
       ...DEFAULT_MULTIPLAYER_SETTINGS,
       setEnabled: (enabled) => set({ enabled }),
+      setNickname: (nickname) => set({ nickname: nickname.slice(0, MAX_NICKNAME_LENGTH) }),
+      setTurnTimeoutSec: (seconds) => set({ turnTimeoutSec: validTimeout(seconds) }),
       setTransport: (transport) => set((state) => ({
         transport: transport === "easytier" && !state.easyTierExperimental ? "webrtc" : transport,
       })),
@@ -78,6 +95,8 @@ export const useMultiplayerSettings = create<MultiplayerSettings>()(
       version: 1,
       partialize: (state): MultiplayerSettingsValues => ({
         enabled: state.enabled,
+        nickname: state.nickname,
+        turnTimeoutSec: state.turnTimeoutSec,
         transport: state.transport,
         stunUrls: state.stunUrls,
         turn: state.turn,
@@ -96,6 +115,8 @@ export const useMultiplayerSettings = create<MultiplayerSettings>()(
         if (merged.transport !== "webrtc" && (merged.transport !== "easytier" || !merged.easyTierExperimental))
           merged.transport = "webrtc";
         merged.enabled = merged.enabled === true;
+        merged.nickname = typeof merged.nickname === "string" ? merged.nickname.slice(0, MAX_NICKNAME_LENGTH) : "";
+        merged.turnTimeoutSec = validTimeout(merged.turnTimeoutSec);
         return merged;
       },
     },

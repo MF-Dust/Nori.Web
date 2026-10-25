@@ -923,6 +923,16 @@ export default {
     "desktopOnly": "Desktop only"
   },
   "multiplayer": {
+    "opponent": "Opponent",
+    "reinvite": "Re-invite (resume this game)",
+    "takeover": "Let Nori take over",
+    "forfeit": "Record a forfeit",
+    "forfeitConfirm": "Record a forfeit for the other player and end the session?",
+    "grace": "Seat reserved; Nori takes over in {{time}}",
+    "clock": {
+      "yours": "Your turn {{time}}",
+      "theirs": "Their turn {{time}}"
+    },
     "title": "Multiplayer",
     "button": "Multiplayer",
     "close": "Close",
@@ -949,6 +959,7 @@ export default {
       "unknown": "Connected"
     },
     "phase": {
+      "peerLost": "Other player disconnected",
       "idle": "Not connected",
       "inviting": "Waiting for the other player…",
       "replying": "Waiting for the host to connect…",
@@ -958,6 +969,9 @@ export default {
       "error": "Connection failed"
     },
     "error": {
+      "peerLost": "The other player dropped. Re-invite them to resume this game.",
+      "hostLost": "Lost the host. Ask the host for a new invite code to rejoin.",
+      "noriTookOver": "The other player did not return in time; Nori has the seat again.",
       "disabled": "Enable multiplayer in Settings first",
       "hostOnly": "Only the host can start, reset or configure the game",
       "hostOffline": "The host lost its server connection",
@@ -1174,6 +1188,11 @@ export default {
       "title": "Language"
     },
     "multiplayer": {
+      "nickname": "Your nickname (shown to the other player)",
+      "turnTimeout": "Guest turn limit",
+      "turnTimeoutOff": "No limit",
+      "turnTimeoutValue": "{{minutes}} min",
+      "turnTimeoutHint": "Applies when hosting: if the other player idles past the limit, Nori plays one move for them; the seat stays theirs.",
       "title": "Multiplayer",
       "description": "Play against or with another person in Nori's seat. The host's world is authoritative; the guest syncs over a peer-to-peer link.",
       "enabled": "Enable multiplayer",

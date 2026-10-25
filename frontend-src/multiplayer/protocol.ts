@@ -10,7 +10,9 @@ export type GameCommand = { type: string; [key: string]: JsonValue };
 
 /** Messages on the peer link. The host is authoritative; the guest never talks to a backend. */
 export type PeerMessage =
-  | { t: "hello"; v: number; game: BuiltInGame; role: "host" | "guest"; room: string }
+  | { t: "hello"; v: number; game: BuiltInGame; role: "host" | "guest"; room: string; name?: string }
+  /** Host -> guest: time left on the guest's turn, or `null` when no clock runs. */
+  | { t: "clock"; remainingMs: number | null }
   | { t: "view"; runtime: CartridgeSnapshot | null }
   | { t: "transition"; version: number; runtime: CartridgeSnapshot; transition: Record<string, JsonValue> }
   | { t: "dispatch"; requestId: string; expectedHeadVersion: number; cmd: GameCommand }
@@ -46,7 +48,10 @@ export function parsePeerMessage(raw: string): PeerMessage | null {
   const message = value as Record<string, unknown>;
   switch (message.t) {
     case "hello":
-      return typeof message.game === "string" && (message.role === "host" || message.role === "guest") && typeof message.room === "string"
+      if (typeof message.game !== "string" || (message.role !== "host" && message.role !== "guest") || typeof message.room !== "string") return null;
+      return { ...message, name: cleanName(message.name) } as PeerMessage;
+    case "clock":
+      return message.remainingMs === null || (typeof message.remainingMs === "number" && message.remainingMs >= 0 && message.remainingMs <= 3_600_000)
         ? message as PeerMessage : null;
     case "view":
       return message.runtime === null || isRuntime(message.runtime) ? message as PeerMessage : null;
@@ -72,6 +77,13 @@ export function parsePeerMessage(raw: string): PeerMessage | null {
     default:
       return null;
   }
+}
+
+/** Peer names are display text only: trimmed, single line, bounded. */
+export function cleanName(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const name = value.replace(/[\u0000-\u001f\u007f]/g, "").replace(/\s+/g, " ").trim().slice(0, 24);
+  return name || undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, JsonValue> {

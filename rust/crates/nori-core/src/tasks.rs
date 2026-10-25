@@ -786,7 +786,7 @@ fn poll_pictionary_hint(
         .unwrap_or(180_000)
         .max(1);
     let progress = (now_ms() - started_ms).max(0) as f64 / duration as f64;
-    let Some(delay) = pictionary::hint_delay(&state, round_id, progress) else {
+    let Some(delay) = pictionary::hint_delay(&state, round_id, progress, world.remote_opponent("pictionary")) else {
         return Step::Done;
     };
     if !*slept {

@@ -18,8 +18,10 @@ export interface PictionaryScreenProps {
   playSound?: (cue: string) => void;
   startSoundLoop?: (cue: string) => () => void;
   onNoriReaction?: (reaction: PictionaryReaction) => void;
+  /** Multiplayer: the other person in Nori's seat. */
+  opponentName?: string;
 }
-export function PictionaryScreen({ controller, drawing, locale = "en", playSound, startSoundLoop, onNoriReaction }: PictionaryScreenProps) {
+export function PictionaryScreen({ controller, drawing, locale = "en", playSound, startSoundLoop, onNoriReaction, opponentName }: PictionaryScreenProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
   const vision = useSyncExternalStore(drawing.subscribe, drawing.snapshot, drawing.snapshot);
   const peer = useSyncExternalStore(drawing.subscribePeer, drawing.peerSnapshot, drawing.peerSnapshot);
@@ -99,9 +101,9 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
   };
   const summary = game?.phase === "RESULTS" ? pictionarySummary(game) : null;
   return <section className="source-pictionary">
-    {!game ? <PictionaryCover locale={locale} open={bookOpen} durationSec={durationSec}
+    {!game ? <PictionaryCover locale={locale} opponentName={opponentName} open={bookOpen} durationSec={durationSec}
       disabled={!snapshot.mounted || snapshot.pending} onDuration={setDurationSec} onToggle={() => setBookOpen(value => !value)}
-      onStart={start} onHelp={() => setHelp(true)} /> : summary ? <PictionaryResults game={game!} locale={locale} pending={snapshot.pending} onRestart={start} />       : round && <div className="source-pictionary-game">
+      onStart={start} onHelp={() => setHelp(true)} /> : summary ? <PictionaryResults game={game!} locale={locale} pending={snapshot.pending} onRestart={start} opponentName={opponentName} />       : round && <div className="source-pictionary-game">
       <div className="source-pictionary-felt" aria-hidden="true" />
       <div className="source-pictionary-vignette" aria-hidden="true" />
       <div className="source-pictionary-tools" aria-label={text("Drawing tools", "画图工具")} data-dimmed={!isDrawer || undefined}>
@@ -134,7 +136,7 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
         </header>
         <PictionaryCanvas ref={canvas} roundId={round.roundId} noriDrawings={round.noriDrawings} redrawEpoch={round.noriRedrawEpoch}
           active={!!active} drawer={round.roles.drawer} color={color} eraser={eraser} startSoundLoop={startSoundLoop}
-          peerStrokes={peer.active ? (peer.roundId === round.roundId ? peer.strokes : []) : undefined}
+          peerStrokes={peer.active ? (peer.roundId === round.roundId ? peer.strokes : []) : undefined} opponentName={opponentName}
           onStroke={stroke => drawing.submit(stroke)} onChange={strokes => { drawing.changed(); drawing.strokesChanged(strokes); }} />
         {!roundActive && <div className="source-pictionary-round-result" role="status"><strong>{round.word}</strong>
           <p>{round.status === "solved" ? text("Correct!", "答对了！") : text("Skipped", "已跳过")}</p>
@@ -159,7 +161,7 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
           {["failed", "unconfigured", "unknown"].includes(vision.status) && <button type="button" onClick={() => drawing.retryRecognition()}>{text("Retry", "重试")}</button>}
         </div>}
         <div ref={chat} className="source-pictionary-messages" role="log">
-          {messages.length ? messages.map(item => <p key={item.id} data-correct={item.correct}><small>{item.by === "agent" ? "Nori" : text("You", "你")}</small>{item.text}{item.correct ? " ✓" : ""}</p>) : (
+          {messages.length ? messages.map(item => <p key={item.id} data-correct={item.correct}><small>{item.by === "agent" ? opponentName ?? "Nori" : text("You", "你")}</small>{item.text}{item.correct ? " ✓" : ""}</p>) : (
             <div className="source-pictionary-chat-empty" role="status">
               <span><Zap aria-hidden="true" /></span>
               <strong>{text("Waiting…", "等待中…")}</strong>

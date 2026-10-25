@@ -1,5 +1,5 @@
-export function PictionaryCover({ locale, open, durationSec, disabled, onDuration, onToggle, onStart, onHelp }: {
-  locale: string; open: boolean; durationSec: number; disabled: boolean;
+export function PictionaryCover({ locale, open, durationSec, disabled, onDuration, onToggle, onStart, onHelp, opponentName }: {
+  locale: string; open: boolean; durationSec: number; disabled: boolean; opponentName?: string;
   onDuration(value: number): void; onToggle(): void; onStart(): void; onHelp(): void;
 }) {
   const zh = locale.toLowerCase().startsWith("zh"), text = (en: string, cn: string) => zh ? cn : en;
@@ -16,7 +16,7 @@ export function PictionaryCover({ locale, open, durationSec, disabled, onDuratio
           <h1>{text("Draw & Guess", "你画我猜")}</h1>
         </div>
         <i />
-        <p>{text("with Nori", "与 Nori 一起")}</p>
+        <p>{opponentName ? text(`with ${opponentName}`, `与 ${opponentName} 一起`) : text("with Nori", "与 Nori 一起")}</p>
       </div>
       <div className="source-pictionary-mode-cards">
         <span className="source-pictionary-coffee-ring source-pictionary-card-ring" aria-hidden="true" />

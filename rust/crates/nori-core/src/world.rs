@@ -111,6 +111,8 @@ pub struct World {
     /// seat: Nori's turns are suppressed and agent-perspective views are emitted.
     /// The host renews the lease; an abandoned session falls back to Nori.
     pub remote_opponents: BTreeMap<String, i64>,
+    /// Set only while the host asks Nori to play one move for an idle remote seat.
+    forced_agent_step: bool,
 }
 
 impl World {
@@ -135,6 +137,7 @@ impl World {
             agent_loops: BTreeMap::new(),
             vision_revision: None,
             remote_opponents: BTreeMap::new(),
+            forced_agent_step: false,
         }
     }
 
@@ -155,6 +158,18 @@ impl World {
         self.cartridges.iter_mut().find(|c| c.id == id)
     }
 
+    /// The remote seat ran out of time: Nori plays exactly one move for it, keeping the
+    /// lease. `None` when the seat is not leased or has nothing to do.
+    pub fn remote_agent_step(&mut self, cartridge_id: &str) -> Option<Vec<Json>> {
+        if !self.remote_opponent(cartridge_id) || cartridge_id == "pictionary" {
+            return None;
+        }
+        self.forced_agent_step = true;
+        let messages = self.agent_step(cartridge_id);
+        self.forced_agent_step = false;
+        messages
+    }
+
     /// Whether a remote human currently holds this cartridge's agent seat.
     pub fn remote_opponent(&self, cartridge_id: &str) -> bool {
         self.remote_opponents
@@ -171,7 +186,8 @@ impl World {
             Some(lease) => {
                 self.remote_opponents
                     .insert(cartridge_id.to_string(), now + lease.clamp(1_000, MAX_REMOTE_LEASE_MS));
-                Vec::new()
+                // A guest taking over mid-round gets its hints right away.
+                if cartridge_id == "pictionary" { self.schedule_pictionary_guess() } else { Vec::new() }
             }
             None => {
                 self.remote_opponents.remove(cartridge_id);
@@ -235,6 +251,7 @@ impl World {
                         "version": commit.version,
                         "runtime": crate::multiplayer::snapshot(c),
                         "transition": crate::multiplayer::transition(c, transition),
+                        "agentTurn": crate::multiplayer::agent_turn(c),
                     }),
                     json!(cartridge_id),
                     Value::Null,
@@ -653,7 +670,7 @@ impl World {
                 tasks.push(task);
             }
         }
-        if let Some(round_id) = crate::cartridges::pictionary::hint_round(&state) {
+        if let Some(round_id) = crate::cartridges::pictionary::hint_round_for(&state, remote) {
             let key = format!("pictionary:hint:{round_id}");
             if !self.agent_loops.contains_key(&key) {
                 let task = Task::pictionary_hint(self, self.pacing, round_id);
@@ -779,7 +796,7 @@ impl World {
         prefer_recovery: bool,
     ) -> Option<Vec<Json>> {
         // A remote human took the seat after this loop started.
-        if self.remote_opponent(cartridge_id) {
+        if self.remote_opponent(cartridge_id) && !self.forced_agent_step {
             return None;
         }
         let state = self.cartridge(cartridge_id)?.state.clone();
@@ -806,9 +823,10 @@ impl World {
 
     /// The hint task's reveal: committed straight from the server, never via a command.
     pub fn pictionary_reveal_hint(&mut self, round_id: &str, progress: f64) -> Option<Vec<Json>> {
+        let human_agent = self.remote_opponent("pictionary");
         let cartridge = self.cartridge_mut("pictionary")?;
         let reduced =
-            crate::cartridges::pictionary::reveal_hint(&cartridge.state, round_id, progress)?;
+            crate::cartridges::pictionary::reveal_hint(&cartridge.state, round_id, progress, human_agent)?;
         let cmd = json!({"type": "revealHint", "roundId": round_id});
         let commit = cartridge.commit("system", &cmd, reduced).ok()?;
         Some(self.commit_messages("pictionary", &commit))

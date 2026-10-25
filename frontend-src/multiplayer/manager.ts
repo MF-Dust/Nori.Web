@@ -1,10 +1,11 @@
 import type { ArcadeChannel } from "../runtime/arcade-client";
 import type { WorldStore } from "../runtime/world-store";
+import type { JsonValue } from "../runtime/protocol";
 import { GameService, type BuiltInGame } from "../services/games";
 import { multiplayerSettings, useMultiplayerSettings, type MultiplayerSettingsValues } from "../state/multiplayer-settings-store";
 import { easyTierAvailable, EasyTierLink } from "./easytier-transport";
 import { hostCommandBlocked, MULTIPLAYER_GAMES } from "./protocol";
-import { GuestArcade, HostBridge, type MultiplayerTranslate, type StrokeRelay } from "./session";
+import { GuestArcade, HostBridge, leaseSeat, type MultiplayerTranslate, type StrokeRelay } from "./session";
 import { decodeSignal, encodeSignal, type PeerLink, type PeerRoute } from "./transport";
 import { WebRtcLink, webRtcConfig, type SignalEnvelope } from "./webrtc-transport";
 
@@ -17,8 +18,14 @@ export type MultiplayerPhase =
   | "replying"
   | "connecting"
   | "connected"
+  /** Host: the guest vanished; its seat stays reserved for a re-invite until `graceUntil`. */
+  | "peerLost"
   | "ended"
   | "error";
+
+/** How long a vanished guest's seat is held before Nori takes over. */
+export const SEAT_GRACE_MS = 90_000;
+const HOLD_RENEW_MS = 30_000;
 
 export interface MultiplayerSessionSnapshot {
   game: BuiltInGame;
@@ -30,6 +37,14 @@ export interface MultiplayerSessionSnapshot {
   replyCode: string | null;
   rttMs: number | null;
   error: string | null;
+  /** The other player's nickname, when it sent one. */
+  peerName: string | null;
+  /** Epoch-ms deadline of the guest's turn clock, when one runs. */
+  turnDeadline: number | null;
+  /** The guest seat has a move to make. */
+  guestTurn: boolean;
+  /** Host, phase `peerLost`: when the held seat returns to Nori. */
+  graceUntil: number | null;
   /** Bumps whenever the guest controllers are created or dropped; screens remount on it. */
   epoch: number;
 }
@@ -64,8 +79,16 @@ export interface MultiplayerManagerOptions {
   createGuestControllers: GuestControllerFactory;
   /** The host's own Pictionary drawing bridge (peer strokes are mirrored on it). */
   hostStrokes?: () => StrokeRelay;
+  /** The host world, for forfeiting on behalf of a vanished guest. */
+  world?: WorldStore;
   settings?: () => MultiplayerSettingsValues;
 }
+
+/** Forfeit commands the host may submit for the guest seat (competitive games only). */
+const FORFEIT: Partial<Record<BuiltInGame, { type: string; [key: string]: JsonValue }>> = {
+  chess: { type: "resign" },
+  cakeduel: { type: "play", action: { type: "concede" } },
+};
 
 interface SessionRecord {
   snapshot: MultiplayerSessionSnapshot;
@@ -78,7 +101,10 @@ interface SessionRecord {
 }
 
 function blank(game: BuiltInGame, epoch = 0): MultiplayerSessionSnapshot {
-  return { game, role: null, phase: "idle", transport: null, route: "unknown", inviteCode: null, replyCode: null, rttMs: null, error: null, epoch };
+  return {
+    game, role: null, phase: "idle", transport: null, route: "unknown", inviteCode: null, replyCode: null, rttMs: null, error: null,
+    peerName: null, turnDeadline: null, guestTurn: false, graceUntil: null, epoch,
+  };
 }
 
 function roomId(): string {
@@ -93,6 +119,7 @@ export class MultiplayerManager {
   private readonly settings: () => MultiplayerSettingsValues;
   private tokens = 0;
   private releaseSettings: () => void;
+  private readonly holds = new Map<BuiltInGame, { until: number; renew: ReturnType<typeof setInterval>; expire: ReturnType<typeof setTimeout> }>();
 
   constructor(private readonly options: MultiplayerManagerOptions) {
     this.settings = options.settings ?? multiplayerSettings;
@@ -126,7 +153,30 @@ export class MultiplayerManager {
 
   isLive(game: BuiltInGame): boolean {
     const phase = this.sessions.get(game)?.snapshot.phase;
-    return phase === "connected" || phase === "connecting" || phase === "inviting" || phase === "replying";
+    return phase === "connected" || phase === "connecting" || phase === "inviting" || phase === "replying" || phase === "peerLost" || this.holds.has(game);
+  }
+
+  /** Replaces "Nori" in labels while another person holds (or is reserved) the seat. */
+  opponentName(game: BuiltInGame): string | null {
+    const session = this.sessions.get(game)?.snapshot;
+    if (!session || (session.phase !== "connected" && session.phase !== "peerLost")) return null;
+    return session.peerName ?? this.options.translate("multiplayer.opponent");
+  }
+
+  /** Host: may the guest seat be forfeited now (chess any time, Cake Duel on its turn)? */
+  canForfeit(game: BuiltInGame): boolean {
+    const session = this.sessions.get(game)?.snapshot;
+    if (!session || session.role !== "host" || !FORFEIT[game] || !this.options.world) return false;
+    if (session.phase !== "peerLost" && session.phase !== "connected" && !this.holds.has(game)) return false;
+    return game === "chess" ? this.options.world.runtime(game)?.state.gameState != null : session.guestTurn;
+  }
+
+  /** Host: record a loss for the guest seat, then hand the seat back. */
+  forfeit(game: BuiltInGame) {
+    const cmd = FORFEIT[game], runtime = this.options.world?.runtime(game);
+    if (!cmd || !runtime || !this.canForfeit(game)) return;
+    try { this.options.arcade.dispatch(game, runtime.headVersion, cmd, "agent"); } catch { /* Connection lost. */ }
+    this.leave(game);
   }
 
   /** Host: create an invite code for `game`. */
@@ -136,7 +186,7 @@ export class MultiplayerManager {
     const record = this.reset(game);
     const token = record.token;
     const meta: InviteMeta = { game, room: roomId() };
-    this.patch(game, { role: "host", phase: "connecting", transport: settings.transport });
+    this.patch(game, { role: "host", phase: "connecting", transport: settings.transport, graceUntil: this.holds.get(game)?.until ?? null });
     try {
       if (settings.transport === "easytier") {
         if (!easyTierAvailable(settings.easyTier, settings.easyTierExperimental)) throw new Error(this.options.translate("multiplayer.error.easyTierUnavailable"));
@@ -198,13 +248,43 @@ export class MultiplayerManager {
     }
   }
 
+  /** Ends the session. A host also hands the seat (held or not) back to Nori. */
   leave(game: BuiltInGame) {
+    const wasHost = this.sessions.get(game)?.snapshot.role === "host";
     this.reset(game);
+    if (this.stopHold(game) || wasHost) leaseSeat(this.options.arcade, game, false);
     this.emit();
+  }
+
+  /** Keeps a vanished guest's seat leased so a re-invite resumes the same game. */
+  private startHold(game: BuiltInGame) {
+    this.stopHold(game);
+    const until = Date.now() + SEAT_GRACE_MS;
+    const renew = setInterval(() => leaseSeat(this.options.arcade, game, true), HOLD_RENEW_MS);
+    const expire = setTimeout(() => {
+      this.stopHold(game);
+      leaseSeat(this.options.arcade, game, false);
+      const record = this.sessions.get(game)!;
+      if (record.snapshot.phase === "peerLost")
+        this.patch(game, { phase: "ended", graceUntil: null, error: this.options.translate("multiplayer.error.noriTookOver") });
+      else if (record.snapshot.phase === "inviting") this.patch(game, { graceUntil: null });
+    }, SEAT_GRACE_MS);
+    this.holds.set(game, { until, renew, expire });
+    return until;
+  }
+
+  private stopHold(game: BuiltInGame): boolean {
+    const hold = this.holds.get(game);
+    if (!hold) return false;
+    clearInterval(hold.renew);
+    clearTimeout(hold.expire);
+    this.holds.delete(game);
+    return true;
   }
 
   dispose() {
     this.releaseSettings();
+    for (const game of MULTIPLAYER_GAMES) this.stopHold(game);
     for (const game of MULTIPLAYER_GAMES) this.reset(game);
     this.options.games.setCommandGuard(null);
     this.listeners.clear();
@@ -219,12 +299,23 @@ export class MultiplayerManager {
       onEnd: (reason: "closed" | "silent" | "failed") => {
         if (record.token !== token) return;
         this.dropGuest(record);
+        const hosted = record.host !== null;
         record.host = null;
+        // Keep `guestTurn`: forfeiting a Cake Duel needs to know whose turn was pending.
+        const clock = { turnDeadline: null };
+        if (hosted && reason !== "closed") {
+          this.patch(game, { ...clock, phase: "peerLost", graceUntil: this.startHold(game), error: this.options.translate("multiplayer.error.peerLost") });
+          return;
+        }
         this.patch(game, {
+          ...clock,
           phase: reason === "closed" ? "ended" : "error",
-          error: reason === "closed" ? null : this.options.translate(reason === "silent" ? "multiplayer.error.silent" : "multiplayer.error.failed"),
+          error: reason === "closed" ? null : this.options.translate(
+            role === "guest" ? "multiplayer.error.hostLost" : reason === "silent" ? "multiplayer.error.silent" : "multiplayer.error.failed"),
         });
       },
+      onPeerName: (name: string | undefined) => { if (record.token === token) this.patch(game, { peerName: name ?? null }); },
+      onClock: (turnDeadline: number | null, guestTurn: boolean) => { if (record.token === token) this.patch(game, { turnDeadline, guestTurn }); },
     };
     link.onState((state) => {
       if (record.token !== token) return;
@@ -238,14 +329,18 @@ export class MultiplayerManager {
       // The bridge waits for the link to open before it leases Nori's seat.
       const start = () => {
         if (record.token !== token || record.host) return;
+        // The new bridge leases the seat itself; a held seat needs no further renewal.
+        this.stopHold(game);
+        const settings = this.settings();
         record.host = new HostBridge(game, link, this.options.arcade, room, this.options.translate, events,
-          game === "pictionary" ? this.options.hostStrokes?.() : undefined);
+          game === "pictionary" ? this.options.hostStrokes?.() : undefined,
+          { name: settings.nickname.trim() || undefined, turnTimeoutMs: settings.turnTimeoutSec * 1000 });
       };
       if (link.state === "open") start();
       else link.onState((state) => { if (state === "open") start(); });
       return;
     }
-    const guest = new GuestArcade(game, link, room, this.options.translate, events);
+    const guest = new GuestArcade(game, link, room, this.options.translate, events, this.settings().nickname.trim() || undefined);
     record.guest = guest;
     const controllers = this.options.createGuestControllers(game, {
       games: new GameService(guest, guest.world), world: guest.world, arcade: guest,

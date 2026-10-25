@@ -1,8 +1,8 @@
 import { pictionarySummary, type PictionaryGame } from "../apps/pictionary-model";
 import { createSourceTranslate } from "../i18n/translate";
 
-export function PictionaryResults({ game, locale, pending, onRestart }: {
-  game: PictionaryGame; locale: string; pending: boolean; onRestart(): void;
+export function PictionaryResults({ game, locale, pending, onRestart, opponentName }: {
+  game: PictionaryGame; locale: string; pending: boolean; onRestart(): void; opponentName?: string;
 }) {
   const summary = pictionarySummary(game), translate = createSourceTranslate(locale);
   const t = (key: string, values?: Record<string, string | number>) => translate("pictionary.results." + key, values);
@@ -22,7 +22,7 @@ export function PictionaryResults({ game, locale, pending, onRestart }: {
       {game.history.length ? <ol className="source-pictionary-result-log">{game.history.map((item, index) =>
         <li key={index} data-outcome={item.outcome}>
           <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-          <div><strong>{item.word}</strong><small>{t(item.roles.drawer === "player" ? "you" : "nori")}</small></div>
+          <div><strong>{item.word}</strong><small>{item.roles.drawer === "player" ? t("you") : opponentName ?? t("nori")}</small></div>
           <span>{item.outcome === "unfinished" ? t("timesUp") : seconds(item.elapsedMs)}</span>
           <span aria-label={item.outcome}>{item.outcome === "solved" ? "✓" : item.outcome === "skipped" ? "−" : "…"}</span>
         </li>)}</ol> : <p>{t("noWordsRecorded")}</p>}

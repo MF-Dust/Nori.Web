@@ -954,19 +954,26 @@ fn locale(state: &Json) -> &str {
 
 /// The active round whose answer the player is guessing, if any.
 pub fn hint_round(state: &Json) -> Option<String> {
+    hint_round_for(state, false)
+}
+
+/// Like [`hint_round`]; with `human_agent` a remote human holding the agent seat is
+/// guessing too and gets the same progressive hints (Nori never needs them).
+pub fn hint_round_for(state: &Json, human_agent: bool) -> Option<String> {
     let game = state.get("gameState")?;
     let round = game.get("round")?;
+    let guesser = round.pointer("/roles/guesser")?.as_str()?;
     (game.get("phase")?.as_str()? == "PLAYING"
         && round.get("status")?.as_str()? == "active"
-        && round.pointer("/roles/guesser")?.as_str()? == "player")
+        && (guesser == "player" || (human_agent && guesser == "agent")))
         .then(|| round.get("roundId")?.as_str().map(str::to_string))
         .flatten()
 }
 
 /// How long the hint task waits before its next reveal, given the round's progress through
 /// the session clock (0..1). `None` when there is nothing left to reveal.
-pub fn hint_delay(state: &Json, round_id: &str, progress: f64) -> Option<u64> {
-    if hint_round(state).as_deref() != Some(round_id) {
+pub fn hint_delay(state: &Json, round_id: &str, progress: f64, human_agent: bool) -> Option<u64> {
+    if hint_round_for(state, human_agent).as_deref() != Some(round_id) {
         return None;
     }
     hint_for(state.pointer("/gameState/round")?, locale(state)).delay(progress)
@@ -974,8 +981,8 @@ pub fn hint_delay(state: &Json, round_id: &str, progress: f64) -> Option<u64> {
 
 /// Reveal the next part of the answer. Only the server's hint task calls this; it is not a
 /// command, so no browser can ask for hints early.
-pub fn reveal_hint(state: &Json, round_id: &str, progress: f64) -> Option<ReducerResult> {
-    if hint_round(state).as_deref() != Some(round_id) {
+pub fn reveal_hint(state: &Json, round_id: &str, progress: f64, human_agent: bool) -> Option<ReducerResult> {
+    if hint_round_for(state, human_agent).as_deref() != Some(round_id) {
         return None;
     }
     let round = state.pointer("/gameState/round")?;

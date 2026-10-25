@@ -194,6 +194,12 @@ fn view_cartridge(cartridge: &Cartridge) -> Cartridge {
     view
 }
 
+/// Whether the remote seat has something to do (its turn). Drives the host's turn clock.
+/// Pictionary has no turns: both seats act during a round under the session clock.
+pub fn agent_turn(cartridge: &Cartridge) -> bool {
+    crate::cartridge::agent_command(&cartridge.id, &cartridge.state).is_some()
+}
+
 /// Agent-perspective snapshot in the shape of a `runtimes[]` entry.
 pub fn snapshot(cartridge: &Cartridge) -> Json {
     let view = view_cartridge(cartridge);

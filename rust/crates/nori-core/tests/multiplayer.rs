@@ -111,3 +111,34 @@ fn unknown_games_are_rejected() {
     assert_eq!(out.direct[0]["payload"]["ok"], false);
     assert!(world.remote_opponents.is_empty());
 }
+
+#[test]
+fn views_report_the_remote_turn_and_nori_can_cover_one_move() {
+    let mut world = new_world();
+    mount(&mut world, "chess");
+    lease(&mut world, "chess", true);
+    let out = dispatch(&mut world, "chess", "player", "start", json!({"type": "startGame", "mode": "normal", "side": "white", "difficulty": "casual"}));
+    assert_eq!(remote_views(&out)[0]["payload"]["agentTurn"], false);
+    let out = dispatch(&mut world, "chess", "player", "e4", json!({"type": "move", "from": "e2", "to": "e4"}));
+    assert_eq!(remote_views(&out)[0]["payload"]["agentTurn"], true);
+    let head = world.cartridge("chess").unwrap().head_version;
+    let out = send(&mut world, json!({"type": "event", "channel": "multiplayer.agent_step", "requestId": "step", "payload": {"cartridgeId": "chess"}}));
+    assert_eq!(out.direct[0]["payload"]["ok"], true);
+    assert_eq!(world.cartridge("chess").unwrap().head_version, head + 1, "exactly one covered move");
+    assert_eq!(remote_views(&out)[0]["payload"]["agentTurn"], false);
+    assert!(world.remote_opponent("chess"), "the seat stays leased");
+    let out = send(&mut world, json!({"type": "event", "channel": "multiplayer.agent_step", "requestId": "again", "payload": {"cartridgeId": "chess"}}));
+    assert_eq!(out.direct[0]["payload"]["ok"], false, "nothing to cover on the host's turn");
+}
+
+#[test]
+fn a_remote_guesser_gets_pictionary_hints_but_no_nori_guesses() {
+    let mut world = new_world();
+    mount(&mut world, "pictionary");
+    lease(&mut world, "pictionary", true);
+    let out = dispatch(&mut world, "pictionary", "player", "s", json!({"type": "startSession", "atMs": nori_core::jsonutil::now_ms(), "settings": {"sessionDurationMs": 180000, "locale": "en"}}));
+    assert_eq!(out.direct[0]["success"], true, "{:?}", out.direct);
+    let labels: Vec<&str> = out.tasks.iter().map(|task| task.label()).collect();
+    assert!(labels.iter().any(|label| label.contains("hint")), "{labels:?}");
+    assert!(!labels.iter().any(|label| label.contains("guess")), "{labels:?}");
+}

@@ -206,6 +206,7 @@ function createSourceSession() {
     arcade: frontend.arcade,
     games: frontend.games,
     translate: sourceTranslate,
+    world: frontend.world,
     hostStrokes: () => drawing.get(),
     createGuestControllers: (game, deps) => {
       if (game === "cakeduel") {
@@ -224,6 +225,12 @@ function createSourceSession() {
     },
   });
   const multiplayerRuntime = { manager: multiplayer, translate: sourceTranslate };
+  /** Game labels name the other person instead of Nori while one holds the seat. */
+  const gameTranslate = (game: BuiltInGame) => (key: string, values?: Readonly<Record<string, string | number>>) => {
+    const text = sourceTranslate(key, values);
+    const opponent = multiplayer.opponentName(game);
+    return opponent ? text.replace(/\bNori\b/g, opponent) : text;
+  };
   const guestOf = <T,>(game: BuiltInGame) => multiplayer.guestController<T>(game);
   /** A guest's screens must not make the local Nori react to the host's moves. */
   const hostOnly = <A extends unknown[]>(game: BuiltInGame, react: (...args: A) => void) =>
@@ -474,7 +481,7 @@ function createSourceSession() {
         if (active) frontend.reactions.setMood(mood);
         else if (frontend.reactions.mood() === mood) frontend.reactions.clearMood();
       },
-      translate: sourceTranslate,
+      translate: gameTranslate("codenames"),
       locale,
       playSound: frontend.audio.playCue,
     },
@@ -482,6 +489,7 @@ function createSourceSession() {
       get controller() { return guestOf<ReturnType<typeof pictionary.get>>("pictionary") ?? pictionary.get(); },
       get drawing() { return multiplayer.guestDrawing<ReturnType<typeof drawing.get>>("pictionary") ?? drawing.get(); },
       multiplayer: multiplayerRuntime,
+      get opponentName() { return multiplayer.opponentName("pictionary") ?? undefined; },
       locale,
       playSound: frontend.audio.playCue,
       startSoundLoop: frontend.audio.startCueLoop,
@@ -491,13 +499,13 @@ function createSourceSession() {
       get controller() { return guestOf<ReturnType<typeof chess.get>>("chess") ?? chess.get(); },
       multiplayer: multiplayerRuntime,
       onNoriReaction: hostOnly("chess", (reaction) => { frontend.reactions.play("chess", reaction); }),
-      translate: sourceTranslate,
+      translate: gameTranslate("chess"),
       onSound: (sound) => frontend.audio.playCue(sound === "response" ? "boardgames-chess-response-toast" : `chess.${sound}`),
     },
     cakeduel: {
       get controller() { return guestOf<ReturnType<typeof cakeduel.get>>("cakeduel") ?? cakeduel.get(); },
       multiplayer: multiplayerRuntime,
-      translate: sourceTranslate,
+      translate: gameTranslate("cakeduel"),
       assets: createCakeDuelPresentationAssets(locale),
     },
     desktop: {

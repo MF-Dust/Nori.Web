@@ -923,6 +923,16 @@ export default {
     "desktopOnly": "仅支持电脑"
   },
   "multiplayer": {
+    "opponent": "对手",
+    "reinvite": "重新邀请（继续当前对局）",
+    "takeover": "让 Nori 接管",
+    "forfeit": "判对方认输",
+    "forfeitConfirm": "确定判对方认输并结束联机吗？",
+    "grace": "席位保留中，{{time}} 后由 Nori 接管",
+    "clock": {
+      "yours": "你的回合 {{time}}",
+      "theirs": "对方回合 {{time}}"
+    },
     "title": "多人联机",
     "button": "联机",
     "close": "关闭",
@@ -949,6 +959,7 @@ export default {
       "unknown": "已连接"
     },
     "phase": {
+      "peerLost": "对方掉线",
       "idle": "未联机",
       "inviting": "等待对方加入…",
       "replying": "等待房主连接…",
@@ -958,6 +969,9 @@ export default {
       "error": "联机失败"
     },
     "error": {
+      "peerLost": "对方连接中断。可以重新邀请继续当前对局。",
+      "hostLost": "与房主的连接中断，请向房主索取新的邀请码重新加入。",
+      "noriTookOver": "对方未能及时回来，席位已交还 Nori。",
       "disabled": "请先在设置中启用多人模式",
       "hostOnly": "仅房主可以开始、重置或调整对局",
       "hostOffline": "房主与服务器的连接已中断",
@@ -1174,6 +1188,11 @@ export default {
       "title": "语言"
     },
     "multiplayer": {
+      "nickname": "你的昵称（显示给对方）",
+      "turnTimeout": "访客回合时限",
+      "turnTimeoutOff": "不限时",
+      "turnTimeoutValue": "{{minutes}} 分钟",
+      "turnTimeoutHint": "房主生效：对方超时未行动时，由 Nori 代走一步，席位仍保留给对方。",
       "title": "多人联机",
       "description": "与另一位玩家对战或合作，替换 Nori 的席位。房主的世界为权威状态，访客通过点对点连接同步。",
       "enabled": "启用多人模式",

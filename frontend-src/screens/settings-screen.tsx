@@ -20,7 +20,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { useMultiplayerSettings } from "../state/multiplayer-settings-store";
+import { MAX_NICKNAME_LENGTH, TURN_TIMEOUT_CHOICES, useMultiplayerSettings } from "../state/multiplayer-settings-store";
 import { useAudioSettings } from "../state/audio-store";
 import { isGraphicsMode, useGraphicsSettings } from "../state/graphics-store";
 import { useUnlockSettings } from "../state/unlock-store";
@@ -346,8 +346,8 @@ function SettingRow({ title, description, children }: { title: string; descripti
     </div>
   );
 }
-function TextSetting({ label, value, onChange, multiline, secret, placeholder }: {
-  label: string; value: string; onChange(value: string): void; multiline?: boolean; secret?: boolean; placeholder?: string;
+function TextSetting({ label, value, onChange, multiline, secret, placeholder, maxLength }: {
+  label: string; value: string; onChange(value: string): void; multiline?: boolean; secret?: boolean; placeholder?: string; maxLength?: number;
 }) {
   const id = useId();
   return (
@@ -358,7 +358,7 @@ function TextSetting({ label, value, onChange, multiline, secret, placeholder }:
           spellCheck={false} onChange={(event) => onChange(event.target.value)} />
       ) : (
         <input id={id} type={secret ? "password" : "text"} autoComplete="off" spellCheck={false} className="settings-action w-full text-xs"
-          value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
+          value={value} placeholder={placeholder} maxLength={maxLength} onChange={(event) => onChange(event.target.value)} />
       )}
     </div>
   );
@@ -376,6 +376,20 @@ function MultiplayerSettings({ t }: { t: Translate }) {
       </SettingRow>
       {mp.enabled && (
         <div className="space-y-3">
+          <TextSetting label={t("settings.multiplayer.nickname")} value={mp.nickname} onChange={mp.setNickname}
+            placeholder={t("multiplayer.opponent")} maxLength={MAX_NICKNAME_LENGTH} />
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="mp-turn-timeout">{t("settings.multiplayer.turnTimeout")}</label>
+            <select id="mp-turn-timeout" className="settings-select w-full" value={mp.turnTimeoutSec}
+              onChange={(event) => mp.setTurnTimeoutSec(Number(event.target.value))}>
+              {TURN_TIMEOUT_CHOICES.map((seconds) => (
+                <option key={seconds} value={seconds}>
+                  {seconds ? t("settings.multiplayer.turnTimeoutValue", { minutes: seconds / 60 }) : t("settings.multiplayer.turnTimeoutOff")}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">{t("settings.multiplayer.turnTimeoutHint")}</p>
+          </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground" htmlFor="mp-transport">{t("settings.multiplayer.transport")}</label>
             <select id="mp-transport" className="settings-select w-full" value={mp.transport}

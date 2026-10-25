@@ -152,3 +152,47 @@ test("version-mismatch acks never leak the host's runtimes and trigger a fresh v
   assert.equal(arcade.events.filter((event) => event.channel === "multiplayer.remote_opponent").length, 2);
   host.close(); guest.close(); guestLink.close();
 });
+
+test("names travel in hello, and the guest's turn clock lets Nori cover one move", async () => {
+  const [hostLink, guestLink] = MemoryLink.pair();
+  const arcade = new FakeHostArcade();
+  const names: Array<string | undefined> = [];
+  const host = new HostBridge("chess", hostLink, arcade, "room", t, {
+    onRtt() {}, onEnd() {}, onPeerName: (name) => names.push(name),
+  }, undefined, { name: "  Alice\n ", turnTimeoutMs: 30 });
+  const guestClocks: Array<number | null> = [];
+  const guest = new GuestArcade("chess", guestLink, "room", t, {
+    onRtt() {}, onEnd() {}, onPeerName: (name) => names.push(name), onClock: (deadline) => guestClocks.push(deadline),
+  }, "Bob");
+  await flush();
+  assert.deepEqual(names.sort(), ["Alice", "Bob"]);
+  arcade.emit({ type: "event", channel: "multiplayer.remote_opponent.result", requestId: arcade.events[0].id, payload: { ok: true, runtime: chessRuntime(1), agentTurn: false } });
+  arcade.emit({ type: "event", channel: "multiplayer.remote_view", payload: { cartridgeId: "chess", version: 2, runtime: chessRuntime(2), transition: { actor: "agent", events: [] }, agentTurn: true } });
+  await flush();
+  assert.ok(guestClocks.some((deadline) => typeof deadline === "number"), "the guest sees its countdown");
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  assert.ok(arcade.events.some((event) => event.channel === "multiplayer.agent_step"), "Nori covers the idle seat");
+  host.close(); guest.close();
+});
+
+test("a vanished guest keeps the seat leased; a goodbye releases it", async () => {
+  const released = (arcade: FakeHostArcade) => arcade.events.some((event) => event.channel === "multiplayer.remote_opponent" && (event.payload as { enabled: boolean }).enabled === false);
+  const lost = connect();
+  lost.guestLink.close();
+  lost.hostLink.close();
+  await flush();
+  assert.ok(lost.ended.includes("host:failed"));
+  assert.equal(released(lost.arcade), false);
+  const clean = connect();
+  clean.guest.close();
+  await flush();
+  assert.ok(clean.ended.includes("host:closed"));
+  assert.equal(released(clean.arcade), true);
+});
+
+test("peer names are bounded single-line text", () => {
+  const hello = parsePeerMessage(JSON.stringify({ t: "hello", v: 1, game: "chess", role: "host", room: "r", name: "a\u0007b\n  c".padEnd(80, "x") }));
+  assert.ok(hello && hello.t === "hello");
+  assert.equal(hello.name?.startsWith("ab c"), true);
+  assert.equal(hello.name!.length <= 24, true);
+});

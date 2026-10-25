@@ -19,6 +19,8 @@ export interface PictionaryCanvasProps {
   active: boolean; drawer: "player" | "agent";
   /** Multiplayer: the other human's strokes replace Nori's sample playback. */
   peerStrokes?: readonly DrawingStroke[];
+  /** Multiplayer: who draws when the drawer is not the local player. */
+  opponentName?: string;
   color: string; eraser: boolean;
   onStroke(stroke: DrawingStroke): void;
   onChange(strokes: readonly DrawingStroke[]): void;
@@ -85,7 +87,7 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     const host = surface.current;
     if (!host) return;
     const target = document.createElement("canvas");
-    target.setAttribute("aria-label", latest.current.drawer === "player" ? "Drawing canvas" : "Nori drawing");
+    target.setAttribute("aria-label", latest.current.drawer === "player" ? "Drawing canvas" : `${latest.current.opponentName ?? "Nori"} drawing`);
     target.dataset.renderer = "loading";
     host.append(target); canvas.current = target;
     let disposed = false;
@@ -105,8 +107,8 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     };
   }, []);
   useEffect(() => {
-    canvas.current?.setAttribute("aria-label", props.drawer === "player" ? "Drawing canvas" : "Nori drawing");
-  }, [props.drawer]);
+    canvas.current?.setAttribute("aria-label", props.drawer === "player" ? "Drawing canvas" : `${props.opponentName ?? "Nori"} drawing`);
+  }, [props.drawer, props.opponentName]);
   useEffect(() => {
     strokes.current = []; draft.current = null; stopScratch(); revision.current = 0; lastPreview.current = 0; setError(null); render();
   }, [props.roundId]);

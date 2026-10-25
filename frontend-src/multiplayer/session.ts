@@ -43,6 +43,25 @@ export interface StrokeRelay {
 export interface BridgeEvents {
   onRtt(ms: number): void;
   onEnd(reason: "closed" | "silent" | "failed"): void;
+  /** The other side introduced itself. */
+  onPeerName?(name: string | undefined): void;
+  /** Local epoch-ms deadline of the guest's turn, or `null` when no clock runs. */
+  onClock?(deadline: number | null, agentTurn: boolean): void;
+}
+
+/** Lease (or release) the agent seat for a remote human; returns the event request id. */
+export function leaseSeat(arcade: ArcadeChannel, game: BuiltInGame, enabled: boolean): string | null {
+  if (arcade.connectionState !== "open") return null;
+  try {
+    return arcade.sendEvent("multiplayer.remote_opponent", { cartridgeId: game, enabled, leaseMs: REMOTE_LEASE_MS }, { cartridgeId: game });
+  } catch { return null; }
+}
+
+export interface HostBridgeOptions {
+  /** Display name sent to the guest. */
+  name?: string;
+  /** Idle time on the guest's turn before Nori plays one move for it; 0 disables. */
+  turnTimeoutMs?: number;
 }
 
 /**
@@ -56,6 +75,9 @@ export class HostBridge {
   private leaseRequest: string | null = null;
   private renewTimer: ReturnType<typeof setInterval> | null = null;
   private closed = false;
+  private agentTurn = false;
+  private deadline: number | null = null;
+  private clockTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     readonly game: BuiltInGame,
@@ -65,6 +87,7 @@ export class HostBridge {
     private readonly translate: MultiplayerTranslate,
     private readonly events: BridgeEvents,
     private readonly strokes?: StrokeRelay,
+    private readonly options: HostBridgeOptions = {},
   ) {
     const beat = heartbeat(link, () => this.end("silent"), events.onRtt);
     this.cleanup.push(link.onMessage((raw) => {
@@ -73,7 +96,8 @@ export class HostBridge {
       this.onPeer(message);
     }));
     this.cleanup.push(link.onState((state) => {
-      if (state === "closed" || state === "failed") this.end(state === "failed" ? "failed" : "closed");
+      // Only a goodbye is a clean leave; a vanished channel keeps the seat for a re-invite.
+      if (state === "closed" || state === "failed") this.end("failed");
     }));
     this.cleanup.push(arcade.onMessage((message) => this.onArcade(message)));
     this.cleanup.push(arcade.onState((state) => {
@@ -84,21 +108,50 @@ export class HostBridge {
       strokes.setPeerSink((roundId, list) => send(this.link, { t: "strokes", roundId, strokes: [...list] }));
       this.cleanup.push(() => strokes.setPeerSink(null));
     }
-    send(link, { t: "hello", v: 1, game, role: "host", room });
+    send(link, { t: "hello", v: 1, game, role: "host", room, ...(options.name ? { name: options.name } : {}) });
     this.lease(true);
     this.renewTimer = setInterval(() => this.lease(true), LEASE_RENEW_MS);
   }
 
   private lease(enabled: boolean) {
-    if (this.arcade.connectionState !== "open") return;
-    try {
-      const requestId = this.arcade.sendEvent(
-        "multiplayer.remote_opponent",
-        { cartridgeId: this.game, enabled, leaseMs: REMOTE_LEASE_MS },
-        { cartridgeId: this.game },
-      );
-      if (enabled) this.leaseRequest = requestId;
-    } catch { /* Reconnect re-leases on world_joined. */ }
+    // A lost reconnect is fine: world_joined re-leases.
+    const requestId = leaseSeat(this.arcade, this.game, enabled);
+    if (enabled && requestId) this.leaseRequest = requestId;
+  }
+
+  /**
+   * AFK protection for the host: the guest's turn runs on a clock that restarts
+   * whenever the guest acts. On expiry Nori plays exactly one move for the seat.
+   */
+  private updateClock(agentTurn: boolean, guestActed: boolean) {
+    const timeout = this.options.turnTimeoutMs ?? 0;
+    const restart = agentTurn && (!this.agentTurn || guestActed || this.deadline === null);
+    this.agentTurn = agentTurn;
+    if (!timeout || !agentTurn) this.setDeadline(null);
+    else if (restart) this.setDeadline(Date.now() + timeout);
+  }
+
+  private setDeadline(deadline: number | null) {
+    if (this.clockTimer) clearTimeout(this.clockTimer);
+    this.clockTimer = null;
+    this.deadline = deadline;
+    if (deadline !== null) {
+      this.clockTimer = setTimeout(() => {
+        this.clockTimer = null;
+        this.deadline = null;
+        if (this.arcade.connectionState === "open") {
+          try { this.arcade.sendEvent("multiplayer.agent_step", { cartridgeId: this.game }, { cartridgeId: this.game }); }
+          catch { /* The next transition restarts the clock. */ }
+        }
+        this.publishClock();
+      }, Math.max(0, deadline - Date.now()));
+    }
+    this.publishClock();
+  }
+
+  private publishClock() {
+    send(this.link, { t: "clock", remainingMs: this.deadline === null ? null : Math.max(0, this.deadline - Date.now()) });
+    this.events.onClock?.(this.deadline, this.agentTurn);
   }
 
   private onArcade(message: ArcadeServerMessage) {
@@ -116,16 +169,22 @@ export class HostBridge {
       const payload = raw.payload as Record<string, JsonValue> | undefined;
       if (raw.channel === "multiplayer.remote_opponent.result" && raw.requestId === this.leaseRequest) {
         this.leaseRequest = null;
-        if (payload?.ok === true) send(this.link, { t: "view", runtime: (payload.runtime ?? null) as CartridgeSnapshot | null });
+        if (payload?.ok === true) {
+          send(this.link, { t: "view", runtime: (payload.runtime ?? null) as CartridgeSnapshot | null });
+          this.updateClock(payload.agentTurn === true, false);
+        }
         return;
       }
       if (raw.channel === "multiplayer.remote_view" && payload?.cartridgeId === this.game) {
+        const transition = (payload.transition ?? {}) as Record<string, JsonValue>;
         send(this.link, {
           t: "transition",
           version: Number(payload.version),
           runtime: payload.runtime as unknown as CartridgeSnapshot,
-          transition: (payload.transition ?? {}) as Record<string, JsonValue>,
+          transition,
         });
+        // Agent-perspective transition: actor "player" is the guest.
+        this.updateClock(payload.agentTurn === true, transition.actor === "player");
       }
       return;
     }
@@ -147,6 +206,7 @@ export class HostBridge {
 
   private onPeer(message: PeerMessage) {
     if (message.t === "bye") { this.end("closed"); return; }
+    if (message.t === "hello") { this.events.onPeerName?.(message.name); return; }
     if (message.t === "strokes") {
       if (this.game === "pictionary") this.strokes?.receivePeerStrokes(message.roundId, message.strokes);
       return;
@@ -188,10 +248,13 @@ export class HostBridge {
     if (this.closed) return;
     this.closed = true;
     if (this.renewTimer) clearInterval(this.renewTimer);
+    if (this.clockTimer) clearTimeout(this.clockTimer);
+    this.clockTimer = null;
     for (const entry of this.pending.values()) clearTimeout(entry.timer);
     this.pending.clear();
-    // Hand the seat back to Nori; an unreachable backend lets the lease expire instead.
-    this.lease(false);
+    // A clean goodbye hands the seat back to Nori. A lost link keeps the lease so the
+    // host can re-invite; the manager holds it for a grace period, then releases it.
+    if (reason === "closed") this.lease(false);
     this.cleanup.splice(0).forEach((fn) => fn());
     this.events.onEnd(reason);
   }
@@ -236,6 +299,7 @@ export class GuestArcade implements ArcadeChannel {
     room: string,
     private readonly translate: MultiplayerTranslate,
     private readonly events: BridgeEvents,
+    name?: string,
   ) {
     this.worldId = `multiplayer-${room}`;
     const beat = heartbeat(link, () => this.end("silent"), events.onRtt);
@@ -247,7 +311,7 @@ export class GuestArcade implements ArcadeChannel {
     this.cleanup.push(link.onState((state) => {
       if (state === "closed" || state === "failed") this.end(state === "failed" ? "failed" : "closed");
     }));
-    send(link, { t: "hello", v: 1, game, role: "guest", room });
+    send(link, { t: "hello", v: 1, game, role: "guest", room, ...(name ? { name } : {}) });
   }
 
   get connectionState() { return this.state; }
@@ -315,7 +379,11 @@ export class GuestArcade implements ArcadeChannel {
     switch (message.t) {
       case "bye": this.end("closed"); return;
       case "hello":
-        if (message.role !== "host" || message.game !== this.game) { this.end("failed"); this.link.close(); }
+        if (message.role !== "host" || message.game !== this.game) { this.end("failed"); this.link.close(); return; }
+        this.events.onPeerName?.(message.name);
+        return;
+      case "clock":
+        this.events.onClock?.(message.remainingMs === null ? null : Date.now() + message.remainingMs, message.remainingMs !== null);
         return;
       case "view": this.applyView(message.runtime); return;
       case "transition": this.applyTransition(message.version, message.runtime, message.transition); return;
