@@ -180,7 +180,7 @@ cargo run --release -p nori-local --manifest-path rust/Cargo.toml
 npm start
 ```
 
-> **Windows 便捷启动**：直接双击根目录下的 `start.bat`（优先使用同目录的 `Nori.Web.exe`，否则用 cargo 编译运行）。
+> **Windows 便捷启动**：直接双击根目录下的 `start.bat`（优先使用同目录的 `Nori.Web.exe`，否则用 cargo 编译运行）。从源码运行且装有 Node.js 时，脚本会在 `frontend-src/` 有改动时重新构建源码前端，并以与 Cloudflare 部署相同的候选站点（`.artifacts/build/app/cutover-candidate`）作为 `NORI_PUBLIC_DIR`；设置 `NORI_LEGACY_FRONTEND=1` 可改回历史入口 `public/index.html`。`npm start` 仍直接托管 `public/`。
 
 常用环境变量：`HOST`（默认 `127.0.0.1`）、`PORT`（默认 `4173`）、`SECRET_KEY`（留空时每次启动随机生成）、`NORI_DISABLE_LIVE_PACK=1`（不加载线上世界归档）、`NORI_PUBLIC_DIR` / `NORI_DATA_DIR`（覆盖 `public/` 与 `backend/data/` 位置）。
 
