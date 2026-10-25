@@ -58,6 +58,8 @@ import type { AuthState } from "./runtime/auth";
 import type { JsonValue } from "./runtime/protocol";
 import { createCakeDuelPresentationAssets } from "./apps/cakeduel-assets";
 import { CakeDuelRuntimeController } from "./apps/cakeduel-runtime";
+import { MultiplayerManager } from "./multiplayer/manager";
+import type { BuiltInGame } from "./services/games";
 import {
   createRecoveredDesktopRuntime,
   type RecoveredDesktopRuntimeBundle,
@@ -198,6 +200,34 @@ function createSourceSession() {
     frontend.arcade,
     frontend.reactions,
   ));
+  // Two-human play (Settings > Multiplayer). A guest runs the same controllers on a
+  // world mirrored from the host over WebRTC (or the experimental EasyTier channel).
+  const multiplayer = new MultiplayerManager({
+    arcade: frontend.arcade,
+    games: frontend.games,
+    translate: sourceTranslate,
+    hostStrokes: () => drawing.get(),
+    createGuestControllers: (game, deps) => {
+      if (game === "cakeduel") {
+        const controller = new CakeDuelRuntimeController(deps.games, deps.world, deps.arcade);
+        return { controller, dispose: () => controller.dispose() };
+      }
+      if (game === "pictionary") {
+        const controller = new GameCartridgeController("pictionary", deps.games, deps.world, deps.arcade, (raw) => pictionaryStateSchema.parse(raw));
+        const guestDrawing = new PictionaryDrawingBridge(controller, deps.arcade);
+        return { controller, drawing: guestDrawing, dispose: () => { guestDrawing.dispose(); controller.dispose(); } };
+      }
+      const controller = game === "chess"
+        ? new GameCartridgeController("chess", deps.games, deps.world, deps.arcade, (raw) => chessStateSchema.parse(raw))
+        : new GameCartridgeController("codenames", deps.games, deps.world, deps.arcade, (raw) => codenamesStateSchema.parse(raw));
+      return { controller, dispose: () => controller.dispose() };
+    },
+  });
+  const multiplayerRuntime = { manager: multiplayer, translate: sourceTranslate };
+  const guestOf = <T,>(game: BuiltInGame) => multiplayer.guestController<T>(game);
+  /** A guest's screens must not make the local Nori react to the host's moves. */
+  const hostOnly = <A extends unknown[]>(game: BuiltInGame, react: (...args: A) => void) =>
+    (...args: A) => { if (!guestOf(game)) react(...args); };
   const idle = createSourceIdleRuntimeEngine({
     getFacts: () => worldFacts(frontend),
     subscribeFacts: (listener) =>
@@ -435,9 +465,11 @@ function createSourceSession() {
     idle: idlePresentation,
     marginalGrowth,
     codenames: {
-      get controller() { return codenames.get(); },
-      onNoriReaction: (reaction) => { frontend.reactions.play("codenames", reaction); },
+      get controller() { return guestOf<ReturnType<typeof codenames.get>>("codenames") ?? codenames.get(); },
+      multiplayer: multiplayerRuntime,
+      onNoriReaction: hostOnly("codenames", (reaction) => { frontend.reactions.play("codenames", reaction); }),
       onNoriPhaseMood: (active) => {
+        if (guestOf("codenames")) return;
         const mood = NORI_PHASE_MOODS[0].expression;
         if (active) frontend.reactions.setMood(mood);
         else if (frontend.reactions.mood() === mood) frontend.reactions.clearMood();
@@ -447,21 +479,24 @@ function createSourceSession() {
       playSound: frontend.audio.playCue,
     },
     pictionary: {
-      get controller() { return pictionary.get(); },
-      get drawing() { return drawing.get(); },
+      get controller() { return guestOf<ReturnType<typeof pictionary.get>>("pictionary") ?? pictionary.get(); },
+      get drawing() { return multiplayer.guestDrawing<ReturnType<typeof drawing.get>>("pictionary") ?? drawing.get(); },
+      multiplayer: multiplayerRuntime,
       locale,
       playSound: frontend.audio.playCue,
       startSoundLoop: frontend.audio.startCueLoop,
-      onNoriReaction: (reaction) => { frontend.reactions.play("pictionary", reaction); },
+      onNoriReaction: hostOnly("pictionary", (reaction) => { frontend.reactions.play("pictionary", reaction); }),
     },
     chess: {
-      get controller() { return chess.get(); },
-      onNoriReaction: (reaction) => { frontend.reactions.play("chess", reaction); },
+      get controller() { return guestOf<ReturnType<typeof chess.get>>("chess") ?? chess.get(); },
+      multiplayer: multiplayerRuntime,
+      onNoriReaction: hostOnly("chess", (reaction) => { frontend.reactions.play("chess", reaction); }),
       translate: sourceTranslate,
       onSound: (sound) => frontend.audio.playCue(sound === "response" ? "boardgames-chess-response-toast" : `chess.${sound}`),
     },
     cakeduel: {
-      get controller() { return cakeduel.get(); },
+      get controller() { return guestOf<ReturnType<typeof cakeduel.get>>("cakeduel") ?? cakeduel.get(); },
+      multiplayer: multiplayerRuntime,
       translate: sourceTranslate,
       assets: createCakeDuelPresentationAssets(locale),
     },
@@ -595,6 +630,7 @@ function createSourceSession() {
     chess,
     pictionary,
     drawing,
+    multiplayer,
     podcast,
     bundle,
   };
@@ -659,6 +695,7 @@ export function SourceApp() {
       session.signalPendingFocus.clear();
       session.chip.dispose();
       session.daniel.dispose();
+      session.multiplayer.dispose();
       session.cakeduel.dispose();
       session.chess.dispose();
       session.codenames.dispose();

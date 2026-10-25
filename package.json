@@ -31,7 +31,8 @@
     "frontend:cutover:smoke": "node scripts/smoke/smoke_frontend_candidate.mjs",
     "frontend:visual:reference": "node scripts/probes/frontend_visual_reference_probe.mjs",
     "frontend:visual:games": "node scripts/probes/frontend_visual_games_probe.mjs",
-    "frontend:suites:test": "node scripts/test/run_node_tests.mjs suites"
+    "frontend:suites:test": "node scripts/test/run_node_tests.mjs suites",
+    "frontend:multiplayer:webrtc": "node scripts/probes/multiplayer_webrtc_probe.mjs"
   },
   "engines": {
     "node": ">=18"

@@ -37,6 +37,17 @@ pub fn world_snapshot(world: &World) -> Json {
     if !acks.is_empty() {
         snapshot["dispatchAcks"] = json!(acks);
     }
+    // Leases survive edge hibernation; expired ones are dropped (Nori resumes).
+    let now = crate::jsonutil::now_ms();
+    let leases: serde_json::Map<String, Value> = world
+        .remote_opponents
+        .iter()
+        .filter(|(_, expires)| **expires > now)
+        .map(|(id, expires)| (id.clone(), json!(expires)))
+        .collect();
+    if !leases.is_empty() {
+        snapshot["remoteOpponents"] = Value::Object(leases);
+    }
     snapshot
 }
 
@@ -137,6 +148,17 @@ pub fn world_from_snapshot(payload: &Json, pack: Arc<LivePack>) -> Option<World>
     let mut world = World::new(owner_id, locale, full_unlock, pack);
     world.world_id = world_id;
     world.cartridges = cartridges;
+    if let Some(leases) = payload.get("remoteOpponents").and_then(Value::as_object) {
+        let now = crate::jsonutil::now_ms();
+        let latest = now + crate::world::MAX_REMOTE_LEASE_MS;
+        for (id, expires) in leases {
+            if let Some(expires) = expires.as_i64().filter(|e| *e > now) {
+                if crate::multiplayer::GAMES.contains(&id.as_str()) {
+                    world.remote_opponents.insert(id.clone(), expires.min(latest));
+                }
+            }
+        }
+    }
     if let Some(entries) = payload.get("dispatchAcks").and_then(Value::as_array) {
         for entry in entries.iter().rev().take(MAX_DISPATCH_ACKS).rev() {
             if let Ok(entry) = serde_json::from_value::<DispatchAck>(entry.clone()) {

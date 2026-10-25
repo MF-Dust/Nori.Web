@@ -922,6 +922,55 @@ export default {
     "desktopHint": "This game can't run on phones or tablets. Open it on a computer.",
     "desktopOnly": "Desktop only"
   },
+  "multiplayer": {
+    "title": "Multiplayer",
+    "button": "Multiplayer",
+    "close": "Close",
+    "host": "Host (create invite code)",
+    "join": "Join",
+    "connect": "Connect",
+    "leave": "Leave session",
+    "copy": "Copy",
+    "copied": "Copied",
+    "inviteInput": "Or paste the host's invite code",
+    "inviteCode": "Invite code: send it to the other player",
+    "replyInput": "Paste the guest's reply code",
+    "replyCode": "Reply code: send it back to the host",
+    "guestHint": "You are playing in the host's game, in Nori's seat. The host starts and resets games.",
+    "hostHint": "The other player holds Nori's seat; Nori will not move on its own.",
+    "role": {
+      "host": "Host",
+      "guest": "Guest"
+    },
+    "route": {
+      "direct": "Direct",
+      "relay": "TURN relay",
+      "easytier": "EasyTier",
+      "unknown": "Connected"
+    },
+    "phase": {
+      "idle": "Not connected",
+      "inviting": "Waiting for the other player…",
+      "replying": "Waiting for the host to connect…",
+      "connecting": "Connecting…",
+      "connected": "Connected ({{role}})",
+      "ended": "Session ended",
+      "error": "Connection failed"
+    },
+    "error": {
+      "disabled": "Enable multiplayer in Settings first",
+      "hostOnly": "Only the host can start, reset or configure the game",
+      "hostOffline": "The host lost its server connection",
+      "timeout": "The host did not answer this action",
+      "disconnected": "Disconnected from the host",
+      "notInMultiplayer": "Not available in multiplayer (tutorials and debug scenarios need Nori)",
+      "easyTierUnavailable": "EasyTier is unavailable: enable the experimental channel and set the module URL and network name in Settings",
+      "noInvite": "Create an invite code first",
+      "wrongGame": "This code belongs to another game",
+      "silent": "The other player stopped responding",
+      "failed": "Could not connect (try configuring a TURN server)"
+    }
+  },
   "os": {
     "capBump": {
       "subtitle": "Nori can unlock more now",
@@ -1124,6 +1173,28 @@ export default {
       "restartPrompt": "Changing language requires restarting the system. Restart now?",
       "title": "Language"
     },
+    "multiplayer": {
+      "title": "Multiplayer",
+      "description": "Play against or with another person in Nori's seat. The host's world is authoritative; the guest syncs over a peer-to-peer link.",
+      "enabled": "Enable multiplayer",
+      "enabledDescription": "Adds a Multiplayer button to the four game windows. When off, games stay single-player.",
+      "transport": "Network channel",
+      "transportWebrtc": "WebRTC (direct first, TURN fallback)",
+      "transportEasyTier": "EasyTier WASM (experimental)",
+      "stun": "STUN servers (direct path)",
+      "turnUrls": "TURN servers (relay when direct fails)",
+      "turnUsername": "TURN username",
+      "turnCredential": "TURN credential",
+      "turnHint": "ICE prefers direct paths and only uses the TURN relay when no direct path works. Without TURN, strict NATs may fail to connect.",
+      "forceRelay": "TURN relay only",
+      "forceRelayDescription": "Hide local and public addresses; route everything through TURN (requires TURN).",
+      "easyTier": "Experimental EasyTier channel",
+      "easyTierDescription": "Connect through a virtual network using an EasyTier WASM browser module you provide. Not bundled; no stability guarantee.",
+      "easyTierModule": "EasyTier module URL (ES module)",
+      "easyTierNetwork": "Network name",
+      "easyTierSecret": "Network secret",
+      "easyTierPeers": "EasyTier peers (WebSocket)"
+    },
     "network": {
       "latency": "Latency",
       "latencyValue": "{{ms}} ms ({{quality}})",
@@ -1155,6 +1226,7 @@ export default {
       "graphics": "Graphics",
       "language": "Language",
       "network": "Network",
+      "multiplayer": "Multiplayer",
       "sound": "Sound",
       "system": "System"
     },

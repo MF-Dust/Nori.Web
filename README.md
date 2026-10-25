@@ -79,6 +79,7 @@ Nori.Web 通过社区维护的兼容后端实现重建了客户端通信所依�
   - 🌲 **Codenames (森林词牌 · 算力2.94)**：25 格词牌矩阵、红蓝阵营对抗、队长提示、翻牌逻辑判定与刺客骤死结算。
   - ♟️ **Chess (国际象棋 · 算力3.12)**：依托 `shakmaty` 实现合法着法、将军、将杀、和棋判定、悔棋与本地引擎对战。
   - 🎨 **Pictionary (你画我猜 · 算力3.05)**：内置画板笔迹插值播放、词义智能判定与多回合流转控制。
+  - 👥 **多人联机（可选）**：四个小游戏可由另一位玩家占据 Nori 的席位；WebRTC 直连优先、TURN 回退，EasyTier WASM 为实验性通道。在设置中开关，详见 [`docs/MULTIPLAYER.md`](docs/MULTIPLAYER.md)。
   - 🌐 **Manifold (流形桌面)**：全套桌面事实（Facts）发射、剧情里程碑与系统级应用解锁联动。
 - **Cloudflare Workers 现代无服务器架构**
   - Rust workers-rs / WebAssembly 网关，共享 `nori-core` 协议与状态核心；

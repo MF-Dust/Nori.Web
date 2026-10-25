@@ -922,6 +922,55 @@ export default {
     "desktopHint": "手机和平板无法运行本游戏，请在电脑上打开。",
     "desktopOnly": "仅支持电脑"
   },
+  "multiplayer": {
+    "title": "多人联机",
+    "button": "联机",
+    "close": "关闭",
+    "host": "创建房间（生成邀请码）",
+    "join": "加入",
+    "connect": "连接",
+    "leave": "断开联机",
+    "copy": "复制",
+    "copied": "已复制",
+    "inviteInput": "或粘贴房主的邀请码",
+    "inviteCode": "邀请码：发给对方",
+    "replyInput": "粘贴对方的回复码",
+    "replyCode": "回复码：发回给房主",
+    "guestHint": "你正在使用房主的对局，占据 Nori 的席位。开始/重置对局由房主操作。",
+    "hostHint": "对方正在占据 Nori 的席位，Nori 不会自动行动。",
+    "role": {
+      "host": "房主",
+      "guest": "访客"
+    },
+    "route": {
+      "direct": "直连",
+      "relay": "TURN 中继",
+      "easytier": "EasyTier",
+      "unknown": "已连接"
+    },
+    "phase": {
+      "idle": "未联机",
+      "inviting": "等待对方加入…",
+      "replying": "等待房主连接…",
+      "connecting": "正在连接…",
+      "connected": "已联机（{{role}}）",
+      "ended": "联机已结束",
+      "error": "联机失败"
+    },
+    "error": {
+      "disabled": "请先在设置中启用多人模式",
+      "hostOnly": "仅房主可以开始、重置或调整对局",
+      "hostOffline": "房主与服务器的连接已中断",
+      "timeout": "房主未响应该操作",
+      "disconnected": "与房主的连接已断开",
+      "notInMultiplayer": "联机对局中不可用（教程与调试场景需要 Nori）",
+      "easyTierUnavailable": "EasyTier 通道不可用：请在设置中启用实验性通道并填写模块地址和网络名称",
+      "noInvite": "请先创建邀请码",
+      "wrongGame": "该代码属于其他游戏",
+      "silent": "对方长时间无响应，联机已断开",
+      "failed": "无法建立连接（可尝试配置 TURN 服务器）"
+    }
+  },
   "os": {
     "capBump": {
       "subtitle": "Nori 能解锁更多了",
@@ -1124,6 +1173,28 @@ export default {
       "restartPrompt": "更改语言需要重新启动系统。现在重新启动吗？",
       "title": "语言"
     },
+    "multiplayer": {
+      "title": "多人联机",
+      "description": "与另一位玩家对战或合作，替换 Nori 的席位。房主的世界为权威状态，访客通过点对点连接同步。",
+      "enabled": "启用多人模式",
+      "enabledDescription": "开启后，四个小游戏窗口左下角会出现“联机”按钮。关闭时游戏保持单人模式。",
+      "transport": "网络通道",
+      "transportWebrtc": "WebRTC（直连优先，TURN 回退）",
+      "transportEasyTier": "EasyTier WASM（实验性）",
+      "stun": "STUN 服务器（直连打洞）",
+      "turnUrls": "TURN 服务器（直连失败时中继）",
+      "turnUsername": "TURN 用户名",
+      "turnCredential": "TURN 密码",
+      "turnHint": "ICE 会优先选择直连路径，仅在直连不可用时使用 TURN 中继。未配置 TURN 时，严格 NAT 下可能无法连接。",
+      "forceRelay": "仅使用 TURN 中继",
+      "forceRelayDescription": "隐藏本机与公网地址，所有流量经 TURN 转发（需配置 TURN）。",
+      "easyTier": "实验性 EasyTier 通道",
+      "easyTierDescription": "通过自行提供的 EasyTier WASM 浏览器模块建立虚拟网络连接。未内置，稳定性无保证。",
+      "easyTierModule": "EasyTier 模块地址（ES Module）",
+      "easyTierNetwork": "网络名称",
+      "easyTierSecret": "网络密钥",
+      "easyTierPeers": "EasyTier 节点（WebSocket）"
+    },
     "network": {
       "latency": "延迟",
       "latencyValue": "{{ms}} ms（{{quality}}）",
@@ -1155,6 +1226,7 @@ export default {
       "graphics": "显示效果",
       "language": "语言",
       "network": "网络",
+      "multiplayer": "多人联机",
       "sound": "声音",
       "system": "系统"
     },

@@ -6,8 +6,10 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type ComponentType,
 } from "react";
 import { WindowContentFallback } from "../components/window-content-host";
+import { MultiplayerGameFrame, type MultiplayerRuntime } from "../screens/multiplayer-panel";
 import type { ProductionWindowBinding } from "../state/production-window-apps";
 import type { WindowScreenComponentProps } from "../state/window-types";
 import type { CakeDuelBannerMessage } from "../screens/cakeduel-banner";
@@ -44,6 +46,7 @@ export interface CakeDuelPresentationRuntime {
   controller: CakeDuelRuntimeController;
   translate: CakeDuelTranslate;
   assets: CakeDuelPresentationAssets;
+  multiplayer?: MultiplayerRuntime;
 }
 
 interface CakeDuelChallengeRevealBoards {
@@ -378,11 +381,16 @@ export function createCakeDuelProductionWindowBinding(
     );
   }
 
+  // Each route reads `runtime.controller` while rendering; the frame remounts it when a
+  // multiplayer guest session swaps in the mirrored controller.
+  const framed = (Route: ComponentType<WindowScreenComponentProps>) => (props: WindowScreenComponentProps) => (
+    <MultiplayerGameFrame game="cakeduel" runtime={runtime.multiplayer}><Route {...props} /></MultiplayerGameFrame>
+  );
   return {
     screens: {
-      start: { component: StartRoute, transition: "fade" },
-      game: { component: GameRoute, transition: "slide-left" },
-      results: { component: ResultsRoute, transition: "slide-up" },
+      start: { component: framed(StartRoute), transition: "fade" },
+      game: { component: framed(GameRoute), transition: "slide-left" },
+      results: { component: framed(ResultsRoute), transition: "slide-up" },
     },
   };
 }

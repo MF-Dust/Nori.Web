@@ -151,6 +151,8 @@ pub(crate) fn poll(
                         && !text.contains(['\n', '\r'])
                         && !text.eq_ignore_ascii_case("UNKNOWN")
                 });
+            // A remote human took Nori's seat while the drawing was being analyzed.
+            let text = text.filter(|_| !world.remote_opponent("pictionary"));
             let status = if let Some(text) = text {
                 if let Some((_, messages)) = world.dispatch_internal(
                     "pictionary",

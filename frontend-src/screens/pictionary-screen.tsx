@@ -22,6 +22,7 @@ export interface PictionaryScreenProps {
 export function PictionaryScreen({ controller, drawing, locale = "en", playSound, startSoundLoop, onNoriReaction }: PictionaryScreenProps) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.snapshot, controller.snapshot);
   const vision = useSyncExternalStore(drawing.subscribe, drawing.snapshot, drawing.snapshot);
+  const peer = useSyncExternalStore(drawing.subscribePeer, drawing.peerSnapshot, drawing.peerSnapshot);
   const [now, setNow] = useState(Date.now);
   const [bookOpen, setBookOpen] = useState(false);
   const [durationSec, setDurationSec] = useState(180);
@@ -133,7 +134,8 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
         </header>
         <PictionaryCanvas ref={canvas} roundId={round.roundId} noriDrawings={round.noriDrawings} redrawEpoch={round.noriRedrawEpoch}
           active={!!active} drawer={round.roles.drawer} color={color} eraser={eraser} startSoundLoop={startSoundLoop}
-          onStroke={stroke => drawing.submit(stroke)} onChange={() => drawing.changed()} />
+          peerStrokes={peer.active ? (peer.roundId === round.roundId ? peer.strokes : []) : undefined}
+          onStroke={stroke => drawing.submit(stroke)} onChange={strokes => { drawing.changed(); drawing.strokesChanged(strokes); }} />
         {!roundActive && <div className="source-pictionary-round-result" role="status"><strong>{round.word}</strong>
           <p>{round.status === "solved" ? text("Correct!", "答对了！") : text("Skipped", "已跳过")}</p>
           {nextRoundAt !== null && <span>{Math.max(0, Math.ceil((nextRoundAt - now) / 1000))}</span>}

@@ -20,6 +20,7 @@ pub const SERVER_ID: &str = "nori-local-arcade";
 pub const MAX_MEDIA_GRANTS: usize = 32;
 pub const MAX_DISPATCH_ACKS: usize = 512;
 pub const DISPATCH_ACK_TTL_MS: i64 = 5 * 60 * 1000;
+pub const MAX_REMOTE_LEASE_MS: i64 = 2 * 60 * 1000;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub(crate) struct DispatchAck {
@@ -106,6 +107,10 @@ pub struct World {
     agent_loops: BTreeMap<String, Weak<()>>,
     // Ephemeral recognition pacing; no images or credentials enter snapshots.
     vision_revision: Option<(String, u64, i64)>,
+    /// Cartridge -> lease expiry (ms). While leased, a remote human holds the agent
+    /// seat: Nori's turns are suppressed and agent-perspective views are emitted.
+    /// The host renews the lease; an abandoned session falls back to Nori.
+    pub remote_opponents: BTreeMap<String, i64>,
 }
 
 impl World {
@@ -129,6 +134,7 @@ impl World {
             dispatch_acks: VecDeque::new(),
             agent_loops: BTreeMap::new(),
             vision_revision: None,
+            remote_opponents: BTreeMap::new(),
         }
     }
 
@@ -147,6 +153,31 @@ impl World {
 
     pub fn cartridge_mut(&mut self, id: &str) -> Option<&mut Cartridge> {
         self.cartridges.iter_mut().find(|c| c.id == id)
+    }
+
+    /// Whether a remote human currently holds this cartridge's agent seat.
+    pub fn remote_opponent(&self, cartridge_id: &str) -> bool {
+        self.remote_opponents
+            .get(cartridge_id)
+            .is_some_and(|expires| *expires > now_ms())
+    }
+
+    /// Lease (or release) the agent seat for a remote human. Returns follow-up tasks:
+    /// releasing the seat hands an in-progress turn back to Nori.
+    pub fn set_remote_opponent(&mut self, cartridge_id: &str, lease_ms: Option<i64>) -> Vec<Task> {
+        let now = now_ms();
+        self.remote_opponents.retain(|_, expires| *expires > now);
+        match lease_ms {
+            Some(lease) => {
+                self.remote_opponents
+                    .insert(cartridge_id.to_string(), now + lease.clamp(1_000, MAX_REMOTE_LEASE_MS));
+                Vec::new()
+            }
+            None => {
+                self.remote_opponents.remove(cartridge_id);
+                self.schedule_agent_loop(cartridge_id)
+            }
+        }
     }
 
     pub fn issue_media_grant(&mut self) -> String {
@@ -193,10 +224,26 @@ impl World {
             .map(|c| c.visible_version)
             .unwrap_or(commit.version);
         let head = cartridge.map(|c| c.head_version).unwrap_or(commit.version);
+        let remote = cartridge
+            .filter(|_| self.remote_opponent(cartridge_id))
+            .map(|c| {
+                event_message(
+                    self,
+                    crate::multiplayer::VIEW_CHANNEL,
+                    json!({
+                        "cartridgeId": cartridge_id,
+                        "version": commit.version,
+                        "runtime": crate::multiplayer::snapshot(c),
+                        "transition": crate::multiplayer::transition(c, transition),
+                    }),
+                    json!(cartridge_id),
+                    Value::Null,
+                )
+            });
         let transition = cartridge
             .map(|c| c.client_transition(transition))
             .unwrap_or_else(|| transition.clone());
-        vec![
+        let mut messages = vec![
             protocol::runtime_transition(&self.world_id, cartridge_id, commit.version, &transition),
             protocol::visibility_advanced(
                 &self.world_id,
@@ -205,7 +252,9 @@ impl World {
                 visible,
                 head,
             ),
-        ]
+        ];
+        messages.extend(remote);
+        messages
     }
 
     /// Server-owned follow-up command (Python `_dispatch_internal`). `None`
@@ -595,7 +644,8 @@ impl World {
             return Vec::new();
         };
         let mut tasks = Vec::new();
-        if let Some(round_id) = crate::cartridges::pictionary::agent_guess_round(&state) {
+        let remote = self.remote_opponent("pictionary");
+        if let Some(round_id) = crate::cartridges::pictionary::agent_guess_round(&state).filter(|_| !remote) {
             let key = format!("pictionary:{round_id}");
             if !self.agent_loops.contains_key(&key) {
                 let task = Task::pictionary_guess(self, self.pacing, round_id);
@@ -617,6 +667,7 @@ impl World {
     pub(crate) fn recognize_drawing(&mut self, payload: &Json, secrets: &Secrets) -> Option<Task> {
         let round_id = payload.get("roundId")?.as_str()?;
         let revision = payload.get("revision")?.as_u64()?;
+        if self.remote_opponent("pictionary") { return None; }
         if revision == 0 || self.cartridge("pictionary").and_then(|c| crate::cartridges::pictionary::agent_guess_round(&c.state)).as_deref() != Some(round_id) { return None; }
         let now = now_ms();
         if self.vision_revision.as_ref().is_some_and(|(round, seen, at)| round == round_id && (revision <= *seen || now - at < 7_000)) { return None; }
@@ -634,7 +685,7 @@ impl World {
             return self.schedule_pictionary_guess();
         }
         self.agent_loops.retain(|_, lease| lease.strong_count() > 0);
-        if self.agent_loops.contains_key(cartridge_id) {
+        if self.remote_opponent(cartridge_id) || self.agent_loops.contains_key(cartridge_id) {
             return Vec::new();
         }
         let pending = self.cartridge(cartridge_id).is_some_and(|cartridge| {
@@ -727,6 +778,10 @@ impl World {
         cartridge_id: &str,
         prefer_recovery: bool,
     ) -> Option<Vec<Json>> {
+        // A remote human took the seat after this loop started.
+        if self.remote_opponent(cartridge_id) {
+            return None;
+        }
         let state = self.cartridge(cartridge_id)?.state.clone();
         let forced = if prefer_recovery {
             tasks::recovery_command(cartridge_id, &state)

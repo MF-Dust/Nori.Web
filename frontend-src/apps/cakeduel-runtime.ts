@@ -1,4 +1,4 @@
-import type { ArcadeClient } from "../runtime/arcade-client";
+import type { ArcadeChannel } from "../runtime/arcade-client";
 import type { ArcadeServerMessage, JsonValue } from "../runtime/protocol";
 import type { WorldStore } from "../runtime/world-store";
 import type { GameService } from "../services/games";
@@ -405,7 +405,7 @@ export class CakeDuelRuntimeController {
   constructor(
     private readonly games: GameService,
     private readonly world: WorldStore,
-    arcade: ArcadeClient,
+    arcade: ArcadeChannel,
     private readonly reactions?: NoriReactionDirector,
   ) {
     this.connected = arcade.connectionState === "open";

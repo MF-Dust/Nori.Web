@@ -1,4 +1,4 @@
-import type { ArcadeClient } from "../runtime/arcade-client";
+import type { ArcadeChannel } from "../runtime/arcade-client";
 import type { JsonValue } from "../runtime/protocol";
 import type { WorldStore } from "../runtime/world-store";
 import type { BuiltInGame, GameService } from "../services/games";
@@ -36,7 +36,7 @@ export class GameCartridgeController<T> {
     readonly game: BuiltInGame,
     private games: GameService,
     private world: WorldStore,
-    private arcade: ArcadeClient,
+    private arcade: ArcadeChannel,
     private parse: (raw: unknown) => T,
   ) {
     this.cleanup.push(world.subscribe((_state, message) => {

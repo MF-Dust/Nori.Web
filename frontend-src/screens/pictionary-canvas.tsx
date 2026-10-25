@@ -17,9 +17,11 @@ export interface PictionaryCanvasProps {
   /** Nori's strokes for this round, chosen by the server. */
   noriDrawings?: readonly DrawingSample[];
   active: boolean; drawer: "player" | "agent";
+  /** Multiplayer: the other human's strokes replace Nori's sample playback. */
+  peerStrokes?: readonly DrawingStroke[];
   color: string; eraser: boolean;
   onStroke(stroke: DrawingStroke): void;
-  onChange(): void;
+  onChange(strokes: readonly DrawingStroke[]): void;
   startSoundLoop?: (cue: string) => () => void;
 }
 export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCanvasProps>(function PictionaryCanvas(props, handle) {
@@ -55,7 +57,7 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     if (!base.current.width) base.current = { width, height };
     renderer.current.render(width, height, base.current, strokes.current, draft.current);
   };
-  const changed = () => { revision.current++; render(); latest.current.onChange(); };
+  const changed = () => { revision.current++; render(); latest.current.onChange(strokes.current); };
   useImperativeHandle(handle, () => ({
     clear() {
       if (!latest.current.active || latest.current.drawer !== "player") return;
@@ -112,7 +114,13 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     if (!props.active) { draft.current = null; stopScratch(); render(); }
   }, [props.active]);
   useEffect(() => {
-    if (props.drawer !== "agent" || !props.active) return;
+    if (props.peerStrokes === undefined || props.drawer !== "agent") return;
+    strokes.current = props.peerStrokes.map(stroke => ({ ...stroke, points: [...stroke.points] }));
+    draft.current = null; revision.current++; render();
+  }, [props.peerStrokes, props.drawer]);
+  const peerMode = props.peerStrokes !== undefined;
+  useEffect(() => {
+    if (peerMode || props.drawer !== "agent" || !props.active) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     let pass = 0;
@@ -154,7 +162,7 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     return () => { cancelled = true; if (timer !== null) clearTimeout(timer); stopScratch(); };
     // Replicated snapshots allocate fresh sample arrays; the round id identifies them.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.roundId, props.redrawEpoch, props.drawer, props.active, props.noriDrawings?.length]);
+  }, [props.roundId, props.redrawEpoch, props.drawer, props.active, props.noriDrawings?.length, peerMode]);
   const point = (event: PointerEvent<HTMLDivElement>): DrawingPoint => {
     const bounds = event.currentTarget.getBoundingClientRect();
     return {
@@ -183,7 +191,7 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
         touchScratch();
       }}
       onPointerMove={event => { if (draft.current?.pointer === event.pointerId) { draft.current.points.push(point(event)); touchScratch(); render();
-        if (Date.now() - lastPreview.current >= 1000) { lastPreview.current = Date.now(); revision.current++; latest.current.onChange(); } } }}
+        if (Date.now() - lastPreview.current >= 1000) { lastPreview.current = Date.now(); revision.current++; latest.current.onChange(strokes.current); } } }}
       onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} />
     {error && <p role="alert">{error}</p>}
   </div>;

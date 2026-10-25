@@ -586,6 +586,23 @@ pub(crate) fn handle_event_with_secrets(world: &mut World, message: &Json, secre
             ));
             return out.outbound;
         }
+        "multiplayer.remote_opponent" => {
+            let game = payload.get("cartridgeId").and_then(Value::as_str).unwrap_or("").to_string();
+            if !crate::multiplayer::GAMES.contains(&game.as_str()) {
+                ("multiplayer.remote_opponent.result".into(), json!({"ok": false, "error": "Unsupported game"}))
+            } else {
+                let enabled = payload.get("enabled") == Some(&Value::Bool(true));
+                let lease = payload.get("leaseMs").and_then(Value::as_i64).unwrap_or(crate::world::MAX_REMOTE_LEASE_MS);
+                let tasks = world.set_remote_opponent(&game, enabled.then_some(lease));
+                out.outbound.tasks.extend(tasks);
+                let runtime = if enabled {
+                    world.cartridge(&game).map(crate::multiplayer::snapshot).unwrap_or(Value::Null)
+                } else {
+                    Value::Null
+                };
+                ("multiplayer.remote_opponent.result".into(), json!({"ok": true, "cartridgeId": game, "enabled": enabled, "runtime": runtime}))
+            }
+        }
         "pictionary.snapshot" => {
             if let Some(task) = world.recognize_drawing(&payload, secrets) {
                 out.outbound.broadcast.push(event_message(world, "pictionary.vision.status", json!({"roundId":payload["roundId"],"revision":payload["revision"],"status":"analyzing"}), json!("pictionary"), Value::Null));

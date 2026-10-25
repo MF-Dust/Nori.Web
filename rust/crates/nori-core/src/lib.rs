@@ -10,6 +10,7 @@ pub mod jsonutil;
 pub mod live_pack;
 pub mod llm;
 pub mod media;
+pub mod multiplayer;
 pub mod protocol;
 pub mod provider;
 pub mod session;

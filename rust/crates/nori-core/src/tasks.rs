@@ -753,6 +753,7 @@ fn poll_pictionary_guess(
     let state = |world: &World| world.cartridge("pictionary").map(|c| c.state.clone());
     let Some(current) = state(world) else { return Step::Done; };
     if pictionary::agent_guess_round(&current).as_deref() != Some(round_id) { return Step::Done; }
+    if world.remote_opponent("pictionary") { return Step::Done; }
     if !*slept {
         *slept = true;
         // Guess pacing is gameplay, not presentation: the edge keeps it too.

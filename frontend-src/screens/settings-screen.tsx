@@ -17,8 +17,10 @@ import {
   Gauge,
   Bug,
   Languages,
+  Users,
   type LucideIcon,
 } from "lucide-react";
+import { useMultiplayerSettings } from "../state/multiplayer-settings-store";
 import { useAudioSettings } from "../state/audio-store";
 import { isGraphicsMode, useGraphicsSettings } from "../state/graphics-store";
 import { useUnlockSettings } from "../state/unlock-store";
@@ -36,13 +38,14 @@ export interface SettingsRuntime {
   speechControl?: ReactNode;
   debugContent?: ReactNode;
 }
-const sections = ["sound", "graphics", "language", "network", "system"] as const;
+const sections = ["sound", "graphics", "language", "network", "multiplayer", "system"] as const;
 type Section = (typeof sections)[number] | "debug";
 const icons = {
   sound: Volume2,
   graphics: Gauge,
   language: Languages,
   network: Wifi,
+  multiplayer: Users,
   system: Monitor,
   debug: Bug,
 };
@@ -332,6 +335,82 @@ function NetworkSettings({ runtime }: { runtime: SettingsRuntime }) {
     </div>
   );
 }
+function SettingRow({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-2">
+      <div className="min-w-0">
+        <div className="text-sm">{title}</div>
+        {description && <div className="text-xs text-muted-foreground">{description}</div>}
+      </div>
+      {children}
+    </div>
+  );
+}
+function TextSetting({ label, value, onChange, multiline, secret, placeholder }: {
+  label: string; value: string; onChange(value: string): void; multiline?: boolean; secret?: boolean; placeholder?: string;
+}) {
+  const id = useId();
+  return (
+    <div className="space-y-1 py-1">
+      <label htmlFor={id} className="text-xs text-muted-foreground">{label}</label>
+      {multiline ? (
+        <textarea id={id} rows={2} className="settings-action w-full font-mono text-xs" value={value} placeholder={placeholder}
+          spellCheck={false} onChange={(event) => onChange(event.target.value)} />
+      ) : (
+        <input id={id} type={secret ? "password" : "text"} autoComplete="off" spellCheck={false} className="settings-action w-full text-xs"
+          value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
+      )}
+    </div>
+  );
+}
+function MultiplayerSettings({ t }: { t: Translate }) {
+  const mp = useMultiplayerSettings();
+  return (
+    <div className="space-y-3">
+      <div>
+        <h3 className="text-sm font-medium">{t("settings.multiplayer.title")}</h3>
+        <p className="text-xs text-muted-foreground">{t("settings.multiplayer.description")}</p>
+      </div>
+      <SettingRow title={t("settings.multiplayer.enabled")} description={t("settings.multiplayer.enabledDescription")}>
+        <Toggle checked={mp.enabled} label={t("settings.multiplayer.enabled")} onChange={() => mp.setEnabled(!mp.enabled)} />
+      </SettingRow>
+      {mp.enabled && (
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="mp-transport">{t("settings.multiplayer.transport")}</label>
+            <select id="mp-transport" className="settings-select w-full" value={mp.transport}
+              onChange={(event) => mp.setTransport(event.target.value === "easytier" ? "easytier" : "webrtc")}>
+              <option value="webrtc">{t("settings.multiplayer.transportWebrtc")}</option>
+              <option value="easytier" disabled={!mp.easyTierExperimental}>{t("settings.multiplayer.transportEasyTier")}</option>
+            </select>
+          </div>
+          <TextSetting label={t("settings.multiplayer.stun")} value={mp.stunUrls} multiline onChange={mp.setStunUrls} placeholder="stun:stun.example.com:3478" />
+          <TextSetting label={t("settings.multiplayer.turnUrls")} value={mp.turn.urls} multiline onChange={(urls) => mp.setTurn({ urls })} placeholder="turn:turn.example.com:3478?transport=udp" />
+          <div className="grid grid-cols-2 gap-2">
+            <TextSetting label={t("settings.multiplayer.turnUsername")} value={mp.turn.username} onChange={(username) => mp.setTurn({ username })} />
+            <TextSetting label={t("settings.multiplayer.turnCredential")} value={mp.turn.credential} secret onChange={(credential) => mp.setTurn({ credential })} />
+          </div>
+          <p className="text-xs text-muted-foreground">{t("settings.multiplayer.turnHint")}</p>
+          <SettingRow title={t("settings.multiplayer.forceRelay")} description={t("settings.multiplayer.forceRelayDescription")}>
+            <Toggle checked={mp.forceRelay} disabled={!mp.turn.urls.trim()} label={t("settings.multiplayer.forceRelay")} onChange={() => mp.setForceRelay(!mp.forceRelay)} />
+          </SettingRow>
+          <hr />
+          <SettingRow title={t("settings.multiplayer.easyTier")} description={t("settings.multiplayer.easyTierDescription")}>
+            <Toggle checked={mp.easyTierExperimental} label={t("settings.multiplayer.easyTier")} onChange={() => mp.setEasyTierExperimental(!mp.easyTierExperimental)} />
+          </SettingRow>
+          {mp.easyTierExperimental && (
+            <div className="space-y-1">
+              <TextSetting label={t("settings.multiplayer.easyTierModule")} value={mp.easyTier.moduleUrl} onChange={(moduleUrl) => mp.setEasyTier({ moduleUrl })} placeholder="/easytier/easytier-web.js" />
+              <TextSetting label={t("settings.multiplayer.easyTierNetwork")} value={mp.easyTier.networkName} onChange={(networkName) => mp.setEasyTier({ networkName })} />
+              <TextSetting label={t("settings.multiplayer.easyTierSecret")} value={mp.easyTier.networkSecret} secret onChange={(networkSecret) => mp.setEasyTier({ networkSecret })} />
+              <TextSetting label={t("settings.multiplayer.easyTierPeers")} value={mp.easyTier.peers} multiline onChange={(peers) => mp.setEasyTier({ peers })} placeholder="wss://relay.example.com:11012" />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 function ResetDialog({
   runtime,
   onClose,
@@ -551,6 +630,8 @@ export function SettingsScreen({ runtime }: { runtime: SettingsRuntime }) {
                   <LanguageSettings t={t} />
                 ) : section === "network" ? (
                   <NetworkSettings runtime={runtime} />
+                ) : section === "multiplayer" ? (
+                  <MultiplayerSettings t={t} />
                 ) : (
                   <div className="space-y-3">
                     <UnlockSettings t={t} />

@@ -17,6 +17,12 @@ export interface ArcadeCloseInfo {
 export type ArcadeMessageListener = (message: ArcadeServerMessage) => void;
 export type ArcadeStateListener = (state: ArcadeConnectionState) => void;
 
+/**
+ * The surface game controllers use. The live socket implements it; a
+ * multiplayer guest implements it over the peer link to the host.
+ */
+export type ArcadeChannel = Pick<ArcadeClient, "connectionState" | "onState" | "onMessage" | "send" | "sendEvent" | "dispatch">;
+
 export interface ArcadeClientOptions {
   locale?: string;
   reconnect?: boolean;
