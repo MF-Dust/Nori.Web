@@ -135,7 +135,10 @@ def main() -> None:
     assert config["r2_buckets"] == [
         {"binding": "NORI_ASSETS_R2", "bucket_name": "nori-web-assets"},
     ]
-    assert config["vars"] == {"NORI_DISABLE_LIVE_PACK": "0"}
+    assert config["vars"] == {
+        "NORI_DISABLE_LIVE_PACK": "0",
+        "NORI_STATIC_ORIGIN": "https://static.nori.mom",
+    }
     assert json.loads((ROOT / "package.json").read_text())["devDependencies"]["wrangler"] == "4.147.0"
 
     first = module.live_pack_fingerprint()
