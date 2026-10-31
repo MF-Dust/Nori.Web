@@ -428,54 +428,6 @@ html.gfx-performance.theme-nori .nori-dock-container {
 html.gfx-performance.theme-nori .topbar-container {
   background: #161a22f0;
 }
-@font-face {
-  font-family: SarasaFixed;
-  src: url(/fonts/sarasa-fixed-sc.woff2) format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: SarasaFixed;
-  src: url(/fonts/sarasa-fixed-sc-bold.woff2) format("woff2");
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Fusion Pixel 12px Proportional SC";
-  src: url(/fonts/fusion-pixel-12px-proportional-sc.woff2) format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Fusion Pixel 12px Monospaced SC";
-  src: url(/fonts/fusion-pixel-12px-monospaced-sc.woff2) format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Press Start 2P";
-  src: url(/fonts/press-start-2p-latin.woff2) format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: VT323;
-  src: url(/fonts/vt323-latin.woff2) format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: Silkscreen;
-  src: url(/fonts/silkscreen-latin.woff2) format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: Silkscreen;
-  src: url(/fonts/silkscreen-bold-latin.woff2) format("woff2");
-  font-weight: 700;
-  font-display: swap;
-}
 :root {
   color-scheme: light;
   --background: oklch(100% 0 0);

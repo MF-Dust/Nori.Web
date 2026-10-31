@@ -1,3 +1,4 @@
+import { staticAssetUrl } from "../runtime/static-assets";
 /** Source-owned graphics stages recovered from the authorized NormalApp reference. */
 import {
   Group,
@@ -1184,7 +1185,7 @@ const fogUniforms = (t) => ({
   },
 });
 const OCEAN_POSITION = new Vector3(0, 89.6, 51);
-const oceanAsset = (t) => `/ocean/${t}`;
+const oceanAsset = (t) => staticAssetUrl(`/ocean/${t}`);
 const OCEAN_OPACITY = 0.5;
 const OCEAN_COMPOSITE_FRAGMENT = OCEAN_COMPOSITE_BASE_FRAGMENT.replace(
   "uniform sampler2D uHUDTexture;",

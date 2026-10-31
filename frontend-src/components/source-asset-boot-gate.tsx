@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { createSourceTranslate } from "../i18n/translate";
 import "./source-asset-boot-gate.css";
+import { staticAssetUrl } from "../runtime/static-assets";
 
 type Progress = { status: "loading" | "error" | "ready"; done: number; total: number };
 type Manifest = { packs: Record<string, string[]>; files: Record<string, { size: number; rev: string }> };
@@ -48,7 +49,7 @@ async function loadBootAssets(report: (done: number, total: number) => void, sig
   if (cache) {
     await forEachLimit(known.length, CACHE_CHECK_CONCURRENCY, async (index) => {
       const path = known[index];
-      if (revisions[path] === manifest.files[path].rev && await cache.match(path)) cached.add(path);
+      if (revisions[staticAssetUrl(path)] === manifest.files[path].rev && await cache.match(staticAssetUrl(path))) cached.add(path);
     });
   }
   let done = 0;
@@ -60,6 +61,7 @@ async function loadBootAssets(report: (done: number, total: number) => void, sig
   report(done, total);
   const download = async (path: string) => {
     const file = manifest.files[path];
+    const url = staticAssetUrl(path);
     for (let attempt = 0; attempt < 3; attempt++) {
       let received = 0;
       const count = (bytes: number) => {
@@ -68,7 +70,7 @@ async function loadBootAssets(report: (done: number, total: number) => void, sig
         report(done, total);
       };
       try {
-        const asset = await fetch(path, { cache: "no-store", headers: { "x-asset-loader": "1" }, signal });
+        const asset = await fetch(url, { cache: "no-store", headers: url.startsWith("/") ? { "x-asset-loader": "1" } : undefined, signal });
         if (!asset.ok || asset.headers.get("content-type")?.includes("text/html")) throw new Error("Asset unavailable: " + path);
         const headers = { "content-type": asset.headers.get("content-type") ?? "application/octet-stream" };
         if (asset.body) {
@@ -79,14 +81,14 @@ async function loadBootAssets(report: (done: number, total: number) => void, sig
               controller.enqueue(chunk);
             },
           }));
-          if (cache) await cache.put(path, new Response(counted, { headers }));
+          if (cache) await cache.put(url, new Response(counted, { headers }));
           else await counted.pipeTo(new WritableStream());
         } else {
           const bytes = await asset.arrayBuffer();
           count(bytes.byteLength);
-          if (cache) await cache.put(path, new Response(bytes, { headers }));
+          if (cache) await cache.put(url, new Response(bytes, { headers }));
         }
-        if (cache) revisions[path] = file.rev;
+        if (cache) revisions[url] = file.rev;
         break;
       } catch (error) {
         done -= received; report(done, total);

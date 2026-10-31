@@ -52,6 +52,7 @@
     }
   ],
   "vars": {
-    "NORI_DISABLE_LIVE_PACK": "0"
+    "NORI_DISABLE_LIVE_PACK": "0",
+    "NORI_STATIC_ORIGIN": "https://static.nori.mom"
   }
 }

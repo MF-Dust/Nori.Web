@@ -67,6 +67,8 @@ function shouldCache(pathname) {
 }
 
 var sw = self;
+var staticOrigin = new URL(sw.location.href).searchParams.get("staticOrigin");
+var staticPrefixes = ["/ARGNori_web/", "/Nori_web/", "/fonts/", "/ocean/", "/cubism_sdk/"];
 
 sw.addEventListener("install", () => {
   sw.skipWaiting();
@@ -90,21 +92,23 @@ sw.addEventListener("activate", (event) => {
 sw.addEventListener("fetch", (event) => {
   let { request } = event;
   if (request.method !== "GET") return;
-  if (request.headers.has(ASSET_LOADER_HEADER)) return;
+  if (request.headers.has(ASSET_LOADER_HEADER) || request.cache === "no-store") return;
   if (request.headers.has("range")) return;
 
   let url = new URL(request.url);
-  if (url.origin !== sw.location.origin) return;
+  var remote = url.origin !== sw.location.origin;
+  if (remote && (url.origin !== staticOrigin || !staticPrefixes.some((prefix) => url.pathname.startsWith(prefix)))) return;
+  var key = remote ? url.href : url.pathname;
   if (url.pathname.startsWith("/api/")) return;
   if (!shouldCache(url.pathname)) return;
 
   event.respondWith(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.match(url.pathname).then((cached) => {
+      cache.match(key).then((cached) => {
         if (cached) return cached;
         return fetch(request).then((response) => {
           if (response && response.status === 200) {
-            cache.put(url.pathname, response.clone());
+            cache.put(key, response.clone());
           }
           return response;
         });

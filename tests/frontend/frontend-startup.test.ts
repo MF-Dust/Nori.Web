@@ -6,6 +6,23 @@ import { createRequire } from "node:module";
 import type * as TypeScript from "typescript";
 import { localizeUserError } from "../../frontend-src/i18n/user-error";
 import { HttpCompatibilityError } from "../../frontend-src/runtime/http";
+import { normalizeStaticOrigin, staticAssetUrl } from "../../frontend-src/runtime/static-assets";
+
+test("static origin only redirects mirrored assets and rejects non-origin configuration", () => {
+  const origin = normalizeStaticOrigin(" https://static.example.com/ ");
+  assert.equal(origin, "https://static.example.com");
+  assert.equal(normalizeStaticOrigin(""), "");
+  for (const path of ["/ARGNori_web/ARGNori.model3.json", "/Nori_web/Nori.model3.json", "/ocean/water-normal.png", "/fonts/a.woff2", "/cubism_sdk/Core/live2dcubismcore.js", "/fonts.css"]) {
+    assert.equal(staticAssetUrl(path, origin), origin + path);
+    assert.equal(staticAssetUrl(path, ""), path);
+  }
+  for (const path of ["/api/auth", "/icon.png", "/asset-manifest.json", "/assets/cosmicweb.min.glb", "/fonts-cdn.css", "https://other.example/fonts/a.woff2", "//other.example/fonts/a.woff2"]) {
+    assert.equal(staticAssetUrl(path, origin), path);
+  }
+  for (const value of ["https://static.example.com/v1", "https://user:pass@example.com", "https://example.com?q=x", "https://example.com#x", "file:///tmp"]) {
+    assert.throws(() => normalizeStaticOrigin(value));
+  }
+});
 
 test("user errors are localized, actionable and never expose transport diagnostics", () => {
   const internal = new Error("World does not have a media grant yet");

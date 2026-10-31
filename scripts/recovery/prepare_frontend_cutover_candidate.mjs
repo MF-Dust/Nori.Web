@@ -128,16 +128,6 @@ async function stagePublic(source, destination) {
   stagedPublicPaths.add(destination);
 }
 
-const candidateLocalFonts = new Set([
-  "sarasa-fixed-sc.woff2",
-  "sarasa-fixed-sc-bold.woff2",
-  "fusion-pixel-12px-proportional-sc.woff2",
-  "fusion-pixel-12px-monospaced-sc.woff2",
-  "press-start-2p-latin.woff2",
-  "vt323-latin.woff2",
-  "silkscreen-latin.woff2",
-  "silkscreen-bold-latin.woff2",
-]);
 const historicalAssetPattern = /\.(?:js|mjs|css|map)$/i;
 
 async function stageFilteredAssetTree(source, destination) {
@@ -157,17 +147,7 @@ async function stageFilteredAssetTree(source, destination) {
 async function stagePublicTree() {
   await mkdir(resolve(candidateTemp, "assets"), { recursive: true });
   for (const entry of await readdir(options.public, { withFileTypes: true })) {
-    if (entry.name === "index.html" || entry.name === "assets" || entry.name === "fonts.css") continue;
-    if (entry.name === "fonts") {
-      const sourceFonts = resolve(options.public, "fonts");
-      const candidateFonts = resolve(candidateTemp, "fonts");
-      await mkdir(candidateFonts, { recursive: true });
-      for (const font of await readdir(sourceFonts, { withFileTypes: true })) {
-        if (!font.isFile() || !candidateLocalFonts.has(font.name)) continue;
-        await stagePublic(resolve(sourceFonts, font.name), resolve(candidateFonts, font.name));
-      }
-      continue;
-    }
+    if (entry.name === "index.html" || entry.name === "assets") continue;
     await stagePublic(resolve(options.public, entry.name), resolve(candidateTemp, entry.name));
   }
   await stageFilteredAssetTree(resolve(options.public, "assets"), resolve(candidateTemp, "assets"));
@@ -253,8 +233,8 @@ async function verifyRequiredCandidateAssets(buildHtml) {
   }
   if (await exists(resolve(candidateTemp, "backend/data/live_world_pack.json")))
     throw new Error("private live-world pack must remain in R2 and outside the static candidate");
-  if (await exists(resolve(candidateTemp, "fonts.css")) || await exists(resolve(candidateTemp, "fonts/web")))
-    throw new Error("legacy mirrored web fonts must stay outside the source cutover candidate");
+  if (!(await exists(resolve(candidateTemp, "fonts.css"))) || !(await exists(resolve(candidateTemp, "fonts/web"))))
+    throw new Error("self-hosted typography must remain available for same-origin fallback");
   return { required: [...required].sort(), lazyChunks: lazyChunks.sort() };
 }
 

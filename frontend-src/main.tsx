@@ -1,6 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ViewportGuard } from "./components/viewport-guard";
+import { staticAssetOrigin } from "./runtime/static-assets";
+
+if ("serviceWorker" in navigator) {
+  void navigator.serviceWorker.register(`/sw.js?staticOrigin=${encodeURIComponent(staticAssetOrigin)}`)
+    .catch((error) => console.warn("Asset cache worker unavailable", error));
+}
 
 const root = document.getElementById("root");
 if (!root) throw new Error("NoriOS source frontend root element is missing");

@@ -1,3 +1,4 @@
+import { staticAssetUrl } from "../runtime/static-assets";
 import { NoriSceneRenderer } from "./scene-renderer";
 import { bindOcclusionAvatar } from "./occlusion-avatar";
 import type { WindowStore } from "../state/window-types";
@@ -164,7 +165,7 @@ export function NoriStage({
       updateBudget();
       void session
         .loadModel({
-          dir: "/ARGNori_web/",
+          dir: staticAssetUrl("/ARGNori_web/"),
           modelJson: "ARGNori.model3.json",
           textureVariants: {
             corrupt: { 0: "ARGNori.4096/texture_00_corrupt.png" },

@@ -28,6 +28,8 @@
 
 ---
 
+静态资源可选独立托管：[EdgeOne Makers 部署与回退](docs/EDGEONE_STATIC_ASSETS.md)。
+
 ## 🌊 关于 Nori.Web
 
 > 「现实之外，高维信息的动态基底被称为『海』。  

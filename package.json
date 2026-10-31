@@ -6,6 +6,8 @@
   "description": "Local protocol-compatible backend for the publicly shipped NoriOS web client",
   "type": "module",
   "scripts": {
+    "assets:edgeone": "python3 scripts/build_edgeone_static.py",
+    "test:edgeone": "python3 -m unittest tests.test_edgeone_static && node --test tests/test_edgeone_cache.mjs",
     "legal:refresh": "node scripts/refresh_legal_notices.mjs",
     "test:legal": "python -m unittest tests.test_release_legal",
     "start": "cargo run --release -p nori-local --manifest-path rust/Cargo.toml",
@@ -15,7 +17,7 @@
     "test:rust": "cargo test --locked --workspace --manifest-path rust/Cargo.toml",
     "test:schema": "node tests/test_client_schema.mjs",
     "test:browser": "node tests/test_browser_bootstrap.mjs",
-    "test": "npm run test:rust && npm run test:schema && npm run frontend:test && npm run test:browser && npm run frontend:story:boot",
+    "test": "npm run test:rust && npm run test:schema && npm run frontend:test && npm run test:browser && npm run frontend:story:boot && npm run test:edgeone",
     "frontend:test": "node scripts/test/run_node_tests.mjs all",
     "frontend:games:test": "node scripts/test/run_node_tests.mjs games",
     "frontend:games:smoke": "node scripts/smoke/smoke_frontend_games.mjs",

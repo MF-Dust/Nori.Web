@@ -1,3 +1,4 @@
+import { staticAssetUrl } from "../runtime/static-assets";
 import {
   Live2DEngine,
   createBlinkPlugin,
@@ -36,7 +37,7 @@ export class FarewellActor {
   }
   async load() {
     const model = await this.session.loadModel({
-      dir: "/Nori_web/",
+      dir: staticAssetUrl("/Nori_web/"),
       modelJson: "Nori.model3.json",
     });
     if (this.disposed) return false;
