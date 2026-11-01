@@ -303,14 +303,6 @@ impl Task {
         )
     }
 
-    /// Agent-turn loops are deduplicated per cartridge (Python `_agent_tasks`).
-    pub fn agent_cartridge(&self) -> Option<&str> {
-        match &self.kind {
-            Kind::AgentTurns { cartridge_id, .. } => Some(cartridge_id),
-            _ => None,
-        }
-    }
-
     /// Weak registration expires on completion or when any host drops the task.
     pub(crate) fn agent_loop_lease(&self) -> Weak<()> {
         Arc::downgrade(self.agent_loop.as_ref().expect("agent task lease"))

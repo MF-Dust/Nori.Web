@@ -7,8 +7,7 @@ bucket `nori-web-assets`, accessed through `NORI_ASSETS_R2`.
 
 The Durable Object loads the lightweight core when opening a world. Mail,
 Files, Signal sections, and browser-page shards are fetched only when needed.
-This preserves the Python Worker's R2 layout; the runtime switch does not
-require new object keys, a public bucket, or R2 access-key secrets.
+No public bucket or R2 access-key secrets are needed.
 
 ## Prepare and upload
 
@@ -19,8 +18,7 @@ npm ci
 python scripts/upload_cloudflare_live_pack.py
 ```
 
-The Python 3 helper uses only the standard library. It does not run the Python
-backend or need uv/pywrangler. To upload with authenticated Cloudflare access:
+The Python 3 helper uses only the standard library. To upload with authenticated Cloudflare access:
 
 ```bash
 python scripts/upload_cloudflare_live_pack.py --upload
@@ -74,11 +72,6 @@ bucket, and falls back to demo data when shards are absent.
 `NoriArcadeSession`, the `NORI_ARCADE` binding, and the existing `v1` SQLite
 migration stay unchanged. World snapshots remain JSON strings at
 `nori:world:v1`; public AI settings remain JSON strings at `nori:ai-public:v1`
-and exclude API keys. There is no storage migration for the Rust replacement.
-
-If needed, pause Workers Builds and roll back to the last working Python
-version in Dashboard Deployments or with
-`npx wrangler rollback <LAST_PYTHON_VERSION_ID>`. Keep the R2 layout, DO binding,
-and `SECRET_KEY`; code rollback does not restore older DO/R2 contents. The
-Python runtime has been removed from the repository; restore it from Git history
-if a Python-version rollback must be rebuilt.
+and exclude API keys. Rolling back a Worker version (see
+[CLOUDFLARE_BUILDS.md](CLOUDFLARE_BUILDS.md)) does not restore older DO/R2
+contents; keep the R2 layout, DO binding and `SECRET_KEY`.

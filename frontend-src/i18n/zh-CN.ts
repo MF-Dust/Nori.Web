@@ -90,15 +90,6 @@ export default {
     "title": "浏览器",
     "unpinTab": "取消固定"
   },
-  "browserWarning": {
-    "body": "本游戏仅支持 Chrome 和 Edge 浏览器。360 安全浏览器、360 极速浏览器、QQ 浏览器、搜狗浏览器等虽基于 Chromium 内核，但可能导致黑屏、没有声音，或游戏剧情无法推进等问题。",
-    "confirmBody": "如果出了问题，作者将无法排查和修复。存档可能损坏，游戏进度也可能丢失。",
-    "confirmContinue": "自行承担风险",
-    "confirmTitle": "确定还要进入？",
-    "continueAnyway": "仍要进入",
-    "goBack": "换用 Chrome",
-    "title": "当前浏览器不受支持"
-  },
   "cakeduel": {
     "banner": {
       "accepted": "接受",
@@ -644,58 +635,6 @@ export default {
     "worldReset": "系统已重置",
     "worldResetRebooting": "系统已被重置，正在重启……"
   },
-  "corruption": {
-    "qte": {
-      "corruptionMeter": "污 染 度",
-      "protocolTitle": "杀 毒 协 议",
-      "scanComplete": "扫 描 完 成",
-      "sector": {
-        "g1": {
-          "threat": "残留进程",
-          "verb": "隔 离"
-        },
-        "g2": {
-          "threat": "寄生数据",
-          "verb": "清 除"
-        },
-        "g3": {
-          "threat": "核心污染",
-          "verb": "净 化"
-        }
-      },
-      "systemPurified": "系 统 已 净 化",
-      "threatDetected": "检 测 到 威 胁",
-      "threatsCleared": "{{purged}} / {{total}} 威胁清除"
-    },
-    "virusDialog": {
-      "body": "一个外部进程正试图改写本地角色渲染层。它已伪装其位置并取得部分控制权。",
-      "bodyEmphasis": "立即隔离并清除以恢复完整性。",
-      "defenseCore": "DEFENSE-CORE",
-      "dismiss": "忽略",
-      "launchCta": "立即杀毒",
-      "scan": {
-        "integrity": {
-          "label": "完整性",
-          "value": "已降级 — 检测到非授权位移"
-        },
-        "nodes": {
-          "label": "受感染节点",
-          "value": "3 个：表情核 / 注视控制 / 景深"
-        },
-        "signature": {
-          "label": "签名"
-        },
-        "source": {
-          "label": "入侵源",
-          "value": "localhost：渲染进程（Nori.live2d）"
-        }
-      },
-      "scanComplete": "扫描完成",
-      "threatBadge": "威胁",
-      "threatCount": "{{found}} / {{total}} 威胁",
-      "title": "检测到病毒"
-    }
-  },
   "credits": {
     "bilibiliAction": "打开主页",
     "bilibiliHint": "关注我们的更新和开发日志。",
@@ -819,12 +758,6 @@ export default {
       "serverCorrupt": "检测到文件服务器损坏，仅能访问部分已恢复文件。"
     }
   },
-  "graphicsRecovery": {
-    "reload": "刷新",
-    "reloading": "正在重新加载以恢复，进度已保存。",
-    "stuck": "自动恢复失败，请刷新页面。",
-    "title": "图像引擎已重置"
-  },
   "idle": {
     "init": {
       "line1": "> 发现可用计算资源 …",
@@ -917,10 +850,6 @@ export default {
     "to": "收件人",
     "trash": "废纸篓",
     "unread": "未读"
-  },
-  "mobile": {
-    "desktopHint": "手机和平板无法运行本游戏，请在电脑上打开。",
-    "desktopOnly": "仅支持电脑"
   },
   "multiplayer": {
     "opponent": "对手",
@@ -1366,11 +1295,6 @@ export default {
       "title": "对话",
       "unread": "{{count}} 条未读"
     }
-  },
-  "softwareRendererWarning": {
-    "body": "当前浏览器未使用显卡进行渲染，游戏将会非常卡顿。请在浏览器设置中开启硬件加速（Chrome/Edge：设置 → 系统），然后重启浏览器；如果已经开启，更新显卡驱动通常可以解决此问题。",
-    "continueAnyway": "仍要进入",
-    "title": "未启用硬件加速"
   },
   "terminal": {
     "cat": {

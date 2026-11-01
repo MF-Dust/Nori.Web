@@ -12,15 +12,6 @@ const CAKEDUEL_FALLBACK_LAYOUT = deriveCakeDuelResponsiveLayout(
 
 const CakeDuelLayoutContext = createContext<CakeDuelResponsiveLayout>(CAKEDUEL_FALLBACK_LAYOUT);
 
-export interface CakeDuelLayoutProviderProps {
-  layout: CakeDuelResponsiveLayout;
-  children: ReactNode;
-}
-
-export function CakeDuelLayoutProvider({ layout, children }: CakeDuelLayoutProviderProps) {
-  return <CakeDuelLayoutContext.Provider value={layout}>{children}</CakeDuelLayoutContext.Provider>;
-}
-
 export interface CakeDuelMeasuredLayoutProps {
   children: ReactNode;
   className?: string;

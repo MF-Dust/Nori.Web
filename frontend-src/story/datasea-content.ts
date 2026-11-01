@@ -120,7 +120,6 @@ export const DATASEA_CG_LINES: readonly DataseaCgLine[] = [
   { text: "啊，原来是这样啊，这是——", t0: 7.2, t1: 10 },
 ];
 
-export const DATASEA_MESSAGES_DURATION = 45;
 const DATASEA_CPS = 10;
 const DATASEA_LINGER = 1.1;
 const DATASEA_GAP = 1.1;

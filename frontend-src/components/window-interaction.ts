@@ -218,17 +218,6 @@ export function computeSnapTearoffRect({
   };
 }
 
-export function clampFloatingDrag(
-  rect: WindowRect,
-  bounds: WindowBounds,
-): WindowRect {
-  const maxY = Math.max(bounds.top, bounds.bottom - rect.height);
-  return {
-    ...rect,
-    y: Math.min(Math.max(bounds.top, rect.y), maxY),
-  };
-}
-
 export function clampVerticalMaximizedDragX(
   x: number,
   width: number,

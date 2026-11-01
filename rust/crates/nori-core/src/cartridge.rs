@@ -1,6 +1,6 @@
 use crate::jsonutil::Json;
 use crate::live_pack::LivePack;
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -310,16 +310,6 @@ pub fn default_cartridges(full_unlock: bool, pack: &LivePack) -> Vec<Cartridge> 
         .collect()
 }
 
-/// Registered cartridge ids (Python `CartridgeRegistry.list_available`).
-pub const AVAILABLE: [&str; 6] = [
-    "chat",
-    "cakeduel",
-    "codenames",
-    "chess",
-    "manifold.web",
-    "pictionary",
-];
-
 pub fn agent_command(id: &str, state: &Json) -> Option<Json> {
     match id {
         "cakeduel" => crate::cartridges::cakeduel::agent_next_command(state),
@@ -327,14 +317,4 @@ pub fn agent_command(id: &str, state: &Json) -> Option<Json> {
         "chess" => crate::cartridges::chess::agent_next_command(state),
         _ => None,
     }
-}
-
-pub fn object_insert(state: &mut Json, key: &str, value: Json) {
-    if let Some(map) = state.as_object_mut() {
-        map.insert(key.into(), value);
-    }
-}
-
-pub fn ensure_object(value: &Json) -> &Map<String, Value> {
-    value.as_object().expect("object")
 }

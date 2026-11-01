@@ -1,6 +1,5 @@
 import type {
   IdleGeneratorDefinition,
-  IdleRunPresentationState,
   IdleUpgradeDefinition,
 } from "./idle";
 
@@ -494,24 +493,4 @@ export function idleGenericPurchaseGrantCompute(upgrade: IdleUpgradeDefinition):
   if (!grant || typeof grant !== "object") return 0;
   const record = grant as Readonly<Record<string, unknown>>;
   return record.kind === "gold" && typeof record.amount === "number" ? record.amount : 0;
-}
-
-/** Adapter for callers that only hold the current public presentation state. */
-export function asIdleGenericPresentationState(
-  state: IdleRunPresentationState,
-  extra: Omit<IdleGenericProgressState, keyof IdleRunPresentationState>,
-): IdleGenericProgressState {
-  return {
-    ...state,
-    currentRunComputeProduced: state.currentRunComputeProduced ?? 0,
-    currentEraSeconds: state.currentEraSeconds ?? 0,
-    productiveClicks: state.productiveClicks ?? 0,
-    computeGainedByClicking: state.computeGainedByClicking ?? 0,
-    factionCoinsFoundThisEra: state.factionCoinsFoundThisEra ?? 0,
-    shortRunAbdications: state.shortRunAbdications ?? 0,
-    hasBuiltThisEra: state.hasBuiltThisEra ?? false,
-    anyActionThisEra: state.anyActionThisEra ?? false,
-    lifetimeAlignmentSeconds: state.lifetimeAlignmentSeconds ?? {},
-    ...extra,
-  };
 }

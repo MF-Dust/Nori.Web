@@ -283,7 +283,7 @@ export const RECOVERED_FEATURES: readonly RecoveredFeatureBoundary[] = [
       /Codenames/i,
       /^deriveScreen-/,
       /^GameScreen-BU9F4fB5\.js$/,
-      // The Codenames card stylesheet (omitted by the shipped entry, see FRONTEND_CSS_RECOVERY.md).
+      // The Codenames card stylesheet (omitted by the shipped entry).
       /^GameScreen-C1LZQU0R\.css$/,
       /^StartScreen-DLxN1cEa\.js$/,
       /^ResultsScreen-en9PN8_z\.js$/,

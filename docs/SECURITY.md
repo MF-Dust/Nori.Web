@@ -85,7 +85,7 @@ rebuilt or switched over by this audit.
 
 - `npm run test:rust`: Rust core, local service, and Worker regressions, including
   authentication, guest isolation, request origins, providers, persistence, and
-  static delivery. The retired Python runtime tests are available in Git history.
+  static delivery.
 - `npm run frontend:runtime:test`: recovered frontend bridge and Markdown cases.
 - `npm audit --registry=https://registry.npmjs.org`: JavaScript dependency audit.
   The vulnerable development-only transitive `brace-expansion` was updated from

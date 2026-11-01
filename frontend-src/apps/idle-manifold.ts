@@ -1,4 +1,4 @@
-import type { IdleAlignment, IdleRunPresentationState } from "./idle";
+import type { IdleAlignment } from "./idle";
 import { IDLE_MANIFOLD_COMPLETE_FACT } from "./idle-faction-progression";
 
 export const IDLE_MEMORY_SHOWN_FACT = "arg.memory.shown";
@@ -82,22 +82,5 @@ export function syncIdleManifoldReveal<T extends IdleManifoldRevealState>(
     state: applyIdleManifoldRevealReset(state, resetForRetraining),
     manifoldRevealApplied: true,
     revealTriggered: true,
-  };
-}
-
-/** Presentation-state adapter for UI parity checks and tests. */
-export function idlePresentationManifoldState(
-  state: IdleRunPresentationState,
-  threads = 0,
-): IdleManifoldRevealState {
-  return {
-    compute: state.compute,
-    currentAlignment: state.currentAlignment,
-    shards: state.shards,
-    owned: state.owned,
-    activeSkillBuffs: state.activeSkillBuffs,
-    claimedMementoCount: state.claimedMementoCount,
-    threads,
-    facts: state.facts,
   };
 }

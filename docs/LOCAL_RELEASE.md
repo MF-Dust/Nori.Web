@@ -22,11 +22,7 @@ python scripts/smoke_release.py
 
 该选项会把 Git 未跟踪的非忽略文件也纳入源码交付（`source/project.zip` 及随包的 `public/`、`backend/data/`），并在 `BUILD_INFO.txt` 中标为 **DEVELOPMENT ONLY**。不要用它生成正式发行物；检查归档内容并提交所有发布源码后，再用默认命令构建。
 
-产物位于 `build/release/Nori.Web-<system>-<architecture>/`。启动目录中的 `Nori.Web` / `Nori.Web.exe`，然后访问 `http://127.0.0.1:4173/`。服务支持 `HOST`、`PORT`、`NORI_DISABLE_LIVE_PACK`、`NORI_PUBLIC_DIR` 和 `NORI_DATA_DIR` 环境变量。构建后 `smoke_release.py` 会用空闲端口启动程序，检查 API、网页、非官方提示、法律页面、源码/许可证文件和 Arcade WebSocket 启动行，并在完成后停止服务。
-
-## 旧打包命令兼容
-
-发行目录始终重建，Cargo 编译缓存仍复用。旧 Nuitka 构建脚本、Python 后端、测试及启动回退已移除；历史实现可从 Git 记录恢复。
+产物位于 `build/release/Nori.Web-<system>-<architecture>/`。启动目录中的 `Nori.Web` / `Nori.Web.exe`，然后访问 `http://127.0.0.1:4173/`。服务支持 `HOST`、`PORT`、`NORI_DISABLE_LIVE_PACK`、`NORI_PUBLIC_DIR` 和 `NORI_DATA_DIR` 环境变量。构建后 `smoke_release.py` 会用空闲端口启动程序，检查 API、网页、非官方提示、法律页面、源码/许可证文件和 Arcade WebSocket 启动行，并在完成后停止服务。发行目录始终重建，Cargo 编译缓存仍复用。
 
 ## 发行目录和依赖解析
 

@@ -168,21 +168,3 @@ export function getIdleMarginalGrowthSteps(input: {
   const phase = Math.max(0, Math.min(1, input.phase));
   return stepOffset + phase * (maxSteps - stepOffset);
 }
-
-/** Active skill buffs multiply a generator's effective per-unit rate. */
-export function getIdleActiveGeneratorMultiplier(
-  generatorId: string,
-  state: IdleRunPresentationState,
-): number {
-  let multiplier = 1;
-  for (const buff of state.activeSkillBuffs) {
-    if (
-      buff.targetGenId === generatorId &&
-      typeof buff.magnitude === "number" &&
-      buff.magnitude !== 0
-    ) {
-      multiplier *= buff.magnitude;
-    }
-  }
-  return multiplier;
-}

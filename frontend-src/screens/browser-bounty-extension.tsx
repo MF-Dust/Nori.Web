@@ -18,7 +18,6 @@ import {
   LoaderCircle,
   Lock,
   LockOpen,
-  X,
 } from "lucide-react";
 import "../styles/browser-bounty.css";
 import type {
@@ -1010,10 +1009,6 @@ export function BrowserBountyExtension({
       : !open && detectedPage === pageUrl && !progress.complete
         ? "本页侦测到优惠！"
         : null;
-
-  const progressText = progress.complete
-    ? `已返 ${BOUNTY_TARGET_COUNT}/${BOUNTY_TARGET_COUNT} 单`
-    : `已返 ${progress.count}/${BOUNTY_TARGET_COUNT} 单，再返 ${BOUNTY_TARGET_COUNT - progress.count} 单解锁尊享会员`;
 
   const panel = progress.complete && submitState === "rest" ? (
     <div className="qm-pop">

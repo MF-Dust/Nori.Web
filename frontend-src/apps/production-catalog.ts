@@ -389,15 +389,3 @@ export const NORI_PRODUCTION_APPS: readonly ProductionAppDescriptor[] = [
     recoveryStatus: "ui-recovered",
   },
 ] as const;
-
-export function getProductionAppDescriptor(
-  appId: string,
-): ProductionAppDescriptor | undefined {
-  return NORI_PRODUCTION_APPS.find((app) => app.id === appId);
-}
-
-export function getProductionWindowDescriptor(appId: string, windowType: string) {
-  return getProductionAppDescriptor(appId)?.windows.find(
-    (window) => window.type === windowType,
-  );
-}

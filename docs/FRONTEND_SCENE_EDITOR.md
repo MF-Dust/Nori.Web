@@ -36,24 +36,6 @@ Model, expression, chat and lighting channels now also have form controls. The *
 
 `frontend_scene_editor_probe.mjs` is wired into the end of the scene tools smoke, after the real-time cult test. It is designed to check file round-trip, rejected and oversized imports, form edits, paused scrubbing, exact phase selection, completion fencing, 390px layout, same-world replacement and production-story takeover. The successful browser run produced `scene-editor-roundtrip.json`, `scene-editor-compact.png` and `scene-editor-scrub.png`; these artifacts were generated and inspected when applying the patch.
 
-The production entry and all five incomplete cutover flags are unchanged. Boot, corruption climax, memory, datasea, farewell and ending are registered source producers; each still requires its own original behavior, visual, media and agent acceptance.
-
-## Original patch verification record
-
-Against source revision `90576c08bdc227f6b3bbbcbd42a79af33195e0ed`, local TypeScript checking, both frontend builds, all 67 runtime tests, all 16 game tests and the recovery checks passed. The cutover check still reports five pending boundaries as intended.
-
-Browser smoke was attempted but the environment blocked navigation to the local test server with `ERR_BLOCKED_BY_ADMINISTRATOR`. The full application/local-backend smoke could not start because the environment lacks the Python `chess` package. Browser interaction, screenshots and full application/backend acceptance therefore remain unverified for this patch. No new remote CI result is claimed.
-
-## Applied patch and follow-up verification
-
-The supplied patch was applied to PR #43 revision `90576c08bdc227f6b3bbbcbd42a79af33195e0ed` without conflicts. The prior browser-environment limitation was resolved in this workspace: the editor probe passed in Chromium, including file round-trip, strict imports, form edits, paused scrubbing, coincident input gates, compact layout and replacement/takeover cleanup. Generated screenshots and the exported JSON are included in the existing CI artifact directory.
-
-Review found an additional exact-selection gap for non-gated, zero-duration phases. Phase seeking now retains the selected phase and its projection while paused, so a later instantaneous change at the same timestamp cannot overwrite it. Resuming still encounters the following input gate. A unit regression and browser check cover this boundary. All 68 runtime tests pass after this fix. Full application/CI verification is reported on PR #43.
-
-## Follow-up acceptance
-
-The next implementation pass adds same-world director instance fencing, immediate preview/Debug cleanup, complete forms for the currently supported channels, structural phase/audio editing and source-file audio offsets. The editor browser probe now checks reordering, gates, invalid duration/path rollback and 2.8 model dim, and saves `scene-editor-structure.png`. Runtime tests additionally cover source offset wrapping, independent fade time, and same-ID completion/retry cancellation. Current full-app and remote CI results are recorded on PR #43.
-
 ## Ocean and glyph channels
 
 The channel editor includes an explicit/off/inherit cold-open mode and all ocean, glyph, morph, model-form and wash values. `oceanEdge` supports 0–4, including the original 3.5 camera-speed limit; other nested values are 0–1. Plankton, wake-burst strength and age are separate numeric channels. Nested numeric endpoints interpolate during preview; `null` releases the graphics owner. File import/export and every form edit use the same validator.

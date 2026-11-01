@@ -1,3 +1,5 @@
+import { ARCADE_TICKET_PATH } from "./protocol";
+
 export interface LocalUser {
   id: string;
   name: string;
@@ -18,13 +20,6 @@ export interface LocalSession {
 
 export interface ArcadeTicketResponse {
   ticket: string;
-}
-
-export interface ConvexResult<T = unknown> {
-  status: "success" | "error";
-  value?: T;
-  errorMessage?: string;
-  logLines?: string[];
 }
 
 export class HttpCompatibilityError extends Error {
@@ -66,13 +61,5 @@ export function getSession(): Promise<LocalSession | null> {
 }
 
 export function issueArcadeTicket(signal?: AbortSignal): Promise<ArcadeTicketResponse> {
-  return requestJson<ArcadeTicketResponse>("/api/arcade/ws-ticket", { method: "POST", signal });
-}
-
-export function convexCall<T = unknown>(path: string, args: unknown = {}): Promise<ConvexResult<T>> {
-  return requestJson<ConvexResult<T>>("/api/query", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args }),
-  });
+  return requestJson<ArcadeTicketResponse>(ARCADE_TICKET_PATH, { method: "POST", signal });
 }

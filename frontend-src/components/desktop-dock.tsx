@@ -583,7 +583,6 @@ export function DesktopDock({
 
   const processes = runtime.store((state) => state.processes);
   const windows = runtime.store((state) => state.windows);
-  const windowOrder = runtime.store((state) => state.windowOrder);
   const focusedWindowId = runtime.store((state) => state.focusedWindowId);
   const exclusiveAppId = runtime.store((state) => state.exclusiveAppId);
   const openAppIds = useMemo(

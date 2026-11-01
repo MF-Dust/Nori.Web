@@ -8,20 +8,12 @@ import {
 import { signalStoryTimestamp } from "./signal-story-clock";
 
 export const SIGNAL_DANIEL_THREAD_ID = "daniel";
-export const SIGNAL_DANIEL_UNLOCK_FACT = "signal_daniel.unlocked";
 export const SIGNAL_DANIEL_DEADMAN_FACT = "daniel.deadman.delivered";
 export const SIGNAL_DANIEL_EVIDENCE_FACT = "daniel.evidence_unlocked";
 export const SIGNAL_DANIEL_VERIFY_COMMAND = "signal.daniel.verify";
 export const SIGNAL_DANIEL_REPLY_CUE = "comms-signal-bot-reply";
 export const SIGNAL_DANIEL_SELF_SENDER = "我";
 export const SIGNAL_DANIEL_ASSISTANT_SENDER = "OpenFlaw 助理";
-
-export interface SignalDanielRuntimeVerifyResponse {
-  ok: boolean;
-  result?: {
-    reply?: string[];
-  };
-}
 
 export interface SignalDanielRuntimeOptions {
   manifold: Pick<ManifoldService, "command">;

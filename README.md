@@ -154,7 +154,7 @@ flowchart TD
     worldMgr <--> db
 ```
 
-Rust 工作区分为 `nori-core`（协议、卡带与世界状态）、`nori-local`（axum 本地服务）和 `nori-worker`（workers-rs 边缘适配）。本地和 Cloudflare 均使用 Rust；旧 Python 后端、测试与启动回退已删除，历史实现可从 Git 记录恢复。边缘持久化继续使用同一个 `NoriArcadeSession`，世界与公开 AI 设置以 JSON 字符串存于 `nori:world:v1`、`nori:ai-public:v1`。
+Rust 工作区分为 `nori-core`（协议、卡带与世界状态）、`nori-local`（axum 本地服务）和 `nori-worker`（workers-rs 边缘适配）。本地和 Cloudflare 均使用 Rust。边缘持久化继续使用同一个 `NoriArcadeSession`，世界与公开 AI 设置以 JSON 字符串存于 `nori:world:v1`、`nori:ai-public:v1`。
 
 ---
 
@@ -196,7 +196,7 @@ npm start
 
 ## ☁️ Cloudflare Workers 边缘部署
 
-`wrangler.jsonc` 现在指向 `rust/crates/nori-worker/build/worker/shim.mjs`，构建钩子在 Worker crate 内执行 `worker-build --release`。生产不再使用 `python_workers` 或 pywrangler；旧 Python 运行时只保存在 Git 历史中。
+`wrangler.jsonc` 现在指向 `rust/crates/nori-worker/build/worker/shim.mjs`，构建钩子在 Worker crate 内执行 `worker-build --release`。
 
 ```text
 Browser (观测端)
@@ -249,7 +249,7 @@ python scripts/cloudflare_builds_deploy.py --prepare-only  # 仅准备，不访�
 python scripts/cloudflare_builds_deploy.py                 # 手动生产发布，需认证
 ```
 
-首次 Rust 发布前记录最后一次正常 Python 版本 ID；需要恢复旧运行时时，暂停自动 Builds，在 Dashboard 回滚或执行 `npx wrangler rollback <LAST_PYTHON_VERSION_ID>`。保留 `NORI_ARCADE`/`NoriArcadeSession`、原 `v1` SQLite migration 与 `SECRET_KEY`；JSON 快照键不变，无需存储迁移。回滚不会倒退 DO/R2 数据，修复或撤回迁移后再恢复 Builds。`--legacy-frontend` 只恢复历史前端，不恢复 Python Worker。
+需要回滚时暂停自动 Builds，在 Dashboard 选择早先版本或执行 `npx wrangler rollback <VERSION_ID>`；保留 `NORI_ARCADE`/`NoriArcadeSession`、原 `v1` SQLite migration 与 `SECRET_KEY`。回滚不会倒退 DO/R2 数据，修复合入 `master` 后再恢复 Builds。`--legacy-frontend`（或构建变量 `NORI_DEPLOY_LEGACY_FRONTEND=1`）只把前端切回历史 `public/` 入口。
 
 详细步骤见 [Workers Builds](docs/CLOUDFLARE_BUILDS.md)、[配置清单](docs/CLOUDFLARE_BUILDS_CHECKLIST.md) 和 [R2 归档](docs/CLOUDFLARE_LIVE_PACK.md)。
 

@@ -1,4 +1,4 @@
-/* Recovered source styles. Provenance and ownership: docs/FRONTEND_CSS_RECOVERY.md. */
+/* Recovered source styles: App-specific reset overrides, colors and scrollbars; standard preflight comes from Tailwind. */
 @layer base {
   * {
     border-color: var(--border);

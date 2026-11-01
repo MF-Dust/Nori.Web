@@ -621,38 +621,3 @@ export function createWindowStore(options: WindowStoreOptions): WindowStore {
   store = create<WindowManagerState>()(creator);
   return store;
 }
-
-export function createWindowActionBridge(store: WindowStore) {
-  return {
-    get focusWindow() {
-      return store.getState().focusWindow;
-    },
-    get closeWindow() {
-      return store.getState().closeWindow;
-    },
-    get minimizeWindow() {
-      return store.getState().minimizeWindow;
-    },
-    get snapWindow() {
-      return store.getState().snapWindow;
-    },
-    get toggleMaximize() {
-      return store.getState().toggleMaximize;
-    },
-    get updateWindowPosition() {
-      return store.getState().updateWindowPosition;
-    },
-    get updateWindowRect() {
-      return store.getState().updateWindowRect;
-    },
-    get setWindowTitle() {
-      return store.getState().setWindowTitle;
-    },
-    get navigateScreen() {
-      return store.getState().navigateScreen;
-    },
-    get goBackScreen() {
-      return store.getState().goBackScreen;
-    },
-  };
-}

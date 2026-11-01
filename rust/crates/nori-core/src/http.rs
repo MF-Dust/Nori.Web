@@ -1,7 +1,6 @@
 use crate::auth::{self, MemoryAuth};
-use crate::jsonutil::{now_ms, now_secs, Json};
+use crate::jsonutil::{now_ms, Json};
 use serde_json::{json, Value};
-use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct HttpRequest {
@@ -448,13 +447,4 @@ pub fn python_truthy(value: &Json) -> bool {
         Value::Array(items) => !items.is_empty(),
         Value::Object(map) => !map.is_empty(),
     }
-}
-
-#[allow(dead_code)]
-pub fn empty_map() -> HashMap<String, Json> {
-    HashMap::new()
-}
-
-pub fn now_for_http() -> i64 {
-    now_secs()
 }

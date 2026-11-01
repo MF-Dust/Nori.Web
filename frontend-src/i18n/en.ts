@@ -90,15 +90,6 @@ export default {
     "title": "Browser",
     "unpinTab": "Unpin Tab"
   },
-  "browserWarning": {
-    "body": "The game supports Google Chrome and Microsoft Edge only. 360, QQ, Sogou and similar browsers are built on Chromium, but they can cause black screens, missing audio, or a story that refuses to advance.",
-    "confirmBody": "If something goes wrong, the author cannot diagnose or fix it. Your save may break and you may lose progress.",
-    "confirmContinue": "I accept the risk",
-    "confirmTitle": "Are you sure?",
-    "continueAnyway": "Continue anyway",
-    "goBack": "Use Chrome instead",
-    "title": "Unsupported browser"
-  },
   "cakeduel": {
     "banner": {
       "accepted": "Accepted",
@@ -644,58 +635,6 @@ export default {
     "worldReset": "System reset",
     "worldResetRebooting": "This system was reset in another window. Restarting..."
   },
-  "corruption": {
-    "qte": {
-      "corruptionMeter": "CORRUPTION",
-      "protocolTitle": "A N T I V I R U S",
-      "scanComplete": "S C A N   C O M P L E T E",
-      "sector": {
-        "g1": {
-          "threat": "Residual process",
-          "verb": "Q U A R A N T I N E"
-        },
-        "g2": {
-          "threat": "Parasitic data",
-          "verb": "P U R G E"
-        },
-        "g3": {
-          "threat": "Core contamination",
-          "verb": "C L E A N S E"
-        }
-      },
-      "systemPurified": "S Y S T E M   P U R I F I E D",
-      "threatDetected": "T H R E A T   D E T E C T E D",
-      "threatsCleared": "{{purged}} / {{total}} threats cleared"
-    },
-    "virusDialog": {
-      "body": "An external process is attempting to rewrite the local character render layer. It has masked its location and seized partial control.",
-      "bodyEmphasis": "Quarantine and purge immediately to restore integrity.",
-      "defenseCore": "DEFENSE-CORE",
-      "dismiss": "Ignore",
-      "launchCta": "Purge Now",
-      "scan": {
-        "integrity": {
-          "label": "Integrity",
-          "value": "Degraded — unauthorized displacement detected"
-        },
-        "nodes": {
-          "label": "Infected nodes",
-          "value": "3: expression core / gaze control / depth of field"
-        },
-        "signature": {
-          "label": "Signature"
-        },
-        "source": {
-          "label": "Intrusion source",
-          "value": "localhost: render process (Nori.live2d)"
-        }
-      },
-      "scanComplete": "Scan complete",
-      "threatBadge": "THREAT",
-      "threatCount": "{{found}} / {{total}} threats",
-      "title": "Virus Detected"
-    }
-  },
   "credits": {
     "bilibiliAction": "Open",
     "bilibiliHint": "Devlogs and updates",
@@ -819,12 +758,6 @@ export default {
       "serverCorrupt": "File server corruption detected — only some recovered files are accessible."
     }
   },
-  "graphicsRecovery": {
-    "reload": "Reload",
-    "reloading": "Reloading to recover. Your progress is saved.",
-    "stuck": "Automatic recovery failed. Reload the page.",
-    "title": "Graphics were reset"
-  },
   "idle": {
     "init": {
       "line1": "> Mounting compute core …",
@@ -917,10 +850,6 @@ export default {
     "to": "To",
     "trash": "Trash",
     "unread": "Unread"
-  },
-  "mobile": {
-    "desktopHint": "This game can't run on phones or tablets. Open it on a computer.",
-    "desktopOnly": "Desktop only"
   },
   "multiplayer": {
     "opponent": "Opponent",
@@ -1366,11 +1295,6 @@ export default {
       "title": "Chats",
       "unread": "{{count}} unread"
     }
-  },
-  "softwareRendererWarning": {
-    "body": "Your browser is rendering without the graphics card, so the game will run at a very low frame rate. Turn on hardware acceleration in your browser settings (Settings → System in Chrome and Edge), then restart the browser. If it is already on, updating your graphics driver usually fixes this.",
-    "continueAnyway": "Continue anyway",
-    "title": "Hardware acceleration is off"
   },
   "terminal": {
     "cat": {

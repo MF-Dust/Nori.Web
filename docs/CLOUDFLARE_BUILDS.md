@@ -2,9 +2,7 @@
 
 The `master` branch deploys the Rust workers-rs Worker in
 `rust/crates/nori-worker` through Cloudflare's GitHub integration.
-`wrangler.jsonc` is the production configuration; the Python backend and old
-Worker sources remain in the repository until the next migration phase, but are
-not bundled or executed by this deployment.
+`wrangler.jsonc` is the production configuration.
 
 ## Build and deploy flow
 
@@ -132,28 +130,18 @@ python scripts/cloudflare_builds_deploy.py --force-live-pack
 
 ## Storage compatibility and rollback
 
-The Rust Worker exports the same `NoriArcadeSession` class and keeps the existing
-`v1` migration's `new_sqlite_classes` unchanged. **Do not add a migration or
-create a new namespace for this runtime switch.** World snapshots remain JSON
-strings under `nori:world:v1`; sanitized, key-free AI settings remain JSON
-strings under `nori:ai-public:v1`. The private R2 shard layout also stays the
-same, so the previous Python Worker can read the retained storage.
+The Worker exports `NoriArcadeSession` under the existing `v1` migration
+(`new_sqlite_classes`). **Do not add a migration or create a new namespace.**
+World snapshots are JSON strings under `nori:world:v1`; sanitized, key-free AI
+settings are JSON strings under `nori:ai-public:v1`.
 
-Before the first Rust production deployment, record the last working Python
-version ID in **Deployments** (or `npx wrangler versions list`). If the runtime
-must be reverted, pause automatic Builds and select that Python version in the
-Dashboard rollback action, or run:
+To revert a bad deployment, pause automatic Builds and pick an earlier version in
+**Deployments** (or `npx wrangler versions list`, then
+`npx wrangler rollback <VERSION_ID>`). Rollback restores code and frontend, not
+DO/R2 data. Leave bindings, the `v1` migration and `SECRET_KEY` unchanged, and
+resume Builds only after the fix lands on `master`.
 
-```bash
-npx wrangler rollback <LAST_PYTHON_VERSION_ID> --message "Restore last Python Worker"
-```
-
-Rollback restores that deployed version and its frontend, not historical DO/R2
-data. Leave bindings, the `v1` migration, and `SECRET_KEY` unchanged; no storage
-conversion is needed. Resume Builds after fixing or reverting the Rust cutover,
-otherwise the next `master` build will deploy Rust again.
-
-For a **frontend-only** emergency rollback while retaining Rust, use
-`--legacy-frontend`, or temporarily set the Build variable
-`NORI_DEPLOY_LEGACY_FRONTEND=1`. This serves `public/`; it does **not** restore the
-Python runtime. Remove the variable after recovery.
+For a **frontend-only** emergency rollback, use `--legacy-frontend` or
+temporarily set the Build variable `NORI_DEPLOY_LEGACY_FRONTEND=1`. This serves
+the historical `public/` entry with the current Worker. Remove the variable after
+recovery.

@@ -6,7 +6,6 @@
 //! requesting socket, then start the follow-up `tasks`.
 
 use crate::cartridge::{self, Cartridge, Commit, DispatchError};
-use crate::cartridges::chat;
 use crate::jsonutil::{now_ms, token_urlsafe, uuid4, Json};
 use crate::live_pack::LivePack;
 use crate::media::fallback_frames;
@@ -843,12 +842,6 @@ impl World {
         }
         self.dispatch_internal("pictionary", "agent", &tasks::pictionary_command())
             .map(|(_, m)| m)
-            .unwrap_or_default()
-    }
-
-    pub fn chat_history(&self) -> Vec<Json> {
-        self.cartridge("chat")
-            .map(|c| chat::history(&c.state))
             .unwrap_or_default()
     }
 }

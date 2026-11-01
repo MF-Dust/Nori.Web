@@ -220,14 +220,6 @@ pub fn agent_guess(state: &Json, round_id: &str, tried: &[String], at_ms: i64) -
     Some(json!({"type": "submitGuess", "text": word, "atMs": at_ms}))
 }
 
-pub fn needs_next_round(state: &Json) -> bool {
-    state.pointer("/gameState/phase").and_then(Value::as_str) == Some("PLAYING")
-        && state
-            .pointer("/gameState/round/status")
-            .and_then(Value::as_str)
-            != Some("active")
-}
-
 pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, CommandRejected> {
     let command_type = cmd.get("type").and_then(Value::as_str).unwrap_or("");
     let mut state = state.clone();

@@ -15,17 +15,3 @@ export async function loadMarginalGrowthCache(shape: string): Promise<MarginalGr
   const buffer = await new Response(decompressed).arrayBuffer();
   return decodeMarginalGrowthCache(buffer);
 }
-
-/**
- * Gunzip a cache payload with the global `DecompressionStream`, then decode it.
- * Node tests that already inflated with `zlib` should call `decodeMarginalGrowthCache` directly.
- */
-export async function decodeGzippedMarginalGrowthCache(
-  bytes: Uint8Array,
-): Promise<MarginalGrowthCache> {
-  const payload = new Uint8Array(bytes.byteLength);
-  payload.set(bytes);
-  const decompressed = new Blob([payload]).stream().pipeThrough(new DecompressionStream("gzip"));
-  const buffer = await new Response(decompressed).arrayBuffer();
-  return decodeMarginalGrowthCache(buffer);
-}

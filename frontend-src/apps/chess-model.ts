@@ -1,6 +1,6 @@
 import tutorialSteps from "../../shared/chess-tutorial.json";
 import { Chess, type Square } from "chess.js";
-import { CHESS_START_FEN, type ChessHistoryMove, type ChessSide } from "./chess-schema";
+import type { ChessHistoryMove, ChessSide } from "./chess-schema";
 
 export {
   CHESS_START_FEN,

@@ -3,7 +3,6 @@ import type {
   WindowBounds,
   WindowGeometryConfig,
   WindowLayerConfig,
-  WindowManagerState,
   WindowRect,
   WindowSnap,
 } from "./window-types";
@@ -129,32 +128,4 @@ export function minimizeWindowSet(
         : { ...window, minimized: true };
   }
   return next;
-}
-
-export function isWindowFullyCovered(
-  state: Pick<WindowManagerState, "windows" | "exclusiveWindowId">,
-  instanceId: string,
-): boolean {
-  const target = state.windows[instanceId];
-  if (!target || target.minimized || instanceId === state.exclusiveWindowId) return false;
-
-  for (const window of Object.values(state.windows)) {
-    if (
-      window.instanceId === instanceId ||
-      window.minimized ||
-      window.instanceId === state.exclusiveWindowId ||
-      window.zIndex <= target.zIndex
-    ) {
-      continue;
-    }
-    if (
-      window.x <= target.x &&
-      window.y <= target.y &&
-      window.x + window.width >= target.x + target.width &&
-      window.y + window.height >= target.y + target.height
-    ) {
-      return true;
-    }
-  }
-  return false;
 }

@@ -81,16 +81,8 @@ pub fn obj(value: &Value) -> Option<&Map<String, Value>> {
     value.as_object()
 }
 
-pub fn obj_mut(value: &mut Value) -> Option<&mut Map<String, Value>> {
-    value.as_object_mut()
-}
-
 pub fn get<'a>(value: &'a Value, key: &str) -> Option<&'a Value> {
     value.get(key)
-}
-
-pub fn get_str<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
-    value.get(key).and_then(Value::as_str)
 }
 
 /// Python `json.dumps(..., sort_keys=True, separators=(",", ":"), ensure_ascii=False)`.

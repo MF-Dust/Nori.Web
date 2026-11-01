@@ -159,12 +159,6 @@ const RELATION_RANK: Readonly<Record<IdleFactionRelation, number>> = {
   alliance: 3,
 };
 
-const RELATION_MARKERS: Readonly<Record<number, string>> = {
-  1: "treaty",
-  2: "pact",
-  3: "alliance",
-};
-
 const STANDARD_MARKER_COST: Readonly<Record<number, number>> = { 1: 20, 2: 100, 3: 500 };
 const NEUTRAL_MARKER_COST: Readonly<Record<number, number>> = { 1: 250, 2: 1_000, 3: 4_000 };
 
