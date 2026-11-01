@@ -175,17 +175,17 @@ cd Nori.Web
 
 ### 2. 启动本地离线服务
 
-```bash
-# 编译并启动 Rust 本地服务（首次编译需要几分钟）
-cargo run --release -p nori-local --manifest-path rust/Cargo.toml
+需要 Node.js 18+ 与 Rust（最低 1.98）。
 
-# 或
+```bash
+# 前端有改动时重新构建，然后编译并启动 Rust 本地服务（首次编译需要几分钟）
+npm ci
 npm start
 ```
 
-> **Windows 便捷启动**：直接双击根目录下的 `start.bat`（优先使用同目录的 `Nori.Web.exe`，否则用 cargo 编译运行）。从源码运行且装有 Node.js 时，脚本会在 `frontend-src/` 有改动时重新构建源码前端，并以与 Cloudflare 部署相同的候选站点（`.artifacts/build/app/cutover-candidate`）作为 `NORI_PUBLIC_DIR`；设置 `NORI_LEGACY_FRONTEND=1` 可改回历史入口 `public/index.html`。`npm start` 仍直接托管 `public/`。
+> **Windows 便捷启动**：直接双击根目录下的 `start.bat`（优先使用同目录的 `Nori.Web.exe`，否则用 cargo 编译运行）。从源码运行时，脚本会在 `frontend-src/` 有改动时重新构建前端。
 
-常用环境变量：`HOST`（默认 `127.0.0.1`）、`PORT`（默认 `4173`）、`SECRET_KEY`（留空时每次启动随机生成）、`NORI_DISABLE_LIVE_PACK=1`（不加载线上世界归档）、`NORI_PUBLIC_DIR` / `NORI_DATA_DIR`（覆盖 `public/` 与 `backend/data/` 位置）。
+本地服务把前端构建产物（`.artifacts/build/app`；发行包中为 `frontend/`）叠加在 `public/` 静态素材之上提供，见 [前端构建与站点](docs/FRONTEND_SITE.md)。常用环境变量：`HOST`（默认 `127.0.0.1`）、`PORT`（默认 `4173`）、`SECRET_KEY`（留空时每次启动随机生成）、`NORI_DISABLE_LIVE_PACK=1`（不加载线上世界归档）、`NORI_FRONTEND_DIR` / `NORI_PUBLIC_DIR` / `NORI_DATA_DIR`（覆盖前端构建、`public/` 与 `backend/data/` 位置）。
 
 启动成功后，在浏览器中访问：👉 **<http://127.0.0.1:4173>**
 
@@ -215,6 +215,7 @@ npm ci  # 安装精确锁定的 Wrangler 4.147.0
 rustup target add wasm32-unknown-unknown
 cargo install worker-build --version 0.8.7 --locked
 cargo test --locked -p nori-core -p nori-worker --manifest-path rust/Cargo.toml
+npm run frontend:app:build && npm run frontend:site -- --materialize  # wrangler.jsonc 的 Assets 目录
 npx wrangler deploy --dry-run --config wrangler.jsonc --outdir tmp/wrangler-dry-run
 npx wrangler dev --config wrangler.jsonc --local --port 8790 --var SECRET_KEY:x
 ```
@@ -225,7 +226,7 @@ npx wrangler dev --config wrangler.jsonc --local --port 8790 --var SECRET_KEY:x
 NORI_SMOKE_URL=http://127.0.0.1:8790 node rust/crates/nori-worker/tests/smoke.mjs
 ```
 
-根配置在本地使用历史 `public/` 前端；生产包装脚本改用构建后的源码候选前端。本地 R2 无归档时会回退到演示数据。
+本地 R2 无归档时会回退到演示数据。
 
 ### 2. 配置部署密钥
 
@@ -242,18 +243,18 @@ npx wrangler secret put OPENAI_API_KEY  # 可选
 
 Cloudflare Dashboard 的 **Settings > Build**：生产分支 `master`、仓库根目录、Build command 留空、Deploy command 设为 `python scripts/cloudflare_builds_deploy.py`，启用缓存、禁用非生产分支构建，构建变量设 `SKIP_DEPENDENCY_INSTALL=1`，移除旧 `PYTHON_VERSION`。域名与路由继续由 Dashboard 管理（`workers_dev=false`，配置不声明 routes）。
 
-Workers Builds 镜像没有 Rust；包装脚本按需非交互安装 Rust 1.98.0（并以 `RUSTUP_TOOLCHAIN` 固定使用）、WASM 目标及 worker-build 0.8.7，并把 `~/.cargo/bin` 加入 PATH。冷安装/编译需额外数分钟。随后构建源码前端、按指纹同步私有 R2 分片，最后用锁定 Wrangler 部署候选配置（`CI=true`，无 `--yes`）。
+Workers Builds 镜像没有 Rust；包装脚本按需非交互安装 Rust 1.98.0（并以 `RUSTUP_TOOLCHAIN` 固定使用）、WASM 目标及 worker-build 0.8.7，并把 `~/.cargo/bin` 加入 PATH。冷安装/编译需额外数分钟。随后构建并暂存前端站点（`.artifacts/build/site`）、按指纹同步私有 R2 分片，最后用锁定 Wrangler 部署（`CI=true`，无 `--yes`）。
 
 ```bash
 python scripts/cloudflare_builds_deploy.py --prepare-only  # 仅准备，不访问 Cloudflare
 python scripts/cloudflare_builds_deploy.py                 # 手动生产发布，需认证
 ```
 
-需要回滚时暂停自动 Builds，在 Dashboard 选择早先版本或执行 `npx wrangler rollback <VERSION_ID>`；保留 `NORI_ARCADE`/`NoriArcadeSession`、原 `v1` SQLite migration 与 `SECRET_KEY`。回滚不会倒退 DO/R2 数据，修复合入 `master` 后再恢复 Builds。`--legacy-frontend`（或构建变量 `NORI_DEPLOY_LEGACY_FRONTEND=1`）只把前端切回历史 `public/` 入口。
+需要回滚时暂停自动 Builds，在 Dashboard 选择早先版本或执行 `npx wrangler rollback <VERSION_ID>`；保留 `NORI_ARCADE`/`NoriArcadeSession`、原 `v1` SQLite migration 与 `SECRET_KEY`。回滚不会倒退 DO/R2 数据，修复合入 `master` 后再恢复 Builds。
 
 详细步骤见 [Workers Builds](docs/CLOUDFLARE_BUILDS.md)、[配置清单](docs/CLOUDFLARE_BUILDS_CHECKLIST.md) 和 [R2 归档](docs/CLOUDFLARE_LIVE_PACK.md)。
 
-> 提示：`NORI_DISABLE_LIVE_PACK=0` 允许加载世界归档；设置为 `1` 仅关闭归档加载，不会删除静态素材、Live2D 或历史前端代码，不能视为版权意义上的“纯净版”。
+> 提示：`NORI_DISABLE_LIVE_PACK=0` 允许加载世界归档；设置为 `1` 仅关闭归档加载，不会删除静态素材、Live2D 或源自原站的前端实现，不能视为版权意义上的“纯净版”。
 
 ---
 
@@ -332,8 +333,8 @@ Nori.Web/
 ├── rust/                     # Rust 工作区：nori-core / nori-local / nori-worker
 ├── backend/data/             # 保留的数据：词库、事实链与 live_world_pack.json
 ├── docs/                     # 逆向协议规范与系统恢复文档
-├── frontend-src/             # 恢复与重构维护的前端源码层（第三方权利仍需核对）
-├── public/                   # 前端静态资源 (Live2D 模型、音效、UI 资源与脚本)
+├── frontend-src/             # 前端源码（Vite + React；第三方权利仍需核对）
+├── public/                   # 静态资源 (Live2D 模型、音效、字体、图标、设置脚本与法律页面)
 ├── tests/                    # 前端、浏览器及构建/部署辅助脚本测试
 ├── scripts/                  # Rust 发行构建、部署及验证辅助脚本
 ├── wrangler.jsonc            # Rust Cloudflare Worker / 绑定 / 构建配置
@@ -361,9 +362,9 @@ Nori.Web/
 
 ## ⚠️ 免责声明与边界
 
-**代码许可与素材权利分别处理**：维护者有权授权的自有代码采用 [GPL-3.0-or-later](LICENSE)，具体范围及排除项见 [COPYRIGHT.md](COPYRIGHT.md)。字体、开源依赖、Live2D 及历史前端说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。GPL 声明不意味着原站代码、角色、剧情和素材已经获准再分发。
+**代码许可与素材权利分别处理**：维护者有权授权的自有代码采用 [GPL-3.0-or-later](LICENSE)，具体范围及排除项见 [COPYRIGHT.md](COPYRIGHT.md)。字体、开源依赖与 Live2D 说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。GPL 声明不意味着原站代码、角色、剧情和素材已经获准再分发。
 
-**桌面包交付**：Rust 发行目录包含 `source/`（构建源码和精确版本的 Rust 依赖源码）、`legal/licenses/`、`RUST-LICENSE-SUMMARY.txt` 与网页可访问的 `/legal/index.html`。`source/project.zip` 与随包的 `public/`、`backend/data/` 共同提供完整源码，运行资源只保存一份；还原步骤见包内 `source/README.md`，分发时保留整个发行目录。构建及再分发要求见 [docs/LOCAL_RELEASE.md](docs/LOCAL_RELEASE.md)。
+**桌面包交付**：Rust 发行目录包含 `source/`（构建源码和精确版本的 Rust 依赖源码）、`legal/licenses/`、`RUST-LICENSE-SUMMARY.txt` 与网页可访问的 `/legal/index.html`。`source/project.zip` 与随包的 `public/`、`backend/data/` 共同提供完整源码，运行资源只保存一份；`frontend/` 是由 `frontend-src/` 构建的前端；还原步骤见包内 `source/README.md`，分发时保留整个发行目录。构建及再分发要求见 [docs/LOCAL_RELEASE.md](docs/LOCAL_RELEASE.md)。
 
 0. **数据版权说明**：本仓库包含用于个人离线研究与技术复现的世界存档快照（`backend/data/live_world_pack.json` 及 `public/webAssets/**`），相关剧情文本与美术素材权利归各自权利人所有；公开部署或二次分发前须确认许可，或移除/替换无授权的内容。“个人研究”声明与禁用归档开关都不能替代授权。
 1. **独立实现范畴**：本项目为社区基于公开前端资产与网络逆向协议重构的开源实现，**不包含、不代理、亦不绕过**原官方私有云端特权或未公开数据库。

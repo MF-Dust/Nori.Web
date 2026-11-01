@@ -87,11 +87,9 @@ async fn main_socket(
         Ok(user_id) => user_id,
         Err(response) => return response,
     };
-    // The historical client stores its story/archive choice in a cookie.
-    let story = auth::story_preference(header_text(&headers, header::COOKIE).unwrap_or(""));
     upgrade
         .protocols(["arcade.v1"])
-        .on_upgrade(move |socket| run_main(ctx, socket, user_id, story))
+        .on_upgrade(move |socket| run_main(ctx, socket, user_id))
 }
 
 async fn media_socket(
@@ -145,7 +143,7 @@ fn close(tx: &Outgoing, code: u16, reason: &str) {
     })));
 }
 
-async fn run_main(ctx: Arc<WsContext>, socket: WebSocket, user_id: String, story: Option<bool>) {
+async fn run_main(ctx: Arc<WsContext>, socket: WebSocket, user_id: String) {
     let (mut stream, tx) = writer(socket);
     let slot = ctx.registry.slot(&user_id);
     let socket_id = ctx.registry.socket_id();
@@ -160,7 +158,7 @@ async fn run_main(ctx: Arc<WsContext>, socket: WebSocket, user_id: String, story
             }
             _ => continue,
         };
-        let (message, secrets) = match session::prepare(raw.as_str(), story) {
+        let (message, secrets) = match session::prepare(raw.as_str()) {
             Ok(prepared) => prepared,
             Err(reply) => {
                 send_json(&tx, &reply);

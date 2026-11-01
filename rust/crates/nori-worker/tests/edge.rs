@@ -104,7 +104,6 @@ impl Fake {
             } else {
                 "/api/arcade/web/v1"
             },
-            "",
         );
         let mut value: Value = serde_json::from_str(&value).unwrap();
         value["role"] = json!(role);
@@ -453,16 +452,11 @@ fn glb_get_head_missing_and_method_headers() {
 }
 #[test]
 fn attachment_is_a_json_string_and_legacy_keys_scrub_on_ping() {
-    let json = attachment::new(
-        "user",
-        "random",
-        "/api/arcade/web/v1/media",
-        "nori_full_unlock=0",
-    );
+    let json = attachment::new("user", "random", "/api/arcade/web/v1/media");
     let value: Value = serde_json::from_str(&json).unwrap();
     assert_eq!(
         value,
-        json!({"version":1,"socketId":"random","userId":"user","role":"pending_media","fullUnlock":false})
+        json!({"version":1,"socketId":"random","userId":"user","role":"pending_media"})
     );
     for legacy_object in [false, true] {
         let (fake, isolate, object) = setup();
@@ -717,17 +711,14 @@ fn public_ai_config_is_canonical_and_contains_no_key_event_or_dispatch() {
     }
 }
 #[test]
-fn story_cookie_defaults_are_applied_and_reset_forces_persistence() {
+fn story_choice_persists_and_reset_forces_persistence() {
     let (fake, isolate, object) = setup();
-    let mut saved = fake.saved(1);
-    saved["fullUnlock"] = json!(false);
-    fake.set_attachment(&1, &saved.to_string()).unwrap();
     send(
         &object,
         &fake,
         &isolate,
         1,
-        json!({"type":"open_my_web_world"}),
+        json!({"type":"open_my_web_world","fullUnlock":false}),
     );
     let id = object.world_id().unwrap();
     let stored: Value =
@@ -738,7 +729,7 @@ fn story_cookie_defaults_are_applied_and_reset_forces_persistence() {
         &fake,
         &isolate,
         1,
-        json!({"type":"reset_my_web_world"}),
+        json!({"type":"reset_my_web_world","fullUnlock":false}),
     );
     assert_ne!(object.world_id().unwrap(), id);
     assert_eq!(fake.world_puts(), 2);

@@ -318,9 +318,8 @@ impl SessionObject {
             return Ok(()); // No settings, per-frame R2 prefetch, tasks or snapshot.
         }
         isolate.loader.prefetch(host, &isolate.pack, &decoded).await;
-        let preference = saved.get("fullUnlock").and_then(Value::as_bool);
         let (message, secrets) =
-            session::prepare(raw, preference).map_err(|_| "prepared decoded frame failed")?;
+            session::prepare(raw).map_err(|_| "prepared decoded frame failed")?;
         let public = if message.get("type").and_then(Value::as_str) == Some("event")
             && message.get("channel").and_then(Value::as_str) == Some("nori.ai.config")
         {

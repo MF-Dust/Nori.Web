@@ -10,12 +10,12 @@ async fn gzip_etag_range_and_bootstrap_asset_delivery() {
     std::fs::create_dir_all(public.path().join("audio/sfx")).unwrap();
     std::fs::write(public.path().join("index.html"), b"<html>index</html>").unwrap();
     std::fs::write(
-        public.path().join("assets/NormalApp-Cn6agT0F.js"),
+        public.path().join("assets/app-Cn6agT0F.js"),
         vec![b'j'; 12_000],
     )
     .unwrap();
     std::fs::write(
-        public.path().join("assets/index-FU-0vwSE.css"),
+        public.path().join("assets/index-FU0vwSEx.css"),
         vec![b'c'; 2_000],
     )
     .unwrap();
@@ -34,8 +34,8 @@ async fn gzip_etag_range_and_bootstrap_asset_delivery() {
     let client = Client::builder().no_gzip().no_deflate().build().unwrap();
 
     for path in [
-        "/assets/NormalApp-Cn6agT0F.js",
-        "/assets/index-FU-0vwSE.css",
+        "/assets/app-Cn6agT0F.js",
+        "/assets/index-FU0vwSEx.css",
     ] {
         let response = client
             .get(format!("{}{path}", server.base))

@@ -13,6 +13,10 @@ pub struct Config {
     pub dev_otp: String,
     pub disable_live_pack: bool,
     pub public_dir: PathBuf,
+    /// Built source frontend (`index.html` + hashed bundles), layered over
+    /// `public_dir`. A release ships it as `frontend/`; a source checkout uses
+    /// the Vite output in `.artifacts/build/app`.
+    pub frontend_dir: Option<PathBuf>,
     pub data_dir: PathBuf,
 }
 
@@ -32,6 +36,7 @@ impl Default for Config {
             dev_otp: String::new(),
             disable_live_pack: false,
             public_dir: default_dir("public", &cwd, exe_dir.as_deref()),
+            frontend_dir: default_frontend_dir(&cwd, exe_dir.as_deref()),
             data_dir: default_dir("backend/data", &cwd, exe_dir.as_deref()),
         }
     }
@@ -77,6 +82,11 @@ impl Config {
                 config.public_dir = resolve_override(&value);
             }
         }
+        if let Ok(value) = env::var("NORI_FRONTEND_DIR") {
+            if !value.trim().is_empty() {
+                config.frontend_dir = Some(resolve_override(&value));
+            }
+        }
         if let Ok(value) = env::var("NORI_DATA_DIR") {
             if !value.trim().is_empty() {
                 config.data_dir = resolve_override(&value);
@@ -107,6 +117,16 @@ fn default_dir(relative: &str, cwd: &Path, exe_dir: Option<&Path>) -> PathBuf {
     cwd.join(relative)
 }
 
+const FRONTEND_DIRS: [&str; 2] = ["frontend", ".artifacts/build/app"];
+
+fn default_frontend_dir(cwd: &Path, exe_dir: Option<&Path>) -> Option<PathBuf> {
+    exe_dir
+        .into_iter()
+        .chain([cwd])
+        .flat_map(|base| FRONTEND_DIRS.map(|relative| base.join(relative)))
+        .find(|path| path.join("index.html").is_file())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,5 +135,23 @@ mod tests {
     fn default_paths_are_resolved_from_cwd_when_not_next_to_executable() {
         let cwd = PathBuf::from("working");
         assert_eq!(default_dir("public", &cwd, None), cwd.join("public"));
+    }
+
+    #[test]
+    fn frontend_build_is_found_next_to_the_executable_before_the_checkout() {
+        let base = env::temp_dir().join(format!("nori-frontend-dir-{}", std::process::id()));
+        let (exe, cwd) = (base.join("release"), base.join("checkout"));
+        assert_eq!(default_frontend_dir(&cwd, Some(&exe)), None);
+        let checkout_build = cwd.join(".artifacts/build/app");
+        std::fs::create_dir_all(&checkout_build).unwrap();
+        std::fs::write(checkout_build.join("index.html"), "checkout").unwrap();
+        assert_eq!(default_frontend_dir(&cwd, Some(&exe)), Some(checkout_build));
+        std::fs::create_dir_all(exe.join("frontend")).unwrap();
+        std::fs::write(exe.join("frontend/index.html"), "release").unwrap();
+        assert_eq!(
+            default_frontend_dir(&cwd, Some(&exe)),
+            Some(exe.join("frontend"))
+        );
+        std::fs::remove_dir_all(base).unwrap();
     }
 }

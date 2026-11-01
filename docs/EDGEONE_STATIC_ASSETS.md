@@ -38,12 +38,12 @@ npm run assets:edgeone
 
 ```sh
 NORI_STATIC_ORIGIN=https://static.example.com npm run frontend:app:build
-npm run frontend:cutover:candidate
+npm run frontend:site -- --materialize
 ```
 
 Cloudflare 自动构建时，将 `NORI_STATIC_ORIGIN` 设置在其构建环境中。只接受 HTTP(S) origin，不接受路径、账号密码、查询参数或 fragment；生产部署使用 HTTPS。
 
-配置同时作用于 HTML 中的字体预加载、字体 CSS、Cubism 脚本，以及前端模型入口、海洋贴图和首屏下载器。模型内部文件继续由引擎相对于模型目录解析。第三方字体 CSS 请求已移除；CSS 中重复的本地字体定义也已移除，统一由 `fonts.css` 提供。源码发布候选目录会保留完整字体镜像，以支持无 EO 配置的同源部署。
+配置同时作用于 HTML 中的字体预加载、字体 CSS、Cubism 脚本，以及前端模型入口、海洋贴图和首屏下载器。模型内部文件继续由引擎相对于模型目录解析。第三方字体 CSS 请求已移除；CSS 中重复的本地字体定义也已移除，统一由 `fonts.css` 提供。部署站点（`.artifacts/build/site`）会保留完整字体镜像，以支持无 EO 配置的同源部署。
 
 首屏清单 `/asset-manifest.json` 仍来自主站。下载器跨域请求不带 `x-asset-loader`，仍按流式字节数显示真实进度、重试和写入 Cache Storage。缓存记录使用完整的远程 URL，避免切换域名后复用错误来源；Service Worker 只缓存配置来源下的指定目录，跳过首屏的 `no-store` 下载。浏览器不支持/禁止 Service Worker 时仍可加载，重复访问主要依赖 HTTP 缓存。
 

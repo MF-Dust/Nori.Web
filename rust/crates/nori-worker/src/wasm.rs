@@ -355,7 +355,6 @@ impl DurableObject for NoriArcadeSession {
             &user,
             &nori_core::jsonutil::token_urlsafe(12),
             &meta.http.path,
-            meta.header("cookie").unwrap_or(""),
         );
         pair.server.serialize_attachment(json)?; // String, deliberately NOT Value.
         self.host

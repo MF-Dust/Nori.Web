@@ -128,7 +128,7 @@ def main() -> None:
         {"tag": "v1", "new_sqlite_classes": ["NoriArcadeSession"]},
     ]
     assert config["assets"] == {
-        "directory": "./public", "binding": "ASSETS",
+        "directory": "./.artifacts/build/site", "binding": "ASSETS",
         "not_found_handling": "single-page-application",
         "run_worker_first": ["/api/*", "/datasea/cosmicweb.min.glb"],
     }
@@ -166,56 +166,46 @@ def main() -> None:
 
     # Deployment is non-interactive without the unsupported --yes switch.
     with patch.object(module, "_run") as run:
-        module.deploy_worker(["npx", "wrangler"], config=ROOT / ".wrangler-candidate.json")
+        module.deploy_worker(["npx", "wrangler"])
         command = run.call_args.args[0]
-        assert command == ["npx", "wrangler", "deploy", "--config", ".wrangler-candidate.json"]
+        assert command == ["npx", "wrangler", "deploy"]
         assert "--yes" not in command
         assert run.call_args.kwargs["env"]["CI"] == "true"
 
     verify_rust_toolchain()
     verify_toolchain_pin()
 
-    # Frontend preparation retains locked dependencies and root-local config output.
+    # Frontend preparation uses locked dependencies and stages the Wrangler Assets directory.
+    assert (ROOT / config["assets"]["directory"]) == module.FRONTEND_SITE_INDEX.parent
     with TemporaryDirectory(prefix="nori-frontend-deploy-test-") as temp:
-        root = Path(temp)
-        candidate_index = root / "candidate" / "index.html"
-        candidate_index.parent.mkdir(parents=True)
-        candidate_index.write_text("source", encoding="utf-8")
-        frontend_config = root / ".wrangler-candidate.json"
-        frontend_config.write_text("{}", encoding="utf-8")
-        with patch.object(module, "FRONTEND_CANDIDATE_INDEX", candidate_index), patch.object(
-            module, "FRONTEND_CONFIG", frontend_config,
-        ), patch.object(module.shutil, "which", side_effect=lambda name: f"/tools/{name}"), patch.object(
-            module, "_run",
-        ) as run:
-            assert module.prepare_source_frontend() == frontend_config
+        site_index = Path(temp) / "site" / "index.html"
+        site_index.parent.mkdir(parents=True)
+        site_index.write_text("source", encoding="utf-8")
+        with patch.object(module, "FRONTEND_SITE_INDEX", site_index), patch.object(
+            module.shutil, "which", side_effect=lambda name: f"/tools/{name}",
+        ), patch.object(module, "_run") as run:
+            assert module.prepare_source_frontend() == site_index.parent
             assert [call.args[0] for call in run.call_args_list] == [
                 ["/tools/npm", "ci", "--no-audit", "--no-fund"],
                 ["/tools/npm", "run", "frontend:app:build"],
-                ["/tools/node", str(module.FRONTEND_CANDIDATE_TOOL), "--materialize"],
-                ["/tools/node", str(module.FRONTEND_CONFIG_TOOL)],
+                ["/tools/node", str(module.FRONTEND_SITE_TOOL), "--materialize"],
             ]
 
     # Deploy builds once through Wrangler; prepare-only builds without R2/deploy.
-    # Legacy frontend still installs local Wrangler and deploys the Rust Worker.
     for switches, expected in [
-        ([], ["frontend", "toolchain", "sync", ("deploy", ROOT / ".wrangler-candidate.json")]),
-        (["--skip-live-pack"], ["frontend", "toolchain", ("deploy", ROOT / ".wrangler-candidate.json")]),
+        ([], ["frontend", "toolchain", "sync", "deploy"]),
+        (["--skip-live-pack"], ["frontend", "toolchain", "deploy"]),
         (["--prepare-only"], ["frontend", "toolchain", "runtime"]),
-        (["--skip-live-pack", "--legacy-frontend"], ["npm-ci", "toolchain", ("deploy", None)]),
     ]:
         events: list[object] = []
 
-        def deploy(base, **kwargs):
+        def deploy(base):
             assert base == ["npx", "wrangler"]
-            events.append(("deploy", kwargs.get("config")))
+            events.append("deploy")
 
-        with patch.object(sys, "argv", ["cloudflare_builds_deploy.py", *switches]), patch.dict(
-            os.environ, {"NORI_DEPLOY_LEGACY_FRONTEND": "0"},
-        ), patch.multiple(
+        with patch.object(sys, "argv", ["cloudflare_builds_deploy.py", *switches]), patch.multiple(
             module,
-            prepare_source_frontend=lambda: events.append("frontend") or (ROOT / ".wrangler-candidate.json"),
-            install_node_dependencies=lambda: events.append("npm-ci"),
+            prepare_source_frontend=lambda: events.append("frontend"),
             ensure_rust_toolchain=lambda: events.append("toolchain"),
             prepare_runtime=lambda: events.append("runtime"),
             wrangler_command=lambda: ["npx", "wrangler"],
@@ -225,7 +215,7 @@ def main() -> None:
             module.main()
             assert events == expected, (events, expected)
 
-    print("[ok] Rust bootstrap, source frontend, frontend rollback, R2 fingerprint, routing, bindings, migration, and CI deploy mode")
+    print("[ok] Rust bootstrap, source frontend site, R2 fingerprint, routing, bindings, migration, and CI deploy mode")
 
 
 if __name__ == "__main__":

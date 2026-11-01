@@ -1,19 +1,27 @@
-// Browser-level smoke test: the restored public frontend reaches the local
-// ticket endpoint and opens both verified Arcade sockets without page errors.
+// Browser-level smoke test: the built frontend, served by nori-local over
+// public/, reaches the local ticket endpoint and opens both verified Arcade
+// sockets without page errors.
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { chromium } from "playwright";
 import { startBackend } from "../scripts/lib/backend_launch.mjs";
+import { probeLaunchOptions } from "../scripts/lib/probe_launch.mjs";
 
+const frontendDir = execFileSync(process.execPath, ["scripts/local/prepare_source_frontend.mjs", "--if-stale"], {
+  encoding: "utf8",
+  stdio: ["ignore", "pipe", "inherit"],
+}).trim().split("\n").at(-1);
 const port = Number(process.env.NORI_E2E_PORT || 4183);
 const base = `http://127.0.0.1:${port}`;
 const server = await startBackend({
   port,
+  frontendDir,
   stdio: "ignore",
   readyTimeoutMs: 10_000,
 });
 let browser;
 try {
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch(probeLaunchOptions());
   const context = await browser.newContext();
   const page = await context.newPage();
   const errors = [];
@@ -36,8 +44,6 @@ try {
   assert.match(await legalPage.title(), /非官方/);
   assert.equal((await legalPage.request.get(`${base}/legal/LICENSE`)).ok(), true);
   await legalPage.close();
-  const bypass = page.getByText("仍要进入");
-  if (await bypass.count()) await bypass.click();
   await page.waitForFunction(
     () => performance.getEntriesByType("resource").some((entry) => entry.name.includes("/api/arcade/ws-ticket")),
     undefined,
@@ -48,10 +54,9 @@ try {
   while (Date.now() < deadline && !(opened("/api/arcade/web/v1") && opened("/api/arcade/web/v1/media"))) {
     await page.waitForTimeout(100);
   }
-  // Exercise the shipped auth plugin's credentials: omit through the shim,
-  // then verify a normal cookie-based ticket request uses the same principal.
+  // The cookie-based session and the ticket must name the same principal.
   const sessionFor = (target) => target.evaluate(async () => {
-    const response = await fetch("/api/auth/get-session", { credentials: "omit" });
+    const response = await fetch("/api/auth/get-session");
     return response.json();
   });
   const ticketUserFor = (target) => target.evaluate(async () => {
@@ -77,7 +82,7 @@ try {
   if (!sockets.some((url) => url.endsWith("/api/arcade/web/v1"))) throw new Error("Main Arcade socket did not open");
   if (!sockets.some((url) => url.endsWith("/api/arcade/web/v1/media"))) throw new Error("Media Arcade socket did not open");
   if (errors.length) throw new Error(`Browser errors: ${errors.join(" | ")}`);
-  console.log("[ok] shipped frontend bootstraps with isolated browser identities stable across reloads/tabs");
+  console.log("[ok] built frontend bootstraps with isolated browser identities stable across reloads/tabs");
 } finally {
   await browser?.close();
   await server.stop();

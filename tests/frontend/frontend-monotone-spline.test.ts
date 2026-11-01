@@ -4,7 +4,7 @@ import { monotoneCubicSpline } from "../../frontend-src/story/story-monotone-spl
 import { dataseaCamera } from "../../frontend-src/story/datasea-scene";
 
 /**
- * Shipped `iUe` (public/assets/NormalApp-Cn6agT0F.js:69212-69224) is
+ * Shipped `iUe` (shipped NormalApp chunk) is
  * `ZBe` (:69163-69205) over these 11 knots. Every expectation below was read
  * off the shipped function by extracting `ZBe` from the bundle and evaluating
  * it, not off this port: 27,007 samples over [0, 27] at 0.001 steps, maximum

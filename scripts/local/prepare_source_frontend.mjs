@@ -4,16 +4,15 @@ import { join, relative, resolve } from "node:path";
 import { repoRoot } from "../lib/paths.mjs";
 
 /**
- * Local start helper: build the source frontend (frontend-src/) and stage the
- * same cutover candidate Cloudflare deploys, so the local server serves the
- * current source app instead of the historical public/index.html entry.
+ * Local start helper: build the source frontend (frontend-src/) into
+ * .artifacts/build/app, which nori-local serves layered over public/.
  *
- * Prints the candidate directory on the last stdout line. Exit code 0 only when
- * the candidate is ready. `--if-stale` skips the build when nothing under
- * frontend-src/ is newer than the last candidate.
+ * Prints the build directory on the last stdout line. Exit code 0 only when
+ * the build is ready. `--if-stale` skips the build when nothing under
+ * frontend-src/ is newer than the last build.
  */
-const candidate = resolve(repoRoot, ".artifacts/build/app/cutover-candidate");
-const marker = join(candidate, "index.html");
+const build = resolve(repoRoot, ".artifacts/build/app");
+const marker = join(build, "index.html");
 const ifStale = process.argv.includes("--if-stale");
 
 function newestMtime(directory) {
@@ -26,26 +25,17 @@ function newestMtime(directory) {
   return newest;
 }
 
-function run(label, command, args, shell = false) {
+function run(label, command, args) {
   console.error(`[frontend] ${label}...`);
-  const result = spawnSync(command, args, { cwd: repoRoot, stdio: ["ignore", 2, 2], shell: shell && process.platform === "win32" });
+  const result = spawnSync(command, args, { cwd: repoRoot, stdio: ["ignore", 2, 2], shell: process.platform === "win32" });
   return result.status === 0;
 }
 
 const stale = !existsSync(marker) || newestMtime(resolve(repoRoot, "frontend-src")) > statSync(marker).mtimeMs;
 if (ifStale && !stale) {
   console.error("[frontend] source frontend is up to date");
-  console.log(relative(repoRoot, candidate));
-  process.exit(0);
+} else {
+  if (!existsSync(resolve(repoRoot, "node_modules")) && !run("installing npm dependencies", "npm", ["ci"])) process.exit(1);
+  if (!run("building source frontend", "npm", ["run", "-s", "frontend:app:build"])) process.exit(1);
 }
-if (!existsSync(resolve(repoRoot, "node_modules")) && !run("installing npm dependencies", "npm", ["ci"], true)) process.exit(1);
-if (!run("building source frontend", "npm", ["run", "-s", "frontend:app:build"], true)) process.exit(1);
-// Windows may briefly lock a just-removed directory (indexer/antivirus): retry the swap.
-for (let attempt = 1; attempt <= 4; attempt++) {
-  if (run(`staging candidate (attempt ${attempt})`, process.execPath, ["scripts/recovery/prepare_frontend_cutover_candidate.mjs"])) {
-    console.log(relative(repoRoot, candidate));
-    process.exit(0);
-  }
-  await new Promise((done) => setTimeout(done, 2000 * attempt));
-}
-process.exit(1);
+console.log(relative(repoRoot, build));

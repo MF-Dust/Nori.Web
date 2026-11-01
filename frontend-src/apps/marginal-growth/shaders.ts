@@ -3,8 +3,8 @@ import type { MarginalGrowthParams } from "../../state/marginal-growth-store";
 
 /**
  * Shipped `K`. Pulse ring size, and the `${K}` substitution in the shader templates.
- * The exported sources keep `${K}` so they stay byte-for-byte substrings of
- * `public/assets/IdleScreen-DCDB640k.js`. Programs receive it replaced with 32.
+ * The exported sources keep `${K}` exactly as the shipped `IdleScreen` chunk
+ * did. Programs receive it replaced with 32.
  */
 export const PULSE_SLOT_COUNT = 32;
 

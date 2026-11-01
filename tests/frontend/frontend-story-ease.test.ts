@@ -18,7 +18,7 @@ import { memoryProjection } from "../../frontend-src/story/memory-scene";
 import { dataseaCamera } from "../../frontend-src/story/datasea-scene";
 
 // Expected values read off the vendored GSAP core in
-// public/assets/NormalApp-Cn6agT0F.js: easeIn = t^n, easeOut = 1 - (1-t)^n,
+// shipped NormalApp chunk: easeIn = t^n, easeOut = 1 - (1-t)^n,
 // easeInOut = t<0.5 ? (2t)^n/2 : 1 - (2(1-t))^n/2, with Power1 n=2, Power2 n=3,
 // Power3 n=4. Every t below is an exact binary fraction, so these are exact.
 test("gsap power eases are the shipped fd formulas, not smoothstep", () => {

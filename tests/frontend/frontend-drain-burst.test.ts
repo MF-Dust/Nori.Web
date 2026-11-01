@@ -1,28 +1,10 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
-  DRAIN_BURST_FRAGMENT_GLSL,
   DRAIN_BURST_INTERVAL_MS,
-  DRAIN_BURST_VERTEX_GLSL,
   drainBurstPlays,
   stepDrainBurst,
 } from "../../frontend-src/live2d/particles/drain-burst";
-
-const shipped = readFileSync("public/assets/index-CyHAbkO5.js", "utf8").replaceAll("\r\n", "\n");
-
-test("drain-burst GLSL occurs verbatim in the shipped particle bundle", () => {
-  assert.equal(typeof DRAIN_BURST_VERTEX_GLSL, "string");
-  assert.equal(typeof DRAIN_BURST_FRAGMENT_GLSL, "string");
-  assert.ok(
-    shipped.includes(DRAIN_BURST_VERTEX_GLSL),
-    "vertex shader drifted from index-CyHAbkO5.js",
-  );
-  assert.ok(
-    shipped.includes(DRAIN_BURST_FRAGMENT_GLSL),
-    "fragment shader drifted from index-CyHAbkO5.js",
-  );
-});
 
 test("drain-burst re-fires every 180ms of scene time", () => {
   assert.equal(DRAIN_BURST_INTERVAL_MS, 180);

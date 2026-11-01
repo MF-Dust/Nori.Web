@@ -8,15 +8,12 @@ The `master` branch deploys the Rust workers-rs Worker in
 
 The Dashboard runs `python scripts/cloudflare_builds_deploy.py`. The wrapper:
 
-1. Runs `npm ci --no-audit --no-fund`, builds the source frontend, and materializes
-   the verified candidate/rollback trees.
-2. Writes `.wrangler-candidate.json` at the repository root, changing only the
-   Assets directory to `.artifacts/build/app/cutover-candidate`. Keeping the
-   configuration at the root preserves the Rust `main` and build `cwd` paths.
-3. Ensures Rust, the WASM target, and worker-build are available (see below).
-4. Compares the private R2 live-pack fingerprint and uploads changed shards.
-5. Runs the locked local `npx wrangler deploy --config .wrangler-candidate.json`
-   with `CI=true`, without `--yes`.
+1. Runs `npm ci --no-audit --no-fund`, builds the source frontend, and
+   materializes the staged site `.artifacts/build/site`, the Assets directory in
+   `wrangler.jsonc` (see [FRONTEND_SITE.md](FRONTEND_SITE.md)).
+2. Ensures Rust, the WASM target, and worker-build are available (see below).
+3. Compares the private R2 live-pack fingerprint and uploads changed shards.
+4. Runs the locked local `npx wrangler deploy` with `CI=true`, without `--yes`.
 
 Wrangler's Custom Build hook runs `worker-build --release` in
 `rust/crates/nori-worker`, producing `build/worker/shim.mjs` and its WASM module.
@@ -102,7 +99,7 @@ cargo install worker-build --version 0.8.7 --locked
 cargo test --locked -p nori-core -p nori-worker --manifest-path rust/Cargo.toml
 python tests/test_cloudflare_builds_deploy.py
 python scripts/cloudflare_builds_deploy.py --prepare-only
-npx wrangler deploy --dry-run --config wrangler.jsonc --outdir tmp/wrangler-dry-run
+npx wrangler deploy --dry-run --config wrangler.jsonc --outdir tmp/wrangler-dry-run  # after --prepare-only staged the site
 npx wrangler dev --config wrangler.jsonc --local --port 8790 --var SECRET_KEY:x
 ```
 
@@ -112,10 +109,9 @@ In a second terminal:
 NORI_SMOKE_URL=http://127.0.0.1:8790 node rust/crates/nori-worker/tests/smoke.mjs
 ```
 
-`--prepare-only` builds the frontend and Rust Worker without reading or writing
-Cloudflare resources. It may download npm/Rust build dependencies on a cold
-machine. The direct root config serves the historical `public/` frontend;
-production uses the generated candidate config. Local R2 may be empty, so the
+`--prepare-only` builds the frontend site and Rust Worker without reading or
+writing Cloudflare resources. It may download npm/Rust build dependencies on a
+cold machine. Local R2 may be empty, so the
 smoke uses the runtime's demo fallback. Stop the Wrangler parent with Ctrl+C
 when finished. CI also checks the output WASM is below 3 MiB gzipped and that the
 large live-pack JSON is absent from the module bundle.
@@ -140,8 +136,3 @@ To revert a bad deployment, pause automatic Builds and pick an earlier version i
 `npx wrangler rollback <VERSION_ID>`). Rollback restores code and frontend, not
 DO/R2 data. Leave bindings, the `v1` migration and `SECRET_KEY` unchanged, and
 resume Builds only after the fix lands on `master`.
-
-For a **frontend-only** emergency rollback, use `--legacy-frontend` or
-temporarily set the Build variable `NORI_DEPLOY_LEGACY_FRONTEND=1`. This serves
-the historical `public/` entry with the current Worker. Remove the variable after
-recovery.

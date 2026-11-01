@@ -16,9 +16,7 @@
 9. Preserve Dashboard-managed domains/routes, `workers_dev=false`, `ASSETS`,
    `NORI_ASSETS_R2` → `nori-web-assets`, and `NORI_ARCADE` → `NoriArcadeSession`.
    Keep the existing `v1` SQLite migration; do not add a new one.
-10. Leave `NORI_DEPLOY_LEGACY_FRONTEND` unset during normal operation. It only
-    restores the historical `public/` frontend.
-11. Save the integration. A new `master` commit builds the source frontend,
+10. Save the integration. A new `master` commit builds the source frontend,
     provisions missing Rust tools, synchronizes changed private R2 shards, and
     deploys the Rust Worker with locked Wrangler 4.147.0.
 

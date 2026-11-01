@@ -58,9 +58,12 @@ jobs:
         run: python tests/test_cloudflare_builds_deploy.py
 
       - name: Verify browser compatibility JavaScript
+        run: node --check public/nori-ai-settings.js
+
+      - name: Stage the frontend site (Wrangler Assets directory)
         run: |
-          node --check public/nori-ai-settings.js
-          node --check public/nori-runtime-shims.js
+          npm run frontend:app:build
+          npm run frontend:site -- --materialize
 
       - name: Dry-run Rust Cloudflare bundle
         shell: bash
@@ -84,6 +87,8 @@ jobs:
             echo "::error::The live-world archive leaked into the Worker bundle instead of R2"
             exit 1
           fi
+          node --test tests/frontend/frontend-site-worker-assets.test.mjs
+          node scripts/verify/verify_frontend_site_worker_assets.mjs .artifacts/build/site "$outdir"
           node --input-type=module - "$outdir" <<'NODE'
           import assert from "node:assert/strict";
           import { readdirSync, readFileSync } from "node:fs";
@@ -123,9 +128,6 @@ jobs:
 
       - name: Verify production story contracts
         run: npm run frontend:stories:test
-
-      - name: Verify historical asset ownership scanner
-        run: npm run frontend:ownership:test
 
       - name: Verify recovered games and story suites
         run: |

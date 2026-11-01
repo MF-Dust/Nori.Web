@@ -16,7 +16,7 @@ test("static origin only redirects mirrored assets and rejects non-origin config
     assert.equal(staticAssetUrl(path, origin), origin + path);
     assert.equal(staticAssetUrl(path, ""), path);
   }
-  for (const path of ["/api/auth", "/icon.png", "/asset-manifest.json", "/assets/cosmicweb.min.glb", "/fonts-cdn.css", "https://other.example/fonts/a.woff2", "//other.example/fonts/a.woff2"]) {
+  for (const path of ["/api/auth", "/icon.png", "/asset-manifest.json", "/assets/cosmicweb.min.glb", "/nori-legal.css", "https://other.example/fonts/a.woff2", "//other.example/fonts/a.woff2"]) {
     assert.equal(staticAssetUrl(path, origin), path);
   }
   for (const value of ["https://static.example.com/v1", "https://user:pass@example.com", "https://example.com?q=x", "https://example.com#x", "file:///tmp"]) {

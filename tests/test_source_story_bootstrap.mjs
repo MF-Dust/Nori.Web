@@ -22,7 +22,7 @@ try {
   await vite.listen();
   browser = await chromium.launch(probeLaunchOptions());
   const page = await browser.newPage({ viewport: { width: 1100, height: 800 }, locale: "en-US" });
-  const errors = [], historical = [], sockets = [], messages = [], bootDownloads = [], gameScreens = [];
+  const errors = [], sockets = [], messages = [], bootDownloads = [], gameScreens = [];
   page.on("pageerror", (error) => errors.push(error.stack));
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
@@ -31,8 +31,6 @@ try {
     const path = new URL(request.url()).pathname;
     if (request.headers()["x-asset-loader"] === "1") bootDownloads.push(path);
     if (/\/screens\/(?:chess-screen|codenames-app|pictionary-screen|cakeduel-screen)\.tsx$/.test(path)) gameScreens.push(path);
-    if (/\/(?:NormalApp-.*\.(?:js|css)|index-CyHAbkO5\.js|index-FU-0vwSE\.css)/.test(request.url()))
-      historical.push(request.url());
   });
   page.on("websocket", (socket) => {
     sockets.push(socket.url());
@@ -54,7 +52,6 @@ try {
   assert.ok(bootDownloads.length > 0, "boot gate did not download its first-screen pack");
   assert.ok(bootDownloads.every((path) => /^(\/ARGNori_web\/|\/ocean\/|\/cubism_sdk\/|\/icon\.png$)/.test(path)), "non-first-screen assets still block boot");
   assert.deepEqual(gameScreens, [], "boot eagerly loaded game UI");
-  assert.deepEqual(historical, [], "source app loaded historical bundles");
   assert.deepEqual(errors, [], "source story raised browser errors");
   console.log("[ok] fresh source app: natural wake -> boot.completed -> advisory mail; first-screen pack only, game UI deferred");
 

@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 import { probeLaunchOptions } from "../../scripts/lib/probe_launch.mjs";
 
 // Run directly: node --test tests/frontend/frontend-landing.test.mjs
-// Read the reference as text only; never execute or import the historical app.
-const reference = (await readFile("public/assets/IntroPage-BO45BFI5.js", "utf8")).split("  h = x(),")[0];
-const historicalAssets = new Set((await readdir("public/assets")).filter((name) => /\.(?:js|css)$/.test(name)));
+// The landing copy tables (recovered verbatim from the shipped IntroPage) must all render.
+const source = await readFile("frontend-src/screens/landing-screen.tsx", "utf8");
+const reference = source.slice(source.indexOf("const page = {"), source.indexOf("const COPIED_DURATION_MS"));
 const windowsAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 const macAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
@@ -43,11 +43,10 @@ test("source landing preserves the shipped intro without starting the desktop", 
     if (window === window.top) localStorage.setItem("arcade-language", "en");
   });
   const page = await context.newPage();
-  const errors = [], historical = [], desktopImports = [], sockets = [];
+  const errors = [], desktopImports = [], sockets = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("request", (request) => {
     const path = new URL(request.url()).pathname;
-    if (historicalAssets.has(path.split("/").at(-1))) historical.push(path);
     if (path.endsWith("/source-app.tsx")) desktopImports.push(path);
   });
   page.on("websocket", (socket) => {
@@ -63,7 +62,7 @@ test("source landing preserves the shipped intro without starting the desktop", 
     assert.equal(await page.evaluate(() => localStorage.getItem("arcade-language")), "en", "landing does not replace the desktop's saved language");
     assert.deepEqual(await page.locator(".intro-section h2").allTextContents(), ["故事导入", "Steam", "联系", "游玩须知"]);
     const text = await page.locator("main").textContent();
-    const nonTextKeys = new Set(["pageTitle", "logoAlt", "mobileTitle", "mobileBody", "photo", "photoAlt", "widgetUrl", "bilibiliUrl", "copied"]);
+    const nonTextKeys = new Set(["logoAlt", "photo", "photoAlt", "widgetUrl", "bilibiliUrl", "copied"]);
     for (const [, key, quoted] of reference.matchAll(/(\w+):\s*("(?:[^"\\]|\\.)*")/g)) {
       if (!nonTextKeys.has(key)) assert.ok(text.includes(JSON.parse(quoted)), `missing shipped intro text: ${key}`);
     }
@@ -102,7 +101,6 @@ test("source landing preserves the shipped intro without starting the desktop", 
     await popup.close();
     assert.deepEqual(desktopImports, []);
     assert.deepEqual(sockets, []);
-    assert.deepEqual(historical, []);
   });
 
   await t.test("QQ and email copy through Clipboard API with 1800ms feedback", async () => {
@@ -192,5 +190,4 @@ test("source landing preserves the shipped intro without starting the desktop", 
     await mac.close();
   });
   assert.deepEqual(errors, [], "landing raised browser errors");
-  assert.deepEqual(historical, [], "landing requested a historical bundle");
 });

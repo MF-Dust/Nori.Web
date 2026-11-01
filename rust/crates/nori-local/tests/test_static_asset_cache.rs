@@ -276,3 +276,48 @@ async fn missing_index_returns_the_static_router_404_body() {
         serde_json::json!({"detail":"Not found"})
     );
 }
+
+#[tokio::test]
+async fn frontend_build_is_layered_over_public_assets() {
+    let public = TempDir::new("overlay-public");
+    let frontend = TempDir::new("overlay-frontend");
+    std::fs::create_dir_all(public.path().join("assets")).unwrap();
+    std::fs::create_dir_all(frontend.path().join("assets")).unwrap();
+    std::fs::write(public.path().join("fonts.css"), b"public fonts").unwrap();
+    std::fs::write(public.path().join("assets/idle-core.png"), b"public image").unwrap();
+    std::fs::write(
+        frontend.path().join("index.html"),
+        b"<html>source app</html>",
+    )
+    .unwrap();
+    std::fs::write(frontend.path().join("assets/index-AbCd1234.js"), b"bundle").unwrap();
+    let mut settings = config(public.path());
+    settings.frontend_dir = Some(frontend.path().to_path_buf());
+    let server = start(settings).await;
+    let client = Client::builder().no_gzip().no_deflate().build().unwrap();
+    let get = |path: &str| client.get(format!("{}{path}", server.base)).send();
+
+    let index = get("/").await.unwrap();
+    assert_eq!(index.headers()["cache-control"], "no-cache, no-transform");
+    assert_eq!(index.text().await.unwrap(), "<html>source app</html>");
+    assert_eq!(
+        get("/desktop/route").await.unwrap().text().await.unwrap(),
+        "<html>source app</html>"
+    );
+    let bundle = get("/assets/index-AbCd1234.js").await.unwrap();
+    assert!(bundle.headers()["cache-control"]
+        .to_str()
+        .unwrap()
+        .contains("immutable"));
+    assert_eq!(bundle.text().await.unwrap(), "bundle");
+    let image = get("/assets/idle-core.png").await.unwrap();
+    assert!(image.headers()["cache-control"]
+        .to_str()
+        .unwrap()
+        .contains("immutable"));
+    assert_eq!(image.text().await.unwrap(), "public image");
+    assert_eq!(
+        get("/fonts.css").await.unwrap().text().await.unwrap(),
+        "public fonts"
+    );
+}

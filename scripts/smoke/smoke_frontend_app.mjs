@@ -51,15 +51,6 @@ try {
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
-  const historicalRequests = [];
-  page.on("request", (request) => {
-    if (
-      /\/(?:NormalApp-.*\.(?:js|css)|index-CyHAbkO5\.js|index-FU-0vwSE\.css)/.test(
-        request.url(),
-      )
-    )
-      historicalRequests.push(request.url());
-  });
   await page.addInitScript(() => {
     const Native = window.WebSocket;
     window.sourceSmoke = { sockets: [], sent: [] };
@@ -673,11 +664,6 @@ try {
       localStorage.getItem("idle.run:source-smoke-old"),
     ),
     null,
-  );
-  assert.deepEqual(
-    historicalRequests,
-    [],
-    "source app loaded historical JS or CSS",
   );
   assert.deepEqual(errors, [], "source app raised browser errors");
   console.log(

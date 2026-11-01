@@ -15,5 +15,3 @@ fonts/Quicksand-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl
 fonts/Lilita-One-OFL.txt: https://raw.githubusercontent.com/google/fonts/main/ofl/lilitaone/OFL.txt
 fonts/LXGW-WenKai-OFL.txt: https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/OFL.txt (copyright lines from the font name table)
 vendor/colord-LICENSE.txt: https://raw.githubusercontent.com/omgovich/colord/master/LICENSE.md
-vendor/Basis-Universal-LICENSE.txt: https://raw.githubusercontent.com/BinomialLLC/basis_universal/master/LICENSE
-vendor/KTX-LICENSE.txt: https://raw.githubusercontent.com/KhronosGroup/KTX-Software/main/LICENSE.md

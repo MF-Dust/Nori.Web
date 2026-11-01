@@ -1,6 +1,6 @@
 /**
  * Marginal-growth cache binary.
- * Port of shipped `La` (`public/assets/IdleScreen-DCDB640k.js`).
+ * Port of shipped `La` (the shipped `IdleScreen` chunk).
  */
 
 /** Shipped `Ua`. Little-endian bytes are the ASCII tag `MGB1`. */

@@ -1,16 +1,15 @@
 import assert from "node:assert/strict";
-import { mkdir, readdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { preview } from "vite";
 import { chromium } from "playwright";
 import { probeLaunchOptions } from "../lib/probe_launch.mjs";
 import { startBackend } from "../lib/backend_launch.mjs";
 
-// Exercise emitted files through a static server, without Vite source transforms.
-const output = resolve(".artifacts/candidate-smoke");
+// Exercise the staged deploy site through a static server, without Vite source transforms.
+const output = resolve(".artifacts/site-smoke");
 await mkdir(output, { recursive: true });
 const backendOrigin = "http://127.0.0.1:47177";
-const historical = new Set((await readdir("public/assets")).filter(name => /\.(js|css)$/.test(name)));
 let backend, backendLog = "", server, browser;
 try {
   backend = await startBackend({
@@ -19,7 +18,7 @@ try {
     stdio: ["ignore", "pipe", "pipe"],
     readyTimeoutMs: 15_000,
   });
-  server = await preview({ configFile: false, root: process.cwd(), build: { outDir: resolve(".artifacts/build/app/cutover-candidate") }, preview: {
+  server = await preview({ configFile: false, root: process.cwd(), build: { outDir: resolve(".artifacts/build/site") }, preview: {
     host: "127.0.0.1", port: 47178, strictPort: true, proxy: { "/api": { target: backendOrigin, ws: true } },
   } });
   browser = await chromium.launch(probeLaunchOptions());
@@ -30,9 +29,8 @@ try {
   await page.route(/https?:\/\/(?:fonts\.loli\.net|npm\.elemecdn\.com)\//, (route) =>
     route.abort("blockedbyclient"),
   );
-  const errors = [], legacyRequests = [], failedAssets = [];
+  const errors = [], failedAssets = [];
   page.on("pageerror", error => errors.push(error.message));
-  page.on("request", request => { if (historical.has(new URL(request.url()).pathname.split("/").at(-1))) legacyRequests.push(request.url()); });
   page.on("response", response => { if (response.status() >= 400 && !new URL(response.url()).pathname.startsWith("/api/")) failedAssets.push([response.status(), response.url()]); });
   // Source worlds default to the fresh story (its boot scene has no chat), so
   // opt into the finished archive desktop like the source app smoke does.
@@ -44,23 +42,22 @@ try {
   await page.goto("http://127.0.0.1:47178", { waitUntil: "domcontentloaded" });
   await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: 90000 });
   const input = page.getByRole("textbox", { name: "Message", exact: true });
-  await input.fill("Candidate entry verification");
+  await input.fill("Site entry verification");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await page.locator('.conversation-lines [data-sender="agent"]').waitFor();
   await page.locator('[data-nori-dock] [data-app-id="terminal"]').click();
   await page.locator(".xterm-helper-textarea").pressSequentially("help");
   await page.locator(".xterm-helper-textarea").press("Enter");
-  await page.screenshot({ path: resolve(output, "candidate-desktop-terminal.png") });
+  await page.screenshot({ path: resolve(output, "site-desktop-terminal.png") });
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.locator('[data-live2d-status="ready"]').waitFor({ timeout: 90000 });
   await page.setViewportSize({ width: 390, height: 700 });
-  await page.screenshot({ path: resolve(output, "candidate-narrow-restored.png") });
-  assert.deepEqual(errors, [], "built candidate runtime errors");
-  assert.deepEqual(failedAssets, [], "built candidate missing static assets");
-  assert.deepEqual(legacyRequests, [], "built candidate executed historical application assets");
-  await writeFile(resolve(output, "result.json"), JSON.stringify({ passed: true, entry: "materialized source build", errors, failedAssets, legacyRequests }, null, 2));
-  console.log("Built candidate passed: static entry, local world, Live2D, chat, Terminal, reload and narrow viewport.");
+  await page.screenshot({ path: resolve(output, "site-narrow-restored.png") });
+  assert.deepEqual(errors, [], "staged site runtime errors");
+  assert.deepEqual(failedAssets, [], "staged site missing static assets");
+  await writeFile(resolve(output, "result.json"), JSON.stringify({ passed: true, errors, failedAssets }, null, 2));
+  console.log("Staged site passed: static entry, local world, Live2D, chat, Terminal, reload and narrow viewport.");
 } finally {
   await browser?.close();
   await new Promise(resolve => server ? server.httpServer.close(resolve) : resolve());

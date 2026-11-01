@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import platform
 import shutil
 import subprocess
@@ -14,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 RUST_MANIFEST = ROOT / "rust" / "Cargo.toml"
 BUILD_ROOT = ROOT / "build" / "rust-release"
 RELEASE_ROOT = ROOT / "build" / "release"
+FRONTEND_BUILD = ROOT / ".artifacts" / "build" / "app"
 sys.path.insert(0, str(ROOT))
 
 
@@ -30,6 +32,22 @@ def _rustc_info() -> tuple[str, str]:
         raise RuntimeError("rustc -vV did not report a host target triple")
     version = subprocess.check_output(["rustc", "--version"], cwd=ROOT, text=True).strip()
     return version, target
+
+
+def build_frontend() -> Path:
+    """Build frontend-src/ with the locked npm dependencies; nori-local serves it as frontend/."""
+    npm = shutil.which("npm")
+    if not npm:
+        raise RuntimeError("npm is required to build the frontend; install Node.js 18+")
+    if not (ROOT / "node_modules").is_dir():
+        subprocess.run([npm, "ci", "--no-audit", "--no-fund"], cwd=ROOT, check=True)
+    print("[npm] run frontend:app:build", flush=True)
+    # The offline package serves every asset itself, never from a static-asset CDN.
+    env = {**os.environ, "NORI_STATIC_ORIGIN": ""}
+    subprocess.run([npm, "run", "frontend:app:build"], cwd=ROOT, check=True, env=env)
+    if not (FRONTEND_BUILD / "index.html").is_file():
+        raise RuntimeError(f"Frontend build is missing: {FRONTEND_BUILD / 'index.html'}")
+    return FRONTEND_BUILD
 
 
 def build(*, allow_untracked: bool = False) -> Path:
@@ -55,6 +73,7 @@ def build(*, allow_untracked: bool = False) -> Path:
         shutil.rmtree(BUILD_ROOT, ignore_errors=True)
         raise
 
+    frontend = build_frontend()
     command = [
         "cargo", "build", "--release", "--locked", "-p", "nori-local",
         "--manifest-path", "rust/Cargo.toml",
@@ -72,6 +91,7 @@ def build(*, allow_untracked: bool = False) -> Path:
     shutil.copy2(executable, release_dir / shipped_name)
     for directory in RUNTIME_DIRECTORIES:
         shutil.copytree(ROOT / directory, release_dir / directory)
+    shutil.copytree(frontend, release_dir / "frontend")
     shutil.copy2(ROOT / "README.md", release_dir / "README.md")
     shutil.copytree(legal_dir, release_dir, dirs_exist_ok=True)
     shutil.rmtree(BUILD_ROOT, ignore_errors=True)
@@ -96,8 +116,8 @@ def build(*, allow_untracked: bool = False) -> Path:
                 f"Linked crates (excluding nori-local): {len(linked_crates)}",
                 f"Build status: {build_kind}",
                 "Start Nori.Web, then open http://127.0.0.1:4173/",
-                "Configuration uses HOST, PORT, NORI_DISABLE_LIVE_PACK, NORI_PUBLIC_DIR, and NORI_DATA_DIR.",
-                "Source delivery: source/project.zip + public/ + backend/data/; see source/README.md to reconstruct.",
+                "Configuration uses HOST, PORT, NORI_DISABLE_LIVE_PACK, NORI_PUBLIC_DIR, NORI_FRONTEND_DIR, and NORI_DATA_DIR.",
+                "Source delivery: source/project.zip + public/ + backend/data/; frontend/ is built from frontend-src/. See source/README.md to reconstruct.",
                 "License summary: see RUST-LICENSE-SUMMARY.txt.",
                 "",
             ]

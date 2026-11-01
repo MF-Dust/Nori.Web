@@ -1,8 +1,8 @@
 //! Frame pipeline shared by both hosts (Python `backend/api/arcade.py`
 //! receive loop and the Worker's `_handle_main_message`).
 //!
-//! Order matters and mirrors Python: decode → object check → story-cookie
-//! default → strip per-dispatch credentials → world handling.
+//! Order matters and mirrors Python: decode → object check → strip
+//! per-dispatch credentials → world handling.
 
 use crate::jsonutil::Json;
 use crate::protocol;
@@ -63,11 +63,9 @@ pub fn take_secrets(message: &mut Json) -> Secrets {
     Secrets { ai, tts }
 }
 
-/// Decode + normalize a frame. `story_preference` comes from the
-/// `nori_full_unlock` cookie captured at upgrade time.
-pub fn prepare(raw: &str, story_preference: Option<bool>) -> Result<(Json, Secrets), Json> {
+/// Decode a frame and split off its per-dispatch credentials.
+pub fn prepare(raw: &str) -> Result<(Json, Secrets), Json> {
     let mut message = decode_frame(raw)?;
-    crate::auth::apply_story_default(&mut message, story_preference);
     let secrets = take_secrets(&mut message);
     Ok((message, secrets))
 }

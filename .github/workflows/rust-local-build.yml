@@ -34,6 +34,15 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install locked frontend dependencies
+        run: npm ci
+
       - name: Install stable Rust
         uses: dtolnay/rust-toolchain@stable
 

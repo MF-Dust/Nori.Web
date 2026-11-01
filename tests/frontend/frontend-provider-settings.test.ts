@@ -78,8 +78,8 @@ test("settings attachment errors report failure rather than sending a bare dispa
   assert.ok(h.events.some(event => event.type === "nori:ai-status" && event.options.detail.kind === "error"));
 });
 
-test("both entry pages bypass previously cached AI and TTS scripts", () => {
-  for (const path of ["public/index.html", "frontend-src/index.html"]) {
+test("the entry page bypasses previously cached AI and TTS scripts", () => {
+  for (const path of ["frontend-src/index.html"]) {
     const html = readFileSync(path, "utf8");
     for (const name of ["nori-ai-settings", "nori-tts-settings"]) {
       assert.ok(html.includes(`/${name}.js?v=per-dispatch-2`), `${path}: ${name}`);

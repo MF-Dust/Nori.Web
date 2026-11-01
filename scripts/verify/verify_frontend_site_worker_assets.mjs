@@ -18,13 +18,13 @@ async function files(directory) {
   return result;
 }
 
-export async function findFrontendWorkerAssetLeaks(candidate, worker) {
+export async function findFrontendWorkerAssetLeaks(site, worker) {
   const hashes = new Map();
-  for (const path of await files(candidate)) {
+  for (const path of await files(site)) {
     const bytes = await readFile(path);
     if (!bytes.length) continue;
     const hash = createHash("sha256").update(bytes).digest("hex");
-    hashes.set(hash, relative(candidate, path));
+    hashes.set(hash, relative(site, path));
   }
   const leaks = [];
   for (const path of await files(worker)) {
@@ -40,11 +40,9 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 ) {
-  const candidate = resolve(
-    process.argv[2] || ".artifacts/build/app/cutover-candidate",
-  );
-  const worker = resolve(process.argv[3] || ".candidate-worker-dist");
-  const leaks = await findFrontendWorkerAssetLeaks(candidate, worker);
+  const site = resolve(process.argv[2] || ".artifacts/build/site");
+  const worker = resolve(process.argv[3] || ".worker-dist");
+  const leaks = await findFrontendWorkerAssetLeaks(site, worker);
   assert.deepEqual(
     leaks,
     [],

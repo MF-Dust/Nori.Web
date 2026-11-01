@@ -1,8 +1,8 @@
 /**
  * GSAP easing ports for the story scenes.
  *
- * Formulas are taken from the GSAP core vendored in
- * `public/assets/NormalApp-Cn6agT0F.js` (line 81190+), not from a docs
+ * Formulas are taken from the GSAP core vendored in the shipped NormalApp
+ * chunk, not from a docs
  * recollection. That bundle's `fd(name, easeIn, easeOut, easeInOut)` builds
  * `easeOut = 1 - easeIn(1 - t)` and the half/half `easeInOut`, and
  * `Ai("Linear,Quad,Cubic,Quart,Quint,Strong", ...)` registers each power ease

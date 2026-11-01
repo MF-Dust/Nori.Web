@@ -1,5 +1,5 @@
-// Validates local server envelopes with the actual parser shipped by NoriOS.
-import { j as parseServerMessage } from "../public/assets/i18n-DtIC1LRi.js";
+// Validates local server envelopes with the strict parser the shipped NoriOS client used.
+import { parseServerMessage } from "./fixtures/arcade-server-schema.mjs";
 
 const runtime = {
   visibilityFenceId: "ui",

@@ -1,8 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import "./landing-screen.css";
 
-// Recovered IntroPage content and interactions; reference:
-// public/assets/IntroPage-BO45BFI5.js, routed by index-CyHAbkO5.js.
+// Recovered IntroPage content and interactions from the shipped IntroPage chunk.
 // The shipped intro is Chinese-only, not part of the desktop i18n namespace.
 const page = {
   title: "NORI_OS",

@@ -1,13 +1,8 @@
 # Maintainable frontend source
 
-This directory is the clean-room maintenance source for the local Nori.Web frontend runtime and progressively recovered UI.
+This directory is the only Nori.Web frontend. It is typed source reconstructed from the originally shipped UI, a set of hashed Vite chunks without source maps. The exact original TypeScript/TSX tree, comments, local identifiers and type annotations could not be recovered; the reconstruction instead preserves verified behavior, protocol/data compatibility and stable presentation semantics in source that can be maintained normally.
 
-The shipped UI under `public/assets/` is a set of hashed Vite JavaScript/CSS chunks without source maps. The exact original TypeScript/TSX tree, comments, local identifiers, source paths and type annotations therefore cannot be recovered reliably. Recovery instead preserves verified behavior, protocol/data compatibility and stable presentation semantics in source that can be maintained normally.
-
-Two outputs are deliberately separated:
-
-1. `public/assets/` — the historical shipped chunks, kept as the rollback entry and reference evidence.
-2. `frontend-src/` — typed source reconstructed from that evidence. This is the implementation intended for development and optimization.
+The shipped chunks have been removed from the repository (they remain in Git history). Comments that cite shipped identifiers (`NormalApp`, `IdleScreen`, `jQe`, ...) refer to that history. How the build is served and deployed is described in [docs/FRONTEND_SITE.md](../docs/FRONTEND_SITE.md).
 
 ## Recovered source boundary
 
@@ -78,10 +73,7 @@ The large `NormalApp-*` desktop shell is no longer a general migration boundary.
   dialogue/voice/inference, and the Corruption, Memory, Datasea and Farewell voice tracks.
   `nori_talk.request` is a local no-op, so none of this is frontend source work;
 - original visual, audio and cinematic comparison against a reference run, plus the Cult,
-  Datasea-compositor, Memory-alert and Debug-layout comparisons that have no baseline yet;
-- final cross-boundary behavior/smoke comparison and historical JavaScript retirement after rollback validation.
-
-The production entry is already switched: Cloudflare Workers Builds (`scripts/cloudflare_builds_deploy.py`) builds and deploys the verified source-app candidate by default, and `public/index.html` is kept unchanged as the explicit `--legacy-frontend` / `NORI_DEPLOY_LEGACY_FRONTEND=1` rollback entry.
+  Datasea-compositor, Memory-alert and Debug-layout comparisons that have no baseline yet.
 
 Cake Duel, Codenames, Chess, Pictionary and the Live2D/Nori scene stack are all bound in
 `source-app.tsx` today; what remains for them is agent behaviour and original comparison, not
@@ -98,4 +90,4 @@ npm run frontend:app:build
 npm run frontend:test
 ```
 
-`frontend:app:build` proves the source-owned browser application composes independently of the historical JavaScript entry. Pull-request CI runs these checks alongside the Worker/Cloudflare validation.
+Pull-request CI runs these checks alongside the Worker/Cloudflare validation.

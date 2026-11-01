@@ -78,7 +78,7 @@ class ReleaseLegalTests(unittest.TestCase):
             files = {
                 "main.rs": b"source",
                 "rust/Cargo.lock": b"locked dependencies",
-                "public/index.html": b"old page",
+                "public/fonts.css": b"old stylesheet",
                 "public/assets/model.glb": b"model bytes",
                 "backend/data/live_world_pack.json": b"{}",
                 "public-tools/help.txt": b"not a runtime directory",
@@ -90,8 +90,8 @@ class ReleaseLegalTests(unittest.TestCase):
                 path.write_bytes(content)
             subprocess.run(["git", "init", "-q", str(root)], check=True)
             subprocess.run(["git", "add", "."], cwd=root, check=True)
-            files["public/index.html"] = b"actual worktree page"
-            (root / "public/index.html").write_bytes(files["public/index.html"])
+            files["public/fonts.css"] = b"actual worktree stylesheet"
+            (root / "public/fonts.css").write_bytes(files["public/fonts.css"])
 
             for reuse_runtime_assets in (False, True):
                 with self.subTest(reuse_runtime_assets=reuse_runtime_assets):
@@ -205,11 +205,11 @@ class ReleaseLegalTests(unittest.TestCase):
         import re
         for name in legal.NOTICE_FILES:
             self.assertEqual((ROOT / name).read_bytes(), (ROOT / "public/legal" / name).read_bytes())
-        for entry in ("public/index.html", "frontend-src/index.html"):
-            html = (ROOT / entry).read_text(encoding="utf-8")
-            self.assertIn('id="nori-community-notice"', html)
-            self.assertIn('href="/legal/index.html"', html)
-            self.assertIn('href="/nori-legal.css"', html)
+        self.assertFalse((ROOT / "public/index.html").exists(), "public/ must not shadow the source entry")
+        html = (ROOT / "frontend-src/index.html").read_text(encoding="utf-8")
+        self.assertIn('id="nori-community-notice"', html)
+        self.assertIn('href="/legal/index.html"', html)
+        self.assertIn('href="/nori-legal.css"', html)
         page = (ROOT / "public/legal/index.html").read_text(encoding="utf-8")
         for link in re.findall(r'href="([^"]+)"', page):
             if not link.startswith(("/", "https:")):

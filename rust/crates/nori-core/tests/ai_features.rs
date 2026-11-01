@@ -27,7 +27,7 @@ fn send(
     if let Some(config) = config {
         message["noriAiConfig"] = config;
     }
-    let (message, secrets) = session::prepare(&message.to_string(), None).unwrap();
+    let (message, secrets) = session::prepare(&message.to_string()).unwrap();
     assert!(message.get("noriAiConfig").is_none());
     session::handle(world, &message, &secrets)
 }

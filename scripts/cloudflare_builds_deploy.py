@@ -1,10 +1,9 @@
 """Production deploy entrypoint for Cloudflare Workers Builds.
 
-The wrapper builds and verifies the source frontend, bootstraps Rust when
+The wrapper builds and stages the source frontend site, bootstraps Rust when
 needed, keeps the private R2 live-world layout synchronized, and invokes the
-locked local Wrangler with the materialized source candidate. Wrangler runs
-worker-build exactly once during deployment. The historical public entry
-remains available as an explicit frontend-only rollback path.
+locked local Wrangler, whose Assets directory is the staged site. Wrangler runs
+worker-build exactly once during deployment.
 """
 
 from __future__ import annotations
@@ -27,16 +26,8 @@ WORKER_ROOT = ROOT / "rust" / "crates" / "nori-worker"
 RUST_TOOLCHAIN = "1.98.0"
 WASM_TARGET = "wasm32-unknown-unknown"
 WORKER_BUILD_VERSION = "0.8.7"
-FRONTEND_CANDIDATE_TOOL = (
-    ROOT / "scripts" / "recovery" / "prepare_frontend_cutover_candidate.mjs"
-)
-FRONTEND_CONFIG_TOOL = (
-    ROOT / "scripts" / "lib" / "frontend_candidate_worker_config.mjs"
-)
-FRONTEND_CANDIDATE_INDEX = (
-    ROOT / ".artifacts" / "build" / "app" / "cutover-candidate" / "index.html"
-)
-FRONTEND_CONFIG = ROOT / ".wrangler-candidate.json"
+FRONTEND_SITE_TOOL = ROOT / "scripts" / "stage_frontend_site.mjs"
+FRONTEND_SITE_INDEX = ROOT / ".artifacts" / "build" / "site" / "index.html"
 R2_BUCKET = "nori-web-assets"
 R2_MARKER_KEY = "runtime/live/source-fingerprint.txt"
 FINGERPRINT_VERSION = "v1"
@@ -198,34 +189,25 @@ def install_node_dependencies() -> None:
 
 
 def prepare_source_frontend() -> Path:
-    """Build and materialize the verified source frontend deployment tree."""
+    """Build the source frontend and materialize the site Wrangler uploads."""
     npm = _required_executable("npm")
     node = _required_executable("node")
     install_node_dependencies()
     _run([npm, "run", "frontend:app:build"])
-    _run([node, str(FRONTEND_CANDIDATE_TOOL), "--materialize"])
-    _run([node, str(FRONTEND_CONFIG_TOOL)])
-    for path in (FRONTEND_CANDIDATE_INDEX, FRONTEND_CONFIG):
-        if not path.is_file():
-            raise RuntimeError(f"Source frontend deployment output is missing: {path}")
-    print(f"Source frontend deployment tree ready: {FRONTEND_CANDIDATE_INDEX.parent}")
-    return FRONTEND_CONFIG
+    _run([node, str(FRONTEND_SITE_TOOL), "--materialize"])
+    if not FRONTEND_SITE_INDEX.is_file():
+        raise RuntimeError(f"Source frontend site is missing: {FRONTEND_SITE_INDEX}")
+    print(f"Source frontend site ready: {FRONTEND_SITE_INDEX.parent}")
+    return FRONTEND_SITE_INDEX.parent
 
 
-def deploy_worker(base: list[str], *, config: Path | None = None) -> None:
+def deploy_worker(base: list[str]) -> None:
     # Wrangler rejects `wrangler deploy --yes` when a Wrangler config file
     # already exists. Workers Builds is a CI environment, so force CI mode and
     # let Wrangler use its non-interactive fallback for confirmation prompts.
     deploy_env = os.environ.copy()
     deploy_env["CI"] = "true"
-    command = [*base, "deploy"]
-    if config is not None:
-        command.extend(["--config", str(config.relative_to(ROOT))])
-    _run(command, env=deploy_env)
-
-
-def _environment_flag(name: str) -> bool:
-    return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+    _run([*base, "deploy"], env=deploy_env)
 
 
 def main() -> None:
@@ -245,11 +227,6 @@ def main() -> None:
         action="store_true",
         help="Prepare the frontend and Rust Worker without accessing Cloudflare.",
     )
-    parser.add_argument(
-        "--legacy-frontend",
-        action="store_true",
-        help="Emergency rollback: deploy the historical public/ frontend instead of the source build.",
-    )
     args = parser.parse_args()
 
     print(
@@ -258,17 +235,7 @@ def main() -> None:
         f"commit={os.getenv('WORKERS_CI_COMMIT_SHA', 'local')})"
     )
 
-    legacy_frontend = args.legacy_frontend or _environment_flag(
-        "NORI_DEPLOY_LEGACY_FRONTEND"
-    )
-
-    frontend_config = None
-    if legacy_frontend:
-        print("Legacy frontend rollback enabled; deploying public/ with the Rust Worker.")
-        install_node_dependencies()
-    else:
-        frontend_config = prepare_source_frontend()
-
+    prepare_source_frontend()
     ensure_rust_toolchain()
     if args.prepare_only:
         prepare_runtime()
@@ -278,7 +245,7 @@ def main() -> None:
     base = wrangler_command()
     if not args.skip_live_pack:
         sync_live_pack(base, force=args.force_live_pack)
-    deploy_worker(base, config=frontend_config)
+    deploy_worker(base)
 
 
 if __name__ == "__main__":

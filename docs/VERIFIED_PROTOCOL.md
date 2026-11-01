@@ -11,7 +11,7 @@ This document records only behavior verified from public responses and the JavaS
   ```
 - The current live `NormalApp-Cn6agT0F.js` SHA-256 captured on 2026-08-26 was
   `a94458746a599c6ae175b68bd2be0497421e1319dc37b2337e12b3eae87be70d`.
-- The client-side Zod schemas are in `public/assets/i18n-DtIC1LRi.js`, around its `Ld()` server-message parser.
+- The client's strict server-message schema (`Ld()` in its `i18n` chunk) is transcribed in `tests/fixtures/arcade-server-schema.mjs` and checked by `npm run test:schema`.
 
 ## WebSocket connection
 

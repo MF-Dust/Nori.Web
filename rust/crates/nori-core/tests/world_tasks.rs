@@ -927,30 +927,25 @@ fn story_open_does_not_broadcast_due_fact_transitions() {
 }
 
 #[test]
-fn frame_pipeline_strips_credentials_and_applies_story_cookie() {
+fn frame_pipeline_strips_credentials() {
     let raw = json!({
         "type": "dispatch", "actor": "player", "cartridgeId": "chat", "requestId": "r",
         "expectedHeadVersion": 0, "cmd": {"type": "playerMessage", "text": "hi"},
         "noriAiConfig": {"enabled": true, "apiKey": "sk-secret", "baseUrl": "https://api.example.test/v1"},
     })
     .to_string();
-    let (message, secrets) = session::prepare(&raw, Some(false)).unwrap();
+    let (message, secrets) = session::prepare(&raw).unwrap();
     assert!(message.get("noriAiConfig").is_none());
     assert_eq!(secrets.ai.as_ref().unwrap()["apiKey"], "sk-secret");
-    let (open, _) = session::prepare(r#"{"type":"open_my_web_world"}"#, Some(false)).unwrap();
-    assert_eq!(open["fullUnlock"], false);
-    let (explicit, _) = session::prepare(
-        r#"{"type":"open_my_web_world","fullUnlock":true}"#,
-        Some(false),
-    )
-    .unwrap();
+    let (explicit, _) =
+        session::prepare(r#"{"type":"open_my_web_world","fullUnlock":true}"#).unwrap();
     assert_eq!(explicit["fullUnlock"], true);
     assert_eq!(
-        session::prepare("nope", None).unwrap_err()["message"],
+        session::prepare("nope").unwrap_err()["message"],
         "Invalid JSON"
     );
     assert_eq!(
-        session::prepare("[]", None).unwrap_err()["message"],
+        session::prepare("[]").unwrap_err()["message"],
         "message must be an object"
     );
 }

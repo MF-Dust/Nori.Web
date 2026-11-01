@@ -1,5 +1,5 @@
 /**
- * Shipped sprite burst (`Bs` in public/assets/index-CyHAbkO5.js) and the
+ * Shipped sprite burst (`Bs` in the shipped `index` chunk) and the
  * Memory preset `xe("drain-burst")`. Motion is integrated in the vertex
  * shader (`position + aVelocity * age` plus the wobble). `integrate` repeats
  * that formula on the CPU so a step can be checked without WebGL.

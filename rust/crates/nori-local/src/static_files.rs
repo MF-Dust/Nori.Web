@@ -38,7 +38,7 @@ pub(crate) async fn handle(State(state): State<AppState>, request: Request<Body>
         return json_response(404, r#"{"detail":"API endpoint not found"}"#, None);
     }
 
-    let Some(file_path) = select_file(&state.public_dir, &path) else {
+    let Some(file_path) = select_file(&state.static_roots, &path) else {
         return json_response(404, r#"{"detail":"Not found"}"#, None);
     };
     let Ok(metadata) = std::fs::metadata(&file_path) else {
@@ -54,7 +54,7 @@ pub(crate) async fn handle(State(state): State<AppState>, request: Request<Body>
         .unwrap_or_default()
         .as_nanos();
     let etag = format!("\"{modified_ns:x}-{size:x}\"");
-    let cache_control = cache_control(&state.public_dir, &file_path);
+    let cache_control = cache_control(&state.static_roots, &file_path);
 
     if let Some(value) = request
         .headers()
@@ -177,8 +177,11 @@ async fn file_body(path: &Path, start: u64, length: u64) -> Result<Body, std::io
     Ok(Body::from_stream(stream))
 }
 
-fn select_file(public_dir: &Path, path: &str) -> Option<PathBuf> {
-    let root = std::fs::canonicalize(public_dir).ok()?;
+fn select_file(static_roots: &[PathBuf], path: &str) -> Option<PathBuf> {
+    let roots: Vec<PathBuf> = static_roots
+        .iter()
+        .filter_map(|root| std::fs::canonicalize(root).ok())
+        .collect();
     let requested = Path::new(path);
     let safe = !requested.components().any(|component| {
         matches!(
@@ -187,18 +190,21 @@ fn select_file(public_dir: &Path, path: &str) -> Option<PathBuf> {
         )
     });
     if safe {
-        let candidate = root.join(requested);
-        if let Ok(resolved) = std::fs::canonicalize(&candidate) {
-            if resolved.starts_with(&root) && resolved.is_file() {
-                return Some(resolved);
+        for root in &roots {
+            if let Ok(resolved) = std::fs::canonicalize(root.join(requested)) {
+                if resolved.starts_with(root) && resolved.is_file() {
+                    return Some(resolved);
+                }
             }
         }
     }
-    let index = root.join("index.html");
-    index.is_file().then_some(index)
+    roots
+        .iter()
+        .map(|root| root.join("index.html"))
+        .find(|index| index.is_file())
 }
 
-fn cache_control(public_dir: &Path, file_path: &Path) -> String {
+fn cache_control(static_roots: &[PathBuf], file_path: &Path) -> String {
     let name = file_path
         .file_name()
         .and_then(|name| name.to_str())
@@ -216,9 +222,11 @@ fn cache_control(public_dir: &Path, file_path: &Path) -> String {
     {
         return "no-cache, no-transform".into();
     }
-    let assets = std::fs::canonicalize(public_dir.join("assets"))
-        .unwrap_or_else(|_| public_dir.join("assets"));
-    if file_path.starts_with(assets) {
+    let hashed = static_roots.iter().any(|root| {
+        let assets = root.join("assets");
+        file_path.starts_with(std::fs::canonicalize(&assets).unwrap_or(assets))
+    });
+    if hashed {
         "public, max-age=31536000, immutable".into()
     } else {
         "public, max-age=0, must-revalidate".into()

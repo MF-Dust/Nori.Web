@@ -1,9 +1,8 @@
 /**
  * Fritsch–Carlson monotone cubic Hermite interpolation.
  *
- * Ported from the shipped Datasea camera spline `ZBe`
- * (`public/assets/NormalApp-Cn6agT0F.js:69163-69205`), built once at module
- * load as `iUe` (:69225-69237) and read by `sUe` (:69238-69241). This is not a
+ * Ported from the shipped Datasea camera spline `ZBe` (NormalApp chunk),
+ * built once at module load as `iUe` and read by `sUe`. This is not a
  * GSAP ease and not a smoothstep: the shipped bundle interpolates the camera Y
  * track through a real spline, so the tangent estimate and the monotonicity
  * clamp are the behaviour. Both are kept verbatim below — a plain Catmull-Rom

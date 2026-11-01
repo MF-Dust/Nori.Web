@@ -7,9 +7,6 @@
 /nori-ai-settings.js
   Cache-Control: public, max-age=0, must-revalidate
 
-/nori-runtime-shims.js
-  Cache-Control: public, max-age=0, must-revalidate
-
 /
   Cache-Control: public, max-age=0, must-revalidate
 

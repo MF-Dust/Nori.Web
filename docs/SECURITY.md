@@ -71,15 +71,13 @@ characters before mutation, then commit and broadcast the batch once. Single
 fact commands and per-fact events retain their existing behavior.
 
 Local gzip uses level 6 instead of 9. A three-run compression-only sample on
-`public/assets/NormalApp-Cn6agT0F.js` measured median 138.65 ms versus 354.65 ms,
+the shipped 1.7 MB `NormalApp` chunk measured median 138.65 ms versus 354.65 ms,
 with 862,632 versus 854,684 compressed bytes. These are local compression
 measurements, not end-to-end latency or Cloudflare performance claims.
 
 The recovered source frontend validates canonical same-origin `/webAssets/`
 paths before its iframe asset bridge fetches them. Its Markdown link scanner
-also avoids quadratic work on unmatched opening brackets. These changes are
-in `frontend-src/`; the historical bundle served by `public/index.html` was not
-rebuilt or switched over by this audit.
+also avoids quadratic work on unmatched opening brackets.
 
 ## Regression checks
 

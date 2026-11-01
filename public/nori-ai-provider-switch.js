@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  // The historical Settings compatibility panel owns its provider-change
+  // The AI settings panel (nori-ai-settings.js) owns its provider-change
   // listener internally. Keep the two built-in default model names symmetric:
   // switching OpenAI -> Anthropic -> OpenAI must not leave the Anthropic
   // default model selected for an OpenAI-compatible endpoint.

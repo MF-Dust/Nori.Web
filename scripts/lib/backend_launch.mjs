@@ -128,6 +128,7 @@ export async function startBackend({
   host = "127.0.0.1",
   env = {},
   publicDir,
+  frontendDir,
   dataDir,
   stdio = ["ignore", "pipe", "pipe"],
   readyTimeoutMs = 60_000,
@@ -140,6 +141,7 @@ export async function startBackend({
   const origin = `http://${originHost}:${port}`;
   const backendEnv = { ...process.env, ...env, HOST: host, PORT: String(port) };
   if (publicDir != null) backendEnv.NORI_PUBLIC_DIR = resolve(repoRoot, publicDir);
+  if (frontendDir != null) backendEnv.NORI_FRONTEND_DIR = resolve(repoRoot, frontendDir);
   if (dataDir != null) backendEnv.NORI_DATA_DIR = resolve(repoRoot, dataDir);
 
   let child;

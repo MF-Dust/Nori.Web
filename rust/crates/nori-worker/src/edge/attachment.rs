@@ -25,15 +25,12 @@ pub fn text(attachment: &Map<String, Value>, key: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
-pub fn new(user_id: &str, socket_id: &str, path: &str, cookie: &str) -> String {
+pub fn new(user_id: &str, socket_id: &str, path: &str) -> String {
     let role = if path.ends_with("/media") {
         "pending_media"
     } else {
         "main"
     };
-    let mut value = json!({"version": 1, "socketId": socket_id, "userId": user_id, "role": role});
-    if let Some(preference) = nori_core::auth::story_preference(cookie) {
-        value["fullUnlock"] = json!(preference);
-    }
+    let value = json!({"version": 1, "socketId": socket_id, "userId": user_id, "role": role});
     serde_json::to_string(&value).expect("JSON attachment")
 }

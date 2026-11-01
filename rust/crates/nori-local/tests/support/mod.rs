@@ -44,6 +44,7 @@ pub async fn start_app(state: AppState, app: axum::Router) -> TestServer {
 pub fn config(public_dir: &Path) -> Config {
     Config {
         public_dir: public_dir.to_path_buf(),
+        frontend_dir: None,
         auto_guest: true,
         dev_otp: String::new(),
         ..Config::default()

@@ -49,8 +49,8 @@ const DATASEA_COSMIC_TAIL = 2;
 const DATASEA_CONTACT = 3.8;
 
 /**
- * The shipped audio table (the one revision of it in public/assets, in
- * NormalApp-Cn6agT0F.js, which public/index.html loads through index-CyHAbkO5).
+ * The shipped audio table (the one revision of it, in the shipped NormalApp
+ * chunk).
  * Every time is an offset from DATASEA_PHASES so the algebra stays checkable.
  */
 export const DATASEA_AUDIO: readonly StoryAudioTrack[] = [

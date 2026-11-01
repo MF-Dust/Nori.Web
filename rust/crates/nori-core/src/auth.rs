@@ -9,7 +9,6 @@ use std::collections::HashMap;
 type HmacSha256 = Hmac<Sha256>;
 
 pub const SESSION_COOKIE: &str = "arcade-auth.session_token";
-pub const STORY_COOKIE: &str = "nori_full_unlock";
 pub const GUEST_PREFIX: &str = "guest.v1.";
 pub const SESSION_TTL: i64 = 30 * 24 * 60 * 60;
 const TICKET_TTL: i64 = 300;
@@ -44,37 +43,6 @@ pub fn cookie_token(cookie_header: &str, better_auth: &str) -> Option<String> {
         }
     }
     None
-}
-
-pub fn story_preference(cookie_header: &str) -> Option<bool> {
-    for part in cookie_header.split(';') {
-        let Some((key, value)) = part.trim().split_once('=') else {
-            continue;
-        };
-        if key == STORY_COOKIE {
-            return match value {
-                "1" => Some(true),
-                "0" => Some(false),
-                _ => None,
-            };
-        }
-    }
-    None
-}
-
-pub fn apply_story_default(message: &mut Json, preference: Option<bool>) {
-    let Some(preference) = preference else {
-        return;
-    };
-    let Some(obj) = message.as_object_mut() else {
-        return;
-    };
-    let kind = obj.get("type").and_then(Value::as_str).unwrap_or("");
-    if (kind == "open_my_web_world" || kind == "reset_my_web_world")
-        && !obj.contains_key("fullUnlock")
-    {
-        obj.insert("fullUnlock".into(), json!(preference));
-    }
 }
 
 pub fn guest_session(secret: &str, token: Option<&str>, now: i64) -> (Json, bool) {

@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
 import {
   bindOsNotifications,
   computeCapForFacts,
@@ -17,7 +15,6 @@ import {
 } from "../../frontend-src/runtime/os-notifications";
 import { createNotificationStore, type NotificationInput } from "../../frontend-src/state/notification-store";
 import { createParadigmRevealStore } from "../../frontend-src/state/paradigm-reveal-store";
-import { RECOVERED_FEATURES } from "../../frontend-src/features/catalog";
 import { idleInitializationCueSchedule } from "../../frontend-src/screens/idle-initialization-sequence";
 import { idleGeneratorAccent } from "../../frontend-src/screens/idle-toasts";
 
@@ -385,16 +382,4 @@ test("Idle initialization cues follow the shipped Js schedule", () => {
   assert.ok(steps.every((item) => item.options?.volume === 0.8));
   assert.equal(idleGeneratorAccent({ alignment: "universal" }), "#94a3b8");
   assert.equal(idleGeneratorAccent({ alignment: "accelerate" }), "#f87171");
-});
-
-test("every shipped chunk has a feature owner and every listed module exists", () => {
-  const chunks = readdirSync("public/assets").filter((name) => /\.(?:js|css)$/.test(name));
-  const unowned = chunks.filter(
-    (chunk) => !RECOVERED_FEATURES.some((feature) => feature.shippedChunkPatterns.some((pattern) => pattern.test(chunk))),
-  );
-  assert.deepEqual(unowned, []);
-  const missing = RECOVERED_FEATURES.flatMap((feature) =>
-    feature.maintenanceModules.filter((module) => !existsSync(join("frontend-src", module))),
-  );
-  assert.deepEqual(missing, []);
 });

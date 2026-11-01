@@ -143,9 +143,8 @@ test("datasea parks only for route alignment and descends to evidence camera tar
 });
 
 test("datasea audio is the live shipped table with phase-derived times", () => {
-  // NormalApp-Cn6agT0F.js (the chunk public/index.html loads through
-  // index-CyHAbkO5) is the only place in public/assets that carries this
-  // table. Times are 99.3 cosmic / 159.115 white / 187.415 cg / 198.415 end.
+  // Transcribed from the shipped NormalApp chunk, the only shipped revision
+  // that carried this table. Times are 99.3 cosmic / 159.115 white / 187.415 cg / 198.415 end.
   assert.deepEqual(
     DATASEA_AUDIO.map(
       ({ id, at, until, gain, fadeIn, fadeOut, loop }) => ({

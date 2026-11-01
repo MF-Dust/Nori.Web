@@ -12,7 +12,7 @@ Copyright (C) Nori.Web contributors.
 
 以下内容**不因根目录的 GPL 声明而获得新的授权**：
 
-- 原站 `os.inori.ai` 的前端代码及其恢复/改写部分，包括 `public/assets/` 中的历史 bundle，以及 `frontend-src/` 中源自这些 bundle 的实现；原创修改的授权不代表底层作品已获授权。
+- 原站 `os.inori.ai` 的前端代码及其恢复/改写部分，包括 `frontend-src/` 中源自原站 bundle 的实现（原站 bundle 本身已从仓库移除，可从 Git 历史找回）；原创修改的授权不代表底层作品已获授权。
 - 原站角色、Live2D 模型、贴图、音频、图标、剧情、世界归档和其他美术/文本资产，例如 `public/Nori_web/`、`public/ARGNori_web/`、`public/webAssets/`、`public/audio/`、`public/icons/`、`public/cakeduel/`、`backend/data/live_world_pack.json`。这不是穷尽清单；应按来源判断，而非仅按目录判断。
 - `public/cubism_sdk/Core/live2dcubismcore.js`：Live2D Cubism Core，版权归 Live2D Inc.，适用其专有软件许可，不是 GPL 代码。
 - 字体和开源依赖：分别遵循各自许可证，见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

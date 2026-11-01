@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -99,6 +100,9 @@ def main() -> None:
             raise RuntimeError("Packaged root response does not look like HTML")
         if b"nori-community-notice" not in index:
             raise RuntimeError("Packaged page is missing the unofficial project notice")
+        entry = re.search(rb'src="/(assets/index-[^"]+\.js)"', index)
+        if not entry or not _wait_for(f"{base}/{entry.group(1).decode()}"):
+            raise RuntimeError("Packaged page does not load the built frontend entry")
         for path in (
             "legal/index.html",
             "legal/LICENSE",
@@ -119,6 +123,8 @@ def main() -> None:
             "source/dependencies.json",
             "source/README.md",
             "backend/data/live_world_pack.json",
+            "frontend/index.html",
+            "public/fonts.css",
         )
         for path in required:
             if not (release_dir / path).is_file():

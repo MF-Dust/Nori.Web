@@ -10,8 +10,6 @@ __pycache__/
 # Local Pi LSP commands contain machine-specific paths.
 /.pi/pi-lsp.json
 
-.wrangler-candidate.json
-
 # --- Cloudflare local state and secrets ---
 .wrangler/
 .dev.vars

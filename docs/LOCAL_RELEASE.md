@@ -1,10 +1,10 @@
 # Rust 本地发行包
 
-本地服务由 `rust/crates/nori-local` 编译为独立可执行文件。发布目录包含 `Nori.Web`（Windows 为 `Nori.Web.exe`）、网页和数据文件，以及许可证和对应源码。
+本地服务由 `rust/crates/nori-local` 编译为独立可执行文件。发布目录包含 `Nori.Web`（Windows 为 `Nori.Web.exe`）、构建好的前端、静态素材和数据文件，以及许可证和对应源码。
 
 ## 本地构建、运行与验证
 
-需安装 Python 3.13、Rust stable（至少 1.98）和 Cargo；Python 仅运行标准库构建/测试辅助脚本，无需安装额外包。所有将进入正式发行包的源码（尤其是 `rust/` 和 `rust/Cargo.lock`）必须先提交或加入 Git 跟踪。默认构建会拒绝未跟踪源码，只允许未跟踪的 `uv.lock` 和 `rust/Cargo.lock`。
+需安装 Python 3.13、Node.js 18+（npm）、Rust stable（至少 1.98）和 Cargo；Python 仅运行标准库构建/测试辅助脚本，无需安装额外包。`build_release.py` 会先以锁定的 npm 依赖执行 `npm run frontend:app:build`（不使用静态资源 CDN），再编译 `nori-local`。所有将进入正式发行包的源码（尤其是 `rust/` 和 `rust/Cargo.lock`）必须先提交或加入 Git 跟踪。默认构建会拒绝未跟踪源码，只允许未跟踪的 `uv.lock` 和 `rust/Cargo.lock`。
 
 ```bash
 python -m unittest tests.test_release_legal
@@ -22,12 +22,13 @@ python scripts/smoke_release.py
 
 该选项会把 Git 未跟踪的非忽略文件也纳入源码交付（`source/project.zip` 及随包的 `public/`、`backend/data/`），并在 `BUILD_INFO.txt` 中标为 **DEVELOPMENT ONLY**。不要用它生成正式发行物；检查归档内容并提交所有发布源码后，再用默认命令构建。
 
-产物位于 `build/release/Nori.Web-<system>-<architecture>/`。启动目录中的 `Nori.Web` / `Nori.Web.exe`，然后访问 `http://127.0.0.1:4173/`。服务支持 `HOST`、`PORT`、`NORI_DISABLE_LIVE_PACK`、`NORI_PUBLIC_DIR` 和 `NORI_DATA_DIR` 环境变量。构建后 `smoke_release.py` 会用空闲端口启动程序，检查 API、网页、非官方提示、法律页面、源码/许可证文件和 Arcade WebSocket 启动行，并在完成后停止服务。发行目录始终重建，Cargo 编译缓存仍复用。
+产物位于 `build/release/Nori.Web-<system>-<architecture>/`。启动目录中的 `Nori.Web` / `Nori.Web.exe`，然后访问 `http://127.0.0.1:4173/`。服务支持 `HOST`、`PORT`、`NORI_DISABLE_LIVE_PACK`、`NORI_FRONTEND_DIR`、`NORI_PUBLIC_DIR` 和 `NORI_DATA_DIR` 环境变量。构建后 `smoke_release.py` 会用空闲端口启动程序，检查 API、网页及前端入口脚本、非官方提示、法律页面、源码/许可证文件和 Arcade WebSocket 启动行，并在完成后停止服务。发行目录始终重建，Cargo 编译缓存仍复用。
 
 ## 发行目录和依赖解析
 
 ```text
 Nori.Web[.exe]
+frontend/          # npm run frontend:app:build 的产物，叠加在 public/ 之上提供
 public/
 backend/data/
 README.md
@@ -45,7 +46,7 @@ source/README.md
 
 构建器要求每个链接 crate 提供 SPDX 表达式、许可证/NOTICE 文件，且表达式必须至少有一个与 GPL-3.0-or-later 兼容的分支；`AND` 中的每个分支都必须兼容，`OR` 中至少一个分支兼容。未知表达式或缺失许可材料会使构建失败，并列出问题 crate。根目录许可证会复制到发行包；`LICENSE`、`COPYRIGHT.md`、`THIRD_PARTY_NOTICES.md` 必须与 `public/legal/` 中对应文件逐字节一致。
 
-`source/project.zip` 收录跟踪文件的实际工作树内容（包括已跟踪修改），但不重复收录发行根目录已提供的 `public/` 和 `backend/data/`。三者共同提供完整的本次构建源码；ZIP 不包含 Git 历史或被忽略的文件。不要将凭据加入 Git 跟踪。发送发行物时保留整个目录，而不只是可执行文件或 `source/`。
+`source/project.zip` 收录跟踪文件的实际工作树内容（包括已跟踪修改），但不重复收录发行根目录已提供的 `public/` 和 `backend/data/`。三者共同提供完整的本次构建源码，`frontend/` 可由其中的 `frontend-src/` 重新构建；ZIP 不包含 Git 历史或被忽略的文件。不要将凭据加入 Git 跟踪。发送发行物时保留整个目录，而不只是可执行文件或 `source/`。
 
 ## 从发行包还原源码
 
@@ -55,12 +56,13 @@ source/README.md
 python -c "import shutil, zipfile; zipfile.ZipFile('source/project.zip').extractall('rebuild'); shutil.copytree('public', 'rebuild/public', dirs_exist_ok=True); shutil.copytree('backend/data', 'rebuild/backend/data', dirs_exist_ok=True)"
 cd rebuild
 cargo build --release --locked -p nori-local --manifest-path rust/Cargo.toml
+npm ci && npm run frontend:app:build
 ```
 
 使用 `BUILD_INFO.txt` 记录的 Rust 工具链。包内 `source/README.md` 也提供相同的还原步骤；不要将精简后的 `project.zip` 单独当作完整源码包分发。
 
 ## GitHub Actions
 
-`.github/workflows/rust-local-build.yml` 支持手动触发和 `v*` 标签。Windows、Linux、macOS runner 会运行授权测试、Rust 核心/本地服务测试、发行构建与 smoke test，并将每个平台的发行目录作为保留 14 天的 artifact 上传。
+`.github/workflows/rust-local-build.yml` 支持手动触发和 `v*` 标签。Windows、Linux、macOS runner 会安装锁定的 npm 依赖，运行授权测试、Rust 核心/本地服务测试、发行构建与 smoke test，并将每个平台的发行目录作为保留 14 天的 artifact 上传。
 
-构建不会签署 Windows 二进制或 notarize macOS 应用。另请注意：随包发布的历史前端、原站素材和 Live2D 资产仍有单独的授权问题；打包许可证或源代码不会授予这些内容的新权利。公开分发前应按 `COPYRIGHT.md` 核实、取得许可或移除相关资产。
+构建不会签署 Windows 二进制或 notarize macOS 应用。另请注意：随包发布的源自原站的前端实现、原站素材和 Live2D 资产仍有单独的授权问题；打包许可证或源代码不会授予这些内容的新权利。公开分发前应按 `COPYRIGHT.md` 核实、取得许可或移除相关资产。

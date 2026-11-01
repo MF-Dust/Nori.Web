@@ -405,7 +405,10 @@ def prepare_rust_legal_bundle(
             f"{reconstruct}"
             "cd rebuild\n"
             "cargo build --release --locked -p nori-local --manifest-path rust/Cargo.toml\n"
+            "npm ci && npm run frontend:app:build\n"
             "```\n\n"
+            "The distribution's `frontend/` directory is that frontend build (`.artifacts/build/app`), "
+            "generated from `frontend-src/` with the npm dependencies locked in `package-lock.json`.\n\n"
             "The root `RUST-LICENSE-SUMMARY.txt` records the license policy results for this bundle. "
             "Project-owned assets may have separate rights; see COPYRIGHT.md before redistribution.\n",
             encoding="utf-8",

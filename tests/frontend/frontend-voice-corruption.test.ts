@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import {
@@ -26,33 +27,31 @@ function processor(path: string) {
     (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32;
   return instance;
 }
+/** SHA-256 of 800 rendered blocks per mode, captured while the source matched the shipped worklet sample for sample. */
+const SHIPPED_OUTPUT: Record<string, string> = {
+  unstable: "68658a3bae505efcc95bbae145a933cd5faa16429de81a46ced3dafba47582a7",
+  glitch: "fafb8621c7d3923980a0acebaecd850b0a0ffa1b3e620e17704dcef3b01e68fa",
+  robot: "1b2f5eb77ea766200111497c30840710edfa0284f66c3b125ff46f5c7d765d35",
+  ghost: "bf06fd462c752f9450a64bec45c692b568508f289888e2c6edd159064196ede6",
+  demon: "7238af83a65bef685c3c36afa52a1c1107a7aea8854e1e05a50af8f85c016b77",
+  haywire: "3f8e757e03cc512d4fa4c71e03c5f7007d4ca7eb845a99e2fdeb955db95df4dd",
+};
 test("all six source corruption modes match the shipped processor sample for sample", () => {
   for (const preset of CORRUPTION_PRESETS) {
-    const source = processor(
-        "frontend-src/runtime/corruption-processor.worklet.js",
-      ),
-      reference = processor(
-        "public/assets/corruptionProcessor.worklet-lw-jqXOl.js",
-      );
-    const config = { ...corruptionPreset(preset, 0.7).worklet, bypass: false };
-    source.applyConfig(config);
-    reference.applyConfig(config);
+    const source = processor("frontend-src/runtime/corruption-processor.worklet.js");
+    source.applyConfig({ ...corruptionPreset(preset, 0.7).worklet, bypass: false });
+    const output = new Float32Array(800 * 128);
     for (let block = 0; block < 800; block++) {
       const input = Float32Array.from(
         { length: 128 },
         (_, i) => 0.3 * Math.sin((block * 128 + i) * 0.043),
       );
-      const actual = new Float32Array(128),
-        expected = new Float32Array(128);
+      const actual = new Float32Array(128);
       source.process([[input]], [[actual]]);
-      reference.process([[input]], [[expected]]);
-      for (let i = 0; i < 128; i++)
-        assert.equal(
-          actual[i],
-          expected[i],
-          `${preset} block ${block} sample ${i}`,
-        );
+      output.set(actual, block * 128);
     }
+    const digest = createHash("sha256").update(new Uint8Array(output.buffer)).digest("hex");
+    assert.equal(digest, SHIPPED_OUTPUT[preset], preset);
   }
 });
 test("bypassing corruption clears captured audio before reactivation and passes dry audio exactly", () => {

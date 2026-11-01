@@ -11,7 +11,8 @@ pub struct AppState {
     pub config: Arc<Config>,
     pub http_host: Arc<Mutex<HttpHost>>,
     pub live_pack: Arc<LivePack>,
-    pub public_dir: PathBuf,
+    /// Static lookup order: the built frontend first, then `public/`.
+    pub static_roots: Vec<PathBuf>,
     pub data_dir: PathBuf,
 }
 
@@ -30,7 +31,12 @@ impl AppState {
             ..HttpHost::default()
         };
         Self {
-            public_dir: config.public_dir.clone(),
+            static_roots: config
+                .frontend_dir
+                .iter()
+                .chain([&config.public_dir])
+                .cloned()
+                .collect(),
             data_dir: config.data_dir.clone(),
             config: Arc::new(config),
             http_host: Arc::new(Mutex::new(http_host)),

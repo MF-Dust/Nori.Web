@@ -1,4 +1,4 @@
-// Collect license texts; this is not an audit of the historical frontend bundle.
+// Collect license texts for the npm dependencies the frontend build ships.
 import { copyFile, readFile, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,7 +8,6 @@ const legal = resolve(root, "public/legal");
 const lock = JSON.parse(await readFile(resolve(root, "package-lock.json"), "utf8"));
 const sections = [
   "Current source-build npm dependencies (package-lock.json).",
-  "Not an exhaustive inventory of the historical public/assets bundles.",
   "Optional native packages not installed on this platform are not included.",
   "The original license texts below retain their own terms.\n",
 ];

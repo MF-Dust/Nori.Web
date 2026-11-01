@@ -53,7 +53,7 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-  candidate:
+  site:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -63,83 +63,20 @@ jobs:
           node-version: "22"
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: rust -> target
-      - name: Cache worker-build
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/bin/worker-build
-          key: worker-build-${{ runner.os }}-0.8.7
-      - name: Install worker-build
-        run: |
-          if ! command -v worker-build || [ "$(worker-build --version)" != "0.8.7" ]; then
-            cargo install worker-build --version 0.8.7 --locked
-          fi
       - run: npm ci
       - name: Build Rust backend for Node smokes
         run: cargo build --release -p nori-local --manifest-path rust/Cargo.toml
       - run: npx playwright install --with-deps chromium
       - run: npm run frontend:app:build
-      - run: npm run frontend:cutover:candidate -- --materialize
-        id: stage
-      - run: npm run frontend:cutover:smoke
-      - name: Capture paired visual reference
-        run: node scripts/probes/frontend_visual_reference_probe.mjs
-      - name: Capture paired game start screens
-        run: node scripts/probes/frontend_visual_games_probe.mjs
-      - name: Dry-run candidate Worker bundle
-        if: ${{ !cancelled() && steps.stage.outcome == 'success' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          config=.wrangler-candidate.json
-          outdir=.candidate-worker-dist
-          log=/tmp/candidate-wrangler.log
-          trap 'rm -f "$config"' EXIT
-
-          node scripts/lib/frontend_candidate_worker_config.mjs
-          set +e
-          npx wrangler deploy --dry-run --config "$config" --outdir "$outdir" > "$log" 2>&1
-          code=$?
-          set -e
-          tail -n 120 "$log"
-          if [ "$code" -ne 0 ]; then
-            exit "$code"
-          fi
-          if grep -Eiq 'Unexpected fields found|configuration error|config(uration)?[^[:alnum:]]+error' "$log"; then
-            echo "::error::Wrangler rejected the candidate configuration"
-            exit 1
-          fi
-          if grep -Fq 'backend/data/live_world_pack.json' "$log" || find "$outdir" -type f -name 'live_world_pack.json' -print -quit | grep -q .; then
-            echo "::error::The large live-world archive leaked into the candidate Worker bundle"
-            exit 1
-          fi
-
-          node --test tests/frontend/frontend-candidate-worker-assets.test.mjs
-          node scripts/verify/verify_frontend_candidate_worker_assets.mjs .artifacts/build/app/cutover-candidate "$outdir"
-
-          node --input-type=module - "$outdir" <<'NODE'
-          import assert from "node:assert/strict";
-          import { readdirSync, readFileSync } from "node:fs";
-          import { join } from "node:path";
-          import { gzipSync } from "node:zlib";
-          const files = readdirSync(process.argv[2], { recursive: true })
-            .filter(path => path.endsWith(".wasm"));
-          assert.ok(files.length, "Candidate Worker output is missing its WASM module");
-          const bytes = files.reduce((total, path) => total + gzipSync(readFileSync(join(process.argv[2], path))).length, 0);
-          console.log(`Candidate Worker WASM gzip size: ${(bytes / 1024).toFixed(2)} KiB`);
-          assert.ok(bytes < 3 * 1024 * 1024, "Candidate Worker WASM must stay below 3 MiB gzipped");
-          NODE
+      - run: npm run frontend:site -- --materialize
+      - run: npm run frontend:site:smoke
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: frontend-candidate-${{ github.sha }}
-          path: |
-            .artifacts/candidate-smoke/
-            .artifacts/visual-reference/
-            .artifacts/build/app/cutover-rollback/rollback-manifest.json
-          include-hidden-files: true
+          name: frontend-site-${{ github.sha }}
+          path: .artifacts/site-smoke/
           retention-days: 7
+          if-no-files-found: warn
