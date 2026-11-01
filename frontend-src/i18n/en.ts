@@ -981,6 +981,8 @@ export default {
       "easyTierUnavailable": "EasyTier is unavailable: enable the experimental channel and set the module URL and network name in Settings",
       "noInvite": "Create an invite code first",
       "wrongGame": "This code belongs to another game",
+      "staleReply": "This reply code answers an older invite; ask for a reply to the current one",
+      "version": "The other player runs an incompatible version of Nori.Web; both need to reload the latest version",
       "silent": "The other player stopped responding",
       "failed": "Could not connect (try configuring a TURN server)"
     }

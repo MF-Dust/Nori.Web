@@ -142,3 +142,42 @@ fn a_remote_guesser_gets_pictionary_hints_but_no_nori_guesses() {
     assert!(labels.iter().any(|label| label.contains("hint")), "{labels:?}");
     assert!(!labels.iter().any(|label| label.contains("guess")), "{labels:?}");
 }
+
+#[test]
+fn lease_renewals_can_skip_the_view_projection() {
+    let mut world = new_world();
+    mount(&mut world, "chess");
+    let out = send(&mut world, json!({"type": "event", "channel": "multiplayer.remote_opponent", "requestId": "renew", "payload": {"cartridgeId": "chess", "enabled": true, "view": false}}));
+    let reply = &out.direct[0]["payload"];
+    assert_eq!(reply["ok"], true);
+    assert!(reply["runtime"].is_null(), "a renewal carries no snapshot");
+    assert!(world.remote_opponent("chess"), "the lease is still extended");
+}
+
+#[test]
+fn a_stale_agent_step_does_not_act_for_a_seat_that_already_moved() {
+    let mut world = new_world();
+    mount(&mut world, "chess");
+    lease(&mut world, "chess", true);
+    dispatch(&mut world, "chess", "player", "start", json!({"type": "startGame", "mode": "normal", "side": "white", "difficulty": "casual"}));
+    dispatch(&mut world, "chess", "player", "e4", json!({"type": "move", "from": "e2", "to": "e4"}));
+    let head = world.cartridge("chess").unwrap().head_version;
+    let out = send(&mut world, json!({"type": "event", "channel": "multiplayer.agent_step", "requestId": "stale", "payload": {"cartridgeId": "chess", "expectedHeadVersion": head - 1}}));
+    assert_eq!(out.direct[0]["payload"]["ok"], false);
+    assert_eq!(out.direct[0]["payload"]["stale"], true);
+    assert_eq!(world.cartridge("chess").unwrap().head_version, head);
+    let out = send(&mut world, json!({"type": "event", "channel": "multiplayer.agent_step", "requestId": "fresh", "payload": {"cartridgeId": "chess", "expectedHeadVersion": head}}));
+    assert_eq!(out.direct[0]["payload"]["ok"], true);
+    assert_eq!(world.cartridge("chess").unwrap().head_version, head + 1);
+}
+
+#[test]
+fn commit_view_matches_the_separate_projections() {
+    let mut world = new_world();
+    mount(&mut world, "cakeduel");
+    lease(&mut world, "cakeduel", true);
+    let out = dispatch(&mut world, "cakeduel", "player", "s", json!({"type": "startGame", "mode": "normal", "difficulty": "soldier"}));
+    let view = &remote_views(&out).last().expect("a remote view")["payload"];
+    let cartridge = world.cartridge("cakeduel").unwrap();
+    assert_eq!(view["runtime"], nori_core::multiplayer::snapshot(cartridge));
+}

@@ -188,10 +188,16 @@ fn swap_event(cartridge_id: &str, event: &mut Value, swapped_state: &Json) {
     }
 }
 
+/// The cartridge as seen from the agent seat. Only `state` is projected (one clone);
+/// `initial_state` is never read by the browser projections, so it is not copied.
 fn view_cartridge(cartridge: &Cartridge) -> Cartridge {
-    let mut view = cartridge.clone();
-    view.state = swap_state(&cartridge.id, &cartridge.state);
-    view
+    Cartridge {
+        id: cartridge.id.clone(),
+        initial_state: Value::Null,
+        state: swap_state(&cartridge.id, &cartridge.state),
+        head_version: cartridge.head_version,
+        visible_version: cartridge.visible_version,
+    }
 }
 
 /// Whether the remote seat has something to do (its turn). Drives the host's turn clock.
@@ -200,28 +206,41 @@ pub fn agent_turn(cartridge: &Cartridge) -> bool {
     crate::cartridge::agent_command(&cartridge.id, &cartridge.state).is_some()
 }
 
-/// Agent-perspective snapshot in the shape of a `runtimes[]` entry.
-pub fn snapshot(cartridge: &Cartridge) -> Json {
-    let view = view_cartridge(cartridge);
+fn snapshot_of(view: &Cartridge) -> Json {
     json!({
-        "visibilityFenceId": crate::world::fence_for(&cartridge.id),
-        "headVersion": cartridge.head_version,
-        "visibleVersion": cartridge.head_version,
+        "visibilityFenceId": crate::world::fence_for(&view.id),
+        "headVersion": view.head_version,
+        "visibleVersion": view.head_version,
         "state": view.client_view(&view.state),
     })
+}
+
+/// Agent-perspective snapshot in the shape of a `runtimes[]` entry.
+pub fn snapshot(cartridge: &Cartridge) -> Json {
+    snapshot_of(&view_cartridge(cartridge))
 }
 
 /// Agent-perspective projection of one committed raw transition. `cartridge` is the
 /// state the transition produced. The browser rebuilds patches from `state`.
 pub fn transition(cartridge: &Cartridge, raw: &Json) -> Json {
+    transition_of(&view_cartridge(cartridge), raw)
+}
+
+/// Snapshot and transition of one commit, sharing a single swapped view: this runs on
+/// every commit while a seat is leased.
+pub fn commit_view(cartridge: &Cartridge, raw: &Json) -> (Json, Json) {
     let view = view_cartridge(cartridge);
+    (snapshot_of(&view), transition_of(&view, raw))
+}
+
+fn transition_of(view: &Cartridge, raw: &Json) -> Json {
     let mut swapped = raw.clone();
     if let Some(actor) = swapped.get_mut("actor") {
         swap_role(actor);
     }
     if let Some(events) = swapped.get_mut("events").and_then(Value::as_array_mut) {
         for event in events.iter_mut() {
-            swap_event(&cartridge.id, event, &view.state);
+            swap_event(&view.id, event, &view.state);
         }
     }
     // Commands of the other seat are not part of the remote view.

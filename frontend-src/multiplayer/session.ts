@@ -2,7 +2,7 @@ import type { ArcadeChannel, ArcadeConnectionState, ArcadeMessageListener, Arcad
 import type { ArcadeClientMessage, ArcadeServerMessage, EventMessage, JsonValue } from "../runtime/protocol";
 import { WorldStore, type CartridgeSnapshot } from "../runtime/world-store";
 import type { BuiltInGame } from "../services/games";
-import { GUEST_COMMANDS, parsePeerMessage, topLevelPatch, type GameCommand, type PeerMessage } from "./protocol";
+import { GUEST_COMMANDS, PEER_PROTOCOL_VERSION, parsePeerMessage, topLevelPatch, type GameCommand, type PeerMessage } from "./protocol";
 import type { PeerLink } from "./transport";
 
 export const REMOTE_LEASE_MS = 120_000;
@@ -10,50 +10,93 @@ const LEASE_RENEW_MS = 30_000;
 const PING_MS = 5_000;
 const PEER_SILENCE_MS = 20_000;
 const HOST_ACK_TIMEOUT_MS = 20_000;
+/** An expired turn clock waits this long for a guest command that is already in flight. */
+const CLOCK_GRACE_MS = 3_000;
+/** Stroke deltas are split so no single peer message nears the transport limit. */
+const STROKE_CHUNK_CHARS = 48 * 1024;
 
 export type MultiplayerTranslate = (key: string, values?: Readonly<Record<string, string | number>>) => string;
 
-function send(link: PeerLink, message: PeerMessage) {
-  try { link.send(JSON.stringify(message)); } catch { /* The link state change reports the failure. */ }
+/** `version`: the peers run incompatible builds. */
+export type SessionEndReason = "closed" | "silent" | "failed" | "version";
+
+function send(link: PeerLink, message: PeerMessage): boolean {
+  try { link.send(JSON.stringify(message)); return true; }
+  catch (error) {
+    // A closed link is reported by its state change; anything else (size) would silently desync.
+    if (link.state === "open") console.warn("[multiplayer] peer message dropped", message.t, error);
+    return false;
+  }
 }
 
 /** Keeps the link alive and notices a silent peer (a closed laptop never sends `close`). */
-function heartbeat(link: PeerLink, onSilent: () => void, onRtt: (ms: number) => void): (message: PeerMessage) => boolean {
+function heartbeat(link: PeerLink, onSilent: () => void, onRtt: (ms: number) => void) {
   let lastSeen = Date.now();
   const timer = setInterval(() => {
     if (link.state !== "open") return;
     if (Date.now() - lastSeen > PEER_SILENCE_MS) { clearInterval(timer); onSilent(); return; }
     send(link, { t: "ping", at: Date.now() });
   }, PING_MS);
-  link.onState((state) => { if (state === "closed" || state === "failed") clearInterval(timer); });
-  return (message) => {
-    lastSeen = Date.now();
-    if (message.t === "ping") { send(link, { t: "pong", at: message.at }); return true; }
-    if (message.t === "pong") { onRtt(Math.max(0, Date.now() - message.at)); return true; }
-    return false;
+  const stop = () => clearInterval(timer);
+  const unsubscribe = link.onState((state) => { if (state === "closed" || state === "failed") stop(); });
+  return {
+    /** Consumes heartbeat traffic; `false` for every other message. */
+    handle(message: PeerMessage): boolean {
+      lastSeen = Date.now();
+      if (message.t === "ping") { send(link, { t: "pong", at: message.at }); return true; }
+      if (message.t === "pong") { onRtt(Math.max(0, Date.now() - message.at)); return true; }
+      return false;
+    },
+    stop() { stop(); unsubscribe(); },
   };
+}
+
+/** A change to one canvas: drop everything from index `from`, then append `strokes`. */
+export interface StrokeUpdate {
+  roundId: string;
+  from: number;
+  strokes: readonly JsonValue[];
 }
 
 export interface StrokeRelay {
   /** Local strokes of the current round, to mirror on the peer canvas. */
-  setPeerSink(sink: ((roundId: string, strokes: readonly JsonValue[]) => void) | null): void;
-  receivePeerStrokes(roundId: string, strokes: readonly JsonValue[]): void;
+  setPeerSink(sink: ((update: StrokeUpdate) => void) | null): void;
+  receivePeerStrokes(update: StrokeUpdate): void;
+}
+
+/** Sends a stroke delta, chunked; every chunk is itself a valid delta, applied in order. */
+export function sendStrokes(link: PeerLink, update: StrokeUpdate) {
+  let from = update.from, chunk: JsonValue[] = [], size = 0;
+  for (const stroke of update.strokes) {
+    const length = JSON.stringify(stroke).length;
+    if (chunk.length && size + length > STROKE_CHUNK_CHARS) {
+      send(link, { t: "strokes", roundId: update.roundId, from, strokes: chunk });
+      from += chunk.length; chunk = []; size = 0;
+    }
+    chunk.push(stroke); size += length;
+  }
+  send(link, { t: "strokes", roundId: update.roundId, from, strokes: chunk });
 }
 
 export interface BridgeEvents {
   onRtt(ms: number): void;
-  onEnd(reason: "closed" | "silent" | "failed"): void;
+  onEnd(reason: SessionEndReason): void;
   /** The other side introduced itself. */
   onPeerName?(name: string | undefined): void;
   /** Local epoch-ms deadline of the guest's turn, or `null` when no clock runs. */
   onClock?(deadline: number | null, agentTurn: boolean): void;
 }
 
-/** Lease (or release) the agent seat for a remote human; returns the event request id. */
-export function leaseSeat(arcade: ArcadeChannel, game: BuiltInGame, enabled: boolean): string | null {
+/**
+ * Lease (or release) the agent seat for a remote human; returns the event request id.
+ * `view: false` (renewals) skips the agent-perspective snapshot in the reply.
+ */
+export function leaseSeat(arcade: ArcadeChannel, game: BuiltInGame, enabled: boolean, view = true): string | null {
   if (arcade.connectionState !== "open") return null;
   try {
-    return arcade.sendEvent("multiplayer.remote_opponent", { cartridgeId: game, enabled, leaseMs: REMOTE_LEASE_MS }, { cartridgeId: game });
+    return arcade.sendEvent("multiplayer.remote_opponent", {
+      cartridgeId: game, enabled, leaseMs: REMOTE_LEASE_MS, ...(enabled && !view ? { view: false } : {}),
+    }, { cartridgeId: game });
   } catch { return null; }
 }
 
@@ -78,6 +121,8 @@ export class HostBridge {
   private agentTurn = false;
   private deadline: number | null = null;
   private clockTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Latest host head seen for this game; a stale `agent_step` is refused by the backend. */
+  private headVersion = -1;
 
   constructor(
     readonly game: BuiltInGame,
@@ -90,9 +135,10 @@ export class HostBridge {
     private readonly options: HostBridgeOptions = {},
   ) {
     const beat = heartbeat(link, () => this.end("silent"), events.onRtt);
+    this.cleanup.push(() => beat.stop());
     this.cleanup.push(link.onMessage((raw) => {
       const message = parsePeerMessage(raw);
-      if (!message || beat(message)) return;
+      if (!message || beat.handle(message)) return;
       this.onPeer(message);
     }));
     this.cleanup.push(link.onState((state) => {
@@ -105,14 +151,17 @@ export class HostBridge {
       for (const [hostId, entry] of this.pending) this.fail(hostId, entry.guestId, this.translate("multiplayer.error.hostOffline"));
     }));
     if (strokes) {
-      strokes.setPeerSink((roundId, list) => send(this.link, { t: "strokes", roundId, strokes: [...list] }));
+      strokes.setPeerSink((update) => sendStrokes(this.link, update));
       this.cleanup.push(() => strokes.setPeerSink(null));
     }
-    send(link, { t: "hello", v: 1, game, role: "host", room, ...(options.name ? { name: options.name } : {}) });
+    send(link, { t: "hello", v: PEER_PROTOCOL_VERSION, game, role: "host", room, ...(options.name ? { name: options.name } : {}) });
     this.lease(true);
-    this.renewTimer = setInterval(() => this.lease(true), LEASE_RENEW_MS);
+    // Renewals only extend the lease: commits already reach the guest as transitions, and a
+    // fresh view would remount the guest's game (aborting animations) for no change.
+    this.renewTimer = setInterval(() => leaseSeat(this.arcade, this.game, true, false), LEASE_RENEW_MS);
   }
 
+  /** Leases the seat and forwards the reply's snapshot to the guest. */
   private lease(enabled: boolean) {
     // A lost reconnect is fine: world_joined re-leases.
     const requestId = leaseSeat(this.arcade, this.game, enabled);
@@ -138,9 +187,12 @@ export class HostBridge {
     if (deadline !== null) {
       this.clockTimer = setTimeout(() => {
         this.clockTimer = null;
+        // The guest moved just in time: its command is on the way, so give it a moment.
+        if (this.pending.size) { this.setDeadline(Date.now() + CLOCK_GRACE_MS); return; }
         this.deadline = null;
         if (this.arcade.connectionState === "open") {
-          try { this.arcade.sendEvent("multiplayer.agent_step", { cartridgeId: this.game }, { cartridgeId: this.game }); }
+          const payload = { cartridgeId: this.game, ...(this.headVersion >= 0 ? { expectedHeadVersion: this.headVersion } : {}) };
+          try { this.arcade.sendEvent("multiplayer.agent_step", payload, { cartridgeId: this.game }); }
           catch { /* The next transition restarts the clock. */ }
         }
         this.publishClock();
@@ -162,6 +214,7 @@ export class HostBridge {
       return;
     }
     if (raw.type === "cartridge_unmounted" && raw.cartridgeId === this.game) {
+      this.headVersion = -1;
       send(this.link, { t: "view", runtime: null });
       return;
     }
@@ -170,16 +223,21 @@ export class HostBridge {
       if (raw.channel === "multiplayer.remote_opponent.result" && raw.requestId === this.leaseRequest) {
         this.leaseRequest = null;
         if (payload?.ok === true) {
-          send(this.link, { t: "view", runtime: (payload.runtime ?? null) as CartridgeSnapshot | null });
+          const runtime = (payload.runtime ?? null) as CartridgeSnapshot | null;
+          // Assigned, not maxed: a host world reset restarts the versions.
+          this.headVersion = runtime ? runtime.headVersion : -1;
+          send(this.link, { t: "view", runtime });
           this.updateClock(payload.agentTurn === true, false);
         }
         return;
       }
       if (raw.channel === "multiplayer.remote_view" && payload?.cartridgeId === this.game) {
         const transition = (payload.transition ?? {}) as Record<string, JsonValue>;
+        const version = Number(payload.version);
+        if (Number.isFinite(version)) this.headVersion = Math.max(this.headVersion, version);
         send(this.link, {
           t: "transition",
-          version: Number(payload.version),
+          version,
           runtime: payload.runtime as unknown as CartridgeSnapshot,
           transition,
         });
@@ -193,6 +251,7 @@ export class HostBridge {
       if (!entry) return;
       clearTimeout(entry.timer);
       this.pending.delete(raw.requestId);
+      if (typeof raw.headVersion === "number") this.headVersion = Math.max(this.headVersion, raw.headVersion);
       // Never forward `runtimes`: a version-mismatch resync carries the host's private view.
       send(this.link, {
         t: "ack", requestId: entry.guestId, success: raw.success === true,
@@ -206,9 +265,19 @@ export class HostBridge {
 
   private onPeer(message: PeerMessage) {
     if (message.t === "bye") { this.end("closed"); return; }
-    if (message.t === "hello") { this.events.onPeerName?.(message.name); return; }
+    if (message.t === "hello") {
+      if (message.v !== PEER_PROTOCOL_VERSION || message.role !== "guest" || message.game !== this.game) {
+        // An incompatible build: hand the seat back instead of holding it for a re-invite.
+        send(this.link, { t: "bye" });
+        this.end("version");
+        this.link.close();
+        return;
+      }
+      this.events.onPeerName?.(message.name);
+      return;
+    }
     if (message.t === "strokes") {
-      if (this.game === "pictionary") this.strokes?.receivePeerStrokes(message.roundId, message.strokes);
+      if (this.game === "pictionary") this.strokes?.receivePeerStrokes(message);
       return;
     }
     if (message.t !== "dispatch") return;
@@ -244,7 +313,7 @@ export class HostBridge {
     send(this.link, { t: "ack", requestId: guestId, success: false, headVersion: 0, error, errorCode: "dispatch_error" });
   }
 
-  private end(reason: "closed" | "silent" | "failed") {
+  private end(reason: SessionEndReason) {
     if (this.closed) return;
     this.closed = true;
     if (this.renewTimer) clearInterval(this.renewTimer);
@@ -254,7 +323,7 @@ export class HostBridge {
     this.pending.clear();
     // A clean goodbye hands the seat back to Nori. A lost link keeps the lease so the
     // host can re-invite; the manager holds it for a grace period, then releases it.
-    if (reason === "closed") this.lease(false);
+    if (reason === "closed" || reason === "version") this.lease(false);
     this.cleanup.splice(0).forEach((fn) => fn());
     this.events.onEnd(reason);
   }
@@ -292,6 +361,8 @@ export class GuestArcade implements ArcadeChannel {
   private cleanup: Array<() => void> = [];
   private closed = false;
   private strokes: StrokeRelay | null = null;
+  /** A mount asked for before the host had the cartridge; acknowledged by the next view. */
+  private pendingMount: string | null = null;
 
   constructor(
     readonly game: BuiltInGame,
@@ -303,15 +374,16 @@ export class GuestArcade implements ArcadeChannel {
   ) {
     this.worldId = `multiplayer-${room}`;
     const beat = heartbeat(link, () => this.end("silent"), events.onRtt);
+    this.cleanup.push(() => beat.stop());
     this.cleanup.push(link.onMessage((raw) => {
       const message = parsePeerMessage(raw);
-      if (!message || beat(message)) return;
+      if (!message || beat.handle(message)) return;
       this.onPeer(message);
     }));
     this.cleanup.push(link.onState((state) => {
       if (state === "closed" || state === "failed") this.end(state === "failed" ? "failed" : "closed");
     }));
-    send(link, { t: "hello", v: 1, game, role: "guest", room, ...(name ? { name } : {}) });
+    send(link, { t: "hello", v: PEER_PROTOCOL_VERSION, game, role: "guest", room, ...(name ? { name } : {}) });
   }
 
   get connectionState() { return this.state; }
@@ -319,7 +391,7 @@ export class GuestArcade implements ArcadeChannel {
   attachStrokes(relay: StrokeRelay | null) {
     this.strokes?.setPeerSink(null);
     this.strokes = relay;
-    relay?.setPeerSink((roundId, strokes) => send(this.link, { t: "strokes", roundId, strokes: [...strokes] }));
+    relay?.setPeerSink((update) => sendStrokes(this.link, update));
   }
 
   onMessage(listener: ArcadeMessageListener) {
@@ -344,8 +416,11 @@ export class GuestArcade implements ArcadeChannel {
         visibleVersion: Math.min(message.version, runtime?.headVersion ?? message.version),
         headVersion: runtime?.headVersion ?? message.version,
       });
-    } else if (message.type === "mount_cartridge" && this.world.runtime(message.cartridgeId)) {
-      const runtime = this.world.runtime(message.cartridgeId)!;
+    } else if (message.type === "mount_cartridge" && message.cartridgeId === this.game) {
+      const runtime = this.world.runtime(message.cartridgeId);
+      // The host has not opened the game yet: answer once its view arrives instead of
+      // letting the controller time out.
+      if (!runtime) { this.pendingMount = message.requestId; return; }
       this.deliver({
         type: "cartridge_mounted_ack", worldId: this.worldId, cartridgeId: message.cartridgeId, requestId: message.requestId,
         runtimes: [{ visibilityFenceId: runtime.visibilityFenceId, headVersion: runtime.headVersion, visibleVersion: runtime.visibleVersion, state: runtime.state }],
@@ -362,14 +437,15 @@ export class GuestArcade implements ArcadeChannel {
     if (this.state !== "open") throw new Error(this.translate("multiplayer.error.disconnected"));
     if (cartridgeId !== this.game) throw new Error(this.translate("multiplayer.error.hostOnly"));
     const requestId = `dispatch-${crypto.randomUUID()}`;
-    if (!GUEST_COMMANDS[this.game].has(cmd.type)) {
-      // Answer asynchronously, like a real ack, so the controller sees its request id first.
-      queueMicrotask(() => this.deliver({
-        type: "dispatch_ack", worldId: this.worldId, cartridgeId, requestId, success: false,
-        headVersion: expectedHeadVersion, error: this.translate("multiplayer.error.hostOnly"), errorCode: "command_rejected",
-      }));
-      return requestId;
-    }
+    // Answer asynchronously, like a real ack, so the controller sees its request id first.
+    const answer = (success: boolean) => queueMicrotask(() => this.deliver({
+      type: "dispatch_ack", worldId: this.worldId, cartridgeId, requestId, success, headVersion: expectedHeadVersion,
+      ...(success ? {} : { error: this.translate("multiplayer.error.hostOnly"), errorCode: "command_rejected" }),
+    }));
+    if (!GUEST_COMMANDS[this.game].has(cmd.type)) { answer(false); return requestId; }
+    // Strokes reach the host canvas as peer deltas; the host would only ack the batch, and
+    // the round trip would block the guest's next action (one request at a time).
+    if (cmd.type === "submitStrokeBatch") { answer(true); return requestId; }
     this.pending.add(requestId);
     send(this.link, { t: "dispatch", requestId, expectedHeadVersion, cmd });
     return requestId;
@@ -379,6 +455,7 @@ export class GuestArcade implements ArcadeChannel {
     switch (message.t) {
       case "bye": this.end("closed"); return;
       case "hello":
+        if (message.v !== PEER_PROTOCOL_VERSION) { send(this.link, { t: "bye" }); this.end("version"); this.link.close(); return; }
         if (message.role !== "host" || message.game !== this.game) { this.end("failed"); this.link.close(); return; }
         this.events.onPeerName?.(message.name);
         return;
@@ -387,7 +464,7 @@ export class GuestArcade implements ArcadeChannel {
         return;
       case "view": this.applyView(message.runtime); return;
       case "transition": this.applyTransition(message.version, message.runtime, message.transition); return;
-      case "strokes": if (this.game === "pictionary") this.strokes?.receivePeerStrokes(message.roundId, message.strokes); return;
+      case "strokes": if (this.game === "pictionary") this.strokes?.receivePeerStrokes(message); return;
       case "ack":
         if (!this.pending.delete(message.requestId)) return;
         this.deliver({
@@ -403,6 +480,10 @@ export class GuestArcade implements ArcadeChannel {
 
   private applyView(runtime: CartridgeSnapshot | null) {
     const settled = { ...runtime, visibleVersion: runtime?.headVersion ?? 0 } as CartridgeSnapshot;
+    const current = this.joined ? this.world.runtime(this.game) : undefined;
+    // Same version, same state: a remount would only abort the guest's animations.
+    if (runtime && current && runtime.headVersion === this.applied) { this.ackPendingMount(); return; }
+    const regressed = !!runtime && !!current && runtime.headVersion < this.applied;
     this.applied = runtime?.headVersion ?? -1;
     if (!this.joined) {
       this.joined = true;
@@ -414,8 +495,26 @@ export class GuestArcade implements ArcadeChannel {
       this.setState("open");
       return;
     }
-    if (!runtime) { this.deliver({ type: "cartridge_unmounted", worldId: this.worldId, cartridgeId: this.game }); return; }
-    this.deliver({ type: "cartridge_mounted", worldId: this.worldId, cartridgeId: this.game, runtimes: [settled] } as unknown as ArcadeServerMessage);
+    // A lower version means the host reset its world: the store would ignore it as stale.
+    if (!runtime || regressed) this.deliver({ type: "cartridge_unmounted", worldId: this.worldId, cartridgeId: this.game });
+    if (!runtime) return;
+    const mount = this.pendingMount;
+    this.pendingMount = null;
+    this.deliver({
+      type: mount ? "cartridge_mounted_ack" : "cartridge_mounted", worldId: this.worldId, cartridgeId: this.game,
+      ...(mount ? { requestId: mount } : {}), runtimes: [settled],
+    } as unknown as ArcadeServerMessage);
+  }
+
+  private ackPendingMount() {
+    const runtime = this.world.runtime(this.game);
+    if (!this.pendingMount || !runtime) return;
+    const requestId = this.pendingMount;
+    this.pendingMount = null;
+    this.deliver({
+      type: "cartridge_mounted_ack", worldId: this.worldId, cartridgeId: this.game, requestId,
+      runtimes: [{ visibilityFenceId: runtime.visibilityFenceId, headVersion: runtime.headVersion, visibleVersion: runtime.visibleVersion, state: runtime.state }],
+    });
   }
 
   private applyTransition(version: number, runtime: CartridgeSnapshot, transition: Record<string, JsonValue>) {
@@ -444,10 +543,11 @@ export class GuestArcade implements ArcadeChannel {
     for (const listener of [...this.stateListeners]) listener(state);
   }
 
-  private end(reason: "closed" | "silent" | "failed") {
+  private end(reason: SessionEndReason) {
     if (this.closed) return;
     this.closed = true;
     this.pending.clear();
+    this.pendingMount = null;
     this.strokes?.setPeerSink(null);
     this.cleanup.splice(0).forEach((fn) => fn());
     this.setState("closed");

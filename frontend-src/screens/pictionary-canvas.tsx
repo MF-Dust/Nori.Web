@@ -24,6 +24,8 @@ export interface PictionaryCanvasProps {
   color: string; eraser: boolean;
   onStroke(stroke: DrawingStroke): void;
   onChange(strokes: readonly DrawingStroke[]): void;
+  /** The local drawing of a round, kept outside the canvas so a remount does not erase it. */
+  restoreStrokes?(roundId: string): readonly DrawingStroke[];
   startSoundLoop?: (cue: string) => () => void;
 }
 export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCanvasProps>(function PictionaryCanvas(props, handle) {
@@ -110,7 +112,10 @@ export const PictionaryCanvas = forwardRef<PictionaryCanvasHandle, PictionaryCan
     canvas.current?.setAttribute("aria-label", props.drawer === "player" ? "Drawing canvas" : `${props.opponentName ?? "Nori"} drawing`);
   }, [props.drawer, props.opponentName]);
   useEffect(() => {
-    strokes.current = []; draft.current = null; stopScratch(); revision.current = 0; lastPreview.current = 0; setError(null); render();
+    // Multiplayer remounts the game when a peer joins or leaves; keep the drawer's work.
+    // Same stroke objects (never mutated once committed), so peer deltas stay incremental.
+    const restored = latest.current.drawer === "player" ? latest.current.restoreStrokes?.(props.roundId) ?? [] : [];
+    strokes.current = [...restored]; draft.current = null; stopScratch(); revision.current = 0; lastPreview.current = 0; setError(null); render();
   }, [props.roundId]);
   useEffect(() => {
     if (!props.active) { draft.current = null; stopScratch(); render(); }

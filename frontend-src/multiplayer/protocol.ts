@@ -3,7 +3,13 @@ import type { JsonPatchOperation } from "../runtime/json-patch";
 import type { CartridgeSnapshot } from "../runtime/world-store";
 import type { BuiltInGame } from "../services/games";
 
-export const PEER_PROTOCOL_VERSION = 1;
+/**
+ * Bumped on any incompatible peer message change. v2: stroke messages are deltas
+ * (`from` + appended strokes) instead of the whole canvas.
+ */
+export const PEER_PROTOCOL_VERSION = 2;
+/** Upper bound of strokes mirrored per round (sender window and receiver list). */
+export const MAX_PEER_STROKES = 512;
 export const MULTIPLAYER_GAMES: readonly BuiltInGame[] = ["chess", "codenames", "cakeduel", "pictionary"];
 
 export type GameCommand = { type: string; [key: string]: JsonValue };
@@ -17,7 +23,8 @@ export type PeerMessage =
   | { t: "transition"; version: number; runtime: CartridgeSnapshot; transition: Record<string, JsonValue> }
   | { t: "dispatch"; requestId: string; expectedHeadVersion: number; cmd: GameCommand }
   | { t: "ack"; requestId: string; success: boolean; headVersion: number; error?: string; errorCode?: string }
-  | { t: "strokes"; roundId: string; strokes: JsonValue[] }
+  /** The sender's canvas from index `from` on; the receiver truncates to `from`, then appends. */
+  | { t: "strokes"; roundId: string; from: number; strokes: JsonValue[] }
   | { t: "ping"; at: number }
   | { t: "pong"; at: number }
   | { t: "bye" };
@@ -48,7 +55,7 @@ export function parsePeerMessage(raw: string): PeerMessage | null {
   const message = value as Record<string, unknown>;
   switch (message.t) {
     case "hello":
-      if (typeof message.game !== "string" || (message.role !== "host" && message.role !== "guest") || typeof message.room !== "string") return null;
+      if (!Number.isInteger(message.v) || typeof message.game !== "string" || (message.role !== "host" && message.role !== "guest") || typeof message.room !== "string") return null;
       return { ...message, name: cleanName(message.name) } as PeerMessage;
     case "clock":
       return message.remainingMs === null || (typeof message.remainingMs === "number" && message.remainingMs >= 0 && message.remainingMs <= 3_600_000)
@@ -68,7 +75,9 @@ export function parsePeerMessage(raw: string): PeerMessage | null {
       return typeof message.requestId === "string" && typeof message.success === "boolean" && typeof message.headVersion === "number"
         ? message as PeerMessage : null;
     case "strokes":
-      return typeof message.roundId === "string" && Array.isArray(message.strokes) && message.strokes.length <= 512 ? message as PeerMessage : null;
+      return typeof message.roundId === "string" && Array.isArray(message.strokes)
+        && Number.isInteger(message.from) && (message.from as number) >= 0
+        && (message.from as number) + message.strokes.length <= MAX_PEER_STROKES ? message as PeerMessage : null;
     case "ping":
     case "pong":
       return typeof message.at === "number" ? message as PeerMessage : null;

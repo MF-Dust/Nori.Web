@@ -119,7 +119,9 @@ export class WebRtcLink implements PeerLink {
 
   send(message: string) {
     if (this.channel?.readyState !== "open") throw new Error("peer link is not open");
-    if (message.length > MAX_MESSAGE_BYTES) throw new Error("peer message is too large");
+    // SCTP limits bytes, not UTF-16 units: CJK text is three bytes per character.
+    const limit = Math.min(MAX_MESSAGE_BYTES, this.pc.sctp?.maxMessageSize || MAX_MESSAGE_BYTES);
+    if (message.length * 3 > limit && new TextEncoder().encode(message).length > limit) throw new Error("peer message is too large");
     this.channel.send(message);
   }
 

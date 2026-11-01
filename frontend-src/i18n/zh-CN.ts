@@ -981,6 +981,8 @@ export default {
       "easyTierUnavailable": "EasyTier 通道不可用：请在设置中启用实验性通道并填写模块地址和网络名称",
       "noInvite": "请先创建邀请码",
       "wrongGame": "该代码属于其他游戏",
+      "staleReply": "该回复码对应的是旧的邀请码，请让对方用当前邀请码重新生成",
+      "version": "对方的 Nori.Web 版本与本机不兼容，请双方刷新到最新版本",
       "silent": "对方长时间无响应，联机已断开",
       "failed": "无法建立连接（可尝试配置 TURN 服务器）"
     }

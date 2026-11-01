@@ -593,20 +593,31 @@ pub(crate) fn handle_event_with_secrets(world: &mut World, message: &Json, secre
             } else {
                 let enabled = payload.get("enabled") == Some(&Value::Bool(true));
                 let lease = payload.get("leaseMs").and_then(Value::as_i64).unwrap_or(crate::world::MAX_REMOTE_LEASE_MS);
+                // Renewals pass `view: false`: the host already mirrors every commit, so a
+                // full projection every renewal would only be discarded.
+                let with_view = payload.get("view") != Some(&Value::Bool(false));
                 let tasks = world.set_remote_opponent(&game, enabled.then_some(lease));
                 out.outbound.tasks.extend(tasks);
                 let cartridge = world.cartridge(&game).filter(|_| enabled);
-                let runtime = cartridge.map(crate::multiplayer::snapshot).unwrap_or(Value::Null);
+                let runtime = cartridge
+                    .filter(|_| with_view)
+                    .map(crate::multiplayer::snapshot)
+                    .unwrap_or(Value::Null);
                 let agent_turn = cartridge.is_some_and(crate::multiplayer::agent_turn);
                 ("multiplayer.remote_opponent.result".into(), json!({"ok": true, "cartridgeId": game, "enabled": enabled, "runtime": runtime, "agentTurn": agent_turn}))
             }
         }
         "multiplayer.agent_step" => {
             let game = payload.get("cartridgeId").and_then(Value::as_str).unwrap_or("").to_string();
-            let messages = world.remote_agent_step(&game);
+            // The host's clock may expire while the remote player's move is in flight: a
+            // step against a newer head would act for a seat that has already moved.
+            let expected = payload.get("expectedHeadVersion").and_then(Value::as_u64);
+            let head = world.cartridge(&game).map(|c| c.head_version);
+            let stale = expected.is_some() && expected != head;
+            let messages = if stale { None } else { world.remote_agent_step(&game) };
             let ok = messages.is_some();
             out.outbound.broadcast.extend(messages.unwrap_or_default());
-            ("multiplayer.agent_step.result".into(), json!({"ok": ok, "cartridgeId": game}))
+            ("multiplayer.agent_step.result".into(), json!({"ok": ok, "cartridgeId": game, "stale": stale}))
         }
         "pictionary.snapshot" => {
             if let Some(task) = world.recognize_drawing(&payload, secrets) {

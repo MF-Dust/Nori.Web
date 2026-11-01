@@ -11,13 +11,14 @@ GameCartridgeController   ←→   HostBridge  ── dispatch(actor="agent") �
 ```
 
 - **房主权威**：只有房主连接后端。访客的命令经点对点链路发给房主，由房主以 `agent` 身份提交；访客永远不接触房主的后端或会话凭据。
-- **席位租约**：房主发送事件 `multiplayer.remote_opponent {cartridgeId, enabled, leaseMs}`。租约有效期间（最长 2 分钟，房主每 30 秒续约）后端不调度 Nori 的回合、你画我猜的 AI 猜词和视觉识别。租约随世界快照持久化，可跨 Durable Object 休眠；房主离开或失联后租约过期，Nori 自动接管未完成的回合。
+- **席位租约**：房主发送事件 `multiplayer.remote_opponent {cartridgeId, enabled, leaseMs}`。租约有效期间（最长 2 分钟，房主每 30 秒以 `view: false` 续约：续约只延长租约，不再附带并转发整份快照，避免访客端每 30 秒重新挂载、打断动画）后端不调度 Nori 的回合、你画我猜的 AI 猜词和视觉识别。租约随世界快照持久化，可跨 Durable Object 休眠；房主离开或失联后租约过期，Nori 自动接管未完成的回合。
 - **视角投影**：租约期间，每次提交都会额外广播 `multiplayer.remote_view`，内容是把原始状态做 player↔agent 交换后，再经过原有脱敏投影（`client_view` / `client_transition`）的结果。访客因此看到自己的手牌/密钥，看不到房主的私有信息（`rust/crates/nori-core/src/multiplayer.rs`）。
   - 国际象棋：翻转 `settings.playerSide`，结果事件 win/loss 互换。
   - Codenames：交换 `counterpartSide` / `agentSide`，事件 `by` 互换（合作模式，结果不翻转）。
   - Cake Duel：交换 `players[0/1]` 与所有座位索引，移除 Nori 的表情 tell，清除调试场景。
-  - Pictionary：只交换 `drawer` / `guesser` / `by` 字段（猜词文本不变）。笔迹通过点对点链路直接同步，不经过后端。
-- **访客镜像**：`GuestArcade` 实现与真实 `ArcadeClient` 相同的 `ArcadeChannel` 接口，把房主转发的快照写入独立的 `WorldStore`，现有游戏控制器与界面无需改动；游戏窗口在切换为访客时重新挂载。
+  - Pictionary：只交换 `drawer` / `guesser` / `by` 字段（猜词文本不变）。笔迹通过点对点链路直接同步，不经过后端：只发送增量（`{t:"strokes", roundId, from, strokes}`，接收方截断到 `from` 后追加；撤销/清空即截断），坐标量化到 1/10000，超大增量分块发送；中途重新邀请的访客会收到当前已画内容。画布重新挂载（对方加入/离开）时恢复本地已画笔迹。访客作为画手时的 `submitStrokeBatch` 在本地确认，不占用一次往返。
+- **访客镜像**：`GuestArcade` 实现与真实 `ArcadeClient` 相同的 `ArcadeChannel` 接口，把房主转发的快照写入独立的 `WorldStore`，现有游戏控制器与界面无需改动；游戏窗口在切换为访客时重新挂载。与已应用版本相同的快照被忽略；版本回退（房主重置世界或重新挂载卡带）时先卸载再安装，避免被当作过期数据丢弃。房主尚未打开游戏时，访客的挂载请求会在首个快照到达时确认。
+- **协议版本**：握手 `hello.v` 必须等于 `PEER_PROTOCOL_VERSION`（当前为 2）；不一致时双方提示刷新到最新版本，房主立即把席位交还 Nori。
 - **权限**：访客只能发送对局内操作（走子、出牌、提示/猜测、认输等，见 `frontend-src/multiplayer/protocol.ts` 中的 `GUEST_COMMANDS`）。开始、重置、教程和调试场景只由房主操作；联机期间房主也不能启动依赖 Nori 的教程/调试场景。版本冲突时不转发包含房主视角的 `runtimes`，而是重新下发访客视角快照。
 
 ## 网络通道
@@ -58,7 +59,7 @@ EasyTier 邀请码包含房间号、网络名称、网络密钥与节点地址�
 
 - **对手名称**：设置中可填写昵称，握手（`hello`）时交换。联机期间四个游戏界面里的 “Nori” 会替换为对方昵称（未填写时显示“对手”）；游戏窗口在名称变化时重新挂载以刷新文案。访客端不会触发本机 Nori 的表情反应。
 - **你画我猜提示**：租约期间，访客作为猜词方时同样获得渐进字母/拼音提示（`hint_round_for`），中途接手的回合会立即开始计时提示。
-- **回合时限**（房主设置，默认 2 分钟，可关闭）：视图消息携带 `agentTurn`，房主在对方回合开始或对方每次行动后重新计时，并把剩余时间同步给访客（窗口左下角显示“你的回合 / 对方回合 m:ss”）。超时后房主发送 `multiplayer.agent_step`，后端让 Nori **只代走一步**，席位仍保留给对方。你画我猜没有回合，沿用会话计时。
+- **回合时限**（房主设置，默认 2 分钟，可关闭）：视图消息携带 `agentTurn`，房主在对方回合开始或对方每次行动后重新计时，并把剩余时间同步给访客（窗口左下角显示“你的回合 / 对方回合 m:ss”）。超时后房主发送 `multiplayer.agent_step {cartridgeId, expectedHeadVersion}`，后端让 Nori **只代走一步**，席位仍保留给对方。若计时到期时访客的操作仍在途中，房主再等待 3 秒；`expectedHeadVersion` 与后端当前版本不一致（对方刚好已经行动）时后端拒绝代走（`stale: true`）。你画我猜没有回合，沿用会话计时。
 - **掉线处理**：对方主动离开（`bye`）时席位立即交还 Nori。若连接意外中断或 20 秒无心跳，房主进入“对方掉线”状态，席位继续保留 90 秒：
   - **重新邀请**：生成新邀请码，对方加入后从当前局面继续；
   - **让 Nori 接管**：立即释放席位；

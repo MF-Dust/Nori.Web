@@ -60,7 +60,7 @@ function round(id = "one", drawer = "player") {
 }
 const vision = { status: "waiting" };
 const peer = { active: false, roundId: null, strokes: [] };
-const drawing = { subscribe: () => () => {}, snapshot: () => vision, subscribePeer: () => () => {}, peerSnapshot: () => peer, strokesChanged() {}, retryRecognition() {}, setCapture(value: typeof capture) { capture = value; }, submit(stroke: any) { strokes.push(stroke); }, changed() { revisions++; } };
+const drawing = { subscribe: () => () => {}, snapshot: () => vision, subscribePeer: () => () => {}, peerSnapshot: () => peer, strokesChanged() {}, localStrokes: () => [], retryRecognition() {}, setCapture(value: typeof capture) { capture = value; }, submit(stroke: any) { strokes.push(stroke); }, changed() { revisions++; } };
 Object.assign(window, { fixture: {
   commands, strokes, sounds,
   loops: () => loops,

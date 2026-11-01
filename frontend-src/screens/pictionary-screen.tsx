@@ -137,7 +137,8 @@ export function PictionaryScreen({ controller, drawing, locale = "en", playSound
         <PictionaryCanvas ref={canvas} roundId={round.roundId} noriDrawings={round.noriDrawings} redrawEpoch={round.noriRedrawEpoch}
           active={!!active} drawer={round.roles.drawer} color={color} eraser={eraser} startSoundLoop={startSoundLoop}
           peerStrokes={peer.active ? (peer.roundId === round.roundId ? peer.strokes : []) : undefined} opponentName={opponentName}
-          onStroke={stroke => drawing.submit(stroke)} onChange={strokes => { drawing.changed(); drawing.strokesChanged(strokes); }} />
+          onStroke={stroke => drawing.submit(stroke)} onChange={strokes => { drawing.changed(); drawing.strokesChanged(strokes); }}
+          restoreStrokes={roundId => drawing.localStrokes(roundId)} />
         {!roundActive && <div className="source-pictionary-round-result" role="status"><strong>{round.word}</strong>
           <p>{round.status === "solved" ? text("Correct!", "答对了！") : text("Skipped", "已跳过")}</p>
           {nextRoundAt !== null && <span>{Math.max(0, Math.ceil((nextRoundAt - now) / 1000))}</span>}

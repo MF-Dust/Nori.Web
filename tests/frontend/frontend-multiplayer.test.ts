@@ -1,10 +1,12 @@
-import test from "node:test";
+import test, { mock } from "node:test";
 import assert from "node:assert/strict";
 import { GameCartridgeController } from "../../frontend-src/apps/game-cartridge-controller";
 import { chessStateSchema } from "../../frontend-src/apps/chess-schema";
 import { GameService } from "../../frontend-src/services/games";
-import { GuestArcade, HostBridge } from "../../frontend-src/multiplayer/session";
-import { GUEST_COMMANDS, hostCommandBlocked, parsePeerMessage, topLevelPatch } from "../../frontend-src/multiplayer/protocol";
+import { GuestArcade, HostBridge, sendStrokes, type StrokeUpdate } from "../../frontend-src/multiplayer/session";
+import { PictionaryDrawingBridge } from "../../frontend-src/apps/pictionary-runtime";
+import type { DrawingStroke } from "../../frontend-src/apps/pictionary-model";
+import { GUEST_COMMANDS, hostCommandBlocked, parsePeerMessage, PEER_PROTOCOL_VERSION, topLevelPatch } from "../../frontend-src/multiplayer/protocol";
 import { decodeSignal, encodeSignal, Emitter, type PeerLink, type PeerLinkState } from "../../frontend-src/multiplayer/transport";
 import { webRtcConfig } from "../../frontend-src/multiplayer/webrtc-transport";
 import { DEFAULT_MULTIPLAYER_SETTINGS } from "../../frontend-src/state/multiplayer-settings-store";
@@ -195,4 +197,201 @@ test("peer names are bounded single-line text", () => {
   assert.ok(hello && hello.t === "hello");
   assert.equal(hello.name?.startsWith("ab c"), true);
   assert.equal(hello.name!.length <= 24, true);
+});
+
+const peerMessages = (link: MemoryLink) => link.sent.map((raw) => JSON.parse(raw) as Record<string, any>);
+
+test("lease renewals extend the seat without remounting the guest's game", async () => {
+  mock.timers.enable({ apis: ["setInterval"] });
+  try {
+    const { arcade, host, guest, controller, hostLink } = connect();
+    const release = controller.retain();
+    arcade.emit({ type: "event", channel: "multiplayer.remote_opponent.result", requestId: arcade.events[0].id, payload: { ok: true, runtime: chessRuntime(2) } });
+    await flush();
+    const epoch = controller.snapshot().presentationEpoch;
+    const views = () => peerMessages(hostLink).filter((message) => message.t === "view").length;
+    assert.equal(views(), 1);
+
+    mock.timers.tick(30_000);
+    const renewal = arcade.events.at(-1)!;
+    assert.deepEqual(renewal.payload, { cartridgeId: "chess", enabled: true, leaseMs: 120_000, view: false });
+    // Even if a backend still attached a snapshot, a renewal is not forwarded.
+    arcade.emit({ type: "event", channel: "multiplayer.remote_opponent.result", requestId: renewal.id, payload: { ok: true, runtime: chessRuntime(2) } });
+    await flush();
+    assert.equal(views(), 1);
+    assert.equal(controller.snapshot().presentationEpoch, epoch, "no remount, no aborted animation");
+
+    // A fresh view at the version the guest already has is a no-op too.
+    arcade.emit({ type: "dispatch_ack", requestId: "unrelated", cartridgeId: "chess", success: true, headVersion: 2 });
+    arcade.emit({ type: "world_joined", world: { worldId: "w", mountedCartridges: [] } });
+    arcade.emit({ type: "event", channel: "multiplayer.remote_opponent.result", requestId: arcade.events.at(-1)!.id, payload: { ok: true, runtime: chessRuntime(2) } });
+    await flush();
+    assert.equal(views(), 2);
+    assert.equal(controller.snapshot().presentationEpoch, epoch);
+    release(); host.close(); guest.close(); controller.dispose();
+  } finally { mock.timers.reset(); }
+});
+
+test("a host world reset (lower version) replaces the guest's mirror", async () => {
+  const { arcade, host, guest, controller } = connect();
+  const release = controller.retain();
+  arcade.emit({ type: "event", channel: "multiplayer.remote_opponent.result", requestId: arcade.events[0].id, payload: { ok: true, runtime: chessRuntime(9, { drawOffer: "white" }) } });
+  await flush();
+  assert.equal(controller.snapshot().state?.drawOffer, "white");
+  arcade.emit({ type: "world_created", world: { worldId: "w2", mountedCartridges: [] } });
+  arcade.emit({ type: "event", channel: "multiplayer.remote_opponent.result", requestId: arcade.events.at(-1)!.id, payload: { ok: true, runtime: chessRuntime(1) } });
+  await flush();
+  assert.equal(guest.world.runtime("chess")?.headVersion, 1);
+  assert.equal(controller.snapshot().state?.drawOffer, null);
+  // Later commits of the new world apply normally.
+  arcade.emit({ type: "event", channel: "multiplayer.remote_view", payload: { cartridgeId: "chess", version: 2, runtime: chessRuntime(2, { drawOffer: "black" }), transition: { actor: "agent", events: [] } } });
+  await flush();
+  assert.equal(controller.snapshot().state?.drawOffer, "black");
+  release(); host.close(); guest.close(); controller.dispose();
+});
+
+test("a guest mount before the host opened the game is acknowledged by the first view", async () => {
+  const { arcade, host, guest, controller } = connect();
+  arcade.emit({ type: "event", channel: "multiplayer.remote_opponent.result", requestId: arcade.events[0].id, payload: { ok: true, runtime: null } });
+  await flush();
+  const mounted = controller.ensureMounted();
+  assert.equal(controller.snapshot().pending, true);
+  arcade.emit({ type: "cartridge_mounted_ack", cartridgeId: "chess", requestId: "host-mount" });
+  arcade.emit({ type: "event", channel: "multiplayer.remote_opponent.result", requestId: arcade.events.at(-1)!.id, payload: { ok: true, runtime: chessRuntime(0) } });
+  assert.equal(await mounted, true);
+  assert.equal(controller.snapshot().pending, false);
+  host.close(); guest.close(); controller.dispose();
+});
+
+test("the turn clock waits for an in-flight guest move and never steps a stale head", async () => {
+  const [hostLink, guestLink] = MemoryLink.pair();
+  const arcade = new FakeHostArcade();
+  const host = new HostBridge("chess", hostLink, arcade, "room", t, { onRtt() {}, onEnd() {} }, undefined, { turnTimeoutMs: 20 });
+  const guest = new GuestArcade("chess", guestLink, "room", t, { onRtt() {}, onEnd() {} });
+  arcade.emit({ type: "event", channel: "multiplayer.remote_opponent.result", requestId: arcade.events[0].id, payload: { ok: true, runtime: chessRuntime(4), agentTurn: true } });
+  await flush();
+  guest.dispatch("chess", 4, { type: "move", from: "e7", to: "e5" });
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  assert.equal(arcade.events.some((event) => event.channel === "multiplayer.agent_step"), false, "the guest's move is pending");
+  // The guest's move lands; the host's turn follows, then the guest idles on its next turn.
+  arcade.emit({ type: "event", channel: "multiplayer.remote_view", payload: { cartridgeId: "chess", version: 5, runtime: chessRuntime(5), transition: { actor: "player", events: [] }, agentTurn: false } });
+  arcade.emit({ type: "dispatch_ack", requestId: "host-0", cartridgeId: "chess", success: true, headVersion: 5 });
+  arcade.emit({ type: "event", channel: "multiplayer.remote_view", payload: { cartridgeId: "chess", version: 6, runtime: chessRuntime(6), transition: { actor: "agent", events: [] }, agentTurn: true } });
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  const step = arcade.events.find((event) => event.channel === "multiplayer.agent_step");
+  assert.deepEqual(step?.payload, { cartridgeId: "chess", expectedHeadVersion: 6 });
+  host.close(); guest.close();
+});
+
+test("peers on another protocol version are refused and the seat goes back to Nori", async () => {
+  const [hostLink, guestLink] = MemoryLink.pair();
+  const arcade = new FakeHostArcade();
+  const ended: string[] = [];
+  new HostBridge("chess", hostLink, arcade, "room", t, { onRtt() {}, onEnd: (reason) => ended.push(reason) });
+  guestLink.send(JSON.stringify({ t: "hello", v: PEER_PROTOCOL_VERSION - 1, game: "chess", role: "guest", room: "room" }));
+  await flush();
+  assert.deepEqual(ended, ["version"]);
+  assert.ok(arcade.events.some((event) => event.channel === "multiplayer.remote_opponent" && (event.payload as { enabled: boolean }).enabled === false));
+  const [a, b] = MemoryLink.pair();
+  const guestEnded: string[] = [];
+  new GuestArcade("chess", b, "room", t, { onRtt() {}, onEnd: (reason) => guestEnded.push(reason) });
+  a.send(JSON.stringify({ t: "hello", v: PEER_PROTOCOL_VERSION + 1, game: "chess", role: "host", room: "room" }));
+  await flush();
+  assert.deepEqual(guestEnded, ["version"]);
+});
+
+test("guest stroke batches are acknowledged locally, without a host round trip", async () => {
+  const [hostLink, guestLink] = MemoryLink.pair();
+  const arcade = new FakeHostArcade();
+  const host = new HostBridge("pictionary", hostLink, arcade, "room", t, { onRtt() {}, onEnd() {} });
+  const guest = new GuestArcade("pictionary", guestLink, "room", t, { onRtt() {}, onEnd() {} });
+  arcade.emit({ type: "event", channel: "multiplayer.remote_opponent.result", requestId: arcade.events[0].id, payload: { ok: true, runtime: { visibilityFenceId: "ui", headVersion: 1, visibleVersion: 1, state: {} } } });
+  await flush();
+  const acks: Array<Record<string, unknown>> = [];
+  guest.onMessage((message) => { if (message.type === "dispatch_ack") acks.push(message as unknown as Record<string, unknown>); });
+  const before = guestLink.sent.length;
+  const id = guest.dispatch("pictionary", 1, { type: "submitStrokeBatch", batch: [] });
+  await flush();
+  assert.equal(acks[0]?.requestId, id);
+  assert.equal(acks[0]?.success, true);
+  assert.equal(guestLink.sent.slice(before).some((raw) => JSON.parse(raw).t === "dispatch"), false);
+  host.close(); guest.close();
+});
+
+function fakeDrawingController(roundId: string) {
+  const listeners = new Set<() => void>();
+  let snapshot = { state: { gameState: { round: { roundId, status: "active", roles: { drawer: "player", guesser: "agent" } } } }, pending: false };
+  return {
+    snapshot: () => snapshot,
+    subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    setRound(next: string, drawer: "player" | "agent" = "player") {
+      snapshot = { state: { gameState: { round: { roundId: next, status: "active", roles: { drawer, guesser: drawer === "player" ? "agent" : "player" } } } }, pending: false };
+      listeners.forEach((listener) => listener());
+    },
+  };
+}
+
+const fakeArcade = { onMessage: () => () => {}, sendEvent: () => "event" } as unknown as ArcadeChannel;
+const stroke = (index: number, points = 3): DrawingStroke => ({
+  points: Array.from({ length: points }, (_, point) => ({ x: (index + point / 7) / 1000 + 0.123456789, y: 0.987654321 })), color: "#000000", width: 3,
+});
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+test("Pictionary strokes travel as quantized deltas and survive undo and races", async () => {
+  const drawer = fakeDrawingController("r1"), viewer = fakeDrawingController("r1");
+  const local = new PictionaryDrawingBridge(drawer as any, fakeArcade);
+  const remote = new PictionaryDrawingBridge(viewer as any, fakeArcade);
+  const wire: StrokeUpdate[] = [];
+  remote.setPeerSink(() => {});
+  local.setPeerSink((update) => { wire.push(update); remote.receivePeerStrokes(JSON.parse(JSON.stringify(update))); });
+
+  const canvas: DrawingStroke[] = [stroke(0), stroke(1)];
+  local.strokesChanged(canvas);
+  await wait(130);
+  canvas.push(stroke(2));
+  local.strokesChanged(canvas);
+  await wait(130);
+  assert.deepEqual(wire.map((update) => [update.from, update.strokes.length]), [[0, 2], [2, 1]], "only the new stroke is sent");
+  assert.equal(JSON.stringify(wire[0].strokes).includes("0.123456789"), false, "coordinates are quantized");
+  assert.equal(remote.peerSnapshot().strokes.length, 3);
+
+  canvas.pop();
+  local.strokesChanged(canvas);
+  await wait(130);
+  assert.deepEqual([wire.at(-1)!.from, wire.at(-1)!.strokes.length], [2, 0], "undo truncates");
+  assert.equal(remote.peerSnapshot().strokes.length, 2);
+
+  // Next round: the first strokes may arrive before the viewer's round transition.
+  drawer.setRound("r2");
+  local.strokesChanged([stroke(9)]);
+  await wait(130);
+  assert.equal(remote.peerSnapshot().roundId, "r2");
+  viewer.setRound("r2", "agent");
+  assert.equal(remote.peerSnapshot().strokes.length, 1, "early strokes are kept");
+  assert.deepEqual(local.localStrokes("r2").length, 1, "the drawer's canvas can be restored after a remount");
+  local.dispose(); remote.dispose();
+});
+
+test("a re-invited peer receives the drawing so far; large deltas are chunked", async () => {
+  const drawer = fakeDrawingController("r1");
+  const local = new PictionaryDrawingBridge(drawer as any, fakeArcade);
+  const canvas = Array.from({ length: 80 }, (_, index) => stroke(index, 128));
+  local.strokesChanged(canvas);
+  const updates: StrokeUpdate[] = [];
+  local.setPeerSink((update) => updates.push(update));
+  await wait(130);
+  assert.equal(updates.length, 1);
+  assert.equal(updates[0].strokes.length, 80);
+
+  const [a, b] = MemoryLink.pair();
+  sendStrokes(a, updates[0]);
+  const messages = a.sent.map((raw) => parsePeerMessage(raw));
+  assert.ok(messages.length > 1, "split into several messages");
+  assert.ok(a.sent.every((raw) => raw.length < 64 * 1024));
+  assert.ok(messages.every((message) => message?.t === "strokes"));
+  const viewer = new PictionaryDrawingBridge(fakeDrawingController("r1") as any, fakeArcade);
+  viewer.setPeerSink(() => {});
+  for (const message of messages) if (message?.t === "strokes") viewer.receivePeerStrokes(message);
+  assert.equal(viewer.peerSnapshot().strokes.length, 80);
+  b.close(); local.dispose(); viewer.dispose();
 });

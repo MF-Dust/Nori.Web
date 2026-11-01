@@ -243,14 +243,15 @@ impl World {
         let remote = cartridge
             .filter(|_| self.remote_opponent(cartridge_id))
             .map(|c| {
+                let (runtime, view_transition) = crate::multiplayer::commit_view(c, transition);
                 event_message(
                     self,
                     crate::multiplayer::VIEW_CHANNEL,
                     json!({
                         "cartridgeId": cartridge_id,
                         "version": commit.version,
-                        "runtime": crate::multiplayer::snapshot(c),
-                        "transition": crate::multiplayer::transition(c, transition),
+                        "runtime": runtime,
+                        "transition": view_transition,
                         "agentTurn": crate::multiplayer::agent_turn(c),
                     }),
                     json!(cartridge_id),

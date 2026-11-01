@@ -59,6 +59,9 @@ export class GameCartridgeController<T> {
           this.finish(true);
         }
       }
+      // Events never change a runtime (e.g. one `multiplayer.remote_view` per host commit);
+      // re-parsing the state for them would only re-render the screen.
+      if (raw.type === "event") return;
       if (raw.cartridgeId === game || String(raw.type).startsWith("world_")) {
         this.refresh(raw.type === "runtime_transition");
         if (this.users && (raw.type === "world_joined" || raw.type === "world_created")) void this.ensureMounted();

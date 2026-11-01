@@ -5,7 +5,7 @@ import { GameService, type BuiltInGame } from "../services/games";
 import { multiplayerSettings, useMultiplayerSettings, type MultiplayerSettingsValues } from "../state/multiplayer-settings-store";
 import { easyTierAvailable, EasyTierLink } from "./easytier-transport";
 import { hostCommandBlocked, MULTIPLAYER_GAMES } from "./protocol";
-import { GuestArcade, HostBridge, leaseSeat, type MultiplayerTranslate, type StrokeRelay } from "./session";
+import { GuestArcade, HostBridge, leaseSeat, type MultiplayerTranslate, type SessionEndReason, type StrokeRelay } from "./session";
 import { decodeSignal, encodeSignal, type PeerLink, type PeerRoute } from "./transport";
 import { WebRtcLink, webRtcConfig, type SignalEnvelope } from "./webrtc-transport";
 
@@ -97,6 +97,8 @@ interface SessionRecord {
   host: HostBridge | null;
   guest: GuestArcade | null;
   controllers: GuestControllers | null;
+  /** Host: the room of the outstanding invite, to reject a reply meant for another one. */
+  room: string | null;
   token: number;
 }
 
@@ -201,6 +203,7 @@ export class MultiplayerManager {
       const { link, code } = await WebRtcLink.offer(config, meta);
       if (token !== record.token) { link.close(); return; }
       record.webrtc = link;
+      record.room = meta.room;
       this.attachLink(game, link, "host", meta.room);
       this.patch(game, { phase: "inviting", inviteCode: code });
     } catch (error) {
@@ -215,6 +218,8 @@ export class MultiplayerManager {
     try {
       const answer = await WebRtcLink.decode<InviteMeta>(code);
       if (answer.meta?.game !== game) throw new Error(this.options.translate("multiplayer.error.wrongGame"));
+      // A reply to an older invite would only fail after the ICE timeout.
+      if (answer.meta.room !== record.room) throw new Error(this.options.translate("multiplayer.error.staleReply"));
       await record.webrtc.accept(answer);
       this.patch(game, { phase: "connecting" });
     } catch (error) { this.patch(game, { error: this.message(error) }); }
@@ -260,7 +265,7 @@ export class MultiplayerManager {
   private startHold(game: BuiltInGame) {
     this.stopHold(game);
     const until = Date.now() + SEAT_GRACE_MS;
-    const renew = setInterval(() => leaseSeat(this.options.arcade, game, true), HOLD_RENEW_MS);
+    const renew = setInterval(() => leaseSeat(this.options.arcade, game, true, false), HOLD_RENEW_MS);
     const expire = setTimeout(() => {
       this.stopHold(game);
       leaseSeat(this.options.arcade, game, false);
@@ -296,13 +301,17 @@ export class MultiplayerManager {
     record.link = link;
     const events = {
       onRtt: (rttMs: number) => { if (record.token === token) this.patch(game, { rttMs }); },
-      onEnd: (reason: "closed" | "silent" | "failed") => {
+      onEnd: (reason: SessionEndReason) => {
         if (record.token !== token) return;
         this.dropGuest(record);
         const hosted = record.host !== null;
         record.host = null;
         // Keep `guestTurn`: forfeiting a Cake Duel needs to know whose turn was pending.
         const clock = { turnDeadline: null };
+        if (reason === "version") {
+          this.patch(game, { ...clock, phase: "error", error: this.options.translate("multiplayer.error.version") });
+          return;
+        }
         if (hosted && reason !== "closed") {
           this.patch(game, { ...clock, phase: "peerLost", graceUntil: this.startHold(game), error: this.options.translate("multiplayer.error.peerLost") });
           return;
@@ -362,7 +371,7 @@ export class MultiplayerManager {
   }
 
   private record(game: BuiltInGame, epoch = 0): SessionRecord {
-    return { snapshot: blank(game, epoch), link: null, webrtc: null, host: null, guest: null, controllers: null, token: ++this.tokens };
+    return { snapshot: blank(game, epoch), link: null, webrtc: null, host: null, guest: null, controllers: null, room: null, token: ++this.tokens };
   }
 
   private reset(game: BuiltInGame): SessionRecord {

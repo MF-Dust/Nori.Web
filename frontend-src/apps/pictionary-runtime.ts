@@ -2,14 +2,21 @@ import type { ArcadeChannel } from "../runtime/arcade-client";
 import type { JsonValue } from "../runtime/protocol";
 import type { GameCartridgeController } from "./game-cartridge-controller";
 import type { DrawingStroke, PictionaryState } from "./pictionary-model";
+import { MAX_PEER_STROKES } from "../multiplayer/protocol";
+import type { StrokeUpdate } from "../multiplayer/session";
 
 export interface DrawingSnapshot { revision: number; image: string; width: number; height: number }
 /** The other human's canvas in a multiplayer round; `null` strokes = nothing drawn yet. */
 export interface PeerDrawing { active: boolean; roundId: string | null; strokes: readonly DrawingStroke[] }
-type PeerSink = (roundId: string, strokes: readonly JsonValue[]) => void;
+type PeerSink = (update: StrokeUpdate) => void;
 
-const MAX_PEER_STROKES = 512;
 const PEER_SEND_INTERVAL_MS = 100;
+
+/** 1/10000 of the canvas is far below a pixel; it cuts each point from ~40 to ~20 bytes. */
+function quantize(stroke: DrawingStroke): JsonValue {
+  const round = (value: number) => Math.round(value * 10_000) / 10_000;
+  return { ...stroke, points: stroke.points.map(point => ({ x: round(point.x), y: round(point.y) })) } as unknown as JsonValue;
+}
 
 function peerStroke(value: unknown): DrawingStroke | null {
   if (!value || typeof value !== "object") return null;
@@ -37,8 +44,13 @@ export class PictionaryDrawingBridge {
   private listeners = new Set<() => void>();
   private peerSink: PeerSink | null = null;
   private peer: PeerDrawing = { active: false, roundId: null, strokes: [] };
+  /** Received strokes by sender index (`null` = rejected), so later deltas stay aligned. */
+  private peerSlots: Array<DrawingStroke | null> = [];
   private peerListeners = new Set<() => void>();
-  private outgoing: { roundId: string; strokes: readonly JsonValue[] } | null = null;
+  /** This canvas's strokes for the current round (also restores the canvas after a remount). */
+  private local: { roundId: string; strokes: readonly DrawingStroke[] } | null = null;
+  /** What the peer already has: deltas are computed against it by stroke identity. */
+  private sent: { roundId: string | null; strokes: readonly DrawingStroke[] } = { roundId: null, strokes: [] };
   private outgoingTimer: ReturnType<typeof setTimeout> | null = null;
   subscribePeer = (listener: () => void) => { this.peerListeners.add(listener); return () => { this.peerListeners.delete(listener); }; };
   peerSnapshot = () => this.peer;
@@ -47,25 +59,47 @@ export class PictionaryDrawingBridge {
   setPeerSink(sink: PeerSink | null) {
     this.peerSink = sink;
     if (this.outgoingTimer) clearTimeout(this.outgoingTimer);
-    this.outgoingTimer = null; this.outgoing = null;
+    this.outgoingTimer = null;
+    this.sent = { roundId: null, strokes: [] };
+    this.peerSlots = [];
     this.setPeer({ active: sink !== null, roundId: null, strokes: [] });
+    // A peer joining mid-round (a re-invite) gets the drawing so far, not just later strokes.
+    if (sink && this.local?.strokes.length) this.scheduleSend();
   }
-  receivePeerStrokes(roundId: string, strokes: readonly JsonValue[]) {
-    if (!this.peerSink || roundId !== this.roundId) return;
-    const parsed = strokes.slice(-MAX_PEER_STROKES).map(peerStroke).filter((stroke): stroke is DrawingStroke => stroke !== null);
-    this.setPeer({ active: true, roundId, strokes: parsed });
+  receivePeerStrokes({ roundId, from, strokes }: StrokeUpdate) {
+    if (!this.peerSink) return;
+    // Kept even if this round has not started here yet: the round transition and the first
+    // strokes may race, and a dropped delta could never be repaired.
+    const base = this.peer.roundId === roundId ? this.peerSlots : [];
+    if (from > base.length) return;
+    this.peerSlots = [...base.slice(0, from), ...strokes.map(peerStroke)].slice(0, MAX_PEER_STROKES);
+    this.setPeer({ active: true, roundId, strokes: this.peerSlots.filter((stroke): stroke is DrawingStroke => stroke !== null) });
+  }
+  /** The canvas's strokes for `roundId`, to redraw it after a remount. */
+  localStrokes(roundId: string): readonly DrawingStroke[] {
+    return this.local?.roundId === roundId ? this.local.strokes : [];
   }
   /** Called with the full local stroke list after each change; sends are coalesced. */
   strokesChanged(strokes: readonly DrawingStroke[]) {
     const round = this.controller.snapshot().state?.gameState?.round;
-    if (!this.peerSink || round?.status !== "active" || round.roles.drawer !== "player") return;
-    this.outgoing = { roundId: round.roundId, strokes: strokes.slice(-MAX_PEER_STROKES) as unknown as JsonValue[] };
+    if (round?.status !== "active" || round.roles.drawer !== "player") return;
+    this.local = { roundId: round.roundId, strokes: strokes.slice(-MAX_PEER_STROKES) };
+    if (this.peerSink) this.scheduleSend();
+  }
+  private scheduleSend() {
     if (this.outgoingTimer) return;
-    this.outgoingTimer = setTimeout(() => {
-      this.outgoingTimer = null;
-      const next = this.outgoing; this.outgoing = null;
-      if (next && next.roundId === this.roundId) this.peerSink?.(next.roundId, next.strokes);
-    }, PEER_SEND_INTERVAL_MS);
+    this.outgoingTimer = setTimeout(() => { this.outgoingTimer = null; this.sendDelta(); }, PEER_SEND_INTERVAL_MS);
+  }
+  /** Sends only what changed since the last send: the common prefix is skipped. */
+  private sendDelta() {
+    const local = this.local;
+    if (!local || !this.peerSink || local.roundId !== this.roundId) return;
+    const base = this.sent.roundId === local.roundId ? this.sent.strokes : [];
+    let from = 0;
+    while (from < base.length && from < local.strokes.length && base[from] === local.strokes[from]) from++;
+    if (this.sent.roundId === local.roundId && from === base.length && from === local.strokes.length) return;
+    this.sent = { roundId: local.roundId, strokes: local.strokes };
+    this.peerSink({ roundId: local.roundId, from, strokes: local.strokes.slice(from).map(quantize) });
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   snapshot = () => this.visionState;
@@ -78,7 +112,9 @@ export class PictionaryDrawingBridge {
       const roundId = controller.snapshot().state?.gameState?.round.roundId ?? null;
       if (roundId !== this.roundId) {
         this.roundId = roundId; this.epoch++; this.queue = []; this.revision = 0; this.recognizedRevision = -1; this.setVision("waiting");
-        if (this.peer.active) this.setPeer({ active: true, roundId, strokes: [] });
+        this.local = null;
+        // Strokes of the new round may already have arrived; keep those.
+        if (this.peer.active && this.peer.roundId !== roundId) { this.peerSlots = []; this.setPeer({ active: true, roundId, strokes: [] }); }
       }
       if (!controller.snapshot().pending) void this.drain();
     }));
@@ -127,7 +163,7 @@ export class PictionaryDrawingBridge {
     } finally { this.draining = false; }
   }
   dispose() {
-    this.disposed = true; this.epoch++; this.queue = []; this.capture = null; this.peerSink = null;
+    this.disposed = true; this.epoch++; this.queue = []; this.capture = null; this.peerSink = null; this.local = null;
     if (this.outgoingTimer) clearTimeout(this.outgoingTimer);
     this.outgoingTimer = null;
     this.cleanup.forEach(fn => fn()); this.listeners.clear(); this.peerListeners.clear();
