@@ -200,8 +200,10 @@ fn select_file(static_roots: &[PathBuf], path: &str) -> Option<PathBuf> {
     }
     roots
         .iter()
-        .map(|root| root.join("index.html"))
-        .find(|index| index.is_file())
+        .find_map(|root| {
+            let index = std::fs::canonicalize(root.join("index.html")).ok()?;
+            (index.starts_with(root) && index.is_file()).then_some(index)
+        })
 }
 
 fn cache_control(static_roots: &[PathBuf], file_path: &Path) -> String {
@@ -418,6 +420,21 @@ pub(crate) fn http_date(time: SystemTime) -> String {
 mod tests {
     use super::http_date;
     use std::time::UNIX_EPOCH;
+
+    #[cfg(unix)]
+    #[test]
+    fn spa_fallback_rejects_index_symlink_outside_root() {
+        let root = std::env::temp_dir().join(format!("nori-static-symlink-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("public")).unwrap();
+        std::fs::write(root.join("secret.html"), "secret").unwrap();
+        std::os::unix::fs::symlink(root.join("secret.html"), root.join("public/index.html")).unwrap();
+        assert!(super::select_file(&[root.join("public")], "spa/route").is_none());
+        std::fs::remove_file(root.join("public/index.html")).unwrap();
+        std::fs::write(root.join("public/index.html"), "safe").unwrap();
+        assert_eq!(super::select_file(&[root.join("public")], "spa/route"),
+            Some(std::fs::canonicalize(root.join("public/index.html")).unwrap()));
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn formats_http_dates_as_gmt() {

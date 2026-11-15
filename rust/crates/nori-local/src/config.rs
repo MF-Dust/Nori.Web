@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 pub struct Config {
     pub host: String,
     pub port: u16,
+    pub allowed_hosts: Vec<String>,
     pub debug: bool,
     pub secret_key: String,
     pub machine_id: String,
@@ -29,6 +30,7 @@ impl Default for Config {
         Self {
             host: "127.0.0.1".into(),
             port: 4173,
+            allowed_hosts: Vec::new(),
             debug: false,
             secret_key: token_urlsafe(32),
             machine_id: "nori-local".into(),
@@ -47,6 +49,9 @@ impl Config {
         let mut config = Self::default();
         if let Ok(value) = env::var("HOST") {
             config.host = value;
+        }
+        if let Ok(value) = env::var("NORI_ALLOWED_HOSTS") {
+            config.allowed_hosts = parse_allowed_hosts(&value);
         }
         if let Ok(value) = env::var("PORT") {
             config.port = value.parse().expect("PORT must be an integer in 0..=65535");
@@ -132,6 +137,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn allowed_hosts_env_value_is_comma_separated_and_trimmed() {
+        let mut config = Config::default();
+        config.allowed_hosts = parse_allowed_hosts(" Proxy.Example, ,custom.test ");
+        assert_eq!(config.allowed_hosts, ["proxy.example", "custom.test"]);
+    }
+
+    #[test]
     fn default_paths_are_resolved_from_cwd_when_not_next_to_executable() {
         let cwd = PathBuf::from("working");
         assert_eq!(default_dir("public", &cwd, None), cwd.join("public"));
@@ -154,4 +166,13 @@ mod tests {
         );
         std::fs::remove_dir_all(base).unwrap();
     }
+}
+
+fn parse_allowed_hosts(value: &str) -> Vec<String> {
+    value
+        .split(',')
+        .map(str::trim)
+        .filter(|host| !host.is_empty())
+        .map(str::to_ascii_lowercase)
+        .collect()
 }

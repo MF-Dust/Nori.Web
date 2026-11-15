@@ -262,11 +262,17 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
     }
     let host = CfHost { env, state: None };
     host::RuntimeConfig::read(&host).map_err(err)?;
-    if meta.http.path.starts_with("/api/")
-        && !meta.http.path.starts_with("/api/arcade/web/v1")
-        && !matches!(meta.http.method.as_str(), "GET" | "HEAD")
-    {
-        meta.http.body = req.bytes().await?;
+    if router::needs_api_body(&meta) {
+        let (body, exceeded) =
+            provider_io::read_limited(req.stream()?, router::MAX_API_BODY_BYTES).await?;
+        if exceeded {
+            return response(HttpResponse::json(
+                413,
+                &serde_json::json!({"detail": "Request body too large"}),
+                vec![],
+            ));
+        }
+        meta.http.body = body;
     }
     match router::route(&host, &isolate(), &meta).await.map_err(err)? {
         Route::Response(value) => response(value),

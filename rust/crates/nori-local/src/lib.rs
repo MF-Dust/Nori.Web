@@ -23,5 +23,8 @@ pub fn build_server(state: AppState) -> axum::Router {
         executor: executor::Executor::new(nori_core::config::ServerAi::from_env(&lookup)),
         secret: state.config.secret_key.clone(),
     });
-    build_app(state).merge(ws::routes(ctx))
+    // Layers on build_app do not cover routes merged afterward. Guard both upgrades too.
+    build_app(state.clone()).merge(ws::routes(ctx).layer(
+        axum::middleware::from_fn_with_state(state, origin::same_origin_guard),
+    ))
 }

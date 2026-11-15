@@ -15,7 +15,7 @@ use futures_util::{SinkExt, StreamExt};
 use nori_core::{auth, session};
 use serde_json::Value;
 use std::sync::Arc;
-use tokio::sync::mpsc;
+use tokio::sync::watch;
 
 pub const MAIN_PATH: &str = "/api/arcade/web/v1";
 pub const MEDIA_PATH: &str = "/api/arcade/web/v1/media";
@@ -110,12 +110,37 @@ async fn media_socket(
         .on_upgrade(move |socket| run_media(ctx, socket, user_id))
 }
 
+async fn overflowed(signal: &mut watch::Receiver<bool>) {
+    let closed = signal.wait_for(|full| *full).await.is_err();
+    if closed {
+        // Sender teardown is not overflow: let the writer drain queued Close frames.
+        std::future::pending::<()>().await;
+    }
+}
+
 /// Split a socket into a reader and a channel-fed writer task.
 fn writer(socket: WebSocket) -> (futures_util::stream::SplitStream<WebSocket>, Outgoing) {
     let (mut sink, stream) = socket.split();
-    let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
+    let (tx, mut rx, mut overflow) = Outgoing::channel();
     tokio::spawn(async move {
-        while let Some(message) = rx.recv().await {
+        loop {
+            let message = tokio::select! {
+                biased;
+                _ = overflowed(&mut overflow) => {
+                    let _ = tokio::time::timeout(std::time::Duration::from_secs(1), async {
+                        let _ = sink.send(Message::Close(Some(CloseFrame {
+                            code: 1008,
+                            reason: "slow_consumer".into(),
+                        }))).await;
+                        let _ = sink.close().await;
+                    }).await;
+                    break;
+                }
+                message = rx.recv() => match message {
+                    Some(message) => message,
+                    None => break,
+                },
+            };
             if let Message::Close(frame) = message {
                 // Server-initiated: writes our Close frame. After a client
                 // Close tungstenite refuses new frames (SendAfterClosing);
@@ -124,7 +149,15 @@ fn writer(socket: WebSocket) -> (futures_util::stream::SplitStream<WebSocket>, O
                 let _ = sink.close().await;
                 break;
             }
-            if sink.send(message).await.is_err() {
+            let sent = tokio::select! {
+                biased;
+                _ = overflowed(&mut overflow) => {
+                    // Re-enter the close branch even if a write was stalled.
+                    continue;
+                }
+                sent = sink.send(message) => sent,
+            };
+            if sent.is_err() {
                 break;
             }
         }
@@ -145,10 +178,13 @@ fn close(tx: &Outgoing, code: u16, reason: &str) {
 
 async fn run_main(ctx: Arc<WsContext>, socket: WebSocket, user_id: String) {
     let (mut stream, tx) = writer(socket);
-    let slot = ctx.registry.slot(&user_id);
     let socket_id = ctx.registry.socket_id();
-    slot.add_main(socket_id, tx.clone());
-    while let Some(Ok(frame)) = stream.next().await {
+    let slot = ctx.registry.add_main(&user_id, socket_id, tx.clone());
+    let mut overflow = tx.overflow();
+    while let Some(Ok(frame)) = tokio::select! {
+        _ = overflowed(&mut overflow) => None,
+        frame = stream.next() => frame,
+    } {
         let raw = match frame {
             Message::Text(text) => text,
             Message::Close(frame) => {
@@ -177,7 +213,7 @@ async fn run_main(ctx: Arc<WsContext>, socket: WebSocket, user_id: String) {
             ctx.executor.spawn(slot.clone(), task, Some(tx.clone()));
         }
     }
-    slot.remove(socket_id);
+    ctx.registry.remove(&user_id, socket_id);
 }
 
 async fn run_media(ctx: Arc<WsContext>, socket: WebSocket, user_id: String) {
@@ -198,18 +234,20 @@ async fn run_media(ctx: Arc<WsContext>, socket: WebSocket, user_id: String) {
     else {
         return close(&tx, 4005, "media_grant_invalid");
     };
-    let Some(slot) = ctx.registry.slot_for_grant(&user_id, grant) else {
+    let socket_id = ctx.registry.socket_id();
+    let Some(_slot) = ctx.registry.add_media(&user_id, grant, socket_id, tx.clone()) else {
         return close(&tx, 4005, "media_grant_invalid");
     };
-    let socket_id = ctx.registry.socket_id();
-    let world_id = slot.world().world_id.clone();
-    slot.add_media(socket_id, world_id, tx.clone());
+    let mut overflow = tx.overflow();
     // Keep the socket alive; client frames are ignored.
-    while let Some(Ok(frame)) = stream.next().await {
+    while let Some(Ok(frame)) = tokio::select! {
+        _ = overflowed(&mut overflow) => None,
+        frame = stream.next() => frame,
+    } {
         if let Message::Close(frame) = frame {
             let _ = tx.send(Message::Close(frame));
             break;
         }
     }
-    slot.remove(socket_id);
+    ctx.registry.remove(&user_id, socket_id);
 }

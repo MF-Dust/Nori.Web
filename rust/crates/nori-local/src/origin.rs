@@ -13,6 +13,19 @@ pub(crate) async fn same_origin_guard(
 ) -> Response {
     let path = request.uri().path();
     if path.starts_with("/api/") {
+        if !host_allowed(&state.config, request.headers().get(header::HOST)) {
+            let mut response = Response::new(Body::from(r#"{"error":"host_forbidden"}"#));
+            *response.status_mut() = StatusCode::FORBIDDEN;
+            response.headers_mut().insert(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/json"),
+            );
+            response.headers_mut().insert(
+                header::CONTENT_LENGTH,
+                HeaderValue::from_static("26"),
+            );
+            return response;
+        }
         let origin = request.headers().get(header::ORIGIN);
         let scheme = request.uri().scheme_str().unwrap_or("http");
         let host = match request.headers().get(header::HOST) {
@@ -50,5 +63,47 @@ fn host_with_port(host: &str, port: u16) -> String {
         format!("[{host}]:{port}")
     } else {
         format!("{host}:{port}")
+    }
+}
+
+fn hostname(host: &str) -> Option<String> {
+    host.parse::<axum::http::uri::Authority>().ok().map(|authority| {
+        authority.host().trim_start_matches('[').trim_end_matches(']').to_ascii_lowercase()
+    })
+}
+
+fn host_allowed(config: &crate::Config, host: Option<&HeaderValue>) -> bool {
+    // A wildcard bind means the operator already chose to expose the port.
+    if matches!(config.host.as_str(), "0.0.0.0" | "::") || host.is_none() {
+        return true;
+    }
+    let Some(host) = host.and_then(|v| v.to_str().ok()).and_then(hostname) else {
+        return false;
+    };
+    ["localhost", "127.0.0.1", "::1"].contains(&host.as_str())
+        || host == config.host.trim_matches(['[', ']']).to_ascii_lowercase()
+        || config.allowed_hosts.iter().any(|allowed| hostname(allowed).as_deref() == Some(&host))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn host_allowlist_handles_ports_ipv6_missing_and_wildcard() {
+        let mut config = crate::Config::default();
+        for host in ["127.0.0.1", "LOCALHOST:8080", "[::1]:8080"] {
+            assert!(host_allowed(&config, Some(&HeaderValue::from_str(host).unwrap())));
+        }
+        assert!(host_allowed(&config, None));
+        let foreign = HeaderValue::from_static("attacker.test:4173");
+        assert!(!host_allowed(&config, Some(&foreign)));
+        config.allowed_hosts = vec!["attacker.test".into()];
+        assert!(host_allowed(&config, Some(&foreign)));
+        config.allowed_hosts.clear();
+        for wildcard in ["0.0.0.0", "::"] {
+            config.host = wildcard.into();
+            assert!(host_allowed(&config, Some(&foreign)));
+        }
     }
 }

@@ -15,9 +15,12 @@ pub const MAX_ENTRIES: usize = 100_000;
 /// Suggested client heartbeat interval.
 pub const INTERVAL_MS: i64 = 30_000;
 
+const PRUNE_INTERVAL_MS: i64 = 5_000;
+
 #[derive(Debug, Default, Clone)]
 pub struct Presence {
     seen: HashMap<String, i64>,
+    last_prune_ms: Option<i64>,
 }
 
 /// The stored key for a user id (never the id itself).
@@ -28,11 +31,14 @@ pub fn identity(user_id: &str) -> String {
 impl Presence {
     fn prune(&mut self, now_ms: i64) {
         self.seen.retain(|_, at| now_ms - *at < TTL_MS);
+        self.last_prune_ms = Some(now_ms);
     }
 
     /// Record a heartbeat (or a goodbye) and return the current online count.
     pub fn beat(&mut self, identity: &str, leave: bool, now_ms: i64) -> usize {
-        self.prune(now_ms);
+        if self.last_prune_ms.is_none_or(|last| now_ms - last >= PRUNE_INTERVAL_MS) {
+            self.prune(now_ms);
+        }
         if leave {
             self.seen.remove(identity);
         } else if self.seen.len() < MAX_ENTRIES || self.seen.contains_key(identity) {
@@ -73,6 +79,19 @@ mod tests {
         assert_eq!(presence.beat(&b, true, 30), 1, "a goodbye leaves immediately");
         assert_eq!(presence.count(TTL_MS + 10), 0, "silent users expire");
         assert_ne!(a, "a");
+    }
+
+    #[test]
+    fn heartbeats_throttle_pruning_but_count_prunes_on_demand() {
+        let mut presence = Presence::default();
+        presence.beat("old", false, 0);
+        presence.beat("new", false, TTL_MS - 1);
+        presence.beat("new", false, TTL_MS);
+        assert!(presence.seen.contains_key("old"));
+        assert_eq!(presence.last_prune_ms, Some(TTL_MS - 1));
+        assert_eq!(presence.count(TTL_MS), 1);
+        presence.beat("next", false, TTL_MS + PRUNE_INTERVAL_MS);
+        assert_eq!(presence.last_prune_ms, Some(TTL_MS + PRUNE_INTERVAL_MS));
     }
 
     #[test]

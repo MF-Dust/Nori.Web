@@ -15,6 +15,10 @@ use std::cell::{Cell, RefCell};
 pub const WORLD_KEY: &str = "nori:world:v1";
 pub const AI_KEY: &str = "nori:ai-public:v1";
 pub const IDLE_FLUSH_MS: i64 = 30_000;
+// Bound server-funded requests per world, with no admission queue.
+const MAX_PROVIDER_REQUESTS: usize = 2;
+// Prevent one socket from occupying every world provider slot.
+const MAX_SOCKET_PROVIDER_REQUESTS: usize = 1;
 const STORAGE_WRITE_ERROR: &str = "storage_write_failed: ";
 
 fn storage_write_error(error: String) -> String {
@@ -26,6 +30,8 @@ pub enum Frame {
     Binary(Vec<u8>),
 }
 
+pub const MAX_WS_TEXT_BYTES: usize = 8 * 1024 * 1024;
+
 #[derive(Default)]
 pub struct SessionObject {
     world: RefCell<Option<World>>,
@@ -34,6 +40,7 @@ pub struct SessionObject {
     alarm_pending: Cell<bool>,
     load_lock: Mutex<()>,
     persist_lock: Mutex<()>,
+    provider_sockets: RefCell<Vec<String>>,
 }
 
 pub trait SessionHost:
@@ -206,6 +213,9 @@ impl SessionObject {
         socket: &H::Socket,
         frame: Frame,
     ) -> Result<()> {
+        if matches!(&frame, Frame::Text(raw) if raw.len() > MAX_WS_TEXT_BYTES) {
+            return host.close(socket, 1009, "message_too_large");
+        }
         let mut saved = attachment::read(host.attachment(socket));
         if attachment::scrub(&mut saved) {
             host.set_attachment(
@@ -436,7 +446,15 @@ impl SessionObject {
         let mut input = None;
         match step {
             Step::Sleep(ms) => host.sleep(ms).await,
-            Step::Http(request) => input = Some(host.fetch(request).await),
+            Step::Http(request) => {
+                let saved = attachment::read(host.attachment(origin));
+                let socket_id = attachment::text(&saved, "socketId").ok_or("socket missing")?;
+                let permit = ProviderPermit::try_acquire(&self.provider_sockets, socket_id);
+                input = Some(match permit {
+                    Some(_permit) => host.fetch(request).await,
+                    None => nori_core::provider::HttpResult::Network("provider admission limit".into()),
+                });
+            }
             // A socket may have joined while another task awaited Http/Sleep.
             Step::Broadcast(messages) => broadcast(host, &self.clients(host), &messages),
             Step::Media(bytes) => {
@@ -507,5 +525,28 @@ fn broadcast<H: Sockets>(host: &H, clients: &Clients<H::Socket>, messages: &[Val
                 break;
             }
         }
+    }
+}
+
+struct ProviderPermit<'a> {
+    sockets: &'a RefCell<Vec<String>>,
+    socket_id: String,
+}
+
+impl<'a> ProviderPermit<'a> {
+    fn try_acquire(sockets: &'a RefCell<Vec<String>>, socket_id: String) -> Option<Self> {
+        let mut active = sockets.borrow_mut();
+        if active.len() >= MAX_PROVIDER_REQUESTS
+            || active.iter().filter(|id| *id == &socket_id).count() >= MAX_SOCKET_PROVIDER_REQUESTS {
+            return None;
+        }
+        active.push(socket_id.clone());
+        Some(Self { sockets, socket_id })
+    }
+}
+
+impl Drop for ProviderPermit<'_> {
+    fn drop(&mut self) {
+        self.sockets.borrow_mut().retain(|id| id != &self.socket_id);
     }
 }

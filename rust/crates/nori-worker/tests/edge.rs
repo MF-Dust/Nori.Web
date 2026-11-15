@@ -1320,3 +1320,90 @@ fn presence_heartbeats_route_to_the_shared_counter_object() {
     let wrong = response(&fake, &request("/api/presence", "PUT"));
     assert!(wrong.headers.contains(&("Allow".into(), "POST".into())));
 }
+
+#[test]
+fn oversized_text_closes_before_decode_or_hibernation_storage_access() {
+    for role in ["main", "pending_media", "media"] {
+        let fake = Fake::new();
+        fake.socket(1, "guest-1", role);
+        let object = SessionObject::default();
+        let raw = "x".repeat(nori_worker::edge::session_object::MAX_WS_TEXT_BYTES + 1);
+        run(object.on_message(&fake, &Isolate::default(), &1, Frame::Text(raw)));
+        assert_eq!(*fake.closes.borrow(), vec![(1, 1009, "message_too_large".into())]);
+        assert_eq!(fake.world_puts(), 0);
+        assert_eq!(fake.binding_reads.get(), 0);
+    }
+}
+
+#[test]
+fn api_body_routes_and_stream_limit_stop_at_first_excess_chunk() {
+    for (path, method, expected) in [
+        ("/api/presence", "POST", true),
+        ("/api/query", "POST", true),
+        ("/api/auth/get-session", "POST", true),
+        ("/api/not-found", "POST", false),
+        ("/api/query", "PUT", false),
+        ("/api/query", "GET", false),
+        ("/api/arcade/web/v1", "POST", false),
+    ] {
+        assert_eq!(router::needs_api_body(&request(path, method)), expected);
+    }
+    let cap = router::MAX_API_BODY_BYTES;
+    let stream = futures_util::stream::iter([
+        Ok::<_, String>(vec![0; cap]),
+        Ok(vec![1]),
+        Err("must not consume remainder".into()),
+    ]);
+    let (body, exceeded) = run(provider_io::read_limited(stream, cap)).unwrap();
+    assert!(exceeded);
+    assert_eq!(body.len(), cap);
+    let (body, exceeded) = run(provider_io::read_limited(
+        futures_util::stream::iter([Ok::<_, String>(vec![0; cap])]), cap)).unwrap();
+    assert!(!exceeded);
+    assert_eq!(body.len(), cap);
+}
+
+#[test]
+fn second_provider_task_on_same_world_socket_is_refused_without_queuing() {
+    let fake = Fake::new();
+    fake.socket(1, "guest-1", "main");
+    let object = SessionObject::default();
+    let isolate = Isolate::default();
+    let raw = json!({"type":"event", "channel":"nori.ai.test", "cartridgeId":"chat",
+        "requestId":"probe", "payload":{"baseUrl":"https://provider.test/v1"}}).to_string();
+    run(async {
+        futures_util::join!(
+            object.on_message(&fake, &isolate, &1, Frame::Text(raw.clone())),
+            object.on_message(&fake, &isolate, &1, Frame::Text(raw.clone()))
+        );
+    });
+    assert_eq!(fake.requests.borrow().len(), 1, "second request must not queue");
+    let replies: Vec<_> = fake.text.borrow().iter()
+        .filter(|(_, message)| message["channel"] == "nori.ai.test.result")
+        .map(|(_, message)| message.clone()).collect();
+    assert_eq!(replies.len(), 2);
+    for reply in replies {
+        assert_eq!(reply["payload"]["ok"], false);
+        assert_eq!(reply["payload"]["error"], "Network request failed");
+    }
+    run(object.on_message(&fake, &isolate, &1, Frame::Text(raw)));
+    assert_eq!(fake.requests.borrow().len(), 2, "permit released after failure");
+}
+
+#[test]
+fn world_provider_gate_allows_two_sockets_but_rejects_a_third() {
+    let fake = Fake::new();
+    for socket in 1..=3 { fake.socket(socket, "guest-1", "main"); }
+    let object = SessionObject::default();
+    let isolate = Isolate::default();
+    let raw = json!({"type":"event", "channel":"nori.ai.test", "cartridgeId":"chat",
+        "payload":{"baseUrl":"https://provider.test/v1"}}).to_string();
+    run(async {
+        futures_util::join!(
+            object.on_message(&fake, &isolate, &1, Frame::Text(raw.clone())),
+            object.on_message(&fake, &isolate, &2, Frame::Text(raw.clone())),
+            object.on_message(&fake, &isolate, &3, Frame::Text(raw.clone()))
+        );
+    });
+    assert_eq!(fake.requests.borrow().len(), 2);
+}

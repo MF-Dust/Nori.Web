@@ -7,12 +7,14 @@ use nori_core::http::{handle_http, HttpRequest, HttpResponse};
 use serde_json::Value;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+const MAX_API_BODY_BYTES: usize = 8 * 1024 * 1024;
+
 pub(crate) async fn handle(State(state): State<AppState>, request: Request<Body>) -> Response {
     let (parts, body) = request.into_parts();
-    let body = to_bytes(body, usize::MAX)
-        .await
-        .unwrap_or_default()
-        .to_vec();
+    let body = match to_bytes(body, MAX_API_BODY_BYTES).await {
+        Ok(body) => body.to_vec(),
+        Err(_) => return json_response(413, r#"{"detail":"Request body too large"}"#, None),
+    };
     let path = parts.uri.path().to_string();
     let method = parts.method.as_str().to_string();
     let scheme = parts.uri.scheme_str().unwrap_or("http").to_string();

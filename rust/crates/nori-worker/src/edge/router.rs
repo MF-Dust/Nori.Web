@@ -107,6 +107,20 @@ fn asgi_allow(path: &str) -> &'static str {
     }
 }
 
+pub const MAX_API_BODY_BYTES: usize = 8 * 1024 * 1024;
+
+/// Only supported POST endpoints consume an API body; all others route unread.
+pub fn needs_api_body(req: &Request) -> bool {
+    req.http.method == "POST"
+        && matches!(req.http.path.as_str(),
+            "/api/auth/get-session" | "/api/auth/convex/token"
+            | "/api/arcade/ws-ticket" | "/api/presence"
+            | "/api/auth/email-otp/send-verification-otp" | "/api/auth/send-email-otp"
+            | "/api/auth/sign-in/email-otp" | "/api/auth/email-otp/verify-email"
+            | "/api/auth/sign-out" | "/api/query_ts" | "/api/query"
+            | "/api/mutation" | "/api/action" | "/api/function" | "/api/query_at_ts")
+}
+
 fn unique_headers(values: Vec<(String, String)>) -> Vec<(String, String)> {
     let mut headers: Vec<(String, String)> = Vec::new();
     for (name, value) in values {
