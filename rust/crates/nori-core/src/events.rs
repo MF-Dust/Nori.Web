@@ -11,6 +11,11 @@ use crate::tasks::Task;
 use crate::world::{event_message, Outbound, World};
 use serde_json::{json, Map, Value};
 
+// Retain only recent game launches without touching progression.
+const MAX_LAUNCHED_GAMES: usize = 256;
+// Bound unique bookmark additions while allowing existing entries to be read or removed.
+const MAX_BOOKMARKS: usize = 1024;
+
 /// One event's publications, including Python's uncaught-dispatch-fault path.
 /// A fault suppresses the reply and later dispatches, not earlier broadcasts.
 #[derive(Default)]
@@ -352,6 +357,9 @@ fn run_manifold_command(
                     .iter()
                     .any(|m| m.get("url").and_then(Value::as_str) == Some(url));
                 if command.ends_with("add") && !exists {
+                    if marks.len() >= MAX_BOOKMARKS {
+                        return Err("bookmark limit reached".into());
+                    }
                     let title = payload
                         .get("title")
                         .filter(|v| truthy(v))
@@ -746,6 +754,9 @@ pub(crate) fn handle_event_with_secrets(world: &mut World, message: &Json, secre
                         .as_array_mut()
                 }) {
                     launched.push(json!({"gameId": payload.get("gameId").unwrap_or(&Value::Null), "atMs": now}));
+                    if launched.len() > MAX_LAUNCHED_GAMES {
+                        launched.drain(..launched.len() - MAX_LAUNCHED_GAMES);
+                    }
                 }
             }
             let result = if channel == "notification.debug.push" {

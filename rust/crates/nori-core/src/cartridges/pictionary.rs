@@ -1,3 +1,6 @@
+// Retain only the most recent rounds in session history.
+const MAX_HISTORY_ROUNDS: usize = 1024;
+
 use crate::cartridge::{CommandRejected, ReducerResult};
 use crate::jsonutil::Json;
 use rand::rngs::StdRng;
@@ -149,11 +152,17 @@ fn check_guess(raw: &str, round: &Json) -> bool {
     false
 }
 
+fn trim_history(history: &mut Vec<Json>) {
+    if history.len() > MAX_HISTORY_ROUNDS {
+        history.drain(..history.len() - MAX_HISTORY_ROUNDS);
+    }
+}
+
 fn session_finished(settings: &Json, history: &[Json]) -> bool {
     let elapsed: i64 = history
         .iter()
         .map(|e| e.get("elapsedMs").and_then(|v| v.as_i64()).unwrap_or(0))
-        .sum();
+        .fold(0_i64, i64::saturating_add);
     elapsed
         >= settings
             .get("sessionDurationMs")
@@ -417,10 +426,11 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                     .get("startedAtMs")
                     .and_then(|v| v.as_i64())
                     .unwrap_or(0);
-                let elapsed = (at_ms - started).max(0);
+                let elapsed = at_ms.saturating_sub(started).max(0);
                 let entry = json!({"word": round["word"], "drawingId": round["drawingId"], "roles": round["roles"], "elapsedMs": elapsed, "outcome": "solved"});
                 if let Some(h) = state["gameState"]["history"].as_array_mut() {
-                    h.push(entry.clone())
+                    h.push(entry.clone());
+                    trim_history(h);
                 }
                 let solved = state
                     .pointer("/gameState/score/solved")
@@ -470,13 +480,14 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                 .pointer("/gameState/round/startedAtMs")
                 .and_then(|v| v.as_i64())
                 .unwrap_or(0);
-            let elapsed = (at_ms - started).max(0);
+            let elapsed = at_ms.saturating_sub(started).max(0);
             let round = state
                 .pointer("/gameState/round")
                 .cloned()
                 .unwrap_or(json!({}));
             if let Some(h) = state["gameState"]["history"].as_array_mut() {
-                h.push(json!({"word": round["word"], "drawingId": round["drawingId"], "roles": round["roles"], "elapsedMs": elapsed, "outcome": "skipped"}))
+                h.push(json!({"word": round["word"], "drawingId": round["drawingId"], "roles": round["roles"], "elapsedMs": elapsed, "outcome": "skipped"}));
+                trim_history(h);
             }
             let skipped = state
                 .pointer("/gameState/score/skipped")
@@ -528,14 +539,15 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
                 .pointer("/gameState/round/startedAtMs")
                 .and_then(|v| v.as_i64())
                 .unwrap_or(0);
-            let elapsed = (at_ms - started).max(0);
+            let elapsed = at_ms.saturating_sub(started).max(0);
             let round = state
                 .pointer("/gameState/round")
                 .cloned()
                 .unwrap_or(json!({}));
             state["gameState"]["round"]["status"] = json!("unfinished");
             if let Some(h) = state["gameState"]["history"].as_array_mut() {
-                h.push(json!({"word": round["word"], "drawingId": round["drawingId"], "roles": round["roles"], "elapsedMs": elapsed, "outcome": "unfinished"}))
+                h.push(json!({"word": round["word"], "drawingId": round["drawingId"], "roles": round["roles"], "elapsedMs": elapsed, "outcome": "unfinished"}));
+                trim_history(h);
             }
             state["gameState"]["phase"] = json!("RESULTS");
             Ok(ReducerResult::new(
@@ -1075,6 +1087,48 @@ pub fn client_transition(transition: &Json, state: &Json) -> Json {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn arithmetic_state() -> Json {
+        json!({"settings": {"sessionDurationMs": i64::MAX}, "gameState": {
+            "phase": "PLAYING", "score": {"solved": 0, "skipped": 0}, "history": [],
+            "round": {"status": "active", "startedAtMs": 1000, "word": "cat", "drawingId": "d", "roundId": "r", "roles": {"drawer": "player", "guesser": "agent"}}
+        }})
+    }
+
+    fn assert_timestamp_elapsed(at_ms: i64, expected: i64) {
+        for command in [json!({"type": "skipRound", "atMs": at_ms}), json!({"type": "forceEndSession", "atMs": at_ms}), json!({"type": "submitGuess", "text": "cat", "atMs": at_ms})] {
+            let actor = if command["type"] == "submitGuess" { "agent" } else { "player" };
+            let result = reduce(&arithmetic_state(), actor, &command).unwrap();
+            assert_eq!(result.state["gameState"]["history"][0]["elapsedMs"], expected);
+        }
+    }
+
+    #[test]
+    fn minimum_timestamp_saturates_elapsed_to_zero() {
+        assert_timestamp_elapsed(i64::MIN, 0);
+    }
+
+    #[test]
+    fn maximum_timestamp_has_sane_elapsed_and_history_sum_saturates() {
+        assert_timestamp_elapsed(i64::MAX, i64::MAX - 1000);
+        assert!(session_finished(&json!({"sessionDurationMs": i64::MAX}), &[json!({"elapsedMs": i64::MAX}), json!({"elapsedMs": 1})]));
+    }
+
+    #[test]
+    fn history_drops_oldest_rounds_at_limit() {
+        let mut state = arithmetic_state();
+        state["gameState"]["history"] = json!((0..MAX_HISTORY_ROUNDS).map(|i| json!({"word": i, "elapsedMs": 0})).collect::<Vec<_>>());
+        for i in 0..2 {
+            state["gameState"]["phase"] = json!("PLAYING");
+            state["gameState"]["round"]["status"] = json!("active");
+            state["gameState"]["round"]["word"] = json!(format!("new-{i}"));
+            state = reduce(&state, "player", &json!({"type": "forceEndSession", "atMs": 1000})).unwrap().state;
+        }
+        let history = state["gameState"]["history"].as_array().unwrap();
+        assert_eq!(history.len(), MAX_HISTORY_ROUNDS);
+        assert_eq!(history[0]["word"], 2);
+        assert_eq!(history[MAX_HISTORY_ROUNDS - 1]["word"], "new-1");
+    }
 
     fn hint(word: &str, locale: &str, pinyin: Option<Json>) -> Hint {
         let mut round = json!({"word": word});

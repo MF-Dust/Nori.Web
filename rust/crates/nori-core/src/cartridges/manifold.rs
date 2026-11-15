@@ -6,6 +6,11 @@ use crate::live_pack::LivePack;
 use serde_json::{json, Map, Value};
 use sha1::{Digest, Sha1};
 
+// Refuse fact growth at the limit without removing existing progression.
+const MAX_FACTS: usize = 16384;
+// Refuse scan growth at the limit while preserving archived readouts.
+const MAX_CHIP_SCANS: usize = 4096;
+
 const DEFAULT_FACTS: &[&str] = &[
     "system.repaired",
     "virus.cleared",
@@ -606,6 +611,9 @@ pub fn reduce(
                 if facts.get(fact_id).is_some_and(truthy) {
                     continue;
                 }
+                if !facts.contains_key(fact_id) && facts.len() >= MAX_FACTS {
+                    return Err(CommandRejected::new("fact limit reached").into());
+                }
                 let source = cmd
                     .get("source")
                     .filter(|value| truthy(value))
@@ -680,6 +688,8 @@ pub fn reduce(
                     .map(python_str)
                     .unwrap_or_else(|| "None".into());
                 json!({"kind": "readout", "text": format!("Archived scan replay — key={key}, row={row}")})
+            } else if scan_count >= MAX_CHIP_SCANS {
+                return Err(CommandRejected::new("chip scan limit reached").into());
             } else if heat >= capacity {
                 json!({"kind": "fried", "text": format!("[{raw_key}] chip thermal lock — heat {heat}/{capacity}; wait for cooldown")})
             } else {
@@ -733,6 +743,9 @@ pub fn reduce(
                 if !scans.iter().any(|entry| {
                     entry.is_object() && entry.get("key").and_then(Value::as_str) == Some(key)
                 }) {
+                    if scans.len() >= MAX_CHIP_SCANS {
+                        return Err(CommandRejected::new("chip scan limit reached").into());
+                    }
                     let title: String = text_or_empty(cmd.get("title")).chars().take(80).collect();
                     scans.push(json!({"key": key, "row": sha_row(&format!("{key}|{readout}")), "title": title}));
                     events.push(status_event(variables, pack)?);
@@ -826,6 +839,36 @@ mod tests {
     use super::*;
     use crate::cartridge::{Cartridge, DispatchError};
     use std::sync::OnceLock;
+
+    #[test]
+    fn fact_limit_preserves_existing_and_oversized_progression() {
+        let pack = LivePack::empty();
+        let mut state = json!({"facts": (0..MAX_FACTS - 1).map(|i| (format!("f{i}"), json!(true))).collect::<Map<_, _>>(), "variables": {}});
+        state = run(&state, json!({"type": "client.emitFact", "factId": "last"}), &pack).state;
+        assert_eq!(state["facts"].as_object().unwrap().len(), MAX_FACTS);
+        assert!(reduce(&state, "player", &json!({"type": "client.emitFact", "factId": "overflow"}), &pack).is_err());
+        state["facts"]["legacy"] = json!(true);
+        let result = run(&state, json!({"type": "client.emitFact", "factId": "last"}), &pack);
+        assert_eq!(result.state, state);
+        assert_eq!(result.state["facts"]["f0"], true);
+        assert!(reduce(&state, "player", &json!({"type": "client.emitFact", "factId": "overflow"}), &pack).is_err());
+    }
+
+    #[test]
+    fn chip_scan_limit_preserves_archived_and_oversized_scans() {
+        let pack = LivePack::empty();
+        let mut state = json!({"facts": {}, "variables": {"chipScans": (0..MAX_CHIP_SCANS - 1).map(|i| json!({"key": format!("k{i}"), "row": "r"})).collect::<Vec<_>>()}});
+        state = run(&state, json!({"type": "chip.debugScan", "key": "last"}), &pack).state;
+        assert_eq!(state["variables"]["chipScans"].as_array().unwrap().len(), MAX_CHIP_SCANS);
+        for kind in ["chip.scan", "chip.debugScan"] {
+            assert!(reduce(&state, "player", &json!({"type": kind, "key": "overflow"}), &pack).is_err());
+        }
+        state["variables"]["chipScans"].as_array_mut().unwrap().push(json!({"key": "legacy", "row": "r"}));
+        let replay = run(&state, json!({"type": "chip.scan", "key": "k0"}), &pack);
+        assert!(replay.result["text"].as_str().unwrap().contains("Archived"));
+        assert_eq!(replay.state["variables"]["chipScans"], state["variables"]["chipScans"]);
+        assert!(reduce(&state, "player", &json!({"type": "chip.debugScan", "key": "overflow"}), &pack).is_err());
+    }
 
     fn packs() -> [&'static LivePack; 2] {
         static EMPTY: OnceLock<LivePack> = OnceLock::new();

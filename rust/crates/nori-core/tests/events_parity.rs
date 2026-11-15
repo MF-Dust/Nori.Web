@@ -1225,3 +1225,36 @@ fn events_malformed_client_payloads_and_restored_state_never_panic() {
     send(&mut world, "manifold.chip.status", json!({}));
     send(&mut world, "manifold.chip.scan", json!({}));
 }
+
+#[test]
+fn launched_games_drop_oldest_at_limit() {
+    let mut world = world(Arc::new(LivePack::empty()), false);
+    let progression = facts(&world).clone();
+    for i in 0..258 {
+        send(&mut world, "nori_open_game", json!({"gameId": i}));
+    }
+    let launched = vars(&world)["launchedGames"].as_array().unwrap();
+    assert_eq!(launched.len(), 256);
+    assert_eq!(launched[0]["gameId"], 2);
+    assert_eq!(launched[255]["gameId"], 257);
+    assert_eq!(facts(&world), &progression);
+}
+
+#[test]
+fn bookmarks_reject_unique_growth_at_limit() {
+    let mut world = world(Arc::new(LivePack::empty()), false);
+    for i in 0..1024 {
+        command(&mut world, "browser.bookmarks.add", json!({"url": format!("https://test/{i}")}));
+    }
+    let rejected = command(&mut world, "browser.bookmarks.add", json!({"url": "https://overflow"}));
+    assert_eq!(rejected.direct[0]["payload"]["ok"], false);
+    let duplicate = command(&mut world, "browser.bookmarks.add", json!({"url": "https://test/0"}));
+    assert_eq!(duplicate.direct[0]["payload"]["ok"], true);
+    let marks = vars(&world)["browserBookmarks"].as_array().unwrap();
+    assert_eq!(marks.len(), 1024);
+    assert_eq!(marks[0]["url"], "https://test/0");
+    assert_eq!(marks[1023]["url"], "https://test/1023");
+    command(&mut world, "browser.bookmarks.remove", json!({"url": "https://test/0"}));
+    command(&mut world, "browser.bookmarks.add", json!({"url": "https://new"}));
+    assert_eq!(vars(&world)["browserBookmarks"][1023]["url"], "https://new");
+}

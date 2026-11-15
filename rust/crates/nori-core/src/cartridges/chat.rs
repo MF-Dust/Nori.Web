@@ -2,6 +2,35 @@ use crate::cartridge::{CommandRejected, ReducerResult};
 use crate::jsonutil::{now_ms, Json};
 use serde_json::{json, Map, Value};
 
+// Retain only recent fully presented operations, never pending story content.
+const MAX_SETTLED_OPERATIONS: usize = 64;
+// Bound queued blocks per operation before accepting another block.
+const MAX_PENDING_BLOCKS: usize = 128;
+
+fn trim_settled_operations(state: &mut Json) {
+    let Some(operations) = state.get_mut("operations").and_then(Value::as_object_mut) else {
+        return;
+    };
+    // serde_json preserves insertion order, so removal keeps the oldest-first ring.
+    let settled: Vec<String> = operations
+        .iter()
+        .filter(|(_, op)| {
+            op.get("pendingBlocks")
+                .and_then(Value::as_object)
+                .is_some_and(|p| p.is_empty())
+                && op.get("presentedThrough").and_then(Value::as_i64).unwrap_or(-1)
+                    >= op.get("revealedThrough").and_then(Value::as_i64).unwrap_or(-1)
+        })
+        .map(|(id, _)| id.clone())
+        .collect();
+    for id in settled
+        .iter()
+        .take(settled.len().saturating_sub(MAX_SETTLED_OPERATIONS))
+    {
+        operations.shift_remove(id);
+    }
+}
+
 const EMOTIONS: &[&str] = &[
     "happy",
     "excited",
@@ -237,7 +266,7 @@ pub fn sanitize_player_text(text: &Value) -> Result<String, CommandRejected> {
 pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, CommandRejected> {
     let command_type = cmd.get("type").and_then(Value::as_str).unwrap_or("");
     let mut state = state.clone();
-    match command_type {
+    let result = match command_type {
         "playerMessage" => {
             if actor != "player" {
                 return Err(CommandRejected::new("Only player may send playerMessage"));
@@ -350,7 +379,11 @@ pub fn reduce(state: &Json, actor: &str, cmd: &Json) -> Result<ReducerResult, Co
         _ => Err(CommandRejected::new(format!(
             "Unknown chat command: {command_type}"
         ))),
-    }
+    };
+    result.map(|mut result| {
+        trim_settled_operations(&mut result.state);
+        result
+    })
 }
 
 fn ingest_block(
@@ -419,6 +452,12 @@ fn ingest_block(
         ))
         .is_some();
     if block_id > revealed && !pending_has {
+        if state["operations"][operation_id]["pendingBlocks"]
+            .as_object()
+            .is_some_and(|p| p.len() >= MAX_PENDING_BLOCKS)
+        {
+            return Err(CommandRejected::new("pending block limit reached"));
+        }
         let mut block = json!({
             "messageId": message_id,
             "blockId": block_id,
@@ -648,4 +687,47 @@ pub fn presentation_mode(state: &Json) -> &str {
         .get("presentationMode")
         .and_then(Value::as_str)
         .unwrap_or("audio")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn block(operation: &str, id: i64) -> Json {
+        json!({"type": "ingestBlock", "operationId": operation, "messageId": "m", "blockId": id, "content": "story", "blockType": "text", "isSpeech": true})
+    }
+
+    #[test]
+    fn settled_operations_drop_oldest_but_preserve_pending_and_unpresented() {
+        let mut state = initial_state(false);
+        state = reduce(&state, "agent", &block("pending", 1)).unwrap().state;
+        state = reduce(&state, "agent", &block("unpresented", 0)).unwrap().state;
+        state = reduce(&state, "agent", &json!({"type": "audioStarted", "operationId": "unpresented", "blockId": 0})).unwrap().state;
+        for i in 0..66 {
+            let mut cmd = block(&format!("op-{i}"), 0);
+            cmd["isSpeech"] = json!(false);
+            state = reduce(&state, "agent", &cmd).unwrap().state;
+        }
+        assert_eq!(state["operations"].as_object().unwrap().len(), 66);
+        assert!(state["operations"].get("op-0").is_none());
+        assert!(state["operations"].get("op-1").is_none());
+        assert!(state["operations"].get("op-2").is_some());
+        assert!(state["operations"].get("op-65").is_some());
+        assert_eq!(state["operations"]["pending"]["pendingBlocks"].as_object().unwrap().len(), 1);
+        assert_eq!(state["operations"]["unpresented"]["presentedThrough"], -1);
+    }
+
+    #[test]
+    fn pending_blocks_reject_growth_at_limit() {
+        let mut state = initial_state(false);
+        for id in 1..=128 {
+            state = reduce(&state, "agent", &block("pending", id)).unwrap().state;
+        }
+        assert!(reduce(&state, "agent", &block("pending", 129)).is_err());
+        assert!(reduce(&state, "agent", &block("pending", 128)).is_ok());
+        let pending = state["operations"]["pending"]["pendingBlocks"].as_object().unwrap();
+        assert_eq!(pending.len(), MAX_PENDING_BLOCKS);
+        assert!(pending.contains_key("1"));
+        assert!(pending.contains_key("128"));
+    }
 }

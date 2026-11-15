@@ -1,5 +1,6 @@
 use crate::cartridge::{CommandRejected, ReducerResult};
 use crate::jsonutil::{is_int, now_ms, Json};
+use rand::Rng;
 use serde_json::{json, Value};
 use std::sync::OnceLock;
 
@@ -500,6 +501,7 @@ fn sample_board(pool: &[String], rng: &mut PythonRandom) -> Result<Vec<Json>, Co
 }
 
 fn new_game(settings: &Json) -> Result<Json, CommandRejected> {
+    // A supplied seed makes the hidden key reproducible by design.
     let seed = settings
         .get("seed")
         .and_then(|value| {
@@ -508,7 +510,7 @@ fn new_game(settings: &Json) -> Result<Json, CommandRejected> {
                 .map(i64::unsigned_abs)
                 .or_else(|| value.as_u64())
         })
-        .unwrap_or_else(|| now_ms() as u64);
+        .unwrap_or_else(|| rand::rng().random::<u64>());
     let mut rng = PythonRandom::new(seed);
     let pool = resolve_words(optional_locale(settings.get("wordLocale"))?)?;
     Ok(json!({
