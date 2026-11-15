@@ -11,7 +11,8 @@ use std::time::Duration;
 
 // Bound server-funded provider work without queuing requests.
 const MAX_PROVIDER_REQUESTS: usize = 4;
-static PROVIDER_GATE: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(MAX_PROVIDER_REQUESTS);
+static PROVIDER_GATE: tokio::sync::Semaphore =
+    tokio::sync::Semaphore::const_new(MAX_PROVIDER_REQUESTS);
 
 #[derive(Clone)]
 pub struct Executor {
@@ -48,7 +49,9 @@ impl Executor {
             match step {
                 Step::Sleep(0) => tokio::task::yield_now().await,
                 Step::Sleep(ms) => tokio::time::sleep(Duration::from_millis(ms)).await,
-                Step::Http(request) => input = Some(self.perform_for(request, origin.as_ref()).await),
+                Step::Http(request) => {
+                    input = Some(self.perform_for(request, origin.as_ref()).await)
+                }
                 Step::Broadcast(messages) => slot.broadcast(&messages),
                 Step::Media(frame) => slot.broadcast_media(frame),
                 Step::Direct(message) => {
@@ -160,7 +163,9 @@ mod tests {
         tokio::time::timeout(
             Duration::from_millis(100),
             Executor::new(ServerAi::default()).run(slot.clone(), task, Some(tx.clone())),
-        ).await.unwrap();
+        )
+        .await
+        .unwrap();
         let Message::Text(text) = rx.try_recv().unwrap() else {
             panic!("expected error event")
         };
@@ -181,7 +186,9 @@ mod tests {
         tokio::time::timeout(
             Duration::from_millis(100),
             Executor::new(ServerAi::default()).run(slot, task, Some(tx)),
-        ).await.unwrap();
+        )
+        .await
+        .unwrap();
         let Message::Text(text) = rx.try_recv().unwrap() else {
             panic!("expected TTS error event")
         };
@@ -197,7 +204,11 @@ mod tests {
         let (tx, _, _) = Outgoing::channel();
         let _permit = tx.provider_gate.try_acquire().unwrap();
         let request = HttpRequest::post_json("http://127.0.0.1:1", vec![], &json!({}), 30000, 1024);
-        let result = Executor::new(ServerAi::default()).perform_for(request, Some(&tx)).await;
-        assert!(matches!(result, HttpResult::Network(error) if error == "provider admission limit"));
+        let result = Executor::new(ServerAi::default())
+            .perform_for(request, Some(&tx))
+            .await;
+        assert!(
+            matches!(result, HttpResult::Network(error) if error == "provider admission limit")
+        );
     }
 }

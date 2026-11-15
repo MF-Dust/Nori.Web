@@ -183,13 +183,20 @@ impl Registry {
     }
 
     /// Python `WorldManager.world_for_grant`: only the user's current world.
-    pub fn add_media(&self, user_id: &str, grant: &str, id: u64, tx: Outgoing) -> Option<Arc<UserSlot>> {
+    pub fn add_media(
+        &self,
+        user_id: &str,
+        grant: &str,
+        id: u64,
+        tx: Outgoing,
+    ) -> Option<Arc<UserSlot>> {
         let mut users = lock(&self.users);
         let mut idle = lock(&self.idle);
         let idle_index = idle.iter().position(|(user, _)| user == user_id);
-        let slot = users.get(user_id).cloned().or_else(|| {
-            idle_index.map(|index| idle[index].1.clone())
-        })?;
+        let slot = users
+            .get(user_id)
+            .cloned()
+            .or_else(|| idle_index.map(|index| idle[index].1.clone()))?;
         let valid = slot.world().has_media_grant(grant);
         if !valid {
             return None;
@@ -214,8 +221,10 @@ mod tests {
         for _ in 0..OUTGOING_CAPACITY {
             tx.send(Message::Text("frame".into())).unwrap();
         }
-        assert!(matches!(tx.send(Message::Text("dropped".into())),
-            Err(mpsc::error::TrySendError::Full(_))));
+        assert!(matches!(
+            tx.send(Message::Text("dropped".into())),
+            Err(mpsc::error::TrySendError::Full(_))
+        ));
         assert!(*overflow.borrow());
         assert_eq!(rx.len(), OUTGOING_CAPACITY);
         for _ in 0..OUTGOING_CAPACITY {

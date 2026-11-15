@@ -452,7 +452,9 @@ impl SessionObject {
                 let permit = ProviderPermit::try_acquire(&self.provider_sockets, socket_id);
                 input = Some(match permit {
                     Some(_permit) => host.fetch(request).await,
-                    None => nori_core::provider::HttpResult::Network("provider admission limit".into()),
+                    None => {
+                        nori_core::provider::HttpResult::Network("provider admission limit".into())
+                    }
                 });
             }
             // A socket may have joined while another task awaited Http/Sleep.
@@ -537,7 +539,8 @@ impl<'a> ProviderPermit<'a> {
     fn try_acquire(sockets: &'a RefCell<Vec<String>>, socket_id: String) -> Option<Self> {
         let mut active = sockets.borrow_mut();
         if active.len() >= MAX_PROVIDER_REQUESTS
-            || active.iter().filter(|id| *id == &socket_id).count() >= MAX_SOCKET_PROVIDER_REQUESTS {
+            || active.iter().filter(|id| *id == &socket_id).count() >= MAX_SOCKET_PROVIDER_REQUESTS
+        {
             return None;
         }
         active.push(socket_id.clone());

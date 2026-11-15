@@ -1244,17 +1244,37 @@ fn launched_games_drop_oldest_at_limit() {
 fn bookmarks_reject_unique_growth_at_limit() {
     let mut world = world(Arc::new(LivePack::empty()), false);
     for i in 0..1024 {
-        command(&mut world, "browser.bookmarks.add", json!({"url": format!("https://test/{i}")}));
+        command(
+            &mut world,
+            "browser.bookmarks.add",
+            json!({"url": format!("https://test/{i}")}),
+        );
     }
-    let rejected = command(&mut world, "browser.bookmarks.add", json!({"url": "https://overflow"}));
+    let rejected = command(
+        &mut world,
+        "browser.bookmarks.add",
+        json!({"url": "https://overflow"}),
+    );
     assert_eq!(rejected.direct[0]["payload"]["ok"], false);
-    let duplicate = command(&mut world, "browser.bookmarks.add", json!({"url": "https://test/0"}));
+    let duplicate = command(
+        &mut world,
+        "browser.bookmarks.add",
+        json!({"url": "https://test/0"}),
+    );
     assert_eq!(duplicate.direct[0]["payload"]["ok"], true);
     let marks = vars(&world)["browserBookmarks"].as_array().unwrap();
     assert_eq!(marks.len(), 1024);
     assert_eq!(marks[0]["url"], "https://test/0");
     assert_eq!(marks[1023]["url"], "https://test/1023");
-    command(&mut world, "browser.bookmarks.remove", json!({"url": "https://test/0"}));
-    command(&mut world, "browser.bookmarks.add", json!({"url": "https://new"}));
+    command(
+        &mut world,
+        "browser.bookmarks.remove",
+        json!({"url": "https://test/0"}),
+    );
+    command(
+        &mut world,
+        "browser.bookmarks.add",
+        json!({"url": "https://new"}),
+    );
     assert_eq!(vars(&world)["browserBookmarks"][1023]["url"], "https://new");
 }

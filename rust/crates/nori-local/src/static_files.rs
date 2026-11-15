@@ -198,12 +198,10 @@ fn select_file(static_roots: &[PathBuf], path: &str) -> Option<PathBuf> {
             }
         }
     }
-    roots
-        .iter()
-        .find_map(|root| {
-            let index = std::fs::canonicalize(root.join("index.html")).ok()?;
-            (index.starts_with(root) && index.is_file()).then_some(index)
-        })
+    roots.iter().find_map(|root| {
+        let index = std::fs::canonicalize(root.join("index.html")).ok()?;
+        (index.starts_with(root) && index.is_file()).then_some(index)
+    })
 }
 
 fn cache_control(static_roots: &[PathBuf], file_path: &Path) -> String {
@@ -427,12 +425,15 @@ mod tests {
         let root = std::env::temp_dir().join(format!("nori-static-symlink-{}", std::process::id()));
         std::fs::create_dir_all(root.join("public")).unwrap();
         std::fs::write(root.join("secret.html"), "secret").unwrap();
-        std::os::unix::fs::symlink(root.join("secret.html"), root.join("public/index.html")).unwrap();
+        std::os::unix::fs::symlink(root.join("secret.html"), root.join("public/index.html"))
+            .unwrap();
         assert!(super::select_file(&[root.join("public")], "spa/route").is_none());
         std::fs::remove_file(root.join("public/index.html")).unwrap();
         std::fs::write(root.join("public/index.html"), "safe").unwrap();
-        assert_eq!(super::select_file(&[root.join("public")], "spa/route"),
-            Some(std::fs::canonicalize(root.join("public/index.html")).unwrap()));
+        assert_eq!(
+            super::select_file(&[root.join("public")], "spa/route"),
+            Some(std::fs::canonicalize(root.join("public/index.html")).unwrap())
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 

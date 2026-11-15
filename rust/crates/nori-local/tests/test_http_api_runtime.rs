@@ -172,7 +172,12 @@ async fn oversized_api_body_is_rejected() {
     let response = reqwest::Client::new()
         .post(format!("{}/api/presence", server.base))
         .body(vec![b' '; 8 * 1024 * 1024 + 1])
-        .send().await.unwrap();
+        .send()
+        .await
+        .unwrap();
     assert_eq!(response.status(), 413);
-    assert_eq!(response.text().await.unwrap(), r#"{"detail":"Request body too large"}"#);
+    assert_eq!(
+        response.text().await.unwrap(),
+        r#"{"detail":"Request body too large"}"#
+    );
 }

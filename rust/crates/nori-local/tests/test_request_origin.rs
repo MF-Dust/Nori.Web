@@ -92,13 +92,22 @@ async fn rejects_rebinding_hosts_on_http_and_both_websocket_paths() {
     let state = nori_local::AppState::new(config(public.path()));
     let server = support::start_app(state.clone(), nori_local::build_server(state)).await;
     let client = Client::new();
-    for path in ["/api/version", "/api/arcade/web/v1", "/api/arcade/web/v1/media"] {
-        let response = client.get(format!("{}{path}", server.base))
+    for path in [
+        "/api/version",
+        "/api/arcade/web/v1",
+        "/api/arcade/web/v1/media",
+    ] {
+        let response = client
+            .get(format!("{}{path}", server.base))
             .header("host", "attacker.test:4173")
             .header("origin", "http://attacker.test:4173")
-            .send().await.unwrap();
+            .send()
+            .await
+            .unwrap();
         assert_eq!(response.status(), 403);
-        assert_eq!(response.json::<serde_json::Value>().await.unwrap(),
-            serde_json::json!({"error":"host_forbidden"}));
+        assert_eq!(
+            response.json::<serde_json::Value>().await.unwrap(),
+            serde_json::json!({"error":"host_forbidden"})
+        );
     }
 }

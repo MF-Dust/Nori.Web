@@ -18,8 +18,14 @@ fn trim_settled_operations(state: &mut Json) {
             op.get("pendingBlocks")
                 .and_then(Value::as_object)
                 .is_some_and(|p| p.is_empty())
-                && op.get("presentedThrough").and_then(Value::as_i64).unwrap_or(-1)
-                    >= op.get("revealedThrough").and_then(Value::as_i64).unwrap_or(-1)
+                && op
+                    .get("presentedThrough")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(-1)
+                    >= op
+                        .get("revealedThrough")
+                        .and_then(Value::as_i64)
+                        .unwrap_or(-1)
         })
         .map(|(id, _)| id.clone())
         .collect();
@@ -701,8 +707,16 @@ mod tests {
     fn settled_operations_drop_oldest_but_preserve_pending_and_unpresented() {
         let mut state = initial_state(false);
         state = reduce(&state, "agent", &block("pending", 1)).unwrap().state;
-        state = reduce(&state, "agent", &block("unpresented", 0)).unwrap().state;
-        state = reduce(&state, "agent", &json!({"type": "audioStarted", "operationId": "unpresented", "blockId": 0})).unwrap().state;
+        state = reduce(&state, "agent", &block("unpresented", 0))
+            .unwrap()
+            .state;
+        state = reduce(
+            &state,
+            "agent",
+            &json!({"type": "audioStarted", "operationId": "unpresented", "blockId": 0}),
+        )
+        .unwrap()
+        .state;
         for i in 0..66 {
             let mut cmd = block(&format!("op-{i}"), 0);
             cmd["isSpeech"] = json!(false);
@@ -713,7 +727,13 @@ mod tests {
         assert!(state["operations"].get("op-1").is_none());
         assert!(state["operations"].get("op-2").is_some());
         assert!(state["operations"].get("op-65").is_some());
-        assert_eq!(state["operations"]["pending"]["pendingBlocks"].as_object().unwrap().len(), 1);
+        assert_eq!(
+            state["operations"]["pending"]["pendingBlocks"]
+                .as_object()
+                .unwrap()
+                .len(),
+            1
+        );
         assert_eq!(state["operations"]["unpresented"]["presentedThrough"], -1);
     }
 
@@ -721,11 +741,15 @@ mod tests {
     fn pending_blocks_reject_growth_at_limit() {
         let mut state = initial_state(false);
         for id in 1..=128 {
-            state = reduce(&state, "agent", &block("pending", id)).unwrap().state;
+            state = reduce(&state, "agent", &block("pending", id))
+                .unwrap()
+                .state;
         }
         assert!(reduce(&state, "agent", &block("pending", 129)).is_err());
         assert!(reduce(&state, "agent", &block("pending", 128)).is_ok());
-        let pending = state["operations"]["pending"]["pendingBlocks"].as_object().unwrap();
+        let pending = state["operations"]["pending"]["pendingBlocks"]
+            .as_object()
+            .unwrap();
         assert_eq!(pending.len(), MAX_PENDING_BLOCKS);
         assert!(pending.contains_key("1"));
         assert!(pending.contains_key("128"));

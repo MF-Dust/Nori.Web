@@ -235,7 +235,10 @@ async fn run_media(ctx: Arc<WsContext>, socket: WebSocket, user_id: String) {
         return close(&tx, 4005, "media_grant_invalid");
     };
     let socket_id = ctx.registry.socket_id();
-    let Some(_slot) = ctx.registry.add_media(&user_id, grant, socket_id, tx.clone()) else {
+    let Some(_slot) = ctx
+        .registry
+        .add_media(&user_id, grant, socket_id, tx.clone())
+    else {
         return close(&tx, 4005, "media_grant_invalid");
     };
     let mut overflow = tx.overflow();

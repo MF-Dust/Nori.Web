@@ -20,10 +20,9 @@ pub(crate) async fn same_origin_guard(
                 header::CONTENT_TYPE,
                 HeaderValue::from_static("application/json"),
             );
-            response.headers_mut().insert(
-                header::CONTENT_LENGTH,
-                HeaderValue::from_static("26"),
-            );
+            response
+                .headers_mut()
+                .insert(header::CONTENT_LENGTH, HeaderValue::from_static("26"));
             return response;
         }
         let origin = request.headers().get(header::ORIGIN);
@@ -67,9 +66,15 @@ fn host_with_port(host: &str, port: u16) -> String {
 }
 
 fn hostname(host: &str) -> Option<String> {
-    host.parse::<axum::http::uri::Authority>().ok().map(|authority| {
-        authority.host().trim_start_matches('[').trim_end_matches(']').to_ascii_lowercase()
-    })
+    host.parse::<axum::http::uri::Authority>()
+        .ok()
+        .map(|authority| {
+            authority
+                .host()
+                .trim_start_matches('[')
+                .trim_end_matches(']')
+                .to_ascii_lowercase()
+        })
 }
 
 fn host_allowed(config: &crate::Config, host: Option<&HeaderValue>) -> bool {
@@ -82,7 +87,10 @@ fn host_allowed(config: &crate::Config, host: Option<&HeaderValue>) -> bool {
     };
     ["localhost", "127.0.0.1", "::1"].contains(&host.as_str())
         || host == config.host.trim_matches(['[', ']']).to_ascii_lowercase()
-        || config.allowed_hosts.iter().any(|allowed| hostname(allowed).as_deref() == Some(&host))
+        || config
+            .allowed_hosts
+            .iter()
+            .any(|allowed| hostname(allowed).as_deref() == Some(&host))
 }
 
 #[cfg(test)]
@@ -93,7 +101,10 @@ mod tests {
     fn host_allowlist_handles_ports_ipv6_missing_and_wildcard() {
         let mut config = crate::Config::default();
         for host in ["127.0.0.1", "LOCALHOST:8080", "[::1]:8080"] {
-            assert!(host_allowed(&config, Some(&HeaderValue::from_str(host).unwrap())));
+            assert!(host_allowed(
+                &config,
+                Some(&HeaderValue::from_str(host).unwrap())
+            ));
         }
         assert!(host_allowed(&config, None));
         let foreign = HeaderValue::from_static("attacker.test:4173");
