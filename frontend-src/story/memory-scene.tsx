@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import { StoryAudio } from "./story-audio";
-import { StoryClock, type StoryPhase } from "./story-clock";
+import { StoryClock, type StoryClockState, type StoryPhase } from "./story-clock";
 import type { StoryInstance } from "./story-director";
 import { power2In, power2InOut, power2Out, ramp } from "./story-ease";
 import { drainBurstPlays } from "../live2d/particles/drain-burst";
@@ -400,6 +400,8 @@ export function MemoryScene({
     };
     document.addEventListener("visibilitychange", visibility);
     clock.advance(performance.now());
+    let publishedState: StoryClockState | undefined;
+    let publishedDrainBursts = -1;
     const render = (now: number) => {
       if (stopped) return;
       try {
@@ -435,33 +437,45 @@ export function MemoryScene({
             console.warn("[MemoryScene] alert request", error);
           }
         }
-        lease.set({
-          // Shipped: project() returns active = chrome < 0.5, and chrome is set to
-          // 1 at phaseStart("drain") = 28.7, so the desktop takes over there.
-          active: state.time < phaseStart("drain"),
-          shake: projection.quake,
-          alertLoop: projection.alert,
-          alertClock: Math.max(0, state.time - phaseStart("attack")),
-          noriTint: projection.tint,
-          chatMode: projection.sweep ? "bubbles" : "normal",
-          bgm: projection.attack
-            ? projection.voidProgress > 0
-              ? "bgm_void"
-              : "silent"
-            : "auto",
-          voidEnv: projection.voidProgress,
-          memoryComputeDrain: projection.drainProgress,
-          drainBurstSeq: drainBursts,
-          // Shipped `aA(L ? "kneel" : "idle", editing)` runs for the whole cutscene
-          // once the clock passes sweep - 0.5; the lease release restores null.
-          noriIdleMotion: memoryIdleMotion(state.time),
-        });
-        setView({
-          time: state.time,
-          phase: state.phase,
-          parkedAt: state.parkedAt,
-          complete: state.complete,
-        });
+        // Scene/view values depend on the clock fields and the drain burst count.
+        if (
+          !publishedState ||
+          state.time !== publishedState.time ||
+          state.phase !== publishedState.phase ||
+          state.parkedAt !== publishedState.parkedAt ||
+          state.complete !== publishedState.complete ||
+          drainBursts !== publishedDrainBursts
+        ) {
+          lease.set({
+            // Shipped: project() returns active = chrome < 0.5, and chrome is set to
+            // 1 at phaseStart("drain") = 28.7, so the desktop takes over there.
+            active: state.time < phaseStart("drain"),
+            shake: projection.quake,
+            alertLoop: projection.alert,
+            alertClock: Math.max(0, state.time - phaseStart("attack")),
+            noriTint: projection.tint,
+            chatMode: projection.sweep ? "bubbles" : "normal",
+            bgm: projection.attack
+              ? projection.voidProgress > 0
+                ? "bgm_void"
+                : "silent"
+              : "auto",
+            voidEnv: projection.voidProgress,
+            memoryComputeDrain: projection.drainProgress,
+            drainBurstSeq: drainBursts,
+            // Shipped `aA(L ? "kneel" : "idle", editing)` runs for the whole cutscene
+            // once the clock passes sweep - 0.5; the lease release restores null.
+            noriIdleMotion: memoryIdleMotion(state.time),
+          });
+          setView({
+            time: state.time,
+            phase: state.phase,
+            parkedAt: state.parkedAt,
+            complete: state.complete,
+          });
+          publishedState = state;
+          publishedDrainBursts = drainBursts;
+        }
         if (state.complete) frontend.story.complete(story);
         else frame = requestAnimationFrame(render);
       } catch (error) {

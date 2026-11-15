@@ -4,13 +4,12 @@ import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import { StoryClock } from "./story-clock";
 import { StoryAudio } from "./story-audio";
 import { createCultRenderer } from "./cult-renderer";
-import type { StoryInstance } from "./story-director";
+import { STORY_ORDER, type StoryInstance } from "./story-director";
 import { BootScene } from "./boot-scene";
 
 // Boot plays on the first session.ready, so it stays in the entry. The later scenes
-// (and their Pixi/three addon/post-processing dependencies) load on demand and are
-// prefetched while the desktop is idle, so they are normally resident before their
-// trigger fact arrives.
+// (and their Pixi/three addon/post-processing dependencies) load on demand. Only
+// the next unfinished deferred scene is prefetched while the desktop is idle.
 const loadCorruptionScene = () => import("./corruption-scene");
 const loadMemoryScene = () => import("./memory-scene");
 const loadDataseaScene = () => import("./datasea-scene");
@@ -21,12 +20,18 @@ const MemoryScene = lazy(() => loadMemoryScene().then((module) => ({ default: mo
 const DataseaScene = lazy(() => loadDataseaScene().then((module) => ({ default: module.DataseaScene })));
 const FarewellScene = lazy(() => loadFarewellScene().then((module) => ({ default: module.FarewellScene })));
 const EndingScene = lazy(() => loadEndingScene().then((module) => ({ default: module.EndingScene })));
-const DEFERRED_SCENE_LOADERS = [loadCorruptionScene, loadMemoryScene, loadDataseaScene, loadFarewellScene, loadEndingScene];
+const DEFERRED_SCENE_LOADERS: Record<string, () => Promise<unknown>> = {
+  "nori-corruption-climax": loadCorruptionScene,
+  memory: loadMemoryScene,
+  datasea: loadDataseaScene,
+  farewell: loadFarewellScene,
+  ending: loadEndingScene,
+};
 /** Grace period after the desktop mounts before background scene prefetch starts. */
 const SCENE_PREFETCH_DELAY_MS = 4000;
 
-/** Warms deferred scene chunks one at a time during idle periods; failures retry on demand. */
-function useDeferredScenePrefetch() {
+/** Warms only the next unfinished deferred scene; failures retry on demand. */
+function useDeferredScenePrefetch(frontend: NoriFrontendRuntime) {
   useEffect(() => {
     let cancelled = false;
     let idle: number | undefined;
@@ -34,12 +39,11 @@ function useDeferredScenePrefetch() {
       if (typeof window.requestIdleCallback === "function") idle = window.requestIdleCallback(run, { timeout: 5000 });
       else idle = window.setTimeout(run, 0);
     };
-    const queue = [...DEFERRED_SCENE_LOADERS];
     const next = () => {
       if (cancelled) return;
-      const load = queue.shift();
-      if (!load) return;
-      void load().catch(() => undefined).then(() => schedule(next));
+      const facts = frontend.world.facts();
+      const scene = STORY_ORDER.find((item) => DEFERRED_SCENE_LOADERS[item.id] && !facts.has(item.sentinel));
+      if (scene) void DEFERRED_SCENE_LOADERS[scene.id]().catch(() => undefined);
     };
     const timer = window.setTimeout(() => schedule(next), SCENE_PREFETCH_DELAY_MS);
     return () => {
@@ -49,7 +53,7 @@ function useDeferredScenePrefetch() {
       if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idle);
       else window.clearTimeout(idle);
     };
-  }, []);
+  }, [frontend]);
 }
 
 function CultFlash({
@@ -188,7 +192,7 @@ export function StoryScenes({
     frontend.story.subscribe,
     frontend.story.snapshot,
   );
-  useDeferredScenePrefetch();
+  useDeferredScenePrefetch(frontend);
   if (!current) return null;
   return (
     <Suspense fallback={null}>

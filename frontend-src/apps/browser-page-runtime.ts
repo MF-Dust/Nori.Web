@@ -292,6 +292,7 @@ class DataUriCache {
 }
 
 const MIB = 1024 * 1024;
+const MAX_FONT_BYTES = 2 * MIB;
 const assetCache = new DataUriCache(256, 32 * MIB);
 const fontCache = new DataUriCache(64, 16 * MIB);
 
@@ -310,12 +311,36 @@ function isSafeWebAsset(url: unknown): url is string {
   }
 }
 
-async function dataUri(url: string, fallbackMime: string): Promise<string | null> {
+async function dataUri(url: string, fallbackMime: string, fontOnly = false): Promise<string | null> {
   try {
     const response = await fetch(url);
     if (!response.ok) return null;
     const mime = response.headers.get("content-type")?.split(";")[0]?.trim() || fallbackMime;
-    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (fontOnly && !mime.startsWith("font/") && mime !== "application/octet-stream") return null;
+    let bytes: Uint8Array;
+    if (fontOnly) {
+      if (!response.body) return null;
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let length = 0;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          length += value.byteLength;
+          if (length > MAX_FONT_BYTES) {
+            await reader.cancel();
+            return null;
+          }
+          chunks.push(value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+      bytes = new Uint8Array(length);
+      let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    } else bytes = new Uint8Array(await response.arrayBuffer());
     let binary = "";
     for (let index = 0; index < bytes.length; index += 32768) {
       binary += String.fromCharCode(...bytes.subarray(index, index + 32768));
@@ -333,7 +358,9 @@ export function fetchBrowserAssetData(url: string): Promise<string | null> {
 }
 
 function fetchBrowserFontData(url: string): Promise<string | null> {
-  return fontCache.load(url, () => dataUri(url, "font/woff2"));
+  if (!isSafeWebAsset(url)) return Promise.resolve(null);
+  return fontCache.load(url, () =>
+    dataUri(new URL(url, window.location.href).href, "", true));
 }
 
 function safeCssToken(value: string): string {

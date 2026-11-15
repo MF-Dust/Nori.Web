@@ -16,6 +16,12 @@ function clone<T>(value: T): T {
     : JSON.parse(JSON.stringify(value)) as T;
 }
 
+function copyContainer<T>(value: T): T {
+  if (Array.isArray(value)) return value.slice() as T;
+  if (value && typeof value === "object") return { ...value };
+  return value;
+}
+
 function resolveParent(root: JsonValue, pointer: string): { parent: any; key: string } {
   if (!pointer.startsWith("/")) throw new Error(`Invalid JSON pointer: ${pointer}`);
   const tokens = pointer.split("/").slice(1).map(decodePointerToken);
@@ -28,8 +34,10 @@ function resolveParent(root: JsonValue, pointer: string): { parent: any; key: st
       if (!Number.isInteger(index) || index < 0 || index >= parent.length) {
         throw new Error(`Invalid array pointer segment: ${token}`);
       }
+      parent[index] = copyContainer(parent[index]);
       parent = parent[index];
     } else if (parent && typeof parent === "object") {
+      parent[token] = copyContainer(parent[token]);
       parent = parent[token];
     } else {
       throw new Error(`Pointer traverses a non-container at ${token}`);
@@ -39,7 +47,8 @@ function resolveParent(root: JsonValue, pointer: string): { parent: any; key: st
 }
 
 export function applyJsonPatch<T extends JsonValue>(document: T, operations: JsonPatchOperation[]): T {
-  const next = clone(document);
+  if (operations.length === 0) return document;
+  const next = copyContainer(document);
   for (const operation of operations) {
     const { parent, key } = resolveParent(next, operation.path);
     if (Array.isArray(parent)) {

@@ -51,6 +51,12 @@ export class ChatRuntimeController {
   private fence = -1;
   private joined = false;
   private localLines: ChatLine[] = [];
+  private refreshInputs?: {
+    state: unknown;
+    connected: boolean;
+    joined: boolean;
+    localLines: ChatLine[];
+  };
   constructor(
     private world: WorldStore,
     private arcade: ArcadeClient,
@@ -140,11 +146,15 @@ export class ChatRuntimeController {
   private refresh() {
     const runtime = this.world.runtime("chat"),
       state = runtime?.state;
+    const connected = this.joined && !!runtime && this.arcade.connectionState === "open";
+    const previous = this.refreshInputs;
+    if (previous && previous.state === state && previous.connected === connected &&
+        previous.joined === this.joined && previous.localLines === this.localLines) return;
+    this.refreshInputs = { state, connected, joined: this.joined, localLines: this.localLines };
     const parsed = z.array(lineSchema).safeParse(state?.lines ?? []);
     this.publish({
       lines: [...(parsed.success ? parsed.data : []), ...this.localLines],
-      connected:
-        this.joined && !!runtime && this.arcade.connectionState === "open",
+      connected,
       phase:
         state?.turn &&
         typeof state.turn === "object" &&

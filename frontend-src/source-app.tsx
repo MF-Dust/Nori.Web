@@ -30,7 +30,6 @@ import {
 } from "./components/chip-overlay";
 import { BrowserPodcastRuntime } from "./apps/browser-page-runtime";
 import { desktopMusicTarget } from "./runtime/audio-mixer";
-import { initializeGraphics } from "./runtime/graphics-detection";
 import type { SettingsRuntime } from "./screens/settings-screen";
 import { SystemService } from "./services/system";
 import { useUnlockSettings } from "./state/unlock-store";
@@ -45,11 +44,10 @@ import { pictionaryStateSchema } from "./apps/pictionary-model";
 import { PictionaryDrawingBridge } from "./apps/pictionary-runtime";
 import { GameCartridgeController } from "./apps/game-cartridge-controller";
 import { chessStateSchema } from "./apps/chess-schema";
-import { lazy as lazyComponent, useEffect, useState, useSyncExternalStore } from "react";
+import { lazy as lazyComponent, Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import { SpeechModeControl } from "./components/speech-mode-control";
 import { ConversationPanel } from "./components/conversation-panel";
 import { SourceLogin } from "./components/source-login";
-import { NoriStage } from "./live2d/nori-stage";
 import { NoriSceneEffects } from "./components/nori-scene-effects";
 import { DesktopSurface } from "./components/desktop-surface";
 import { useAudioSettings } from "./state/audio-store";
@@ -88,6 +86,7 @@ import {
   type FilesRecoveredFile,
 } from "./apps/files";
 
+const NoriStage = lazyComponent(() => import("./live2d/nori-stage").then((module) => ({ default: module.NoriStage })));
 const DebugScreen = lazyComponent(() => import("./screens/debug-screen").then((module) => ({ default: module.DebugScreen })));
 const PreviewScreen = lazyComponent(() => import("./screens/preview-screen").then((module) => ({ default: module.PreviewScreen })));
 const AboutScreen = lazyComponent(() => import("./screens/system-screen").then((module) => ({ default: module.AboutScreen })));
@@ -126,7 +125,6 @@ function hasWorldFact(frontend: NoriFrontendRuntime, factId: string): boolean {
 }
 
 function createSourceSession() {
-  initializeGraphics();
   const frontend = new NoriFrontendRuntime({
     createWebSocket: createNetworkFaultWebSocketFactory(readNetworkFaultProfile(localStorage)),
   });
@@ -1020,14 +1018,16 @@ function SourceSessionView({ source }: { source: SourceSession }) {
       background={
         <>
           <DesktopSurface />
-          <NoriStage
-            frontend={source.frontend}
-            facts={facts}
-            windows={source.bundle.runtime.store}
-            exclusive={() =>
-              source.bundle.runtime.store.getState().exclusiveAppId !== null
-            }
-          />
+          <Suspense fallback={<div className="nori-stage" data-live2d-status="loading" />}>
+            <NoriStage
+              frontend={source.frontend}
+              facts={facts}
+              windows={source.bundle.runtime.store}
+              exclusive={() =>
+                source.bundle.runtime.store.getState().exclusiveAppId !== null
+              }
+            />
+          </Suspense>
         </>
       }
       overlay={

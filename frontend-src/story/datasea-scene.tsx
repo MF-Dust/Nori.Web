@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
 import { NORI_SHELL_LAYERS } from "../state/window-layout-runtime";
 import { StoryAudio, type StoryAudioTrack } from "./story-audio";
-import { StoryClock, type StoryPhase } from "./story-clock";
+import { StoryClock, type StoryClockState, type StoryPhase } from "./story-clock";
 import type { StoryInstance } from "./story-director";
 import { createDataseaRenderer } from "./datasea-renderer";
 import { DataseaWaveGate } from "./datasea-wave-gate";
@@ -345,6 +345,7 @@ export function DataseaScene({
       audio.sync(clock.snapshot());
     };
     document.addEventListener("visibilitychange", visibility);
+    let publishedState: StoryClockState | undefined;
     const render = (now: number) => {
       if (stopped) return;
       try {
@@ -360,21 +361,31 @@ export function DataseaScene({
           phase: state.phase,
           ...camera,
         });
-        lease.set({
-          active: true,
-          ...camera,
-          lerp: 1,
-          darkness: state.time < 30 ? Math.min(1, state.time / 18) : 1,
-          whiteFlash: whiteProgress,
-          bgm: "silent",
-          chatMode: "hidden",
-        });
-        setView({
-          time: state.time,
-          phase: state.phase,
-          parkedAt: state.parkedAt,
-          ready: true,
-        });
+        // All published scene/view values are derived from these clock fields.
+        if (
+          !publishedState ||
+          state.time !== publishedState.time ||
+          state.phase !== publishedState.phase ||
+          state.parkedAt !== publishedState.parkedAt ||
+          state.complete !== publishedState.complete
+        ) {
+          lease.set({
+            active: true,
+            ...camera,
+            lerp: 1,
+            darkness: state.time < 30 ? Math.min(1, state.time / 18) : 1,
+            whiteFlash: whiteProgress,
+            bgm: "silent",
+            chatMode: "hidden",
+          });
+          setView({
+            time: state.time,
+            phase: state.phase,
+            parkedAt: state.parkedAt,
+            ready: true,
+          });
+          publishedState = state;
+        }
         if (state.complete) frontend.story.complete(story);
         else frame = requestAnimationFrame(render);
       } catch (error) {

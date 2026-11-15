@@ -30,6 +30,8 @@ export class Emitter<T> {
 }
 
 const CODE_PREFIX = "NORI-MP1.";
+const MAX_SIGNAL_BYTES = 256 * 1024;
+const MAX_ENCODED_SIGNAL_LENGTH = Math.ceil(MAX_SIGNAL_BYTES * 4 / 3) + 1024;
 
 function toBase64Url(bytes: Uint8Array): string {
   let binary = "";
@@ -46,9 +48,29 @@ function fromBase64Url(text: string): Uint8Array {
   return bytes;
 }
 
-async function pipe(bytes: Uint8Array, stream: CompressionStream | DecompressionStream): Promise<Uint8Array> {
+async function pipe(bytes: Uint8Array, stream: CompressionStream | DecompressionStream, maxBytes = Infinity): Promise<Uint8Array> {
   const output = new Blob([bytes as BlobPart]).stream().pipeThrough(stream);
-  return new Uint8Array(await new Response(output).arrayBuffer());
+  const reader = output.getReader();
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      length += value.byteLength;
+      if (length > maxBytes) {
+        await reader.cancel();
+        throw new Error("code is too large");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const result = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.byteLength; }
+  return result;
 }
 
 /**
@@ -68,13 +90,14 @@ export async function decodeSignal<T>(code: string): Promise<T> {
   const text = code.trim().replace(/\s+/g, "");
   if (!text.startsWith(CODE_PREFIX)) throw new Error("not a Nori multiplayer code");
   const body = text.slice(CODE_PREFIX.length);
+  if (body.length - 1 > MAX_ENCODED_SIGNAL_LENGTH) throw new Error("code is too large");
   const bytes = fromBase64Url(body.slice(1));
   let json: Uint8Array;
   if (body[0] === "z") {
     if (typeof DecompressionStream !== "function") throw new Error("this browser cannot read compressed codes");
-    json = await pipe(bytes, new DecompressionStream("deflate-raw"));
+    json = await pipe(bytes, new DecompressionStream("deflate-raw"), MAX_SIGNAL_BYTES);
   } else if (body[0] === "j") json = bytes;
   else throw new Error("unknown code encoding");
-  if (json.length > 256 * 1024) throw new Error("code is too large");
+  if (json.length > MAX_SIGNAL_BYTES) throw new Error("code is too large");
   return JSON.parse(new TextDecoder().decode(json)) as T;
 }

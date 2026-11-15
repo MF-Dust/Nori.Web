@@ -1,5 +1,6 @@
 import test, { mock } from "node:test";
 import assert from "node:assert/strict";
+import { deflateRawSync } from "node:zlib";
 import { GameCartridgeController } from "../../frontend-src/apps/game-cartridge-controller";
 import { chessStateSchema } from "../../frontend-src/apps/chess-schema";
 import { GameService } from "../../frontend-src/services/games";
@@ -394,4 +395,12 @@ test("a re-invited peer receives the drawing so far; large deltas are chunked", 
   for (const message of messages) if (message?.t === "strokes") viewer.receivePeerStrokes(message);
   assert.equal(viewer.peerSnapshot().strokes.length, 80);
   b.close(); local.dispose(); viewer.dispose();
+});
+
+
+test("compressed signal codes reject oversized decompressed JSON", async () => {
+  const compressed = deflateRawSync(JSON.stringify({ sdp: "a".repeat(1024 * 1024) }));
+  const code = `NORI-MP1.z${compressed.toString("base64url")}`;
+  assert.ok(code.length < 4096, "the encoded bomb fits the input limit");
+  await assert.rejects(decodeSignal(code), { message: "code is too large" });
 });

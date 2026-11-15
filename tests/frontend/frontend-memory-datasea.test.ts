@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { resolve } from "node:path";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -29,6 +32,8 @@ import {
   dataseaWhiteAt,
 } from "../../frontend-src/story/datasea-content";
 import { StoryClock } from "../../frontend-src/story/story-clock";
+
+const { transformSync }: typeof import("esbuild") = createRequire(resolve("package.json"))("esbuild");
 
 test("memory retains all five ordered interaction gates", () => {
   const clock = new StoryClock(MEMORY_PHASES);
@@ -261,3 +266,72 @@ test("datasea whiteout is the shipped 1.2s handoff ramp, not a 5s phase ramp", (
   assert.equal(dataseaWhiteout(163.5151785714286), 1);
   assert.equal(dataseaWhiteout(187.4151785714286), 1);
 });
+
+// Execute the production frame callback without mounting a browser/WebGL scene.
+// This keeps publication assertions on the actual loop rather than a duplicate gate.
+for (const [scene, phases] of [
+  ["memory", MEMORY_PHASES],
+  ["datasea", DATASEA_PHASES],
+] as const) {
+  test(`${scene} frame loop does not publish unchanged parked frames`, () => {
+    const source = readFileSync(`frontend-src/story/${scene}-scene.tsx`, "utf8");
+    const start = source.indexOf("    let publishedState:");
+    const end = source.indexOf("\n    };", start) + "\n    };".length;
+    const callback = transformSync(source.slice(start, end), { loader: "ts" }).code;
+    const clock = new StoryClock(phases);
+    clock.advance(0);
+    const gate = phases.find((phase) => phase.pauseAtStart)!;
+    const gateTime = phases.slice(0, phases.indexOf(gate))
+      .reduce((sum, phase) => sum + phase.duration, 0);
+    clock.advance(gateTime * 1000);
+    assert.equal(clock.snapshot().parkedAt, gate.id);
+    let publications = 0, views = 0, frames = 0, audioSyncs = 0, renders = 0;
+    let view: unknown;
+    const env = {
+      clock,
+      lease: { set: () => { publications++; } },
+      setView: (next: unknown) => { views++; view = next; },
+      audio: { sync: () => { audioSyncs++; } },
+      renderer: { render: () => { renders++; } },
+      requestAnimationFrame: () => ++frames,
+      frontend: { story: { complete: () => assert.fail("parked scene completed") } },
+      story: {},
+      fail: (error: unknown) => { throw error; },
+      memoryProjection,
+      memoryIdleMotion,
+      phaseStart: (id: string) => MEMORY_PHASES.slice(0, MEMORY_PHASES.findIndex((phase) => phase.id === id))
+        .reduce((sum, phase) => sum + phase.duration, 0),
+      dataseaCamera,
+      dataseaWhiteout,
+      startOf: (id: string) => DATASEA_PHASES.slice(0, DATASEA_PHASES.findIndex((phase) => phase.id === id))
+        .reduce((sum, phase) => sum + phase.duration, 0),
+    };
+    const render = new Function(...Object.keys(env), `
+      let stopped = false, frame = 0, drainBursts = 0, memoryAlertTalks = 0;
+      const drainAt = 28.7, MEMORY_ALERT_TALKS = 2, MEMORY_ALERT_GAP = 5;
+      ${callback}
+      return render;
+    `)(...Object.values(env)) as (now: number) => void;
+    render(gateTime * 1000);
+    assert.equal(publications, 1);
+    assert.equal(views, 1);
+    const parkedView = view;
+    for (let frame = 1; frame <= 18000; frame++) render(gateTime * 1000 + frame * 1000 / 60);
+    assert.equal(publications, 1);
+    assert.equal(views, 1);
+    assert.equal(view, parkedView);
+    assert.equal(frames, 18001);
+    assert.equal(audioSyncs, frames);
+    if (scene === "datasea") assert.equal(renders, frames);
+
+    const now = gateTime * 1000 + 300000;
+    clock.wake(gate.id, now);
+    render(now);
+    assert.equal(publications, 2, "changed gate input publishes exactly once");
+    assert.equal(views, 2);
+    assert.notEqual(view, parkedView);
+    render(now);
+    assert.equal(publications, 2);
+    assert.equal(views, 2);
+  });
+}

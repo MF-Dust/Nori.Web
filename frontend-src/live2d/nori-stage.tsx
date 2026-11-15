@@ -22,7 +22,7 @@ import {
   ResolutionHysteresis,
 } from "../state/graphics-store";
 import "./stage.css";
-import { detectGpu } from "../runtime/graphics-detection";
+import { detectGpu, initializeGraphics } from "../runtime/graphics-detection";
 import { bindNoriModel } from "./model-runtime";
 import { noriIdleFromFacts, noriLipExpressionBlend } from "./idle-controller";
 import type { NoriFrontendRuntime } from "../runtime/frontend-runtime";
@@ -51,6 +51,7 @@ export function NoriStage({
   const [status, setStatus] = useState("loading");
   useEffect(() => {
     if (!host.current) return;
+    initializeGraphics();
     const hostElement = host.current;
     // A fresh canvas for each effect lifetime also survives StrictMode's setup/cleanup probe.
     const canvas = document.createElement("canvas");

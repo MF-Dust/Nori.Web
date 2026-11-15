@@ -27,6 +27,7 @@ import {
   type ChatAudioFrame,
 } from "../../frontend-src/runtime/chat-media";
 import { SpeechPlayer } from "../../frontend-src/runtime/speech-player";
+import { applyJsonPatch } from "../../frontend-src/runtime/json-patch";
 import { WorldStore } from "../../frontend-src/runtime/world-store";
 import { ChatRuntimeController } from "../../frontend-src/apps/chat-runtime";
 import { ManifoldService } from "../../frontend-src/services/manifold";
@@ -839,3 +840,44 @@ test("story chat stays local between memory and ending, blocks scene input and r
 });
 import "./frontend-antivirus.test";
 import "./frontend-head-pat-audio.test";
+
+
+test("applyJsonPatch copies patched paths and shares untouched subtrees", () => {
+  const document = { chat: { lines: [{ content: "old" }, { content: "untouched" }] }, other: { facts: [true] } };
+  assert.equal(applyJsonPatch(document, []), document);
+  const next = applyJsonPatch(document, [{ op: "replace", path: "/chat/lines/0/content", value: "new" }]);
+  assert.notEqual(next, document);
+  assert.notEqual(next.chat, document.chat);
+  assert.notEqual(next.chat.lines, document.chat.lines);
+  assert.notEqual(next.chat.lines[0], document.chat.lines[0]);
+  assert.equal(next.chat.lines[1], document.chat.lines[1]);
+  assert.equal(next.other, document.other);
+  assert.equal(document.chat.lines[0].content, "old");
+  assert.equal(next.chat.lines[0].content, "new");
+});
+
+test("chat refresh ignores unrelated world events but publishes chat state changes", () => {
+  const world = new WorldStore();
+  const arcade = { connectionState: "open", onState() { return () => {}; }, send() {} };
+  const chat = new ChatRuntimeController(world, arcade as any);
+  world.consume({
+    type: "world_joined",
+    world: { worldId: "world", mountedCartridges: [{ cartridgeId: "chat", runtimes: [{
+      visibilityFenceId: "ui", headVersion: 1, visibleVersion: 1,
+      state: { lines: [{ messageId: "1", content: "hello", sender: "agent" }] },
+    }] }] },
+  } as any);
+  let publications = 0;
+  chat.subscribe(() => publications++);
+  const before = chat.snapshot();
+  world.consume({ type: "dispatch_ack", cartridgeId: "other", headVersion: 2 } as any);
+  world.consume({ type: "runtime_transition", cartridgeId: "chat", version: 2, transition: { patches: [] } } as any);
+  assert.equal(publications, 0);
+  assert.equal(chat.snapshot(), before);
+  world.consume({ type: "runtime_transition", cartridgeId: "chat", version: 3, transition: { patches: [
+    { op: "replace", path: "/lines/0/content", value: "updated" },
+  ] } } as any);
+  assert.equal(publications, 1);
+  assert.equal(chat.snapshot().lines[0].content, "updated");
+  chat.dispose();
+});

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   createBrowserFrameBridge,
   fetchBrowserAssetData,
+  resolveBrowserFontCss,
 } from "../../frontend-src/apps/browser-page-runtime";
 
 test("asset bridge rejects URL escapes before fetch and returns legitimate assets", async (t) => {
@@ -79,4 +80,40 @@ test("asset bridge rejects URL escapes before fetch and returns legitimate asset
     url,
     dataUri: `data:image/png;base64,${btoa("asset")}`,
   })));
+});
+
+
+test("artifact fonts cannot fetch credentialed API data or send it to the frame", async (t) => {
+  const host = Object.assign(new EventTarget(), { location: new URL("https://nori.test/app/") });
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+  Object.defineProperty(globalThis, "window", { configurable: true, value: host });
+  t.after(() => {
+    if (descriptor) Object.defineProperty(globalThis, "window", descriptor);
+    else delete (globalThis as any).window;
+  });
+  const fetched: string[] = [];
+  t.mock.method(globalThis, "fetch", async (url: string) => {
+    fetched.push(String(url));
+    return new Response("session secret", { headers: { "content-type": "application/json" } });
+  });
+  const css = resolveBrowserFontCss([{ family: "artifact", url: "/api/auth/get-session" }]);
+  assert.equal(css.ready, "");
+  assert.equal(await css.pending, "");
+  const replies: unknown[] = [];
+  const frame = { postMessage: (message: unknown) => replies.push(message) };
+  const bridge = createBrowserFrameBridge({
+    iframe: { contentWindow: frame } as unknown as HTMLIFrameElement,
+    hostWindow: host as unknown as Window,
+    allowedCommands: [],
+    invokeCommand: async () => assert.fail("unexpected command"),
+    onNavigate: () => assert.fail("unexpected navigation"),
+    fontCss: css.pending,
+  });
+  t.after(() => bridge.dispose());
+  const event = new MessageEvent("message", { data: { __arcade: true, type: "fonts-request" } });
+  Object.defineProperty(event, "source", { value: frame });
+  host.dispatchEvent(event);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(fetched, []);
+  assert.deepEqual(replies, [], "no font-css message may contain API data");
 });
