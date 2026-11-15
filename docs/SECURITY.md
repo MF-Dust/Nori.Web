@@ -79,6 +79,62 @@ The recovered source frontend validates canonical same-origin `/webAssets/`
 paths before its iframe asset bridge fetches them. Its Markdown link scanner
 also avoids quadratic work on unmatched opening brackets.
 
+## Trust boundaries accepted on purpose
+
+These are design decisions, not open findings. Changing them means changing the
+wire contract.
+
+- `actor` on a dispatch message is chosen by the client. In two-human play the
+  host browser relays the remote player's commands as `agent`, which is the
+  seat that Nori normally occupies; the relay is bounded by the `GUEST_COMMANDS`
+  allowlist in the frontend, and the world belongs to that host. A world owner
+  can therefore cheat their own world or an invited guest. This is not
+  authentication and not anti-cheat.
+- Chess, Codenames, and Pictionary accept client timestamps and, where offered,
+  a client `seed`. A supplied Codenames seed reproduces the hidden key by
+  design; every board from an absent seed is drawn from the CSPRNG. Seeded games
+  are reproducible, not cheat-resistant.
+- Deferred idle sync may be lost on Durable Object hibernation before the alarm
+  (see the `shortcut:` note in `session_object.rs`). The browser recomputes idle
+  progress from timestamps and re-sends it after reconnect, so the loss heals.
+
+## Request admission
+
+- `/api/*` requests, including both WebSocket upgrades, must carry an allowed
+  `Host`: `localhost`, `127.0.0.1`, `::1`, the configured bind host, or a name
+  listed in the comma-separated `NORI_ALLOWED_HOSTS`. This blocks DNS rebinding.
+  A wildcard bind (`0.0.0.0`, `::`) skips the check because the operator already
+  chose to expose the port; put a reverse proxy in front instead.
+- HTTP bodies are capped at 8 MiB (`413`), WebSocket text frames at 8 MiB
+  (`1009`), and a WebSocket consumer that stops reading is disconnected with
+  `1008` instead of growing its queue.
+- Provider work is admitted, never queued: 4 concurrent requests process-wide on
+  the local server, 2 per world and 1 per socket on the Worker. Beyond that the
+  existing provider error path runs, which keeps server-funded keys bounded.
+
+## Bounded state
+
+Long sessions are bounded by counting, not by deleting progression: Codenames and
+Pictionary history are rings, chat keeps the newest settled operations, and facts,
+scans, and bookmarks refuse further growth instead of dropping data.
+
+| State | Cap |
+| --- | --- |
+| Settled chat operations | 64 (oldest settled dropped first) |
+| Pending blocks per chat operation | 128 |
+| Game launch history | 256 (oldest dropped) |
+| Bookmarks | 1024 (further additions rejected) |
+| Manifold facts | 16384 (further emissions rejected) |
+| Chip scans | 4096 (further scans rejected) |
+| Pictionary rounds | 1024 (oldest dropped) |
+
+## Patch broadcasting
+
+Commits currently broadcast whole top-level subtrees. Do not replace that with
+leaf-level patches without diffing the **projected** view first: redaction in
+`codenames::client_view` works by recognizing objects that contain `key`, so a
+nested `/gameState/key/...` patch would ship the hidden roles to every client.
+
 ## Regression checks
 
 - `npm run test:rust`: Rust core, local service, and Worker regressions, including

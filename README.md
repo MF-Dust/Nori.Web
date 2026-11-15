@@ -185,7 +185,7 @@ npm start
 
 > **Windows 便捷启动**：直接双击根目录下的 `start.bat`（优先使用同目录的 `Nori.Web.exe`，否则用 cargo 编译运行）。从源码运行时，脚本会在 `frontend-src/` 有改动时重新构建前端。
 
-本地服务把前端构建产物（`.artifacts/build/app`；发行包中为 `frontend/`）叠加在 `public/` 静态素材之上提供，见 [前端构建与站点](docs/FRONTEND_SITE.md)。常用环境变量：`HOST`（默认 `127.0.0.1`）、`PORT`（默认 `4173`）、`SECRET_KEY`（留空时每次启动随机生成）、`NORI_DISABLE_LIVE_PACK=1`（不加载线上世界归档）、`NORI_FRONTEND_DIR` / `NORI_PUBLIC_DIR` / `NORI_DATA_DIR`（覆盖前端构建、`public/` 与 `backend/data/` 位置）。
+本地服务把前端构建产物（`.artifacts/build/app`；发行包中为 `frontend/`）叠加在 `public/` 静态素材之上提供，见 [前端构建与站点](docs/FRONTEND_SITE.md)。常用环境变量：`HOST`（默认 `127.0.0.1`）、`PORT`（默认 `4173`）、`SECRET_KEY`（留空时每次启动随机生成）、`NORI_ALLOWED_HOSTS`（逗号分隔的额外 Host 白名单，反向代理或自定义域名时填写）、`NORI_DISABLE_LIVE_PACK=1`（不加载线上世界归档）、`NORI_FRONTEND_DIR` / `NORI_PUBLIC_DIR` / `NORI_DATA_DIR`（覆盖前端构建、`public/` 与 `backend/data/` 位置）。
 
 启动成功后，在浏览器中访问：👉 **<http://127.0.0.1:4173>**
 
