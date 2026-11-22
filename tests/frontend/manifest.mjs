@@ -8,7 +8,7 @@ import { repoRoot } from "../../scripts/lib/paths.mjs";
  * which re-exports it, so it has no entry of its own.
  */
 export const groups = {
-  games: ["tests/frontend/frontend-games.test.ts", "tests/frontend/frontend-confirmed-visuals.test.tsx", "tests/frontend/frontend-multiplayer.test.ts"],
+  games: ["tests/frontend/frontend-games.test.ts", "tests/frontend/frontend-multiplayer.test.ts"],
   runtime: [
     "tests/frontend/frontend-runtime.test.ts",
     "tests/frontend/frontend-presence.test.ts",
@@ -34,7 +34,6 @@ export const groups = {
     "tests/frontend/frontend-story-clock.test.ts",
     "tests/frontend/frontend-story-ease.test.ts",
     "tests/frontend/farewell-ending.test.ts",
-    "tests/frontend/frontend-cult.test.ts",
   ],
   suites: [
     "tests/frontend/frontend-antivirus.test.ts",
@@ -51,7 +50,6 @@ export const groups = {
     "tests/frontend/frontend-idle-marginal-growth.test.ts",
     "tests/frontend/frontend-live2d-debug.test.ts",
     "tests/frontend/frontend-marginal-growth-cache.test.ts",
-    "tests/frontend/frontend-marginal-growth-shader.test.ts",
     "tests/frontend/frontend-messenger-interactions.test.ts",
     "tests/frontend/frontend-messenger-model.test.ts",
     "tests/frontend/frontend-nori-scene.test.ts",

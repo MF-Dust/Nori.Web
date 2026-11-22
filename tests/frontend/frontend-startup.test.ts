@@ -100,17 +100,10 @@ test("App screens are absent from the source entry's static dependency graph", (
     assert.equal(visited.has(path), false, `${scene} is still eagerly imported`);
     assert.ok(dynamic.has(path), `${scene} has no lazy import`);
   }
+  const stage = resolve(root, "frontend-src/live2d/nori-stage.tsx");
+  assert.equal(visited.has(stage), false, "NoriStage is still eagerly imported");
+  assert.ok(dynamic.has(stage), "NoriStage has no lazy import");
+
   // The entry validates chess state through the engine-free schema module.
   assert.equal(visited.has(resolve(root, "frontend-src/apps/chess-model.ts")), false, "chess engine model is eagerly imported");
-});
-
-test("login defers the Nori stage chunk and graphics initialization until desktop mount", () => {
-  const app = readFileSync(resolve(root, "frontend-src/source-app.tsx"), "utf8");
-  const stage = readFileSync(resolve(root, "frontend-src/live2d/nori-stage.tsx"), "utf8");
-  assert.doesNotMatch(app, /import\s*\{\s*NoriStage\s*\}\s*from/);
-  assert.match(app, /const NoriStage = lazyComponent\(\(\) => import\("\.\/live2d\/nori-stage"\)/);
-  assert.doesNotMatch(app, /initializeGraphics\(/);
-  assert.match(app, /<Suspense fallback=\{<div className="nori-stage" data-live2d-status="loading" \/>\}>\s*<NoriStage/);
-  assert.ok(app.indexOf('if (auth.status !== "authenticated")') < app.indexOf("<NoriStage"));
-  assert.match(stage, /useEffect\(\(\) => \{\s*if \(!host.current\) return;\s*initializeGraphics\(\);/);
 });

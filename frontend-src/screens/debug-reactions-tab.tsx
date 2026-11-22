@@ -112,12 +112,6 @@ export const DEBUG_REACTION_GROUPS: readonly DebugReactionGroup[] = [
   },
 ];
 
-export function debugReactionLabel(id: string): string {
-  return id
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/^./, (value) => value.toUpperCase());
-}
-
 export function debugReactionSpec(entry: DebugReactionEntry): ReactionSpec {
   return (NORI_REACTIONS[entry.game] as Readonly<Record<string, ReactionSpec>>)[
     entry.id

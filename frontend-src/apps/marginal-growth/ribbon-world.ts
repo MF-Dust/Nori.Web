@@ -41,8 +41,7 @@ const SIZE_POLL_MS = 500;
 const MIN_RESOLUTION = 1;
 const MAX_RESOLUTION = 2;
 
-export const MARGINAL_GROWTH_SHAPES = ["circle", "chubby", "spiky", "nori"] as const;
-export type MarginalGrowthShape = (typeof MARGINAL_GROWTH_SHAPES)[number];
+export type MarginalGrowthShape = "circle" | "chubby" | "spiky" | "nori";
 
 export interface RibbonCameraTransform {
   x: number;

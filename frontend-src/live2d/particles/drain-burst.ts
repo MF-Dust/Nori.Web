@@ -1,8 +1,7 @@
 /**
  * Shipped sprite burst (`Bs` in the shipped `index` chunk) and the
  * Memory preset `xe("drain-burst")`. Motion is integrated in the vertex
- * shader (`position + aVelocity * age` plus the wobble). `integrate` repeats
- * that formula on the CPU so a step can be checked without WebGL.
+ * shader (`position + aVelocity * age` plus the wobble).
  *
  * The shader strings keep the shipped template's LF so they are substrings
  * of index-CyHAbkO5.js.
@@ -96,12 +95,6 @@ export const DRAIN_BURST_PRESET = {
 export interface ParticleAnchor {
   position: { x: number; y: number; z: number };
   size: { x: number; y: number };
-}
-
-export interface IntegratedSprite {
-  x: number;
-  y: number;
-  z: number;
 }
 
 type SpriteMode =
@@ -205,35 +198,6 @@ export class SpriteBurst {
     if (!alive) this.done = true;
   }
 
-  /**
-   * Shipped vertex displacement at `time`: `position + aVelocity * age`,
-   * then the two sine wobbles. Dead slots are omitted, matching the shader's discard.
-   */
-  integrate(time: number): IntegratedSprite[] {
-    const sprites: IntegratedSprite[] = [];
-    for (let index = 0; index < SPRITE_BURST_CAPACITY; index += 1) {
-      const born = this.bornAt[index];
-      const life = this.lifespanAttr[index];
-      const age = time - born;
-      const t = age / life;
-      if (born < 0 || t < 0 || t > 1) continue;
-      const seed = this.seed[index];
-      sprites.push({
-        x:
-          this.position[index * 3] +
-          this.velocity[index * 3] * age +
-          Math.sin(time * 1.3 + seed * 6.28) * 0.05,
-        y:
-          this.position[index * 3 + 1] +
-          this.velocity[index * 3 + 1] * age +
-          Math.sin(time * 0.9 + seed * 11.0) * 0.04,
-        z:
-          this.position[index * 3 + 2] + this.velocity[index * 3 + 2] * age,
-      });
-    }
-    return sprites;
-  }
-
   private spawn(time: number) {
     if (!this.anchor) return;
     let slot = -1;
@@ -286,26 +250,4 @@ export function drainBurstPlays(elapsedSeconds: number) {
     1 +
     Math.floor((elapsedSeconds * 1000 + 1e-6) / DRAIN_BURST_INTERVAL_MS)
   );
-}
-
-/** One burst spawn plus a shader integrate, with no WebGL context. */
-export function stepDrainBurst(
-  dt: number,
-  rng: () => number = Math.random,
-  anchor: ParticleAnchor = {
-    position: { x: 0, y: -0.6, z: 0 },
-    size: { x: 4, y: 8 },
-  },
-) {
-  const burst = new SpriteBurst({
-    id: "drain-burst-1",
-    ...DRAIN_BURST_PRESET,
-    rng,
-  });
-  burst.update(0, 0, anchor);
-  return {
-    count: burst.integrate(0).length,
-    spawned: burst.integrate(0),
-    moved: burst.integrate(dt),
-  };
 }

@@ -1,4 +1,4 @@
-use crate::cartridge::{self, Cartridge};
+use crate::cartridge;
 use crate::jsonutil::{canonical_json, Json};
 use crate::live_pack::LivePack;
 use crate::world::{DispatchAck, World, MAX_DISPATCH_ACKS, MAX_MEDIA_GRANTS};
@@ -189,14 +189,4 @@ pub fn world_from_snapshot(payload: &Json, pack: Arc<LivePack>) -> Option<World>
 pub fn world_from_snapshot_json(raw: &str, pack: Arc<LivePack>) -> Option<World> {
     let payload: Json = serde_json::from_str(raw).ok()?;
     world_from_snapshot(&payload, pack)
-}
-
-pub fn restore_cartridge(id: &str, saved: &Json, pack: &LivePack) -> Option<Cartridge> {
-    let mut cartridge = cartridge::create(id, true, pack)?;
-    let state = saved.get("state")?;
-    if id == "codenames" {
-        crate::cartridges::codenames::validate_restored_state(state).ok()?;
-    }
-    cartridge.state = state.clone();
-    Some(cartridge)
 }

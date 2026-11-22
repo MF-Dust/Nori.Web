@@ -68,10 +68,6 @@ impl Executor {
 
     /// Execute a provider request: no redirects, whole-request timeout,
     /// transparent gzip/deflate, body capped at `max_response_bytes`.
-    pub async fn perform(&self, request: HttpRequest) -> HttpResult {
-        self.perform_for(request, None).await
-    }
-
     async fn perform_for(&self, request: HttpRequest, origin: Option<&Outgoing>) -> HttpResult {
         let _socket_permit = match origin.map(|tx| tx.provider_gate.try_acquire()) {
             Some(Ok(permit)) => Some(permit),

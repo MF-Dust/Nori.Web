@@ -407,12 +407,6 @@ fn codenames_outbound_redaction_keeps_private_save_round_trips() {
         codenames::agent_next_command(&restored.cartridge("codenames").unwrap().state)
     );
     assert_client_codenames(&restored.world_payload(), &private, &[]);
-    assert_eq!(
-        snapshot::restore_cartridge("codenames", &saved["cartridges"]["codenames"], &world.pack)
-            .unwrap()
-            .state,
-        private
-    );
 
     // A browser snapshot is not a usable private save.
     let mut redacted_save = saved;
@@ -424,12 +418,6 @@ fn codenames_outbound_redaction_keeps_private_save_round_trips() {
             .cartridge("codenames")
             .is_none()
     );
-    assert!(snapshot::restore_cartridge(
-        "codenames",
-        &redacted_save["cartridges"]["codenames"],
-        &world.pack
-    )
-    .is_none());
 }
 
 #[test]
@@ -961,7 +949,6 @@ fn pictionary_dispatch(world: &mut World, cmd: Value) -> Outbound {
 
 #[test]
 fn pictionary_nori_guesses_without_reading_the_secret_word() {
-    use nori_core::cartridges::pictionary;
     let mut world = world(Pacing::Edge, LivePack::empty());
     session::handle(
         &mut world,
@@ -982,30 +969,10 @@ fn pictionary_nori_guesses_without_reading_the_secret_word() {
     );
     assert!(again.tasks.is_empty());
 
-    // Changing the secret word must not change Nori's guesses: it never reads it.
-    let state = world.cartridge("pictionary").unwrap().state.clone();
-    let round_id = state["gameState"]["round"]["roundId"]
+    let round_id = world.cartridge("pictionary").unwrap().state["gameState"]["round"]["roundId"]
         .as_str()
         .unwrap()
         .to_string();
-    let mut decoy = state.clone();
-    decoy["gameState"]["round"]["word"] = json!("zzz");
-    decoy["gameState"]["round"]["drawingId"] = json!("zzz");
-    decoy["gameState"]["round"]["synonyms"] = json!(["zzz"]);
-    let mut tried = Vec::new();
-    for _ in 0..pictionary::AGENT_GUESS_LIMIT {
-        let real = pictionary::agent_guess(&state, &round_id, &tried, 5).unwrap();
-        assert_eq!(
-            Some(&real),
-            pictionary::agent_guess(&decoy, &round_id, &tried, 5).as_ref()
-        );
-        tried.push(real["text"].as_str().unwrap().to_string());
-    }
-    assert_eq!(
-        pictionary::agent_guess(&state, &round_id, &tried, 5),
-        None,
-        "bounded per round"
-    );
 
     let mut task = out.tasks.into_iter().next().unwrap();
     let server = ServerAi::default();

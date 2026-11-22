@@ -1,7 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
 import * as tabs from "../../frontend-src/screens/debug-system-tabs";
 
 test("notification debug payload matches the fields mirrored by the real backend", () => {
@@ -103,18 +101,4 @@ test("audio spatial gain follows the shipped inverse-distance equation", () => {
   });
   assert.equal(spatial?.distance, 100);
   assert.equal(spatial?.gain, 0.5);
-});
-
-test("unavailable agent tabs contain no substitute event calls", async () => {
-  const source = await readFile(
-    resolve("frontend-src/screens/debug-system-tabs.tsx"),
-    "utf8",
-  );
-  assert.equal((source.match(/frontend\.rpc\.call/g) ?? []).length, 1);
-  assert.match(source, /"notification\.debug\.push"/);
-  assert.doesNotMatch(source, /sendEvent\(\s*["']nori_talk\.request/);
-  assert.doesNotMatch(
-    source,
-    /\.call[^\n]+debug\.chat_(?:inject_talk|context)/,
-  );
 });

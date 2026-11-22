@@ -3,7 +3,6 @@ import test from "node:test";
 import {
   DRAIN_BURST_INTERVAL_MS,
   drainBurstPlays,
-  stepDrainBurst,
 } from "../../frontend-src/live2d/particles/drain-burst";
 
 test("drain-burst re-fires every 180ms of scene time", () => {
@@ -13,15 +12,4 @@ test("drain-burst re-fires every 180ms of scene time", () => {
   const drain = 28.7;
   assert.equal(drainBurstPlays(drain + 0.18 - drain), 2);
   assert.equal(drainBurstPlays(0.36), 3);
-});
-
-test("a drain burst spawns 55 sprites and integrates them downward", () => {
-  let seed = 1;
-  const step = stepDrainBurst(0.25, () => {
-    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-    return seed / 4294967296;
-  });
-  assert.equal(step.count, 55);
-  assert.equal(step.moved.length, 55);
-  assert.ok(step.moved.every((sprite, index) => sprite.y < step.spawned[index].y));
 });

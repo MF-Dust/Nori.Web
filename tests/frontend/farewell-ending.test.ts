@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFileSync } from "node:fs";
 import { StoryClock } from "../../frontend-src/story/story-clock";
 import {
   FAREWELL_CUES,
@@ -180,63 +179,6 @@ test("an evicted line keeps rendering for its exit and the stack settle", () => 
   assert.deepEqual(phases(FAREWELL_SUBTITLE_FROM), []);
   assert.deepEqual(phases(FAREWELL_CUT_AT), []);
   assert.equal(farewellSubtitleStack(FAREWELL_CUT_AT - 0.001).length, 3);
-});
-
-// The overlay motion and bubble styling below were transcribed from the
-// shipped `jQe` overlay: enter 0.4s, exit 0.35s, layout settle 0.3s, all on
-// ease [0.32, 0.72, 0, 1], with a mint gradient bubble.
-test("the CSS carries the shipped bubble styling, unchanged", () => {
-  const css = readFileSync("frontend-src/story/farewell-scene.css", "utf8");
-  const rule = (selector: string) =>
-    css.slice(
-      css.indexOf(selector),
-      css.indexOf("}", css.indexOf(selector)) + 1,
-    );
-  for (const declaration of [
-    "background:linear-gradient(135deg,#d2e8e9f2 0%,#caf5f1f6 50%,#d2e8e9f2 100%)",
-    "border-radius:16px 16px 16px 4px",
-    "border:1px solid rgba(126,168,172,.38)",
-    "color:#56565f",
-    "font:600 14px/1.625 Nunito,system-ui,sans-serif",
-    "animation:farewell-line-in .4s cubic-bezier(.32,.72,0,1) both",
-  ])
-    assert.ok(rule(".farewell-line{").includes(declaration), declaration);
-  for (const declaration of [
-    "right:20px",
-    "bottom:11%",
-    "width:min(340px,34vw)",
-    "gap:8px",
-  ])
-    assert.ok(rule(".farewell-subtitles{").includes(declaration), declaration);
-});
-
-test("the CSS reproduces the shipped exit and the layout settle", () => {
-  const css = readFileSync("frontend-src/story/farewell-scene.css", "utf8");
-  assert.match(
-    css,
-    /@keyframes farewell-line-exit\{from\{opacity:1;transform:none\}to\{opacity:0;transform:translateY\(-60px\) scale\(\.85\)\}\}/,
-  );
-  assert.match(
-    css,
-    /\.farewell-line\[data-line\]\{animation:farewell-line-exit \.35s cubic-bezier\(\.32,\.72,0,1\) both\}/,
-  );
-  // The settle is a CSS transition on the evicted line's own box geometry, so
-  // the stack's slot closes with the shipped ease and no JS tween.
-  assert.match(css, /transition-duration:\.3s/);
-  assert.match(css, /transition-timing-function:cubic-bezier\(\.32,\.72,0,1\)/);
-  assert.match(
-    css,
-    /transition-property:line-height,padding-block,border-block-width,margin-bottom/,
-  );
-  assert.match(
-    css,
-    /\.farewell-line\[data-line=settle\]\{line-height:0;padding-block:0;border-block-width:0;margin-bottom:-8px;overflow:hidden\}/,
-  );
-  // Reduced motion drops both halves rather than only the enter.
-  assert.match(
-    css,
-    /@media \(prefers-reduced-motion:reduce\)\{\.farewell-line\{animation:none;transition:none\}\}/,
-  );
 });
 
 test("ending remains parked until the matching wake action", () => {

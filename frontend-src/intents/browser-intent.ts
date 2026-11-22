@@ -1,14 +1,3 @@
-import type { JsonValue } from "../runtime/protocol";
-
-export const BROWSER_APP_ID = "browser";
-
-export interface AppIntentTarget {
-  appId: string;
-  args: { [key: string]: JsonValue };
-}
-
-export type OpenAppIntent = (target: AppIntentTarget) => void;
-
 export interface BrowserPendingIntent {
   id: number;
   url: string;
@@ -46,19 +35,4 @@ export function createBrowserIntentStore(): BrowserIntentStore {
       };
     },
   };
-}
-
-/** Preserves the shipped `{ appId: "browser", args: { url } }` intent contract. */
-export class BrowserIntent {
-  constructor(private readonly openApp: OpenAppIntent) {}
-  open(url: string): void {
-    this.openApp({ appId: BROWSER_APP_ID, args: { url } });
-  }
-  toArgs(url: string): { url: string } {
-    return { url };
-  }
-}
-
-export function openUrlInBrowser(intent: BrowserIntent, url: string): void {
-  intent.open(url);
 }

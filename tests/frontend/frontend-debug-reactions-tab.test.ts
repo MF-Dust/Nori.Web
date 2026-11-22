@@ -3,7 +3,6 @@ import test from "node:test";
 import { NoriReactionDirector } from "../../frontend-src/live2d/reaction-director";
 import {
   DEBUG_REACTION_GROUPS,
-  debugReactionLabel,
   playDebugReaction,
 } from "../../frontend-src/screens/debug-reactions-tab";
 
@@ -17,7 +16,6 @@ test("reaction debug groups expose every production-bound reaction", () => {
       ["cakeduel", 9],
     ],
   );
-  assert.equal(debugReactionLabel("skipNoriDrawing"), "Skip Nori Drawing");
   assert.equal(
     DEBUG_REACTION_GROUPS[0].entries[1].label,
     "She solves fast (<30s)",
